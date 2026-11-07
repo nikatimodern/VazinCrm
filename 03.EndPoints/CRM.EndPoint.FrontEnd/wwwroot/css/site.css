@@ -8651,3 +8651,33 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 #FilterModal .filter-modal-cancel:hover { background:#F0F1F7; }
 #FilterModal button:focus-visible { outline:2px solid var(--filter-secondary); outline-offset:2px; }
 @media (max-width:575px) { #FilterModal .modal-dialog { margin:8px; } #FilterModal .modal-body { padding:8px; } #FilterModal .filter-modal-section { padding:8px; } }
+
+/* Shared request-amount form: project palette and readable Persian typography. */
+#addRequestAmountModal { --request-border:#DDE1E8; --request-primary:#004944; --request-purple:#5811B4; }
+#addRequestAmountModal .modal-content { padding:0; border:1px solid var(--request-border); border-radius:12px; background:#fff; color:#212529; }
+#addRequestAmountModal .request-amount-modal-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid var(--request-border); background:#E7F3F0; }
+#addRequestAmountModal #reqAmountModalTitleId { margin:0; color:var(--request-primary); font:700 16px/1.8 IRANSansBold; overflow-wrap:anywhere; }
+#addRequestAmountModal .request-amount-modal-close { display:flex; align-items:center; justify-content:center; width:30px; height:30px; flex-shrink:0; border:1px solid var(--request-border); border-radius:6px; background:#fff; color:var(--request-primary); font:400 22px/1 IRANSans; }
+#addRequestAmountModal .modal-body { padding:14px 16px; scrollbar-color:#00665C transparent; }
+#addRequestAmountModal #requestAmountForm { gap:10px !important; }
+#addRequestAmountModal #requestAmountForm label { display:block; margin-bottom:4px; color:var(--request-primary); font:500 14px/1.7 IRANSansMedium; }
+#addRequestAmountModal :is(.form-control, .form-select, .ts-control) { min-height:36px; border:1px solid #A3B8B3; border-radius:6px; color:#212529; background-color:#fff; font:400 14px/1.8 IRANSans; }
+#addRequestAmountModal :is(.form-control, .form-select):focus,
+#addRequestAmountModal .ts-wrapper.focus .ts-control { border-color:var(--request-purple); box-shadow:0 0 0 2px #F3EDFC; outline:none; }
+#addRequestAmountModal .ts-dropdown { border-color:var(--request-border); border-radius:6px; font:400 14px/1.8 IRANSans; }
+#addRequestAmountModal .ts-dropdown .active { background:#E7F3F0; color:var(--request-primary); }
+#addRequestAmountModal textarea { resize:vertical; min-height:76px; }
+#addRequestAmountModal .currencyHint { color:#545961; font-size:12px; }
+#addRequestAmountModal .request-amount-modal-actions { display:flex; flex-direction:row-reverse; justify-content:flex-end; flex-wrap:wrap; gap:7px; border-top:1px solid var(--request-border); padding-top:12px; margin-top:2px; }
+#addRequestAmountModal .request-amount-modal-actions button { min-height:36px; min-width:76px; padding:5px 14px; border:1px solid var(--request-border); border-radius:6px; box-shadow:none; font:500 14px/1.7 IRANSansMedium; }
+#addRequestAmountModal .request-amount-modal-actions .buttonGreen3 { background:#00665C; color:#fff; border-color:#00665C; }
+#addRequestAmountModal .request-amount-modal-actions .buttonCancel2 { background:#fff; color:#545961; }
+#addRequestAmountModal .request-amount-modal-actions .buttonCancel2:hover { background:#F0F1F7; }
+#addRequestAmountModal button:focus-visible { outline:2px solid var(--request-purple); outline-offset:2px; }
+@media (max-width:575px) {
+    #addRequestAmountModal .modal-dialog { margin:8px; }
+    #addRequestAmountModal .request-amount-modal-header { padding:10px 12px; }
+    #addRequestAmountModal #reqAmountModalTitleId { font-size:14px; }
+    #addRequestAmountModal .modal-body { padding:12px; }
+    #addRequestAmountModal .request-amount-modal-actions button { min-height:40px; }
+}

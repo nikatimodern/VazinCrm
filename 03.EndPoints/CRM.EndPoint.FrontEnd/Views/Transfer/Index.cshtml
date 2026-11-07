@@ -1,3 +1,8 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 
 @{
     ViewBag.Title = "title";
@@ -5,7 +10,7 @@
 }
 
 
-<div>
+<div id="transferWorkspace" class="crm-operations-theme">
     <div class="d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-1 mb-3">
             <button class="buttonGreen0 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(1)">
@@ -119,6 +124,7 @@
 </div>
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("transferWorkspace")));</script>
     <script src="~/js/Transfer.js?release=7.0.4" data-page-bindings="transferTbl,transferModel,transferData,transferAttachment,transferModal,transferFields,showModalTransfer,setTransferModalUI,loadTransferAccounts,cancelTransferModal,submitTransferModal,getAllTransfersDt,editTransfer,deleteTransfer,changeStatusTransfer" asp-append-version="true"></script>
     <script data-page-bindings="">
         document.addEventListener("DOMContentLoaded", async () => {

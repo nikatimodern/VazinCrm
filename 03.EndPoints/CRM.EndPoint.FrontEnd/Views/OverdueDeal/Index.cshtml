@@ -1,3 +1,8 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @{
     ViewData["Title"] = "سفارشات باز معوقه";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -1004,7 +1009,7 @@
     }
 </style>
 
-<div class="container-fluid py-3 overdue-deal-page" dir="rtl">
+<div id="overdueWorkspace" class="crm-operations-theme container-fluid py-3 overdue-deal-page" dir="rtl">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div class="d-flex align-items-center gap-2">
             <span class="d-inline-flex align-items-center justify-content-center rounded-3 p-2"
@@ -1255,6 +1260,7 @@
 
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("overdueWorkspace")));</script>
     <script data-page-bindings="filterDealConfig,overdueDealSearchVal">
         var filterDealConfig = window.filterDealConfig || {};
         var overdueDealSearchVal = null;

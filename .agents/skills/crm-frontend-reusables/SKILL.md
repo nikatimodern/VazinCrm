@@ -7,6 +7,15 @@ description: Reuse and maintain the existing shared JavaScript utilities in ever
 
 ## Reuse Priority
 
+### Local asset references
+
+Use `release=7.0.4` in local JavaScript and stylesheet URLs, matching the current
+project release convention. Preserve `asp-append-version="true"` where present.
+Append with `&` when a URL already has a query, and do not duplicate an existing
+release parameter. Keep future references versioned; change the release value
+project-wide only when the user requests a new release. Do not rewrite third-party
+CDN URLs or archived/uploaded documents as part of source asset maintenance.
+
 1. Check the shared source and relevant reference for an existing function or class before writing one.
 2. Use an existing utility when its contract fits the need.
 3. If it needs extension, inspect all relevant callers and preserve compatibility before changing it.

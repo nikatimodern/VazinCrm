@@ -1,9 +1,35 @@
+/** Keep tab toolbars outside the flexible scroll region, including AJAX tables. */
+function initCartableViewport() {
+    const root = document.getElementById("cartableWorkspace");
+    if (!root) return;
+    let frame = 0;
+    const update = () => {
+        frame = 0;
+        root.querySelectorAll(".cartable-document-scroll, .salesExperts-list, #FinancialExpertPfContentId, #FinancialRequestContentId, #MDRequestAmountContentId, #TContentId, #SalesAdminPfactorContentId, .dt-scroll-body").forEach(region => {
+            region.classList.add("cartable-viewport-scroll");
+            for (let parent = region.parentElement; parent && parent !== root; parent = parent.parentElement) {
+                parent.classList.add("cartable-viewport-fill");
+            }
+        });
+    };
+    update();
+    const observer = new MutationObserver(() => {
+        if (!frame) frame = requestAnimationFrame(update);
+    });
+    observer.observe(root, { childList:true, subtree:true });
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        observer.disconnect();
+        cancelAnimationFrame(frame);
+    }, { once:true });
+}
+
 let filConfigSession = null;
 let fromWarning = false;
 
 
 document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("cartableWorkspace"));
+    initCartableViewport();
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////

@@ -1,0 +1,97 @@
+/* Opt-in theme for supply, treasury, warehouse, pricing and overdue workspaces. */
+.crm-operations-theme {
+    --ops-primary:#004944;
+    --ops-action:#00665C;
+    --ops-light:#E7F3F0;
+    --ops-purple:#5811B4;
+    --ops-purple-light:#F3EDFC;
+    --ops-danger:#C2185B;
+    --ops-border:#DDE1E8;
+    color:#212529;
+    min-width:0;
+    width:100%;
+    font:400 14px/1.7 IRANSans;
+}
+.crm-operations-theme :is(h1,h2,h3,h4,h5) { color:var(--ops-primary); font-family:IRANSansBold; line-height:1.7; }
+.crm-operations-theme :is(h1,h2) { font-size:18px; }
+.crm-operations-theme :is(h3,h4,h5) { font-size:16px; }
+.crm-operations-theme .search-group { border:1px solid var(--ops-border); border-radius:7px; overflow:hidden; background:#fff; }
+.crm-operations-theme .search-group input { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 14px/1.7 IRANSans; text-align:start; }
+.crm-operations-theme .search-group:focus-within { border-color:var(--ops-purple); box-shadow:0 0 0 2px var(--ops-purple-light); }
+.crm-operations-theme .search-icon { background:var(--ops-purple-light); color:var(--ops-purple); border:none; }
+.crm-operations-theme .filter-switch { display:flex; flex-wrap:wrap; gap:3px; padding:3px; border:1px solid var(--ops-border); border-radius:7px; background:#fff; }
+.crm-operations-theme .filter-switch label { color:#545961; border-radius:5px; font:500 12px/1.7 IRANSansMedium; }
+.crm-operations-theme .filter-switch input:checked + label { color:var(--ops-primary); background:var(--ops-light); box-shadow:none; }
+.crm-operations-theme .filter-count-badge { position:static; margin-inline-start:4px; border-radius:5px; background:var(--ops-purple-light); color:var(--ops-purple); }
+.crm-operations-theme :is(.buttonGray2,.buttonGreen,.buttonGreen0,.buttonGreen2,.buttonGreen3,.buttonBlue,.buttonBlue2,.buttonCancel2,.buttonCancel3) { border-radius:6px; box-shadow:none; font:500 13px/1.7 IRANSansMedium; }
+.crm-operations-theme :is(.buttonGray2,.buttonBlue,.buttonBlue2) { background:var(--ops-purple); color:#fff; }
+.crm-operations-theme :is(.buttonGreen,.buttonGreen0,.buttonGreen2,.buttonGreen3) { background:var(--ops-action); color:#fff; }
+.crm-operations-theme :is(.buttonCancel2,.buttonCancel3) { background:var(--ops-danger); color:#fff; }
+.crm-operations-theme :is(.buttonGray,.icon-button--gray) { border:1px solid var(--ops-border); border-radius:5px; background:var(--ops-light); color:var(--ops-primary); box-shadow:none; }
+.crm-operations-theme .dt-container { padding:10px; border:1px solid var(--ops-border); border-radius:9px; background:#fff; font-size:13px; }
+.crm-operations-theme table.table { --bs-table-bg:#fff; --bs-table-color:#212529; --bs-table-striped-bg:#F7F8FA; --bs-table-striped-color:#212529; --bs-table-hover-bg:var(--ops-light); --bs-table-hover-color:#212529; border-color:var(--ops-border); font:400 13px/1.8 IRANSans; }
+.crm-operations-theme table.table thead th { background:var(--ops-light); color:var(--ops-primary); padding:9px 7px; border-color:var(--ops-border); font:700 13px/1.7 IRANSansBold; }
+.crm-operations-theme .dt-container table tbody td { padding:8px 7px !important; border-color:var(--ops-border); }
+.crm-operations-theme .dt-scroll-body { border-bottom:1px solid var(--ops-border); scrollbar-color:var(--ops-action) transparent; }
+.crm-operations-theme :is(.dt-layout-row,.dt-layout-cell,.dt-layout-start,.dt-layout-end) { min-width:0; flex-wrap:wrap; gap:7px; }
+.crm-operations-theme .dt-search input { min-height:34px; border:1px solid var(--ops-border); border-radius:6px; font:400 13px/1.7 IRANSans; text-align:start; }
+.crm-operations-theme .page-link { border-color:var(--ops-border); color:var(--ops-primary); box-shadow:none; }
+.crm-operations-theme .page-item.active .page-link { border-color:var(--ops-purple); background:var(--ops-purple); color:#fff; }
+.crm-operations-theme :is(input,select,button,a):focus-visible { outline:2px solid var(--ops-purple); outline-offset:2px; }
+.crm-operations-theme :is(.btnFilter,.overdue-filter-button) { background:var(--ops-purple-light); color:var(--ops-purple); border:1px solid var(--ops-border); box-shadow:none; border-radius:6px; }
+.crm-operations-theme :is(.btnFilter,.overdue-filter-button) svg { color:var(--ops-purple) !important; }
+.crm-operations-theme .layered-card { --ops-card-accent:var(--ops-primary); --ops-card-bg:var(--ops-light); border:1px solid var(--ops-card-accent); border-radius:9px; background:var(--ops-card-bg); box-shadow:0 1px 3px rgb(33 37 41 / 4%); }
+.crm-operations-theme .layered-card:nth-child(even) { --ops-card-accent:var(--ops-purple); --ops-card-bg:var(--ops-purple-light); }
+.crm-operations-theme .layered-card > .layered-card__layer { background:transparent; border-color:var(--ops-border); font-size:13px; line-height:1.8; }
+.crm-operations-theme .layered-card .fbold { font-family:IRANSansMedium; font-weight:500; }
+.crm-operations-theme .layered-card .label-vertical { background:var(--ops-card-accent) !important; color:#fff; }
+.crm-operations-theme .layered-card :is(.sf-manage-allocations,.buttonGray) { padding:5px 9px; background:#fff; color:var(--ops-card-accent); border:1px solid var(--ops-border); border-radius:6px; box-shadow:none; }
+.crm-operations-theme .sf-supply-card button[data-title-right] { color:var(--ops-card-accent) !important; min-width:30px; min-height:30px; }
+.crm-operations-theme .sf-supply-card button[data-title-right="حذف"] { color:var(--ops-danger) !important; }
+#requestAmountWorkspace { container-type:inline-size; container-name:request-page; }
+#requestAmountWorkspace .request-page-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+#requestAmountWorkspace .request-page-search { order:0; flex:0 1 240px; min-width:0; display:flex; }
+#requestAmountWorkspace .request-page-search .search-group { width:100%; }
+#requestAmountWorkspace .request-page-filters { order:1; min-width:0; }
+#requestAmountWorkspace .request-page-actions { order:2; margin-inline-start:auto; }
+#requestAmountWorkspace .request-page-actions button { min-height:34px; white-space:nowrap; }
+#requestAmountWorkspace #requestAmountSearchId { padding-inline:12px !important; }
+#requestAmountWorkspace .layered-card { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; padding:8px; }
+#requestAmountWorkspace :is(.request-card__metadata,.request-card__details,.request-card__requested) { grid-column:1 / -1; }
+#requestAmountWorkspace .layered-card > .layered-card__layer { min-width:0; width:auto; padding:8px !important; border:1px solid var(--ops-border); border-radius:6px; background:#fff; overflow-wrap:anywhere; }
+#requestAmountWorkspace .request-card__actions { min-width:0 !important; flex-direction:row !important; flex-wrap:wrap; gap:7px !important; }
+#requestAmountWorkspace .layered-select-box { grid-column:1 / -1; padding:2px 4px !important; }
+#requestAmountWorkspace .input-group { flex-wrap:nowrap; }
+#requestAmountWorkspace .input-group input { min-width:0; font-size:13px; }
+#requestAmountWorkspace .layered-card .badge { box-shadow:none; font-size:12px; }
+@container request-page (min-width:992px) {
+    #requestAmountWorkspace .layered-card { grid-template-columns:minmax(0,1.1fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) minmax(95px,.65fr); }
+    #requestAmountWorkspace :is(.request-card__metadata,.request-card__details,.request-card__requested,.request-card__actions) { grid-column:auto; }
+}
+#warehouseWorkspace { --warehouse-primary:#004944; --warehouse-primary-dark:#00665C; --warehouse-primary-soft:#E7F3F0; --warehouse-primary-softer:#F0F1F7; --warehouse-text:#212529; --warehouse-text-muted:#545961; --warehouse-border:#DDE1E8; }
+#warehouseWorkspace .warehouse-card { --clickable-card-color:#004944; --clickable-card-bg:#E7F3F0; --clickable-card-bg-border:#A3B8B3; background:#E7F3F0; border-top-width:3px; border-radius:9px; }
+#warehouseWorkspace .warehouse-card:nth-child(even) { --clickable-card-color:#5811B4; --clickable-card-bg:#F3EDFC; --clickable-card-bg-border:#C6B5DD; background:#F3EDFC; }
+#warehouseWorkspace .warehouse-card.warehouse-card--main { --clickable-card-color:#545961; --clickable-card-bg:#F0F1F7; --clickable-card-bg-border:#B8BEC6; background:#F0F1F7; }
+#warehouseWorkspace .clickable-card__title { color:var(--clickable-card-color); font:700 16px/1.8 IRANSansBold; }
+#warehouseWorkspace .clickable-card__badge { font:500 12px/1.7 IRANSansMedium; }
+#warehouseWorkspace .clickable-card-add { border-color:#A3B8B3; color:#004944; background:#fff; }
+#priceWorkspace .list-product__box { border:1px solid #A3B8B3; border-radius:9px; box-shadow:0 1px 3px rgb(33 37 41 / 4%); padding:12px; }
+#priceWorkspace .list-product__grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr)); }
+#priceWorkspace .list-product__box .buttonGreen { background:var(--ops-purple); color:#fff; box-shadow:none; }
+#priceWorkspace .list-product__priceTable { font:400 13px/1.8 IRANSans; }
+#priceWorkspace .list-product__priceTable .header { background:var(--ops-light) !important; color:var(--ops-primary); font:700 13px/1.7 IRANSansBold; }
+#priceWorkspace .list-product__priceTable [data-title="حذف"] { color:var(--ops-danger) !important; }
+#priceWorkspace .list-product__priceTable [data-title="ویرایش"] { color:var(--ops-primary) !important; }
+#overdueWorkspace { --overdue-primary:#004944; --overdue-secondary:#5811B4; --overdue-secondary-light:#F3EDFC; }
+#overdueWorkspace .overdue-sort-button { font:700 13px/1.7 IRANSansBold; }
+#overdueWorkspace table tbody td { padding:9px 7px; font:400 13px/1.8 IRANSans; }
+#overdueWorkspace table tbody tr:hover { background:#E7F3F0; }
+@media (max-width:767px) {
+    .crm-operations-theme .filter-switch { width:100%; }
+    .crm-operations-theme .filter-switch label { padding:6px; }
+    .crm-operations-theme .dt-container { padding:7px; }
+    .crm-operations-theme :is(.pagination,.dt-paging) { flex-wrap:wrap; }
+    .crm-operations-theme .layered-card > .layered-card__layer { min-width:0; max-width:100%; }
+    #priceWorkspace .list-product__grid { grid-template-columns:minmax(0,1fr); }
+    #priceWorkspace .list-product__box { padding:9px; }
+}

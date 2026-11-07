@@ -1,8 +1,11 @@
 <!-- Modal addRequestAmount -->
-<div class="modal fade" id="addRequestAmountModal" tabindex="-1" role="dialog" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content col-12 p-2">
-            <div id="reqAmountModalTitleId" class="text-center text-white rounded py-1 fbold" style="background-color: #6c757d">درخواست وجه</div>
+<div class="modal fade" id="addRequestAmountModal" tabindex="-1" role="dialog" aria-labelledby="reqAmountModalTitleId" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content col-12">
+            <div class="request-amount-modal-header">
+                <h2 id="reqAmountModalTitleId">درخواست وجه</h2>
+                <button type="button" class="request-amount-modal-close" aria-label="بستن" onclick="cancelRequestAmountModal()">×</button>
+            </div>
             <div class="modal-body pb-2">
                 <form id="requestAmountForm" class="d-flex flex-column gap-2">
                     <div id="requestAmountTypeWrapper">
@@ -67,7 +70,7 @@
                         <textarea id="reqAmountDescription" class="form-control h-auto px-2 py-1 text-start" name="description" rows="3"></textarea>
                     </div>
 
-                    <div class="d-flex justify-content-center gap-1 mt-3">
+                    <div class="request-amount-modal-actions">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" onclick="cancelRequestAmountModal()">انصراف</button>
                         <button type="button" class="buttonGreen3" style="padding-block: 4px" onclick="submitRequestAmountModal()">ثبت</button>
                     </div>

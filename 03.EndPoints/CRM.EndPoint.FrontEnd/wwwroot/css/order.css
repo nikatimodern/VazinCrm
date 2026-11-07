@@ -65,7 +65,8 @@
 
 
 @media all and (max-width: 1199px) {
-  #allOrdersContainer {
+
+#allOrdersContainer {
     border: 2px solid #02514b;
     border-end-end-radius: 0;
     border-end-start-radius: 20px;
@@ -194,4 +195,71 @@
 
 #CreateOrderTabs .nav-item[data-tabid] .nav-link svg:hover {
   background-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* Production order index theme applies at every viewport width. */
+
+#mainWrapper:has(#productionOrderWorkspace) { height:100dvh; min-height:0; }
+#mainContent:has(#productionOrderWorkspace) { display:flex; flex-direction:column; height:auto; min-height:0; padding-block-end:10px; }
+#productionOrderWorkspace { --order-primary:#004944; --order-action:#00665C; --order-light:#E7F3F0; --order-purple:#5811B4; --order-purple-light:#F3EDFC; --order-border:#DDE1E8; display:flex; flex:1; min-height:0; color:#212529; font:400 14px/1.7 IRANSans; }
+#productionOrderWorkspace .order-workspace-layout { flex:1; min-height:0; }
+#productionOrderWorkspace .order-workspace-layout > :first-child { flex-shrink:0; }
+#productionOrderWorkspace .order-board { flex:1; min-height:0; }
+#productionOrderWorkspace #ordersTabs { flex-shrink:0; }
+#productionOrderWorkspace #allOrdersContainer { flex:1; min-height:0; gap:12px; border:none; padding:0; }
+#productionOrderWorkspace #allOrdersContainer > [role="tabpanel"] { min-width:0; min-height:0; height:100%; }
+#productionOrderWorkspace #allOrdersContainer > [role="tabpanel"] > div { min-height:0; }
+#productionOrderWorkspace #allOrdersContainer > [role="tabpanel"] > div > :first-child { flex-shrink:0; color:var(--order-primary); font:700 14px/1.7 IRANSansBold; }
+#productionOrderWorkspace #allOrdersContainer > [role="tabpanel"] > div > :first-child span { font-size:13px !important; }
+#productionOrderWorkspace .orders-container { --order-accent:var(--order-primary); --order-tint:var(--order-light); flex:1; min-height:0; height:auto; padding:7px; border:1px solid var(--order-border); border-radius:9px; background:#fff; gap:8px; scrollbar-color:var(--order-accent) transparent; }
+#productionOrderWorkspace #registeredOrderId { --order-accent:#545961; --order-tint:#F0F1F7; }
+#productionOrderWorkspace #producingOrderId { --order-accent:var(--order-purple); --order-tint:var(--order-purple-light); }
+#productionOrderWorkspace .orderBox { flex-shrink:0; min-width:0; border:1px solid var(--order-border); border-top:2px solid var(--order-accent); border-radius:7px; background:var(--order-tint); box-shadow:0 1px 3px rgb(33 37 41 / 4%); }
+#productionOrderWorkspace .orderBox_col4 { --order-accent:#545961; --order-tint:#F0F1F7; }
+#productionOrderWorkspace .orderBox label { font-size:13px; line-height:1.8; }
+#productionOrderWorkspace .orderBox label[style*="IRANSansBold"],
+#productionOrderWorkspace .orderBox label.fbold { font-family:IRANSansMedium !important; font-weight:500; }
+#productionOrderWorkspace .orderBox label[style*="color:gray"] { color:#545961 !important; font-family:IRANSans; font-weight:400; }
+#productionOrderWorkspace .order-card-facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; padding-bottom:4px; border-bottom:1px solid var(--order-border); }
+#productionOrderWorkspace .order-card-facts > div { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 5px; min-width:0; }
+#productionOrderWorkspace .order-card-facts span,
+#productionOrderWorkspace .order-card-field > span { color:#545961; font:400 12px/1.7 IRANSans; }
+#productionOrderWorkspace .order-card-facts strong { font:500 13px/1.8 IRANSansMedium; }
+#productionOrderWorkspace .order-card-people { display:grid; gap:3px; padding-block:4px; }
+#productionOrderWorkspace .order-card-customer { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; }
+#productionOrderWorkspace .order-card-staff { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+#productionOrderWorkspace .order-card-supply-expert { justify-content:flex-end; text-align:left; }
+#productionOrderWorkspace .order-card-field { display:flex; align-items:baseline; gap:4px; min-width:0; }
+#productionOrderWorkspace .order-card-field > span { flex-shrink:0; }
+#productionOrderWorkspace .order-card-field strong { overflow-wrap:anywhere; font:500 14px/1.8 IRANSansMedium; }
+#productionOrderWorkspace .order-card-field .order-card-sales-name { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; overflow-wrap:normal; }
+#productionOrderWorkspace .order-card-sales-name:focus-visible { outline:2px solid var(--order-purple); outline-offset:2px; }
+#productionOrderWorkspace :is(.order-card-prefactor,.order-card-profile) { align-self:flex-start; padding:0; border:0; background:transparent; color:var(--order-accent); font:500 13px/1.8 IRANSansMedium; text-decoration:underline; text-underline-offset:3px; }
+#productionOrderWorkspace .order-card-actions { display:flex; align-items:center; flex-wrap:wrap; gap:4px; padding-top:4px; border-top:1px solid var(--order-border); }
+#productionOrderWorkspace .order-card-icon-actions { display:flex; align-items:center; gap:3px; flex-wrap:wrap; }
+#productionOrderWorkspace .order-card-workflow-actions { display:flex; flex:1; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; }
+#productionOrderWorkspace .order-card-status-actions { display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+#productionOrderWorkspace .order-card-actions button { border-radius:5px; box-shadow:none; font:500 12px/1.7 IRANSansMedium; }
+#productionOrderWorkspace .order-card-actions button[data-title] { min-height:30px; color:var(--order-accent) !important; }
+#productionOrderWorkspace .order-card-actions button[data-title="حذف"] { color:#C2185B !important; }
+#productionOrderWorkspace .order-card-actions button[data-title]:hover { background:#fff; }
+#productionOrderWorkspace .order-card-actions .buttonGray { background:#fff; border:1px solid var(--order-border); color:var(--order-accent); padding:4px 8px; }
+#productionOrderWorkspace .order-card-actions .buttonGreen2 { background:var(--order-action); color:#fff; padding:4px 8px; }
+#productionOrderWorkspace .filter-switch { padding:3px; background:#fff; border:1px solid var(--order-border); border-radius:7px; }
+#productionOrderWorkspace .filter-switch label { padding:5px 9px; font:500 12px/1.7 IRANSansMedium; color:#545961; border-radius:5px; }
+#productionOrderWorkspace .filter-switch input:checked + label { background:var(--order-light); color:var(--order-primary); box-shadow:none; }
+#productionOrderWorkspace .search-group { border:1px solid var(--order-border); border-radius:7px; overflow:hidden; background:#fff; }
+#productionOrderWorkspace #orderSearchId { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 13px/1.7 IRANSans; text-align:start; }
+#productionOrderWorkspace .search-icon { background:var(--order-purple-light); color:var(--order-purple); border:none; }
+#productionOrderWorkspace .btnFilter { padding:5px; background:var(--order-light); border-radius:6px; }
+#productionOrderWorkspace .btnFilter svg { color:var(--order-primary) !important; }
+#productionOrderWorkspace #ordersTabs { gap:4px; border:none; padding:4px; border-radius:8px; background:#fff; }
+#productionOrderWorkspace #ordersTabs .nav-link { border:0; border-radius:6px; color:var(--order-primary) !important; font:500 13px/1.7 IRANSansMedium; }
+#productionOrderWorkspace #ordersTabs .nav-link.active { background:var(--order-primary); color:#fff !important; }
+#productionOrderWorkspace #ordersTabs .badge-count { position:static; display:inline-flex; min-width:22px; padding:2px 5px; margin-inline-start:5px; border-radius:5px; background:var(--order-purple-light); color:var(--order-purple); font-size:11px; }
+#productionOrderWorkspace :is(button,input):focus-visible { outline:2px solid var(--order-purple); outline-offset:2px; }
+@media (max-width:767px) {
+  #productionOrderWorkspace #ordersTabs .nav-link { padding:6px; font-size:12px; }
+  #productionOrderWorkspace .order-card-actions button { min-height:36px; }
+  #productionOrderWorkspace .order-card-facts { row-gap:4px !important; }
 }

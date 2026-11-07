@@ -1,8 +1,13 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @{
     Layout = "_Layout";
 }
 
-<div id="receivedChecksContainer" style="width: 99%">
+<div id="receivedChecksContainer" class="crm-operations-theme">
     <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
 
         <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
@@ -57,6 +62,7 @@
 <partial name="Modals/_NotAcceptModal" />
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("receivedChecksContainer")));</script>
     <script data-page-bindings="getReceivedChecks">
         document.addEventListener("DOMContentLoaded", async () => {
             await getReceivedChecks();

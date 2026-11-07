@@ -1240,3 +1240,33 @@
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group { flex-wrap:nowrap; min-width:0; }
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group input { min-width:0; font-size:13px; border-color:#A3B8B3; }
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .acceptedAmountPercent { flex:0 0 auto; width:66px; font-size:12px; }
+
+/* Fit the active document workspace; only its two lists own vertical scrolling. */
+#mainWrapper:has(#CPrefactorFactorId:not(.d-none)) { height:100dvh; min-height:0; }
+#mainContent:has(#CPrefactorFactorId:not(.d-none)) { display:flex; flex-direction:column; height:auto; min-height:0; padding-block-end:10px; }
+#cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) { display:flex; flex-direction:column; flex:1; min-height:0; }
+#cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) #CartableTabs { flex-shrink:0; }
+#cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) .CartableContent { flex:1; min-height:0; justify-content:flex-start; }
+#cartableWorkspace #CPrefactorFactorId { flex:1; min-height:0; }
+#CPrefactorFactorId #allTabFactors { flex-shrink:0; }
+#CPrefactorFactorId #tabContentAllFactors { flex:1; min-height:0; }
+#CPrefactorFactorId #tabContentAllFactors > [role="tabpanel"] { height:100%; min-height:0; }
+#CPrefactorFactorId #tabContentAllFactors > [role="tabpanel"]:not(.tab-pane),
+#CPrefactorFactorId #tabContentAllFactors > .tab-pane.active { display:flex; }
+#CPrefactorFactorId .cartable-column-heading { flex-shrink:0; }
+#CPrefactorFactorId .InfoData { flex:1; min-height:0; justify-content:flex-start !important; }
+#CPrefactorFactorId .cartable-list-toolbar { flex-shrink:0; }
+#CPrefactorFactorId .cartable-document-scroll { flex:1; min-height:0; max-height:none !important; overflow:auto; width:100%; display:flex; justify-content:center; }
+
+/* All Cartable roles share the same viewport contract. */
+#mainWrapper:has(#cartableWorkspace) { height:100dvh; min-height:0; }
+#mainContent:has(#cartableWorkspace) { display:flex; flex-direction:column; height:auto; min-height:0; padding-block-end:10px; }
+#cartableWorkspace { display:flex; flex-direction:column; flex:1; min-height:0; }
+#cartableWorkspace #CartableTabs { flex-shrink:0; }
+#cartableWorkspace .CartableContent { flex:1; min-height:0; justify-content:flex-start; }
+#cartableWorkspace .cartable-pane:not(.d-none) { display:flex; flex-direction:column; flex:1; min-height:0; overflow:auto; }
+#cartableWorkspace .cartable-viewport-fill { flex:1; min-height:0; min-width:0; }
+#cartableWorkspace .cartable-viewport-fill:not(.tab-pane):not(.d-none):not(.d-xxl-grid),
+#cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex; flex-direction:column; }
+#cartableWorkspace .cartable-viewport-fill > :not(.cartable-viewport-fill):not(.cartable-viewport-scroll) { flex-shrink:0; }
+#cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }

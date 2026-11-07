@@ -3,8 +3,8 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="mx-auto col-12">
-    <div class="d-flex flex-column align-items-start justify-content-center w-100">
+<div id="productionOrderWorkspace" class="mx-auto col-12">
+    <div class="order-workspace-layout d-flex flex-column align-items-start w-100">
 
         <div class="col-12 col-md-auto d-flex align-items-center gap-2 mb-2 flex-wrap">
             <div class="d-flex align-items-center gap-2 flex-grow-1">
@@ -37,7 +37,7 @@
         </div>
 
 
-        <div class="d-flex flex-column w-100">
+        <div class="order-board d-flex flex-column w-100">
             <ul class="nav nav-tabs" id="ordersTabs" role="tablist" style="display: none;">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active text-dark position-relative" style="margin-bottom:-2px;isolation:auto" id="registeredOrderTab" data-tab="registeredOrder" data-bs-toggle="tab" data-bs-target="#registeredOrderTab-pane" type="button" role="tab" aria-controls="registeredOrderTab-pane" aria-selected="true">
@@ -142,6 +142,7 @@
         const closedIcon = document.querySelector("#showFinishedOrderIcon #closedEyeIcon");
 
         document.addEventListener("DOMContentLoaded", async () => {
+            enableMomentumScrollScope(document.getElementById("productionOrderWorkspace"));
 
             //getAllOrders();
 

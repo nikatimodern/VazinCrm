@@ -13,52 +13,23 @@
     var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
     <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
         <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
-            <div class="mp flex-column" style=" display:flex;justify-content:space-between; width:100%;">
-                <div class="col-12 d-flex flex-wrap justify-content-around" style="row-gap:.5rem;column-gap:10px;">
-                    <div class="justify-content-between" style=" display:flex;align-items:center;gap:6px">
-                        <label style="color:gray">شماره:</label>
-                        <label style="font-family:'IRANSansBold'">@item.OrderNumber</label>
-                    </div>
-                    <div class="justify-content-between" style="display:flex;align-items:center;gap:6px">
-                        <label style="color:gray">پیش‌فاکتور:</label>
-                        <label class="hoverLink" style="font-family:'IRANSansBold'" onclick="ShowPreviewPfactor('@item.Prefactor')">@item.PrefactorSer</label>
-                    </div>
-                    <div class="justify-content-between" style="display:flex;align-items:center; gap:6px">
-                        <label style="color:gray">تاریخ:</label>
-                        <label style="font-family:'IRANSansBold'">@item.OrderDate</label>
-                    </div>
-                </div>
-
-                <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                <div class="d-flex flex-column" style="row-gap:.5rem;column-gap:10px;">
-                    <div class="col-12 d-flex flex-wrap justify-content-around" style="text-align:center;row-gap:.5rem;column-gap:10px;">
-                        <div style=" display:flex;align-items:center;gap:8px">
-                            <label style="color:gray">نام مشتری:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@(item.CustomerTxt)</label>
-                        </div>
-                        <div style=" display:flex;align-items:center;gap:8px">
-                            <label style="color:gray">کد مشتری:</label>
-                            <label class="@(item.CustomerCode != null ? "hoverLink" : "") text-center fbold" onclick="openCustomerProfile('@item.Customer', '@item.PrefactorSer')">@(item.CustomerCode?.ToString() ?? "-")</label>
-                        </div>
-                    </div>
-                    <div class="col-12 d-flex flex-wrap justify-content-around" style="text-align:center;row-gap:.5rem;column-gap:10px;">
-                        <div style=" display:flex;align-items:center; gap:8px">
-                            <label style="color:gray">کارشناس فروش:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@item.UserCreator</label>
-                        </div>
-                        <div style=" display:flex;align-items:center; gap:8px">
-                            <label style="color:gray">کارشناس تامین:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@item.UserTaminTxt</label>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="order-card-facts">
+                <div><span>شماره حواله</span><strong>@item.OrderNumber</strong></div>
+                <div><span>پیش‌فاکتور</span><button type="button" class="order-card-prefactor" onclick="ShowPreviewPfactor('@item.Prefactor')">@item.PrefactorSer</button></div>
+                <div><span>تاریخ</span><strong>@item.OrderDate</strong></div>
             </div>
-            <div class="my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-            <div class="d-flex flex-column flex-xxl-row flex-wrap gap-2">
-                <div class="d-flex align-items-center justify-content-evenly flex-grow-1 gap-3">
+            <div class="order-card-people">
+                <div class="order-card-customer">
+                    <div class="order-card-field"><span>مشتری</span><strong>@item.CustomerTxt</strong></div>
+                    <div class="order-card-field order-card-customer-code"><span>کد مشتری</span><button type="button" class="order-card-profile" onclick="openCustomerProfile('@item.Customer', '@item.PrefactorSer')">@(item.CustomerCode?.ToString() ?? "-")</button></div>
+                </div>
+                <div class="order-card-staff">
+                    <div class="order-card-field"><span>کارشناس فروش</span><strong class="order-card-sales-name" title="@item.UserCreator" tabindex="0">@item.UserCreator</strong></div>
+                    <div class="order-card-field order-card-supply-expert"><span>کارشناس تأمین</span><strong>@item.UserTaminTxt</strong></div>
+                </div>
+            </div>
+            <div class="order-card-actions">
+                <div class="order-card-icon-actions">
                     <button class="flex-center px-2" data-title="مشاهده" style="color:var(--DarkColor)" onclick="PreviewOrderPrint('@item.Id')">
                         <i class="mp fa fa-eye"></i>
                     </button>
@@ -78,7 +49,7 @@
                     }
                 </div>
 
-                <div class="d-flex align-items-center justify-content-between flex-grow-1 gap-2 flex-wrap pe-2 mt-1 mt-xxl-0">
+                <div class="order-card-workflow-actions">
                     @if (showAddRequestAmountBtn) {
                         <div class="@(requestCount > 0 ? "buttonGroup" : "")">
                             <button class="buttonGray" onclick="showAddRequestAmountModal('@item.Id', '@item.OrderNumber')">درخواست پیش‌پرداخت</button>
@@ -90,7 +61,7 @@
                             }
                         </div>
                     }
-                    <div class="d-flex align-items-center justify-content-end flex-grow-1 gap-2">
+                    <div class="order-card-status-actions">
                         @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
                             <button class="buttonGray @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @passType)">مرحله قبل</button>
                         }

@@ -1,17 +1,29 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @{
     Layout = "_Layout";
 }
 
-<div class="w-100p pb-3">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div class="d-flex align-content-center gap-2 col-lg-3">
+<div id="requestAmountWorkspace" class="crm-operations-theme w-100 pb-3">
+    <div class="request-page-toolbar">
+        <div class="request-page-actions d-flex align-items-center flex-wrap gap-2">
             <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showAddRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
-
+    @if (User.IsAdmin() || User.IsFinancialExpert()) {
+        <div>
+            <button class="selection-toggle-btn buttonGreen2 d-flex align-items-center gap-2" style="padding: 4px 8px !important">
+                <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
+                <span style="line-height: 1">پرداخت گروهی</span>
+            </button>
         </div>
-        <div class="d-flex align-items-center gap-2 col-12 col-lg-5">
+    }
+        </div>
+        <div class="request-page-search">
             @*<div id="ContentRequestAmountFilterId" class="ContentFilter"></div>
             <div class="btnFilter" data-filtervarconfig="filterRequestAmountConfig" data-filtercallback="callbackFilterRequestAmount" data-filtercontentid="ContentRequestAmountFilterId" data-filterinpsearchid="requestAmountSearchId" data-filtervarsearch="requestAmountSearchVal" onclick="ShowFilterPopup(this)">
                 <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
@@ -23,7 +35,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex align-items-center justify-content-start justify-content-lg-end gap-2 col-lg">
+        <div class="request-page-filters">
             <ul class="filter-switch">
                 <li class="filter-switch-item">
                     <input type="radio" name="requestAmountFilter" id="requestAmountFilterAll" value="-1" checked />
@@ -54,14 +66,6 @@
         </div>
     </div>
 
-    @if (User.IsAdmin() || User.IsFinancialExpert()) {
-        <div>
-            <button class="selection-toggle-btn buttonGreen2 d-flex align-items-center gap-2 mt-3" style="padding: 4px 8px !important">
-                <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
-                <span style="line-height: 1">پرداخت گروهی</span>
-            </button>
-        </div>
-    }
     <div class="selection-bar d-none mt-2">
         <div class="d-none d-lg-flex align-items-center gap-3">
             <label class="d-flex align-items-center gap-3">
@@ -102,6 +106,7 @@
 
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("requestAmountWorkspace")));</script>
     <script data-page-bindings="modelRequestAmount,filterRequestAmountConfig,requestAmountSearchVal,requestContainer,callbackFilterRequestAmount,getAllRequestAmount,requestSelection">
         let modelRequestAmount = { filt: null, serVal: null };
         var filterRequestAmountConfig = {};

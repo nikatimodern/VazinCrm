@@ -439,6 +439,7 @@ let requestAmountData = {};
 let isFromOrderHead = false;
 let ohReqAmountId;
 async function showAddRequestAmountModal(ohId, ohNumber) {
+    enableMomentumScrollScope(addReqAmountModal);
     await setupSelectOptionsReqAmount();
     if (ohId) {
         ohReqAmountId = ohId;

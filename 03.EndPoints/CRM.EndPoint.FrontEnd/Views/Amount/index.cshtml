@@ -1,10 +1,16 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 ﻿
 @{
     ViewData["Title"] = "index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="my-2 mb-md-3 col-8 offset-2 col-md-6 offset-md-3">
+<div id="priceWorkspace" class="crm-operations-theme">
+<div class="my-2 mb-md-3 col-12 col-md-8 mx-auto">
     <form class="search-group" onsubmit="searchProduct(event, 'amountIndex')">
         <input class="form-control" style="font-size:1rem !important;min-height:34px" type="text" name="search" placeholder="جستجو نام محصول" />
         <button class="search-icon">
@@ -17,6 +23,8 @@
 
 </div>
 
+
+</div>
 
 <!-- Modal Amount -->
 <div class="mp modal fade" dir="rtl" id="EditAmountModel" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
@@ -82,6 +90,7 @@
 </div>
 
 @section scripts{
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("priceWorkspace")));</script>
     <script data-page-bindings="ProductId,AmountId,isEditAmountModal,showRegisterAmountModal,showEditAmountModal,showDeleteAmountModal,registerAmount,cancelRegisterAmount">
         let ProductId;
         let AmountId;
