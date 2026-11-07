@@ -22,6 +22,8 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
@@ -207,6 +209,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private sealed record LegacyFiscalYearRow(
             int Year, DateTime StartDate, DateTime EndDate);
 
+        private sealed record LegacyCustomerRow(
+            Guid Id, string CompanyName, int? FinancialCustomerId);
+
+        private sealed record LegacyCustomerEvidence(
+            Guid CustomerId, int SepidarPartyId, string SourceDocument);
+
+        private sealed record LegacyCustomerConflict(
+            Guid CustomerId, string CompanyName, string Reason,
+            List<int> SepidarPartyIds, List<string> SourceDocuments);
+
         private static int? GetLegacyFiscalYear(string value)
         {
             if (string.IsNullOrWhiteSpace(value) || value.Length < 4)
@@ -255,8 +267,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private sealed record LegacyMappingPlan(
             int AlreadyMapped, int NotMatched, int Ambiguous,
             List<ExternalMapping> Pending, List<LegacyMappingIssue> Issues,
-            List<LegacyDuplicateTargetGroup> DuplicateTargetGroups)
+            List<LegacyDuplicateTargetGroup> DuplicateTargetGroups,
+            List<LegacyCustomerConflict> CustomerConflicts,
+            int AlreadyMappedCustomers)
         {
+            public List<ExternalMapping> PendingCustomers => Pending
+                .Where(x => x.MapType == ExternalMappingTypeEnum.مشتری).ToList();
+
+            public Dictionary<string, int> CustomerConflictSummary => CustomerConflicts
+                .GroupBy(x => x.Reason)
+                .ToDictionary(x => x.Key, x => x.Count());
+
             public Dictionary<string, int> ReasonsSummary => Issues
                 .GroupBy(x => x.Reason)
                 .ToDictionary(x => x.Key, x => x.Count());
@@ -288,15 +309,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .ToListAsync(ct);
 
             readStage = "CRM.Customers";
-            var financialCustomerIds = await db.Customers.AsNoTracking()
-                .Where(c => c.FinancialCustomerId.HasValue)
-                .Select(c => new { c.Id, c.FinancialCustomerId })
-                .ToDictionaryAsync(x => x.Id, x => x.FinancialCustomerId!.Value, ct);
+            var customers = await db.Customers.AsNoTracking()
+                .Select(c => new LegacyCustomerRow(c.Id, c.CompanyName, c.FinancialCustomerId))
+                .ToListAsync(ct);
+            var customersById = customers.ToDictionary(x => x.Id);
+            var financialCustomerIds = customers
+                .Where(x => x.FinancialCustomerId.HasValue)
+                .ToDictionary(x => x.Id, x => x.FinancialCustomerId!.Value);
 
             readStage = "CRM.ExternalMappings";
             var existing = await db.ExternalMappings.AsNoTracking()
                 .Where(m => m.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                         || m.MapType == ExternalMappingTypeEnum.فاکتور)
+                         || m.MapType == ExternalMappingTypeEnum.فاکتور
+                         || m.MapType == ExternalMappingTypeEnum.مشتری)
                 .ToListAsync(ct);
 
             var existingSources = existing
@@ -329,6 +354,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var issues = new List<LegacyMappingIssue>();
             // Groups only the CRM documents competing for the same Sepidar target.
             var duplicateTargetGroups = new List<LegacyDuplicateTargetGroup>();
+            var customerConflicts = new List<LegacyCustomerConflict>();
             void AddIssue(string entityName, Guid id, string crmNumber,
                 string status, string reason, string details)
             {
@@ -683,9 +709,181 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
                 RemoveAmbiguousProposals(ExternalMappingTypeEnum.فاکتور);
+
+                // Map CRM customers from the Sepidar documents that are already linked
+                // or have a unique, conflict-free mapping proposed by this run.
+                // The existing Customer.ExternalMapping is never overwritten.
+                var documentMappings = existing.Concat(pending)
+                    .Where(x => x.ExternalSoftwareId == softwareId &&
+                        ((x.EntityName == nameof(PreFactor)
+                          && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                          && x.ExEntityName == nameof(Quotation))
+                         || (x.EntityName == nameof(Factor)
+                          && x.MapType == ExternalMappingTypeEnum.فاکتور
+                          && x.ExEntityName == nameof(Invoice))))
+                    .ToList();
+
+                var crmPreFactors = preFactors.ToDictionary(x => x.Id);
+                var crmFactors = factors.ToDictionary(x => x.Id);
+
+                var quotationIdsForCustomers = documentMappings
+                    .Where(x => x.ExEntityName == nameof(Quotation))
+                    .Select(x => int.TryParse(x.ExEntityId, out var id) ? id : 0)
+                    .Where(x => x > 0).Distinct().ToArray();
+                var invoiceIdsForCustomers = documentMappings
+                    .Where(x => x.ExEntityName == nameof(Invoice))
+                    .Select(x => int.TryParse(x.ExEntityId, out var id) ? id : 0)
+                    .Where(x => x > 0).Distinct().ToArray();
+
+                readStage = "Sepidar1.SLS.Quotation customer references";
+                var quotationParties = new Dictionary<int, int?>();
+                foreach (var batch in quotationIdsForCustomers.Chunk(400))
+                {
+                    var rows = await sepidar.Quotations.AsNoTracking()
+                        .Where(x => batch.Contains(x.QuotationId))
+                        .Select(x => new {
+                            x.QuotationId,
+                            PartyId = (int?)x.CustomerPartyRef
+                        })
+                        .ToListAsync(ct);
+
+                    foreach (var row in rows)
+                        quotationParties[row.QuotationId] = row.PartyId;
+                }
+
+                readStage = "Sepidar1.SLS.Invoice customer references";
+                var invoiceParties = new Dictionary<int, int?>();
+                foreach (var batch in invoiceIdsForCustomers.Chunk(400))
+                {
+                    var rows = await sepidar.SalesInvoices.AsNoTracking()
+                        .Where(x => batch.Contains(x.InvoiceId))
+                        .Select(x => new {
+                            x.InvoiceId,
+                            PartyId = (int?)x.CustomerPartyRef
+                        })
+                        .ToListAsync(ct);
+
+                    foreach (var row in rows)
+                        invoiceParties[row.InvoiceId] = row.PartyId;
+                }
+
+                var evidence = new List<LegacyCustomerEvidence>();
+                foreach (var mapping in documentMappings)
+                {
+                    Guid? crmCustomerId = null;
+                    if (mapping.EntityName == nameof(PreFactor)
+                        && crmPreFactors.TryGetValue(mapping.EntityId, out var sourcePreFactor))
+                        crmCustomerId = sourcePreFactor.CustomerId;
+                    else if (mapping.EntityName == nameof(Factor)
+                        && crmFactors.TryGetValue(mapping.EntityId, out var sourceFactor))
+                        crmCustomerId = sourceFactor.CustomerId;
+
+                    if (!crmCustomerId.HasValue
+                        || !customersById.ContainsKey(crmCustomerId.Value)
+                        || !int.TryParse(mapping.ExEntityId, out var externalDocId))
+                        continue;
+
+                    int? sepidarPartyId = null;
+                    if (mapping.ExEntityName == nameof(Quotation))
+                        quotationParties.TryGetValue(externalDocId, out sepidarPartyId);
+                    else if (mapping.ExEntityName == nameof(Invoice))
+                        invoiceParties.TryGetValue(externalDocId, out sepidarPartyId);
+
+                    if (sepidarPartyId > 0)
+                        evidence.Add(new LegacyCustomerEvidence(
+                            crmCustomerId.Value, sepidarPartyId.Value,
+                            $"{mapping.ExEntityName}:{externalDocId}"));
+                }
+
+                // Check actual GNR.Party rows; don't use a document's PartyRef blindly.
+                var partyIds = evidence.Select(x => x.SepidarPartyId).Distinct().ToArray();
+                readStage = "Sepidar1.GNR.Party customer validation";
+                var validSepidarCustomers = new HashSet<int>();
+                foreach (var batch in partyIds.Chunk(400))
+                {
+                    var validIds = await sepidar.Parties.AsNoTracking()
+                        .Where(x => batch.Contains(x.PartyId) && x.IsCustomer)
+                        .Select(x => x.PartyId).ToListAsync(ct);
+                    validSepidarCustomers.UnionWith(validIds);
+                }
+
+                var customerCandidates = new List<LegacyCustomerEvidence>();
+                foreach (var customerEvidence in evidence.GroupBy(x => x.CustomerId))
+                {
+                    var customer = customersById[customerEvidence.Key];
+
+                    // Already mapped in ExternalMapping: leave it unchanged.
+                    if (existingSources.Contains((
+                            softwareId, nameof(Customer), customer.Id,
+                            ExternalMappingTypeEnum.مشتری)))
+                        continue;
+
+                    var possibleParties = customerEvidence.Select(x => x.SepidarPartyId)
+                        .Distinct().OrderBy(x => x).ToList();
+                    var sources = customerEvidence.Select(x => x.SourceDocument)
+                        .Distinct().OrderBy(x => x).ToList();
+                    var reason = possibleParties.Count > 1 ? "MultipleSepidarParties"
+                        : !validSepidarCustomers.Contains(possibleParties[0]) ? "PartyNotFoundOrNotCustomer"
+                        : customer.FinancialCustomerId.HasValue
+                          && customer.FinancialCustomerId != possibleParties[0]
+                            ? "LegacyFinancialCustomerIdMismatch"
+                        : existingTargets.Contains((softwareId, nameof(Party), possibleParties[0].ToString()))
+                            ? "PartyAlreadyMappedToAnotherCustomer"
+                            : null;
+
+                    if (reason != null)
+                    {
+                        customerConflicts.Add(new LegacyCustomerConflict(
+                            customer.Id, customer.CompanyName, reason, possibleParties, sources));
+                        continue;
+                    }
+
+                    customerCandidates.Add(new LegacyCustomerEvidence(
+                        customer.Id, possibleParties[0], string.Join(", ", sources)));
+                }
+
+                // Two different CRM customers must not silently map to the same Party.
+                var repeatedParties = customerCandidates.GroupBy(x => x.SepidarPartyId)
+                    .Where(x => x.Count() > 1)
+                    .Select(x => x.Key).ToHashSet();
+
+                foreach (var candidate in customerCandidates)
+                {
+                    if (repeatedParties.Contains(candidate.SepidarPartyId))
+                    {
+                        var customer = customersById[candidate.CustomerId];
+                        customerConflicts.Add(new LegacyCustomerConflict(
+                            candidate.CustomerId, customer.CompanyName,
+                            "DuplicateCrmCustomersForParty",
+                            new List<int> { candidate.SepidarPartyId },
+                            customerCandidates.Where(x => x.SepidarPartyId == candidate.SepidarPartyId)
+                                .Select(x => $"CRM CustomerId={x.CustomerId}; {x.SourceDocument}")
+                                .ToList()));
+                        continue;
+                    }
+
+                    pending.Add(new ExternalMapping {
+                        Id = Guid.NewGuid(),
+                        EntityName = nameof(Customer),
+                        EntityId = candidate.CustomerId,
+                        ExternalSoftwareId = softwareId,
+                        MapType = ExternalMappingTypeEnum.مشتری,
+                        MapTypeTxt = nameof(ExternalMappingTypeEnum.مشتری),
+                        ExEntityName = nameof(Party),
+                        ExEntityId = candidate.SepidarPartyId.ToString(),
+                        UserCreatorID = "legacy-migration",
+                        UserCreator = "Legacy Sepidar mapping backfill"
+                    });
+                }
+
             }
 
-            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending, issues, duplicateTargetGroups);
+            return new LegacyMappingPlan(
+                alreadyMapped, notMatched, ambiguous, pending, issues, duplicateTargetGroups,
+                customerConflicts,
+                existing.Count(x => x.ExternalSoftwareId == Sepidar1SoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.مشتری
+                    && x.EntityName == nameof(Customer)));
             }
             catch (SqlNullValueException ex)
             {
@@ -709,7 +907,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 // Never overwrite an existing mapping or silently reuse a target record.
                 var live = await db.ExternalMappings.AsNoTracking()
                     .Where(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                             || x.MapType == ExternalMappingTypeEnum.فاکتور)
+                             || x.MapType == ExternalMappingTypeEnum.فاکتور
+                             || x.MapType == ExternalMappingTypeEnum.مشتری)
                     .ToListAsync(ct);
 
                 foreach (var candidate in plan.Pending)
