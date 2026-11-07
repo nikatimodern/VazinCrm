@@ -80,3 +80,6 @@ When creating or editing UI (including design previews), load and follow [.agent
 
 Use relevant skills in `.agents/skills/` when the task matches their descriptions. The repository's actual code and explicit user instructions take precedence over examples in skills.
 For every frontend task in any module (including Razor, JavaScript, CSS, and frontend components), load `.agents/skills/crm-frontend-reusables/SKILL.md`. Follow that skill for shared utility reuse and maintenance.
+
+### Compact forms
+For every new or modified form, modal form, filter form, input, select, textarea, button, or form layout, follow `.agents/skills/crm-compact-form-ui/SKILL.md` and its relevant references. Apply compact form density by default, even when the request does not explicitly mention spacing or sizing. Also respect existing responsive and typography skills. Do not change unrelated screens, application behavior, or shared global CSS.
