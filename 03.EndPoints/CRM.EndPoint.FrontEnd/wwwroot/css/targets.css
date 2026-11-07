@@ -196,6 +196,18 @@
 }
 .target-expert-picker #targetExpertProgress { color: var(--target-muted); font-size: 11px; white-space: nowrap; }
 .target-step-panel.target-table-mode #targetExpertPicker { display: none; }
+.target-allocation-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-block: 0 8px;
+}
+.target-allocation-toolbar .target-btn {
+    min-height: 30px;
+    padding: 4px 9px;
+    font-size: 12px;
+}
 .target-month-summary { border: 1px solid var(--target-border-strong); border-radius: 8px; margin-block-end: 8px; }
 .target-month-summary > summary { cursor: pointer; font-size: 12px; padding: 7px 10px; color: var(--target-muted); }
 .target-month-summary .target-month-totals { margin: 0; padding: 0 9px 9px; }
