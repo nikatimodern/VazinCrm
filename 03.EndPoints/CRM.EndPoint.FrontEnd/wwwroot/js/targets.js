@@ -58,6 +58,48 @@
         const [whole, fraction] = s.split('.');
         return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction ? '.' + fraction : '');
     };
+    // Accept only digits for counts, and numeric decimals (up to two places) for money and percentages.
+    const sanitizeMetricInput = (raw, metric) => {
+        const source = toEnglishDigits(String(raw ?? '')).replace(/٫/g, '.');
+        let result = '';
+        let decimal = false;
+        let fractionDigits = 0;
+
+        for (const char of source) {
+            if (char >= '0' && char <= '9') {
+                if (decimal && fractionDigits >= 2) continue;
+                result += char;
+                if (decimal) fractionDigits++;
+            } else if (char === '.' && metric.kind !== 1 && !decimal) {
+                if (!result) result = '0';
+                result += '.';
+                decimal = true;
+            }
+        }
+        return result;
+    };
+
+    // Group only monetary amounts; counts and percentages remain ungrouped.
+    const displayMetricInput = (value, metric) => {
+        const text = sanitizeMetricInput(value, metric);
+        if (metric.kind !== 0 || !text) return text;
+        const decimalIndex = text.indexOf('.');
+        const whole = decimalIndex < 0 ? text : text.slice(0, decimalIndex);
+        const suffix = decimalIndex < 0 ? '' : text.slice(decimalIndex);
+        return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix;
+    };
+
+    // Keep the caret near the edited digit when commas are added or removed.
+    function formatTypedInput(input, metric) {
+        const caret = input.selectionStart ?? input.value.length;
+        const prefix = sanitizeMetricInput(input.value.slice(0, caret), metric);
+        const value = sanitizeMetricInput(input.value, metric);
+        input.value = displayMetricInput(value, metric);
+        const nextCaret = displayMetricInput(prefix, metric).length;
+        input.setSelectionRange(nextCaret, nextCaret);
+        return value;
+    }
+
     const findItem = (kind, code, month = 0, userId = '') =>
         state[kind].find(item => key(item.metricCode, item.month, item.userId) === key(code, month, userId));
     const valueOf = (kind, code, month = 0, userId = '') =>
@@ -87,10 +129,10 @@
         const value = valueOf(kind, metric.code, month, userId);
         return `<label class="target-field">
             <span>${html(metric.title)}</span>
-            <input type="text" inputmode="decimal" autocomplete="off"
-                data-kind="${kind}" data-code="${html(metric.code)}"
+            <input type="text" inputmode="${metric.kind === 1 ? 'numeric' : 'decimal'}" autocomplete="off"
+                data-metric-kind="${metric.kind}" data-kind="${kind}" data-code="${html(metric.code)}"
                 data-month="${month}" data-user="${html(userId)}"
-                value="${html(formatted(value))}" placeholder="مقدار را وارد کنید" />
+                value="${html(displayMetricInput(value, metric))}" placeholder="مقدار را وارد کنید" />
             <small>${html(metric.unit)}</small>
         </label>`;
     }
@@ -497,23 +539,20 @@
     root.addEventListener('input', event => {
         const input = event.target;
         if (input.id === 'targetYear') {
-            state.year = Number(normalize(input.value)) || 0;
+            input.value = toEnglishDigits(input.value).replace(/\D/g, '').slice(0, 4);
+            state.year = Number(input.value) || 0;
             changed = true;
             renderSummary();
             return;
         }
-        if (!input.matches('[data-kind]')) return;
-        const value = normalize(input.value);
+        if (!input.matches('[data-kind]') || event.isComposing) return;
         const metric = setup.metrics.find(item => item.code === input.dataset.code);
-        if (value && (!metric || !metricValueValid(metric, value))) {
-            input.setCustomValidity('مقدار معتبر وارد کنید.');
-            setAmount(input.dataset.kind, input.dataset.code,
-                Number(input.dataset.month), input.dataset.user, '');
-        } else {
-            input.setCustomValidity('');
-            setAmount(input.dataset.kind, input.dataset.code,
-                Number(input.dataset.month), input.dataset.user, value);
-        }
+        if (!metric) return;
+        const value = formatTypedInput(input, metric);
+        input.setCustomValidity(value && !metricValueValid(metric, value)
+            ? 'مقدار عددی معتبر وارد کنید.' : '');
+        setAmount(input.dataset.kind, input.dataset.code,
+            Number(input.dataset.month), input.dataset.user, value);
         changed = true;
         renderSummary();
         if (step === 1) refreshMonthlyFeedback();
@@ -522,8 +561,20 @@
 
     root.addEventListener('focusout', event => {
         const input = event.target;
-        if (input.matches('[data-kind]') && !input.validationMessage)
-            input.value = formatted(input.value);
+        if (!input.matches('[data-kind]')) return;
+        const metric = setup.metrics.find(item => item.code === input.dataset.code);
+        if (!metric) return;
+        const value = sanitizeMetricInput(input.value, metric).replace(/\.$/, '');
+        input.value = displayMetricInput(value, metric);
+        input.setCustomValidity(value && !metricValueValid(metric, value)
+            ? 'مقدار عددی معتبر وارد کنید.' : '');
+        setAmount(input.dataset.kind, input.dataset.code,
+            Number(input.dataset.month), input.dataset.user, value);
+    });
+
+    root.addEventListener('compositionend', event => {
+        if (event.target.matches('[data-kind]'))
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
     root.addEventListener('click', event => {
