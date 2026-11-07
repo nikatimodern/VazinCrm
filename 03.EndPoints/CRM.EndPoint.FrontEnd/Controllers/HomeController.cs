@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
+using CRM.Core.Domain.Factors.Entities;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
