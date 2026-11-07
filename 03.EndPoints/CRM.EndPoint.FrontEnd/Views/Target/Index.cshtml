@@ -52,15 +52,20 @@
                         <p class="target-feedback" id="targetFormFeedback" role="alert" aria-live="polite" hidden></p>
 
                         <section data-target-panel="0" class="target-step-panel">
-                            <div class="target-step-heading">
-                                <div class="target-step-heading-row"><h3>تعریف اهداف سالانه</h3><button type="button" class="target-btn target-btn-outline target-table-toggle" data-target-table-toggle>نمایش همه به‌صورت جدول</button></div>
-                                <p>سال شمسی و هدف سالانه هر شاخص را وارد کنید.</p>
+                            <div class="target-step-heading target-annual-heading">
+                                <div class="target-annual-intro">
+                                    <h3>تعریف اهداف سالانه</h3>
+                                    <p>سال شمسی و هدف سالانه هر شاخص را وارد کنید.</p>
+                                </div>
+                                <div class="target-annual-actions">
+                                    <label class="target-year-field" for="targetYear" data-target-editor>
+                                        <span>سال شمسی</span>
+                                        <input id="targetYear" name="year" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                                               value="@persianYear" required />
+                                    </label>
+                                    <button type="button" class="target-btn target-btn-outline target-table-toggle" data-target-table-toggle>نمایش همه به‌صورت جدول</button>
+                                </div>
                             </div>
-                            <label class="target-year-field" for="targetYear" data-target-editor>
-                                سال شمسی
-                                <input id="targetYear" name="year" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
-                                       value="@persianYear" required />
-                            </label>
                             <div id="targetAnnualFields" class="target-form-grid" data-target-editor></div>
                             <div class="target-flat-view" data-target-table-view hidden></div>
                         </section>
