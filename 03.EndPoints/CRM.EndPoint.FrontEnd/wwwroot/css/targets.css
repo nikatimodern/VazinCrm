@@ -178,7 +178,17 @@
 .target-expert-heading-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .target-expert-picker { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .target-expert-picker label { font-size: 12px; font-weight: 600; white-space: nowrap; }
-.target-expert-picker select { flex: 0 1 210px; width: 210px; min-width: 110px; max-width: 210px; min-height: 33px; }
+.target-modal #targetExpertSelect {
+    flex: 0 1 160px;
+    width: 160px;
+    min-width: 110px;
+    max-width: 160px;
+    height: 30px;
+    min-height: 30px;
+    padding: 3px 7px;
+    font-size: 12px;
+    line-height: 1.35;
+}
 .target-expert-picker #targetExpertProgress { color: var(--target-muted); font-size: 11px; white-space: nowrap; }
 .target-step-panel.target-table-mode #targetExpertPicker { display: none; }
 .target-month-summary { border: 1px solid var(--target-border-strong); border-radius: 8px; margin-block-end: 8px; }
@@ -243,7 +253,14 @@
     .target-expert-heading-actions { width: 100%; justify-content: space-between; }
     .target-expert-picker { flex: 1 1 auto; min-width: 0; }
     .target-expert-picker label { display: none; }
-    .target-expert-picker select { flex: 1 1 auto; min-width: 0; width: 100%; max-width: none; }
+    .target-modal #targetExpertSelect {
+        flex: 0 1 140px;
+        width: 140px;
+        min-width: 100px;
+        max-width: 140px;
+        height: 34px;
+        min-height: 34px;
+    }
     .target-expert-heading-actions .target-table-toggle { white-space: nowrap; flex-shrink: 0; }
     .target-month-tabs { gap: 4px; }
     .target-month-button { font-size: 11px; padding-inline: 2px; }
