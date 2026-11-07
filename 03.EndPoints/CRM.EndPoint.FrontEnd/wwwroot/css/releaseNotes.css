@@ -134,7 +134,7 @@
     }
     html.sidebar-collapsed #desktopNavbar .menu-item.menu-release-notes .menu-release-compact {
         display:flex;
-        flex:0 0 58px;
+        flex:0 0 44px;
         flex-direction:column;
         align-items:center;
         justify-content:center;
@@ -142,7 +142,7 @@
         margin:0;
         padding:0;
         text-align:center;
-        font:700 11px/1.35 IRANSansBold,sans-serif;
+        font:700 10px/1.2 IRANSansBold,sans-serif;
         color:#fff;
     }
     html.sidebar-collapsed #desktopNavbar .menu-item.menu-release-notes .menu-release-compact small {
@@ -150,7 +150,7 @@
         margin:0;
         padding:0;
         color:var(--menu-muted,#d0e7e3);
-        font:400 9px/1.2 IRANSans,sans-serif;
-        letter-spacing:-.3px;
+        font:400 7px/1.15 IRANSans,sans-serif;
+        letter-spacing:-.4px;
     }
 }
