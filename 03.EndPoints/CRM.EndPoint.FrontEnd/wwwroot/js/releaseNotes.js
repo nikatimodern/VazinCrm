@@ -98,6 +98,7 @@
         historyTools.hidden = !isHistory;
         historyEmpty.hidden = true;
         modal.classList.toggle("rn-history", isHistory);
+        modal.classList.toggle("rn-preview", isPreview && !isHistory);
         historySearch.value = "";
         historyType = "all";
         historyFilters.forEach(button => {
@@ -121,7 +122,7 @@
         content.replaceChildren();
         historyTools.hidden = true;
         historyEmpty.hidden = true;
-        modal.classList.remove("rn-history");
+        modal.classList.remove("rn-history", "rn-preview");
         restoreFocus?.isConnected && restoreFocus.focus();
     });
     ack.addEventListener("click", async () => {
