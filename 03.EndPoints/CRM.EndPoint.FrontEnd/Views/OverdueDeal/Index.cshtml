@@ -1,6 +1,6 @@
 @section Styles {
 
-    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.5" asp-append-version="true" />
 }
 
 @{
@@ -1024,21 +1024,10 @@
             </div>
         </div>
         <div class="d-flex align-items-center flex-wrap gap-2 overdue-toolbar">
-            <input type="hidden" id="overdueDealSearch" value="" />
-            <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
-            <ul class="filter-switch overdue-mode-filter" aria-label="نوع سفارش‌های نمایش داده‌شده">
-                <li class="filter-switch-item">
-                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterCurrent" value="overdue" checked />
-                    <label for="overdueFilterCurrent">معوقه‌های فعلی</label>
-                </li>
-                <li class="filter-switch-item">
-                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterActive" value="active" />
-                    <label for="overdueFilterActive">دارای فرصت پیگیری</label>
-                </li>
-            </ul>
-            <button type="button" class="btnFilter overdue-filter-button" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal" data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch" data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
-                <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
-            </button>
+
+
+
+
             <span class="text-muted small">تعداد:</span>
             <span id="overdueDealCount" class="badge rounded-pill overdue-count-badge">۰</span>
             <button type="button" id="refreshOverdueDeals" class="btn btn-outline-secondary btn-sm overdue-refresh-button">
@@ -1050,16 +1039,29 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
-            <div id="overdueDealsLoading" class="p-2" role="status" aria-label="در حال دریافت سفارشات معوقه"><partial name="_PageSkeleton" /></div>
-
-            <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
-
-            <div id="overdueDealsEmpty" class="text-center py-5 d-none">
-                <div class="mb-2" style="font-size: 2rem; color: var(--overdue-primary);">✓</div>
-                <h2 class="h6" id="overdueDealsEmptyTitle">سفارش معوقه‌ای وجود ندارد</h2>
-                <p class="text-muted mb-0" id="overdueDealsEmptyText">سفارش باز معوقه‌ای در این بازه زمانی پیدا نشد.</p>
-            </div>
-
+            <div class="overdue-results-toolbar">
+                <div class="overdue-search-filters">
+            <form id="overdueSearchForm" class="search-group overdue-search" role="search">
+                <input type="search" id="overdueDealSearch" class="form-control" placeholder="جستجو در سفارشات…" aria-label="جستجو در سفارشات معوقه" autocomplete="off" />
+                <button type="submit" class="search-icon" aria-label="جستجو" title="جستجو">
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                </button>
+            </form>
+            <button type="button" class="btnFilter overdue-filter-button" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterOverdueDeal" data-filterContentId="ContentOverdueDealFilterId" data-filterInpSearchId="overdueDealSearch" data-filterVarSearch="overdueDealSearchVal" onclick="ShowFilterPopup(this)" title="فیلتر">
+                <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
+            </button>
+            <ul class="filter-switch overdue-mode-filter" aria-label="نوع سفارش‌های نمایش داده‌شده">
+                <li class="filter-switch-item">
+                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterCurrent" value="overdue" checked />
+                    <label for="overdueFilterCurrent">معوقه‌های فعلی</label>
+                </li>
+                <li class="filter-switch-item">
+                    <input type="radio" name="overdueFollowUpFilter" id="overdueFilterActive" value="active" />
+                    <label for="overdueFilterActive">دارای فرصت پیگیری</label>
+                </li>
+            </ul>
+            <div id="ContentOverdueDealFilterId" class="ContentFilter"></div>
+                </div>
             <div id="overdueDealsPaginationTop" class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom d-none">
                 <div class="d-flex align-items-center gap-2">
                     <label for="overduePageSizeTop" class="small text-muted mb-0">تعداد در صفحه</label>
@@ -1076,6 +1078,17 @@
                     <ul id="overduePaginationButtonsTop" class="pagination pagination-sm mb-0"></ul>
                 </nav>
             </div>
+            </div>
+            <div id="overdueDealsLoading" class="p-2" role="status" aria-label="در حال دریافت سفارشات معوقه"><partial name="_PageSkeleton" /></div>
+
+            <div id="overdueDealsError" class="alert alert-danger m-3 d-none" role="alert"></div>
+
+            <div id="overdueDealsEmpty" class="text-center py-5 d-none">
+                <div class="mb-2" style="font-size: 2rem; color: var(--overdue-primary);">✓</div>
+                <h2 class="h6" id="overdueDealsEmptyTitle">سفارش معوقه‌ای وجود ندارد</h2>
+                <p class="text-muted mb-0" id="overdueDealsEmptyText">سفارش باز معوقه‌ای در این بازه زمانی پیدا نشد.</p>
+            </div>
+
             <div id="overdueDealsTableWrap" class="table-responsive d-none">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
@@ -1444,7 +1457,7 @@
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
                                 </button>
-                                <a class="btn btn-sm overdue-view-button" href="/Deal/Index?dealId=${encodeURIComponent(deal.id)}&serialNumber=${encodeURIComponent(deal.serialNumber)}" title="نمایش در صفحه سفارشات" aria-label="نمایش سفارش در صفحه سفارشات">
+                                <a class="btn btn-sm overdue-view-button" href="/Deal/Index?dealId=${encodeURIComponent(deal.id)}&serialNumber=${encodeURIComponent(deal.serialNumber)}" target="_blank" rel="noopener" title="نمایش در صفحه سفارشات در تب جدید" aria-label="نمایش سفارش در صفحه سفارشات در تب جدید">
                                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                         <path d="M13 5h6v6M19 5l-9 9" />
                                         <path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
@@ -1857,9 +1870,23 @@
                 currentPage = 1;
                 loadOverdueDeals();
             }));
+            const submitOverdueSearch = () => {
+                overdueSearchVal = searchInput.value.trim();
+                overdueDealSearchVal = overdueSearchVal;
+                window.filterDealConfig.varSearch = overdueSearchVal;
+                currentPage = 1;
+                return loadOverdueDeals();
+            };
+            document.getElementById("overdueSearchForm").addEventListener("submit", event => {
+                event.preventDefault();
+                submitOverdueSearch();
+            });
+            searchInput.addEventListener("search", () => {
+                if (!searchInput.value) submitOverdueSearch();
+            });
             refreshButton.addEventListener("click", loadOverdueDeals);
             loadOverdueDeals();
         });
     </script>
-    <script src="~/js/deal/deal-documents.js?release=7.0.4" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js?release=7.0.5" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
 }
