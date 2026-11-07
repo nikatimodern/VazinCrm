@@ -143,6 +143,17 @@
                     }
 
 
+                    @if (isAdminOrFinancial && Model._Setting?.Sepidar == true
+                        && item.status == FactorStatus.تایید_شده && !isReturnFactor && !item.Returned) {
+                        <button type="button" class="flex-center" aria-label="ارسال فاکتور به سپیدار"
+                                data-title-right="ارسال فاکتور به نرم‌افزار مالی"
+                                onclick="sendFactorToExternalSoftware('@item.Id')">
+                            <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                                <i class="fa fa-paper-plane"></i>
+                            </span>
+                        </button>
+                    }
+
                     <button type="button" class="flex-center" aria-label="نمایش فاکتور" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="fa fa-eye"></i>
                     </span></button>
