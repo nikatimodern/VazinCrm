@@ -1,0 +1,122 @@
+@model CRM.Core.Domain.Targets.Models.TargetSetup
+@{
+    ViewData["Title"] = "مدیریت تارگت‌ها";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var persianYear = new System.Globalization.PersianCalendar().GetYear(DateTime.Today);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/targets.css?release=7.5.1" asp-append-version="true" />
+}
+
+<section class="target-page" id="targetPage" dir="rtl" data-current-year="@persianYear">
+    <header class="target-page-header">
+        <div>
+            <h1>مدیریت تارگت‌ها</h1>
+            <p>ثبت هدف‌های سالانه، تقسیم ماهانه و تخصیص به کارشناسان فروش</p>
+        </div>
+        <button type="button" class="target-btn target-btn-primary" id="targetNew">+ تارگت جدید</button>
+    </header>
+    <div class="target-list-panel">
+        <div class="target-list-header">
+            <h2>تارگت‌های ثبت‌شده</h2>
+            <button class="target-btn target-btn-muted" type="button" id="targetRefresh">به‌روزرسانی</button>
+        </div>
+        <div id="targetListFeedback" role="status" aria-live="polite"></div>
+        <div id="targetList" class="target-list"></div>
+    </div>
+
+    <div class="modal fade target-modal" id="targetWizard" tabindex="-1" data-bs-focus="false"
+         aria-labelledby="targetWizardTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <form id="targetWizardForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header target-modal-header">
+                        <div>
+                            <h2 id="targetWizardTitle">تارگت جدید</h2>
+                            <span id="targetModalStatus">پیش‌نویس</span>
+                        </div>
+                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <div class="target-steps" aria-label="مراحل ثبت تارگت">
+                        <button type="button" data-target-step="0" class="active"><span>۱</span> سالانه</button>
+                        <button type="button" data-target-step="1"><span>۲</span> ماهانه</button>
+                        <button type="button" data-target-step="2"><span>۳</span> تخصیص کارشناسان</button>
+                        <button type="button" data-target-step="3"><span>۴</span> بررسی نهایی</button>
+                    </div>
+                    <div class="modal-body target-modal-body">
+                        <details class="target-summary" id="targetPreviousSummary">
+                            <summary>خلاصه اطلاعات مراحل قبل</summary>
+                            <div id="targetSummaryContent"></div>
+                        </details>
+                        <p class="target-feedback" id="targetFormFeedback" role="alert" aria-live="polite" hidden></p>
+
+                        <section data-target-panel="0" class="target-step-panel">
+                            <div class="target-step-heading">
+                                <h3>تعریف اهداف سالانه</h3>
+                                <p>سال شمسی و هدف سالانه هر شاخص را وارد کنید.</p>
+                            </div>
+                            <label class="target-year-field" for="targetYear">
+                                سال شمسی
+                                <input id="targetYear" name="year" type="number" min="1300" max="1600"
+                                       value="@persianYear" required />
+                            </label>
+                            <div id="targetAnnualFields" class="target-form-grid"></div>
+                        </section>
+
+                        <section data-target-panel="1" class="target-step-panel" hidden>
+                            <div class="target-step-heading">
+                                <h3>تقسیم اهداف بین ماه‌ها</h3>
+                                <p>سیستم تقسیم اولیه را انجام می‌دهد؛ تمام مقادیر قابل ویرایش هستند.</p>
+                            </div>
+                            <div class="target-toolbar">
+                                <button type="button" class="target-btn target-btn-muted" id="targetRebalance">تقسیم مجدد پیش‌فرض</button>
+                                <span id="targetMonthlyFeedback" role="status"></span>
+                            </div>
+                            <div id="targetMonthlyFields" class="target-month-grid"></div>
+                        </section>
+
+                        <section data-target-panel="2" class="target-step-panel" hidden>
+                            <div class="target-step-heading">
+                                <h3>تخصیص تارگت به کارشناسان</h3>
+                                <p>برای هر ماه، سهم کارشناسان را مشخص کنید.</p>
+                            </div>
+                            <nav class="target-month-navigation" aria-label="انتخاب ماه تخصیص">
+                                <button type="button" class="target-btn target-btn-muted" id="targetPreviousMonth">ماه قبل</button>
+                                <label>ماه
+                                    <select id="targetMonthSelect"></select>
+                                </label>
+                                <button type="button" class="target-btn target-btn-muted" id="targetNextMonth">ماه بعد</button>
+                            </nav>
+                            <div id="targetCurrentMonthTargets" class="target-month-totals"></div>
+                            <div id="targetExpertFields" class="target-expert-grid"></div>
+                            <div id="targetAllocationFeedback" role="status" aria-live="polite"></div>
+                            <div id="targetMonthProgress" class="target-progress"></div>
+                        </section>
+
+                        <section data-target-panel="3" class="target-step-panel" hidden>
+                            <div class="target-step-heading">
+                                <h3>بررسی و ثبت نهایی</h3>
+                                <p>مجموع هدف‌های ماهانه و سهم کارشناسان را پیش از ثبت نهایی بررسی کنید.</p>
+                            </div>
+                            <div id="targetReview"></div>
+                        </section>
+                    </div>
+                    <div class="modal-footer target-modal-footer">
+                        <button type="button" class="target-btn target-btn-muted" id="targetBack">مرحله قبل</button>
+                        <div class="target-footer-actions">
+                            <button type="button" class="target-btn target-btn-outline" id="targetSaveDraft">ذخیره پیش‌نویس</button>
+                            <button type="button" class="target-btn target-btn-primary" id="targetNext">مرحله بعد</button>
+                            <button type="button" class="target-btn target-btn-primary" id="targetFinish" hidden>ثبت نهایی</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/targets.js?release=7.5.1" asp-append-version="true"></script>
+}
