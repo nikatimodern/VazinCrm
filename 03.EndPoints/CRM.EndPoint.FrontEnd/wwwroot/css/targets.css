@@ -162,6 +162,9 @@
 .target-expert-card { width: 100%; }
 .target-expert-card .target-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .target-field { background: #fff; border: 2px solid var(--target-border-strong); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+.target-field-label { font-size: 13px; line-height: 1.5; }
+.target-field-title { font-weight: 700; }
+.target-field-unit { font-size: 11px; font-weight: 400; color: var(--target-muted); white-space: nowrap; }
 .target-field input { border: 1px solid var(--target-border); direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
 .target-month-card, .target-expert-card { padding: 9px; min-width: 0; border-color: var(--target-border-strong); }
 .target-month-card h4, .target-expert-card h4 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }

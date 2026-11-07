@@ -34,6 +34,12 @@ scoped UI work; it does not authorize a global font migration or redesign.
    selection. Report code checks separately from browser checks and name any
    unverified visual behavior.
 
+## Form labels with units
+
+- When an input label includes a unit or short qualifier (e.g., "فروش ریالی (ریال)" or "نرخ تبدیل (درصد)"), keep the main field title **bold (700)** and display the parenthesized unit **smaller (typically 11–12px), regular (400)** on the same line.
+- Use separately styled inline spans inside the associated label so the title and unit remain visually distinct, without creating an extra line beneath the input. Allow long labels to wrap naturally while keeping each unit together where possible.
+- Apply this hierarchy with component-scoped styles, preserving the project's IRANSans fonts and compact-form density; do not force bold on the unit via inheritance.
+
 ## Integration With Existing Skills
 
 - [Project UI Design System](../project-ui-design-system/SKILL.md) owns palette and

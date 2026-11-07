@@ -128,7 +128,7 @@
     function field(metric, kind, month = 0, userId = '') {
         const value = valueOf(kind, metric.code, month, userId);
         return `<label class="target-field">
-            <span>${html(metric.title)} (${html(metric.unit)})</span>
+            <span class="target-field-label"><span class="target-field-title">${html(metric.title)}</span> <span class="target-field-unit">(${html(metric.unit)})</span></span>
             <input type="text" inputmode="${metric.kind === 1 ? 'numeric' : 'decimal'}" autocomplete="off"
                 data-metric-kind="${metric.kind}" data-kind="${kind}" data-code="${html(metric.code)}"
                 data-month="${month}" data-user="${html(userId)}"
