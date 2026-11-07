@@ -111,27 +111,28 @@
 
 .target-step-heading h3 { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
 .target-year-field, .target-field { display: flex; flex-direction: column; gap: 4px; font-weight: 500; }
-.target-year-field { max-width: 190px; margin: 0; }
-/* Place the year next to the annual heading instead of leaving a separate empty row. */
-.target-step-panel[data-target-panel="0"]:not([hidden]) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 190px;
-    align-items: end;
-    column-gap: 16px;
-    row-gap: 10px;
+.target-annual-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-block-end: 10px;
 }
-.target-step-panel[data-target-panel="0"] > .target-step-heading {
-    grid-column: 1;
-    grid-row: 1;
+.target-annual-intro { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 12px; min-width: 0; }
+.target-annual-intro h3 { margin: 0; white-space: nowrap; }
+.target-annual-intro p { font-size: 12px; line-height: 1.5; }
+.target-annual-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.target-annual-actions .target-year-field {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    max-width: none;
     margin: 0;
+    font-size: 12px;
+    white-space: nowrap;
 }
-.target-step-panel[data-target-panel="0"] > .target-year-field {
-    grid-column: 2;
-    grid-row: 1;
-}
-.target-step-panel[data-target-panel="0"] > .target-form-grid {
-    grid-column: 1 / -1;
-}
+.target-annual-actions #targetYear { width: 84px; min-height: 33px; text-align: center; }
 .target-modal input, .target-modal select { border: 1px solid var(--target-border); border-radius: 8px; min-height: 36px; background: #fff; padding: 6px 9px; font: inherit; width: 100%; }
 .target-modal input[readonly] { background: #f7f8fa; }
 .target-modal input:focus, .target-modal select:focus {
@@ -201,17 +202,9 @@
     .target-steps button { font-size: 11px; min-height: 35px; padding: 3px 2px; }
     .target-steps button span { margin-inline-end: 0; }
     .target-modal-body { max-height: none; padding: 12px; }
-    .target-step-panel[data-target-panel="0"]:not([hidden]) {
-        grid-template-columns: minmax(0, 1fr);
-        row-gap: 10px;
-    }
-    .target-step-panel[data-target-panel="0"] > .target-step-heading,
-    .target-step-panel[data-target-panel="0"] > .target-year-field,
-    .target-step-panel[data-target-panel="0"] > .target-form-grid {
-        grid-column: 1;
-        grid-row: auto;
-    }
-    .target-year-field { max-width: 100%; }
+    .target-annual-heading { flex-wrap: wrap; gap: 8px; }
+    .target-annual-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+    .target-annual-intro { gap: 4px 8px; }
     .target-form-grid, .target-mini-grid, .target-expert-card .target-mini-grid {
         grid-template-columns: 1fr;
     }
