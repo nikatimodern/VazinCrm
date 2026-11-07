@@ -180,6 +180,8 @@
     background: #f8fafb; border: 1px solid var(--target-border-strong); border-radius: 9px;
 }
 .target-expert-picker label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.target-expert-heading-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.target-step-panel.target-table-mode #targetExpertPicker { display: none; }
 .target-expert-picker select { width: min(100%, 360px); flex: 1 1 220px; max-width: 360px; }
 .target-expert-picker #targetExpertProgress { color: var(--target-muted); font-size: 12px; }
 .target-month-summary { border: 1px solid var(--target-border-strong); border-radius: 8px; margin-block-end: 8px; }
@@ -222,6 +224,25 @@
     .target-form-grid, .target-expert-card .target-mini-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .target-expert-heading-row { gap: 8px; }
+    .target-expert-heading-actions .target-expert-picker {
+        flex-wrap: nowrap;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        gap: 6px;
+    }
+    .target-expert-heading-actions .target-expert-picker label { font-size: 12px; }
+    .target-expert-heading-actions .target-expert-picker select {
+        flex: 0 1 200px;
+        width: 200px;
+        min-width: 105px;
+        max-width: 200px;
+        min-height: 33px;
+    }
+    .target-expert-heading-actions #targetExpertProgress { display: none; }
 }
 @media (max-width: 760px) {
     .target-page { padding: 10px; }
@@ -238,8 +259,16 @@
     .target-form-grid, .target-mini-grid, .target-expert-card .target-mini-grid {
         grid-template-columns: 1fr;
     }
-    .target-expert-picker { align-items: stretch; }
-    .target-expert-picker select { max-width: none; flex-basis: 100%; }
+    .target-expert-heading-row > h3 { flex: 1 0 100%; }
+    .target-expert-heading-actions { width: 100%; justify-content: space-between; }
+    .target-expert-heading-actions .target-expert-picker { flex: 1 1 auto; min-width: 0; }
+    .target-expert-heading-actions .target-expert-picker label { display: none; }
+    .target-expert-heading-actions .target-expert-picker select {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+        max-width: none;
+    }
     .target-modal-footer { padding: 8px 10px; }
     .target-footer-actions { flex-wrap: wrap; }
     .target-modal .modal-content { height: 100%; border-radius: 0; }
