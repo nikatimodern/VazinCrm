@@ -13,6 +13,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
+using System.Threading;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
@@ -163,6 +167,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 */
 
 
+                // One-time ExternalMapping backfill (NOT EXECUTED).
+                // Review the private BuildLegacySepidarMappingPlanAsync method below first.
+                // Do not run database writes from GET /Home/Index.
+                // After approval, expose a separate administrator-only, one-time POST
+                // to review and apply the plan. No migration method is invoked here.
+
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }
@@ -172,6 +182,325 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+
+        // One-off historical mapping migration draft. Private and intentionally uncalled.
+        // Review first. No SQL reads or writes happen just by visiting Home/Index.
+        private sealed record LegacyPreFactorRow(
+            Guid Id, int SerialNumber, DateTime? DateMiladi,
+            decimal SumTotalAmount, decimal PaymentAmount, Guid? CustomerId);
+
+        private sealed record LegacyFactorRow(
+            Guid Id, Guid PfactorId, int? SepidarId, string SnFinancial,
+            DateTime? DateMiladi, decimal PaymentAmount, Guid? CustomerId);
+
+        private sealed record LegacyQuotationRow(
+            int Id, int Number, DateTime Date, decimal Price,
+            decimal NetPrice, int CustomerPartyRef);
+
+        private sealed record LegacyInvoiceRow(
+            int Id, int? Number, int? QuotationRef, DateTime? Date,
+            decimal? NetPrice, int? CustomerPartyRef);
+
+        private sealed record LegacyMappingPlan(
+            int AlreadyMapped, int NotMatched, int Ambiguous,
+            List<ExternalMapping> Pending);
+
+        private async Task<LegacyMappingPlan> BuildLegacySepidarMappingPlanAsync(CancellationToken ct)
+        {
+            // This method only READS data. It never calls Add/Update/SaveChanges.
+            var preFactors = await db.PreFactors.AsNoTracking()
+                .Select(p => new LegacyPreFactorRow(
+                    p.Id, p.SerialNumber, p.DateMiladi,
+                    p.SumTotalAmount, p.PaymentAmount, p.CustomerId))
+                .ToListAsync(ct);
+
+            var factors = await db.Factors.AsNoTracking()
+                .Select(f => new LegacyFactorRow(
+                    f.Id, f.PfactorID, f.SepidarId, f.SnFinancial,
+                    f.DateMiladi, f.PaymentAmount, f.CustomerId))
+                .ToListAsync(ct);
+
+            var financialCustomerIds = await db.Customers.AsNoTracking()
+                .Where(c => c.FinancialCustomerId.HasValue)
+                .Select(c => new { c.Id, c.FinancialCustomerId })
+                .ToDictionaryAsync(x => x.Id, x => x.FinancialCustomerId!.Value, ct);
+
+            var existing = await db.ExternalMappings.AsNoTracking()
+                .Where(m => m.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                         || m.MapType == ExternalMappingTypeEnum.فاکتور)
+                .ToListAsync(ct);
+
+            var existingSources = existing
+                .Select(m => (m.ExternalSoftwareId, m.EntityName, m.EntityId, m.MapType))
+                .ToHashSet();
+            var existingTargets = existing
+                .Select(m => (m.ExternalSoftwareId, m.ExEntityName, m.ExEntityId))
+                .ToHashSet();
+
+            var configuredSoftwareIds = await db.ExternalSoftwares.AsNoTracking()
+                .Where(x => x.Id == Sepidar1SoftwareId || x.Id == Sepidar2SoftwareId)
+                .Select(x => x.Id)
+                .ToListAsync(ct);
+
+            var pending = new List<ExternalMapping>();
+            var alreadyMapped = 0;
+            var notMatched = 0;
+            var ambiguous = 0;
+
+            void Propose(Guid softwareId, string entityName, Guid entityId,
+                ExternalMappingTypeEnum mapType, string externalName, int externalId)
+            {
+                if (existingSources.Contains((softwareId, entityName, entityId, mapType)))
+                {
+                    alreadyMapped++;
+                    return;
+                }
+
+                if (existingTargets.Contains((softwareId, externalName, externalId.ToString())))
+                {
+                    ambiguous++;
+                    return;
+                }
+
+                pending.Add(new ExternalMapping {
+                    Id = Guid.NewGuid(),
+                    ExternalSoftwareId = softwareId,
+                    EntityName = entityName,
+                    EntityId = entityId,
+                    MapType = mapType,
+                    MapTypeTxt = mapType.ToString(),
+                    ExEntityName = externalName,
+                    ExEntityId = externalId.ToString(),
+                    UserCreatorID = "legacy-migration",
+                    UserCreator = "Legacy Sepidar mapping backfill"
+                });
+            }
+
+            // Remove ALL conflicting proposals instead of arbitrarily keeping the first.
+            void RemoveAmbiguousProposals(ExternalMappingTypeEnum mapType)
+            {
+                var duplicateIds = pending.Where(x => x.MapType == mapType)
+                    .GroupBy(x => (x.ExternalSoftwareId, x.ExEntityName, x.ExEntityId))
+                    .Where(g => g.Count() > 1)
+                    .SelectMany(g => g.Select(x => x.Id))
+                    .ToHashSet();
+
+                ambiguous += duplicateIds.Count;
+                pending.RemoveAll(x => duplicateIds.Contains(x.Id));
+            }
+
+            foreach (var softwareId in configuredSoftwareIds)
+            {
+                var sepidar = softwareId == Sepidar1SoftwareId
+                    ? (SepidarContextDbBase)sdb : s2Db;
+
+                var numbers = preFactors
+                    .Where(x => x.SerialNumber > 0 && x.DateMiladi.HasValue)
+                    .Select(x => x.SerialNumber).Distinct().ToArray();
+
+                var quotations = new List<LegacyQuotationRow>();
+                foreach (var batch in numbers.Chunk(400))
+                {
+                    quotations.AddRange(await sepidar.Quotations.AsNoTracking()
+                        .Where(x => batch.Contains(x.Number))
+                        .Select(x => new LegacyQuotationRow(
+                            x.QuotationId, x.Number, x.Date,
+                            x.Price, x.NetPriceInBaseCurrency, x.CustomerPartyRef))
+                        .ToListAsync(ct));
+                }
+
+                var quoteByNumber = quotations.GroupBy(q => q.Number)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                foreach (var pf in preFactors)
+                {
+                    if (existingSources.Contains((softwareId, nameof(PreFactor),
+                            pf.Id, ExternalMappingTypeEnum.پیش_فاکتور)))
+                    {
+                        alreadyMapped++;
+                        continue;
+                    }
+
+                    if (!pf.DateMiladi.HasValue
+                        || !quoteByNumber.TryGetValue(pf.SerialNumber, out var options))
+                    {
+                        notMatched++;
+                        continue;
+                    }
+
+                    // Avoid matching a quotation just because the serial number happens to match.
+                    var matches = options.Where(q =>
+                        q.Date.Date == pf.DateMiladi.Value.Date
+                        && q.Price == pf.SumTotalAmount
+                        && q.NetPrice == pf.PaymentAmount
+                        && (softwareId != Sepidar1SoftwareId
+                            || !pf.CustomerId.HasValue
+                            || !financialCustomerIds.TryGetValue(pf.CustomerId.Value, out var partyId)
+                            || q.CustomerPartyRef == partyId)).ToList();
+
+                    if (matches.Count == 1)
+                        Propose(softwareId, nameof(PreFactor), pf.Id,
+                            ExternalMappingTypeEnum.پیش_فاکتور, nameof(Quotation), matches[0].Id);
+                    else if (matches.Count == 0)
+                        notMatched++;
+                    else
+                        ambiguous++;
+                }
+
+                RemoveAmbiguousProposals(ExternalMappingTypeEnum.پیش_فاکتور);
+
+                // Reuse existing quotation mappings as well as unambiguous new proposals.
+                var quotationByPreFactor = new Dictionary<Guid, int>();
+                foreach (var map in existing.Where(x =>
+                             x.ExternalSoftwareId == softwareId
+                             && x.EntityName == nameof(PreFactor)
+                             && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                             && x.ExEntityName == nameof(Quotation)))
+                {
+                    if (int.TryParse(map.ExEntityId, out var id) && id > 0)
+                        quotationByPreFactor.TryAdd(map.EntityId, id);
+                }
+
+                foreach (var map in pending.Where(x =>
+                             x.ExternalSoftwareId == softwareId
+                             && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور))
+                    quotationByPreFactor[map.EntityId] = int.Parse(map.ExEntityId);
+
+                var quotationIds = quotationByPreFactor.Values.Distinct().ToArray();
+                var legacyInvoiceIds = softwareId == Sepidar1SoftwareId
+                    ? factors.Where(f => f.SepidarId > 0).Select(f => f.SepidarId!.Value)
+                        .Distinct().ToArray()
+                    : Array.Empty<int>();
+
+                var invoices = new Dictionary<int, LegacyInvoiceRow>();
+                foreach (var batch in quotationIds.Chunk(400))
+                {
+                    var rows = await sepidar.vwInvoice.AsNoTracking()
+                        .Where(x => x.QuotationRef.HasValue
+                                    && batch.Contains(x.QuotationRef.Value))
+                        .Select(x => new LegacyInvoiceRow(
+                            x.InvoiceId, x.Number, x.QuotationRef,
+                            x.Date, x.NetPrice, x.CustomerPartyRef))
+                        .ToListAsync(ct);
+
+                    foreach (var row in rows)
+                        invoices.TryAdd(row.Id, row);
+                }
+
+                foreach (var batch in legacyInvoiceIds.Chunk(400))
+                {
+                    var rows = await sepidar.vwInvoice.AsNoTracking()
+                        .Where(x => batch.Contains(x.InvoiceId))
+                        .Select(x => new LegacyInvoiceRow(
+                            x.InvoiceId, x.Number, x.QuotationRef,
+                            x.Date, x.NetPrice, x.CustomerPartyRef))
+                        .ToListAsync(ct);
+
+                    foreach (var row in rows)
+                        invoices.TryAdd(row.Id, row);
+                }
+
+                var invoicesByQuotation = invoices.Values
+                    .Where(x => x.QuotationRef.HasValue)
+                    .GroupBy(x => x.QuotationRef!.Value)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                foreach (var factor in factors)
+                {
+                    if (existingSources.Contains((softwareId, nameof(Factor),
+                            factor.Id, ExternalMappingTypeEnum.فاکتور)))
+                    {
+                        alreadyMapped++;
+                        continue;
+                    }
+
+                    quotationByPreFactor.TryGetValue(factor.PfactorId, out var quotationId);
+                    List<LegacyInvoiceRow> matches;
+
+                    if (softwareId == Sepidar1SoftwareId && factor.SepidarId > 0)
+                    {
+                        // Old Factor.SepidarId points to Sepidar1; it is not a Sepidar2 reference.
+                        matches = invoices.TryGetValue(factor.SepidarId.Value, out var invoice)
+                            ? new List<LegacyInvoiceRow> { invoice } : new List<LegacyInvoiceRow>();
+                    }
+                    else
+                    {
+                        matches = quotationId > 0 && invoicesByQuotation.TryGetValue(
+                                quotationId, out var quotationInvoices)
+                            ? quotationInvoices : new List<LegacyInvoiceRow>();
+                    }
+
+                    matches = matches.Where(invoice =>
+                        invoice.NetPrice == factor.PaymentAmount
+                        && (!factor.DateMiladi.HasValue
+                            || (invoice.Date.HasValue
+                                && invoice.Date.Value.Date == factor.DateMiladi.Value.Date))
+                        && (quotationId <= 0 || invoice.QuotationRef == quotationId)
+                        && (string.IsNullOrWhiteSpace(factor.SnFinancial)
+                            || (int.TryParse(factor.SnFinancial, out var financialNumber)
+                                && invoice.Number == financialNumber))
+                        && (softwareId != Sepidar1SoftwareId
+                            || !factor.CustomerId.HasValue
+                            || !financialCustomerIds.TryGetValue(factor.CustomerId.Value, out var partyId)
+                            || invoice.CustomerPartyRef == partyId))
+                        .ToList();
+
+                    if (matches.Count == 1)
+                        Propose(softwareId, nameof(Factor), factor.Id,
+                            ExternalMappingTypeEnum.فاکتور, nameof(Invoice), matches[0].Id);
+                    else if (matches.Count == 0)
+                        notMatched++;
+                    else
+                        ambiguous++;
+                }
+
+                RemoveAmbiguousProposals(ExternalMappingTypeEnum.فاکتور);
+            }
+
+            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending);
+        }
+
+        // NOT CALLED from Index or any public route.
+        // This write method must only be wired to an administrator-only one-time POST
+        // AFTER the user has reviewed the candidate counts and approved the migration.
+        private async Task<int> ApplyLegacySepidarMappingPlanAsync(CancellationToken ct)
+        {
+            var plan = await BuildLegacySepidarMappingPlanAsync(ct);
+            if (plan.Pending.Count == 0) return 0;
+
+            await using var transaction = await db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                // Never overwrite an existing mapping or silently reuse a target record.
+                var live = await db.ExternalMappings.AsNoTracking()
+                    .Where(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                             || x.MapType == ExternalMappingTypeEnum.فاکتور)
+                    .ToListAsync(ct);
+
+                foreach (var candidate in plan.Pending)
+                {
+                    if (live.Any(x => x.ExternalSoftwareId == candidate.ExternalSoftwareId
+                        && ((x.EntityName == candidate.EntityName
+                             && x.EntityId == candidate.EntityId
+                             && x.MapType == candidate.MapType)
+                            || (x.ExEntityName == candidate.ExEntityName
+                                && x.ExEntityId == candidate.ExEntityId))))
+                        throw new InvalidOperationException(
+                            "نگاشت‌های مالی هنگام آماده‌سازی تغییر کرده‌اند؛ پیش‌نمایش را دوباره تهیه کنید.");
+                }
+
+                db.ExternalMappings.AddRange(plan.Pending);
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return plan.Pending.Count;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
+        }
 
         public IActionResult sigR()
         {
