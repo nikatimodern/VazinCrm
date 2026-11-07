@@ -52,21 +52,47 @@ public sealed class TargetRepository(CRMContextDb db, UserManager<AppUser> users
 
     public async Task<TargetPlanDetails?> GetAsync(Guid id, CancellationToken ct)
     {
+        // Project the plan and its child collections separately to avoid
+        // the cartesian multiplication caused by including both collections.
         var plan = await db.TargetPlans.AsNoTracking()
-            .Include(x => x.Values).Include(x => x.Assignments)
-            .FirstOrDefaultAsync(x => x.Id == id, ct);
+            .Where(x => x.Id == id)
+            .Select(x => new TargetPlanDetails
+            {
+                Id = x.Id,
+                Year = x.Year,
+                Version = x.Version,
+                Status = x.Status,
+                CreatedAtUtc = x.CreatedAtUtc,
+                UpdatedAtUtc = x.UpdatedAtUtc
+            })
+            .FirstOrDefaultAsync(ct);
         if (plan == null) return null;
-        return new TargetPlanDetails
-        {
-            Id = plan.Id, Year = plan.Year, Version = plan.Version, Status = plan.Status,
-            CreatedAtUtc = plan.CreatedAtUtc, UpdatedAtUtc = plan.UpdatedAtUtc,
-            Yearly = plan.Values.Where(x => x.Month == 0)
-                .Select(x => new TargetAmountInput { MetricCode = x.MetricCode, Month = 0, Value = x.Value }).ToList(),
-            Monthly = plan.Values.Where(x => x.Month > 0)
-                .Select(x => new TargetAmountInput { MetricCode = x.MetricCode, Month = x.Month, Value = x.Value }).ToList(),
-            Assignments = plan.Assignments
-                .Select(x => new TargetAmountInput { MetricCode = x.MetricCode, Month = x.Month, UserId = x.UserId, Value = x.Value }).ToList()
-        };
+
+        var values = await db.TargetValues.AsNoTracking()
+            .Where(x => x.PlanId == id)
+            .Select(x => new TargetAmountInput
+            {
+                MetricCode = x.MetricCode,
+                Month = x.Month,
+                Value = x.Value
+            })
+            .ToListAsync(ct);
+
+        plan.Yearly = values.Where(x => x.Month == 0).ToList();
+        plan.Monthly = values.Where(x => x.Month > 0).ToList();
+
+        plan.Assignments = await db.TargetAssignments.AsNoTracking()
+            .Where(x => x.PlanId == id)
+            .Select(x => new TargetAmountInput
+            {
+                MetricCode = x.MetricCode,
+                Month = x.Month,
+                UserId = x.UserId,
+                Value = x.Value
+            })
+            .ToListAsync(ct);
+
+        return plan;
     }
 
     public async Task<TargetSaveResult> SaveAsync(TargetSaveRequest request, bool finalize, string actorId, CancellationToken ct)
@@ -75,7 +101,10 @@ public sealed class TargetRepository(CRMContextDb db, UserManager<AppUser> users
         TargetPlan? plan = null;
         if (request.Id.HasValue)
         {
-            plan = await db.TargetPlans.Include(x => x.Values).Include(x => x.Assignments)
+            plan = await db.TargetPlans
+                .Include(x => x.Values)
+                .Include(x => x.Assignments)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.Id == request.Id.Value, ct);
             if (plan == null) return new(404, "تارگت یافت نشد.");
             if (plan.Status == TargetPlanStatus.Final) return new(409, "این تارگت قبلاً نهایی شده است.");
