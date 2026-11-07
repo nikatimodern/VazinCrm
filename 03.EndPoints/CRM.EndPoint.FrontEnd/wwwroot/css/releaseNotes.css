@@ -124,3 +124,33 @@
     .rn .rn-change-type .rn-type-icon { animation:none; transition:none; }
     .rn :is(.rn-item,.rn-history-item):is(:hover,:focus-within) .rn-type-icon { transform:none; }
 }
+
+
+/* Keep version and publish date visible in the 64px desktop sidebar. */
+.menu-nav .menu-item.menu-release-notes .menu-release-compact { display:none; }
+@media (min-width:768px) {
+    html.sidebar-collapsed #desktopNavbar .menu-item.menu-release-notes {
+        padding-inline:0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item.menu-release-notes .menu-release-compact {
+        display:flex;
+        flex:0 0 58px;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:0;
+        margin:0;
+        padding:0;
+        text-align:center;
+        font:700 11px/1.35 IRANSansBold,sans-serif;
+        color:#fff;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item.menu-release-notes .menu-release-compact small {
+        display:block;
+        margin:0;
+        padding:0;
+        color:var(--menu-muted,#d0e7e3);
+        font:400 9px/1.2 IRANSans,sans-serif;
+        letter-spacing:-.3px;
+    }
+}
