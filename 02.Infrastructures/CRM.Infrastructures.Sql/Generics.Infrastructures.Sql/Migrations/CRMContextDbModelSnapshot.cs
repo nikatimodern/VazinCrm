@@ -7655,6 +7655,110 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.Navigation("WarehouseProductVouchers");
                 });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetMetric", b =>
+                {
+                    b.Property<string>("Code").HasMaxLength(50).IsUnicode(false).HasColumnType("varchar(50)");
+                    b.Property<string>("Title").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("Unit").IsRequired().HasMaxLength(30).HasColumnType("nvarchar(30)");
+                    b.Property<byte>("Kind").HasColumnType("tinyint");
+                    b.Property<int>("SortOrder").HasColumnType("int");
+                    b.Property<bool>("IsActive").HasColumnType("bit");
+                    b.HasKey("Code");
+                    b.HasIndex("SortOrder");
+                    b.ToTable("TargetMetrics");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetPlan", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<int>("Year").HasColumnType("int");
+                    b.Property<byte>("Status").HasColumnType("tinyint");
+                    b.Property<long>("Version").IsConcurrencyToken().HasColumnType("bigint");
+                    b.Property<string>("CreatedById").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<string>("ModifiedById").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                    b.Property<DateTime>("UpdatedAtUtc").HasColumnType("datetime2");
+                    b.Property<DateTime?>("FinalizedAtUtc").HasColumnType("datetime2");
+                    b.HasKey("Id");
+                    b.HasIndex("Year").IsUnique();
+                    b.ToTable("TargetPlans");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetValue", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("PlanId").HasColumnType("uniqueidentifier");
+                    b.Property<string>("MetricCode").IsRequired().HasMaxLength(50).IsUnicode(false).HasColumnType("varchar(50)");
+                    b.Property<int>("Month").HasColumnType("int");
+                    b.Property<decimal>("Value").HasPrecision(28, 2).HasColumnType("decimal(28,2)");
+                    b.HasKey("Id");
+                    b.HasIndex("MetricCode");
+                    b.HasIndex("PlanId", "MetricCode", "Month").IsUnique();
+                    b.ToTable("TargetValues", (string)null, t => t.HasCheckConstraint("CK_TargetValues_Month", "[Month] >= 0 AND [Month] <= 12"));
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetAssignment", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("PlanId").HasColumnType("uniqueidentifier");
+                    b.Property<string>("MetricCode").IsRequired().HasMaxLength(50).IsUnicode(false).HasColumnType("varchar(50)");
+                    b.Property<int>("Month").HasColumnType("int");
+                    b.Property<string>("UserId").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<decimal>("Value").HasPrecision(28, 2).HasColumnType("decimal(28,2)");
+                    b.HasKey("Id");
+                    b.HasIndex("MetricCode");
+                    b.HasIndex("PlanId", "MetricCode", "Month", "UserId").IsUnique();
+                    b.ToTable("TargetAssignments", (string)null, t => t.HasCheckConstraint("CK_TargetAssignments_Month", "[Month] >= 1 AND [Month] <= 12"));
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetPlanAudit", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("PlanId").HasColumnType("uniqueidentifier");
+                    b.Property<long>("Version").HasColumnType("bigint");
+                    b.Property<string>("Action").IsRequired().HasMaxLength(40).HasColumnType("nvarchar(40)");
+                    b.Property<string>("ActorId").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<DateTime>("AtUtc").HasColumnType("datetime2");
+                    b.HasKey("Id");
+                    b.HasIndex("PlanId", "Version").IsUnique();
+                    b.ToTable("TargetPlanAudits");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetValue", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Targets.Entities.TargetMetric", "Metric")
+                        .WithMany().HasForeignKey("MetricCode").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("CRM.Core.Domain.Targets.Entities.TargetPlan", "Plan")
+                        .WithMany("Values").HasForeignKey("PlanId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.Navigation("Metric");
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetAssignment", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Targets.Entities.TargetMetric", "Metric")
+                        .WithMany().HasForeignKey("MetricCode").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                    b.HasOne("CRM.Core.Domain.Targets.Entities.TargetPlan", "Plan")
+                        .WithMany("Assignments").HasForeignKey("PlanId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.Navigation("Metric");
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetPlanAudit", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Targets.Entities.TargetPlan", "Plan")
+                        .WithMany("Audits").HasForeignKey("PlanId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Targets.Entities.TargetPlan", b =>
+                {
+                    b.Navigation("Values");
+                    b.Navigation("Assignments");
+                    b.Navigation("Audits");
+                });
+
 #pragma warning restore 612, 618
         }
     }
