@@ -28,21 +28,26 @@ public sealed class TargetRepository(CRMContextDb db, UserManager<AppUser> users
 
     public async Task<IReadOnlyList<TargetPlanSummary>> ListAsync(CancellationToken ct)
     {
-        var plans = await db.TargetPlans.AsNoTracking()
-            .Include(x => x.Values).Include(x => x.Assignments)
-            .OrderByDescending(x => x.Year).ToListAsync(ct);
-        return plans.Select(x => new TargetPlanSummary
-        {
-            Id = x.Id,
-            Year = x.Year,
-            Status = x.Status,
-            Version = x.Version,
-            SalesTarget = x.Values.FirstOrDefault(v => v.Month == 0 && v.MetricCode == "sales_amount")?.Value ?? 0,
-            AllocatedMonths = x.Assignments.Select(a => a.Month).Distinct().Count(),
-            ExpertCount = x.Assignments.Select(a => a.UserId).Distinct().Count(),
-            CreatedAtUtc = x.CreatedAtUtc,
-            UpdatedAtUtc = x.UpdatedAtUtc
-        }).ToList();
+        // Keep counts and sales amount on the SQL server. Including both collections
+        // multiplies their rows and makes the list increasingly slow as plans grow.
+        return await db.TargetPlans.AsNoTracking()
+            .OrderByDescending(x => x.Year)
+            .Select(x => new TargetPlanSummary
+            {
+                Id = x.Id,
+                Year = x.Year,
+                Status = x.Status,
+                Version = x.Version,
+                SalesTarget = x.Values
+                    .Where(v => v.Month == 0 && v.MetricCode == "sales_amount")
+                    .Select(v => (decimal?)v.Value)
+                    .FirstOrDefault() ?? 0m,
+                AllocatedMonths = x.Assignments.Select(a => a.Month).Distinct().Count(),
+                ExpertCount = x.Assignments.Select(a => a.UserId).Distinct().Count(),
+                CreatedAtUtc = x.CreatedAtUtc,
+                UpdatedAtUtc = x.UpdatedAtUtc
+            })
+            .ToListAsync(ct);
     }
 
     public async Task<TargetPlanDetails?> GetAsync(Guid id, CancellationToken ct)
