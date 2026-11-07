@@ -19,6 +19,7 @@ Use for Razor, JavaScript, CSS, modal, select, table, form, and frontend refacto
 5. Check TomSelect lifecycle, dropdown positioning, modal overflow/scroll, focus, cleanup, and repeated modal opening.
 6. Prevent duplicate listeners, repeated submissions, stale state, excessive DOM updates, and unnecessary allocations.
 7. Favor concise, readable, performant implementations. Refactor related touched code when it improves clarity, reuse, or efficiency without broad unrelated changes.
+8. Apply shared wheel inertia by default when creating or modifying scrollable UI. Follow [CRM Frontend Reusables](../crm-frontend-reusables/SKILL.md#scroll-interaction-standard) for attachment and lifecycle; leave layout and scroll containment to `crm-responsive`.
 
 ## Verification
 - Check Persian RTL, mobile layout, keyboard interaction, loading/errors, empty states, and repeated use when practical.

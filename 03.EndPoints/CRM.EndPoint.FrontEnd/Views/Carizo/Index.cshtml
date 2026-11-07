@@ -3,7 +3,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="d-flex flex-column w-100">
+<div id="carizoWorkspace" class="d-flex flex-column w-100">
     <div style="padding-bottom:8px;">
         <ul class="filter-switch">
             <li class="filter-switch-item">
@@ -62,7 +62,7 @@
                         <partial name="_AddTaskFormContainer" />
                     </div>
 
-                    <div class="w-100 flex-grow-1 px-2" style="height: 100%;overflow:auto">
+                    <div class="carizo-task-scroll px-2">
                         <div id="todoTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="tasks-container">
-                    <div class="w-100 p-2" style="height: 100%;overflow:auto">
+                    <div class="carizo-task-scroll p-2">
                         <div id="todayTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
                     </div>
                 </div>
@@ -113,7 +113,7 @@
 
                 <div class="tasks-container">
 
-                    <div class="w-100 p-2" style="height: 100%;overflow:auto">
+                    <div class="carizo-task-scroll p-2">
                         <div id="finishedTaskId" class="d-flex flex-column gap-2" style="width:100%"></div>
                     </div>
                 </div>
@@ -140,6 +140,7 @@
         let systematicTask = 0;
 
         document.addEventListener("DOMContentLoaded", async () => {
+            enableMomentumScrollScope(document.getElementById("carizoWorkspace"));
             removeTasksTabsDesktop();
             await Promise.all([getAllTask(0, systematicTask), getAllTask(1, systematicTask), getAllTask(2, systematicTask)]);
             if (!__page.isActive) return;

@@ -1,308 +1,65 @@
-﻿@using CRM.Core.Domain.Customers.Enum
+@using CRM.Core.Domain.Customers.Enum
 @using CRM.EndPoint.FrontEnd.Services
-
 @model IList<CRM.Core.Domain.Customers.Entities.Customer>
 @{
     Layout = null;
+    bool canManage = ViewBag.AccessAccepte == true;
 }
-
 
 @if (Model.Any()) {
-    foreach (var item in Model.ToList()) {
-        <div style=" height:230px;">
-
-            <div style="border-radius: 24px 24px 10px 10px;background-color:white; height:100%  ">
-                <div class="mp image-content" style="height:40%">
-                    <div class="@(item.RoleType != RoleTypeEnum.مشتری ? "overlaySupplier" : "overlay")" style="padding:10px; color:aliceblue; font-size:12px;">
-                        <div class="d-flex justify-content-between w-100">
-                            @if (item.RoleType == RoleTypeEnum.تامین_کننده_مشتری) {
-                                <p class="fbold d-flex flex-column" style=" width:100%;z-index: 10">
-                                    <span>مشتری</span>
-                                    <span>تامین کننده</span>
-                                </p>
-                            } else {
-                                <p class="fbold" style=" width:100%;z-index: 10">
-                                    @item.RoleTypeTxt
-                                </p>
-                            }
-
-                            @if (item.Juridical == 1) {
-                                <p class="fbold" style=" text-align:end; width:100%;">حقوقی</p>
-                            } else {
-                                <div class="@(item.RoleType != RoleTypeEnum.مشتری ? "overlaySupplier" : "overlay")"></div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="card-image" style="top:5%">
-                        <img style="width:100%" src="~/Img/User.png" class="rounded-circle" alt="...">
+    foreach (var item in Model) {
+        var displayName = item.Sex == 1 ? $"آقای {item.AgentName}" : item.Sex == 0 ? $"خانم {item.AgentName}" : item.AgentName;
+        <article class="customer-person-card @(item.Juridical == 1 ? "customer-person-card--legal" : "")">
+            <header class="customer-person-card__header">
+                <span class="customer-person-card__avatar" aria-hidden="true"><i class="fa fa-user"></i></span>
+                <div class="customer-person-card__identity">
+                    <h2 class="customer-person-card__name" tabindex="0" title="@displayName">@displayName</h2>
+                    <div class="customer-person-card__badges">
+                        @if (item.RoleType == RoleTypeEnum.تامین_کننده_مشتری) {
+                            <span>مشتری</span><span>تأمین‌کننده</span>
+                        } else {
+                            <span>@item.RoleTypeTxt</span>
+                        }
+                        <span class="customer-person-card__kind">@(item.Juridical == 1 ? "حقوقی" : "حقیقی")</span>
                     </div>
                 </div>
-
-                <div class="card-content mp" style="display:flex; flex-direction:column; justify-content:space-between;  height:60%; width:100%;  margin-top:10px !important">
-                    <div style=" height:100% ; width:100%; overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center  ">
-                        <div style="display:flex;flex-wrap:wrap">
-                            <span> کد @(item.RoleType == RoleTypeEnum.تامین_کننده ? "تامین کننده" : "مشتری") : </span>
-                            <span class="fbold"> @item.CustomerCode </span>
-                        </div>
-                        @if (item.Sex == 1) {
-                            <div style="display:flex;flex-wrap:wrap">
-                                <span> نام: </span>
-                                <span class="fbold">آقای @item.AgentName </span>
-                            </div>
-                        } else if (item.Sex == 0) {
-                            <div style="display:flex;flex-wrap:wrap">
-                                <span> نام: </span><span class="fbold">خانم @item.AgentName </span>
-                            </div>
-                        } else {
-                            <div style=" display:flex;flex-wrap:wrap">
-                                <span> نام: </span><span class="fbold">@item.AgentName </span>
-                            </div>
-                        }
-
-
-                        @if (item.Juridical == 1) {
-                            <div style="display:flex; justify-content:center">
-                                <span> شرکت: </span><span class="fbold">@item.CompanyName </span>
-                            </div>
-                            @*<div style="display:flex"><span> نوع: </span><span class="fbold">حقوقی</span>  </div>*@
-                        } else {
-                            @*<div style="display:flex"><span> نوع: </span><span class="fbold">حقیقی</span>  </div>*@
-                        }
-
-                    </div>
-                    <div style="padding:5px; height:50%; align-items:center; width:100%; display:flex; justify-content:space-between; flex-wrap:wrap;gap: 4px ">
-                        <div style=" font-size: 10px;">
-                            @if (ViewBag.AccessAccepte) {
-                                <div>
-                                    <span> در اختیار: </span>
-                                    <span class="fbold">@item.SelExpertRel</span>
-                                </div>
+            </header>
+            <dl class="customer-person-card__details">
+                <div><dt>کد @(item.RoleType == RoleTypeEnum.تامین_کننده ? "تأمین‌کننده" : "مشتری")</dt><dd><bdi>@item.CustomerCode</bdi></dd></div>
+                @if (item.Juridical == 1) {
+                    <div><dt>شرکت</dt><dd class="customer-person-card__company" tabindex="0" title="@item.CompanyName">@item.CompanyName</dd></div>
+                }
+            </dl>
+            @if (canManage) {
+                <div class="customer-person-card__owner"><i class="fa fa-user" aria-hidden="true"></i><span>کارشناس فروش:</span><span>@item.SelExpertRel</span></div>
+            }
+            <footer class="customer-person-card__footer">
+                @if (item.Accepted) {
+                    if (item.RoleType != RoleTypeEnum.تامین_کننده) {
+                        <a href="/Customer/CustomerProfile?Id=@item.Id" class="customer-person-card__profile"><i class="fa fa-eye" aria-hidden="true"></i><span>مشاهده پروفایل</span></a>
+                        <div class="customer-person-card__actions">
+                            <button type="button" aria-label="ویرایش" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                            <button type="button" aria-label="ثبت گزارش" title="ثبت گزارش" onclick="ShowModalReport(@item.ToCamelJson())"><i class="fa fa-text" aria-hidden="true"></i></button>
+                            @if (canManage) {
+                                <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
                             }
                         </div>
-
-                        @if (item.Accepted) {
-                            if (item.RoleType != RoleTypeEnum.تامین_کننده) {
-                                <div style="display:flex;justify-content:end;gap:5px; width:104px;margin-bottom:10px !important;color:#fff;">
-                                    <a style=" width:50%" href="/Customer/CustomerProfile?Id=@item.Id" class="mp buttonGreen buttonCusPartial">
-                                        <i class="fa fa-eye"></i>
-                                    </a>
-                                    <button style=" width:50%" class="mp buttonGreen buttonCusPartial" onclick="ShowModalUpCustomer('@item.Id')">
-                                        <i class="fa fa-pencil"></i>
-                                    </button>
-                                    <button style=" width:50%" class="mp buttonOrange buttonCusPartial" onclick="ShowModalReport(@item.ToCamelJson())">
-                                        <i class="fa fa-text"></i>
-                                    </button>
-                                    @if (ViewBag.AccessAccepte) {
-                                        <a style="width:50%" class="mp buttonPurple buttonCusPartial" href="/Customer/CustomerDetail?id=@item.Id" target="_blank">
-                                            <i class="fa fa-search"></i>
-                                        </a>
-                                    }
-                                </div>
-                            } else {
-                                <button style=" width:24px" class="mp buttonGreen buttonCusPartial" onclick="ShowModalUpCustomer('@item.Id')">
-                                    <i class="fa fa-pencil"></i>
-                                </button>
-                            }
-                        } else {
-                            <div style="display:flex;flex-direction:column; justify-content:center; align-items:center;">
-                                <p class="mp fbold text-center" style=" color: var(--color25); font-family:'IRANSansBold'; ">در انتظار تایید</p>
-                                @if (ViewBag.AccessAccepte) {
-                                    <div style="display:flex;margin-bottom:10px !important; width:100%; justify-content:space-around;color:#fff;">
-                                        <button style="  width:30px" class="mp buttonPurple buttonCusPartial " title="تایید" onclick="acceptCustomer('@item.Id')">
-                                            <i class=" fa fa-check"></i>
-                                        </button>
-                                        <button style=" width:30px;font-size:18px" class="mp buttonPurple buttonCusPartial " title="عدم تایید" onclick="abortCustomer('@item.Id')">×</button>
-                                        <a style="width:30px" class="mp buttonPurple buttonCusPartial " title="مشاهده جزئیات" href="/Customer/CustomerDetail?id=@item.Id" target="_blank">
-                                            <i class="fa fa-search"></i>
-                                        </a>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
+                    } else {
+                        <div class="customer-person-card__actions"><button type="button" aria-label="ویرایش تأمین‌کننده" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button></div>
+                    }
+                } else {
+                    <span class="customer-person-card__pending">در انتظار تأیید</span>
+                    @if (canManage) {
+                        <div class="customer-person-card__actions">
+                            <button type="button" aria-label="تأیید" title="تأیید" onclick="acceptCustomer('@item.Id')"><i class="fa fa-check" aria-hidden="true"></i></button>
+                            <button type="button" class="customer-person-card__reject" aria-label="عدم تأیید" title="عدم تأیید" onclick="abortCustomer('@item.Id')"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
+                        </div>
+                    }
+                }
+            </footer>
+        </article>
     }
 } else {
-    <div class="no-customer-found" style="grid-column: 1 / -1; height:200px;width:100%;display:flex;flex-direction:column;align-items:center; justify-content:center ">
-        <h1 class="text-center">یافت نشد!</h1>
-        <h5 class="text-center">هیچ مشتری در سیستم ثبت نشده است</h5>
-        @*
-        <section class="mp  test">
-            <div class="four_zero_four_bg">
-            </div>
-        </section>
-        *@
-    </div>
+    <div class="no-customer-found customer-directory__empty" role="status"><i class="fa fa-users" aria-hidden="true"></i><h2>موردی یافت نشد</h2><p>هیچ شخصی با شرایط انتخاب‌شده پیدا نشد.</p></div>
 }
-
-<style>
-
-
-    .four_zero_four_bg {
-        /*background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);*/
-        height: 400px;
-        background-position: center;
-    }
-
-
-    .slide-container {
-        max-width: 1120px;
-        width: 100%;
-        padding: 40px 0;
-    }
-
-
-    .slide-content {
-        margin: 0 5px;
-        overflow: hidden;
-        border-radius: 25px;
-    }
-
-
-    .card {
-        border-radius: 25px;
-        background-color: #FFF;
-    }
-
-
-    .image-content,
-    .card-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 10px 14px;
-    }
-
-
-    .image-content {
-        position: relative;
-        row-gap: 5px;
-        padding: 10px 0;
-    }
-
-
-    .overlayJuri {
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 100%;
-        background-color: var(--DarkColor);
-        border-radius: 25px 25px 0 25px;
-    }
-
-
-    /*
-            .overlayJuri::before,
-            .overlayJuri::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            bottom: -40px;
-            height: 40px;
-            width: 40px;
-            background-color: #9042f5;
-            }
-
-            .overlayJuri::after {
-            border-radius: 0 25px 0 0;
-            background-color: #FFF;
-            }*/
-
-    /*////////*/
-
-
-    .overlay {
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 100%;
-        background: linear-gradient(to bottom, var(--color7), var(--color8));
-        /*border: 2px solid #808080;*/
-        border-radius: 24px 24px 0 20px;
-    }
-
-
-    .overlaySupplier {
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 100%;
-        background: linear-gradient(to bottom, #009191, #004944);
-        /*border: 2px solid #808080;*/
-        border-radius: 24px 24px 0 20px;
-    }
-
-
-    /*.overlay::before,
-        .overlay::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            bottom: -40px;
-            height: 40px;
-            width: 40px;
-            background-color: #4070F4;
-        }
-
-        .overlay::after {
-            border-radius: 0 25px 0 0;
-            background-color: #FFF;
-        }*/
-
-    .card-image {
-        position: relative;
-        height: 80px;
-        width: 80px;
-        border-radius: 50%;
-        background: #FFF;
-        padding: 3px;
-    }
-
-
-    .card-image .card-img {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 4px solid #4070F4;
-    }
-
-
-    .name {
-        font-size: 18px;
-        font-weight: 500;
-        color: #333;
-    }
-
-
-    .description {
-        font-size: 14px;
-        color: #707070;
-        text-align: center;
-    }
-
-
-    .button {
-        border: none;
-        font-size: 16px;
-        color: #FFF;
-        padding: 8px 16px;
-        background-color: #4070F4;
-        border-radius: 6px;
-        margin: 14px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-
-    .button:hover {
-        background: #265DF2;
-    }
-
-</style>

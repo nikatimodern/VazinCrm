@@ -2912,6 +2912,144 @@ function createInlineAlert({ type = "info", message, dismissible = false, icon }
 }
 
 
+const momentumScrollInstances = new WeakMap();
+
+/** Opt-in wheel inertia for a local scroll region. Returns an idempotent cleanup. */
+function enableMomentumScroll(element, { signal = window.PageRuntime?.current?.signal } = {}) {
+    if (!(element instanceof HTMLElement) || signal?.aborted) return () => {};
+    if (momentumScrollInstances.has(element)) return momentumScrollInstances.get(element);
+    const controller = new AbortController();
+    const options = { signal: controller.signal };
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    let target = 0;
+    let previousTime = 0;
+    let direction = 0;
+    const stop = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        direction = 0;
+    };
+    const destroy = () => {
+        if (controller.signal.aborted) return;
+        stop();
+        controller.abort();
+        momentumScrollInstances.delete(element);
+    };
+    const animate = time => {
+        if (!element.isConnected) {
+            destroy();
+            return;
+        }
+        if (!element.clientHeight || reducedMotion.matches || document.hidden) {
+            stop();
+            return;
+        }
+        const elapsed = Math.min(time - previousTime, 40);
+        previousTime = time;
+        target = Math.max(0, Math.min(target, element.scrollHeight - element.clientHeight));
+        const remaining = target - element.scrollTop;
+        if (Math.abs(remaining) < 1) {
+            element.scrollTop = target;
+            stop();
+            return;
+        }
+        const movement = remaining * (1 - Math.exp(-elapsed / 240));
+        element.scrollTop += Math.sign(remaining) * Math.max(1, Math.abs(movement));
+        frame = requestAnimationFrame(animate);
+    };
+    element.addEventListener("wheel", event => {
+        if (event.defaultPrevented || !event.cancelable || reducedMotion.matches ||
+            event.ctrlKey || event.metaKey || event.shiftKey ||
+            event.target.closest?.("input, textarea, select, [contenteditable='true']") ||
+            Math.abs(event.deltaX) > Math.abs(event.deltaY) ||
+            (event.deltaMode === 0 && Math.abs(event.deltaY) < 40)) {
+            stop();
+            return;
+        }
+        for (let child = event.target; child && child !== element; child = child.parentElement) {
+            if (child instanceof HTMLElement && child.scrollHeight > child.clientHeight &&
+                /auto|scroll/.test(getComputedStyle(child).overflowY)) {
+                stop();
+                return;
+            }
+        }
+        const nextDirection = Math.sign(event.deltaY);
+        const maxScroll = element.scrollHeight - element.clientHeight;
+        if (!nextDirection || maxScroll <= 0 ||
+            (nextDirection < 0 && element.scrollTop <= 0) ||
+            (nextDirection > 0 && element.scrollTop >= maxScroll - 1)) {
+            stop();
+            return;
+        }
+        event.preventDefault();
+        if (!frame || nextDirection !== direction) target = element.scrollTop;
+        direction = nextDirection;
+        const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? element.clientHeight : 1;
+        const distance = Math.min(Math.abs(event.deltaY * unit) * 1.4, 220) * direction;
+        target = Math.max(0, Math.min(maxScroll,
+            Math.max(element.scrollTop - 420, Math.min(element.scrollTop + 420, target + distance))));
+        if (!frame) {
+            previousTime = performance.now();
+            frame = requestAnimationFrame(animate);
+        }
+    }, { ...options, passive: false });
+    element.addEventListener("pointerdown", stop, options);
+    element.addEventListener("keydown", stop, options);
+    element.addEventListener("dragstart", stop, options);
+    reducedMotion.addEventListener("change", stop, options);
+    document.addEventListener("visibilitychange", stop, options);
+    window.addEventListener("blur", stop, options);
+    window.addEventListener("pagehide", destroy, { ...options, once: true });
+    signal?.addEventListener("abort", destroy, { ...options, once: true });
+    momentumScrollInstances.set(element, destroy);
+    return destroy;
+}
+
+const momentumScrollScopes = new WeakMap();
+
+/** Covers current and AJAX-created vertical scroll regions without scanning every mutation. */
+function enableMomentumScrollScope(root, { signal = window.PageRuntime?.current?.signal } = {}) {
+    if (!(root instanceof HTMLElement) || signal?.aborted) return () => {};
+    if (momentumScrollScopes.has(root)) return momentumScrollScopes.get(root);
+    const controller = new AbortController();
+    const attached = new Map();
+    const destroy = () => {
+        if (controller.signal.aborted) return;
+        controller.abort();
+        attached.forEach(cleanup => cleanup());
+        attached.clear();
+        momentumScrollScopes.delete(root);
+    };
+    root.addEventListener("wheel", event => {
+        if (event.defaultPrevented) return;
+        // Discard regions replaced by an AJAX refresh before binding another one.
+        attached.forEach((cleanup, element) => {
+            if (!root.contains(element)) {
+                cleanup();
+                attached.delete(element);
+            }
+        });
+        for (let element = event.target instanceof Element ? event.target : null;
+             element && root.contains(element); element = element.parentElement) {
+            if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight && element.clientHeight > 0 &&
+                /^(auto|scroll|overlay)$/.test(getComputedStyle(element).overflowY)) {
+                if (!attached.has(element)) {
+                    attached.set(element, enableMomentumScroll(element, { signal: controller.signal }));
+                }
+                break;
+            }
+            if (element === root) break;
+        }
+        // Register non-passively up front so the browser keeps the first wheel event cancelable.
+        // A passive scope with lazily attached listeners can begin a native scroll transaction first.
+    }, { capture: true, passive: false, signal: controller.signal });
+    window.addEventListener("pagehide", destroy, { once: true, signal: controller.signal });
+    signal?.addEventListener("abort", destroy, { once: true, signal: controller.signal });
+    momentumScrollScopes.set(root, destroy);
+    return destroy;
+}
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll("&", "&amp;")

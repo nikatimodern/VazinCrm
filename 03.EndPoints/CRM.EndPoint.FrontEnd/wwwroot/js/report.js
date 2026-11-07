@@ -5,6 +5,84 @@ let typeReportSubmit = 0;
 
 var filterReportConfig = {};
 
+/** Expand a native audio player in the report card without opening a modal. */
+function toggleReportAudio(button) {
+    const card = button.closest(".report-box");
+    if (!card || !button.dataset.audioSrc) return;
+
+    let panel = card.querySelector(".report-inline-audio");
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.className = "report-inline-audio";
+        panel.hidden = true;
+
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.preload = "metadata";
+        audio.setAttribute("aria-label", "فایل صوتی گزارش");
+        const source = document.createElement("source");
+        source.src = button.dataset.audioSrc;
+        audio.append(source);
+
+        const header = document.createElement("div");
+        header.className = "report-inline-audio__header";
+        const status = document.createElement("span");
+        status.setAttribute("role", "status");
+        status.textContent = "در حال دریافت فایل صوتی…";
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "report-inline-audio__close";
+        close.textContent = "بستن ×";
+        close.setAttribute("aria-label", "بستن پخش‌کننده صوتی");
+        close.addEventListener("click", () => {
+            audio.pause();
+            panel.hidden = true;
+            button.setAttribute("aria-expanded", "false");
+            button.focus();
+        });
+        header.append(status, close);
+        const showAudioError = () => {
+            status.textContent = "دریافت یا پخش فایل صوتی ممکن نشد؛ برای تلاش دوباره، پلیر را ببندید و باز کنید.";
+        };
+        audio.addEventListener("loadedmetadata", () => { status.textContent = "فایل صوتی گزارش"; });
+        audio.addEventListener("waiting", () => { status.textContent = "در حال دریافت فایل صوتی…"; });
+        audio.addEventListener("play", () => {
+            document.querySelectorAll(".report-inline-audio audio").forEach(other => {
+                if (other !== audio) other.pause();
+            });
+        });
+        audio.addEventListener("playing", () => { status.textContent = "در حال پخش"; });
+        audio.addEventListener("error", showAudioError);
+        source.addEventListener("error", showAudioError);
+        window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+            audio.pause();
+            source.removeAttribute("src");
+            audio.load();
+        }, { once: true });
+        panel.append(header, audio);
+        card.querySelector(".report-badges").after(panel);
+    }
+
+    const audio = panel.querySelector("audio");
+    const expanded = panel.hidden;
+    panel.hidden = !expanded;
+    button.setAttribute("aria-expanded", String(expanded));
+    if (expanded) {
+        const status = panel.querySelector('[role="status"]');
+        status.textContent = "در حال دریافت فایل صوتی…";
+        // Explicitly load the source after mounting, including failed-source retries.
+        if (!audio.readyState || audio.error) audio.load();
+        audio.play().catch(error => {
+            if (panel.hidden || error.name === "AbortError") return;
+            status.textContent = error.name === "NotAllowedError"
+                ? "برای شروع، دکمه پخش داخل پلیر را بزنید."
+                : "پخش فایل صوتی ممکن نشد؛ فایل یا ارتباط با سرور صوت را بررسی کنید.";
+        });
+    } else {
+        audio.pause();
+    }
+}
+
 const SubmitReportForm = async () => {
     if (await mySer.CheckValidForm("#ReportFormId")) {
         let data = mySer.convertFormToJSON("#ReportFormId");
@@ -281,6 +359,7 @@ async function getAllReports(showLoading = true) {
         data: model,
         showLoading,
         onSuccess: async (res) => {
+            containerReport.querySelectorAll(".report-inline-audio audio").forEach(audio => audio.pause());
             containerReport.innerHTML = res.data.html;
             
             const select = document.getElementById("reportCountSelect");

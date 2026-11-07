@@ -1,0 +1,173 @@
+@using CRM.Core.Domain.Factors.Enum
+@inject IFileVersionProvider AllocationFileVersions
+@model CRM.EndPoint.FrontEnd.Models.Factor.FactorsViewModel
+@{
+    Layout = null;
+    var isReadOnly = ViewBag.PassType == 7;
+    var isAdminOrFinancial = !isReadOnly && (User.IsAdmin() || User.IsFinancial());
+    var canManageAllocations = isAdminOrFinancial;
+    var allocationScript = AllocationFileVersions.AddFileVersionToPath(Context.Request.PathBase, Url.Content("~/js/supplyFactor.js"));
+    var passType = ViewBag.PassType; // 0: PreFactor/Factor, 1: CustomerProfile, 4: Deal, 5: Supply, 6: Email, 7: Customer approved factors (read-only).
+}
+<div class="pf-accepted-list factor-card-list">
+@foreach (var item in Model.Factors.OrderByDescending(f => f.ModifyDate)) {
+    var isReturnFactor = item.ParentReturnedId != null;
+    <article class="pf-accepted-card @(isReturnFactor || item.Returned ? "factor-card--returned" : "")">
+        <div class="@(item.OfficialType == 1 ? "InfoDataHead_PrefactorRasmi" : "InfoDataHead_PrefactorNonRasmi")"><label style="writing-mode:vertical-lr">@(item.OfficialType == 1 ? "رسمی" : "غیررسمی")</label></div>
+        @if (item.Export == true) { <div class="InfoDataHead_PrefactorExport"><label style="writing-mode:vertical-lr">صادراتی</label></div> }
+        <div class="InfoDataItem_Prefactor pf-accepted-card__content factor-card__content">
+            <div class="pf-accepted-card__facts" aria-label="مشخصات فاکتور">
+                <div class="pf-accepted-card__fact"><span>سریال فاکتور</span><strong>@item.SerialNumber</strong></div>
+                <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><button type="button" class="pf-accepted-card__amount-link" onclick="showPrefac('@item.PfactorSerialNumber')">@item.PfactorSerialNumber</button></div>
+                <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@item.Date</strong></div>
+            </div>
+            <div class="pf-accepted-card__body">
+                <section class="pf-accepted-card__section pf-accepted-card__customer">
+                    <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
+                    <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</strong></div>
+                    <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</strong></div>
+                    <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.SelerFullName</strong></div>
+                    <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@item.UserCreator</strong></div>
+                </section>
+                <section class="pf-accepted-card__section pf-accepted-card__financial factor-card__financial">
+                    <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
+                    <div class="pf-accepted-card__row"><span>مبلغ</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:N0}")</bdi> <small>@(item.CurrencyTypeTxt ?? "ريال")</small></strong></div>
+                        @if (Model._Setting?.Sepidar == true) {
+                            <div class="factor-card__external">
+                                <label style="color:gray">فاکتور مالی :</label>
+
+                                @if (item.SnFinancial == null) {
+                                    if (item.status == FactorStatus.ابطال_شده) {
+                                        <label class="fbold">ابطال شده</label>
+                                    } else {
+                                        if (User.IsAdmin() || User.IsFinancial()) {
+                                            <button type="button" class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
+                                                انتخاب از سپیدار
+                                            </button>
+                                        } else {
+                                            <span>-</span>
+                                        }
+                                    }
+                                } else {
+                                    if (isAdminOrFinancial) {
+                                        <div class="buttonGroup">
+                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
+                                                <i style="font-size:10px" class="fa fa-pencil"></i>
+                                            </button>
+                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
+                                        </div>
+                                    } else {
+                                        @*  <label class="fbold">@item.SnFinancial</label> *@
+                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
+                                    }
+                                }
+
+                            </div>
+                        }
+
+
+                    <div class="factor-card__financial-actions">
+                    <div class="factor-card__status">
+                                @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
+                                    if (item.status == FactorStatus.در_دست_تایید) {
+                                        if (isAdminOrFinancial) {
+                                            <button type="button" class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @passType)">
+                                                تایید
+                                            </button>
+                                            <button type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
+                                                ابطال
+                                            </button>
+                                        } else {
+                                            <div class="fbold factor-card__state--pending">
+                                                در دست تایید
+                                            </div>
+                                        }
+                                    } else if (item.status == FactorStatus.تایید_شده) {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="fbold factor-card__state--accepted">
+                                                تایید شده
+                                            </div>
+                                            @if (isAdminOrFinancial) {
+                                                <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @passType)" data-title="بازگشت">
+                                                    <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
+                                                </div>
+                                            }
+                                        </div>
+                                    } else {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="fbold factor-card__state--danger">
+                                                ابطال شده
+                                            </div>
+                                            @if (isAdminOrFinancial) {
+                                                <div style="cursor:pointer;color:#333" onclick="acceptFactor('@item.Id', 1, @passType)" data-title="بازگشت">
+                                                    <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                } else if (isReturnFactor) {
+                                    var text = $"<a href='/factor/PreviewFactorPrint/{item.ParentReturnedId}' target='_blank'>نمایش فاکتور اصلی</a>";
+                                    <div class="fbold factor-card__state--danger">
+                                        <span>فاکتور برگشتی</span>
+                                        <span data-bs-toggle="popover" data-bs-html="true" data-bs-content="@Html.Raw(text)">
+                                        <svg style="width: 12px;color: #666" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
+                                    </span>
+                                    </div>
+                                } else if (item.Returned) {
+                                    <div class="fbold factor-card__state--danger">
+                                        برگشت خورده
+                                    </div>
+                                }
+
+                    </div>
+                        @if (canManageAllocations) {
+                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
+                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
+                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
+                            </button>
+                        }
+                    </div>
+                </section>
+            </div>
+            <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
+                    @if (isAdminOrFinancial) {
+                        if (User.IsAdmin()) {
+                            <button type="button" class="flex-center" aria-label="حذف" data-title-right="حذف" style="color:var(--DarkColor);" onclick="deleteFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                                <i class="fa fa-trash"></i>
+                            </span></button>
+                        }
+
+                        <button type="button" class="flex-center" aria-label="ویرایش" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="fa fa-pencil"></i>
+                        </span></button>
+                    }
+
+
+                    <button type="button" class="flex-center" aria-label="نمایش فاکتور" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <i class="fa fa-eye"></i>
+                    </span></button>
+
+                    @if (!isReadOnly && passType != 1 && !User.IsCustomer() && item.CustomerId != null)
+                    {
+                        <button type="button" class="flex-center" aria-label="پروفایل" data-title-right="پروفایل" style="color:var(--DarkColor);" onclick="openCustomerProfile('@item.CustomerId', '@item.PfactorSerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="fa fa-user"></i>
+                        </span></button>
+                    }
+
+                    @if ((isAdminOrFinancial) && !isReturnFactor) {
+                        <button type="button" class="flex-center" aria-label="فاکتور برگشتی" data-title-right="فاکتور برگشتی" style="color:darkred" onclick="returnFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="fa fa-arrow-right"></i>
+                            @* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" /><path d="M20 4v5h-5" /></svg> *@
+                        </span></button>
+                    }
+
+                    @if (!User.IsCustomer()) {
+                        <button type="button" class="flex-center" aria-label="تاریخچه" data-title-right="تاریخچه" style="color:var(--DarkColor)" onclick="showLogEntity('@nameof(Factor)', '@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <svg style="width: 18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></svg>
+                        </span></button>
+                    }
+            </div></div>
+        </div>
+    </article>
+}
+</div>

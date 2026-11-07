@@ -21,6 +21,7 @@ const ShowAllBtn = document.getElementById("btnShowAllId");
 
 
 document.addEventListener("DOMContentLoaded", () => {
+    enableMomentumScroll(document.getElementById("customerScrollRegion"));
     getAllCustomers();
     
     initSearchInput(SearchInp, (e, input) => {
@@ -49,10 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 const getCountOfCustomerPartialTop = () => {
-    if (window.innerWidth < 1200) return 2;
-    if (window.innerWidth >= 1200 && window.innerWidth < 1500) return 3;
-    if (window.innerWidth >= 1500 && window.innerWidth < 1830) return 4;
-    return 5;
+    const grid = document.getElementById("CustomerPartial");
+    const tracks = grid ? getComputedStyle(grid).gridTemplateColumns : "none";
+    if (tracks && tracks !== "none") return tracks.split(" ").filter(Boolean).length;
+    return window.innerWidth >= 1600 ? 4 : window.innerWidth >= 1200 ? 3 : window.innerWidth >= 768 ? 2 : 1;
 };
 
 
@@ -171,8 +172,7 @@ const showFormCustomer = () => {
     document.getElementById("btnNew").style.display = "none";
     document.getElementById("CuParId").style.display = "none";
     document.getElementById("formAddCustom").style.display = "";
-    document.getElementById("searchCustomerWrapper").style.display = "none";
-    document.getElementById("roleTypeRadios").style.display = "none";
+    document.getElementById("customerToolbar").hidden = true;
     gotoStep(1);
 };
 
@@ -180,8 +180,7 @@ const showFormCustomer = () => {
 const hideFormCustomer = () => {
     document.getElementById("btnNew").style.display = "";
     document.getElementById("CuParId").style.display = "flex";
-    document.getElementById("searchCustomerWrapper").style.display = "block";
-    document.getElementById("roleTypeRadios").style.display = "block";
+    document.getElementById("customerToolbar").hidden = false;
     document.getElementById("btnCancel").style.display = "none";
     document.getElementById("formAddCustom").style.display = "none";
     document.getElementById("btnIn").innerText = "تایید و بعدی";

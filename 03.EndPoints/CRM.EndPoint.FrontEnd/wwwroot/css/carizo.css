@@ -604,3 +604,40 @@ p[contenteditable]:empty:before {
     order: 1;
   }
 }*/
+/* Activity board theme, scoped to preserve dashboard and document widgets. */
+#carizoWorkspace { --dashboard-secondary:#5811B4; --dashboard-secondary-light:#F3EDFC; --dashboard-task-border:#DDE1E8; color:#212529; }
+#carizoWorkspace .filter-switch { background:#fff; border:1px solid #DDE1E8; border-radius:7px; }
+#carizoWorkspace .filter-switch label { font:500 12px/1.6 IRANSansMedium; border-radius:5px; color:#545961; }
+#carizoWorkspace .filter-switch .filter-switch-item input:checked + label { background:#E7F3F0; color:#004944; box-shadow:none; }
+#mainWrapper:has(#carizoWorkspace) { height:100dvh; min-height:0; }
+#mainContent:has(#carizoWorkspace) { height:auto; min-height:0; display:flex; flex-direction:column; padding-block-end:12px; }
+#carizoWorkspace { flex:1; min-height:0; }
+#carizoWorkspace > :first-child, #carizoWorkspace #tasksTabs { flex-shrink:0; }
+#carizoWorkspace #allCarizoContainer { gap:12px; min-width:0; min-height:0; flex:1; }
+#carizoWorkspace #allCarizoContainer > div { min-width:0; min-height:0; height:100%; }
+#carizoWorkspace #allCarizoContainer > div > .h-100 { min-height:0; }
+#carizoWorkspace .tasks-container { min-width:0; min-height:0; height:auto; flex:1; overflow:hidden; padding:5px; border:1px solid #DDE1E8; border-radius:9px; background:#fff; }
+#carizoWorkspace .tasks-container > :not(.carizo-task-scroll) { flex-shrink:0; }
+#carizoWorkspace .carizo-task-scroll { flex:1; min-height:0; overflow:auto; width:100%; }
+#carizoWorkspace [data-task-id] { box-shadow:0 2px 5px rgb(33 37 41 / 5%) !important; border-radius:8px !important; min-width:0; }
+#carizoWorkspace .carizo-title { font-family:IRANSansMedium !important; font-weight:500; line-height:1.6; overflow-wrap:anywhere; }
+#carizoWorkspace [data-task-id] > div:first-child { flex-wrap:wrap; }
+#carizoWorkspace [data-task-id] p { line-height:1.8; font-size:13px; }
+#carizoWorkspace .tasks-container .buttonGreen2 { background:#00665C; color:#fff; border-radius:5px; box-shadow:none; font-size:12px; }
+#carizoWorkspace .tasks-container .buttonCancel3 { background:#C2185B; color:#fff; box-shadow:none; }
+#carizoWorkspace .taskForm-container, #carizoWorkspace .addTaskPlus { background:#F0F1F7; color:#004944; border-radius:7px; }
+#carizoWorkspace .taskForm-container { border:1px solid #DDE1E8; }
+#carizoWorkspace #finishedTaskId [data-task-id] { background:#F0F1F7 !important; border-color:#DDE1E8 !important; border-right-color:#838E98 !important; }
+#carizoWorkspace #tasksTabs { gap:4px; border:none; padding:4px; background:#fff; border-radius:8px; margin-bottom:8px; }
+#carizoWorkspace #tasksTabs .nav-link { border:0; border-radius:6px; color:#004944 !important; font:500 13px/1.6 IRANSansMedium; }
+#carizoWorkspace #tasksTabs .nav-link.active { background:#004944; color:#fff !important; }
+#carizoWorkspace :is(.tasks-container, .carizo-task-scroll) { scrollbar-color:#5811B4 transparent; }
+#carizoWorkspace #finishedTaskTab-pane .carizo-task-scroll { scrollbar-color:#838E98 transparent; }
+#carizoWorkspace :is(button, a, input):not(#taskTitle-input):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+#carizoWorkspace #taskTitle-input:focus { outline:none; border:none; box-shadow:none; }
+#carizoWorkspace [contenteditable]:focus { border-color:#5811B4; background:#fff; color:#212529; }
+@media (max-width:767px) {
+    #carizoWorkspace #tasksTabs .nav-item { flex:1; min-width:0; }
+    #carizoWorkspace #tasksTabs .nav-link { width:100%; padding:6px; font-size:12px; }
+    #carizoWorkspace [data-task-id] { padding-inline:10px !important; }
+}

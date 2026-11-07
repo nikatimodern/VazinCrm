@@ -6,7 +6,7 @@
         : Url.Content(currentUser.PersonImageUrl);
 }
 
-<header id="mainHeader">
+<header id="mainHeader" class="crm-main-header">
     <div class="header-container">
         <button id="expandMenuIcon" onclick="toggleMenu()">
             <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
@@ -63,7 +63,7 @@
 
             <div class="me-2 position-relative">
                 <span id="CountChatId" class="badge-count badge-top-right d-none"></span>
-                <a class="buttonGreen2" asp-controller="Chat" asp-action="Main">پیام رسان</a>
+                <a class="header-chat-link" asp-controller="Chat" asp-action="Main">پیام‌رسان</a>
             </div>
         </div>
     </div>

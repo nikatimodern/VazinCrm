@@ -13,6 +13,19 @@ description: Reuse and maintain the existing shared JavaScript utilities in ever
 4. Create a new shared utility only when no suitable one exists; keep feature-specific code in its feature.
 5. Avoid duplicate functions, unnecessary wrappers, and alternate implementations without a technical reason.
 
+## Scroll Interaction Standard
+
+Use the existing shared inertia behavior by default for scrollable regions in new
+or touched CRM UI: pages, lists, cards, tables, tabs and modal bodies. Use
+`enableMomentumScroll(element)` for a stable region or
+`enableMomentumScrollScope(root)` for tabs/AJAX content whose scroll containers
+can appear or be replaced later. Read the [contract](references/site-core.md#local-wheel-inertia)
+for tuning, cleanup and native-input exceptions. Do not copy the animation into
+individual modules, add packages, or activate it across unrelated existing pages
+without a requested rollout. Preserve reduced motion, native touch/trackpad and
+horizontal gestures, editable controls, nested scrolling and boundary chaining.
+Verify initialization is not duplicated and cleanup runs on page/component disposal.
+
 ## Vanilla JavaScript
 
 Write new and changed utility logic in vanilla JavaScript and native DOM APIs; do not add jQuery code or dependencies. Reuse compatible public helpers without copying their legacy internals into feature code. Inspect existing callers before converting a shared helper, preserving its public contract and lifecycle behavior. Follow [the frontend vanilla JavaScript requirement](../crm-frontend/SKILL.md#vanilla-javascript-requirement) for existing jQuery-dependent plugins and migration scope.

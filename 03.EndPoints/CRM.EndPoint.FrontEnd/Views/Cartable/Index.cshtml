@@ -8,14 +8,14 @@
 }
 
 
-<div>
+<div id="cartableWorkspace">
     <div id="CartableTabs" class="d-flex justify-content-center flex-wrap-reverse">
         <div class="TCar" id="TPrefactorFactorId" onclick="GetCartable('TPrefactorFactorId')">
             <p>پیش فاکتور و فاکتور</p>
         </div>
         @if (canAccessFinancialExpert) {
             <div class="TCar" id="TFinancialExpertId" onclick="GetCartable('TFinancialExpertId')">
-                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                <span class="badge-count cartable-tab-count d-none"></span>
                 <p>کارشناس مالی</p>
             </div>
         }
@@ -26,25 +26,25 @@
         }
         @if (canAccessSalesExpert) {
             <div class="TCar" id="TSalesExpertId" onclick="GetCartable('TSalesExpertId')">
-                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                <span class="badge-count cartable-tab-count d-none"></span>
                 <p>کارشناس فروش</p>
             </div>
         }
         @if (canAccessSalesAdmin) {
             <div class="TCar" id="TSalesAdminId" onclick="GetCartable('TSalesAdminId')">
-                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                <span class="badge-count cartable-tab-count d-none"></span>
                 <p>مدیر فروش</p>
             </div>
         }
         @if (canAccessTaminExpert) {
             <div class="TCar" id="TTaminExpertId" onclick="GetCartable('TTaminExpertId')">
-                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                <span class="badge-count cartable-tab-count d-none"></span>
                 <p>کارشناس تامین</p>
             </div>
         }
         @if (canAccessManagingDirector) {
             <div class="TCar" id="TManagingDirectorId" onclick="GetCartable('TManagingDirectorId')">
-                <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                <span class="badge-count cartable-tab-count d-none"></span>
                 <p>مدیر عامل</p>
             </div>
         }

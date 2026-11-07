@@ -4,25 +4,25 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link position-relative" onclick="GetInvoicesFinancialExpert()" id="FinancialInvoiceTab" data-bs-target="#FinancialInvoiceTab-pane" type="button" role="tab">
                     صورتحساب ها
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link active position-relative" onclick="GetPreFactorFinancialExpert()" id="FinancialPrefactorTab" data-bs-target="#FinancialPrefactorTab-pane" type="button" role="tab">
                     پیش‌فاکتور ها
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link position-relative" onclick="GetRequestFinancialExpert()" id="FinancialRequestTab" data-bs-target="#FinancialRequestTab-pane" type="button" role="tab">
                     درخواست ها
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link position-relative" onclick="GetDealFinancialExpert()" id="FinancialDealTab" data-bs-target="#FinancialDealTab-pane" type="button" role="tab">
                     سفارشات
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10;color: #fff"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
         </ul>
@@ -32,7 +32,7 @@
                 <div class="w-100">
                     <div class="px-2 w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        <div class="cartable-column-count">
                             تعداد: <span id="FinancialExpertInvoiceCount"></span>
                         </div>
 
@@ -93,14 +93,14 @@
             <div class="tab-pane fade show active border-0" id="FinancialPrefactorTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                 <div class="d-flex flex-column align-items-center w-100 gap-3">
-                    <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center align-items-md-center">
+                    <div class="cartable-list-toolbar">
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        <div class="cartable-column-count">
                             تعداد: <span id="FinancialExpertCount"></span>
                         </div>
 
-                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
-                            <input class="form-control" type="text" id="FinancialExpertSearchId" placeholder="جستجو..." />
+                        <div class="search-group cartable-list-toolbar__search">
+                            <input class="form-control" type="text" id="FinancialExpertSearchId" aria-label="جستجوی پیش‌فاکتورهای مالی" placeholder="جستجو در پیش‌فاکتورها…" />
                             <div class="search-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                             </div>
@@ -147,15 +147,15 @@
             <div class="tab-pane fade border-0" id="FinancialRequestTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                 <div class="w-100">
-                    <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center">
+                    <div class="cartable-list-toolbar">
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        <div class="cartable-column-count">
                             تعداد: <span id="FinancialRequestCount"></span>
                         </div>
 
 
-                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
-                            <input class="form-control" type="text" id="FinancialRequestSearchId" placeholder="جستجو..." />
+                        <div class="search-group cartable-list-toolbar__search">
+                            <input class="form-control" type="text" id="FinancialRequestSearchId" aria-label="جستجوی درخواست‌های مالی" placeholder="جستجو در درخواست‌ها…" />
                             <div class="search-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                             </div>
@@ -190,12 +190,13 @@
                                 </li>
                             </ul>
                         </div>
-                    </div>
-
-                    <button id="requestSelectionModeBtn" class="buttonGreen2 d-flex align-items-center gap-2 mt-2 mb-1" style="padding: 4px 8px !important">
+                    <button id="requestSelectionModeBtn" type="button" class="financial-request-batch">
                         <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z" /></svg>
                         <span style="line-height: 1">پرداخت گروهی</span>
                     </button>
+                    </div>
+
+
 
                     <div id="requestSelectionBar" class="selection-bar d-none mt-2">
                         <div class="d-none d-lg-flex align-items-center gap-3">

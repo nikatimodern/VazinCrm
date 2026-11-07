@@ -919,11 +919,11 @@
 		max-height: calc(100dvh - 293px) !important;
 	}
 	
-	#FinancialRequestContentId {
+	:is(#FinancialRequestContentId, #MDRequestAmountContentId) {
 		max-height: calc(100dvh - 347px) !important;
 	}
 	
-	#FinancialRequestContentId.selection-mode {
+	:is(#FinancialRequestContentId, #MDRequestAmountContentId).selection-mode {
 		max-height: calc(100dvh - 396px) !important;
 	}
 	
@@ -1017,3 +1017,226 @@
 
 
 
+
+/* Cartable shell and invoice cards share the approved prefactor visual system. */
+#cartableWorkspace { --cartable-primary:#004944; --cartable-secondary:#5811B4; --cartable-border:#DDE1E8; }
+#cartableWorkspace #CartableTabs { gap:5px; padding-bottom:10px; }
+#cartableWorkspace .TCar { width:auto; min-width:130px; height:34px; padding:5px 14px; border:1px solid var(--cartable-border); border-radius:7px; background:#fff; color:var(--cartable-primary) !important; font-size:13px; }
+#cartableWorkspace .TCar:is(:hover,.TCarActive) { background:var(--cartable-primary); border-color:var(--cartable-primary); color:#fff !important; }
+#cartableWorkspace .CartableContent { border:1px solid var(--cartable-border); border-radius:12px; background:#fff; padding:4px; }
+#cartableWorkspace .cartable-column-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 4px 10px; color:var(--cartable-primary); }
+#cartableWorkspace .cartable-column-heading h2 { margin:0; font:700 16px/1.5 IRANSansBold; }
+#cartableWorkspace .cartable-column-count { border-radius:6px; padding:3px 8px; background:#F3EDFC; color:var(--cartable-secondary); font:500 12px/1.5 IRANSansMedium; }
+#cartableWorkspace .parent-all-factors .InfoData { border:1px solid var(--cartable-border); border-radius:9px; padding:8px; }
+#cartableWorkspace .search-group { min-width:0; }
+#cartableWorkspace .search-group input { min-height:34px; border:1px solid var(--cartable-border); border-radius:7px; background:#fff; font:400 12px/1.6 IRANSans; text-align:start; padding-inline:10px 36px !important; }
+#cartableWorkspace .search-group input:focus { border-color:var(--cartable-secondary); box-shadow:0 0 0 3px rgb(88 17 180 / 8%); }
+#cartableWorkspace .search-icon { width:29px; inset-inline-end:3px; inset-inline-start:auto; top:3px; bottom:3px; border:none; border-radius:5px; background:#F3EDFC; color:var(--cartable-secondary); }
+#cartableWorkspace .search-icon:hover { background:var(--cartable-secondary) !important; color:#fff !important; }
+#cartableWorkspace .search-icon svg { width:17px; }
+#cartableWorkspace .filter-switch { border-radius:7px; background:#F0F1F7; }
+#cartableWorkspace .filter-switch label { font:500 12px/1.5 IRANSansMedium; border-radius:5px; color:#545961; }
+#cartableWorkspace .filter-switch .filter-switch-item input:checked + label { background:#E7F3F0; color:var(--cartable-primary); box-shadow:none; }
+#cartableWorkspace .nav-tabs { gap:4px; border:none; padding:4px; background:#F0F1F7; border-radius:8px; }
+#cartableWorkspace .nav-tabs .nav-link { border:none; border-radius:6px; font:500 13px/1.5 IRANSansMedium; color:var(--cartable-primary) !important; }
+#cartableWorkspace .nav-tabs .nav-link.active { color:#fff !important; background:var(--cartable-primary); }
+.pf-accepted-card__content.InfoDataItem_Prefactor.factor-card__content { grid-template-areas:"facts" "body" "actions"; }
+.factor-card__financial > div:not(.pf-accepted-card__row) { font-size:12px; gap:6px; }
+.factor-card__financial label { color:#545961 !important; font-size:11px; }
+.factor-card__financial button:is(.buttonBlue,.buttonBlue2) { background:var(--pf-card-background); color:var(--pf-operation-accent); border:1px solid var(--pf-border); border-radius:5px; font-size:11px; }
+.factor-card__external {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-block: 5px;
+}
+.factor-card__financial-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-top: 7px;
+	margin-top: 4px;
+	border-top: 1px solid var(--pf-border);
+}
+.factor-card__status { display:flex; align-items:center; gap:6px; min-width:0; }
+.factor-card__status:not(:has(> *)) { display:none; }
+.factor-card__financial-actions button,
+.factor-card__external button:is(.buttonBlue, .buttonBlue2) {
+	min-height: 28px;
+	margin: 0;
+	padding: 4px 8px;
+	border-radius: 5px;
+	box-shadow: none;
+	white-space: nowrap;
+	font: 500 11px/1.5 IRANSansMedium;
+}
+.factor-card__financial-actions .sf-sales-manage-allocations {
+	background: var(--pf-card-background);
+	border-color: var(--pf-border);
+	color: var(--pf-operation-accent);
+}
+.factor-card__status .buttonCancel3 { background:#C2185B; color:#fff; }
+.factor-card__status .buttonGray { background:var(--pf-operation-accent); color:#fff; }
+.factor-card__state--accepted { color:var(--pf-operation-accent); }
+.factor-card__state--danger { color:#C2185B; }
+.factor-card__state--pending { color:var(--pf-secondary); }
+.pf-accepted-list > .pf-accepted-card.factor-card--returned { --pf-card-background:#FCE8F0; --pf-card-accent:#C2185B; --pf-operation-accent:#C2185B; }
+@container accepted-prefactor (min-width:992px) { .pf-accepted-card__content.InfoDataItem_Prefactor.factor-card__content { grid-template-areas:"facts actions" "body actions"; } }
+@media (max-width:575px) {
+    #cartableWorkspace .TCar { min-width:0; flex:1 1 calc(33.333% - 5px); height:auto; min-height:34px; padding-inline:5px; font-size:12px; }
+    #cartableWorkspace .parent-all-factors .InfoData { padding:5px; }
+}
+
+#cartableWorkspace #allTabFactors .nav-item { flex:1; width:auto; }
+#cartableWorkspace #CartableTabs .TCar {
+	gap: 7px;
+	flex-direction: row-reverse;
+}
+#cartableWorkspace .TCar > .cartable-tab-count {
+	position: static;
+	min-width: 24px;
+	height: 22px;
+	padding: 2px 6px;
+	flex-shrink: 0;
+	border: 1px solid rgb(88 17 180 / 12%);
+	border-radius: 6px;
+	background: #F3EDFC;
+	color: #5811B4;
+	font: 500 11px/1.5 IRANSansMedium;
+}
+#cartableWorkspace .TCar:is(:hover, .TCarActive) > .cartable-tab-count {
+	border-color: rgb(255 255 255 / 20%);
+	background: rgb(255 255 255 / 16%);
+	color: #fff;
+}
+#cartableWorkspace .cartable-list-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	width: 100%;
+	padding-bottom: 6px;
+}
+#cartableWorkspace .cartable-list-toolbar__search {
+	flex: 1 1 150px;
+	width: auto;
+	max-width: 260px;
+}
+#cartableWorkspace .cartable-list-toolbar .filter-switch {
+	flex: 0 0 auto;
+	margin: 0;
+}
+#cartableWorkspace .cartable-list-toolbar .filter-switch label {
+	padding-inline: 7px;
+}
+#cartableWorkspace .cartable-list-toolbar__actions {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: 6px;
+	margin-inline-start: auto;
+}
+#cartableWorkspace .cartable-filter-chips {
+	display: flex;
+	flex-wrap: wrap;
+	width: 100%;
+	min-width: 0;
+}
+#cartableWorkspace .cartable-filter-chips .ContentFilter {
+	width: 100%;
+}
+
+#cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) { display:flex; flex-wrap:wrap; gap:5px; border:none; padding:4px 0 10px; }
+#cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .nav-link { display:flex; align-items:center; gap:7px; min-height:34px; padding:5px 12px; border:1px solid #DDE1E8; border-radius:7px; background:#F0F1F7; color:#004944; font:500 13px/1.5 IRANSansMedium; }
+#cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .nav-link.active { background:#004944; color:#fff; border-color:#004944; }
+#cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .cartable-tab-count { position:static; min-width:24px; height:22px; padding:2px 6px; border-radius:6px; background:#F3EDFC; color:#5811B4; font:500 11px/1.5 IRANSansMedium; }
+#cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .active .cartable-tab-count { background:rgb(255 255 255 / 16%); color:#fff; }
+#cartableWorkspace :is(#tabContentFinancialExperts, #tabContentManagingDirector, #tabContentTaminExperts) { border-top:1px solid #DDE1E8; }
+.pf-accepted-card__content.InfoDataItem_Prefactor.pf-finance-card { grid-template-areas:"facts" "body" "actions" "description"; }
+.pf-finance-card__controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:7px; border-top:1px solid var(--pf-border); }
+.pf-finance-card__controls > button { display:inline-flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; min-height:28px; padding:4px 9px; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
+.pf-finance-card__controls > .pf-finance-card__button { background:var(--pf-operation-accent); color:#fff; }
+.pf-finance-card__invoice > span { display:inline-flex; align-items:center; justify-content:center; min-width:20px; min-height:20px; padding-inline:4px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:11px; }
+.pf-finance-card__invoice > .pf-finance-card__md-count { background:#F3EDFC; color:#5811B4; }
+@container accepted-prefactor (min-width:992px) { .pf-accepted-card__content.InfoDataItem_Prefactor.pf-finance-card { grid-template-areas:"facts actions" "body actions" "description description"; } }
+
+/* Financial requests: scoped presentation; shared request workflows remain unchanged. */
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) { container:financial-request-list / inline-size; }
+#FinancialRequestTab-pane .financial-request-batch { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:32px; padding:5px 10px; border:1px solid #5811B4; border-radius:6px; background:#5811B4; color:#fff; font:500 12px/1.5 IRANSansMedium; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card { display:grid; grid-template-columns:minmax(0,1fr); gap:7px; padding:8px; border:1px solid #004944; border-radius:10px; background:#E7F3F0; box-shadow:0 2px 5px rgb(33 37 41 / 4%); font:400 12px/1.7 IRANSans; --layer-bg-1:#fff; --layer-bg-2:#fff; --layer-bg-3:#fff; --layer-bg-4:#fff; --layer-bg-5:#fff; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card:is(.layered-purple-light,.layered-purple) { border-color:#5811B4; background:#F3EDFC; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card > .layered-card__layer { width:auto; min-width:0; border:1px solid #DDE1E8; border-radius:7px; padding:9px !important; overflow-wrap:anywhere; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-select-box { grid-column:1 / -1; padding:2px 5px !important; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__details > div { width:100%; justify-content:space-between !important; text-align:start !important; gap:4px 8px; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__metadata > div { gap:8px; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__actions { flex-direction:row !important; flex-wrap:wrap; gap:7px !important; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__actions > div { flex-direction:row !important; flex-wrap:wrap; gap:6px !important; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__actions button { min-height:28px; border-radius:5px; box-shadow:none; font:500 12px/1.5 IRANSansMedium; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .buttonGreen2, #FinancialRequestTab-pane .selection-action-btn { background:#00665C; color:#fff; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .buttonCancel3 { background:#C2185B; color:#fff; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .badge { border-radius:6px; box-shadow:none; max-width:100%; flex-wrap:wrap; gap:3px; line-height:1.6; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .badge-outline-green { border-color:#00665C; color:#004944; background:#E7F3F0; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .badge-outline-purple { border-color:#5811B4; color:#5811B4; background:#F3EDFC; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .badge-outline-red { border-color:#C2185B; color:#C2185B; background:#FCE8F0; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId) .badge-green { background:#00665C; color:#fff; }
+#FinancialRequestTab-pane .selection-bar { background:#E7F3F0; border-color:#DDE1E8; border-radius:8px; }
+:is(#FinancialRequestContentId, #MDRequestAmountContentId).selection-mode .layered-card.selected { outline:2px solid #5811B4; outline-offset:-2px; }
+@container financial-request-list (min-width:768px) {
+    :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card { grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr); }
+    :is(#FinancialRequestContentId, #MDRequestAmountContentId) .request-card__actions { grid-column:1 / -1; justify-content:flex-end; }
+}
+@media (max-width:991px) { :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card { border-radius:10px !important; } }
+
+/* Financial order DataTable, including its cloned scroll header. */
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) { color:#212529; font:400 13px/1.7 IRANSans; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-container { --bs-border-color:#DDE1E8; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) table { --bs-table-bg:#fff; --bs-table-color:#212529; --bs-table-striped-bg:color-mix(in srgb,#F0F1F7 55%,#fff); --bs-table-striped-color:#212529; --bs-table-hover-bg:#E7F3F0; --bs-table-hover-color:#212529; border-color:#DDE1E8; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) thead th { background:#E7F3F0; color:#004944; border-color:#DDE1E8; font:700 13px/1.6 IRANSansBold; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) tbody td { border-color:#DDE1E8; font-size:13px; line-height:1.7; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-scroll { border:1px solid #DDE1E8; border-radius:8px; overflow:hidden; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-scroll-body { border-bottom:1px solid #DDE1E8; scrollbar-color:#00665C transparent; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-search { gap:6px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-search input { min-height:34px; max-width:100%; padding:6px 10px; border:1px solid #DDE1E8; border-radius:7px; color:#212529; background:#fff; font-size:12px; text-align:start; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(.dt-search input,.dt-length select):focus { border-color:#5811B4; box-shadow:0 0 0 3px rgb(88 17 180 / 9%); outline:none; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-length select { min-height:32px; border-color:#DDE1E8; border-radius:6px; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-info, :is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-length { color:#545961; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:36px; min-height:28px; padding:3px 6px; border:1px solid transparent; border-radius:6px; background:#E7F3F0; color:#004944; cursor:pointer; font:500 12px/1.5 IRANSansMedium; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action:hover { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action svg { width:17px; height:17px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(.financial-deal-approve,.financial-deal-reopen) { min-height:28px; padding:4px 9px; border:1px solid transparent; border-radius:5px; box-shadow:none; font:500 12px/1.5 IRANSansMedium; white-space:nowrap; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-approve { background:#00665C; color:#fff; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-approve:hover { background:#004944; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-reopen { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--open { color:#5811B4; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--failed { color:#C2185B; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--success { color:#00665C; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) tr.tableRow-bgGreen > :is(td, th) { background-color:#E7F3F0 !important; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-link { min-width:30px; min-height:30px; padding:4px 9px; border-color:#DDE1E8; color:#004944; background:#fff; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-item.active .page-link { background:#5811B4; border-color:#5811B4; color:#fff; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-link:focus-visible { box-shadow:0 0 0 3px rgb(88 17 180 / 12%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-item.disabled .page-link { color:#838E98; background:#F0F1F7; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(button,a):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+
+.pf-finance-card__controls > .pf-finance-card__reject { background:#FCE8F0; border-color:#C2185B; color:#C2185B; }
+
+/* Supply workflow and remaining cartable tables. */
+.supply-card__steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.supply-card__steps .completedTrack { display:flex; align-items:center; justify-content:center; font-size:14px; }
+.supply-card__warning { padding:4px 7px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:12px; }
+.supply-card__controls button { width:auto; min-height:28px; padding:4px 8px !important; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
+.supply-card__controls .btn-secondary, .supply-card__controls .buttonGreen { background:var(--pf-operation-accent); color:#fff; }
+.supply-card__controls .btn-outline-danger { border-color:#C2185B; background:#FCE8F0; color:#C2185B; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGreen2 { background:#00665C; color:#fff; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) :is(.buttonCancel3,.buttonCancel2) { background:#C2185B; color:#fff; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGray { background:#F3EDFC; color:#5811B4; border:1px solid #DDE1E8; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) button { font-size:12px; }
+#cartableWorkspace :is(#CTaminExpertId,#CManagingDirectorId) { min-width:0; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .dt-empty { padding:24px 10px !important; color:#545961; font-size:13px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .dt-layout-row { flex-wrap:wrap; gap:8px; }
+#cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group { flex-wrap:nowrap; min-width:0; }
+#cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group input { min-width:0; font-size:13px; border-color:#A3B8B3; }
+#cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .acceptedAmountPercent { flex:0 0 auto; width:66px; font-size:12px; }

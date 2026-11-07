@@ -16,6 +16,9 @@
     @Html.AntiForgeryToken()
 }
 
+@if (passType == 0) {
+    <partial name="~/Views/Factor/_FactorCards.cshtml" model="Model" />
+} else {
 <div class="d-flex flex-column w-100" style="gap: 5px">
     @foreach (var item in Model.Factors.OrderByDescending(f => f.ModifyDate)) {
         var isReturnFactor = item.ParentReturnedId != null;
@@ -237,3 +240,5 @@
         </div>
     }
 </div>
+
+}

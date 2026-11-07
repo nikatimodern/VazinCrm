@@ -47,6 +47,37 @@ const menu = Dropdown.setupDelegate({
 
 ## Forms, dates, numbers, DOM
 
+### Local wheel inertia
+
+`enableMomentumScroll(element, { signal } = {})` opts one `HTMLElement` into
+wheel inertia and returns an idempotent cleanup function. Repeated attachment
+returns the existing cleanup. It defaults to the current `PageRuntime` abort
+signal when present; cleanup also runs on `pagehide`. Pass a lifecycle signal
+for another host, or call the returned cleanup when disposing its component.
+
+The shared tuning matches the approved order preview: 240ms exponential decay,
+1.4 wheel-distance multiplier, 220px per-event cap and 420px queued-distance cap.
+Pointer/keyboard/drag input, blur, visibility changes and reduced-motion changes
+stop pending movement. Reduced motion, small pixel deltas (trackpad heuristic),
+zoom/horizontal gestures, nested scroll regions and outer boundaries retain
+native behavior. Editable controls and touch scrolling are untouched. Used by
+deal columns and the customer directory's local scroll region.
+
+`enableMomentumScrollScope(root, { signal } = {})` installs one non-passive capture
+listener on a page/component root. On wheel input it attaches the same helper to
+the closest actual vertical scroll region (`overflow-y: auto/scroll/overlay`),
+before the event reaches that region. This covers the first wheel event and
+future AJAX/DataTables/tab containers without repeatedly scanning descendants.
+Keep the scope listener non-passive from initialization: otherwise the browser
+can start a native wheel transaction before a region's listener is attached,
+leaving the initial events non-cancelable and delaying inertia activation.
+It returns an idempotent cleanup, deduplicates per root, prunes replaced regions
+on later wheel input and releases its attachments on lifecycle abort/pagehide.
+Cartable uses this scope for every tab under `#cartableWorkspace`. Content outside
+the chosen scope is unaffected; there is no automatic global activation. Prefer
+one scope per region instead of overlapping scopes or mixing direct/scoped owners
+for the same scroll element.
+
 | API | Inputs / output | Use |
 | --- | --- | --- |
 | `MyService` | Instance methods `emptyForm(formId,defaultVals=[],blacklist=[])`, `convertJsonToForm(js,formId,blackListArray=[],flashFilled=false)`, `convertFormToJSON(formId,blackListArray=[],elm=null,selector=null)`, `getJsonFromDiv(divEl,blackListArray=[])`, `CheckValidForm(formId)` async, `RemoveAlertForm(formId)`. | Form reset, hydration, serialization, validation. Check method result in source for the exact workflow. |

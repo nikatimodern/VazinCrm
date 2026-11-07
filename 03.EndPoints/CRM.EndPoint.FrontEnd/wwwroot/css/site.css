@@ -2579,6 +2579,108 @@ html.sidebar-collapsed #mainWrapper {
 	color: var(--color8);
 }
 
+/* Main application header; customer/embedded headers keep their own layout. */
+#mainHeader.crm-main-header {
+	--header-primary: #004944;
+	--header-secondary: #5811B4;
+	--header-border: #DDE1E8;
+	border-bottom-color: var(--header-border);
+	box-shadow: 0 1px 4px rgb(33 37 41 / 3%);
+}
+.crm-main-header .header-profile {
+	gap: 7px;
+	padding: 3px 7px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	color: var(--header-primary);
+}
+.crm-main-header .header-profile:hover {
+	border-color: var(--header-border);
+	background: #E7F3F0;
+}
+.crm-main-header .header-profile .profile-image {
+	width: 36px;
+	height: 36px;
+	object-fit: cover;
+	border: 1px solid var(--header-border);
+	border-radius: 50%;
+}
+.crm-main-header .header-profile .profile-name {
+	font: 500 13px/1.6 IRANSansMedium, Tahoma, sans-serif;
+}
+.crm-main-header .header-datetime {
+	gap: 5px;
+	color: #545961;
+	font: 500 13px/1.6 IRANSansMedium, Tahoma, sans-serif;
+}
+.crm-main-header .header-datetime p { margin: 0; }
+.crm-main-header .header-content > .header-icon-btn {
+	width: 32px;
+	height: 32px;
+	flex-shrink: 0;
+	border: 1px solid transparent;
+	border-radius: 7px;
+	background: #E7F3F0;
+	color: var(--header-primary);
+	text-decoration: none;
+}
+.crm-main-header .header-content > .header-icon-btn:hover {
+	border-color: rgb(88 17 180 / 15%);
+	background: #F3EDFC;
+	color: var(--header-secondary);
+}
+.crm-main-header .header-content > .header-icon-btn > svg,
+.crm-main-header #notification-icon > svg {
+	width: 20px !important;
+	height: 20px !important;
+}
+.crm-main-header .header-chat-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 32px;
+	padding: 5px 11px;
+	border: 1px solid var(--header-secondary);
+	border-radius: 7px;
+	background: var(--header-secondary);
+	color: #fff;
+	text-decoration: none;
+	white-space: nowrap;
+	font: 500 12px/1.5 IRANSansMedium, Tahoma, sans-serif;
+}
+.crm-main-header .header-chat-link:hover {
+	background: color-mix(in srgb, var(--header-secondary) 85%, #212529);
+}
+.crm-main-header .header-content .badge-count {
+	min-width: 18px;
+	height: 18px;
+	padding: 2px 4px;
+	border: 2px solid #fff;
+	border-radius: 6px;
+	background: var(--header-secondary);
+	color: #fff;
+	font: 500 10px/1 IRANSansMedium, Tahoma, sans-serif;
+}
+.crm-main-header .header-content .notification-icon-badge { background: #C2185B; }
+.crm-main-header :is(a, button):focus-visible {
+	outline: 2px solid var(--header-secondary);
+	outline-offset: 2px;
+}
+@media (max-width: 767px) {
+	.crm-main-header .header-profile { padding: 0; gap: 0; }
+	.crm-main-header .header-profile .profile-name {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+	.crm-main-header .header-content { gap: 3px; }
+	.crm-main-header .header-content > .header-icon-btn { width: 28px; height: 28px; }
+	.crm-main-header .header-content > .me-2 { margin-inline: 0 !important; }
+	.crm-main-header .header-chat-link { padding-inline: 8px; font-size: 11px; }
+}
+
 
 /* ================================
    Profile Modal
@@ -8509,3 +8611,43 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 		padding: 5px;
 	}
 }
+
+/* Shared filter dialog: all callers retain their existing field IDs and callbacks. */
+#FilterModal { --bs-modal-width:560px; --filter-primary:#004944; --filter-action:#00665C; --filter-border:#A3B8B3; --filter-secondary:#5811B4; }
+#FilterModal .modal-content { max-height:calc(100dvh - 24px); border:1px solid var(--filter-border); border-radius:12px; background:#fff; box-shadow:0 12px 36px rgb(33 37 41 / 18%); }
+#FilterModal .filter-modal-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--filter-border); border-radius:12px 12px 0 0; background:#E7F3F0; color:var(--filter-primary); }
+#FilterModal .filter-modal-heading { display:flex; align-items:center; gap:8px; }
+#FilterModal .filter-modal-heading h2 { margin:0; font:700 18px/1.5 IRANSansBold; }
+#FilterModal .filter-modal-close { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:6px; color:var(--filter-primary); }
+#FilterModal .filter-modal-close:hover { background:#fff; }
+#FilterModal .modal-body { padding:12px; overflow-y:auto; }
+#FilterModal .filter-modal-form { display:flex; flex-direction:column; gap:10px; width:100%; min-width:0; }
+#FilterModal .disableDiv { opacity: .65; }
+#FilterModal .filter-modal-section { display:flex; flex-direction:column; align-items:stretch; gap:2px; padding:10px; border:1px solid var(--filter-border); border-radius:8px; background:#fff; }
+#FilterModal .filter-modal-section:has(.input:checked) { border-color:color-mix(in srgb,var(--filter-action) 35%,var(--filter-border)); background:color-mix(in srgb,#E7F3F0 25%,#fff); }
+#FilterModal .filter-modal-label { color:var(--filter-primary); font:700 14px/1.6 IRANSansBold; }
+#FilterModal .checkbox-wrapper-20 { --switch-on-color:#00665C; --slider-on-color:#b5d8d0; --switch-off-color:#fff; --slider-off-color:#DDE1E8; }
+#FilterModal .checkbox-wrapper-20 .switch { display:flex; align-items:center; gap:9px; min-height:28px; position:relative; }
+#FilterModal .checkbox-wrapper-20 .switch label { margin:0; }
+#FilterModal .checkbox-wrapper-20 .switch .input { display:block; position:absolute; width:1px; height:1px; opacity:0; }
+#FilterModal .checkbox-wrapper-20 .input:focus-visible ~ .slider { outline:2px solid var(--filter-secondary); outline-offset:4px; }
+#FilterModal .form-control, #FilterModal .select2-selection { min-height:34px; border:1px solid var(--filter-border); border-radius:6px; background:#fff; color:#212529; font:400 13px/1.6 IRANSans; }
+#FilterModal .select2-container { max-width:100%; min-width:0; }
+#FilterModal .select2-selection__rendered { text-align:start; padding-inline:8px 24px; font-size:13px; }
+#FilterModal .select2-dropdown { border-color:var(--filter-border); border-radius:6px; font-size:13px; }
+#FilterModal .select2-results__option--highlighted[aria-selected] { background:#E7F3F0; color:var(--filter-primary); }
+#FilterModal .form-control:focus { border-color:var(--filter-secondary); box-shadow:0 0 0 3px rgb(88 17 180 / 9%); }
+#FilterModal #dateFilterBtnId { flex-wrap:wrap; gap:5px !important; }
+#FilterModal #dateFilterBtnId button { min-height:28px; padding:4px 7px; border:1px solid var(--filter-border); border-radius:5px; background:#F0F1F7; color:#545961; box-shadow:none; font:500 11px/1.5 IRANSansMedium; }
+#FilterModal #dateFilterBtnId button:is(:hover,.bgGreen2) { border-color:var(--filter-action); background:#E7F3F0; color:var(--filter-primary); }
+#FilterModal #DateFilterDivContent { flex-wrap:wrap; }
+#FilterModal #DateFilterDivContent > div { flex:1 1 160px; min-width:0; }
+#FilterModal #DateFilterDivContent label { font:500 12px/1.6 IRANSansMedium; color:#545961; }
+#FilterModal .filter-modal-footer { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; padding-top:10px; border-top:1px solid var(--filter-border); }
+#FilterModal .filter-modal-footer button { min-height:34px; padding:6px 18px; border:1px solid var(--filter-border); border-radius:6px; font:500 13px/1.5 IRANSansMedium; box-shadow:none; }
+#FilterModal .filter-modal-apply { background:var(--filter-action); color:#fff; }
+#FilterModal .filter-modal-apply:hover { background:var(--filter-primary); }
+#FilterModal .filter-modal-cancel { background:#fff; color:#545961; }
+#FilterModal .filter-modal-cancel:hover { background:#F0F1F7; }
+#FilterModal button:focus-visible { outline:2px solid var(--filter-secondary); outline-offset:2px; }
+@media (max-width:575px) { #FilterModal .modal-dialog { margin:8px; } #FilterModal .modal-body { padding:8px; } #FilterModal .filter-modal-section { padding:8px; } }

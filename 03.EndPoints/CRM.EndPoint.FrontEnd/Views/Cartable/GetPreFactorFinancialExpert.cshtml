@@ -1,150 +1,80 @@
 @using CRM.Core.Domain.PreFactors.Enum
 @model List<CRM.EndPoint.FrontEnd.Models.PreFactors.PreFactorFinancialExpertVModel>
-
-@{
-    Layout = null;
-}
-
-<div style="width:100%;display:flex;flex-direction:column;gap:5px ">
-    @foreach (var vm in Model) {
-        var preFactor = vm.PreFactor;
-        var notAcceptedFiAccCount = vm.NotAcceptedFiAccCount;
-        var notAcceptedMdAccCount = vm.NotAcceptedMdAccCount;
-        var notAcceptedAccCount = notAcceptedMdAccCount + notAcceptedFiAccCount;
-        var totalAccCount = vm.TotalAccCount;
-        <div class="mp" style="width:100%;display:flex;">
-            @if (preFactor.OfficialType == 1) {
-                <div class="mp InfoDataHead_PrefactorRasmi" style="width:24px">
-                    <label class="mp" style="transform: rotate(90deg);"> رسمی</label>
-                </div>
-            } else {
-                <div class="mp InfoDataHead_PrefactorNonRasmi" style="width:24px">
-                    <label class="mp" style="transform: rotate(90deg);"> غیررسمی</label>
-                </div>
-            }
-
-            <div class="InfoDataItem_Prefactor pt-2 pb-sm-2 flex-column flex-sm-row" style=" display:flex; width:100%;  ">
-                <div class="d-flex flex-column w-100">
-                    <div class="flex-column flex-md-row w-100" style="display:flex;justify-content:space-between; ">
-                        <div class="d-flex justify-content-around flex-row flex-md-column col-12 col-md-3 px-2 gap-md-2 flex-wrap" style="row-gap:.5rem;column-gap:1rem;">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">سریال:</span>
-                                <span class="text-center fbold">@preFactor.SerialNumber</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">تاریخ:</span>
-                                <span class="text-center fbold">@preFactor.Date</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">تاریخ تایید:</span>
-                                <span class="text-center fbold">@(string.IsNullOrEmpty(preFactor.AcceptedDateTxt) ? "-" : preFactor.AcceptedDateTxt.Substring(0, 10))</span>
-                            </div>
-                        </div>
-
-                        <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                        <div class="d-flex flex-md-column justify-content-around flex-wrap col-12 col-md-3 gap-md-2 px-2 ps-md-0" style="row-gap:.5rem;column-gap:1rem;">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">شرکت:</span>
-                                <span class="text-center fbold">@(string.IsNullOrEmpty(preFactor.Customer) ? "-" : preFactor.Customer)</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">نماینده:</span>
-                                <span class="text-center fbold">@(string.IsNullOrEmpty(preFactor.AgentName) ? "-" : preFactor.AgentName)</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:0">مبلغ:</span>
-                                <span class="text-center fbold">@($"{preFactor.PaymentAmount:n0}") <span style="font-size: 12px"> @(preFactor.CurrencyTypeTxt ?? "ريال")</span></span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span style="color:gray;flex-shrink:1">پیش پرداخت:</span>
-                                <span class="text-center fbold" style="color:crimson;">@($"{vm.ReceiveAmount:n0}") <span style="font-size: 12px"> @(preFactor.CurrencyTypeTxt ?? "ريال")</span></span>
-                            </div>
-                        </div>
-
-                        <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                        <div class="d-flex flex-column justify-content-around align-items-center flex-wrap col-12 col-md-3 px-4 px-md-0 gap-2">
-                            <div class="d-flex align-items-center flex-column justify-content-center" style="column-gap: .5rem">
-                                <label class="text-center" style="color:gray">کارشناس فروش:</label>
-                                <label class="text-center fbold">@preFactor.UserCreator</label>
-                            </div>
-                            @if (totalAccCount > 0) {
-                                <div class="d-flex w-100 position-relative" style="min-width: 120px;max-width: 160px;width: 90%;">
-                                    <button class="p-0 btn btn-outline-secondary" style="height: 22px;flex-grow: 1" onclick="ShowModalListInvoice('@preFactor.Id', 1,'@preFactor.SerialNumber', 5, false)">
-                                        صورت حساب
-                                    </button>
-                                    @if (notAcceptedFiAccCount > 0) {
-                                        <span class="badge-count position-absolute" style="top: 3px;left: 4px">@(notAcceptedFiAccCount)</span>
-                                    }
-                                    @if (notAcceptedMdAccCount > 0) {
-                                        <span class="badge-count position-absolute" style="top: 3px;right: 4px;background-color: #d19d02;">@(notAcceptedMdAccCount)</span>
-                                    }
-                                </div>
-                            }
-                        </div>
-
-                        <div class="d-md-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                        <div class="d-flex flex-md-column col-12 col-md-3 px-2 gap-3 flex-wrap align-items-center justify-content-around justify-content-md-center">
-                            <div class="d-flex flex-md-column align-items-center column-gap-2">
-                                <span style="color:gray">وضعیت:</span>
-                                <span class="text-center fbold">@preFactor.PftypeTxt</span>
-                            </div>
-                            <div class="d-flex align-items-center flex-column gap-2">
+@{ Layout = null; }
+<div class="pf-accepted-list">
+@foreach (var vm in Model) {
+    var preFactor = vm.PreFactor;
+    var notAcceptedFiAccCount = vm.NotAcceptedFiAccCount;
+    var notAcceptedMdAccCount = vm.NotAcceptedMdAccCount;
+    var notAcceptedAccCount = notAcceptedMdAccCount + notAcceptedFiAccCount;
+    var totalAccCount = vm.TotalAccCount;
+    <article class="pf-accepted-card @(preFactor.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : "")">
+        <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="preFactor" />
+        <div class="InfoDataItem_Prefactor pf-accepted-card__content pf-finance-card">
+            <div class="pf-accepted-card__facts" aria-label="مشخصات پیش‌فاکتور">
+                <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><strong>@preFactor.SerialNumber</strong></div>
+                <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@preFactor.Date</strong></div>
+                <div class="pf-accepted-card__fact"><span>تاریخ تأیید</span><strong>@(string.IsNullOrEmpty(preFactor.AcceptedDateTxt) ? "-" : preFactor.AcceptedDateTxt.Substring(0, 10))</strong></div>
+            </div>
+            <div class="pf-accepted-card__body">
+                <section class="pf-accepted-card__section pf-accepted-card__customer">
+                    <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
+                    <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(preFactor.Customer) ? "-" : preFactor.Customer)</strong></div>
+                    <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(preFactor.AgentName) ? "-" : preFactor.AgentName)</strong></div>
+                    <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@preFactor.UserCreator</strong></div>
+                </section>
+                <section class="pf-accepted-card__section pf-accepted-card__financial">
+                    <h3><span>بررسی مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
+                    <div class="pf-accepted-card__row"><span>مبلغ</span><strong><bdi dir="ltr">@($"{preFactor.PaymentAmount:n0}")</bdi> <small>@(preFactor.CurrencyTypeTxt ?? "ريال")</small></strong></div>
+                    <div class="pf-accepted-card__row"><span>پیش‌پرداخت</span><strong><bdi dir="ltr">@($"{vm.ReceiveAmount:n0}")</bdi> <small>@(preFactor.CurrencyTypeTxt ?? "ريال")</small></strong></div>
+                    <div class="pf-accepted-card__row"><span>وضعیت</span><strong>@preFactor.PftypeTxt</strong></div>
+                    <div class="pf-finance-card__controls">
+                        @if (totalAccCount > 0) {
+                            <button type="button" class="pf-finance-card__invoice" onclick="ShowModalListInvoice('@preFactor.Id', 1,'@preFactor.SerialNumber', 5, false)">
+                                صورت‌حساب
+                                @if (notAcceptedFiAccCount > 0) { <span title="در انتظار تأیید مالی" aria-label="در انتظار تأیید مالی">@notAcceptedFiAccCount</span> }
+                                @if (notAcceptedMdAccCount > 0) { <span class="pf-finance-card__md-count" title="در انتظار تأیید مدیرعامل" aria-label="در انتظار تأیید مدیرعامل">@notAcceptedMdAccCount</span> }
+                            </button>
+                        }
                                 @if (preFactor.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی && totalAccCount > 0 && notAcceptedAccCount == 0 && preFactor.AcceptedFinancial != true) {
-                                    <button class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="acceptFinancial('@preFactor.Id')">
+                                    <button type="button" class="pf-finance-card__button" onclick="acceptFinancial('@preFactor.Id')">
                                         تایید
                                     </button>
                                 }
 
                                 @if (preFactor.AcceptedFinancial == null && preFactor.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی) {
-                                    <button class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalNotAccept('@preFactor.Id', 12)">
+                                    <button type="button" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
                                         عدم تایید
                                     </button>
                                 } else if (preFactor.AcceptedFinancial == true && preFactor.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
-                                    <button class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="rejectPreFactor('@preFactor.Id', 12)">
+                                    <button type="button" class="pf-finance-card__button" onclick="rejectPreFactor('@preFactor.Id', 12)">
                                         رد تایید
                                     </button>
-                                    <button class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalNotAccept('@preFactor.Id', 12)">
+                                    <button type="button" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
                                         رد تایید و بازگشت
                                     </button>
                                 }
 
-                            </div>
-                        </div>
                     </div>
-                    @if (!string.IsNullOrEmpty(preFactor.CommentText)) {
-                        <div class="my-2 mt-md-3 mx-auto" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px"></div>
-
-                        <div class="px-2 d-flex justify-content-around gap-1">
-                            <label style="color:gray">توضیحات:</label>
-                            <span class="flex-grow-1" style="white-space: pre-line">@Html.Raw(preFactor.CommentText)</span>
-                        </div>
-                    }
-                </div>
-
-
-                <div class="d-sm-none my-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
-
-                <div class="me-sm-2 mt-sm-0 ms-md-2 d-flex flex-row flex-sm-column justify-content-around" style="font-size:16px;">
-                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')">
-                        <i class="mp fa fa-eye"></i>
-                    </button>
-                    @if (preFactor.CustomerId != null) {
-                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')">
-                            <i class="mp fa fa-user"></i>
-                        </button>
-                    }
-                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')">
-                        <i class="mp fa fa-paperclip"></i>
-                    </button>
-                </div>
+                </section>
             </div>
+            <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
+                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <i class="mp fa fa-eye"></i>
+                    </span></button>
+                    @if (preFactor.CustomerId != null) {
+                        <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="mp fa fa-user"></i>
+                        </span></button>
+                    }
+                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <i class="mp fa fa-paperclip"></i>
+                    </span></button>
+            </div></div>
+            @if (!string.IsNullOrEmpty(preFactor.CommentText)) {
+                <div class="pf-accepted-card__description"><span>توضیحات: </span><span style="white-space:pre-line">@Html.Raw(preFactor.CommentText)</span></div>
+            }
         </div>
-    }
+    </article>
+}
 </div>
-
-
-
-

@@ -32,7 +32,7 @@
                     <input type="checkbox" class="card-checkbox" />
                 </div>
             }
-            <div class="layered-card__layer col-12 col-xl-auto col-xxl-3 d-flex flex-column justify-content-center px-3 py-2">
+            <div class="layered-card__layer request-card__metadata col-12 col-xl-auto col-xxl-3 d-flex flex-column justify-content-center px-3 py-2">
                 <div class="d-flex justify-content-between align-items-baseline mb-1 column-gap-3">
                     <span style="font-size: 13px; color: #777">شماره درخواست:</span>
                     <span class="fbold">@reqAmount.RequestNumber</span>
@@ -49,7 +49,7 @@
                 </div>
             </div>
 
-            <div class="layered-card__layer col-12 col-xl-3 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
+            <div class="layered-card__layer request-card__details col-12 col-xl-3 d-flex flex-column justify-content-center align-items-center px-3 px-xl-2 py-2">
                 <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 text-center">
                     <span style="font-size: 13px; color: #777">نوع:</span>
                     <span class="fbold doc-type-wrapper">
@@ -105,7 +105,7 @@
                 }
             </div>
 
-            <div class="layered-card__layer col-12 col-xl flex-center flex-wrap gap-2 flex-xl-column px-3 px-xl-2 py-2">
+            <div class="layered-card__layer request-card__requested col-12 col-xl flex-center flex-wrap gap-2 flex-xl-column px-3 px-xl-2 py-2">
                 <div class="d-flex flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center column-gap-2">
                     <span style="font-size: 13px; color: #777">مبلغ درخواست:</span>
                     <div class="fbold flex-center align-items-baseline column-gap-1">
@@ -144,7 +144,7 @@
                 }
             </div>
 
-            <div class="layered-card__layer col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
+            <div class="layered-card__layer request-card__approved col-12 col-xl d-flex flex-column justify-content-xl-evenly align-items-center gap-2 px-3 px-xl-2 py-2">
                 <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                     <span style="font-size: 13px; color: #777" class="flex-shrink-0">مبلغ تایید شده:</span>
                     @if ((User.IsManagingDirector() || User.IsAdmin()) && status == RequestStatusEnum.در_انتظار_تایید_مدیرعامل) {
@@ -186,7 +186,7 @@
                     </div>
                 }
             </div>
-            <div class="layered-card__layer col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
+            <div class="layered-card__layer request-card__actions col-12 col-xl-auto col-xxl-1 flex-center flex-row flex-xl-column p-2 px-xl-3 gap-4 gap-xl-3" style="min-width: 140px;">
                 @switch (status) {
                     case RequestStatusEnum.ثبت_اولیه:
                         if (isCreator || User.IsAdmin()) {

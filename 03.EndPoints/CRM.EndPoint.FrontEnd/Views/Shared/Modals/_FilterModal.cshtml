@@ -1,13 +1,17 @@
 <!-- Modal Filter -->
-<div class="modal fade " dir="ltr" id="FilterModal" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+<div class="modal fade " dir="rtl" id="FilterModal" tabindex="-1" role="dialog" data-bs-focus="false" aria-labelledby="sharedFilterModalTitle" aria-hidden="true">
     <div class=" modal-dialog modal-dialog-centered " role="document">
-        <div class="mp modal-content col-12  " style="border-radius:10px;">
-            <div class=" modal-body" style=" direction:rtl; display:flex;justify-content:center ">
-                <form id="FilterFormId" class="InfoData" style=" padding-inline: 8px !important; width:100%; display:flex;flex-direction:column;height:100%;justify-content:space-between;gap:10px ">
-                    <div id="cusFilterItem" style=" display:flex;flex-direction:column;align-items:start ">
+        <div class="modal-content filter-modal-content">
+            <div class="filter-modal-header">
+                <div class="filter-modal-heading"><i class="fa fa-filter" aria-hidden="true"></i><h2 id="sharedFilterModalTitle">فیلترها</h2></div>
+                <button type="button" class="filter-modal-close" data-bs-dismiss="modal" aria-label="بستن"><i class="fa fa-times" aria-hidden="true"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="FilterFormId" class="filter-modal-form">
+                    <div id="cusFilterItem" class="filter-modal-section">
                         <div class="checkbox-wrapper-20">
                             <div class="switch">
-                                <label for="CusFilterChd" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">مشتری</label>
+                                <label for="CusFilterChd" class="filter-modal-label">مشتری</label>
 
                                 <input id="CusFilterChd" name="CusFilterChd" class="input" type="checkbox" />
                                 <label for="CusFilterChd" class="slider"></label>
@@ -19,10 +23,10 @@
                         </div>
                     </div>
                     @if (User.IsAdmin() || User.IsSalesAdmin() || User.IsTaminAdmin() || User.IsFinancial() || User.IsManagingDirector()) {
-                        <div id="selFilterItem" class="d-flex flex-column">
+                        <div id="selFilterItem" class="filter-modal-section">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
-                                    <label id="SelFilterLabel" for="SelFilterChd" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">کارشناس فروش</label>
+                                    <label id="SelFilterLabel" for="SelFilterChd" class="filter-modal-label">کارشناس فروش</label>
 
                                     <input id="SelFilterChd" name="SelFilterChd" class="input" type="checkbox" />
                                     <label for="SelFilterChd" class="slider"></label>
@@ -34,11 +38,11 @@
                             </div>
                         </div>
                     }
-                    <div id="dateFilterItem" style=" display:flex;flex-direction:column;align-items:start ">
+                    <div id="dateFilterItem" class="filter-modal-section">
                         <div class="d-flex align-items-end justify-content-between flex-wrap gap-2 w-100">
                             <div class="checkbox-wrapper-20">
                                 <div class="switch">
-                                    <label for="DateFilterChk" style="font-family:IRANSansBold; font-size:clamp(16px,2vw,18px);">تاریخ</label>
+                                    <label for="DateFilterChk" class="filter-modal-label">تاریخ</label>
 
                                     <input id="DateFilterChk" name="DateFilterChk" class="input" type="checkbox" />
                                     <label for="DateFilterChk" class="slider"></label>
@@ -64,9 +68,9 @@
                         </div>
                     </div>
 
-                    <div class="gap-1 mt-2" style=" display:flex;flex-direction:row-reverse; justify-content:end; ">
-                        <button style="padding-block:4px" type="button" class="buttonGreen3" onclick="FilterAccepted()"> تایید</button>
-                        <button style="padding-block:4px" type="button" data-bs-dismiss="modal" class="buttonCancel2">انصراف</button>
+                    <div class="filter-modal-footer">
+                        <button type="button" class="filter-modal-apply" onclick="FilterAccepted()"> تایید</button>
+                        <button type="button" data-bs-dismiss="modal" class="filter-modal-cancel">انصراف</button>
                     </div>
                 </form>
             </div>

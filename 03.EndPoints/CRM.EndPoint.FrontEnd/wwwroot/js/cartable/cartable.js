@@ -3,6 +3,7 @@ let fromWarning = false;
 
 
 document.addEventListener("DOMContentLoaded", async () => {
+    enableMomentumScrollScope(document.getElementById("cartableWorkspace"));
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
@@ -585,9 +586,9 @@ function getAllDealsDt() {
             {
                 data: "status",
                 render: data => {
-                    if (data === 1) return `<span class="fMedium" style="color: #3b82f6">باز</span>`;
-                    if (data === 2) return `<span class="fMedium" style="color: #b91c1c">ناموفق</span>`;
-                    if (data === 3) return `<span class="fMedium" style="color: #16a34a">موفق</span>`;
+                    if (data === 1) return `<span class="fMedium financial-deal-state--open">باز</span>`;
+                    if (data === 2) return `<span class="fMedium financial-deal-state--failed">ناموفق</span>`;
+                    if (data === 3) return `<span class="fMedium financial-deal-state--success">موفق</span>`;
                     return "-";
                 },
             },
@@ -693,9 +694,9 @@ function getAllDealsDt() {
                 orderable: false,
                 render: function (data, type, row) {
                     if (row.financialStatus === 0) {
-                        return `<button class="buttonCancel3 btn-accept" onclick="closeDeal('${data}')">تایید سفارش</button>`;
+                        return `<button type="button" class="financial-deal-approve btn-accept" onclick="closeDeal('${data}')">تایید سفارش</button>`;
                     } else if (row.financialStatus === 1) {
-                        return `<button class="buttonGreen2 btn-accept" onclick="activeDeal('${data}')">بازگشت</button>`;
+                        return `<button type="button" class="financial-deal-reopen btn-accept" onclick="activeDeal('${data}')">بازگشت</button>`;
                     }
                     
                     return "-";
@@ -712,7 +713,7 @@ function getAllDealsDt() {
         initComplete: initFilterDealTable,
     });
     function initFilterDealTable() {
-        const dtSearch = document.querySelector(".dt-search");
+        const dtSearch = document.querySelector("#FinancialDealContentId .dt-search");
         const searchInput = dtSearch?.querySelector("input");
         if (!searchInput) return;
         

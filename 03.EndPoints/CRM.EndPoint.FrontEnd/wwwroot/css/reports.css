@@ -114,6 +114,13 @@
 	background: linear-gradient(135deg, #c2188f, #5b21b6);
 }
 
+.report-inline-audio { min-width:0; padding:6px; border:1px solid #DDE1E8; border-radius:6px; background:#fff; }
+.report-inline-audio[hidden] { display:none; }
+.report-inline-audio audio { display:block; width:100%; max-width:100%; height:36px; }
+.report-inline-audio__header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px; color:#545961; font:400 12px/1.7 IRANSans; }
+.report-inline-audio__close { flex-shrink:0; border:1px solid #DDE1E8; border-radius:5px; padding:3px 8px; background:#F0F1F7; color:#004944; cursor:pointer; font:500 12px/1.7 IRANSansMedium; }
+.report-badges .report-audio-play { display:inline-flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; }
+
 
 .ai-svg-icon {
 	color: white;
@@ -478,7 +485,8 @@
 		padding: 3px 8px;
 	}
 	
-	#allReportsId {
+/* Shared report widgets retain their styling; the index theme is scoped below. */
+#allReportsId {
 		padding-inline: .5rem;
 		height: calc(100dvh - 186px);
 	}
@@ -543,4 +551,88 @@
 		padding-right: 0;
 		border-right: none;
 	}
+}
+
+/* Report index: fill the available workspace without fixed viewport deductions. */
+#mainWrapper:has(#reportWorkspace) { height:100dvh; min-height:0; }
+#mainContent:has(#reportWorkspace) { height:auto; min-height:0; display:flex; flex-direction:column; padding-block-end:12px; }
+#reportWorkspace {
+	--report-primary:#004944;
+	--report-action:#00665C;
+	--report-teal-light:#E7F3F0;
+	--report-purple:#5811B4;
+	--report-purple-light:#F3EDFC;
+	--report-danger:#C2185B;
+	--report-border:#DDE1E8;
+	--report-muted:#545961;
+	flex:1;
+	min-height:0;
+	display:flex;
+	color:#212529;
+}
+#reportWorkspace .report-page-layout { display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; }
+#reportWorkspace .report-page-header { flex-shrink:0; padding:10px; border:1px solid var(--report-border); border-radius:9px; background:#fff; }
+#reportWorkspace .report-page-header > div:first-child { align-items:center !important; gap:8px; }
+#reportWorkspace .report-page-header > div:first-child > div:first-child { flex:1 1 580px !important; min-width:0; }
+#reportWorkspace .report-page-header > div:first-child > div:first-child > div:first-child { flex:1 1 200px; min-width:0; }
+#reportWorkspace .search-group { min-width:120px; width:100%; border:1px solid var(--report-border); border-radius:7px; background:#fff; overflow:hidden; }
+#reportWorkspace .search-group:focus-within { border-color:var(--report-purple); box-shadow:0 0 0 2px var(--report-purple-light); }
+#reportWorkspace #reportSearchId { min-width:0; min-height:36px; border:0; box-shadow:none; background:transparent; font:400 13px/1.7 IRANSans; text-align:start; }
+#reportWorkspace .search-icon { background:var(--report-purple-light); color:var(--report-purple); border:0; }
+#reportWorkspace .btnFilter { flex-shrink:0; padding:6px; border-radius:6px; background:var(--report-teal-light); }
+#reportWorkspace .btnFilter svg { color:var(--report-primary) !important; }
+#reportWorkspace .filter-switch { display:flex; flex-wrap:wrap; gap:3px; padding:3px; border-radius:7px; background:#F0F1F7; margin:0; }
+#reportWorkspace .filter-switch label { padding:5px 9px; border-radius:5px; color:var(--report-muted); font:500 12px/1.6 IRANSansMedium; white-space:nowrap; }
+#reportWorkspace .filter-switch input:checked + label { background:var(--report-teal-light); color:var(--report-primary); box-shadow:none; }
+#reportWorkspace .report-page-header label { font-size:13px; }
+#reportWorkspace #myReportId { accent-color:var(--report-action); width:16px; height:16px; }
+#reportWorkspace .report-page-header .form-select { min-height:32px; border:1px solid var(--report-border); border-radius:6px; color:var(--report-primary); font-size:13px; }
+#reportWorkspace .report-create-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:34px; padding:6px 10px; border:1px solid var(--report-purple); border-radius:6px; background:var(--report-purple); color:#fff; font:500 13px/1.6 IRANSansMedium; white-space:nowrap; }
+#reportWorkspace .report-create-button:hover { filter:brightness(.9); }
+#reportWorkspace #allReportsId { flex:1; min-height:0; height:auto; margin-top:10px; padding:14px; border:1px solid var(--report-border); border-radius:9px; background:#fff; scrollbar-color:var(--report-action) transparent; }
+#reportWorkspace .container-reports { gap:12px; }
+#reportWorkspace .report-wrapper { min-width:0; gap:12px; }
+#reportWorkspace .report-box { --report-accent:var(--report-primary); --report-tint:var(--report-teal-light); min-width:0; padding:10px 12px; border:1px solid var(--report-border); border-inline-end:3px solid var(--report-accent); border-radius:9px; background:var(--report-tint); box-shadow:0 2px 5px rgb(33 37 41 / 5%); gap:7px; }
+#reportWorkspace .container-reports > .report-wrapper:nth-child(even) .report-box { --report-accent:var(--report-purple); --report-tint:var(--report-purple-light); }
+#reportWorkspace .report-box::before { border-left-color:var(--report-tint); }
+#reportWorkspace .report-badges { position:static; flex-direction:row-reverse; justify-content:flex-start; align-items:center; gap:5px; }
+#reportWorkspace :is(.report-type-badge, .report-ai-badge) { box-sizing:border-box; height:24px; padding:2px 6px; justify-content:center; font:500 11px/1.6 IRANSansMedium; box-shadow:none; border-radius:5px; }
+#reportWorkspace .report-type-badge { background:var(--report-accent); }
+#reportWorkspace .report-ai-badge { background:var(--report-purple); color:#fff; border:1px solid var(--report-purple); }
+#reportWorkspace .ai-svg-icon { height:13px; width:auto; color:#fff; filter:brightness(0) invert(1); }
+#reportWorkspace .report-badges button { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; flex-shrink:0; }
+#reportWorkspace .report-badges button svg { width:20px !important; height:20px; color:var(--report-purple) !important; }
+#reportWorkspace .report-badges .report-audio-play { width:auto; gap:4px; padding:2px 6px; border:1px solid var(--report-purple); border-radius:5px; background:#fff; color:var(--report-purple); font:500 11px/1.6 IRANSansMedium; white-space:nowrap; cursor:pointer; }
+#reportWorkspace .report-audio-play:hover { background:var(--report-purple-light); }
+#reportWorkspace .reporter-name { color:var(--report-primary); padding-left:0; margin-bottom:5px; font:500 13px/1.7 IRANSansMedium; overflow-wrap:anywhere; }
+#reportWorkspace .report-text { color:#212529; font:400 14px/1.9 IRANSans; padding:0; margin-bottom:0; overflow-wrap:anywhere; }
+#reportWorkspace .report-info { color:var(--report-muted); gap:6px 16px; font-size:12px; }
+#reportWorkspace .report-box > div:last-child { flex-wrap:wrap; border-top:1px solid var(--report-border); padding-top:7px; }
+#reportWorkspace .report-dropdown__item { min-width:30px; min-height:30px; padding:4px; border-radius:5px; color:var(--report-primary); }
+#reportWorkspace .report-dropdown__item[data-title="افزودن فعالیت"] { color:var(--report-primary) !important; }
+#reportWorkspace .report-dropdown__item[data-title="حذف"] { color:var(--report-danger); }
+#reportWorkspace .report-dropdown__item:hover { background:#fff; }
+#reportWorkspace .agent-review-box { margin-block:7px 0; padding:7px 9px; border-right-color:var(--report-purple); background:#fff; }
+#reportWorkspace .agent-review-box:not(.open):hover { background:var(--report-purple-light); }
+#reportWorkspace .evaluation-title { color:var(--report-purple); }
+#reportWorkspace .agent-score-text { color:var(--report-muted); }
+#reportWorkspace .agent-rating-wrapper { background:#F0F1F7; }
+#reportWorkspace :is(button, input, select, .btnFilter):focus-visible { outline:2px solid var(--report-purple); outline-offset:2px; }
+@media (max-width:767px) {
+	#reportWorkspace .report-page-header { padding:8px; }
+	#reportWorkspace .report-page-header > div:first-child > div:first-child { flex-basis:100% !important; }
+	#reportWorkspace .filter-switch { width:100%; }
+	#reportWorkspace .filter-switch-item { flex:1; text-align:center; }
+	#reportWorkspace .filter-switch label { padding-inline:6px; }
+	#reportWorkspace #allReportsId { padding:10px 7px; }
+	#reportWorkspace .report-wrapper { gap:7px; }
+	#reportWorkspace .report-sidebar-timeline { min-width:32px; }
+	#reportWorkspace .reporter-image { width:32px; }
+	#reportWorkspace .report-box { padding:8px; }
+	#reportWorkspace .agent-review-content { gap:7px; }
+	#reportWorkspace .evaluation-item { display:flex; flex-wrap:wrap; gap:5px; }
+	#reportWorkspace .agent-review-header { align-items:flex-start; }
+}
+@media (prefers-reduced-motion:reduce) {
+	#reportWorkspace :is(.agent-review-collapse, .agent-review-text, .agent-review-toggle, .reporter-image) { transition:none; }
 }

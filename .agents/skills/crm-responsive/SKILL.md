@@ -19,4 +19,5 @@ Read only the references needed for the task:
 - This skill complements [Project UI Design System](../project-ui-design-system/SKILL.md) for palette, fonts, and visual styling; [CRM Frontend](../crm-frontend/SKILL.md) for frontend implementation; and [CRM Frontend Reusables](../crm-frontend-reusables/SKILL.md) for shared JavaScript. Follow those skills for UI work as required by `AGENTS.md`.
 - Leave architecture, APIs, JavaScript contracts, and business rules to their specialist instructions. Avoid copying their rules here.
 - Consolidate related responsive rules in the affected component stylesheet or existing shared layout stylesheet. Avoid duplicate CSS and scattered media queries.
+- Apply the [shared scroll interaction standard](../crm-frontend-reusables/SKILL.md#scroll-interaction-standard) to new or touched scrollable UI. This skill owns scroll containment and viewport fit; the shared utility owns wheel inertia and lifecycle.
 - Report a genuine conflict with another skill or existing behavior; do not rewrite its rules without a reason and the task's authorization.

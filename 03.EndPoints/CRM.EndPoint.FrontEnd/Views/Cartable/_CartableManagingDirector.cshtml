@@ -1,16 +1,16 @@
-<div class="cartable-pane col-12 col-xxl-11 p-2 d-none" id="CManagingDirectorId">
+<div class="cartable-pane col-12 p-2 d-none" id="CManagingDirectorId">
     <div class="d-flex flex-column w-100">
         <ul class="nav nav-pills" id="ManagingDirectorTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active position-relative" onclick="GetRequestManagingDirector()" id="MDRequestAmountTab" data-bs-target="#MDRequestAmountTab-pane" type="button" role="tab">
                     درخواست ها
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link position-relative" onclick="GetTransferManagingDirector()" id="MDTransferTab" data-bs-target="#MDTransferTab-pane" type="button" role="tab">
                     نقل و انتقال
-                    <span class="badge-count d-none" style="position: absolute;top: -6px;left: 0;z-index: 10"></span>
+                    <span class="badge-count cartable-tab-count d-none"></span>
                 </button>
             </li>
         </ul>
@@ -18,13 +18,13 @@
             <div class="tab-pane fade show active border-0" id="MDRequestAmountTab-pane" role="tabpanel" tabindex="0" style="flex-direction:column;width:100%">
 
                 <div class="d-flex flex-column align-items-center w-100 gap-3">
-                    <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
+                    <div class="cartable-list-toolbar">
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        <div class="cartable-column-count">
                             تعداد: <span id="MDRequestAmountCount"></span>
                         </div>
 
-                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                        <div class="search-group cartable-list-toolbar__search">
                             <input class="form-control" type="text" id="MDRequestAmountSearchId" placeholder="جستجو..." />
                             <div class="search-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
@@ -73,13 +73,13 @@
             <div class="tab-pane fade border-0" id="MDTransferTab-pane" role="tabpanel" tabindex="0">
 
                 <div class="d-flex flex-column align-items-center w-100 gap-3">
-                    <div class="w-100 d-flex justify-content-between flex-wrap gap-2 align-items-center">
+                    <div class="cartable-list-toolbar">
 
-                        <div class="d-flex align-items-center justify-content-start gap-1 fbold" style="font-size:clamp(16px,2vw,18px);color:rgb(84 57 213)">
+                        <div class="cartable-column-count">
                             تعداد: <span id="MDTransferCount"></span>
                         </div>
 
-                        <div class="search-group col-12 order-5 order-md-0 col-md-5">
+                        <div class="search-group cartable-list-toolbar__search">
                             <input class="form-control" type="text" id="MDTransferSearchId" placeholder="جستجو..." />
                             <div class="search-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>

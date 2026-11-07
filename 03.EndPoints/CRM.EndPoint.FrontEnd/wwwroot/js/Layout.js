@@ -992,6 +992,7 @@ const ShowFilterPopup = (filterBtn, filterItemBlackList = []) => {
         return;
     }
     
+    enableMomentumScrollScope(document.getElementById("FilterModal"));
     const selLabelElm = document.getElementById("SelFilterLabel");
     const selChkElm = document.getElementById("SelFilterChd");
     const cusChkElm = document.getElementById("CusFilterChd");
