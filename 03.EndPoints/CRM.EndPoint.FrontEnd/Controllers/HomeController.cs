@@ -99,83 +99,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
-                //var de = db.Deals.ToList();
-                //foreach(var item in de)
-                //{
-                //    item.CreateDate = DateTime.Now.AddDays(-20);
-                //    item.CreateDateTxt = dts.GetDatePersian( DateTime.Now.AddDays(-20));
-                //    item.Status = DealStatusEnum.باز;
-                    
-                //}
-                //db.SaveChanges();
-
-                /*var softs = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
-                var baseCenters = await db.BaseCenterCashes.AsNoTracking().ToListAsync();
-
-                var mappings = new List<ExternalMapping>();
-
-                foreach (var soft in softs)
-                {
-                    if (soft.Code == 1)
-                    {
-                        var dls = await S1db.DLs.AsNoTracking()
-                            .Where(f => f.Type == 3)
-                            .ToListAsync();
-
-                        foreach (var center in baseCenters)
-                        {
-                            var dl = dls.FirstOrDefault(f => f.Code == center.Code);
-
-                            if (dl != null)
-                            {
-                                mappings.Add(new ExternalMapping {
-                                    EntityName = nameof(BaseCenterCash),
-                                    EntityId = center.Id,
-                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
-                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
-                                    ExternalSoftwareId = soft.Id,
-                                    ExEntityName = nameof(DL),
-                                    ExEntityId = dl.DLId.ToString()
-                                });
-                            }
-                        }
-                    } else
-                    {
-                        var dls = await s2Db.DLs.AsNoTracking()
-                            .Where(f => f.Type == 3)
-                            .ToListAsync();
-
-                        foreach (var center in baseCenters)
-                        {
-                            var code = center.Code.StartsWith('0') ? center.Code[1..] : center.Code;
-                            var dl = dls.FirstOrDefault(f => f.Code == code);
-
-                            if (dl != null)
-                            {
-                                mappings.Add(new ExternalMapping {
-                                    EntityName = nameof(BaseCenterCash),
-                                    EntityId = center.Id,
-                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
-                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
-                                    ExternalSoftwareId = soft.Id,
-                                    ExEntityName = nameof(DL),
-                                    ExEntityId = dl.DLId.ToString()
-                                });
-                            }
-                        }
-                    }
-                }
-
-                db.ExternalMappings.AddRange(mappings);
-                await db.SaveChangesAsync();
-*/
 
 
-                // One-time ExternalMapping backfill (NOT EXECUTED).
-                // Review the private BuildLegacySepidarMappingPlanAsync method below first.
-                // Do not run database writes from GET /Home/Index.
-                // After approval, expose a separate administrator-only, one-time POST
-                // to review and apply the plan. No migration method is invoked here.
+                await ApplyLegacySepidarMappingPlanAsync();
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
@@ -1057,7 +983,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         // NOT CALLED from Index or any public route.
         // This write method must only be wired to an administrator-only one-time POST
         // AFTER the user has reviewed the candidate counts and approved the migration.
-        private async Task<int> ApplyLegacySepidarMappingPlanAsync(CancellationToken ct)
+        private async Task<int> ApplyLegacySepidarMappingPlanAsync(CancellationToken ct = default)
         {
             var plan = await BuildLegacySepidarMappingPlanAsync(ct);
             if (plan.Pending.Count == 0) return 0;
