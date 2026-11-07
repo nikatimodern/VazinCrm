@@ -58,7 +58,7 @@
                             </div>
                             <label class="target-year-field" for="targetYear" data-target-editor>
                                 سال شمسی
-                                <input id="targetYear" name="year" type="number" min="1300" max="1600"
+                                <input id="targetYear" name="year" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
                                        value="@persianYear" required />
                             </label>
                             <div id="targetAnnualFields" class="target-form-grid" data-target-editor></div>
