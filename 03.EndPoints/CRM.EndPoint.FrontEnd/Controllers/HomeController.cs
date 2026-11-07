@@ -187,20 +187,55 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         // One-off historical mapping migration draft. Private and intentionally uncalled.
         // Review first. No SQL reads or writes happen just by visiting Home/Index.
         private sealed record LegacyPreFactorRow(
-            Guid Id, int SerialNumber, DateTime? DateMiladi,
+            Guid Id, int SerialNumber, string Date, DateTime? DateMiladi,
             decimal SumTotalAmount, decimal PaymentAmount, Guid? CustomerId);
 
         private sealed record LegacyFactorRow(
             Guid Id, Guid PfactorId, int? SepidarId, string SnFinancial,
-            DateTime? DateMiladi, decimal PaymentAmount, Guid? CustomerId);
+            string Date, DateTime? DateMiladi, decimal PaymentAmount, Guid? CustomerId);
 
         private sealed record LegacyQuotationRow(
-            int Id, int Number, DateTime Date, decimal Price,
+            int Id, int Number, int FiscalYearRef, decimal Price,
             decimal NetPrice, int CustomerPartyRef);
 
         private sealed record LegacyInvoiceRow(
-            int Id, int? Number, int? QuotationRef, DateTime? Date,
+            int Id, int? Number, int? QuotationRef, int FiscalYearRef,
             decimal? NetPrice, int? CustomerPartyRef);
+
+        private sealed record LegacyFiscalYearRow(
+            int Year, DateTime StartDate, DateTime EndDate);
+
+        private static int? GetLegacyFiscalYear(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length < 4)
+                return null;
+
+            Span<char> digits = stackalloc char[4];
+            for (var i = 0; i < digits.Length; i++)
+            {
+                var number = char.GetNumericValue(value[i]);
+                if (number < 0 || number > 9 || number != Math.Floor(number))
+                    return null;
+
+                digits[i] = (char)('0' + (int)number);
+            }
+
+            return int.TryParse(digits, out var year) ? year : null;
+        }
+
+        private static bool IsInLegacyFiscalYear(
+            string crmPersianDate, DateTime? crmMiladiDate, LegacyFiscalYearRow fiscalYear)
+        {
+            // Prefer Persian financial year (e.g. 1405); do NOT compare exact dates.
+            var crmYear = GetLegacyFiscalYear(crmPersianDate);
+            if (crmYear.HasValue)
+                return crmYear.Value == fiscalYear.Year;
+
+            // Fallback only when the CRM Persian date/year is unavailable.
+            return crmMiladiDate.HasValue
+                && crmMiladiDate.Value.Date >= fiscalYear.StartDate.Date
+                && crmMiladiDate.Value.Date <= fiscalYear.EndDate.Date;
+        }
 
         private sealed record LegacyMappingPlan(
             int AlreadyMapped, int NotMatched, int Ambiguous,
@@ -211,14 +246,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             // This method only READS data. It never calls Add/Update/SaveChanges.
             var preFactors = await db.PreFactors.AsNoTracking()
                 .Select(p => new LegacyPreFactorRow(
-                    p.Id, p.SerialNumber, p.DateMiladi,
+                    p.Id, p.SerialNumber, p.Date, p.DateMiladi,
                     p.SumTotalAmount, p.PaymentAmount, p.CustomerId))
                 .ToListAsync(ct);
 
             var factors = await db.Factors.AsNoTracking()
                 .Select(f => new LegacyFactorRow(
                     f.Id, f.PfactorID, f.SepidarId, f.SnFinancial,
-                    f.DateMiladi, f.PaymentAmount, f.CustomerId))
+                    f.Date, f.DateMiladi, f.PaymentAmount, f.CustomerId))
                 .ToListAsync(ct);
 
             var financialCustomerIds = await db.Customers.AsNoTracking()
@@ -238,10 +273,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Select(m => (m.ExternalSoftwareId, m.ExEntityName, m.ExEntityId))
                 .ToHashSet();
 
+            // Historical backfill is restricted to Sepidar 1 only.
             var configuredSoftwareIds = await db.ExternalSoftwares.AsNoTracking()
-                .Where(x => x.Id == Sepidar1SoftwareId || x.Id == Sepidar2SoftwareId)
+                .Where(x => x.Id == Sepidar1SoftwareId)
                 .Select(x => x.Id)
                 .ToListAsync(ct);
+
+            var financialYears = await sdb.FiscalYears.AsNoTracking()
+                .Select(x => new { x.FiscalYearId, x.Title, x.StartDate, x.EndDate })
+                .ToListAsync(ct);
+
+            var fiscalYears = financialYears
+                .Where(x => GetLegacyFiscalYear(x.Title).HasValue)
+                .ToDictionary(
+                    x => x.FiscalYearId,
+                    x => new LegacyFiscalYearRow(
+                        GetLegacyFiscalYear(x.Title)!.Value, x.StartDate, x.EndDate));
 
             var pending = new List<ExternalMapping>();
             var alreadyMapped = 0;
@@ -292,11 +339,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             foreach (var softwareId in configuredSoftwareIds)
             {
-                var sepidar = softwareId == Sepidar1SoftwareId
-                    ? (SepidarContextDbBase)sdb : s2Db;
+                var sepidar = (SepidarContextDbBase)sdb;
 
                 var numbers = preFactors
-                    .Where(x => x.SerialNumber > 0 && x.DateMiladi.HasValue)
+                    .Where(x => x.SerialNumber > 0)
                     .Select(x => x.SerialNumber).Distinct().ToArray();
 
                 var quotations = new List<LegacyQuotationRow>();
@@ -305,7 +351,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     quotations.AddRange(await sepidar.Quotations.AsNoTracking()
                         .Where(x => batch.Contains(x.Number))
                         .Select(x => new LegacyQuotationRow(
-                            x.QuotationId, x.Number, x.Date,
+                            x.QuotationId, x.Number, x.FiscalYearRef,
                             x.Price, x.NetPriceInBaseCurrency, x.CustomerPartyRef))
                         .ToListAsync(ct));
                 }
@@ -322,20 +368,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         continue;
                     }
 
-                    if (!pf.DateMiladi.HasValue
-                        || !quoteByNumber.TryGetValue(pf.SerialNumber, out var options))
+                    if (!quoteByNumber.TryGetValue(pf.SerialNumber, out var options))
                     {
                         notMatched++;
                         continue;
                     }
 
-                    // Avoid matching a quotation just because the serial number happens to match.
+                    // Match fiscal year, serial number, amounts, and known customer.
+                    // The registration day can differ between CRM and Sepidar.
                     var matches = options.Where(q =>
-                        q.Date.Date == pf.DateMiladi.Value.Date
+                        fiscalYears.TryGetValue(q.FiscalYearRef, out var financialYear)
+                        && IsInLegacyFiscalYear(pf.Date, pf.DateMiladi, financialYear)
                         && q.Price == pf.SumTotalAmount
                         && q.NetPrice == pf.PaymentAmount
-                        && (softwareId != Sepidar1SoftwareId
-                            || !pf.CustomerId.HasValue
+                        && (!pf.CustomerId.HasValue
                             || !financialCustomerIds.TryGetValue(pf.CustomerId.Value, out var partyId)
                             || q.CustomerPartyRef == partyId)).ToList();
 
@@ -368,20 +414,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     quotationByPreFactor[map.EntityId] = int.Parse(map.ExEntityId);
 
                 var quotationIds = quotationByPreFactor.Values.Distinct().ToArray();
-                var legacyInvoiceIds = softwareId == Sepidar1SoftwareId
-                    ? factors.Where(f => f.SepidarId > 0).Select(f => f.SepidarId!.Value)
-                        .Distinct().ToArray()
-                    : Array.Empty<int>();
+                var legacyInvoiceIds = factors.Where(f => f.SepidarId > 0)
+                    .Select(f => f.SepidarId!.Value).Distinct().ToArray();
 
                 var invoices = new Dictionary<int, LegacyInvoiceRow>();
                 foreach (var batch in quotationIds.Chunk(400))
                 {
-                    var rows = await sepidar.vwInvoice.AsNoTracking()
-                        .Where(x => x.QuotationRef.HasValue
-                                    && batch.Contains(x.QuotationRef.Value))
+                    var rows = await sepidar.SalesInvoices.AsNoTracking()
+                        .Where(x => batch.Contains(x.QuotationRef))
                         .Select(x => new LegacyInvoiceRow(
                             x.InvoiceId, x.Number, x.QuotationRef,
-                            x.Date, x.NetPrice, x.CustomerPartyRef))
+                            x.FiscalYearRef, x.NetPriceInBaseCurrency, x.CustomerPartyRef))
                         .ToListAsync(ct);
 
                     foreach (var row in rows)
@@ -390,11 +433,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 foreach (var batch in legacyInvoiceIds.Chunk(400))
                 {
-                    var rows = await sepidar.vwInvoice.AsNoTracking()
+                    var rows = await sepidar.SalesInvoices.AsNoTracking()
                         .Where(x => batch.Contains(x.InvoiceId))
                         .Select(x => new LegacyInvoiceRow(
                             x.InvoiceId, x.Number, x.QuotationRef,
-                            x.Date, x.NetPrice, x.CustomerPartyRef))
+                            x.FiscalYearRef, x.NetPriceInBaseCurrency, x.CustomerPartyRef))
                         .ToListAsync(ct);
 
                     foreach (var row in rows)
@@ -418,7 +461,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     quotationByPreFactor.TryGetValue(factor.PfactorId, out var quotationId);
                     List<LegacyInvoiceRow> matches;
 
-                    if (softwareId == Sepidar1SoftwareId && factor.SepidarId > 0)
+                    if (factor.SepidarId > 0)
                     {
                         // Old Factor.SepidarId points to Sepidar1; it is not a Sepidar2 reference.
                         matches = invoices.TryGetValue(factor.SepidarId.Value, out var invoice)
@@ -432,16 +475,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
 
                     matches = matches.Where(invoice =>
-                        invoice.NetPrice == factor.PaymentAmount
-                        && (!factor.DateMiladi.HasValue
-                            || (invoice.Date.HasValue
-                                && invoice.Date.Value.Date == factor.DateMiladi.Value.Date))
+                        fiscalYears.TryGetValue(invoice.FiscalYearRef, out var financialYear)
+                        && IsInLegacyFiscalYear(factor.Date, factor.DateMiladi, financialYear)
+                        && invoice.NetPrice == factor.PaymentAmount
                         && (quotationId <= 0 || invoice.QuotationRef == quotationId)
                         && (string.IsNullOrWhiteSpace(factor.SnFinancial)
                             || (int.TryParse(factor.SnFinancial, out var financialNumber)
                                 && invoice.Number == financialNumber))
-                        && (softwareId != Sepidar1SoftwareId
-                            || !factor.CustomerId.HasValue
+                        && (!factor.CustomerId.HasValue
                             || !financialCustomerIds.TryGetValue(factor.CustomerId.Value, out var partyId)
                             || invoice.CustomerPartyRef == partyId))
                         .ToList();
