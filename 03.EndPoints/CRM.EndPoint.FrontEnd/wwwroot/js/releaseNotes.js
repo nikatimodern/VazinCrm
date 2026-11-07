@@ -42,8 +42,14 @@
                 const section = element("section", null, "rn-item");
                 section.dataset.rnHistoryItem = "";
                 section.dataset.type = String(item.type);
-                section.append(element("span", types[item.type] || "تغییر", "rn-tag rn-type-" + item.type), element("h3", item.title));
-                if (item.description) section.append(element("p", item.description, "rn-description"));
+                const heading = element("div", null, "rn-item-heading");
+                const line = element("div", null, "rn-item-line");
+                line.append(element("h3", item.title));
+                if (item.description) {
+                    line.append(element("span", " : ", "rn-item-separator"), element("span", item.description, "rn-item-summary"));
+                }
+                heading.append(element("span", types[item.type] || "تغییر", "rn-tag rn-type-" + item.type), line);
+                section.append(heading);
                 const imageUrl = safeUrl(item.imageUrl), learnMoreUrl = safeUrl(item.learnMoreUrl);
                 if (imageUrl) { const image = element("img"); image.src = imageUrl; image.alt = item.title; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; section.append(image); }
                 if (learnMoreUrl) { const link = element("a", "بیشتر بدانید ↗"); link.href = learnMoreUrl; link.target = "_blank"; link.rel = "noopener noreferrer"; section.append(link); }
