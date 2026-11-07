@@ -156,12 +156,51 @@
         }
     }
 
-    function fillAssignmentDefaults() {
-        for (const metric of metricList())
-            for (let month = 1; month <= 12; month++)
-                for (const expert of setup.experts)
-                    if (!findItem('assignments', metric.code, month, expert.id))
+    // Distribute additive targets exactly, giving the remainder to the first experts.
+    // A percentage is a personal rate, so it is copied rather than divided or summed.
+    // Automatic defaults never overwrite previously saved or manually edited allocations.
+    function distributeExpertTargets(month, overwrite = false) {
+        const experts = setup.experts;
+        if (!experts.length) return false;
+        let updated = false;
+
+        for (const metric of metricList()) {
+            const monthlyValue = valueOf('monthly', metric.code, month);
+            if (!metricValueValid(metric, monthlyValue)) continue;
+
+            const hasAssignments = experts.some(expert =>
+                findItem('assignments', metric.code, month, expert.id));
+
+            if (hasAssignments && !overwrite) {
+                // Keep existing allocations unchanged if an expert was added later.
+                for (const expert of experts)
+                    if (!findItem('assignments', metric.code, month, expert.id)) {
                         setAmount('assignments', metric.code, month, expert.id, '0');
+                        updated = true;
+                    }
+                continue;
+            }
+
+            const total = scaled(monthlyValue);
+            const units = metric.kind === 1 ? total / 100n : total;
+            const count = BigInt(experts.length);
+            const share = units / count;
+            const remainder = units % count;
+
+            experts.forEach((expert, index) => {
+                const portion = share + (BigInt(index) < remainder ? 1n : 0n);
+                const value = metric.kind === 2 ? monthlyValue
+                    : metric.kind === 1 ? portion.toString() : fromScaled(portion);
+                setAmount('assignments', metric.code, month, expert.id, value);
+            });
+            updated = true;
+        }
+        return updated;
+    }
+
+    function fillAssignmentDefaults() {
+        for (let month = 1; month <= 12; month++)
+            distributeExpertTargets(month);
     }
 
     function monthlyIssues() {
@@ -439,6 +478,8 @@
         form.querySelectorAll('[data-target-panel] input[data-kind], #targetYear')
             .forEach(input => { input.disabled = state.status === 1; });
         el('targetRebalance').disabled = state.status === 1;
+        el('targetAutoAllocateMonth').disabled = state.status === 1;
+        el('targetAutoAllocateAll').disabled = state.status === 1;
         const body = root.querySelector('.target-modal-body');
         body?.scrollTo({ top: 0, behavior: 'instant' });
         if (typeof enableMomentumScrollScope === 'function')
@@ -603,6 +644,40 @@
         activeExpertId = event.target.value;
         renderExperts();
     });
+
+    async function runAutoAllocation(allMonths) {
+        if (state.status === 1 || sending) return;
+        if (!setup.experts.length) {
+            showFeedback('برای تقسیم خودکار، ابتدا کارشناس فروش تعریف کنید.');
+            return;
+        }
+        const selectedMonths = allMonths
+            ? Array.from({ length: 12 }, (_, index) => index + 1)
+            : [activeMonth];
+        if (selectedMonths.some(month => metricList().some(metric =>
+            !metricValueValid(metric, valueOf('monthly', metric.code, month))))) {
+            showFeedback('ابتدا هدف‌های ماهانه را تکمیل کنید.');
+            return;
+        }
+
+        const approved = await confirmAlert({
+            title: allMonths ? 'تقسیم خودکار تمام ماه‌ها' : 'تقسیم خودکار این ماه',
+            text: allMonths
+                ? 'تخصیص فعلی همه کارشناسان در ۱۲ ماه با تقسیم مساوی جایگزین می‌شود. ادامه می‌دهید؟'
+                : 'تخصیص فعلی همه کارشناسان در این ماه با تقسیم مساوی جایگزین می‌شود. ادامه می‌دهید؟',
+            confirmText: 'بله، تقسیم کن'
+        });
+        if (!approved) return;
+
+        for (const month of selectedMonths)
+            distributeExpertTargets(month, true);
+        changed = true;
+        showFeedback();
+        renderExperts();
+    }
+
+    el('targetAutoAllocateMonth').addEventListener('click', () => runAutoAllocation(false));
+    el('targetAutoAllocateAll').addEventListener('click', () => runAutoAllocation(true));
 
     el('targetRebalance').addEventListener('click', async () => {
         const approved = await confirmAlert({
