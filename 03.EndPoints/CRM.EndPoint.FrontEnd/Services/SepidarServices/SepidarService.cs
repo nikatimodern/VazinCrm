@@ -1445,6 +1445,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.QuotationId == id),
 
+            nameof(Invoice) => await sepidarContext.SalesInvoices
+                .AsNoTracking()
+                .AnyAsync(x => x.InvoiceId == id),
+
             _ => null
         };
     }
