@@ -109,6 +109,37 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
             throw new InvalidOperationException("جمع ردیف‌های فاکتور با اطلاعات مالی CRM برابر نیست.");
 
+        var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
+        var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
+            .Where(x => lineIds.Contains(x.QuotationItemRef))
+            .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1
+                    && !(x.Number == factor.SerialNumber && x.QuotationRef == quotationId)),
+                item => item.InvoiceRef, invoice => invoice.InvoiceId,
+                (item, invoice) => new { item.QuotationItemRef, item.Quantity })
+            .GroupBy(x => x.QuotationItemRef)
+            .Select(x => new { QuotationItemId = x.Key, Quantity = x.Sum(y => y.Quantity) })
+            .ToListAsync(ct);
+
+        var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
+        foreach (var line in lines)
+        {
+            var quotedQuantity = quotationItemsByRow.Values
+                .Single(x => x.QuotationItemID == line.QuotationItemId).Quantity;
+
+            if (line.Quantity + previousByItem.GetValueOrDefault(line.QuotationItemId) > quotedQuantity)
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده از تعداد پیش‌فاکتور سپیدار بیشتر می‌شود.");
+        }
+
+        var stockIds = lines.Select(x => x.StockRef).Distinct().ToArray();
+        var stocks = await context.Stocks.AsNoTracking()
+            .Where(x => stockIds.Contains(x.StockID))
+            .Select(x => new { x.StockID, x.Title })
+            .ToDictionaryAsync(x => x.StockID, x => x.Title, ct);
+        foreach (var line in lines)
+            line.StockTitle = stocks.GetValueOrDefault(line.StockRef)
+                ?? line.StockRef.ToString(CultureInfo.InvariantCulture);
+
         return new SepidarInvoiceExportPreview {
             QuotationId = quotationId,
             QuotationNumber = quotation.Number,
