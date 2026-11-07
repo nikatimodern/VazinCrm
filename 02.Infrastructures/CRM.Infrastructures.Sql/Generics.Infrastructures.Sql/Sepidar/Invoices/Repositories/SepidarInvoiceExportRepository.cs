@@ -167,9 +167,30 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         if (existing.Count != 0)
         {
             if (existing.Count == 1 && existing[0].QuotationRef == quotationId)
-                return existing[0].InvoiceId;
+            {
+                var priorInvoice = await context.SalesInvoices.AsNoTracking()
+                    .SingleAsync(x => x.InvoiceId == existing[0].InvoiceId, ct);
+                var priorItems = await context.SalesInvoiceItems.AsNoTracking()
+                    .Where(x => x.InvoiceRef == priorInvoice.InvoiceId).ToListAsync(ct);
 
-            throw new InvalidOperationException("شماره فاکتور در این سال مالی قبلاً برای سند دیگری استفاده شده است.");
+                var isSameInvoice = priorInvoice.Price == preview.Price
+                    && priorInvoice.Discount == preview.Discount
+                    && priorInvoice.Tax == preview.Tax
+                    && priorInvoice.NetPriceInBaseCurrency == preview.NetPrice
+                    && priorItems.Count == preview.Items.Count
+                    && preview.Items.All(line => priorItems.Any(item =>
+                        item.QuotationItemRef == line.QuotationItemId
+                        && item.Quantity == line.Quantity
+                        && item.Fee == line.Fee
+                        && item.Price == line.Price
+                        && item.Discount == line.Discount
+                        && item.Tax == line.Tax));
+
+                if (isSameInvoice)
+                    return priorInvoice.InvoiceId;
+            }
+
+            throw new InvalidOperationException("شماره فاکتور در این سال مالی قبلاً برای سند متفاوتی استفاده شده است.");
         }
 
         var quotation = await context.Quotations.AsNoTracking()
