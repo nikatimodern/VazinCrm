@@ -29,7 +29,9 @@
         for (const note of notes) {
             const article = element("article", null, "rn-release"), header = element("header");
             article.dataset.rnHistoryCard = "";
-            const version = element("span", note.version, "rn-version"); version.dir = "ltr";
+            const version = element("span", null, "rn-version");
+            version.append(element("span", "نسخه:", "rn-version-label"), element("span", note.version, "rn-version-number"));
+            version.querySelector(".rn-version-number").dir = "ltr";
             header.append(version, element("h2", note.title));
             if (note.isImportant) header.append(element("span", "مهم", "rn-tag"));
             if (note.publishDate) {

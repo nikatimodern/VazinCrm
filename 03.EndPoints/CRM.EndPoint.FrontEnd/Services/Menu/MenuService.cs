@@ -33,7 +33,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 roles.Contains(AppRoles.Customer), roles.Any(role => role != AppRoles.Customer));
             var version = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
                 .GetLatestVisibleVersionAsync(reader, DateTime.UtcNow, default);
-            versionMenu.Title = version is null ? "ورژن" : $"ورژن {version}";
+            versionMenu.Title = version is null ? "نسخه" : $"نسخه {version}";
         }
 
         await SetBadgeCountsAsync(filteredMenus);
@@ -559,7 +559,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             },
             new MenuItem {
                 Id = "releaseNotes",
-                Title = "ورژن",
+                Title = "نسخه",
                 OnClick = "showReleaseNotesHistory()",
                 ClassName = "menu-release-notes",
                 IconHtml = "",
