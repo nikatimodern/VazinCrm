@@ -430,6 +430,7 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
         document.querySelector("#addInvoiceBtns .deposit-btn")?.classList.toggle("d-none", passType === 5); // کارتابل مالی دکمه واریزی نمایش داده نشود فقط برگشتی نمایش داده شود
     }*/
     
+    enableMomentumScroll(document.querySelector("#InvoiceListModalId .invoice-list-body"));
     ModalToggle("#InvoiceListModalId", "show");
 };
 
