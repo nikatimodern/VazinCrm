@@ -27,7 +27,18 @@
                 @if (!string.IsNullOrWhiteSpace(note.Description)) { <p class="rn-description rn-history-note" hidden>@note.Description</p> }
                 @foreach (var item in note.Items) {
                     <div class="rn-history-item" data-history-item data-type="@((int)item.Type)">
-                        <span class="rn-tag rn-type-@((int)item.Type)">@(item.Type == ReleaseNoteItemType.NewFeature ? "قابلیت جدید" : item.Type == ReleaseNoteItemType.Improvement ? "بهبود" : "رفع مشکل")</span>
+                        @{
+                            var iconClass = item.Type switch {
+                                ReleaseNoteItemType.NewFeature => "fa-plus-circle",
+                                ReleaseNoteItemType.Improvement => "fa-magic",
+                                ReleaseNoteItemType.BugFix => "fa-wrench",
+                                _ => "fa-info-circle"
+                            };
+                        }
+                        <span class="rn-tag rn-change-type rn-type-@((int)item.Type)">
+                            <i class="fas rn-type-icon @iconClass" aria-hidden="true"></i>
+                            @(item.Type == ReleaseNoteItemType.NewFeature ? "قابلیت جدید" : item.Type == ReleaseNoteItemType.Improvement ? "بهبود" : "رفع مشکل")
+                        </span>
                         <div class="rn-history-item-content"><h3>@item.Title</h3>
                             @if (!string.IsNullOrWhiteSpace(item.Description)) { <p class="rn-history-item-summary">@item.Description</p> }
                             @if ((!string.IsNullOrWhiteSpace(item.ImageUrl) && ReleaseNoteAdministration.SafeUrl(item.ImageUrl)) || (!string.IsNullOrWhiteSpace(item.LearnMoreUrl) && ReleaseNoteAdministration.SafeUrl(item.LearnMoreUrl))) {

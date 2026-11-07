@@ -11,6 +11,7 @@
     let ids = [], preview = false, busy = false, restoreFocus = null;
     let historyType = "all", historyRequest = null;
     const types = { 1: "قابلیت جدید", 2: "بهبود", 3: "رفع اشکال" };
+    const typeIcons = { 1: "fa-plus-circle", 2: "fa-magic", 3: "fa-wrench" };
     function element(tag, text, className) {
         const node = document.createElement(tag);
         if (text != null) node.textContent = text;
@@ -50,7 +51,11 @@
                 if (item.description) {
                     line.append(element("span", " : ", "rn-item-separator"), element("span", item.description, "rn-item-summary"));
                 }
-                heading.append(element("span", types[item.type] || "تغییر", "rn-tag rn-type-" + item.type), line);
+                const typeBadge = element("span", null, "rn-tag rn-change-type rn-type-" + item.type);
+                const icon = element("i", null, "fas rn-type-icon " + (typeIcons[item.type] || "fa-info-circle"));
+                icon.setAttribute("aria-hidden", "true");
+                typeBadge.append(icon, document.createTextNode(types[item.type] || "تغییر"));
+                heading.append(typeBadge, line);
                 section.append(heading);
                 const imageUrl = safeUrl(item.imageUrl), learnMoreUrl = safeUrl(item.learnMoreUrl);
                 if (imageUrl) { const image = element("img"); image.src = imageUrl; image.alt = item.title; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; section.append(image); }

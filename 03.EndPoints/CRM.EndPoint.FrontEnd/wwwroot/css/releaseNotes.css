@@ -84,3 +84,32 @@
     #releaseNotesModal.rn-preview .rn-release { padding:10px; }
     #releaseNotesModal.rn-preview .rn-button { min-height:42px; }
 }
+
+/* Category icon badges in the release notes modal and history page. */
+.rn .rn-change-type {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    vertical-align:middle;
+    white-space:nowrap;
+}
+.rn .rn-change-type .rn-type-icon {
+    display:inline-block;
+    flex:none;
+    font-size:11px;
+    line-height:1;
+    transform-origin:center;
+    animation:rn-type-icon-enter 280ms ease-out both;
+    transition:transform 180ms ease-out;
+}
+.rn :is(.rn-item,.rn-history-item):is(:hover,:focus-within) .rn-type-icon {
+    transform:translateY(-1px) rotate(-8deg) scale(1.08);
+}
+@keyframes rn-type-icon-enter {
+    from { opacity:0; transform:translateY(3px) scale(.88); }
+    to { opacity:1; transform:translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion:reduce) {
+    .rn .rn-change-type .rn-type-icon { animation:none; transition:none; }
+    .rn :is(.rn-item,.rn-history-item):is(:hover,:focus-within) .rn-type-icon { transform:none; }
+}
