@@ -35,7 +35,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 .GetLatestVisibleVersionInfoAsync(reader, DateTime.UtcNow, default);
             versionMenu.Title = latest is null ? "نسخه" : $"نسخه {latest.Version}";
             if (latest?.PublishDate is DateTime publishDate)
-                versionMenu.Subtitle = $"تاریخ انتشار: {CRM.Framework.BaseServices.GetDatePersian(publishDate)}";
+                versionMenu.Subtitle = CRM.Framework.BaseServices.GetDatePersian(publishDate);
         }
 
         await SetBadgeCountsAsync(filteredMenus);
