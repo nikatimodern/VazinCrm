@@ -1,6 +1,12 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @model CRM.EndPoint.FrontEnd.Models.Admin.AdminViewModel
 
-<div class="user-management-page" dir="rtl">
+<div id="settingsUsersWorkspace" class="crm-settings-theme crm-operations-theme user-management-page" dir="rtl">
     <div class="user-page-header">
         <div>
             <h2>مدیریت کاربران</h2>
@@ -293,6 +299,7 @@
 </style>
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsUsersWorkspace")));</script>
 <script data-page-bindings="currentUserPage,userPageSize,userSearchTerm,userTotalCount,userTotalPages,userSearchDebounce,userLoadController,selectedUserRoles,syncUserRoleModal,renderSelectedUserRoleChips,loadUsers,normalizeUserSearch,getAllUserCards,renderUserCards,renderUserPagination,createRoleChip,appendCreatedUserToTable,DelUserRole,deleteUser">
     let currentUserPage = 1;
     let userPageSize = 5;

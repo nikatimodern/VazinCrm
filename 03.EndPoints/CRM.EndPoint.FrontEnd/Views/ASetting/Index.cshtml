@@ -1,8 +1,14 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 ﻿@{
     Layout = "_Layout";
 }
 
-<div style="display:flex;width:100%; justify-content:center;  ">
+<div id="settingsBaseWorkspace" class="crm-settings-theme crm-operations-theme d-flex justify-content-center">
     <div class="InfoData col-12 col-md-8 col-xl-6">
         <form id="SettingFormId" class="mx-2 mx-md-3 my-3" style="display:flex;justify-content:end;flex-direction:column;align-items:start;gap:8px;font-size: clamp(14px,1.6vw,16px)">
             <div class="d-flex align-items-center gap-1">
@@ -109,6 +115,7 @@
 
 
 @section Scripts{
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsBaseWorkspace")));</script>
 
     <script data-page-bindings="submitSetting,getSmsService">
         document.addEventListener("DOMContentLoaded", async () => {

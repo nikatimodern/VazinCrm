@@ -8681,3 +8681,31 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     #addRequestAmountModal .modal-body { padding:12px; }
     #addRequestAmountModal .request-amount-modal-actions button { min-height:40px; }
 }
+
+/* Shared settings navigation modal. */
+#BaseSetting .modal-content { border:1px solid #DDE1E8; border-radius:12px; background:#fff; color:#212529; }
+#BaseSetting .modal-header { padding:12px 16px; border-bottom:1px solid #DDE1E8; background:#E7F3F0; }
+#BaseSetting #baseSettingTitle { color:#004944; margin:0; font:700 16px/1.8 IRANSansBold; }
+#BaseSetting .btn-close { opacity:.7; border-radius:5px; }
+#BaseSetting .modal-body { padding:12px; scrollbar-color:#00665C transparent; }
+#BaseSetting .modal-body > div { gap:6px !important; }
+#BaseSetting .buttonGreen-wide { display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%; min-height:44px; padding:6px 10px; border:1px solid #DDE1E8; border-radius:7px; background:#fff; color:#004944; box-shadow:none; text-align:start; font:500 14px/1.7 IRANSansMedium; transition:background-color .15s,border-color .15s; }
+#BaseSetting .buttonGreen-wide > :is(i,svg) { box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; width:30px !important; height:30px; padding:7px; flex-shrink:0; border-radius:6px; background:#E7F3F0; color:#004944; font-size:16px; }
+#BaseSetting .buttonGreen-wide::after { content:'›'; margin-inline-start:auto; color:#545961; font-size:22px; line-height:1; }
+#BaseSetting .buttonGreen-wide:hover { border-color:#C6B5DD; background:#F3EDFC; color:#5811B4; }
+#BaseSetting .buttonGreen-wide:hover > :is(i,svg) { background:#F3EDFC; color:#5811B4; }
+#BaseSetting :is(button,a):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+@media (max-width:575px) { #BaseSetting .modal-dialog { margin:8px; } #BaseSetting .modal-body { padding:9px; } }
+@media (prefers-reduced-motion:reduce) { #BaseSetting .buttonGreen-wide { transition:none; } }
+
+/* Settings phone directory is shared by every page. */
+#phoneBookModal .modal-content { border:1px solid #DDE1E8; border-radius:12px; color:#212529; }
+#phoneBookModal .modal-header { padding:12px 16px; border-bottom:1px solid #DDE1E8; background:#E7F3F0; }
+#phoneBookModal #phonebookLabel { color:#004944; font:700 16px/1.8 IRANSansBold; }
+#phoneBookModal .modal-body { padding:12px; background:#fff; }
+#phoneBookModal #PhoneBookSearchInp { min-height:36px; padding-inline:12px; border:1px solid #A3B8B3; border-radius:7px; font:400 14px/1.8 IRANSans; }
+#phoneBookModal #phonebookList { scrollbar-color:#00665C transparent; }
+#phoneBookModal #phonebookList > div { padding:9px; border:1px solid #DDE1E8; border-radius:7px; background:#F0F1F7; color:#212529; box-shadow:none; font:400 13px/1.8 IRANSans; }
+#phoneBookModal a[href^="tel:"] { color:#00665C !important; }
+#phoneBookModal :is(button,input,a):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+@media (max-width:575px) { #phoneBookModal .modal-dialog { margin:8px; } #phoneBookModal .modal-body { padding:9px; } }

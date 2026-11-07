@@ -2856,6 +2856,7 @@ async function loadPhonebook(search = "") {
 
 
 async function showModalPhonebook() {
+    enableMomentumScrollScope(document.getElementById("phoneBookModal"));
     ModalToggle("phoneBookModal");
     
     await loadPhonebook();
@@ -2953,6 +2954,7 @@ audioModal?.addEventListener("hidden.bs.modal", () => {
 
 function showModalSetting() {
     toggleMobileDrawer(false);
+    enableMomentumScrollScope(document.getElementById("BaseSetting"));
     ModalToggle("BaseSetting");
 }
 

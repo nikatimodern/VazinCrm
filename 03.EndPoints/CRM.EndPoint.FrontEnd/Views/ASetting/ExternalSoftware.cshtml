@@ -1,6 +1,12 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @model dynamic
 
-<div class="mx-2 mx-md-3 my-3">
+<div id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme mx-2 mx-md-3 my-3">
 
     <div class="d-flex align-items-center justify-content-between mb-2">
         <div>نرم افزارهای متصل</div>
@@ -42,6 +48,7 @@
 
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsConnectionsWorkspace")));</script>
 
     <script data-page-bindings="addExternalSoftware,submitExternalSoftware,getExternalSoftware">
 

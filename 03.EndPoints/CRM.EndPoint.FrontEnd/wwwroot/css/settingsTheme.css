@@ -1,0 +1,56 @@
+/* Settings destinations only; preserve each module's interaction and state rules. */
+.crm-settings-theme { font:400 14px/1.8 IRANSans; color:#212529; }
+.crm-settings-theme :is(.InfoData,.user-list-panel,.sms-content-card,.sms-summary-card,.user-card) { padding:12px; border:1px solid #DDE1E8; border-radius:9px; background:#fff; box-shadow:0 1px 3px rgb(33 37 41 / 4%); min-width:0; }
+.crm-settings-theme :is(.form-control,.form-select,.ts-control) { min-height:36px; border:1px solid #A3B8B3; border-radius:6px; background-color:#fff; color:#212529; font:400 14px/1.8 IRANSans; }
+.crm-settings-theme input:not([type="checkbox"]):not([type="radio"]) { min-width:0; }
+.crm-settings-theme :is(.form-control,.form-select):focus { outline:none; border-color:#5811B4; box-shadow:0 0 0 2px #F3EDFC; }
+.crm-settings-theme :is(input[type="checkbox"],input[type="radio"]) { accent-color:#00665C; }
+.crm-settings-theme form label { color:#004944; font:500 14px/1.8 IRANSansMedium; }
+.crm-settings-theme .table { font:400 13px/1.8 IRANSans; }
+.crm-settings-theme .InfoData > form { gap:8px; }
+.crm-settings-theme .InfoData > form > input { flex-basis:100px; }
+.crm-settings-theme .InfoData > .line { border-color:#DDE1E8 !important; }
+.crm-settings-theme .hoverLink { color:#5811B4; }
+.crm-settings-theme .buttonGreen2 { box-shadow:none; }
+#settingsCompanyWorkspace > div > div > label { color:#004944; font:700 16px/1.8 IRANSansBold !important; }
+#settingsBaseWorkspace #SettingFormId { width:auto; gap:0 !important; font:400 14px/1.8 IRANSans !important; }
+#settingsBaseWorkspace #SettingFormId > div { width:100%; padding-block:8px; border-bottom:1px solid #DDE1E8; }
+#settingsBaseWorkspace #SettingFormId > div:last-child { border-bottom:0; }
+#settingsBaseWorkspace #SettingFormId input[type="checkbox"] { flex-shrink:0; width:16px; height:16px; }
+#settingsConnectionsWorkspace #externalSoftwareList { gap:7px; }
+#settingsConnectionsWorkspace #externalSoftwareList .list-group-item { padding:10px 12px; border:1px solid #DDE1E8; border-radius:7px; color:#004944; background:#fff; font:500 14px/1.8 IRANSansMedium; }
+#settingsUsersWorkspace .user-page-header h2 { font:700 18px/1.8 IRANSansBold; color:#004944; }
+#settingsUsersWorkspace .user-card h3 { font:500 16px/1.8 IRANSansMedium; color:#004944; overflow-wrap:anywhere; }
+#settingsUsersWorkspace :is(.user-page-header p,.user-card-username,.user-section-label) { color:#545961; font-size:12px; }
+#settingsUsersWorkspace .user-card { border-top:2px solid #004944; }
+#settingsUsersWorkspace :is(.user-avatar,.user-role-chip,.user-role-badge) { background:#E7F3F0; color:#004944; }
+#settingsUsersWorkspace :is(.user-filter-group,.user-list-toolbar) { border-color:#DDE1E8; background:#fff; }
+#settingsUsersWorkspace .user-card-actions { padding-top:8px; border-top:1px solid #DDE1E8; gap:6px; flex-wrap:wrap; }
+#settingsUsersWorkspace .user-action { border:1px solid #DDE1E8; border-radius:6px; background:#E7F3F0; color:#004944; box-shadow:none; font:500 13px/1.7 IRANSansMedium; }
+#settingsUsersWorkspace .user-action-roles { background:#F3EDFC; color:#5811B4; }
+#settingsUsersWorkspace .user-action-delete { background:#FCE8F0; color:#C2185B; }
+#settingsUsersWorkspace .user-status-active { background:#E7F3F0; color:#004944; }
+#settingsUsersWorkspace .user-role-picker-button { background:#F3EDFC; color:#5811B4; border:1px solid #DDE1E8; border-radius:6px; }
+#settingsUsersWorkspace .user-pagination button.active { background:#5811B4; border-color:#5811B4; color:#fff; }
+#settingsRecycleWorkspace .filter-switch { justify-content:flex-start; }
+#settingsSmsWorkspace .sms-page-title { color:#004944; font:700 18px/1.8 IRANSansBold; }
+#settingsSmsWorkspace .sms-page-subtitle { color:#545961; font:400 13px/1.8 IRANSans; }
+#settingsSmsWorkspace .sms-summary-icon { border:1px solid #DDE1E8; background:#E7F3F0; color:#004944; }
+#settingsSmsWorkspace .sms-summary-card:nth-child(2) .sms-summary-icon { background:#F3EDFC; color:#5811B4; }
+#settingsSmsWorkspace .sms-summary-content strong { color:#004944; font:700 18px/1.8 IRANSansBold; }
+#settingsSmsWorkspace .sms-summary-content span { color:#545961; font-size:13px; }
+#settingsSmsWorkspace .sms-tabs { background:#F0F1F7; border-color:#DDE1E8; gap:5px; flex-wrap:wrap; }
+#settingsSmsWorkspace .sms-tab { border-radius:6px; color:#545961; font:500 14px/1.8 IRANSansMedium; }
+#settingsSmsWorkspace .sms-tab.active { background:#004944; color:#fff; border-color:#004944; }
+#settingsSmsWorkspace .sms-tab-count { background:#F3EDFC; color:#5811B4; }
+#settingsSmsWorkspace .sms-tab.active .sms-tab-count { background:#fff; color:#004944; }
+#settingsSmsWorkspace .sms-content-card table thead th { color:#004944; background:#E7F3F0; font:700 13px/1.8 IRANSansBold; }
+#settingsSmsWorkspace .sms-content-card table tbody td { font:400 13px/1.8 IRANSans; border-color:#DDE1E8; }
+.crm-settings-theme :is(button,a,input,select):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+@media (max-width:767px) {
+    .crm-settings-theme :is(.InfoData,.user-list-panel,.sms-content-card,.sms-summary-card,.user-card) { padding:9px; }
+    .crm-settings-theme .InfoData > form { flex-wrap:wrap; }
+    #settingsUsersWorkspace :is(.user-page-actions,.user-card-actions) { flex-wrap:wrap; }
+    #settingsSmsWorkspace .sms-tabs { gap:4px; }
+    #settingsSmsWorkspace .sms-tab { padding:7px; font-size:13px; }
+}

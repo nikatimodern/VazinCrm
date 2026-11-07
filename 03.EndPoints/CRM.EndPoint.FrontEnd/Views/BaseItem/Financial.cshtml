@@ -1,3 +1,9 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 @model CRM.EndPoint.FrontEnd.Models.BaseItem.FinancialSettingVModel
 
 @{
@@ -5,7 +11,7 @@
     Layout = "_Layout";
 }
 
-<div class="p-1">
+<div id="settingsFinancialWorkspace" class="crm-settings-theme crm-operations-theme p-1">
     <div class="col-12">
         <label class="fbold mb-1" style="font-size:18px">عنوان های هزینه تنخواه</label>
         <div class="InfoData">
@@ -70,6 +76,7 @@
 </div>
 
 @section Scripts {
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsFinancialWorkspace")));</script>
     <script data-page-bindings="baseCashData,baseCashTbl,getAllBaseCashes,submitBaseCashForm,DelBaseCashItem,ShowUpdateBaseCash,UpBaseCashCancel">
         let baseCashData = {};
 

@@ -1,9 +1,15 @@
+@section Styles {
+
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.0.4" asp-append-version="true" />
+}
+
 ﻿@{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div style="width:100%;">
+<div id="settingsCompanyWorkspace" class="crm-settings-theme crm-operations-theme">
     <div class="col-12" style="display:flex; flex-flow:wrap">
         <div class="col-12 col-xl-4 pt-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">اصناف</label>
@@ -276,6 +282,7 @@
 
 
 @section Scripts{
+    <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsCompanyWorkspace")));</script>
     <script data-page-bindings="AllSenfTbl,AllFamilyTbl,AllBankAccountTbl,AllImageUp,logo,MohrR,Mohr,companyId,delimageComp,getCompany,DelSenfItem,DelFamilyWayItem,DelProductItem,getAllProductBase,getAllSenf,getAllFamilyWay,modelGetBankAccounts,getAllBankAccount,formProductSubmit,formSenfSubmit,formFamilyWaySubmit,submitCompanyForm,submitBankAccountForm,updateBankAccountActive,DelBankAccountItem,DelBankAccountItemOk,bankAccountData,ShowUpdateBankAccountItem,UpBankAccountItem,UpBankAccountItemCancel">
 
         var AllSenfTbl = null;
