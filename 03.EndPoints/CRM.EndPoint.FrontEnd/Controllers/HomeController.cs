@@ -238,9 +238,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 && crmMiladiDate.Value.Date <= fiscalYear.EndDate.Date;
         }
 
+        // Read-only diagnostics for failed historical matches. Expand plan.Issues in the debugger.
+        private sealed record LegacyMappingIssue(
+            string EntityName, Guid EntityId, string CrmNumber,
+            string Status, string Reason, string Details);
+
         private sealed record LegacyMappingPlan(
             int AlreadyMapped, int NotMatched, int Ambiguous,
-            List<ExternalMapping> Pending);
+            List<ExternalMapping> Pending, List<LegacyMappingIssue> Issues)
+        {
+            public Dictionary<string, int> ReasonsSummary => Issues
+                .GroupBy(x => x.Reason)
+                .ToDictionary(x => x.Key, x => x.Count());
+
+            public int PreFactorsWithoutMatch => Issues.Count(x =>
+                x.EntityName == nameof(PreFactor) && x.Status == "NotMatched");
+            public int FactorsWithoutMatch => Issues.Count(x =>
+                x.EntityName == nameof(Factor) && x.Status == "NotMatched");
+        }
 
         private async Task<LegacyMappingPlan> BuildLegacySepidarMappingPlanAsync(CancellationToken ct)
         {
@@ -300,12 +315,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         GetLegacyFiscalYear(x.Title)!.Value, x.StartDate, x.EndDate));
 
             var pending = new List<ExternalMapping>();
+            var issues = new List<LegacyMappingIssue>();
+            void AddIssue(string entityName, Guid id, string crmNumber,
+                string status, string reason, string details)
+            {
+                issues.Add(new LegacyMappingIssue(entityName, id, crmNumber,
+                    status, reason, details));
+            }
+
             var alreadyMapped = 0;
             var notMatched = 0;
             var ambiguous = 0;
 
             void Propose(Guid softwareId, string entityName, Guid entityId,
-                ExternalMappingTypeEnum mapType, string externalName, int externalId)
+                string crmNumber, ExternalMappingTypeEnum mapType, string externalName, int externalId)
             {
                 if (existingSources.Contains((softwareId, entityName, entityId, mapType)))
                 {
@@ -316,6 +339,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (existingTargets.Contains((softwareId, externalName, externalId.ToString())))
                 {
                     ambiguous++;
+                    AddIssue(entityName, entityId, crmNumber, "Ambiguous",
+                        "ExternalTargetAlreadyMapped",
+                        $"سپیدار {externalName} ID={externalId} قبلاً به سند دیگری متصل شده است.");
                     return;
                 }
 
@@ -343,6 +369,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .ToHashSet();
 
                 ambiguous += duplicateIds.Count;
+                foreach (var conflict in pending.Where(x => duplicateIds.Contains(x.Id)))
+                    AddIssue(conflict.EntityName, conflict.EntityId, "-",
+                        "Ambiguous", "DuplicateProposedTarget",
+                        $"چند سند CRM به یک {conflict.ExEntityName} سپیدار با ID={conflict.ExEntityId} منتهی شده‌اند.");
                 pending.RemoveAll(x => duplicateIds.Contains(x.Id));
             }
 
@@ -381,6 +411,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (!quoteByNumber.TryGetValue(pf.SerialNumber, out var options))
                     {
                         notMatched++;
+                        AddIssue(nameof(PreFactor), pf.Id, pf.SerialNumber.ToString(),
+                            "NotMatched", "QuotationNumberNotFound",
+                            $"هیچ پیش‌فاکتوری در سپیدار ۱ با Number={pf.SerialNumber} پیدا نشد.");
                         continue;
                     }
 
@@ -396,12 +429,53 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             || q.CustomerPartyRef == partyId)).ToList();
 
                     if (matches.Count == 1)
+                    {
                         Propose(softwareId, nameof(PreFactor), pf.Id,
-                            ExternalMappingTypeEnum.پیش_فاکتور, nameof(Quotation), matches[0].Id);
+                            pf.SerialNumber.ToString(), ExternalMappingTypeEnum.پیش_فاکتور,
+                            nameof(Quotation), matches[0].Id);
+                    }
                     else if (matches.Count == 0)
+                    {
                         notMatched++;
+                        var candidates = options.Select(q => {
+                            var differences = new List<string>();
+                            if (!fiscalYears.TryGetValue(q.FiscalYearRef, out var fiscalYear))
+                                differences.Add($"سال مالی سپیدار با Ref={q.FiscalYearRef} شناخته نشده");
+                            else if (!IsInLegacyFiscalYear(pf.Date, pf.DateMiladi, fiscalYear))
+                                differences.Add($"سال مالی متفاوت: CRM={pf.Date}, Sepidar={fiscalYear.Year}");
+
+                            if (q.Price != pf.SumTotalAmount)
+                                differences.Add($"مبلغ ناخالص: CRM={pf.SumTotalAmount}, Sepidar={q.Price}");
+                            if (q.NetPrice != pf.PaymentAmount)
+                                differences.Add($"مبلغ نهایی: CRM={pf.PaymentAmount}, Sepidar={q.NetPrice}");
+                            if (pf.CustomerId.HasValue
+                                && financialCustomerIds.TryGetValue(pf.CustomerId.Value, out var partyId)
+                                && q.CustomerPartyRef != partyId)
+                                differences.Add($"مشتری: CRM SepidarPartyId={partyId}, Sepidar={q.CustomerPartyRef}");
+
+                            return new { q.Id, Differences = differences };
+                        }).ToList();
+
+                        var reason = candidates.All(x => x.Differences.Any(d => d.StartsWith("سال مالی")))
+                            ? "QuotationFiscalYearMismatch"
+                            : candidates.All(x => x.Differences.Any(d => d.StartsWith("مبلغ")))
+                                ? "QuotationAmountMismatch"
+                                : candidates.All(x => x.Differences.Any(d => d.StartsWith("مشتری")))
+                                    ? "QuotationCustomerMismatch"
+                                    : "QuotationMultipleFieldMismatch";
+
+                        AddIssue(nameof(PreFactor), pf.Id, pf.SerialNumber.ToString(),
+                            "NotMatched", reason,
+                            string.Join(" | ", candidates.Take(5).Select(x =>
+                                $"QuotationId={x.Id}: {string.Join("; ", x.Differences)}")));
+                    }
                     else
+                    {
                         ambiguous++;
+                        AddIssue(nameof(PreFactor), pf.Id, pf.SerialNumber.ToString(),
+                            "Ambiguous", "MultipleMatchingQuotations",
+                            $"چند پیش‌فاکتور کاملاً مطابق: QuotationIds={string.Join(", ", matches.Select(x => x.Id))}");
+                    }
                 }
 
                 RemoveAmbiguousProposals(ExternalMappingTypeEnum.پیش_فاکتور);
@@ -486,6 +560,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             ? quotationInvoices : new List<LegacyInvoiceRow>();
                     }
 
+                    var candidateInvoices = matches.ToList();
                     matches = matches.Where(invoice =>
                         fiscalYears.TryGetValue(invoice.FiscalYearRef, out var financialYear)
                         && IsInLegacyFiscalYear(factor.Date, factor.DateMiladi, financialYear)
@@ -500,18 +575,79 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         .ToList();
 
                     if (matches.Count == 1)
+                    {
                         Propose(softwareId, nameof(Factor), factor.Id,
+                            factor.SnFinancial ?? factor.SepidarId?.ToString() ?? factor.Id.ToString(),
                             ExternalMappingTypeEnum.فاکتور, nameof(Invoice), matches[0].Id);
+                    }
                     else if (matches.Count == 0)
+                    {
                         notMatched++;
+                        var crmNumber = factor.SnFinancial ?? factor.SepidarId?.ToString() ?? "-";
+                        if (candidateInvoices.Count == 0)
+                        {
+                            var reason = factor.SepidarId > 0 ? "InvoiceIdNotFound"
+                                : quotationId == 0 ? "RelatedQuotationNotMapped"
+                                : "InvoiceForQuotationNotFound";
+                            AddIssue(nameof(Factor), factor.Id, crmNumber,
+                                "NotMatched", reason,
+                                $"CRM PrefactorId={factor.PfactorId}, SepidarId={factor.SepidarId}, QuotationId={quotationId}");
+                        }
+                        else
+                        {
+                            var candidates = candidateInvoices.Select(invoice => {
+                                var differences = new List<string>();
+                                if (!fiscalYears.TryGetValue(invoice.FiscalYearRef, out var fiscalYear))
+                                    differences.Add($"سال مالی سپیدار Ref={invoice.FiscalYearRef} ناشناخته");
+                                else if (!IsInLegacyFiscalYear(factor.Date, factor.DateMiladi, fiscalYear))
+                                    differences.Add($"سال مالی: CRM={factor.Date}, Sepidar={fiscalYear.Year}");
+
+                                if (invoice.NetPrice != factor.PaymentAmount)
+                                    differences.Add($"مبلغ نهایی: CRM={factor.PaymentAmount}, Sepidar={invoice.NetPrice}");
+                                if (quotationId > 0 && invoice.QuotationRef != quotationId)
+                                    differences.Add($"QuotationRef: expected={quotationId}, actual={invoice.QuotationRef}");
+                                if (!string.IsNullOrWhiteSpace(factor.SnFinancial)
+                                    && (!int.TryParse(factor.SnFinancial, out var number)
+                                        || invoice.Number != number))
+                                    differences.Add($"شماره مالی: CRM={factor.SnFinancial}, Sepidar={invoice.Number}");
+                                if (factor.CustomerId.HasValue
+                                    && financialCustomerIds.TryGetValue(factor.CustomerId.Value, out var partyId)
+                                    && invoice.CustomerPartyRef != partyId)
+                                    differences.Add($"مشتری: CRM SepidarPartyId={partyId}, Sepidar={invoice.CustomerPartyRef}");
+
+                                return new { invoice.Id, Differences = differences };
+                            }).ToList();
+                            var reason = candidates.All(x => x.Differences.Any(d => d.StartsWith("سال مالی")))
+                                ? "InvoiceFiscalYearMismatch"
+                                : candidates.All(x => x.Differences.Any(d => d.StartsWith("مبلغ")))
+                                    ? "InvoiceAmountMismatch"
+                                    : candidates.All(x => x.Differences.Any(d => d.StartsWith("شماره مالی")))
+                                        ? "InvoiceFinancialNumberMismatch"
+                                        : candidates.All(x => x.Differences.Any(d => d.StartsWith("مشتری")))
+                                            ? "InvoiceCustomerMismatch"
+                                            : candidates.All(x => x.Differences.Any(d => d.StartsWith("QuotationRef")))
+                                                ? "InvoiceQuotationMismatch"
+                                                : "InvoiceMultipleFieldMismatch";
+                            AddIssue(nameof(Factor), factor.Id, crmNumber,
+                                "NotMatched", reason,
+                                string.Join(" | ", candidates.Take(5).Select(x =>
+                                    $"InvoiceId={x.Id}: {string.Join("; ", x.Differences)}")));
+                        }
+                    }
                     else
+                    {
                         ambiguous++;
+                        AddIssue(nameof(Factor), factor.Id,
+                            factor.SnFinancial ?? factor.SepidarId?.ToString() ?? "-",
+                            "Ambiguous", "MultipleMatchingInvoices",
+                            $"چند فاکتور مطابق: InvoiceIds={string.Join(", ", matches.Select(x => x.Id))}");
+                    }
                 }
 
                 RemoveAmbiguousProposals(ExternalMappingTypeEnum.فاکتور);
             }
 
-            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending);
+            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending, issues);
             }
             catch (SqlNullValueException ex)
             {
