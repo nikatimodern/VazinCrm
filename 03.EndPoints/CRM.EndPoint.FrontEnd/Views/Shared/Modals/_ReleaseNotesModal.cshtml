@@ -5,8 +5,24 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header"><h2 id="releaseNotesTitle">تازه‌های سامانه</h2><button type="button" class="rn-close" data-bs-dismiss="modal" aria-label="بستن">×</button></div>
-            <div class="modal-body" data-rn-content></div>
-            <div class="modal-footer"><p data-rn-error role="alert" hidden></p><a href="/ReleaseNotes/History" class="rn-button">همه تغییرات</a><button type="button" class="rn-button" data-bs-dismiss="modal">بعداً</button><button type="button" class="rn-button rn-primary" data-rn-ack>متوجه شدم</button></div>
+            <div class="modal-body">
+                <div class="rn-history-tools" data-rn-history-tools hidden>
+                    <label class="rn-history-search">
+                        <span class="visually-hidden">جستجو در تغییرات نسخه‌ها</span>
+                        <i class="fa fa-search" aria-hidden="true"></i>
+                        <input type="search" data-rn-history-search placeholder="جستجو در نسخه‌ها و تغییرات…" autocomplete="off" />
+                    </label>
+                    <div class="rn-history-filters" role="group" aria-label="نوع تغییر">
+                        <button type="button" class="rn-history-filter active" data-rn-history-type="all" aria-pressed="true">همه</button>
+                        <button type="button" class="rn-history-filter" data-rn-history-type="1" aria-pressed="false">قابلیت جدید</button>
+                        <button type="button" class="rn-history-filter" data-rn-history-type="2" aria-pressed="false">بهبود</button>
+                        <button type="button" class="rn-history-filter" data-rn-history-type="3" aria-pressed="false">رفع مشکل</button>
+                    </div>
+                </div>
+                <p class="rn-empty" data-rn-history-empty hidden>موردی مطابق جستجو یا فیلتر پیدا نشد.</p>
+                <div data-rn-content></div>
+            </div>
+            <div class="modal-footer"><p data-rn-error role="alert" hidden></p><button type="button" class="rn-button" data-rn-history>همه تغییرات</button><button type="button" class="rn-button" data-bs-dismiss="modal">بعداً</button><button type="button" class="rn-button rn-primary" data-rn-ack>متوجه شدم</button></div>
         </div>
     </div>
 </div>

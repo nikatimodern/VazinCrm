@@ -3,7 +3,13 @@
     const modal = document.getElementById("releaseNotesModal");
     if (!modal || window.ReleaseNotes) return;
     const content = modal.querySelector("[data-rn-content]"), ack = modal.querySelector("[data-rn-ack]"), error = modal.querySelector("[data-rn-error]");
+    const historyButton = modal.querySelector("[data-rn-history]");
+    const historyTools = modal.querySelector("[data-rn-history-tools]");
+    const historySearch = modal.querySelector("[data-rn-history-search]");
+    const historyFilters = [...modal.querySelectorAll("[data-rn-history-type]")];
+    const historyEmpty = modal.querySelector("[data-rn-history-empty]");
     let ids = [], preview = false, busy = false, restoreFocus = null;
+    let historyType = "all", historyRequest = null;
     const types = { 1: "قابلیت جدید", 2: "بهبود", 3: "رفع اشکال" };
     function element(tag, text, className) {
         const node = document.createElement(tag);
@@ -22,6 +28,7 @@
         const fragment = document.createDocumentFragment();
         for (const note of notes) {
             const article = element("article", null, "rn-release"), header = element("header");
+            article.dataset.rnHistoryCard = "";
             const version = element("span", note.version, "rn-version"); version.dir = "ltr";
             header.append(version, element("h2", note.title));
             if (note.isImportant) header.append(element("span", "مهم", "rn-tag"));
@@ -33,6 +40,8 @@
             if (note.description) article.append(element("p", note.description, "rn-description"));
             for (const item of note.items || []) {
                 const section = element("section", null, "rn-item");
+                section.dataset.rnHistoryItem = "";
+                section.dataset.type = String(item.type);
                 section.append(element("span", types[item.type] || "تغییر", "rn-tag rn-type-" + item.type), element("h3", item.title));
                 if (item.description) section.append(element("p", item.description, "rn-description"));
                 const imageUrl = safeUrl(item.imageUrl), learnMoreUrl = safeUrl(item.learnMoreUrl);
@@ -44,22 +53,69 @@
         }
         target.replaceChildren(fragment);
     }
-    function show(notes, isPreview = false, heading = null) {
-        if (busy || (!isPreview && !notes.length) || document.querySelector(".modal.show")) return false;
-        preview = isPreview; ids = isPreview ? [] : notes.map(x => x.id);
-        restoreFocus = document.activeElement;
+    const normalize = value => String(value || "").trim().toLocaleLowerCase("fa-IR").replace(/[يى]/g, "ی").replace(/ك/g, "ک");
+    function filterHistory() {
+        const term = normalize(historySearch.value);
+        let visibleCount = 0;
+        const cards = content.querySelectorAll("[data-rn-history-card]");
+        for (const card of cards) {
+            const headerText = card.querySelector("header")?.textContent || "";
+            const noteText = card.querySelector(":scope > .rn-description")?.textContent || "";
+            const headerMatch = normalize(headerText + " " + noteText).includes(term);
+            const items = card.querySelectorAll("[data-rn-history-item]");
+            let matchingItems = 0;
+            for (const item of items) {
+                const match = (historyType === "all" || item.dataset.type === historyType) &&
+                    (headerMatch || normalize(item.textContent).includes(term));
+                item.hidden = !match;
+                if (match) matchingItems++;
+            }
+            const visible = matchingItems > 0 || (historyType === "all" && headerMatch && !items.length);
+            card.hidden = !visible;
+            if (visible) visibleCount++;
+        }
+        historyEmpty.hidden = visibleCount > 0 || cards.length === 0;
+    }
+    function show(notes, isPreview = false, heading = null, isHistory = false) {
+        const openModal = document.querySelector(".modal.show");
+        if (busy || (!isPreview && !notes.length) || (openModal && openModal !== modal)) return false;
+        preview = isPreview;
+        ids = isPreview ? [] : notes.map(x => x.id);
+        if (!modal.classList.contains("show")) restoreFocus = document.activeElement;
         if (notes.length) render(notes, content);
         else content.replaceChildren(element("p", "هنوز تغییری برای نمایش وجود ندارد.", "rn-empty"));
         error.hidden = true;
         ack.hidden = isPreview;
+        historyButton.hidden = isHistory;
+        historyTools.hidden = !isHistory;
+        historyEmpty.hidden = true;
+        modal.classList.toggle("rn-history", isHistory);
+        historySearch.value = "";
+        historyType = "all";
+        historyFilters.forEach(button => {
+            const active = button.dataset.rnHistoryType === "all";
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        if (isHistory && notes.length) filterHistory();
         modal.querySelector("[data-bs-dismiss='modal'].rn-button").textContent = isPreview ? "بستن" : "بعداً";
         document.getElementById("releaseNotesTitle").textContent = heading || (isPreview ? "پیش‌نمایش تغییرات نسخه" : "تازه‌های سامانه");
-        ModalToggle(modal, "show");
+        if (!modal.classList.contains("show")) ModalToggle(modal, "show");
         return true;
     }
     const scrollCleanup = typeof enableMomentumScrollScope === "function" ? enableMomentumScrollScope(modal) : null;
-    modal.addEventListener("hide.bs.modal", event => { if (busy) event.preventDefault(); });
-    modal.addEventListener("hidden.bs.modal", () => { ids = []; content.replaceChildren(); restoreFocus?.isConnected && restoreFocus.focus(); });
+    modal.addEventListener("hide.bs.modal", event => {
+        if (busy) event.preventDefault();
+        else historyRequest?.abort();
+    });
+    modal.addEventListener("hidden.bs.modal", () => {
+        ids = [];
+        content.replaceChildren();
+        historyTools.hidden = true;
+        historyEmpty.hidden = true;
+        modal.classList.remove("rn-history");
+        restoreFocus?.isConnected && restoreFocus.focus();
+    });
     ack.addEventListener("click", async () => {
         if (preview || busy || !ids.length) return;
         busy = true; ack.disabled = true; error.hidden = true;
@@ -70,11 +126,48 @@
             else { error.textContent = "ثبت تأیید انجام نشد. دوباره تلاش کنید؛ در صورت تغییر وضعیت نسخه، صفحه را تازه‌سازی کنید."; error.hidden = false; }
         } finally { busy = false; ack.disabled = false; }
     });
-    window.ReleaseNotes = Object.freeze({ preview:notes => show(notes, true), render, safeUrl,
-        history: async () => {
-            const notes = await sendApiRequest({ url:"/ReleaseNotes/HistoryData", showLoading:false });
-            if (Array.isArray(notes)) show(notes, true, "تغییرات نسخه‌ها");
-        } });
+    async function showHistory() {
+        if (historyRequest || busy) return;
+        const openModal = document.querySelector(".modal.show");
+        if (openModal && openModal !== modal) return;
+        const controller = new AbortController();
+        historyRequest = controller;
+        historyButton.disabled = true;
+        error.hidden = true;
+        if (!modal.classList.contains("show") && show([], true, "تغییرات نسخه‌ها", true)) {
+            content.replaceChildren(element("p", "در حال دریافت تاریخچه تغییرات…", "rn-empty"));
+        }
+        try {
+            const notes = await sendApiRequest({
+                url: "/ReleaseNotes/HistoryData", showLoading: false, showError: false, signal: controller.signal
+            });
+            if (controller.signal.aborted) return;
+            if (Array.isArray(notes)) show(notes, true, "تغییرات نسخه‌ها", true);
+            else {
+                error.textContent = "دریافت تاریخچه تغییرات انجام نشد. دوباره تلاش کنید.";
+                error.hidden = false;
+            }
+        } finally {
+            if (historyRequest === controller) {
+                historyRequest = null;
+                historyButton.disabled = false;
+            }
+        }
+    }
+    historyButton.addEventListener("click", showHistory);
+    historySearch.addEventListener("input", filterHistory);
+    historyTools.addEventListener("click", event => {
+        const button = event.target.closest("[data-rn-history-type]");
+        if (!button || !historyTools.contains(button)) return;
+        historyType = button.dataset.rnHistoryType;
+        historyFilters.forEach(filter => {
+            const active = filter === button;
+            filter.classList.toggle("active", active);
+            filter.setAttribute("aria-pressed", String(active));
+        });
+        filterHistory();
+    });
+    window.ReleaseNotes = Object.freeze({ preview: notes => show(notes, true), render, safeUrl, history: showHistory });
     window.showReleaseNotesHistory = () => window.ReleaseNotes.history();
     // این کلید فقط مزاحمت تکراری را کم می‌کند؛ وضعیت دیده‌شدن همیشه از پایگاه داده می‌آید.
     const key = "release-notes:" + modal.dataset.user + ":" + (modal.dataset.session || "existing-login");
