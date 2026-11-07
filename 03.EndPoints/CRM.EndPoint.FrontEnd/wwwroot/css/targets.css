@@ -39,8 +39,9 @@
 .target-btn-muted { background: #f0f1f7; }
 .target-btn:hover:not(:disabled) { filter: brightness(.97); }
 .target-btn:disabled { opacity: .55; cursor: not-allowed; }
-.target-btn:focus-visible, .target-modal input:focus-visible, .target-modal select:focus-visible {
-    outline: 2px solid var(--target-secondary); outline-offset: 2px;
+.target-btn:focus-visible {
+    outline: 2px solid var(--target-secondary);
+    outline-offset: 2px;
 }
 .target-modal .modal-content {
     border: 0;
@@ -135,10 +136,14 @@
 .target-annual-actions #targetYear { width: 84px; min-height: 33px; text-align: center; }
 .target-modal input, .target-modal select { border: 1px solid var(--target-border); border-radius: 8px; min-height: 36px; background: #fff; padding: 6px 9px; font: inherit; width: 100%; }
 .target-modal input[readonly] { background: #f7f8fa; }
-.target-modal input:focus, .target-modal select:focus {
+.target-modal input:focus,
+.target-modal input:focus-visible,
+.target-modal select:focus,
+.target-modal select:focus-visible {
     border-color: var(--target-secondary);
+    outline: none !important;
+    box-shadow: none !important;
 }
-.target-field:focus-within { border-color: var(--target-secondary); }
 .target-form-grid, .target-expert-grid { display: grid; gap: 10px; }
 .target-month-grid { display: block; }
 .target-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
