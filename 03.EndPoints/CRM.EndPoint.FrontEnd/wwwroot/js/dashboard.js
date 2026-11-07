@@ -3,6 +3,8 @@ var systematicTask = 0;
 var filterDashboardConfig = { filterVar: {} };
 
 document.addEventListener("DOMContentLoaded", async () => {
+    enableMomentumScrollScope(document.getElementById("dashboardWorkspace"));
+    enableMomentumScroll(document.scrollingElement);
     const tasks = getAllTask(1, 0, 2);
     try {
         currentMonthArr = await myDate.getCurrentMonth();

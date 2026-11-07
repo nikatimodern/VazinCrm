@@ -2,35 +2,25 @@
     Layout = "_Layout";
 }
 
-<style>
-    #AcTable_wrapper table.dataTable {
-        font-size: clamp(11px, .75vw, 13.5px);
-    }
-    #AcTable_wrapper table.dataTable thead th {
-        white-space: normal;
-        line-height: 1.4;
-        padding: 6px 4px;
-    }
-    #AcTable_wrapper table.dataTable tbody td {
-        padding: 6px 4px !important;
-    }
-    #AcTable_wrapper table.dataTable td.wrap-text-minw {
-        min-width: 105px;
-    }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/accountancy.css" asp-append-version="true" />
+}
 
-<div class="mx-auto pb-2 w-100">
+<div id="accountancyWorkspace" class="mx-auto pb-2 w-100">
+    <div class="accountancy-heading">
+        <h1>حسابداری</h1>
     @if (User.IsAdmin() || User.IsFinancialExpert()) {
-        <div class="d-flex align-items-center gap-1 mb-3 justify-content-end">
-            <button class="buttonGreen0 deposit-btn py-1 px-2" style="font-size: 12px" onclick="showModalPreFactorList(1)">
+        <div class="accountancy-actions">
+            <button type="button" class="buttonGreen0 deposit-btn" onclick="showModalPreFactorList(1)">
                 ثبت واریزی
             </button>
-            <button class="buttonCancel2 backward-btn py-1 px-2" style="background-color: #750002;font-size: 12px" onclick="showModalPreFactorList(2)">
+            <button type="button" class="buttonCancel2 backward-btn" onclick="showModalPreFactorList(2)">
                 ثبت برگشتی
             </button>
         </div>
     }
-    <div style="border-radius:10px;width:100%;">
+    </div>
+    <div class="accountancy-table-panel">
         <table style=" width:100%" class="table table-striped table-hover nowrap" id="AcTable">
             <thead>
             <tr>
@@ -68,6 +58,7 @@
         let HeadAccouTBL;
 
         document.addEventListener("DOMContentLoaded", async () => {
+            enableMomentumScrollScope(document.getElementById("accountancyWorkspace"));
             getAllAccount();
             await Ac_GetCustomersOpId();
         });
@@ -170,13 +161,13 @@
                         data: "statusTxt", name: "StatusTxt", autoWidth: true, defaultContent: "-",
                         render: (data, type, row) => {
                             const colors = {
-                                0: "#777",
-                                1: "#CC9900",
-                                2: "#006400",
-                                3: "#8b0000",
+                                0: "#545961",
+                                1: "#5811B4",
+                                2: "#00665C",
+                                3: "#C2185B",
                             };
                             if ((row.payType === 2 || row.payType === 3) && row.vosoled) {
-                                return `<span class="fbold hoverLink text-decoration-underline" style="color: #0074bb" onclick="showPayment('${row.id}', true)">وصول شده</span>`;
+                                return `<span class="fbold hoverLink text-decoration-underline" style="color: #00665C" onclick="showPayment('${row.id}', true)">وصول شده</span>`;
                             }
                             return `<span class="fbold" style="color: ${colors[row.status]}">${data ?? "-"}</span>`;
                         },
@@ -248,10 +239,12 @@
 
 
             function initFilterAccTable() {
-                const dtLength = document.querySelector(".dt-length label");
-                const dtSearch = document.querySelector(".dt-search");
+                const dtLength = document.querySelector("#AcTable_wrapper .dt-length label");
+                const dtSearch = document.querySelector("#AcTable_wrapper .dt-search");
                 const searchInput = dtSearch?.querySelector("input");
                 if (!searchInput) return;
+                searchInput.placeholder = "جستجو در حسابداری…";
+                searchInput.setAttribute("aria-label", "جستجو در حسابداری");
 
                 const refresh = `
                     <span class="inline-flex-center" onclick="callBackAccFilter()">

@@ -9,10 +9,29 @@
 	--dashboard-task-border: color-mix(in srgb, var(--dashboard-secondary) 20%, var(--dashboard-border));
 	color: #212529;
 }
+html:has(#dashboardWorkspace) {
+	scrollbar-color:#00665C #F0F1F7;
+	scroll-behavior:auto;
+}
 .dashboard-theme .dashGridItem {
 	border: 1px solid var(--dashboard-border);
 	box-shadow: 0 1px 3px rgb(33 37 41 / 6%);
 }
+#dashboardWorkspace .dashGridContainer > .dashGridItem { min-width:0; }
+#dashboardWorkspace .dashboard-panel,
+#dashboardWorkspace #financialReportContainer { min-width:0; min-height:0; }
+#dashboardWorkspace .dashboard-panel > :first-child { flex-shrink:0; }
+#dashboardWorkspace .dashboard-scroll {
+	min-width:0;
+	min-height:0;
+	overflow:auto;
+	scrollbar-width:thin;
+	scrollbar-color:var(--dashboard-scroll-accent, var(--dashboard-action)) transparent;
+}
+#dashboardWorkspace .gridItemTasks { --dashboard-scroll-accent:var(--dashboard-secondary); }
+#dashboardWorkspace .gridItemReports,
+#dashboardWorkspace .gridItemTasks { min-height:0; height:350px; }
+#dashboardWorkspace .gridItemFinancial { min-height:0; }
 .dashboard-theme .dashCardIcon {
 	border-width: 1px;
 	background: var(--dashboard-primary-light);
@@ -195,6 +214,49 @@
 #allReportsDashboardId .report-type-badge {
 	padding: 3px 8px;
 }
+
+/* Keep report media controls compact and aligned inside dashboard cards. */
+#allReportsDashboardId .report-badges {
+	position:static;
+	justify-content:flex-end;
+	align-items:center;
+	gap:5px;
+	margin-block:3px 6px;
+}
+#allReportsDashboardId :is(.report-type-badge, .report-ai-badge, .report-audio-play) {
+	box-sizing:border-box;
+	height:24px;
+	padding:2px 6px;
+	border-radius:5px;
+	font:500 11px/1.6 IRANSansMedium;
+	box-shadow:none;
+}
+#allReportsDashboardId .report-badges .report-audio-play {
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	gap:4px;
+	border:1px solid var(--dashboard-secondary);
+	background:#fff;
+	color:var(--dashboard-secondary);
+	white-space:nowrap;
+	cursor:pointer;
+}
+#allReportsDashboardId .report-audio-play svg {
+	width:18px !important;
+	height:18px;
+	color:currentColor !important;
+	flex-shrink:0;
+}
+#allReportsDashboardId .report-audio-play:hover {
+	background:var(--dashboard-secondary-light);
+}
+#allReportsDashboardId .report-audio-play:focus-visible {
+	outline:2px solid var(--dashboard-secondary);
+	outline-offset:2px;
+}
+#allReportsDashboardId .ai-svg-icon { height:13px; width:auto; }
+#allReportsDashboardId .report-box .reporter-name { padding-left:0; }
 
 
 .dash-readMore {
