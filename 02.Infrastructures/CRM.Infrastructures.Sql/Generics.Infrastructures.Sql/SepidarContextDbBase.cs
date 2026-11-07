@@ -24,6 +24,8 @@ public abstract class SepidarContextDbBase : DbContext {
 
     public DbSet<ExtraData> ExtraData { get; set; }
     public DbSet<Invoice> vwInvoice { get; set; }
+    public DbSet<SalesInvoiceRecord> SalesInvoices { get; set; }
+    public DbSet<SalesInvoiceItemRecord> SalesInvoiceItems { get; set; }
     public DbSet<InvoiceItem> vwInvoiceItem { get; set; }
     public DbSet<PaymentHeader> PaymentHeaders { get; set; }
     public DbSet<FiscalYear> FiscalYears { get; set; }
@@ -56,6 +58,8 @@ public abstract class SepidarContextDbBase : DbContext {
 
         modelBuilder.Entity<Invoice>().ToView("vwInvoice", "SLS").Ignore(f => f.DateTXT);
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
+        modelBuilder.Entity<SalesInvoiceRecord>().ToTable("Invoice", "SLS");
+        modelBuilder.Entity<SalesInvoiceItemRecord>().ToTable("InvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
 
 
