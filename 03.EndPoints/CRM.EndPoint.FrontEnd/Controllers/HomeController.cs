@@ -274,6 +274,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             public List<ExternalMapping> PendingCustomers => Pending
                 .Where(x => x.MapType == ExternalMappingTypeEnum.مشتری).ToList();
 
+            public List<ExternalMapping> PendingDocuments => Pending
+                .Where(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                    || x.MapType == ExternalMappingTypeEnum.فاکتور).ToList();
+
+            public List<LegacyMappingIssue> BlockedDocuments => Issues
+                .Where(x => x.Status == "BlockedByCustomer").ToList();
+
+            public int BlockedDocumentCount => BlockedDocuments.Count;
+
             public Dictionary<string, int> CustomerConflictSummary => CustomerConflicts
                 .GroupBy(x => x.Reason)
                 .ToDictionary(x => x.Key, x => x.Count());
@@ -807,29 +816,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     validSepidarCustomers.UnionWith(validIds);
                 }
 
+                // Validate historical customer mappings too. A customer already mapped to
+                // a different Party, or with contradictory document evidence, is conflicted.
+                var existingCustomerMappings = existing
+                    .Where(x => x.ExternalSoftwareId == softwareId
+                        && x.MapType == ExternalMappingTypeEnum.مشتری
+                        && x.EntityName == nameof(Customer))
+                    .GroupBy(x => x.EntityId)
+                    .ToDictionary(x => x.Key, x => x.ToList());
+
                 var customerCandidates = new List<LegacyCustomerEvidence>();
                 foreach (var customerEvidence in evidence.GroupBy(x => x.CustomerId))
                 {
                     var customer = customersById[customerEvidence.Key];
-
-                    // Already mapped in ExternalMapping: leave it unchanged.
-                    if (existingSources.Contains((
-                            softwareId, nameof(Customer), customer.Id,
-                            ExternalMappingTypeEnum.مشتری)))
-                        continue;
-
                     var possibleParties = customerEvidence.Select(x => x.SepidarPartyId)
                         .Distinct().OrderBy(x => x).ToList();
                     var sources = customerEvidence.Select(x => x.SourceDocument)
                         .Distinct().OrderBy(x => x).ToList();
+
+                    existingCustomerMappings.TryGetValue(customer.Id, out var savedMappings);
+                    var savedPartyIds = savedMappings?
+                        .Select(x => int.TryParse(x.ExEntityId, out var id) ? id : 0)
+                        .Distinct().ToList() ?? new List<int>();
+
                     var reason = possibleParties.Count > 1 ? "MultipleSepidarParties"
-                        : !validSepidarCustomers.Contains(possibleParties[0]) ? "PartyNotFoundOrNotCustomer"
+                        : !validSepidarCustomers.Contains(possibleParties[0])
+                            ? "PartyNotFoundOrNotCustomer"
+                        : savedMappings != null
+                          && (savedPartyIds.Count != 1 || savedPartyIds[0] != possibleParties[0]
+                              || savedMappings.Any(x => x.ExEntityName != nameof(Party)))
+                            ? "ExistingCustomerMappingMismatch"
                         : customer.FinancialCustomerId.HasValue
                           && customer.FinancialCustomerId != possibleParties[0]
                             ? "LegacyFinancialCustomerIdMismatch"
-                        : existingTargets.Contains((softwareId, nameof(Party), possibleParties[0].ToString()))
+                        : existing.Any(x => x.ExternalSoftwareId == softwareId
+                          && x.MapType == ExternalMappingTypeEnum.مشتری
+                          && x.ExEntityName == nameof(Party)
+                          && x.ExEntityId == possibleParties[0].ToString()
+                          && x.EntityId != customer.Id)
                             ? "PartyAlreadyMappedToAnotherCustomer"
-                            : null;
+                        : null;
 
                     if (reason != null)
                     {
@@ -838,8 +864,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         continue;
                     }
 
+                    // Already mapped and consistent with the matched Sepidar documents.
+                    if (savedMappings != null)
+                        continue;
+
                     customerCandidates.Add(new LegacyCustomerEvidence(
                         customer.Id, possibleParties[0], string.Join(", ", sources)));
+                }
+
+                // Existing duplicate customer mappings also block new documents.
+                foreach (var duplicatedParty in existingCustomerMappings
+                             .SelectMany(g => g.Value
+                                 .Where(x => x.ExEntityName == nameof(Party)
+                                     && int.TryParse(x.ExEntityId, out _))
+                                 .Select(x => new { g.Key, PartyId = int.Parse(x.ExEntityId) }))
+                             .GroupBy(x => x.PartyId)
+                             .Where(x => x.Select(y => y.Key).Distinct().Count() > 1))
+                {
+                    foreach (var customerId in duplicatedParty.Select(x => x.Key).Distinct())
+                    {
+                        if (!customersById.TryGetValue(customerId, out var customer)
+                            || customerConflicts.Any(x => x.CustomerId == customerId))
+                            continue;
+
+                        customerConflicts.Add(new LegacyCustomerConflict(
+                            customerId, customer.CompanyName, "ExistingDuplicateCustomerParty",
+                            new List<int> { duplicatedParty.Key },
+                            duplicatedParty.Select(x => $"CRM CustomerId={x.Key}").Distinct().ToList()));
+                    }
                 }
 
                 // Two different CRM customers must not silently map to the same Party.
@@ -875,6 +927,104 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         UserCreator = "Legacy Sepidar mapping backfill"
                     });
                 }
+
+                // Stage 2: an invoice/quotation can only be proposed after its CRM
+                // customer is ALREADY mapped in ExternalMapping, with a matching Party.
+                // A customer mapping merely proposed in this run does not unlock documents.
+                // Approve/save customer mappings first, then re-run the preview.
+                var conflictedCustomerIds = customerConflicts
+                    .Select(x => x.CustomerId).ToHashSet();
+                var proposedCustomerIds = pending
+                    .Where(x => x.MapType == ExternalMappingTypeEnum.مشتری
+                        && x.ExternalSoftwareId == softwareId)
+                    .Select(x => x.EntityId).ToHashSet();
+                var blockedIds = new HashSet<Guid>();
+
+                foreach (var document in pending.Where(x => x.ExternalSoftwareId == softwareId
+                             && (x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                                 || x.MapType == ExternalMappingTypeEnum.فاکتور)).ToList())
+                {
+                    Guid? customerId = null;
+                    string crmNumber;
+                    if (document.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                    {
+                        var source = crmPreFactors.GetValueOrDefault(document.EntityId);
+                        customerId = source?.CustomerId;
+                        crmNumber = source?.SerialNumber.ToString() ?? "-";
+                    }
+                    else
+                    {
+                        var source = crmFactors.GetValueOrDefault(document.EntityId);
+                        crmNumber = source?.SerialNumber.ToString() ?? "-";
+                        customerId = source?.CustomerId;
+                        // A factor without an explicit CustomerId may inherit the
+                        // customer of its CRM quotation, but never if the IDs disagree.
+                        var quotationCustomerId = source != null
+                            ? preFactors.FirstOrDefault(x => x.Id == source.PfactorId)?.CustomerId
+                            : null;
+                        if (customerId.HasValue && quotationCustomerId.HasValue
+                            && customerId.Value != quotationCustomerId.Value)
+                        {
+                            blockedIds.Add(document.Id);
+                            AddIssue(document.EntityName, document.EntityId, crmNumber,
+                                "BlockedByCustomer", "DocumentCrmCustomerMismatch",
+                                $"Factor.CustomerId={customerId}, PreFactor.CustomerId={quotationCustomerId}");
+                            continue;
+                        }
+
+                        customerId ??= quotationCustomerId;
+                    }
+
+                    if (!customerId.HasValue || !customersById.ContainsKey(customerId.Value))
+                    {
+                        blockedIds.Add(document.Id);
+                        AddIssue(document.EntityName, document.EntityId, crmNumber,
+                            "BlockedByCustomer", "DocumentCustomerMissing",
+                            "مشتری CRM این سند مشخص نیست یا در جدول Customers وجود ندارد.");
+                        continue;
+                    }
+
+                    if (conflictedCustomerIds.Contains(customerId.Value))
+                    {
+                        blockedIds.Add(document.Id);
+                        AddIssue(document.EntityName, document.EntityId, crmNumber,
+                            "BlockedByCustomer", "CustomerHasConflict",
+                            $"CustomerId={customerId.Value} دارای تعارض مپینگ است.");
+                        continue;
+                    }
+
+                    if (!existingCustomerMappings.TryGetValue(customerId.Value, out var confirmed)
+                        || confirmed.Count != 1 || confirmed[0].ExEntityName != nameof(Party)
+                        || !int.TryParse(confirmed[0].ExEntityId, out var mappedPartyId)
+                        || mappedPartyId <= 0)
+                    {
+                        blockedIds.Add(document.Id);
+                        var reason = proposedCustomerIds.Contains(customerId.Value)
+                            ? "CustomerMappingPendingApproval" : "CustomerNotMapped";
+                        AddIssue(document.EntityName, document.EntityId, crmNumber,
+                            "BlockedByCustomer", reason,
+                            $"CustomerId={customerId.Value}; ابتدا مپینگ مشتری را ثبت یا اصلاح کنید.");
+                        continue;
+                    }
+
+                    int? documentPartyId = null;
+                    if (document.ExEntityName == nameof(Quotation)
+                        && int.TryParse(document.ExEntityId, out var quotationDocId))
+                        quotationParties.TryGetValue(quotationDocId, out documentPartyId);
+                    else if (document.ExEntityName == nameof(Invoice)
+                             && int.TryParse(document.ExEntityId, out var invoiceDocId))
+                        invoiceParties.TryGetValue(invoiceDocId, out documentPartyId);
+
+                    if (documentPartyId != mappedPartyId)
+                    {
+                        blockedIds.Add(document.Id);
+                        AddIssue(document.EntityName, document.EntityId, crmNumber,
+                            "BlockedByCustomer", "DocumentSepidarCustomerMismatch",
+                            $"CustomerId={customerId.Value}, mapped PartyId={mappedPartyId}, document PartyId={documentPartyId}");
+                    }
+                }
+
+                pending.RemoveAll(x => blockedIds.Contains(x.Id));
 
             }
 
