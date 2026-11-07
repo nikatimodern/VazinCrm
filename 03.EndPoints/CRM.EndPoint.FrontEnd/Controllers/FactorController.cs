@@ -3286,6 +3286,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
                 var invoiceId = await repository.CreateAsync(factor, preFactor, quotationId, ct);
 
+                var invoiceAlreadyLinked = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                    x.EntityId != factor.Id
+                    && x.EntityName == nameof(Factor)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور
+                    && x.ExEntityId == invoiceId.ToString(), ct);
+                if (invoiceAlreadyLinked)
+                    return Conflict("این فاکتور سپیدار قبلاً به فاکتور دیگری در CRM متصل شده است.");
+
                 // The Sepidar transaction is committed first. If CRM save fails,
                 // a retry reuses the invoice with the same number and quotation.
                 var user = await userManager.GetUserAsync(HttpContext.User);
