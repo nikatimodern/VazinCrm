@@ -72,6 +72,15 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             if (quotationItem.ItemRef <= 0 || quotationItem.StockRef <= 0)
                 throw new InvalidOperationException($"ردیف {factorItem.Row}: کالا یا انبار مپ‌شده معتبر نیست.");
 
+            // The older quotation exporter assigned RowID by collection order.
+            // Verify the original quantity and fee before trusting the row correspondence.
+            if (!decimal.TryParse(sourceItem.WeightCount, NumberStyles.Number,
+                    CultureInfo.InvariantCulture, out var sourceQuantity)
+                || sourceQuantity != quotationItem.Quantity
+                || sourceItem.UnitAmount != quotationItem.Fee)
+                throw new InvalidOperationException(
+                    $"ردیف {factorItem.Row}: تطبیق ردیف CRM و پیش‌فاکتور سپیدار قطعی نیست؛ اطلاعات را بررسی کنید.");
+
             if (!decimal.TryParse(factorItem.WeightCount, NumberStyles.Number,
                     CultureInfo.InvariantCulture, out var quantity) || quantity <= 0)
                 throw new InvalidOperationException($"ردیف {factorItem.Row}: تعداد معتبر نیست.");
