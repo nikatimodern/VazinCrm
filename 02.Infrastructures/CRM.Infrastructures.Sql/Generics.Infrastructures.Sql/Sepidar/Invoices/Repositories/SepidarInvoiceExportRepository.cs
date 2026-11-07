@@ -333,7 +333,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 });
             }
 
-            await context.SaveChangesAsync(ct);
+//            await context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             return invoiceId;
         }
