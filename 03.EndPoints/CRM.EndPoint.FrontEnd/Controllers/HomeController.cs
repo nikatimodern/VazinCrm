@@ -281,7 +281,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             readStage = "CRM.Factors";
             var factors = await db.Factors.AsNoTracking()
-                .Where(f => f.status == FactorStatus.تایید_شده)
+                .Where(f => f.status == FactorStatus.تایید_شده && f.ParentReturnedId == null)
                 .Select(f => new LegacyFactorRow(
                     f.Id, f.SerialNumber, f.PfactorID, f.SepidarId, f.SnFinancial,
                     f.Date, f.DateMiladi, f.PaymentAmount, f.CustomerId))
