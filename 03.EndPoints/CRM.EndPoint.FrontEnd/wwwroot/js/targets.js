@@ -128,12 +128,11 @@
     function field(metric, kind, month = 0, userId = '') {
         const value = valueOf(kind, metric.code, month, userId);
         return `<label class="target-field">
-            <span>${html(metric.title)}</span>
+            <span>${html(metric.title)} (${html(metric.unit)})</span>
             <input type="text" inputmode="${metric.kind === 1 ? 'numeric' : 'decimal'}" autocomplete="off"
                 data-metric-kind="${metric.kind}" data-kind="${kind}" data-code="${html(metric.code)}"
                 data-month="${month}" data-user="${html(userId)}"
                 value="${html(displayMetricInput(value, metric))}" placeholder="مقدار را وارد کنید" />
-            <small>${html(metric.unit)}</small>
         </label>`;
     }
 
