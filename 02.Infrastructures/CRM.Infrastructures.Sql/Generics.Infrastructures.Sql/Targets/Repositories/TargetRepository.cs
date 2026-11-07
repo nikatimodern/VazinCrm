@@ -93,19 +93,36 @@ public sealed class TargetRepository(CRMContextDb db, UserManager<AppUser> users
         if (request.Id.HasValue) plan.Version++;
         if (finalize) { plan.Status = TargetPlanStatus.Final; plan.FinalizedAtUtc = DateTime.UtcNow; }
 
-        db.TargetValues.RemoveRange(plan.Values);
-        db.TargetAssignments.RemoveRange(plan.Assignments);
-        plan.Values.Clear();
-        plan.Assignments.Clear();
-
+        // Update existing rows instead of deleting and re-inserting matching unique keys.
         var values = request.Yearly.Concat(request.Monthly)
-            .Select(x => new TargetValue { PlanId = plan.Id, MetricCode = x.MetricCode, Month = x.Month, Value = x.Value })
-            .ToList();
-        var assignments = request.Assignments
-            .Select(x => new TargetAssignment { PlanId = plan.Id, MetricCode = x.MetricCode,
-                Month = x.Month, UserId = x.UserId!, Value = x.Value }).ToList();
-        db.TargetValues.AddRange(values);
-        db.TargetAssignments.AddRange(assignments);
+            .ToDictionary(x => (x.MetricCode, x.Month));
+        foreach (var stored in plan.Values)
+        {
+            if (values.Remove((stored.MetricCode, stored.Month), out var input))
+                stored.Value = input.Value;
+            else
+                db.TargetValues.Remove(stored);
+        }
+        foreach (var input in values.Values)
+            db.TargetValues.Add(new TargetValue
+            {
+                PlanId = plan.Id, MetricCode = input.MetricCode, Month = input.Month, Value = input.Value
+            });
+
+        var assignments = request.Assignments.ToDictionary(x => (x.MetricCode, x.Month, x.UserId));
+        foreach (var stored in plan.Assignments)
+        {
+            if (assignments.Remove((stored.MetricCode, stored.Month, stored.UserId), out var input))
+                stored.Value = input.Value;
+            else
+                db.TargetAssignments.Remove(stored);
+        }
+        foreach (var input in assignments.Values)
+            db.TargetAssignments.Add(new TargetAssignment
+            {
+                PlanId = plan.Id, MetricCode = input.MetricCode,
+                Month = input.Month, UserId = input.UserId!, Value = input.Value
+            });
         db.TargetPlanAudits.Add(new TargetPlanAudit
         {
             PlanId = plan.Id, Version = plan.Version, ActorId = actorId,

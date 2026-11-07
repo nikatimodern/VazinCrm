@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Targets.Commands.SaveTarget;
 using CRM.Core.ApplicationServices.Targets.Queries.GetTarget;
