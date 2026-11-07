@@ -162,7 +162,6 @@
 .target-expert-card { width: 100%; }
 .target-expert-card .target-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .target-field { background: #fff; border: 2px solid var(--target-border-strong); border-radius: 8px; padding: 6px 8px; min-width: 0; }
-.target-field small { color: var(--target-muted); font-size: 11px; }
 .target-field input { border: 1px solid var(--target-border); direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
 .target-month-card, .target-expert-card { padding: 9px; min-width: 0; border-color: var(--target-border-strong); }
 .target-month-card h4, .target-expert-card h4 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
