@@ -785,7 +785,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         crmCustomerId = sourcePreFactor.CustomerId;
                     else if (mapping.EntityName == nameof(Factor)
                         && crmFactors.TryGetValue(mapping.EntityId, out var sourceFactor))
-                        crmCustomerId = sourceFactor.CustomerId;
+                    {
+                        var relatedPreFactorCustomerId =
+                            crmPreFactors.GetValueOrDefault(sourceFactor.PfactorId)?.CustomerId;
+
+                        // Do not derive a customer mapping from internally inconsistent CRM documents.
+                        if (sourceFactor.CustomerId.HasValue
+                            && relatedPreFactorCustomerId.HasValue
+                            && sourceFactor.CustomerId.Value != relatedPreFactorCustomerId.Value)
+                            continue;
+
+                        crmCustomerId = sourceFactor.CustomerId ?? relatedPreFactorCustomerId;
+                    }
 
                     if (!crmCustomerId.HasValue
                         || !customersById.ContainsKey(crmCustomerId.Value)
@@ -960,7 +971,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         // A factor without an explicit CustomerId may inherit the
                         // customer of its CRM quotation, but never if the IDs disagree.
                         var quotationCustomerId = source != null
-                            ? preFactors.FirstOrDefault(x => x.Id == source.PfactorId)?.CustomerId
+                            ? crmPreFactors.GetValueOrDefault(source.PfactorId)?.CustomerId
                             : null;
                         if (customerId.HasValue && quotationCustomerId.HasValue
                             && customerId.Value != quotationCustomerId.Value)
