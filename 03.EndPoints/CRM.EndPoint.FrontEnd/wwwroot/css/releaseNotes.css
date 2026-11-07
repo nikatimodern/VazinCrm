@@ -160,7 +160,4 @@
     html:not(.sidebar-collapsed) #desktopNavbar .menu-item.menu-release-notes .menu-item-title > span:first-child {
         font-size:10.5px;
     }
-    html:not(.sidebar-collapsed) #desktopNavbar .menu-item.menu-release-notes .menu-release-date {
-        font-size:7px;
-    }
 }
