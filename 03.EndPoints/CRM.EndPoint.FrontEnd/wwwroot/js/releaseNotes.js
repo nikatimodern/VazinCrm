@@ -27,8 +27,9 @@
     }
     function render(notes, target) {
         const fragment = document.createDocumentFragment();
-        for (const note of notes) {
+        for (const [index, note] of notes.entries()) {
             const article = element("article", null, "rn-release"), header = element("header");
+            article.classList.add(index % 2 === 0 ? "rn-tone-teal" : "rn-tone-purple");
             article.dataset.rnHistoryCard = "";
             const version = element("span", null, "rn-version");
             version.append(element("span", "نسخه:", "rn-version-label"), element("span", note.version, "rn-version-number"));
@@ -85,7 +86,11 @@
             }
             const visible = matchingItems > 0 || (historyType === "all" && headerMatch && !items.length);
             card.hidden = !visible;
-            if (visible) visibleCount++;
+            if (visible) {
+                card.classList.toggle("rn-tone-teal", visibleCount % 2 === 0);
+                card.classList.toggle("rn-tone-purple", visibleCount % 2 !== 0);
+                visibleCount++;
+            }
         }
         historyEmpty.hidden = visibleCount > 0 || cards.length === 0;
     }

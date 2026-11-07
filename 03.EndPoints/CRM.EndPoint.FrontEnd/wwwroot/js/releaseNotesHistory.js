@@ -6,6 +6,7 @@
     const search = root.querySelector("[data-history-search]");
     const filters = [...root.querySelectorAll("[data-history-type]")];
     const cards = [...root.querySelectorAll("[data-history-card]")];
+    cards.forEach((card, index) => card.classList.add(index % 2 === 0 ? "rn-tone-teal" : "rn-tone-purple"));
     const empty = root.querySelector("[data-history-empty]");
     let type = "all";
     const normalize = value => (value || "").trim().toLocaleLowerCase("fa-IR").replace(/[يى]/g, "ی").replace(/ك/g, "ک");
@@ -22,7 +23,11 @@
             }
             const visible = matchingItems > 0 || (type === "all" && headerMatch && !card.querySelector("[data-history-item]"));
             card.hidden = !visible;
-            if (visible) visibleCount++;
+            if (visible) {
+                card.classList.toggle("rn-tone-teal", visibleCount % 2 === 0);
+                card.classList.toggle("rn-tone-purple", visibleCount % 2 !== 0);
+                visibleCount++;
+            }
         }
         empty.hidden = visibleCount > 0 || cards.length === 0;
     }
