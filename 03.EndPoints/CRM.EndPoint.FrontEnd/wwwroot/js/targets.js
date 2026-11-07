@@ -215,10 +215,10 @@
         const box = el('targetPreviousSummary');
         box.hidden = step === 0;
         const annual = metricList().map(metric =>
-            `<span>${html(metric.title)}: <b>${html(formatted(valueOf('yearly', metric.code) || '—'))}</b> ${html(metric.unit)}</span>`).join('');
+            `<span>${html(metric.title)}: <strong class="target-summary-number">${html(formatted(valueOf('yearly', metric.code) || '—'))}</strong> ${html(metric.unit)}</span>`).join('');
         const current = step >= 1 && step <= 2 ? `<span>ماه ${months[activeMonth - 1]}</span>` : '';
         el('targetSummaryContent').innerHTML = `<div class="target-summary-content">
-            <span>سال <b>${html(state.year)}</b></span>${annual}${current}</div>`;
+            <span>سال <strong class="target-summary-number">${html(state.year)}</strong></span>${annual}${current}</div>`;
     }
 
     function renderAnnual() {
@@ -318,7 +318,7 @@
             const info = metricList().filter(metric => metric.kind !== 2).map(metric => {
                 const rows = state.assignments.filter(item =>
                     item.metricCode === metric.code && item.userId === expert.id);
-                return `${html(metric.title)}: ${html(formatted(fromScaled(sum(rows))))}`;
+                return `${html(metric.title)}: <strong class="target-summary-number">${html(formatted(fromScaled(sum(rows))))}</strong>`;
             }).join(' | ');
             return `<div class="target-review-line"><span>${html(expert.name)}</span><span>${info}</span></div>`;
         }).join('');
