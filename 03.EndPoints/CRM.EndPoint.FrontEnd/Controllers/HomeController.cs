@@ -22,6 +22,7 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Factors.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
@@ -280,6 +281,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             readStage = "CRM.Factors";
             var factors = await db.Factors.AsNoTracking()
+                .Where(f => f.status == FactorStatus.تایید_شده)
                 .Select(f => new LegacyFactorRow(
                     f.Id, f.SerialNumber, f.PfactorID, f.SepidarId, f.SnFinancial,
                     f.Date, f.DateMiladi, f.PaymentAmount, f.CustomerId))
