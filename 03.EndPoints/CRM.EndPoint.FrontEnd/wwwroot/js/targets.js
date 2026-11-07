@@ -18,6 +18,7 @@
     let activeExperts = [];
     let step = 0;
     let activeMonth = 1;
+    let tableMode = false;
     let sending = false;
     let changed = false;
     let modalInstance;
@@ -173,7 +174,7 @@
         box.hidden = step === 0;
         const annual = metricList().map(metric =>
             `<span>${html(metric.title)}: <b>${html(formatted(valueOf('yearly', metric.code) || '—'))}</b> ${html(metric.unit)}</span>`).join('');
-        const current = step >= 2 ? `<span>ماه ${months[activeMonth - 1]}</span>` : '';
+        const current = step >= 1 && step <= 2 ? `<span>ماه ${months[activeMonth - 1]}</span>` : '';
         el('targetSummaryContent').innerHTML = `<div class="target-summary-content">
             <span>سال <b>${html(state.year)}</b></span>${annual}${current}</div>`;
     }
@@ -183,11 +184,27 @@
         el('targetAnnualFields').innerHTML = metricList().map(metric => field(metric, 'yearly')).join('');
     }
 
+    function renderMonthTabs(containerId, allocation = false) {
+        el(containerId).innerHTML = months.map((name, index) => {
+            const month = index + 1;
+            const complete = allocation
+                ? allocationIssues(month).length === 0
+                : metricList().every(metric => metricValueValid(metric,
+                    valueOf('monthly', metric.code, month)));
+            return `<button type="button" data-target-month="${month}"
+                class="target-month-button${activeMonth === month ? ' active' : ''}${complete ? ' complete' : ''}"
+                aria-pressed="${activeMonth === month}" aria-label="ماه ${name}${complete ? '، تکمیل‌شده' : ''}">
+                ${name}${complete ? '<span aria-hidden="true">✓</span>' : ''}
+            </button>`;
+        }).join('');
+    }
+
     function renderMonthly() {
-        el('targetMonthlyFields').innerHTML = months.map((monthName, index) =>
-            `<article class="target-month-card"><h4>${monthName}</h4>
-                <div class="target-mini-grid">${metricList().map(metric => field(metric, 'monthly', index + 1)).join('')}</div>
-             </article>`).join('');
+        el('targetMonthlyFields').innerHTML = `<div class="target-month-single">
+            <h4>اهداف ${months[activeMonth - 1]}</h4>
+            <div class="target-form-grid">${metricList()
+                .map(metric => field(metric, 'monthly', activeMonth)).join('')}</div>
+        </div>`;
         refreshMonthlyFeedback();
     }
 
@@ -196,13 +213,10 @@
         const box = el('targetMonthlyFeedback');
         box.textContent = issues.length ? `${issues.length} مورد نیازمند اصلاح` : 'تقسیم ماهانه کامل است.';
         box.style.color = issues.length ? '#c2185b' : '#004944';
+        renderMonthTabs('targetMonthlyTabs');
     }
 
     function renderExperts() {
-        el('targetMonthSelect').innerHTML = months.map((monthName, index) =>
-            `<option value="${index + 1}" ${index + 1 === activeMonth ? 'selected' : ''}>${monthName}</option>`).join('');
-        el('targetPreviousMonth').disabled = activeMonth === 1;
-        el('targetNextMonth').disabled = activeMonth === 12;
         el('targetCurrentMonthTargets').innerHTML = metricList().map(metric =>
             `<span>${html(metric.title)}: <b>${html(formatted(valueOf('monthly', metric.code, activeMonth) || '—'))}</b></span>`).join('');
         el('targetExpertFields').innerHTML = setup.experts.length
@@ -220,8 +234,7 @@
         el('targetAllocationFeedback').className = 'target-validation' + (issues.length ? '' : ' ok');
         el('targetAllocationFeedback').textContent = issues.length
             ? issues.join(' | ') : 'تخصیص این ماه کامل است.';
-        el('targetMonthProgress').innerHTML = months.map((monthName, index) =>
-            `<span class="${allocationIssues(index + 1).length ? '' : 'done'}">${monthName}</span>`).join('');
+        renderMonthTabs('targetExpertTabs', true);
     }
 
     function renderReview() {
@@ -260,6 +273,86 @@
         el('targetFinish').disabled = problems.length > 0 || state.status === 1;
     }
 
+
+    const displayValue = value => value === '' || value === null || value === undefined
+        ? '—' : formatted(value);
+
+    function flatTable(caption, headers, rows) {
+        return `<div class="target-table-scroll">
+            <table class="target-data-table">
+                <caption>${html(caption)}</caption>
+                <thead><tr>${headers.map(header => `<th scope="col">${html(header)}</th>`).join('')}</tr></thead>
+                <tbody>${rows.map(cells => `<tr>${cells.map((cell, index) =>
+                    index === 0 ? `<th scope="row">${html(cell)}</th>` :
+                        `<td>${html(cell)}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+    }
+
+    function annualFlatTable() {
+        return flatTable('تعاریف تارگت سالانه', ['شاخص', 'هدف سالانه', 'واحد'],
+            metricList().map(metric => [metric.title,
+                displayValue(valueOf('yearly', metric.code)), metric.unit]));
+    }
+
+    function monthlyFlatTable() {
+        const metrics = metricList();
+        const rows = months.map((monthName, index) =>
+            [monthName, ...metrics.map(metric =>
+                displayValue(valueOf('monthly', metric.code, index + 1)))]);
+        rows.push(['هدف سالانه', ...metrics.map(metric =>
+            displayValue(valueOf('yearly', metric.code)))]);
+        rows.push(['جمع ۱۲ ماه', ...metrics.map(metric => metric.kind === 2
+            ? '—' : displayValue(fromScaled(sum(state.monthly.filter(item =>
+                item.metricCode === metric.code)))))]);
+        rows.push(['اختلاف با سالانه', ...metrics.map(metric => {
+            if (metric.kind === 2) return '—';
+            const yearly = scaled(valueOf('yearly', metric.code));
+            return yearly === null ? '—' : fromScaled(yearly -
+                sum(state.monthly.filter(item => item.metricCode === metric.code)));
+        })]);
+        return flatTable('تعاریف تارگت ۱۲ ماه', ['ماه', ...metrics.map(x => x.title)], rows);
+    }
+
+    function allocationFlatTable() {
+        const metrics = metricList();
+        const rows = [];
+        for (let month = 1; month <= 12; month++) {
+            rows.push([months[month - 1], 'هدف ماه',
+                ...metrics.map(metric => displayValue(valueOf('monthly', metric.code, month)))]);
+            for (const expert of setup.experts) {
+                rows.push([months[month - 1], expert.name,
+                    ...metrics.map(metric => displayValue(
+                        valueOf('assignments', metric.code, month, expert.id)))]);
+            }
+            rows.push([months[month - 1], 'جمع تخصیص',
+                ...metrics.map(metric => metric.kind === 2 ? '—' :
+                    displayValue(fromScaled(sum(state.assignments.filter(item =>
+                        item.metricCode === metric.code && item.month === month)))))]);
+        }
+        return flatTable('تخصیص تمام ماه‌ها به کارشناسان',
+            ['ماه', 'کارشناس / نوع', ...metrics.map(x => x.title)], rows);
+    }
+
+    function setTableMode(visible) {
+        tableMode = visible;
+        const panel = panels[step];
+        panel.querySelectorAll('[data-target-editor]').forEach(item => {
+            item.hidden = visible;
+        });
+        const tableView = panel.querySelector('[data-target-table-view]');
+        tableView.hidden = !visible;
+        if (visible) {
+            tableView.innerHTML = step === 0 ? annualFlatTable()
+                : step === 1 ? monthlyFlatTable()
+                    : step === 2 ? allocationFlatTable()
+                        : annualFlatTable() + monthlyFlatTable() + allocationFlatTable();
+        }
+        const toggle = panel.querySelector('[data-target-table-toggle]');
+        toggle.textContent = visible ? 'بازگشت به فرم' : 'نمایش همه به‌صورت جدول';
+        toggle.setAttribute('aria-pressed', String(visible));
+    }
+
     function navigate(nextStep) {
         if (nextStep < 0 || nextStep > 3) return;
         step = nextStep;
@@ -280,6 +373,7 @@
         if (step === 1) renderMonthly();
         if (step === 2) renderExperts();
         if (step === 3) renderReview();
+        setTableMode(false);
         form.querySelectorAll('[data-target-panel] input[data-kind], #targetYear')
             .forEach(input => { input.disabled = state.status === 1; });
         el('targetRebalance').disabled = state.status === 1;
@@ -413,6 +507,16 @@
     root.addEventListener('click', event => {
         const open = event.target.closest('[data-open-id]');
         if (open) { openExisting(open.dataset.openId); return; }
+        const monthButton = event.target.closest('[data-target-month]');
+        if (monthButton) {
+            activeMonth = Number(monthButton.dataset.targetMonth);
+            if (step === 1) renderMonthly();
+            if (step === 2) renderExperts();
+            renderSummary();
+            return;
+        }
+        const tableToggle = event.target.closest('[data-target-table-toggle]');
+        if (tableToggle) { setTableMode(!tableMode); return; }
         const button = event.target.closest('[data-target-step]');
         if (button) navigate(Number(button.dataset.targetStep));
     });
@@ -422,17 +526,6 @@
     el('targetNext').addEventListener('click', () => navigate(step + 1));
     el('targetSaveDraft').addEventListener('click', () => save(false));
     el('targetFinish').addEventListener('click', () => save(true));
-    el('targetMonthSelect').addEventListener('change', event => {
-        activeMonth = Number(event.target.value);
-        renderExperts();
-        renderSummary();
-    });
-    el('targetPreviousMonth').addEventListener('click', () => {
-        if (activeMonth > 1) { activeMonth--; renderExperts(); renderSummary(); }
-    });
-    el('targetNextMonth').addEventListener('click', () => {
-        if (activeMonth < 12) { activeMonth++; renderExperts(); renderSummary(); }
-    });
     el('targetRebalance').addEventListener('click', async () => {
         const approved = await confirmAlert({
             title: 'تقسیم مجدد اهداف',
