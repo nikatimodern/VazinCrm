@@ -286,6 +286,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var entityName = request.MapType switch {
                 ExternalMappingTypeEnum.تنخواه => nameof(Cash),
                 ExternalMappingTypeEnum.پیش_فاکتور => nameof(PreFactor),
+                ExternalMappingTypeEnum.فاکتور => nameof(Factor),
                 _ => null
             };
 
