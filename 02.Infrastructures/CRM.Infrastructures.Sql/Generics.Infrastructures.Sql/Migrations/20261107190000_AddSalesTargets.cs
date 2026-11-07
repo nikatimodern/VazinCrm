@@ -107,6 +107,7 @@ public partial class AddSalesTargets : Migration
         migrationBuilder.InsertData(
             table: "TargetMetrics",
             columns: new[] { "Code", "Title", "Unit", "Kind", "SortOrder", "IsActive" },
+            columnTypes: new[] { "varchar(50)", "nvarchar(120)", "nvarchar(30)", "tinyint", "int", "bit" },
             values: new object[,]
             {
                 { "sales_amount", "فروش ریالی", "ریال", (byte)0, 1, true },
