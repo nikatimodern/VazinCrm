@@ -192,7 +192,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             decimal SumTotalAmount, decimal PaymentAmount, Guid? CustomerId);
 
         private sealed record LegacyFactorRow(
-            Guid Id, Guid PfactorId, int? SepidarId, string SnFinancial,
+            Guid Id, int SerialNumber, Guid PfactorId, int? SepidarId, string SnFinancial,
             string Date, DateTime? DateMiladi, decimal PaymentAmount, Guid? CustomerId);
 
         private sealed record LegacyQuotationRow(
@@ -243,9 +243,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             string EntityName, Guid EntityId, string CrmNumber,
             string Status, string Reason, string Details);
 
+        private sealed record LegacyDuplicateCrmDocument(
+            string EntityName, Guid EntityId, int SerialNumber,
+            string Date, decimal PaymentAmount);
+
+        private sealed record LegacyDuplicateTargetGroup(
+            Guid ExternalSoftwareId, string ExEntityName, string ExEntityId,
+            ExternalMappingTypeEnum MapType, List<LegacyDuplicateCrmDocument> CrmDocuments);
+
         private sealed record LegacyMappingPlan(
             int AlreadyMapped, int NotMatched, int Ambiguous,
-            List<ExternalMapping> Pending, List<LegacyMappingIssue> Issues)
+            List<ExternalMapping> Pending, List<LegacyMappingIssue> Issues,
+            List<LegacyDuplicateTargetGroup> DuplicateTargetGroups)
         {
             public Dictionary<string, int> ReasonsSummary => Issues
                 .GroupBy(x => x.Reason)
@@ -272,7 +281,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             readStage = "CRM.Factors";
             var factors = await db.Factors.AsNoTracking()
                 .Select(f => new LegacyFactorRow(
-                    f.Id, f.PfactorID, f.SepidarId, f.SnFinancial,
+                    f.Id, f.SerialNumber, f.PfactorID, f.SepidarId, f.SnFinancial,
                     f.Date, f.DateMiladi, f.PaymentAmount, f.CustomerId))
                 .ToListAsync(ct);
 
@@ -316,6 +325,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var pending = new List<ExternalMapping>();
             var issues = new List<LegacyMappingIssue>();
+            // Groups only the CRM documents competing for the same Sepidar target.
+            var duplicateTargetGroups = new List<LegacyDuplicateTargetGroup>();
             void AddIssue(string entityName, Guid id, string crmNumber,
                 string status, string reason, string details)
             {
@@ -359,20 +370,45 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 });
             }
 
-            // Remove ALL conflicting proposals instead of arbitrarily keeping the first.
+            // Keep the conflicting CRM documents together for inspection in Debug.
             void RemoveAmbiguousProposals(ExternalMappingTypeEnum mapType)
             {
-                var duplicateIds = pending.Where(x => x.MapType == mapType)
+                var duplicateGroups = pending.Where(x => x.MapType == mapType)
                     .GroupBy(x => (x.ExternalSoftwareId, x.ExEntityName, x.ExEntityId))
                     .Where(g => g.Count() > 1)
-                    .SelectMany(g => g.Select(x => x.Id))
+                    .ToList();
+
+                foreach (var group in duplicateGroups)
+                {
+                    var documents = group.Select(mapping => {
+                        var preFactor = mapping.EntityName == nameof(PreFactor)
+                            ? preFactors.FirstOrDefault(x => x.Id == mapping.EntityId) : null;
+                        var factor = mapping.EntityName == nameof(Factor)
+                            ? factors.FirstOrDefault(x => x.Id == mapping.EntityId) : null;
+
+                        return new LegacyDuplicateCrmDocument(
+                            mapping.EntityName, mapping.EntityId,
+                            preFactor?.SerialNumber ?? factor?.SerialNumber ?? 0,
+                            preFactor?.Date ?? factor?.Date,
+                            preFactor?.PaymentAmount ?? factor?.PaymentAmount ?? 0);
+                    }).ToList();
+
+                    duplicateTargetGroups.Add(new LegacyDuplicateTargetGroup(
+                        group.Key.ExternalSoftwareId, group.Key.ExEntityName,
+                        group.Key.ExEntityId, mapType, documents));
+
+                    foreach (var mapping in group)
+                        AddIssue(mapping.EntityName, mapping.EntityId,
+                            documents.First(x => x.EntityId == mapping.EntityId).SerialNumber.ToString(),
+                            "Ambiguous", "DuplicateProposedTarget",
+                            $"سپیدار: {mapping.ExEntityName} ID={mapping.ExEntityId}، تعداد اسناد متعارض CRM={documents.Count}");
+                }
+
+                var duplicateIds = duplicateGroups
+                    .SelectMany(x => x.Select(mapping => mapping.Id))
                     .ToHashSet();
 
                 ambiguous += duplicateIds.Count;
-                foreach (var conflict in pending.Where(x => duplicateIds.Contains(x.Id)))
-                    AddIssue(conflict.EntityName, conflict.EntityId, "-",
-                        "Ambiguous", "DuplicateProposedTarget",
-                        $"چند سند CRM به یک {conflict.ExEntityName} سپیدار با ID={conflict.ExEntityId} منتهی شده‌اند.");
                 pending.RemoveAll(x => duplicateIds.Contains(x.Id));
             }
 
@@ -647,7 +683,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 RemoveAmbiguousProposals(ExternalMappingTypeEnum.فاکتور);
             }
 
-            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending, issues);
+            return new LegacyMappingPlan(alreadyMapped, notMatched, ambiguous, pending, issues, duplicateTargetGroups);
             }
             catch (SqlNullValueException ex)
             {
