@@ -478,7 +478,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.TaminAdmin,
                     AppRoles.SalesAdmin,
                     AppRoles.FinancialAdmin,
-                    AppRoles.FinancialExpert
+                    AppRoles.FinancialExpert,
+                    AppRoles.Customer
                 ],
                 DisplayOrder = 13
             },

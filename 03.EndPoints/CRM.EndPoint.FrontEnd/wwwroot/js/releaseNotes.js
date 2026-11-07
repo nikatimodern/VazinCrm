@@ -1,0 +1,101 @@
+(() => {
+    "use strict";
+    const modal = document.getElementById("releaseNotesModal");
+    if (!modal || window.ReleaseNotes) return;
+    const content = modal.querySelector("[data-rn-content]"), ack = modal.querySelector("[data-rn-ack]"), error = modal.querySelector("[data-rn-error]");
+    let ids = [], preview = false, busy = false, restoreFocus = null;
+    const types = { 1: "قابلیت جدید", 2: "بهبود", 3: "رفع اشکال" };
+    function element(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text != null) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+    }
+    function safeUrl(value) {
+        if (!value || /[\u0000-\u0020\\]/.test(value)) return null;
+        try {
+            const url = new URL(value, location.origin);
+            return /^https?:$/.test(url.protocol) && !url.username && !url.password ? url.href : null;
+        } catch { return null; }
+    }
+    function render(notes, target) {
+        const fragment = document.createDocumentFragment();
+        for (const note of notes) {
+            const article = element("article", null, "rn-release"), header = element("header");
+            const version = element("span", note.version, "rn-version"); version.dir = "ltr";
+            header.append(version, element("h2", note.title));
+            if (note.isImportant) header.append(element("span", "مهم", "rn-tag"));
+            if (note.publishDate) {
+                const date = new Date(note.publishDate.endsWith("Z") ? note.publishDate : note.publishDate + "Z");
+                if (!Number.isNaN(date.valueOf())) header.append(element("time", date.toLocaleDateString("fa-IR")));
+            }
+            article.append(header);
+            if (note.description) article.append(element("p", note.description, "rn-description"));
+            for (const item of note.items || []) {
+                const section = element("section", null, "rn-item");
+                section.append(element("span", types[item.type] || "تغییر", "rn-tag rn-type-" + item.type), element("h3", item.title));
+                if (item.description) section.append(element("p", item.description, "rn-description"));
+                const imageUrl = safeUrl(item.imageUrl), learnMoreUrl = safeUrl(item.learnMoreUrl);
+                if (imageUrl) { const image = element("img"); image.src = imageUrl; image.alt = item.title; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; section.append(image); }
+                if (learnMoreUrl) { const link = element("a", "بیشتر بدانید ↗"); link.href = learnMoreUrl; link.target = "_blank"; link.rel = "noopener noreferrer"; section.append(link); }
+                article.append(section);
+            }
+            fragment.append(article);
+        }
+        target.replaceChildren(fragment);
+    }
+    function show(notes, isPreview = false) {
+        if (busy || !notes.length || document.querySelector(".modal.show")) return false;
+        preview = isPreview; ids = isPreview ? [] : notes.map(x => x.id);
+        restoreFocus = document.activeElement;
+        render(notes, content); error.hidden = true;
+        ack.hidden = isPreview;
+        modal.querySelector("[data-bs-dismiss='modal'].rn-button").textContent = isPreview ? "بستن پیش‌نمایش" : "بعداً";
+        document.getElementById("releaseNotesTitle").textContent = isPreview ? "پیش‌نمایش تغییرات نسخه" : "تازه‌های سامانه";
+        ModalToggle(modal, "show");
+        return true;
+    }
+    const scrollCleanup = typeof enableMomentumScrollScope === "function" ? enableMomentumScrollScope(modal) : null;
+    modal.addEventListener("hide.bs.modal", event => { if (busy) event.preventDefault(); });
+    modal.addEventListener("hidden.bs.modal", () => { ids = []; content.replaceChildren(); restoreFocus?.isConnected && restoreFocus.focus(); });
+    ack.addEventListener("click", async () => {
+        if (preview || busy || !ids.length) return;
+        busy = true; ack.disabled = true; error.hidden = true;
+        try {
+            const result = await sendApiRequest({ url:"/ReleaseNotes/Acknowledge", method:"POST", data:{ ids },
+                headers:{ RequestVerificationToken:modal.querySelector("[name='__RequestVerificationToken']").value }, successMsg:null, showError:false, showLoading:false });
+            if (result) { busy = false; ModalToggle(modal, "hide"); }
+            else { error.textContent = "ثبت تأیید انجام نشد. دوباره تلاش کنید؛ در صورت تغییر وضعیت نسخه، صفحه را تازه‌سازی کنید."; error.hidden = false; }
+        } finally { busy = false; ack.disabled = false; }
+    });
+    window.ReleaseNotes = Object.freeze({ preview:notes => show(notes, true), render, safeUrl });
+    // این کلید فقط مزاحمت تکراری را کم می‌کند؛ وضعیت دیده‌شدن همیشه از پایگاه داده می‌آید.
+    const key = "release-notes:" + modal.dataset.user + ":" + (modal.dataset.session || "existing-login");
+    const readChecked = () => { try { return sessionStorage.getItem(key) === "checked"; } catch { return false; } };
+    const markChecked = () => { try { sessionStorage.setItem(key, "checked"); } catch { /* ذخیره محلی ممکن است غیرفعال باشد. */ } };
+    if (!modal.dataset.user || readChecked()) return;
+    let lastInteraction = Date.now(), requested = false, pending = null;
+    const onInteraction = () => { lastInteraction = Date.now(); };
+    document.addEventListener("pointerdown", onInteraction, { passive:true });
+    document.addEventListener("keydown", onInteraction);
+    const idle = () => document.visibilityState === "visible" && Date.now() - lastInteraction > 2500 &&
+        !document.querySelector(".modal.show,.swal2-container,#mainContent[aria-busy='true']") &&
+        !(typeof activeApiLoadingCount !== "undefined" && activeApiLoadingCount > 0) &&
+        !document.activeElement?.matches("input,textarea,select,[contenteditable='true']");
+    const timer = setInterval(async () => {
+        if (!idle()) return;
+        if (!requested) {
+            requested = true;
+            const requestPage = window.PageRuntime?.current;
+            pending = await sendApiRequest({ url:"/ReleaseNotes/Unseen", showLoading:false, showError:false });
+            if (!Array.isArray(pending)) {
+                if (requestPage?.signal.aborted) requested = false; else stop();
+                return;
+            }
+            if (!pending.length) { markChecked(); stop(); return; }
+        }
+        if (pending && idle() && show(pending)) { markChecked(); stop(); }
+    }, 1000);
+    function stop() { clearInterval(timer); document.removeEventListener("pointerdown", onInteraction); document.removeEventListener("keydown", onInteraction); }
+    window.addEventListener("pagehide", () => { stop(); if (typeof scrollCleanup === "function") scrollCleanup(); }, { once:true });
+})();

@@ -83,6 +83,7 @@
     <link rel="stylesheet" href="~/css/menu.css?release=7.0.5" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/pageNavigation.css?release=7.0.5" asp-append-version="true" />
 
+    <link rel="stylesheet" href="~/css/releaseNotes.css?release=7.0.5" asp-append-version="true" />
     <template data-page-styles>@await RenderSectionAsync("Styles", required: false)</template>
 </head>
 
@@ -301,6 +302,8 @@
     var baseUrl = basePath === "/" ? basePath : `${basePath}/`;
 </script>
 
+<partial name="~/Views/Shared/Modals/_ReleaseNotesModal.cshtml" />
+<script src="~/js/releaseNotes.js?release=7.0.5" defer asp-append-version="true"></script>
 <template data-page-scripts>@await RenderSectionAsync("Scripts", required: false)</template>
 <script src="~/js/pageDom.js?release=7.0.5" defer asp-append-version="true"></script>
 <script src="~/js/pageRuntime.js?release=7.0.5" defer asp-append-version="true"></script>

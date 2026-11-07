@@ -38,6 +38,10 @@ namespace CRM.Infrastructures.Sql {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
         public DbSet<Accountancy> Accountancies { get; set; }
+        public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote> ReleaseNotes { get; set; }
+        public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem> ReleaseNoteItems { get; set; }
+        public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteRole> ReleaseNoteRoles { get; set; }
+        public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.UserReleaseNote> UserReleaseNotes { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<City> Cities { get; set; }

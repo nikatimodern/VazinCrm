@@ -1,0 +1,25 @@
+@model CRM.Core.ApplicationServices.ReleaseNotes.Dtos.ReleaseNoteAdminPage
+<section class="rn rn-page" id="releaseNotesAdmin">
+    <header class="rn-toolbar"><h1>مدیریت تغییرات نسخه‌ها</h1><button type="button" class="rn-button rn-primary" data-new>ثبت نسخه جدید</button></header>
+    <div class="rn-toolbar"><label class="rn-search"><span>جستجو</span><input type="search" data-search placeholder="عنوان یا شماره نسخه…" maxlength="200" /></label><label>وضعیت <select data-status><option value="">همه</option><option value="0">پیش‌نویس</option><option value="1">منتشرشده</option><option value="2">بایگانی</option></select></label><button type="button" class="rn-button" data-refresh>تازه‌سازی</button></div>
+    <p role="status" data-list-status></p><div class="rn-list" data-list></div>
+    <div class="modal fade rn" id="releaseNoteEditor" tabindex="-1" aria-labelledby="releaseEditorTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl"><form class="modal-content" data-editor>
+            @Html.AntiForgeryToken()
+            <div class="modal-header"><h2 id="releaseEditorTitle">پیش‌نویس تغییرات نسخه</h2><button type="button" class="rn-close" data-bs-dismiss="modal" aria-label="بستن">×</button></div>
+            <div class="modal-body">
+                <div class="rn-fields"><label>شماره نسخه<input name="version" dir="ltr" maxlength="64" placeholder="7.0.5" required /></label><label>عنوان انتشار<input name="title" maxlength="200" required /></label>
+                    <label class="rn-full">توضیحات<textarea name="description" maxlength="4000" rows="2"></textarea></label>
+                    <label>زمان انتشار (به وقت دستگاه)<input type="datetime-local" name="publishDate" /><small>خالی باشد: هنگام انتشار نمایش داده می‌شود.</small></label>
+                    <label>مخاطبان<select name="audience"><option value="0">همه کاربران</option><option value="1">کاربران داخلی</option><option value="2">مشتریان</option><option value="3">نقش‌های انتخابی</option></select></label>
+                    <label class="rn-full" data-roles-wrap hidden>نقش‌های مجاز<select name="roles" multiple>@foreach (var role in Model.Roles) { <option value="@role">@role</option> }</select></label>
+                    <label class="rn-check"><input type="checkbox" name="isImportant" /> انتشار مهم</label><label class="rn-check"><input type="checkbox" name="showPopup" checked /> نمایش در مدال تازه‌ها</label>
+                </div>
+                <div class="rn-toolbar"><h3>تغییرات این نسخه</h3><button type="button" class="rn-button" data-add-item>+ افزودن تغییر</button></div>
+                <div data-items></div><p class="rn-error" data-form-error role="alert" hidden></p>
+            </div>
+            <div class="modal-footer"><button type="button" class="rn-button" data-bs-dismiss="modal">انصراف</button><button type="button" class="rn-button" data-preview>پیش‌نمایش</button><button type="submit" class="rn-button rn-primary">ذخیره پیش‌نویس</button></div>
+        </form></div>
+    </div>
+</section>
+@section Scripts { <script src="~/js/releaseNotesAdmin.js?release=7.0.5" asp-append-version="true"></script> }

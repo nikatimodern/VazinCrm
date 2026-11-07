@@ -1,0 +1,17 @@
+<section class="rn rn-page rn-settings">
+    <header class="rn-toolbar"><h1>تنظیمات نسخه‌ها</h1></header>
+    <div class="rn-settings-grid">
+        <a class="rn-settings-link" asp-controller="ReleaseNotes" asp-action="History">
+            <span class="rn-settings-icon" aria-hidden="true"><i class="fa fa-list-alt"></i></span>
+            <span><strong>تغییرات نسخه‌ها</strong><small>تاریخچه قابلیت‌ها، بهبودها و رفع اشکال‌ها</small></span>
+            <span class="rn-settings-arrow" aria-hidden="true">‹</span>
+        </a>
+        @if (User.IsAdmin()) {
+            <a class="rn-settings-link" asp-controller="ReleaseNotesAdmin" asp-action="Index">
+                <span class="rn-settings-icon" aria-hidden="true"><i class="fa fa-edit"></i></span>
+                <span><strong>مدیریت تغییرات نسخه‌ها</strong><small>ثبت، انتشار و بایگانی نسخه‌ها</small></span>
+                <span class="rn-settings-arrow" aria-hidden="true">‹</span>
+            </a>
+        }
+    </div>
+</section>

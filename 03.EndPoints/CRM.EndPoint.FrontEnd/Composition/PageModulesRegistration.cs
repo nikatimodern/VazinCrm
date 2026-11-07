@@ -62,6 +62,7 @@ public static class PageModulesRegistration
         services.AddScoped<IQueryHandler<GetOverdueDealsQuery, OverdueDealsResult>, GetOverdueDealsQueryHandler>();
         services.AddScoped<IQueryHandler<GetOverdueDealDetailsQuery, OverdueDealDetails>, GetOverdueDealDetailsQueryHandler>();
         services.AddScoped<ICommandHandler<UpdateOverdueFollowUpCommand, FollowUpResult>, UpdateOverdueFollowUpCommandHandler>();
+        services.AddReleaseNotes();
         return services;
     }
 }
