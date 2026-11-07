@@ -12,6 +12,7 @@
 .rn :is(label,small) { display:block; }.rn small,.rn-muted,.rn time { color:var(--color-text-muted,#545961); font-size:12px; }.rn-search { width:280px; max-width:100%; }.rn-toolbar>label { display:flex; align-items:center; gap:8px; }.rn-toolbar select { width:auto; }
 .rn-empty { padding:40px 16px; text-align:center; background:white; border:1px solid var(--color-border,#DDE1E8); border-radius:9px; }
 .rn-release,.rn-list-row { margin-bottom:14px; background:white; border:1px solid var(--color-border,#DDE1E8); border-radius:9px; padding:18px; min-width:0; }
+#releaseNotesModal .rn-release { border-color:#C7D0D9; }
 .rn-release header h2 { flex:1; }.rn-description { white-space:pre-wrap; overflow-wrap:anywhere; margin:8px 0; }.rn-version { display:inline-flex; align-items:center; gap:4px; direction:rtl; white-space:nowrap; font-family:IRANSansMedium,sans-serif; color:var(--color-secondary,#5811B4); background:var(--color-secondary-light,#F3EDFC); padding:2px 9px; border-radius:6px; }
 .rn-version-number { direction:ltr; unicode-bidi:isolate; }
 .rn-tag { display:inline-block; font:500 12px/1.8 IRANSansMedium,sans-serif; border-radius:5px; padding:2px 8px; background:var(--color-secondary-light,#F3EDFC); color:var(--color-secondary,#5811B4); }
