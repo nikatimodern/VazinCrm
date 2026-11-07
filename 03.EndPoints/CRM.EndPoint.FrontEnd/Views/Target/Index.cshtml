@@ -29,8 +29,7 @@
     <div class="modal fade target-modal" id="targetWizard" tabindex="-1" data-bs-focus="false"
          aria-labelledby="targetWizardTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl modal-fullscreen-sm-down">
-            <div class="modal-content">
-                <form id="targetWizardForm" novalidate>
+            <form class="modal-content" id="targetWizardForm" novalidate>
                     @Html.AntiForgeryToken()
                     <div class="modal-header target-modal-header">
                         <div>
@@ -89,7 +88,15 @@
                             </div>
                             <div class="target-stage-editor" data-target-editor>
                                 <nav id="targetExpertTabs" class="target-month-tabs" aria-label="انتخاب ماه تخصیص به کارشناسان"></nav>
-                                <div id="targetCurrentMonthTargets" class="target-month-totals"></div>
+                                <div class="target-expert-picker">
+                                    <label for="targetExpertSelect">کارشناس فروش</label>
+                                    <select id="targetExpertSelect" aria-label="انتخاب کارشناس فروش"></select>
+                                    <span id="targetExpertProgress" aria-live="polite"></span>
+                                </div>
+                                <details class="target-month-summary">
+                                    <summary>مشاهده اهداف ماه انتخاب‌شده</summary>
+                                    <div id="targetCurrentMonthTargets" class="target-month-totals"></div>
+                                </details>
                                 <div id="targetExpertFields" class="target-expert-grid"></div>
                                 <div id="targetAllocationFeedback" role="status" aria-live="polite"></div>
                             </div>
@@ -113,8 +120,7 @@
                             <button type="button" class="target-btn target-btn-primary" id="targetFinish" hidden>ثبت نهایی</button>
                         </div>
                     </div>
-                </form>
-            </div>
+            </form>
         </div>
     </div>
 </section>

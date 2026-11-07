@@ -18,6 +18,7 @@
     let activeExperts = [];
     let step = 0;
     let activeMonth = 1;
+    let activeExpertId = '';
     let tableMode = false;
     let sending = false;
     let changed = false;
@@ -217,14 +218,31 @@
     }
 
     function renderExperts() {
+        const experts = setup.experts;
+        if (!experts.some(expert => expert.id === activeExpertId))
+            activeExpertId = experts[0]?.id ?? '';
+
+        const select = el('targetExpertSelect');
+        select.innerHTML = experts.length
+            ? experts.map(expert =>
+                `<option value="${html(expert.id)}">${html(expert.name)}</option>`).join('')
+            : '<option value="">کارشناسی یافت نشد</option>';
+        select.value = activeExpertId;
+        select.disabled = !experts.length;
+
+        const index = experts.findIndex(expert => expert.id === activeExpertId);
+        el('targetExpertProgress').textContent = index < 0
+            ? 'بدون کارشناس' : `کارشناس ${index + 1} از ${experts.length}`;
+
         el('targetCurrentMonthTargets').innerHTML = metricList().map(metric =>
             `<span>${html(metric.title)}: <b>${html(formatted(valueOf('monthly', metric.code, activeMonth) || '—'))}</b></span>`).join('');
-        el('targetExpertFields').innerHTML = setup.experts.length
-            ? setup.experts.map(expert =>
-                `<article class="target-expert-card"><h4>${html(expert.name)}</h4>
-                    <div class="target-mini-grid">${metricList().map(metric =>
-                        field(metric, 'assignments', activeMonth, expert.id)).join('')}</div>
-                 </article>`).join('')
+
+        const expert = experts.find(item => item.id === activeExpertId);
+        el('targetExpertFields').innerHTML = expert
+            ? `<article class="target-expert-card">
+                <div class="target-mini-grid">${metricList().map(metric =>
+                    field(metric, 'assignments', activeMonth, expert.id)).join('')}</div>
+            </article>`
             : '<p>کارشناس فروش ثبت‌شده‌ای یافت نشد.</p>';
         refreshAllocationFeedback();
     }
@@ -233,7 +251,9 @@
         const issues = allocationIssues(activeMonth);
         el('targetAllocationFeedback').className = 'target-validation' + (issues.length ? '' : ' ok');
         el('targetAllocationFeedback').textContent = issues.length
-            ? issues.join(' | ') : 'تخصیص این ماه کامل است.';
+            ? `${issues.length} شاخص نیازمند تکمیل تخصیص در ${months[activeMonth - 1]} است.`
+            : 'تخصیص تمام کارشناسان این ماه کامل است.';
+        el('targetAllocationFeedback').title = issues.join('\n');
         renderMonthTabs('targetExpertTabs', true);
     }
 
@@ -416,6 +436,7 @@
         state = emptyState();
         step = 0;
         activeMonth = 1;
+        activeExpertId = setup.experts[0]?.id ?? '';
         changed = false;
         el('targetWizardTitle').textContent = 'تارگت جدید';
         navigate(0);
@@ -435,6 +456,7 @@
             .filter(id => !setup.experts.some(x => x.id === id));
         setup.experts.push(...missing.map(id => ({ id, name: 'کارشناس سابق (' + id + ')' })));
         activeMonth = 1;
+        activeExpertId = setup.experts[0]?.id ?? '';
         changed = false;
         el('targetWizardTitle').textContent = `تارگت سال ${state.year}`;
         navigate(0);
@@ -526,6 +548,10 @@
     el('targetNext').addEventListener('click', () => navigate(step + 1));
     el('targetSaveDraft').addEventListener('click', () => save(false));
     el('targetFinish').addEventListener('click', () => save(true));
+    el('targetExpertSelect').addEventListener('change', event => {
+        activeExpertId = event.target.value;
+        renderExperts();
+    });
     el('targetRebalance').addEventListener('click', async () => {
         const approved = await confirmAlert({
             title: 'تقسیم مجدد اهداف',
