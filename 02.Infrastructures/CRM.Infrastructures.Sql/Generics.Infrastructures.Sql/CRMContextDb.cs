@@ -32,6 +32,7 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using Microsoft.EntityFrameworkCore;
+using CRM.Core.Domain.Targets.Entities;
 
 namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
@@ -42,6 +43,11 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem> ReleaseNoteItems { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteRole> ReleaseNoteRoles { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.UserReleaseNote> UserReleaseNotes { get; set; }
+        public DbSet<TargetMetric> TargetMetrics { get; set; }
+        public DbSet<TargetPlan> TargetPlans { get; set; }
+        public DbSet<TargetValue> TargetValues { get; set; }
+        public DbSet<TargetAssignment> TargetAssignments { get; set; }
+        public DbSet<TargetPlanAudit> TargetPlanAudits { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<City> Cities { get; set; }

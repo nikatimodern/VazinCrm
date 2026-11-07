@@ -13,7 +13,7 @@ public sealed class TargetAmountInput
     public decimal Value { get; set; }
 }
 
-public sealed class TargetSaveRequest
+public class TargetSaveRequest
 {
     public Guid? Id { get; set; }
     public int Year { get; set; }
