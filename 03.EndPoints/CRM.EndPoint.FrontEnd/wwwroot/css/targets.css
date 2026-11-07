@@ -112,12 +112,22 @@
 .target-data-table thead th { position: sticky; top: 0; z-index: 1; background: #e7f3f0; color: #004944; }
 .target-data-table tbody tr:nth-child(even) { background: #f8fafb; }
 .target-data-table tbody th { font-weight: 600; }
-.target-month-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-block-end: 9px; }
+.target-month-tabs {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(76px, 1fr));
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-block-end: 9px;
+    padding-block: 2px;
+}
 .target-month-button {
     border: 1px solid var(--target-border); background: #fff; color: #545961;
-    border-radius: 8px; padding: 5px 7px; min-height: 36px;
-    font: inherit; font-size: 13px; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 7px; padding: 4px 3px; min-height: 32px;
+    font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center; gap: 3px;
 }
 .target-month-button.complete { border-color: #9ebfb7; }
 .target-month-button.complete span { color: var(--target-primary); font-weight: 700; }
@@ -213,9 +223,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-@media (min-width: 761px) and (max-width: 1050px) {
-    .target-month-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
 @media (max-width: 760px) {
     .target-page { padding: 10px; }
     .target-page-header { flex-direction: column; }
@@ -236,7 +243,6 @@
     .target-modal-footer { padding: 8px 10px; }
     .target-footer-actions { flex-wrap: wrap; }
     .target-modal .modal-content { height: 100%; border-radius: 0; }
-    .target-month-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-block-end: 10px; }
     .target-month-button { min-height: 40px; padding: 6px 4px; font-size: 12px; }
     .target-step-heading-row { flex-wrap: wrap; }
     .target-table-toggle { min-height: 36px; }
