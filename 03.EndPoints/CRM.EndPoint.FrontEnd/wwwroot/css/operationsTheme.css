@@ -83,6 +83,22 @@
 #priceWorkspace .list-product__priceTable [data-title="حذف"] { color:var(--ops-danger) !important; }
 #priceWorkspace .list-product__priceTable [data-title="ویرایش"] { color:var(--ops-primary) !important; }
 #overdueWorkspace { --overdue-primary:#004944; --overdue-secondary:#5811B4; --overdue-secondary-light:#F3EDFC; }
+#overdueWorkspace .overdue-toolbar { justify-content:flex-start; min-width:0; }
+#overdueWorkspace .overdue-results-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:12px; border-bottom:1px solid #DDE1E8; background:#fff; }
+#overdueWorkspace .overdue-search-filters { display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; gap:7px; min-width:0; }
+#overdueWorkspace .overdue-search-filters .overdue-search { order:0; flex:0 1 240px; width:240px; min-width:160px; }
+#overdueWorkspace .overdue-search-filters .overdue-filter-button { order:1; }
+#overdueWorkspace .overdue-search-filters .overdue-mode-filter { order:2; width:auto; flex:0 0 auto; margin:0; }
+#overdueWorkspace #overdueDealsPaginationTop { padding:0 !important; margin-inline-start:auto; background:transparent !important; border:0 !important; gap:10px !important; }
+#overdueWorkspace #overdueDealsPaginationTop label { color:#545961 !important; font:400 12px/1.7 IRANSans; }
+#overdueWorkspace #overdueDealsPaginationTop select { color:#212529; }
+#overdueWorkspace .overdue-search-filters .overdue-filter-button { width:34px; height:36px; flex:0 0 34px; padding:6px; border:1px solid #DDE1E8; border-radius:6px; background:#F3F3F3 !important; color:#545961; box-shadow:none !important; }
+#overdueWorkspace .overdue-search-filters .overdue-filter-button svg { color:#545961 !important; }
+#overdueWorkspace .overdue-search { display:flex; flex:0 1 300px; min-width:160px; margin:0; border:1px solid #DDE1E8; border-radius:8px; background:#fff; overflow:hidden; }
+#overdueWorkspace #overdueDealSearch { width:100%; min-height:38px; padding:6px 12px 6px 48px !important; background:#fff; font:400 14px/1.7 IRANSans; }
+#overdueWorkspace .overdue-search .search-icon { display:flex; align-items:center; justify-content:center; align-self:stretch; flex-shrink:0; width:40px; min-width:40px; padding:8px; border:0; border-inline-start:1px solid #DDE1E8; border-radius:0; background:#F3F3F3; color:#A3A3A3; box-shadow:none; }
+#overdueWorkspace .overdue-search .search-icon svg { width:21px; height:21px; }
+#overdueWorkspace #ContentOverdueDealFilterId:not(:empty) { order:5; flex-basis:100%; }
 #overdueWorkspace .overdue-sort-button { font:700 13px/1.7 IRANSansBold; }
 #overdueWorkspace table tbody td { padding:9px 7px; font:400 13px/1.8 IRANSans; }
 #overdueWorkspace table tbody tr:hover { background:#E7F3F0; }
