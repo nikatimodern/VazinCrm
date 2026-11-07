@@ -44,6 +44,7 @@
 @media(min-width:768px) { .rn-fields { grid-template-columns:1fr 1fr; } }
 .menu-nav .menu-item.menu-release-notes { justify-content:center; text-align:center; }
 .menu-nav .menu-item.menu-release-notes .menu-item-title { width:100%; justify-content:center; text-align:center; flex-direction:column; align-items:center; gap:1px; line-height:1.5; }
+.menu-nav .menu-item.menu-release-notes .menu-item-title > span:first-child { font:700 15px/1.6 IRANSansBold,sans-serif; }
 .menu-nav .menu-item.menu-release-notes .menu-release-date { display:block; color:var(--menu-muted,#d0e7e3); font:400 11px/1.55 IRANSans,sans-serif; }
 @media(max-width:575.98px) { .rn-page { padding:10px; }.rn .modal-dialog { margin:8px; }.rn .modal-body { padding:12px; }.rn .modal-header h2 { font-size:16px; }.rn-release { padding:12px; }.rn-release>header { gap:7px; }.rn-release header h2 { flex-basis:100%; order:1; }.rn-button { min-height:42px; }.rn .modal-footer { flex-wrap:wrap; }.rn-list-actions { width:100%; } }
 .rn-history-heading { margin-bottom:12px; }
