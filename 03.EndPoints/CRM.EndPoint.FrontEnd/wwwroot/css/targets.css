@@ -59,12 +59,19 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
-.target-modal-header { padding: 12px 18px; }
-.target-modal-header h2 { font-size: 19px; margin: 0; }
-.target-modal-header span { display: block; margin-block-start: 4px; color: var(--target-muted); font-size: 12px; }
-.target-steps { padding: 7px 12px; border-block: 1px solid var(--target-border); display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
-.target-steps button { border: 0; background: transparent; color: var(--target-muted); font: inherit; min-height: 36px; border-radius: 8px; cursor: pointer; }
-.target-steps button span { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #f0f1f7; margin-inline-end: 5px; }
+.target-modal-header { padding: 7px 14px; min-height: 43px; }
+.target-modal-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }
+.target-modal-header h2 { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0; }
+.target-modal-header #targetModalStatus {
+    display: inline-flex; align-items: center;
+    padding: 2px 6px; border-radius: 5px;
+    background: var(--target-secondary-light); color: var(--target-secondary);
+    font-size: 10px; font-weight: 500; line-height: 1.4;
+}
+.target-modal-header .btn-close { margin: 0; padding: 5px; width: 14px; height: 14px; background-size: 14px; }
+.target-steps { padding: 4px 10px; border-block: 1px solid var(--target-border); display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+.target-steps button { border: 0; background: transparent; color: var(--target-muted); font: inherit; font-size: 12px; line-height: 1.3; min-height: 30px; padding: 3px 5px; border-radius: 7px; cursor: pointer; }
+.target-steps button span { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; background: #f0f1f7; margin-inline-end: 4px; font-size: 11px; }
 .target-steps button.active { color: var(--target-primary); background: var(--target-primary-light); font-weight: 700; }
 .target-steps button.active span { background: var(--target-primary); color: #fff; }
 .target-modal-body { padding: 10px 16px; }
@@ -190,8 +197,8 @@
     .target-page-header { flex-direction: column; }
     .target-list-panel { padding: 12px; }
     .target-modal .modal-content { border-radius: 0; }
-    .target-steps { padding: 8px; gap: 2px; }
-    .target-steps button { font-size: 11px; padding: 5px 2px; }
+    .target-steps { padding: 4px 6px; gap: 2px; }
+    .target-steps button { font-size: 11px; min-height: 35px; padding: 3px 2px; }
     .target-steps button span { margin-inline-end: 0; }
     .target-modal-body { max-height: none; padding: 12px; }
     .target-step-panel[data-target-panel="0"]:not([hidden]) {
