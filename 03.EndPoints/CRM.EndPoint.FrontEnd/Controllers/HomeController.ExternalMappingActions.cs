@@ -66,6 +66,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             });
         }
 
+        [Authorize(Roles = AppRoles.Admin)]
+        [HttpGet]
+        public async Task<IActionResult> GetExternalMappingTargetDetails(
+            Guid softwareId, int mapType, int targetId, CancellationToken ct)
+        {
+            if (targetId <= 0 || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType)
+                || softwareId != Sepidar1SoftwareId && softwareId != Sepidar2SoftwareId
+                || !await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
+                return BadRequest("نرم‌افزار، نوع نگاشت یا شناسه معتبر نیست.");
+
+            var sepidar = softwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb : s2Db;
+            var entityName = mapType == (int)ExternalMappingTypeEnum.مشتری ? nameof(Customer)
+                : mapType == (int)ExternalMappingTypeEnum.پیش_فاکتور ? nameof(PreFactor)
+                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor) : null;
+            if (entityName == null)
+                return BadRequest("نمایش معادل برای این نوع نگاشت هنوز پشتیبانی نمی‌شود.");
+
+            var externalName = entityName == nameof(Customer) ? "Party"
+                : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
+            var exists = entityName == nameof(Customer)
+                ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct)
+                : entityName == nameof(PreFactor)
+                    ? await sepidar.Quotations.AsNoTracking().AnyAsync(x => x.QuotationId == targetId, ct)
+                    : await sepidar.SalesInvoices.AsNoTracking().AnyAsync(x => x.InvoiceId == targetId, ct);
+            if (!exists) return NotFound("معادل انتخاب‌شده در نرم‌افزار خارجی پیدا نشد.");
+
+            var entry = new MappingReportEntry(
+                "manual-preview", entityName, Guid.Empty, "pending", "ReadyForReview",
+                "", externalName, targetId, Array.Empty<string>(), mapType,
+                targetId.ToString(), new[] { targetId });
+            var rows = await EnrichMappingEntriesAsync(new List<MappingReportEntry> { entry }, softwareId, ct);
+            return Ok(new { target = rows[0].Sepidar });
+        }
+
         // Only selected rows are submitted; no automatic migration runs from page visits.
         // On success each record becomes a persisted ExternalMapping, never an external INSERT.
         [Authorize(Roles = AppRoles.Admin)]
