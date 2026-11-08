@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "مدیریت نگاشت نرم‌افزارهای خارجی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.5" asp-append-version="true" />
+}
+
+<section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl" aria-labelledby="lmrTitle">
+    @Html.AntiForgeryToken()
+    <header class="lmr-heading">
+        <div>
+            <h1 id="lmrTitle">مدیریت نگاشت نرم‌افزارهای خارجی</h1>
+            <p>ارتباط مشتریان، پیش‌فاکتورها، فاکتورها، تنخواه و سایر اطلاعات CRM با نرم‌افزارهای مالی</p>
+        </div>
+        <label class="lmr-software">
+            <span>نرم‌افزار مقصد</span>
+            <select id="lmrSoftware" aria-label="انتخاب نرم‌افزار خارجی"></select>
+        </label>
+    </header>
+
+    <div class="lmr-stats" role="group" aria-label="خلاصه نگاشت‌های نرم‌افزار انتخاب‌شده">
+        <div><span>ثبت‌شده در CRM</span><strong id="lmrSavedCount">—</strong></div>
+        <div><span>پیشنهادهای جدید</span><strong id="lmrPendingCount">—</strong></div>
+        <div><span>تعارض مشتریان</span><strong id="lmrCustomerConflicts">—</strong></div>
+        <div><span>موارد نیازمند بررسی</span><strong id="lmrBlockedCount">—</strong></div>
+    </div>
+
+    <div class="lmr-origin" aria-live="polite">
+        <div id="lmrSavedSource" class="lmr-origin-item"><i class="fas fa-database" aria-hidden="true"></i> نگاشت‌های ثبت‌شده مستقیماً از جدول ExternalMapping خوانده می‌شوند.</div>
+        <div id="lmrSuggestedSource" class="lmr-origin-item"><i class="fas fa-search" aria-hidden="true"></i> پیشنهادها و تعارض‌ها ذخیره نشده‌اند؛ با مقایسه اطلاعات CRM و سپیدار محاسبه می‌شوند.</div>
+    </div>
+
+    <section class="lmr-workspace" aria-label="فهرست نگاشت‌های نرم‌افزار خارجی">
+        <div class="lmr-toolbar">
+            <div class="lmr-view-tabs" id="lmrStatusTabs" role="group" aria-label="نوع اطلاعات">
+                <button type="button" class="is-active" data-status="saved"><i class="fas fa-check-circle" aria-hidden="true"></i> نگاشت‌های ثبت‌شده</button>
+                <button type="button" data-status="pending">پیشنهادهای آماده</button>
+                <button type="button" data-status="customerConflict">تعارض مشتریان</button>
+                <button type="button" data-status="ambiguous">نگاشت‌های مبهم</button>
+                <button type="button" data-status="blocked">متوقف به‌علت مشتری</button>
+                <button type="button" data-status="notMatched">معادل پیدا نشده</button>
+            </div>
+            <div class="lmr-refresh-group">
+                <button id="lmrRefreshSaved" type="button" class="lmr-btn lmr-btn-soft"><i class="fas fa-sync-alt" aria-hidden="true"></i> تازه‌سازی ثبت‌شده‌ها</button>
+                <button id="lmrCompute" type="button" class="lmr-btn lmr-btn-primary"><i class="fas fa-calculator" aria-hidden="true"></i> <span id="lmrComputeLabel">محاسبه پیشنهادها</span></button>
+            </div>
+        </div>
+
+        <div class="lmr-filterbar">
+            <label class="lmr-filter lmr-search">
+                <span>جستجو</span>
+                <input id="lmrSearch" type="search" placeholder="نام مشتری، شماره فاکتور یا پیش‌فاکتور، شناسه" autocomplete="off" />
+            </label>
+            <label class="lmr-filter">
+                <span>نوع نگاشت</span>
+                <select id="lmrType"><option value="">همه انواع</option></select>
+            </label>
+            <label class="lmr-filter">
+                <span>علت</span>
+                <select id="lmrReason"><option value="">همه علت‌ها</option></select>
+            </label>
+            <label class="lmr-filter lmr-size">
+                <span>تعداد</span>
+                <select id="lmrPageSize">
+                    <option value="10" selected>۱۰</option>
+                    <option value="20">۲۰</option>
+                    <option value="40">۴۰</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="lmr-section-head">
+            <div class="lmr-section-heading">
+                <strong id="lmrSectionTitle">نگاشت‌های ثبت‌شده</strong>
+                <span id="lmrResultCount" aria-live="polite">—</span>
+            </div>
+            <div class="lmr-selection-actions" id="lmrSelectionActions" hidden>
+                <label class="lmr-check-all"><input id="lmrSelectPage" type="checkbox" /> انتخاب موارد این صفحه</label>
+                <span id="lmrSelectedCount">۰ انتخاب</span>
+                <button type="button" id="lmrSaveSelected" class="lmr-btn lmr-btn-primary" disabled>ثبت نگاشت‌های انتخاب‌شده</button>
+            </div>
+        </div>
+
+        <div id="lmrFeedback" role="status" aria-live="polite"></div>
+        <div id="lmrRecords" class="lmr-record-list" role="list" aria-label="نتایج نگاشت"></div>
+        <footer class="lmr-footer">
+            <span id="lmrPageInfo">—</span>
+            <nav id="lmrPagination" class="lmr-pagination" aria-label="صفحه‌بندی نگاشت‌ها"></nav>
+        </footer>
+    </section>
+
+    <p class="lmr-note">برای ثبت پیش‌فاکتور یا فاکتور، مشتری آن باید قبلاً در همین نرم‌افزار نگاشت شده باشد. تعارض‌ها تنها پس از انتخاب صریح معادل صحیح قابل ثبت هستند.</p>
+</section>
+
+@section Scripts {
+    <script src="~/js/legacyMappingReport.js?release=7.0.5" asp-append-version="true"></script>
+}
