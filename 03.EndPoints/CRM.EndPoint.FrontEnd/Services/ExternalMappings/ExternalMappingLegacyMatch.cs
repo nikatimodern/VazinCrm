@@ -737,7 +737,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         : possibleParties.Count > 1 ? "MultipleSepidarParties"
                         : !validSepidarCustomers.Contains(possibleParties[0])
                             ? "PartyNotFoundOrNotCustomer"
-                        : customer.FinancialCustomerId.HasValue
+                        : targetSoftwareId == Sepidar1SoftwareId
+                          && customer.FinancialCustomerId.HasValue
                           && customer.FinancialCustomerId != possibleParties[0]
                             ? "LegacyFinancialCustomerIdMismatch"
                         : existing.Any(x => x.ExternalSoftwareId == softwareId
