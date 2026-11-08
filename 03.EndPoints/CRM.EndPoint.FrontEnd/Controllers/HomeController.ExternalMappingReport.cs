@@ -16,6 +16,9 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.Payments.Entites;
+using CRM.Core.Domain.Sepidar.Vouchers.Entites;
+using CRM.Core.Domain.Sepidar.DLs.Entites;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -516,6 +519,69 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         x.IsCustomer ? "مشتری فعال در فهرست اشخاص" : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
             }
 
+                // Enrich the other saved Sepidar mapping types when their
+                // external entity names are known, without assuming custom schemas.
+                var vouchers = entries.Where(x => x.TargetEntity == nameof(Voucher) && x.TargetId > 0)
+                    .Select(x => x.TargetId.Value).Distinct().ToArray();
+                foreach (var batch in vouchers.Chunk(350))
+                {
+                    var rows = await sepidarContext.Vouchers.AsNoTracking()
+                        .Where(x => batch.Contains(x.VoucherId))
+                        .Select(x => new { x.VoucherId, x.Number, x.Date, x.Description, x.FiscalYearRef })
+                        .ToListAsync(ct);
+                    foreach (var x in rows)
+                        externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
+                            "سند حسابداری نرم‌افزار مالی", x.VoucherId.ToString(),
+                            x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
+                            x.Description, $"سال مالی: {x.FiscalYearRef}");
+                }
+
+                var payments = entries.Where(x => x.TargetEntity == nameof(PaymentHeader) && x.TargetId > 0)
+                    .Select(x => x.TargetId.Value).Distinct().ToArray();
+                foreach (var batch in payments.Chunk(350))
+                {
+                    var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
+                        .Where(x => batch.Contains(x.PaymentHeaderId))
+                        .Select(x => new { x.PaymentHeaderId, x.Number, x.Date,
+                            x.AmountInBaseCurrency, x.Description, x.FiscalYearRef })
+                        .ToListAsync(ct);
+                    foreach (var x in rows)
+                        externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
+                            "اعلامیه پرداخت نرم‌افزار مالی", x.PaymentHeaderId.ToString(),
+                            x.Number.ToString(), FormatLegacyPersianDate(x.Date),
+                            x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
+                }
+
+                var dlIds = entries.Where(x => x.TargetEntity == nameof(DL) && x.TargetId > 0)
+                    .Select(x => x.TargetId.Value).Distinct().ToArray();
+                foreach (var batch in dlIds.Chunk(350))
+                {
+                    var rows = await sepidarContext.DLs.AsNoTracking()
+                        .Where(x => batch.Contains(x.DLId))
+                        .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
+                    foreach (var x in rows)
+                        externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
+                            "حساب تفصیلی نرم‌افزار مالی", x.DLId.ToString(),
+                            x.Code, "", null, x.Title, "");
+                }
+
+                var cashIdsInSepidar = entries.Where(x => (x.TargetEntity == "Cash"
+                        || x.TargetEntity == "SepidarCash") && x.TargetId > 0)
+                    .Select(x => x.TargetId.Value).Distinct().ToArray();
+                foreach (var batch in cashIdsInSepidar.Chunk(350))
+                {
+                    var rows = await sepidarContext.SepidarCash.AsNoTracking()
+                        .Where(x => batch.Contains(x.CashId))
+                        .Select(x => new { x.CashId, x.Title }).ToListAsync(ct);
+                    foreach (var x in rows)
+                    {
+                        var side = new MappingReportSide(
+                            "تنخواه نرم‌افزار مالی", x.CashId.ToString(),
+                            x.CashId.ToString(), "", null, x.Title, "");
+                        externalSides[("Cash", x.CashId)] = side;
+                        externalSides[("SepidarCash", x.CashId)] = side;
+                    }
+                }
             }
 
             return entries.Select(entry => {
