@@ -72,7 +72,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     mapType = (int)x.MapType,
                     count = x.Count
                 }),
-                automaticMatchingSoftwareId = Sepidar1SoftwareId,
+                supportedAutomaticSoftwareIds = new[] { Sepidar1SoftwareId, Sepidar2SoftwareId },
                 supportedManualSoftwareIds = new[] { Sepidar1SoftwareId, Sepidar2SoftwareId }
             };
         }
