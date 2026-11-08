@@ -1,5 +1,6 @@
 <div class="cartable-pane flex-center flex-column col-12 gap-3 p-2 d-none" id="CTaminExpertId">
-    <ul class="nav nav-pills" id="taminExpertsTabs" role="tablist">
+    <div class="cartable-tamin-nav-row">
+        <ul class="nav nav-pills" id="taminExpertsTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link position-relative" onclick="GetInvoicesTaminExpert()" id="TaminInvoiceTab" data-bs-target="#TaminInvoiceTab-pane" type="button" role="tab">
                 صورتحساب ها
@@ -12,7 +13,9 @@
                 <span class="badge-count cartable-tab-count d-none"></span>
             </button>
         </li>
-    </ul>
+        </ul>
+        <div class="cartable-tamin-top-controls" aria-label="فیلتر و جستجوی پیش‌فاکتورهای تأمین"></div>
+    </div>
     <div class="tab-content p-2 px-1 px-sm-2 col-12" id="tabContentTaminExperts">
 
 
