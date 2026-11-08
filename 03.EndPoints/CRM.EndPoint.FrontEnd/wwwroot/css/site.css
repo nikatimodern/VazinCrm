@@ -2868,6 +2868,119 @@ html.sidebar-collapsed #mainWrapper {
 	gap: 6px;
 }
 
+/* Compact profile details only on phones. Keep desktop and other modals unchanged. */
+@media (max-width: 767px) {
+    #UserSetting .profile-modal-dialog {
+        max-width: min(420px, calc(100vw - 16px));
+        margin: 8px auto;
+    }
+
+    #UserSetting .profile-modal {
+        max-height: calc(100dvh - 16px);
+    }
+
+    #UserSetting .profile-modal-header {
+        padding: 8px 12px;
+    }
+
+    #UserSetting .profile-modal-header h1 {
+        margin-top: 1px;
+        margin-bottom: 0;
+        font-size: 16px;
+    }
+
+    #UserSetting .profile-modal-subtitle {
+        font-size: 10px;
+    }
+
+    #UserSetting .profile-modal-body {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 9px 12px 12px;
+    }
+
+    #UserSetting .profile-modal-body > .px-2 {
+        padding-inline: 0 !important;
+    }
+
+    #UserSetting .profile-image-section {
+        margin-bottom: 8px;
+    }
+
+    #UserSetting .profile-image-wrapper {
+        width: 96px;
+        height: 96px;
+        padding: 2px;
+    }
+
+    #UserSetting .profile-delete-image {
+        margin-top: 4px;
+    }
+
+    #UserSetting .profile-image-upload {
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    #UserSetting .profile-file-name {
+        min-width: 0;
+        height: 30px;
+        min-height: 30px;
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+
+    #UserSetting .profile-upload-btn {
+        min-width: 90px;
+        min-height: 30px;
+        padding: 3px 8px !important;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    #UserSetting .profile-upload-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    #UserSetting .profile-information {
+        gap: 8px;
+    }
+
+    #UserSetting .profile-field label {
+        margin-bottom: 3px;
+        font-size: 12px;
+    }
+
+    #UserSetting .profile-input {
+        height: 32px;
+        min-height: 32px;
+        padding-right: 32px !important;
+        font-size: 12px;
+    }
+
+    #UserSetting .profile-input-wrapper > svg {
+        right: 10px;
+        width: 15px;
+        height: 15px;
+    }
+
+    #UserSetting .profile-actions {
+        margin-top: 12px;
+        padding-top: 8px;
+        gap: 6px;
+    }
+
+    #UserSetting .profile-save-btn,
+    #UserSetting .profile-logout-btn {
+        min-height: 28px !important;
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+        gap: 4px;
+    }
+}
+
 
 .personImageOpenMenu {
 	width: 100px !important;
