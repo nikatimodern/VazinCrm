@@ -71,7 +71,8 @@
             saved: { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: 0 },
             proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
-            processing: false
+            processing: false,
+            deleting: false
         };
 
         function reason(row) {
@@ -360,6 +361,9 @@
                 '<footer class="lmr-item-footer">'+
                     '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
                     inputTarget(row)+
+                    (row.status === "saved" && row.mappingId ?
+                        '<button type="button" class="lmr-btn lmr-btn-danger" data-delete-mapping aria-label="حذف این نگاشت">' +
+                            '<i class="fas fa-trash-alt" aria-hidden="true"></i> حذف نگاشت</button>' : '')+
                 '</footer>'+
                 '<div class="lmr-expanded" hidden>'+
                     '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
@@ -394,6 +398,7 @@
                 get("lmrCustomerConflicts").textContent = format.format(stats.customerConflicts || 0);
                 get("lmrBlockedCount").textContent = format.format(
                     (stats.blockedDocuments || 0) + (stats.ambiguous || 0));
+                get("lmrUnmatchedCount").textContent = format.format(stats.unmatched || 0);
             }
             const supported = state.autoIds.includes(state.softwareId);
             get("lmrCompute").disabled = !supported || state.proposal.calculating;
@@ -570,6 +575,67 @@
             renderSaved(model.rows, model.total);
         }
 
+        async function deleteSavedMapping(row) {
+            if (state.deleting || !row?.mappingId || row.status !== "saved") return;
+
+            const ok = await confirmAlert({
+                title: "حذف نگاشت",
+                text: "نگاشت «" + typeTitle(row) + "» بین CRM و «" +
+                    state.softwareTitle + "» حذف شود؟ اطلاعات اصلی در CRM و نرم‌افزار مالی حذف نمی‌شوند.",
+                icon: "warning", confirmText: "حذف نگاشت", cancelText: "انصراف"
+            });
+            if (!ok) return;
+
+            const softwareId = state.softwareId;
+            state.deleting = true;
+            const savedCard = [...savedRoot.querySelectorAll("[data-key]")]
+                .find(x => x.dataset.key === row.key);
+            const deleteButton = savedCard?.querySelector("[data-delete-mapping]");
+            if (deleteButton) deleteButton.disabled = true;
+
+            const result = await sendApiRequest({
+                url: "/ExternalMapping/DeleteExternalMapping",
+                method: "POST",
+                headers: { "RequestVerificationToken": token },
+                data: { softwareId, mappingId: row.mappingId },
+                timeout: 60000,
+                successMsg: null
+            });
+            state.deleting = false;
+            if (!isActive() || softwareId !== state.softwareId) return;
+
+            if (!result?.deleted) {
+                if (deleteButton) deleteButton.disabled = false;
+                return;
+            }
+
+            toastifySuccess("نگاشت انتخاب‌شده حذف شد.");
+            // Any calculated proposal may be outdated after deleting a saved mapping.
+            state.proposal.loaded = false;
+            state.proposal.rows = [];
+            state.proposal.visible = [];
+            state.proposal.summary = null;
+            state.selected.clear();
+            state.targets.clear();
+            state.crmTargets.clear();
+            state.preview.clear();
+            updateProposalTabs();
+            updateSummary();
+            renderProposals();
+
+            const options = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions",
+                showLoading: false
+            });
+            if (!isActive() || softwareId !== state.softwareId) return;
+            if (options) {
+                state.counts = options.counts || [];
+                fillTypes("saved");
+                updateSummary();
+            }
+            await loadSaved();
+        }
+
         async function calculate() {
             const model = state.proposal;
             if (model.calculating || !state.autoIds.includes(state.softwareId)) return;
@@ -716,7 +782,13 @@
             return true;
         }
 
-        savedRoot.addEventListener("click", event => toggleDetails(savedRoot, event));
+        savedRoot.addEventListener("click", async event => {
+            if (toggleDetails(savedRoot, event)) return;
+            if (!event.target.closest("[data-delete-mapping]")) return;
+            const savedCard = event.target.closest("[data-key]");
+            const row = state.saved.rows.find(item => item.key === savedCard?.dataset.key);
+            if (row) await deleteSavedMapping(row);
+        });
         proposalRoot.addEventListener("click", async event => {
             if (toggleDetails(proposalRoot, event)) return;
             const panel = event.target.closest("[data-key]");

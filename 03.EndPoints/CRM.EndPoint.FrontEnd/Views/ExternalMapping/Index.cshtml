@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.8" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.9" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -81,6 +81,7 @@
             <span>آماده: <strong id="lmrPendingCount">۰</strong></span>
             <span>تعارض مشتری: <strong id="lmrCustomerConflicts">۰</strong></span>
             <span>متوقف یا مبهم: <strong id="lmrBlockedCount">۰</strong></span>
+            <span>بدون معادل: <strong id="lmrUnmatchedCount">۰</strong></span>
         </div>
 
         <div id="lmrProposalStatusTabs" class="lmr-tabs" role="group" aria-label="وضعیت پیشنهادهای نگاشت">
@@ -122,5 +123,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.8" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.9" asp-append-version="true"></script>
 }

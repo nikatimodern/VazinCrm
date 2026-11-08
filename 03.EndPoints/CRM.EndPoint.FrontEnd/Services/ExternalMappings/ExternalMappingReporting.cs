@@ -40,13 +40,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         private sealed record MappingReportEntry(
             string Key, string Kind, Guid EntityId, string Status,
             string Reason, string Details, string TargetEntity, int? TargetId,
-            string[] Sources, int MapType, string TargetRaw = null, int[] CandidateIds = null);
+            string[] Sources, int MapType, string TargetRaw = null,
+            int[] CandidateIds = null, Guid? MappingId = null);
 
         private sealed record MappingReportRow(
             string Key, string Kind, string Status, string Reason,
             string Details, string[] Sources,
             MappingReportSide Crm, MappingReportSide Sepidar, int MapType,
-            List<MappingReportTargetOption> Options);
+            List<MappingReportTargetOption> Options, Guid? MappingId);
 
         private sealed record MappingReportTargetOption(int Id, string Title, string Description);
 
@@ -263,7 +264,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     pendingDocuments = plan.PendingDocuments.Count,
                     customerConflicts = plan.CustomerConflicts.Count,
                     blockedDocuments = plan.BlockedDocumentCount,
-                    unmatched = plan.NotMatched,
+                    unmatched = reportRows.Count(x => x.Status == "notMatched"),
                     ambiguous = plan.Ambiguous,
                     duplicateGroups = plan.DuplicateTargetGroups.Count
                 },
@@ -337,7 +338,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var mappings = await query.OrderByDescending(x => x.CreateDate)
                 .ThenBy(x => x.EntityId).Skip((page - 1) * pageSize)
                 .Take(pageSize).Select(x => new {
-                    x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId
+                    x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId
                 }).ToListAsync(ct);
 
             var entries = mappings.Select(x => {
@@ -347,7 +348,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     x.EntityId, "saved", "AlreadyMapped",
                     "این نگاشت در پایگاه داده CRM ثبت شده است.",
                     x.ExEntityName, externalId > 0 ? externalId : null,
-                    Array.Empty<string>(), (int)x.MapType, x.ExEntityId);
+                    Array.Empty<string>(), (int)x.MapType, x.ExEntityId,
+                    null, x.Id);
             }).ToList();
 
             return new {
@@ -660,7 +662,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
                     entry.Reason, entry.Details, entry.Sources, crm, sepidar,
-                    entry.MapType, options);
+                    entry.MapType, options, entry.MappingId);
             }).ToList();
         }
     }

@@ -124,6 +124,68 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     new LegacyFiscalYearRow(persianYear.Value, year.StartDate, year.EndDate));
         }
 
+        // Delete only the CRM ExternalMapping row, never the external software record.
+        // Keep existing invoice/quotation mappings consistent with their customer mappings.
+        public async Task DeleteExternalMappingAsync(
+            Guid softwareId, Guid mappingId, CancellationToken ct)
+        {
+            if (softwareId == Guid.Empty || mappingId == Guid.Empty)
+                throw new ArgumentException("شناسه نرم‌افزار یا نگاشت معتبر نیست.");
+
+            await using var transaction = await db.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable, ct);
+
+            var mapping = await db.ExternalMappings.SingleOrDefaultAsync(
+                x => x.Id == mappingId && x.ExternalSoftwareId == softwareId, ct);
+            if (mapping == null)
+                throw new KeyNotFoundException("نگاشت انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
+
+            if (mapping.MapType == ExternalMappingTypeEnum.مشتری
+                && mapping.EntityName == nameof(Customer))
+            {
+                var hasMappedPreFactor = await db.PreFactors.AsNoTracking()
+                    .AnyAsync(p => p.CustomerId == mapping.EntityId
+                        && db.ExternalMappings.Any(m =>
+                            m.ExternalSoftwareId == softwareId
+                            && m.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                            && m.EntityId == p.Id), ct);
+
+                var hasMappedFactor = await db.Factors.AsNoTracking()
+                    .AnyAsync(f =>
+                        (f.CustomerId == mapping.EntityId ||
+                            db.PreFactors.Any(p => p.Id == f.PfactorID
+                                && p.CustomerId == mapping.EntityId))
+                        && db.ExternalMappings.Any(m =>
+                            m.ExternalSoftwareId == softwareId
+                            && m.MapType == ExternalMappingTypeEnum.فاکتور
+                            && m.EntityId == f.Id), ct);
+
+                if (hasMappedPreFactor || hasMappedFactor)
+                    throw new MappingConflictException(
+                        "این مشتری هنوز پیش‌فاکتور یا فاکتور نگاشت‌شده دارد. " +
+                        "ابتدا نگاشت پیش‌فاکتورها و فاکتورهای مربوط را حذف کنید.");
+            }
+
+            if (mapping.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                && mapping.EntityName == nameof(PreFactor))
+            {
+                var hasMappedFactor = await db.Factors.AsNoTracking()
+                    .AnyAsync(f => f.PfactorID == mapping.EntityId
+                        && db.ExternalMappings.Any(m =>
+                            m.ExternalSoftwareId == softwareId
+                            && m.MapType == ExternalMappingTypeEnum.فاکتور
+                            && m.EntityId == f.Id), ct);
+                if (hasMappedFactor)
+                    throw new MappingConflictException(
+                        "برای این پیش‌فاکتور، فاکتور نگاشت‌شده وجود دارد. " +
+                        "ابتدا نگاشت فاکتور مربوط را حذف کنید.");
+            }
+
+            db.ExternalMappings.Remove(mapping);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+
         // Only selected rows are submitted; no automatic migration runs from page visits.
         // On success each record becomes a persisted ExternalMapping, never an external INSERT.
 

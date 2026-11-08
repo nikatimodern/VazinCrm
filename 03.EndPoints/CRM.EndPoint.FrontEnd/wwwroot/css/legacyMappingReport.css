@@ -63,6 +63,9 @@
 .lmr-btn { border:1px solid var(--map-border);border-radius:6px;min-height:31px;padding:4px 10px;background:white;color:var(--map-primary);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap; }
 .lmr-btn-primary { border-color:var(--map-action);background:var(--map-action);color:white; }
 .lmr-btn-soft { background:var(--map-soft); }
+.lmr-btn-danger { color:var(--map-danger);background:var(--map-danger-soft);border-color:#eac0d2; }
+.lmr-btn-danger:hover:not(:disabled) { background:#f7dbe7; }
+.lmr-item-footer .lmr-btn-danger { margin-inline-start:auto;min-height:30px; }
 .lmr-btn:hover:not(:disabled) { filter:brightness(.96); }
 .lmr-btn:disabled { opacity:.45;cursor:not-allowed; }
 .lmr-record-list { display:grid;gap:6px;padding:7px;min-height:50px; }
