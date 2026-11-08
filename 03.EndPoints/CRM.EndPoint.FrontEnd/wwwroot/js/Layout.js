@@ -26,8 +26,42 @@ function initMobileHeaderCollapse() {
         }
     };
 
-    toggle.addEventListener("click", () => {
-        if (mobile.matches) setOpen(!panel.classList.contains("is-open"));
+    // Tap still toggles the panel; vertical swipes on the handle open/close it.
+    let dragStartY = null;
+    let activePointerId = null;
+    let lastSwipeAt = -Infinity;
+    const swipeThreshold = 22;
+
+    toggle.addEventListener("pointerdown", event => {
+        if (!mobile.matches || !event.isPrimary || !["touch", "pen"].includes(event.pointerType)) return;
+        dragStartY = event.clientY;
+        activePointerId = event.pointerId;
+        toggle.setPointerCapture?.(event.pointerId);
+    });
+
+    toggle.addEventListener("pointerup", event => {
+        if (!mobile.matches || dragStartY === null || event.pointerId !== activePointerId) return;
+        const deltaY = event.clientY - dragStartY;
+        dragStartY = null;
+        activePointerId = null;
+        if (Math.abs(deltaY) < swipeThreshold) return;
+        lastSwipeAt = performance.now();
+        setOpen(deltaY > 0);
+    });
+
+    toggle.addEventListener("pointercancel", () => {
+        dragStartY = null;
+        activePointerId = null;
+    });
+
+    toggle.addEventListener("click", event => {
+        if (!mobile.matches) return;
+        // Avoid the synthetic click after a successful swipe applying the opposite action.
+        if (event.detail !== 0 && performance.now() - lastSwipeAt < 400) {
+            event.preventDefault();
+            return;
+        }
+        setOpen(!panel.classList.contains("is-open"));
     });
 
     panel.addEventListener("transitionend", event => {
