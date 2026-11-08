@@ -76,8 +76,29 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 }
             }
 
+            // Resolve who already owns a conflicting Sepidar customer mapping.
+            // Names/codes come from actual CRM Customers; no ownership is inferred.
+            var conflictPartyReferences = plan.CustomerConflicts
+                .SelectMany(x => x.SepidarPartyIds)
+                .Where(x => x > 0).Distinct()
+                .Select(x => x.ToString()).ToArray();
+            var savedPartyOwners = new List<(int PartyId, Guid CustomerId)>();
+            foreach (var batch in conflictPartyReferences.Chunk(350))
+            {
+                var mappings = await db.ExternalMappings.AsNoTracking()
+                    .Where(x => x.ExternalSoftwareId == softwareId
+                        && x.MapType == ExternalMappingTypeEnum.مشتری
+                        && x.ExEntityName == nameof(Party)
+                        && batch.Contains(x.ExEntityId))
+                    .Select(x => new { x.ExEntityId, x.EntityId }).ToListAsync(ct);
+                foreach (var mapping in mappings)
+                    if (int.TryParse(mapping.ExEntityId, out var id))
+                        savedPartyOwners.Add((id, mapping.EntityId));
+            }
+
             var relatedCustomerIds = evidence.Select(x => x.CustomerId)
                 .Concat(plan.CustomerConflicts.Select(x => x.CustomerId))
+                .Concat(savedPartyOwners.Select(x => x.CustomerId))
                 .Distinct().ToArray();
             var crmCustomerNames = new Dictionary<Guid, (string Name, int Code)>();
             foreach (var batch in relatedCustomerIds.Chunk(350))
@@ -159,11 +180,27 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var partyDescriptions = conflict.SepidarPartyIds.Select(id =>
                     $"گزینه مشتری سپیدار: «{partyNames.GetValueOrDefault(id, "نام ثبت نشده")}» (کد {id})");
 
+                var owners = savedPartyOwners
+                    .Where(x => conflict.SepidarPartyIds.Contains(x.PartyId)
+                        && x.CustomerId != conflict.CustomerId)
+                    .Distinct()
+                    .Select(x => {
+                        var customerInfo = crmCustomerNames.GetValueOrDefault(x.CustomerId);
+                        var owner = !string.IsNullOrWhiteSpace(customerInfo.Name)
+                            ? $"«{customerInfo.Name}» (کد {customerInfo.Code})"
+                            : $"با شناسه داخلی {x.CustomerId} (مشتری در CRM پیدا نشد)";
+                        var partyName = partyNames.GetValueOrDefault(x.PartyId, "بدون نام");
+                        return $"مشتری «{partyName}» در سپیدار (کد {x.PartyId}) قبلاً به مشتری CRM {owner} نگاشت شده است.";
+                    }).ToArray();
+
+                var conflictDetails = owners.Length > 0
+                    ? string.Join("\n", owners)
+                    : $"برای این مشتری CRM، {conflict.SepidarPartyIds.Count} معادل احتمالی در سپیدار وجود دارد.";
                 var sources = related.Concat(partyDescriptions).ToArray();
                 entries.Add(new MappingReportEntry(
                     $"customer-conflict-{conflict.CustomerId}", nameof(Customer),
                     conflict.CustomerId, "customerConflict", conflict.Reason,
-                    $"این مشتری CRM به {conflict.SepidarPartyIds.Count} مشتری احتمالی در سپیدار مربوط شده است. ردیف‌های مرتبط را باز کنید تا ارتباط هر پیش‌فاکتور یا فاکتور روشن شود.",
+                    conflictDetails,
                     nameof(Party), conflict.SepidarPartyIds.Count > 0 && conflict.SepidarPartyIds[0] > 0
                         ? conflict.SepidarPartyIds[0] : (int?)null,
                     sources, (int)ExternalMappingTypeEnum.مشتری, null,
