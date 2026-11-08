@@ -101,6 +101,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             return Ok(new { target = rows[0].Sepidar });
         }
 
+        private async Task<bool> HasSameExternalFiscalYearAsync(
+            SepidarContextDbBase context, int fiscalYearRef, string crmDate,
+            DateTime? crmMiladiDate, CancellationToken ct)
+        {
+            var year = await context.FiscalYears.AsNoTracking()
+                .Where(x => x.FiscalYearId == fiscalYearRef)
+                .Select(x => new { x.Title, x.StartDate, x.EndDate })
+                .SingleOrDefaultAsync(ct);
+            var persianYear = year == null ? null : GetLegacyFiscalYear(year.Title);
+            return year != null && persianYear.HasValue
+                && IsInLegacyFiscalYear(crmDate, crmMiladiDate,
+                    new LegacyFiscalYearRow(persianYear.Value, year.StartDate, year.EndDate));
+        }
+
         // Only selected rows are submitted; no automatic migration runs from page visits.
         // On success each record becomes a persisted ExternalMapping, never an external INSERT.
         [Authorize(Roles = AppRoles.Admin)]
@@ -208,24 +222,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         {
                             var pf = await db.PreFactors.AsNoTracking()
                                 .Where(x => x.Id == item.EntityId)
-                                .Select(x => new { x.CustomerId })
+                                .Select(x => new { x.CustomerId, x.Date, x.DateMiladi })
                                 .SingleOrDefaultAsync(ct);
                             if (pf == null || !pf.CustomerId.HasValue)
                                 return BadRequest("پیش‌فاکتور CRM مشتری مشخصی ندارد.");
                             customerId = pf.CustomerId;
                             var external = await targetDb.Quotations.AsNoTracking()
                                 .Where(x => x.QuotationId == targetId)
-                                .Select(x => new { x.CustomerPartyRef })
+                                .Select(x => new { x.CustomerPartyRef, x.FiscalYearRef })
                                 .SingleOrDefaultAsync(ct);
                             if (external == null)
                                 return BadRequest($"پیش‌فاکتور با شناسه {targetId} در نرم‌افزار مقصد پیدا نشد.");
+                            if (!await HasSameExternalFiscalYearAsync(targetDb, external.FiscalYearRef,
+                                    pf.Date, pf.DateMiladi, ct))
+                                return BadRequest("سال مالی پیش‌فاکتور CRM و نرم‌افزار انتخاب‌شده یکسان نیست.");
                             partyId = external.CustomerPartyRef;
                         }
                         else
                         {
                             var factor = await db.Factors.AsNoTracking()
                                 .Where(x => x.Id == item.EntityId)
-                                .Select(x => new { x.CustomerId, x.PfactorID, x.status, x.ParentReturnedId })
+                                .Select(x => new { x.CustomerId, x.PfactorID, x.status,
+                                    x.ParentReturnedId, x.Date, x.DateMiladi })
                                 .SingleOrDefaultAsync(ct);
                             if (factor == null || factor.status != FactorStatus.تایید_شده
                                 || factor.ParentReturnedId.HasValue)
@@ -244,10 +262,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
                             var external = await targetDb.SalesInvoices.AsNoTracking()
                                 .Where(x => x.InvoiceId == targetId)
-                                .Select(x => new { x.CustomerPartyRef, x.QuotationRef })
+                                .Select(x => new { x.CustomerPartyRef, x.QuotationRef, x.FiscalYearRef })
                                 .SingleOrDefaultAsync(ct);
                             if (external == null)
                                 return BadRequest($"فاکتور با شناسه {targetId} در نرم‌افزار مقصد پیدا نشد.");
+                            if (!await HasSameExternalFiscalYearAsync(targetDb, external.FiscalYearRef,
+                                    factor.Date, factor.DateMiladi, ct))
+                                return BadRequest("سال مالی فاکتور CRM و نرم‌افزار انتخاب‌شده یکسان نیست.");
                             partyId = external.CustomerPartyRef;
 
                             var crmQuotationMapping = existing.FirstOrDefault(x =>
