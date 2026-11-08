@@ -166,6 +166,10 @@
             const stateClass = row.status === "saved" ? "saved" :
                 row.status === "pending" ? "proposal" : "problem";
             const related = (row.sources || []).filter(Boolean);
+            const relatedPreview = row.status === "customerConflict" && related.length
+                ? '<p class="lmr-source-preview">نمونه ارتباط: '+escape(related[0])+
+                    (related.length>1 ? ' <strong>('+escape(format.format(related.length-1))+' مورد دیگر در توضیحات)</strong>' : '')+
+                    '</p>' : '';
             const crmName = left.customer || left.title;
             const extName = right.customer || right.title;
             const leftNum = left.number;
@@ -194,6 +198,7 @@
                         ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
                 '</div>'+
                 '<div class="lmr-one-line">'+escape(title[1])+'</div>'+
+                relatedPreview+
                 inputTarget(row)+
                 '<div class="lmr-expanded" hidden>'+
                     '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
@@ -221,6 +226,8 @@
                 format.format((stats.blockedDocuments||0)+(stats.ambiguous||0)) : "—";
             get("lmrSuggestedSource").hidden=state.softwareId!==state.automaticId;
             get("lmrCompute").disabled=state.softwareId!==state.automaticId || state.calculating;
+            get("lmrComputeLabel").textContent=state.suggestionsLoaded
+                ? "محاسبه مجدد پیشنهادها" : "محاسبه پیشنهادها";
         }
 
         function types() {
@@ -339,6 +346,7 @@
 
         async function calculate() {
             if(state.calculating||state.softwareId!==state.automaticId)return;
+            const softwareId = state.softwareId;
             state.calculating=true;state.selected.clear();summary();
             records.replaceChildren();
             feedback("در حال محاسبه تطبیق مشتریان، پیش‌فاکتورها و فاکتورها… هیچ نگاشتی ذخیره نمی‌شود.");
@@ -346,6 +354,7 @@
                 showLoading:false,timeout:180000});
             if(!isActive())return;
             state.calculating=false;summary();
+            if(softwareId !== state.softwareId)return;
             if(!response){feedback("محاسبه تطبیق‌ها انجام نشد. دوباره امتحان کنید.",true);return;}
             state.rows=response.rows||[];state.summary=response.summary||{};
             state.suggestionsLoaded=true;state.targets.clear();state.preview.clear();
