@@ -202,104 +202,62 @@
 
 
 
-/* The shared header is collapsible only on mobile. Desktop keeps its original layout. */
-.crm-main-header .crm-mobile-header-panel {
-    display: contents;
-}
-
-.crm-main-header .crm-mobile-header-toggle {
-    display: none;
-}
-
+/* Mobile: restore the standard fixed top header while reducing its contents ~20%. */
 @media (max-width: 767px) {
-    /* Reserve a small transparent slot for the fixed handle so it never overlaps page tabs. */
-    #mainHeader.crm-main-header {
-        position: static;
-        flex: 0 0 calc(38px + env(safe-area-inset-top, 0px));
-        height: calc(38px + env(safe-area-inset-top, 0px));
-        min-height: calc(38px + env(safe-area-inset-top, 0px));
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        box-shadow: none;
+    #mainHeader.crm-main-header .header-content {
+        gap: 2px;
     }
 
-    .crm-main-header .crm-mobile-header-panel {
-        display: block;
-        position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 38px);
-        inset-inline: 0;
-        z-index: 1100;
-        height: 0;
-        overflow: hidden;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        background: #fff;
-        transition: height 340ms ease, opacity 280ms ease, visibility 0s linear 340ms;
+    #mainHeader.crm-main-header .header-content > .header-icon-btn {
+        width: 22px;
+        height: 22px;
     }
 
-    .crm-main-header .crm-mobile-header-panel.is-open {
-        height: 48px;
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-        box-shadow: 0 8px 20px rgb(0 0 0 / 14%);
-        transition: height 340ms ease, opacity 280ms ease;
+    #mainHeader.crm-main-header .header-content > .header-icon-btn > svg,
+    #mainHeader.crm-main-header #notification-icon > svg {
+        width: 16px !important;
+        height: 16px !important;
     }
 
-    /* Allow notification dropdowns to escape the header after opening completes. */
-    .crm-main-header .crm-mobile-header-panel.is-open.is-expanded {
-        overflow: visible;
-    }
-
-    .crm-main-header .crm-mobile-header-panel > .header-container {
-        height: 48px;
-    }
-
-    .crm-main-header .crm-mobile-header-toggle {
+    #mainHeader.crm-main-header #notification-icon {
         display: flex;
-        position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 8px);
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1101;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 24px;
-        margin: 0;
-        padding: 0;
-        border: 1px solid #DDE1E8;
-        border-radius: 8px;
-        background: #F0F1F7;
-        color: #004944;
-        cursor: pointer;
-        touch-action: none;
-        user-select: none;
-        -webkit-user-select: none;
+        width: 100%;
+        height: 100%;
     }
 
-    .crm-main-header .crm-mobile-header-toggle svg {
-        width: 14px;
+    #mainHeader.crm-main-header .header-profile .profile-image {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    #mainHeader.crm-main-header .header-chat-link {
+        min-height: 26px;
+        padding: 3px 6px;
+        font-size: 9px;
+    }
+
+    #mainHeader.crm-main-header .header-content .badge-count {
+        min-width: 14px;
         height: 14px;
-        transition: transform 340ms ease;
+        padding: 1px 3px;
+        border-width: 1px;
+        font-size: 8px;
     }
 
-    .crm-main-header .crm-mobile-header-toggle[aria-expanded="true"] svg {
-        transform: rotate(180deg);
+    #mainHeader.crm-main-header .header-content .notification-icon-badge {
+        width: 6px;
+        height: 6px;
     }
 
-    .crm-main-header .crm-mobile-header-toggle:focus-visible {
-        outline: 2px solid #5811B4;
-        outline-offset: 2px;
+    #mainHeader.crm-main-header .header-action-btn {
+        width: 26px;
+        height: 26px;
     }
-}
 
-@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
-    .crm-main-header .crm-mobile-header-panel,
-    .crm-main-header .crm-mobile-header-toggle svg {
-        transition: none;
+    #mainHeader.crm-main-header .header-action-btn svg {
+        width: 16px;
+        height: 16px;
     }
 }
