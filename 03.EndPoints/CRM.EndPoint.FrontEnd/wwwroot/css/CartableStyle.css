@@ -1321,40 +1321,51 @@
         font-size: 9px;
     }
 
-    /* Match the pre-factor/factor subtabs to the compact 23px role buttons on mobile. */
-    #cartableWorkspace #allTabFactors {
+    /* Reserve a small, self-sized slot for the document subtabs on phones. */
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors {
+        display: inline-flex !important;
+        flex: 0 0 auto;
+        align-self: flex-start;
         justify-content: flex-start;
-        width: 100%;
+        width: max-content !important;
+        max-width: 100%;
+        min-height: 23px;
         gap: 3px;
+        margin: 0;
         padding: 0;
         border: 0 !important;
+        border-radius: 0;
         background: transparent;
     }
 
-    #cartableWorkspace #allTabFactors > .nav-item {
-        flex: 0 0 auto;
-        width: auto !important;
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors > .nav-item {
+        flex: 0 0 auto !important;
+        width: max-content !important;
         max-width: none;
+        min-width: 0;
     }
 
-    #cartableWorkspace #allTabFactors .nav-link {
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors .nav-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         box-sizing: border-box;
         width: auto !important;
         height: 23px;
         min-height: 23px;
-        margin-bottom: 0 !important;
-        padding: 1px 5px;
+        margin: 0 !important;
+        padding: 1px 6px;
         border: 1px solid #DDE1E8 !important;
         border-radius: 7px !important;
-        background: #fff;
+        background-color: #fff !important;
         color: #004944 !important;
         font: 500 11px/1.3 IRANSansMedium;
         white-space: nowrap;
     }
 
-    #cartableWorkspace #allTabFactors .nav-link.active {
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors .nav-link.active {
         border-color: #004944 !important;
-        background: #004944 !important;
+        background-color: #004944 !important;
         color: #fff !important;
     }
 
