@@ -112,6 +112,60 @@ function initCartableMobileSearch() {
     }, { once: true });
 }
 
+/** Present the existing supply pre-factor radio filters as a compact mobile dropdown. */
+function initCartableMobileStatusFilter() {
+    const filter = document.querySelector("#TaminPrefactorTab-pane .cartable-mobile-status-filter");
+    if (!filter) return;
+
+    const toggle = filter.querySelector(".cartable-mobile-status-filter__toggle");
+    const selectedLabel = filter.querySelector(".cartable-mobile-status-filter__selected");
+    const options = filter.querySelector(".filter-switch");
+    const mobile = window.matchMedia("(max-width: 767px)");
+
+    const syncLabel = () => {
+        const checked = filter.querySelector('input[name="TFilter"]:checked');
+        selectedLabel.textContent = checked?.dataset.statusLabel ?? "همه";
+    };
+    const close = () => {
+        filter.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+    };
+
+    toggle.addEventListener("click", () => {
+        const open = filter.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", String(open));
+    });
+
+    // A click also closes when the chosen radio was already selected.
+    options.addEventListener("click", event => {
+        if (!event.target.matches('input[name="TFilter"]')) return;
+        syncLabel();
+        close();
+    });
+    options.addEventListener("change", syncLabel);
+
+    const onOutsideClick = event => {
+        if (!filter.contains(event.target)) close();
+    };
+    const onEscape = event => {
+        if (event.key !== "Escape" || !filter.classList.contains("is-open")) return;
+        close();
+        toggle.focus();
+    };
+    const onViewportChange = () => close();
+
+    document.addEventListener("pointerdown", onOutsideClick);
+    document.addEventListener("keydown", onEscape);
+    mobile.addEventListener("change", onViewportChange);
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        document.removeEventListener("pointerdown", onOutsideClick);
+        document.removeEventListener("keydown", onEscape);
+        mobile.removeEventListener("change", onViewportChange);
+    }, { once: true });
+
+    syncLabel();
+}
+
 let filConfigSession = null;
 let fromWarning = false;
 
@@ -120,6 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("cartableWorkspace"));
     initCartableViewport();
     initCartableMobileSearch();
+    initCartableMobileStatusFilter();
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
