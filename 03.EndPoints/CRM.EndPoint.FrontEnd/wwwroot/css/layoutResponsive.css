@@ -258,15 +258,18 @@
         z-index: 2;
         align-items: center;
         justify-content: center;
-        width: 26px;
-        height: 26px;
+        width: 48px;
+        height: 24px;
         margin-inline: auto;
         padding: 0;
         border: 1px solid #DDE1E8;
-        border-radius: 50%;
+        border-radius: 8px;
         background: #F0F1F7;
         color: #004944;
         cursor: pointer;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
     }
 
     .crm-main-header .crm-mobile-header-toggle svg {
