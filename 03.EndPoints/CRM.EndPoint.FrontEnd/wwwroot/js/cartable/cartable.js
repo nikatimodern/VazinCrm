@@ -549,7 +549,28 @@ const GetPreFactorTaminExpert = async () => {
         skeleton: { target: "#TContentId" },
         params: { serVal: val, type },
         onSuccess: (res) => {
-            document.getElementById("TContentId").innerHTML = res.data.html;
+            const container = document.getElementById("TContentId");
+            const isEmpty = Number(res.data.count) === 0;
+            container.classList.toggle("cartable-supply-empty", isEmpty);
+
+            if (isEmpty) {
+                const status = {
+                    "-1": "هیچ پیش‌فاکتوری وجود ندارد.",
+                    "1": "هیچ پیش‌فاکتوری در انتظار تأیید وجود ندارد.",
+                    "2": "هیچ پیش‌فاکتور تأییدشده‌ای وجود ندارد.",
+                };
+                const selectedStatus = document.querySelector('input[name="TFilter"]:checked')?.dataset.statusLabel ?? "همه";
+                const message = document.createElement("p");
+                message.className = "cartable-supply-empty__message";
+                message.setAttribute("role", "status");
+                message.textContent = val
+                    ? `برای «${val}» در وضعیت «${selectedStatus}» نتیجه‌ای یافت نشد.`
+                    : (status[type] ?? "هیچ پیش‌فاکتوری یافت نشد.");
+                container.replaceChildren(message);
+            } else {
+                container.innerHTML = res.data.html;
+            }
+
             document.getElementById("T_CountId").textContent = res.data.count;
             updateFilterSwitchState({
                 wrapperSelector: "#TaminPrefactorTab-pane",
