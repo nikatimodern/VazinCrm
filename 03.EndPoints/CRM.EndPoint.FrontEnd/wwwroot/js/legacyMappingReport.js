@@ -467,9 +467,15 @@
             const model = state[which];
             const prefix = which === "saved" ? "lmrSaved" : "lmrProposal";
             const pages = get(prefix + "Pagination");
+            pages.replaceChildren();
+            if (model.size === 0) {
+                model.page = 1;
+                get(prefix + "PageInfo").textContent =
+                    "نمایش همه " + format.format(total) + " مورد";
+                return;
+            }
             const limit = Math.max(1, Math.ceil(total / model.size));
             model.page = Math.min(Math.max(1, model.page), limit);
-            pages.replaceChildren();
 
             const add = (label, index, disabled) => {
                 const button = document.createElement("button");
@@ -534,9 +540,11 @@
                     row.sepidar?.customer, row.sepidar?.number,
                     row.details, ...(row.sources || [])]
                     .join(" ").toLocaleLowerCase("fa").includes(keyword)));
-            model.page = Math.min(model.page, Math.max(1, Math.ceil(filtered.length / model.size)));
+            model.page = model.size === 0 ? 1 :
+                Math.min(model.page, Math.max(1, Math.ceil(filtered.length / model.size)));
             const start = (model.page - 1) * model.size;
-            model.visible = filtered.slice(start, start + model.size);
+            model.visible = model.size === 0 ? filtered :
+                filtered.slice(start, start + model.size);
             proposalRoot.innerHTML = model.visible.length
                 ? model.visible.map(card).join("")
                 : '<div class="lmr-empty">موردی مطابق این فیلتر پیدا نشد.</div>';
@@ -566,7 +574,7 @@
             }
             model.rows = result.rows || [];
             model.total = Number(result.total || 0);
-            const max = Math.max(1, Math.ceil(model.total / model.size));
+            const max = model.size === 0 ? 1 : Math.max(1, Math.ceil(model.total / model.size));
             if (model.page > max) {
                 model.page = max;
                 await loadSaved();
@@ -700,49 +708,108 @@
 
         async function save(items) {
             if (state.processing || !items.length) return;
-            if (items.some(x => x.mapType === 5) && items.some(x => x.mapType !== 5)) {
-                toastifyError("ابتدا مشتری‌ها را ثبت کنید، سپس پیش‌فاکتورها و فاکتورها را.");
+
+            // The server accepts at most 100 mappings per request.
+            // Save customers first, then quotations and invoices, in separate batches.
+            const ordered = [
+                ...items.filter(x => x.mapType === 5),
+                ...items.filter(x => x.mapType === 2),
+                ...items.filter(x => x.mapType === 3)
+            ];
+            if (ordered.length !== items.length) {
+                toastifyError("نوع بعضی از نگاشت‌های انتخاب‌شده قابل ثبت نیست.");
                 return;
             }
+
             const agreed = await confirmAlert({
                 title: "تأیید نگاشت",
                 text: "ثبت " + format.format(items.length) + " نگاشت در «" +
-                    state.softwareTitle + "» انجام شود؟",
+                    state.softwareTitle + "» انجام شود؟ " +
+                    (items.length > 100 ? "نگاشت‌ها به دسته‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
+                    "مشتری‌ها قبل از پیش‌فاکتورها و فاکتورها ثبت می‌شوند.",
                 icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
             });
             if (!agreed) return;
+
+            const softwareId = state.softwareId;
             state.processing = true;
+            softwareSelect.disabled = true;
+            mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = true);
+            get("lmrCompute").disabled = true;
+            selectAll.disabled = true;
             updateSelection();
-            const result = await sendApiRequest({
-                url: "/ExternalMapping/SaveSelectedExternalMappings",
-                method: "POST",
-                headers: { "RequestVerificationToken": token },
-                data: { externalSoftwareId: state.softwareId, items },
-                timeout: 120000, successMsg: null
-            });
-            state.processing = false;
-            if (!result?.count) {
+
+            let savedCount = 0;
+            let failed = false;
+            try {
+                for (const groupType of [5, 2, 3]) {
+                    const group = ordered.filter(item => item.mapType === groupType);
+                    for (let i = 0; i < group.length; i += 100) {
+                        const batch = group.slice(i, i + 100);
+                        feedback("proposal", "در حال ثبت نگاشت‌ها: " +
+                            format.format(savedCount) + " از " + format.format(items.length));
+                        const result = await sendApiRequest({
+                            url: "/ExternalMapping/SaveSelectedExternalMappings",
+                            method: "POST",
+                            headers: { "RequestVerificationToken": token },
+                            data: { externalSoftwareId: softwareId, items: batch },
+                            timeout: 120000, successMsg: null
+                        });
+                        if (result?.count !== batch.length) {
+                            failed = true;
+                            break;
+                        }
+                        savedCount += result.count;
+                        for (const item of batch) {
+                            for (const [key, selected] of state.selected) {
+                                if (selected.entityId === item.entityId &&
+                                    selected.mapType === item.mapType &&
+                                    selected.exEntityId === item.exEntityId)
+                                    state.selected.delete(key);
+                            }
+                        }
+                    }
+                    if (failed) break;
+                }
+            } finally {
+                state.processing = false;
+                softwareSelect.disabled = false;
+                mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = false);
+                updateSummary();
                 updateSelection();
-                return;
             }
-            toastifySuccess(format.format(result.count) + " نگاشت ثبت شد.");
-            state.selected.clear();
-            state.targets.clear();
-            state.preview.clear();
-            state.crmTargets.clear();
-            state.proposal.loaded = false;
-            state.proposal.rows = [];
-            state.proposal.summary = null;
-            state.proposal.visible = [];
-            updateProposalTabs();
-            renderProposals();
-            const options = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
-            });
-            if (options) state.counts = options.counts || [];
-            fillTypes("saved");
-            updateSummary();
-            await loadSaved();
+
+            if (savedCount > 0) {
+                toastifySuccess(format.format(savedCount) + " نگاشت ثبت شد.");
+                state.selected.clear();
+                state.targets.clear();
+                state.preview.clear();
+                state.crmTargets.clear();
+                state.proposal.loaded = false;
+                state.proposal.rows = [];
+                state.proposal.summary = null;
+                state.proposal.visible = [];
+                updateProposalTabs();
+                renderProposals();
+                const options = await sendApiRequest({
+                    url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                });
+                if (options) state.counts = options.counts || [];
+                fillTypes("saved");
+                updateSummary();
+                await loadSaved();
+            }
+
+            if (failed) {
+                const remaining = items.length - savedCount;
+                feedback("proposal", "ثبت گروهی کامل نشد. " +
+                    format.format(savedCount) + " مورد ثبت شده و " +
+                    format.format(remaining) + " مورد باقی مانده است. " +
+                    "پیشنهادها را دوباره محاسبه کنید و موارد باقی‌مانده را بررسی کنید.", true);
+            } else if (savedCount > 0) {
+                feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
+                    "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
+            }
         }
 
         async function preview(row, id) {
