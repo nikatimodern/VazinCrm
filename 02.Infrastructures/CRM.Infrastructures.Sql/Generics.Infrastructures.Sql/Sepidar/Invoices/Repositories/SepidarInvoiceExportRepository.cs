@@ -26,23 +26,23 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             ?? throw new InvalidOperationException($"پیش‌فاکتور نگاشت‌شده در سپیدار پیدا نشد (شناسه: {quotationId}).");
 
         if (factor.PfactorID != preFactor.Id)
-            throw new InvalidOperationException($"فاکتور به پیش‌فاکتور انتخاب‌شده تعلق ندارد (پیش‌فاکتور فاکتور: {factor.PfactorID}، پیش‌فاکتور انتخاب‌شده: {preFactor.Id}).");
+            throw new InvalidOperationException("فاکتور با پیش‌فاکتور انتخاب‌شده مطابقت ندارد.");
 
         if (factor.ParentReturnedId.HasValue || factor.Returned)
             throw new InvalidOperationException($"صدور فاکتور برگشتی پشتیبانی نمی‌شود (شماره فاکتور: {factor.SerialNumber}).");
 
         if (factor.SerialNumber <= 0 || !factor.DateMiladi.HasValue)
-            throw new InvalidOperationException($"شماره یا تاریخ فاکتور CRM نامعتبر است (شماره: {factor.SerialNumber}، تاریخ: {factor.DateMiladi?.ToString("yyyy/MM/dd") ?? "ثبت نشده"}).");
+            throw new InvalidOperationException("شماره یا تاریخ فاکتور CRM معتبر نیست.");
 
         var fiscalYear = await context.FiscalYears.AsNoTracking()
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
 
         if (fiscalYear == null || factor.DateMiladi.Value.Date < fiscalYear.StartDate.Date
             || factor.DateMiladi.Value.Date > fiscalYear.EndDate.Date)
-            throw new InvalidOperationException($"تاریخ فاکتور خارج از سال مالی پیش‌فاکتور سپیدار است (تاریخ فاکتور: {factor.DateMiladi:yyyy/MM/dd}، بازه سال مالی: {(fiscalYear == null ? "یافت نشد" : $"{fiscalYear.StartDate:yyyy/MM/dd} تا {fiscalYear.EndDate:yyyy/MM/dd}")}).");
+            throw new InvalidOperationException($"تاریخ فاکتور ({factor.DateMiladi:yyyy/MM/dd}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         if (quotation.CustomerPartyRef <= 0 || quotation.SaleTypeRef <= 0)
-            throw new InvalidOperationException($"مشتری یا نوع فروش پیش‌فاکتور سپیدار نامعتبر است (مشتری: {quotation.CustomerPartyRef}، نوع فروش: {quotation.SaleTypeRef}).");
+            throw new InvalidOperationException("مشتری یا نوع فروش پیش‌فاکتور سپیدار نامعتبر است.");
 
         var preFactorItems = (preFactor.PreFactorItems ?? Array.Empty<PreFactorItem>())
             .Where(x => !x.IsDeleted).ToList();
@@ -50,11 +50,11 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             .Where(x => !x.IsDeleted).OrderBy(x => x.Row).ToList();
 
         if (preFactorItems.Count == 0 || factorItems.Count == 0)
-            throw new InvalidOperationException($"پیش‌فاکتور یا فاکتور ردیف معتبر ندارد (ردیف‌های پیش‌فاکتور: {preFactorItems.Count}، ردیف‌های فاکتور: {factorItems.Count}).");
+            throw new InvalidOperationException($"پیش‌فاکتور یا فاکتور ردیف معتبر ندارد (پیش‌فاکتور: {preFactorItems.Count}، فاکتور: {factorItems.Count}).");
 
         if (factorItems.Any(x => !x.PfItemId.HasValue)
             || factorItems.Select(x => x.PfItemId).Distinct().Count() != factorItems.Count)
-            throw new InvalidOperationException($"ردیف‌های فاکتور به ردیف‌های یکتای پیش‌فاکتور CRM متصل نیستند (شماره فاکتور: {factor.SerialNumber}).");
+            throw new InvalidOperationException("هر ردیف فاکتور باید به یک ردیف یکتای پیش‌فاکتور CRM متصل باشد.");
 
         var itemsById = preFactorItems.ToDictionary(x => x.Id);
         var quotationItemsByRow = quotation.QuotationItems.ToDictionary(x => x.RowID);
@@ -67,10 +67,10 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 || !quotationItemsByRow.TryGetValue(sourceItem.Row, out var quotationItem)
                 || !quotationItemIds.Add(quotationItem.QuotationItemID))
                 throw new InvalidOperationException(
-                    $"ارتباط ردیف فاکتور با کالای پیش‌فاکتور سپیدار مشخص نیست (ردیف: {factorItem.Row}، ردیف پیش‌فاکتور CRM: {factorItem.PfItemId}).");
+                    $"ردیف {factorItem.Row}: کالای متناظر در پیش‌فاکتور سپیدار مشخص نیست.");
 
             if (quotationItem.ItemRef <= 0 || quotationItem.StockRef <= 0)
-                throw new InvalidOperationException($"کالا یا انبار ردیف پیش‌فاکتور سپیدار نامعتبر است (ردیف: {factorItem.Row}، کالا: {quotationItem.ItemRef}، انبار: {quotationItem.StockRef}).");
+                throw new InvalidOperationException($"ردیف {factorItem.Row}: کالا یا انبار پیش‌فاکتور سپیدار نامعتبر است.");
 
             // The older quotation exporter assigned RowID by collection order.
             // Verify the original quantity and fee before trusting the row correspondence.
@@ -79,22 +79,22 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 || sourceQuantity != quotationItem.Quantity
                 || sourceItem.UnitAmount != quotationItem.Fee)
                 throw new InvalidOperationException(
-                    $"تعداد یا قیمت ردیف CRM با پیش‌فاکتور سپیدار متفاوت است (ردیف: {factorItem.Row}، تعداد CRM: {sourceItem.WeightCount}، سپیدار: {quotationItem.Quantity:N3}، قیمت CRM: {sourceItem.UnitAmount:N0}، سپیدار: {quotationItem.Fee:N0}).");
+                    $"ردیف {factorItem.Row}: تعداد یا قیمت CRM با سپیدار متفاوت است (تعداد: {sourceItem.WeightCount}/{quotationItem.Quantity:N3}، قیمت: {sourceItem.UnitAmount:N0}/{quotationItem.Fee:N0}).");
 
             if (!decimal.TryParse(factorItem.WeightCount, NumberStyles.Number,
                     CultureInfo.InvariantCulture, out var quantity) || quantity <= 0)
-                throw new InvalidOperationException($"مقدار ردیف فاکتور نامعتبر است (ردیف: {factorItem.Row}، مقدار: {factorItem.WeightCount}).");
+                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({factorItem.WeightCount}).");
 
             // Source quotation can contain more quantity than this invoice (partial invoicing).
             if (quantity > quotationItem.Quantity)
-                throw new InvalidOperationException($"مقدار فاکتور از پیش‌فاکتور سپیدار بیشتر است (ردیف: {factorItem.Row}، فاکتور: {quantity:N3}، پیش‌فاکتور: {quotationItem.Quantity:N3}).");
+                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور ({quantity:N3}) از پیش‌فاکتور سپیدار ({quotationItem.Quantity:N3}) بیشتر است.");
 
             var price = Math.Round(quantity * factorItem.UnitAmount);
             var discount = factorItem.Discount;
             var tax = factorItem.TaxAmount;
             if (price < 0 || discount < 0 || discount > price || tax < 0
                 || factorItem.TotalAmount != price - discount + tax)
-                throw new InvalidOperationException($"مبلغ ردیف فاکتور با محاسبات برابر نیست (ردیف: {factorItem.Row}، مبلغ ثبت‌شده: {factorItem.TotalAmount:N0}، مبلغ محاسبه‌شده: {price - discount + tax:N0}).");
+                throw new InvalidOperationException($"ردیف {factorItem.Row}: مبلغ فاکتور ({factorItem.TotalAmount:N0}) با مبلغ محاسبه‌شده ({price - discount + tax:N0}) برابر نیست.");
 
             lines.Add(new SepidarInvoiceExportItemPreview {
                 RowId = lines.Count + 1,
@@ -116,7 +116,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             || lines.Sum(x => x.Discount) != factor.Discount
             || lines.Sum(x => x.Tax) != factor.TotalTax
             || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
-            throw new InvalidOperationException($"جمع ردیف‌های فاکتور با جمع کل CRM برابر نیست (مبلغ ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ فاکتور: {factor.PaymentAmount:N0}، تخفیف ردیف‌ها: {lines.Sum(x => x.Discount):N0}، تخفیف فاکتور: {factor.Discount:N0}، مالیات ردیف‌ها: {lines.Sum(x => x.Tax):N0}، مالیات فاکتور: {factor.TotalTax:N0}).");
+            throw new InvalidOperationException($"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ نهایی: {factor.PaymentAmount:N0}).");
 
         var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
         var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
@@ -138,7 +138,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             var previousQuantity = previousByItem.GetValueOrDefault(line.QuotationItemId);
             if (line.Quantity + previousQuantity > quotedQuantity)
                 throw new InvalidOperationException(
-                    $"مجموع مقدار فاکتورهای صادرشده از پیش‌فاکتور سپیدار بیشتر است (ردیف: {line.RowId}، کالا: {line.ItemTitle}، پیش‌فاکتور: {quotedQuantity:N3}، قبلی: {previousQuantity:N3}، فعلی: {line.Quantity:N3}، مازاد: {line.Quantity + previousQuantity - quotedQuantity:N3}).");
+                    $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({line.Quantity + previousQuantity:N3}) از تعداد پیش‌فاکتور سپیدار ({quotedQuantity:N3}) بیشتر می‌شود.");
         }
 
         var stockIds = lines.Select(x => x.StockRef).Distinct().ToArray();
