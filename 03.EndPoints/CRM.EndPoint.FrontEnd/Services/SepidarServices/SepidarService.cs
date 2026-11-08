@@ -261,45 +261,47 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken ct = default)
+    private async Task<int> GetNextIdAsync(
+        string tableName, int incValue = 1, CancellationToken ct = default)
     {
         var connection = sepidarContext.Database.GetDbConnection();
+        var openedHere = connection.State != ConnectionState.Open;
 
-        await using var command = connection.CreateCommand();
+        if (openedHere)
+            await sepidarContext.Database.OpenConnectionAsync(ct);
 
-        command.CommandText = @"
-            DECLARE @Id INT;
-
-            EXEC FMK.spGetNextId
-                @TableName = @TableName,
-                @Id = @Id OUTPUT,
-                @IncValue = @IncValue;
-
-            SELECT @Id;
-        ";
-
-        var tableParameter = command.CreateParameter();
-        tableParameter.ParameterName = "@TableName";
-        tableParameter.Value = tableName;
-
-        var incParameter = command.CreateParameter();
-        incParameter.ParameterName = "@IncValue";
-        incParameter.Value = incValue;
-
-        command.Parameters.Add(tableParameter);
-        command.Parameters.Add(incParameter);
-
-        var transaction = sepidarContext.Database.CurrentTransaction;
-
-        if (transaction != null)
+        try
         {
-            command.Transaction = transaction.GetDbTransaction();
+            await using var command = connection.CreateCommand();
+            command.CommandText = @"
+                DECLARE @Id INT;
+                EXEC FMK.spGetNextId
+                    @TableName = @TableName,
+                    @Id = @Id OUTPUT,
+                    @IncValue = @IncValue;
+                SELECT @Id;";
+
+            var tableParameter = command.CreateParameter();
+            tableParameter.ParameterName = "@TableName";
+            tableParameter.Value = tableName;
+            command.Parameters.Add(tableParameter);
+
+            var incParameter = command.CreateParameter();
+            incParameter.ParameterName = "@IncValue";
+            incParameter.Value = incValue;
+            command.Parameters.Add(incParameter);
+
+            var transaction = sepidarContext.Database.CurrentTransaction;
+            if (transaction != null)
+                command.Transaction = transaction.GetDbTransaction();
+
+            return Convert.ToInt32(await command.ExecuteScalarAsync(ct));
         }
-
-        var result = await command.ExecuteScalarAsync(ct);
-
-
-        return Convert.ToInt32(result);
+        finally
+        {
+            if (openedHere)
+                await sepidarContext.Database.CloseConnectionAsync();
+        }
     }
 
     private async Task<int> GetBankAccountIdByDlRefAsync(int dlRef, CancellationToken ct = default)
@@ -1474,6 +1476,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
     {
+        // The number must be allocated in the same transaction as the invoice insert.
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
+
         var lastNumber = await sepidarContext.SalesInvoices.AsNoTracking()
             .Where(x => x.FiscalYearRef == fiscalYearId)
             .MaxAsync(x => (int?)x.Number, ct) ?? 0;
