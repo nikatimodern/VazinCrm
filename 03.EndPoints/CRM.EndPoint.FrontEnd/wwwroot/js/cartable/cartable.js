@@ -166,6 +166,44 @@ function initCartableMobileStatusFilter() {
     syncLabel();
 }
 
+/** Keep supply pre-factor controls in the top row on mobile without cloning inputs. */
+function initCartableTaminMobileToolbar() {
+    const root = document.getElementById("CTaminExpertId");
+    const destination = root?.querySelector(".cartable-tamin-top-controls");
+    const pane = root?.querySelector("#TaminPrefactorTab-pane");
+    const search = pane?.querySelector(".cartable-list-toolbar__search");
+    const status = pane?.querySelector(".cartable-mobile-status-filter");
+    if (!destination || !search || !status) return;
+
+    const originalSearchParent = search.parentElement;
+    const originalStatusParent = status.parentElement;
+    const searchNext = search.nextSibling;
+    const statusNext = status.nextSibling;
+    const mobile = window.matchMedia("(max-width: 767px)");
+
+    const update = () => {
+        if (mobile.matches) {
+            destination.append(search, status);
+        } else {
+            if (search.parentElement !== originalSearchParent) {
+                originalSearchParent.insertBefore(search, searchNext);
+            }
+            if (status.parentElement !== originalStatusParent) {
+                originalStatusParent.insertBefore(status, statusNext);
+            }
+        }
+    };
+
+    update();
+    mobile.addEventListener("change", update);
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        mobile.removeEventListener("change", update);
+        // Restore the original markup for page-navigation cleanup.
+        if (search.parentElement !== originalSearchParent) originalSearchParent.insertBefore(search, searchNext);
+        if (status.parentElement !== originalStatusParent) originalStatusParent.insertBefore(status, statusNext);
+    }, { once: true });
+}
+
 let filConfigSession = null;
 let fromWarning = false;
 
@@ -175,6 +213,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initCartableViewport();
     initCartableMobileSearch();
     initCartableMobileStatusFilter();
+    initCartableTaminMobileToolbar();
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
