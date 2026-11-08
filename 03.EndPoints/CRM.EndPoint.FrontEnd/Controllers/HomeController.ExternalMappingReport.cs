@@ -69,10 +69,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     _ => "notMatched"
                 };
                 var targetId = ExtractLegacyTargetId(issue.Details, targetName);
+                var relatedGroup = issue.Reason == "DuplicateProposedTarget" && targetId.HasValue
+                    ? plan.DuplicateTargetGroups.FirstOrDefault(x => x.ExEntityName == targetName
+                        && x.ExEntityId == targetId.Value.ToString())
+                    : null;
+                var relatedDocuments = relatedGroup?.CrmDocuments
+                    .Select(x => $"CRM {x.EntityName} شماره {x.SerialNumber} | ID={x.EntityId} | مبلغ={x.PaymentAmount}")
+                    .ToArray() ?? Array.Empty<string>();
                 entries.Add(new MappingReportEntry(
                     $"issue-{kind}-{issue.EntityId}-{issue.Reason}", kind,
                     issue.EntityId, status, issue.Reason,
-                    issue.Details, targetName, targetId, Array.Empty<string>()));
+                    issue.Details, targetName, targetId, relatedDocuments));
             }
 
             foreach (var mapping in plan.Pending)
@@ -190,9 +197,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         {
             if (string.IsNullOrEmpty(details)) return null;
             var expression = targetName == nameof(Quotation)
-                ? @"(?:QuotationId|ID)=(\d+)"
+                ? @"(?:QuotationIds?|ID)=(\d+)"
                 : targetName == nameof(Invoice)
-                    ? @"(?:InvoiceId|ID)=(\d+)"
+                    ? @"(?:InvoiceIds?|ID)=(\d+)"
                     : @"(?:PartyId|ID)=(\d+)";
             var match = Regex.Match(details, expression);
             return match.Success && int.TryParse(match.Groups[1].Value, out var id)
