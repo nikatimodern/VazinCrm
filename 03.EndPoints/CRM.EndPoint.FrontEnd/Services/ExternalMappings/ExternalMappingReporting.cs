@@ -52,10 +52,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
 
 
-        public async Task<object> GetExternalMappingReview(CancellationToken ct)
+        public async Task<object> GetExternalMappingReview(Guid softwareId, CancellationToken ct)
         {
-            // NEVER invoke ApplyLegacySepidarMappingPlanAsync from a report endpoint.
-            var plan = await BuildLegacySepidarMappingPlanAsync(ct);
+            // Compute a fresh preview for the chosen software. Never INSERT from report.
+            var plan = await BuildLegacySepidarMappingPlanAsync(softwareId, ct);
+            var sepidar = softwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
             var entries = new List<MappingReportEntry>();
 
             // Render references in business language: which CRM customer belongs to
@@ -101,7 +103,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 (int Number, int PartyId)>();
             foreach (var batch in quoteIds.Chunk(350))
             {
-                var rows = await sdb.Quotations.AsNoTracking()
+                var rows = await sepidar.Quotations.AsNoTracking()
                     .Where(x => batch.Contains(x.QuotationId))
                     .Select(x => new { x.QuotationId, x.Number, x.CustomerPartyRef })
                     .ToListAsync(ct);
@@ -110,7 +112,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             }
             foreach (var batch in invoiceIds.Chunk(350))
             {
-                var rows = await sdb.SalesInvoices.AsNoTracking()
+                var rows = await sepidar.SalesInvoices.AsNoTracking()
                     .Where(x => batch.Contains(x.InvoiceId))
                     .Select(x => new {
                         x.InvoiceId, Number = (int?)x.Number,
@@ -128,7 +130,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var partyNames = new Dictionary<int, string>();
             foreach (var batch in candidatePartyIds.Chunk(350))
             {
-                var parties = await sdb.Parties.AsNoTracking()
+                var parties = await sepidar.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
                     .Select(x => new { x.PartyId, x.Name, x.LastName }).ToListAsync(ct);
                 foreach (var party in parties)
@@ -202,15 +204,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 entries.Add(new MappingReportEntry(
                     $"pending-{mapping.EntityName}-{mapping.EntityId}", mapping.EntityName,
                     mapping.EntityId, "pending", "ReadyForReview",
-                    "این ارتباط فقط پیشنهاد شده و هنوز در ExternalMapping ذخیره نشده است.",
+                    "",
                     mapping.ExEntityName, targetId > 0 ? targetId : null, Array.Empty<string>(),
                     (int)mapping.MapType, mapping.ExEntityId,
                     targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
-            var reportRows = await EnrichMappingEntriesAsync(entries, Sepidar1SoftwareId, ct);
+            var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
-                .Where(x => x.ExternalSoftwareId == Sepidar1SoftwareId
+                .Where(x => x.ExternalSoftwareId == softwareId
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                         || x.MapType == ExternalMappingTypeEnum.فاکتور))
