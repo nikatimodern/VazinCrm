@@ -27,8 +27,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             => Ok(await mappings.GetExternalMappingWorkspaceOptions(ct));
 
         [HttpGet]
-        public async Task<IActionResult> GetExternalMappingReview(CancellationToken ct)
-            => Ok(await mappings.GetExternalMappingReview(ct));
+        public async Task<IActionResult> GetExternalMappingReview(Guid softwareId, CancellationToken ct)
+        {
+            try
+            {
+                return Ok(await mappings.GetExternalMappingReview(softwareId, ct));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetSavedExternalMappings(
