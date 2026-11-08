@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "گزارش نگاشت‌های سپیدار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.5" asp-append-version="true" />
+}
+
+<section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl" aria-labelledby="legacyMappingTitle">
+    <header class="lmr-header">
+        <div class="lmr-heading">
+            <div class="lmr-breadcrumb"><i class="fas fa-cog" aria-hidden="true"></i> تنظیمات <span>/</span> ارتباطات مالی</div>
+            <h1 id="legacyMappingTitle">گزارش نگاشت‌های سپیدار</h1>
+            <p>مقایسه اطلاعات CRM و سپیدار ۱، شناسایی تعارض‌ها و علت توقف نگاشت‌ها</p>
+        </div>
+        <div class="lmr-header-actions">
+            <span class="lmr-readonly"><i class="fas fa-eye" aria-hidden="true"></i> فقط مشاهده</span>
+            <button type="button" id="lmrRefresh" class="lmr-button lmr-button-primary">
+                <i class="fas fa-sync-alt" aria-hidden="true"></i> بازخوانی گزارش
+            </button>
+        </div>
+    </header>
+
+    <div class="lmr-guidance" role="note">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span><strong>ترتیب نگاشت:</strong> ابتدا تعارض‌های مشتری بررسی و مپینگ مشتری ثبت می‌شود؛ بعد از آن پیش‌فاکتور و فاکتور مرتبط اجازه نگاشت دارند. این صفحه هیچ تغییری در دیتابیس ایجاد نمی‌کند.</span>
+    </div>
+
+    <section class="lmr-stat-grid" aria-label="آمار نگاشت‌ها">
+        <article class="lmr-stat">
+            <span class="lmr-stat-label">نگاشت‌های ثبت‌شده</span>
+            <strong id="lmrSavedCount" class="lmr-stat-value">—</strong>
+            <span>مشتری، پیش‌فاکتور و فاکتور</span>
+        </article>
+        <article class="lmr-stat lmr-stat-danger">
+            <span class="lmr-stat-label">تعارض مشتریان</span>
+            <strong id="lmrCustomerConflicts" class="lmr-stat-value">—</strong>
+            <span>نیازمند تعیین تکلیف</span>
+        </article>
+        <article class="lmr-stat lmr-stat-secondary">
+            <span class="lmr-stat-label">اسناد متوقف‌شده</span>
+            <strong id="lmrBlockedCount" class="lmr-stat-value">—</strong>
+            <span>به‌دلیل وضعیت مشتری</span>
+        </article>
+        <article class="lmr-stat">
+            <span class="lmr-stat-label">مشتریان آماده نگاشت</span>
+            <strong id="lmrPendingCustomers" class="lmr-stat-value">—</strong>
+            <span>پیشنهادی؛ هنوز ذخیره نشده‌اند</span>
+        </article>
+        <article class="lmr-stat">
+            <span class="lmr-stat-label">اسناد آماده نگاشت</span>
+            <strong id="lmrPendingDocuments" class="lmr-stat-value">—</strong>
+            <span>مشتری قبلاً مپ شده است</span>
+        </article>
+    </section>
+
+    <section class="lmr-panel" aria-label="فهرست و مقایسه نگاشت‌ها">
+        <div class="lmr-panel-heading">
+            <h2>بررسی نگاشت‌ها</h2>
+            <span id="lmrResultCount" class="lmr-result-count" aria-live="polite">در حال دریافت اطلاعات…</span>
+        </div>
+
+        <nav id="lmrStatusTabs" class="lmr-status-tabs" aria-label="فیلتر وضعیت نگاشت">
+            <button type="button" class="is-active" data-status="customerConflict">تعارض مشتریان</button>
+            <button type="button" data-status="ambiguous">اسناد مبهم</button>
+            <button type="button" data-status="blocked">مسدود به‌دلیل مشتری</button>
+            <button type="button" data-status="notMatched">بدون تطبیق</button>
+            <button type="button" data-status="pending">آماده نگاشت</button>
+            <button type="button" data-status="saved">ثبت‌شده‌ها</button>
+        </nav>
+
+        <div class="lmr-filters">
+            <label class="lmr-field lmr-search">
+                <span>جستجو</span>
+                <input id="lmrSearch" type="search" placeholder="شماره سند، نام مشتری یا شناسه" autocomplete="off" />
+            </label>
+            <label class="lmr-field">
+                <span>نوع رکورد</span>
+                <select id="lmrType">
+                    <option value="">همه</option>
+                    <option value="Customer">مشتری</option>
+                    <option value="PreFactor">پیش‌فاکتور</option>
+                    <option value="Factor">فاکتور</option>
+                </select>
+            </label>
+            <label class="lmr-field lmr-reason-field">
+                <span>علت مشکل</span>
+                <select id="lmrReason">
+                    <option value="">همه علت‌ها</option>
+                </select>
+            </label>
+            <label class="lmr-field lmr-page-size">
+                <span>تعداد در صفحه</span>
+                <select id="lmrPageSize">
+                    <option value="8">۸</option>
+                    <option value="12" selected>۱۲</option>
+                    <option value="20">۲۰</option>
+                </select>
+            </label>
+        </div>
+
+        <div id="lmrFeedback" class="lmr-feedback" role="status" aria-live="polite">در حال آماده‌سازی گزارش…</div>
+        <div id="lmrRecords" class="lmr-records" aria-label="تطبیق‌های CRM و سپیدار ۱"></div>
+
+        <footer class="lmr-footer">
+            <span id="lmrPageInfo">—</span>
+            <div id="lmrPagination" class="lmr-pagination" aria-label="صفحه‌بندی نتایج"></div>
+        </footer>
+    </section>
+</section>
+
+@section Scripts {
+    <script src="~/js/legacyMappingReport.js?release=7.0.5" asp-append-version="true"></script>
+}
