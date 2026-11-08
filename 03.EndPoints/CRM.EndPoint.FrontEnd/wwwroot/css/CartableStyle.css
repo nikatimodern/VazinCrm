@@ -1272,6 +1272,15 @@
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
 
+/* The wrapper has no layout effect on desktop; only mobile combines tabs and controls. */
+#cartableWorkspace .cartable-tamin-nav-row {
+    display: contents;
+}
+
+#cartableWorkspace .cartable-tamin-top-controls {
+    display: none;
+}
+
 /* Desktop keeps the existing status radio controls visible. */
 #cartableWorkspace .cartable-mobile-status-filter__toggle {
     display: none;
@@ -1319,6 +1328,54 @@
     #cartableWorkspace #allTabFactors .nav-link {
         padding: 4px 8px;
         font-size: 12px;
+    }
+
+    /* Place the supply pre-factor search and status alongside the two subtabs. */
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row > #taminExpertsTabs {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search.is-search-open {
+        flex-basis: min(160px, 38vw);
+        width: min(160px, 38vw);
+        max-width: min(160px, 38vw);
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter.is-open > .filter-switch {
+        inset-inline-start: auto;
+        inset-inline-end: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-column-count {
+        display: none;
+    }
+
+    /* Invoices retain their existing filters within their own tab. */
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row:has(#TaminInvoiceTab.active) .cartable-tamin-top-controls {
+        display: none;
     }
 
     /* The supply pane's p-2 and gap-3 create empty bands around its subtabs. */
@@ -1556,14 +1613,14 @@
     }
 
     /* Supply pre-factor status is a small dropdown on mobile, keeping the original radios. */
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter {
         position: relative;
         flex: 0 0 auto;
         max-width: none;
         z-index: 5;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle {
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -1578,20 +1635,20 @@
         cursor: pointer;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle:focus-visible {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle:focus-visible {
         outline: 2px solid var(--cartable-secondary);
         outline-offset: 2px;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle svg {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle svg {
         flex-shrink: 0;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter > .filter-switch {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter > .filter-switch {
         display: none;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter.is-open > .filter-switch {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter.is-open > .filter-switch {
         position: absolute;
         display: flex;
         flex-direction: column;
@@ -1611,12 +1668,12 @@
         box-shadow: 0 6px 18px rgb(0 0 0 / 12%);
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch-item,
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch label {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch-item,
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch label {
         width: 100%;
     }
 
-    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch label {
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch label {
         min-height: 30px;
         display: flex;
         align-items: center;
