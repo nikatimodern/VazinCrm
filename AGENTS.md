@@ -83,3 +83,6 @@ For every frontend task in any module (including Razor, JavaScript, CSS, and fro
 
 ### Compact forms
 For every new or modified form, modal form, filter form, input, select, textarea, button, or form layout, follow `.agents/skills/crm-compact-form-ui/SKILL.md` and its relevant references. Apply compact form density by default, even when the request does not explicitly mention spacing or sizing. Also respect existing responsive and typography skills. Do not change unrelated screens, application behavior, or shared global CSS.
+
+### Mobile button density
+For any new or modified button, text action, tab, filter action or modal action on CRM frontend pages, follow `.agents/skills/crm-mobile-button-density/SKILL.md` alongside the existing UI skills. It defines a compact mobile-only baseline for button **height, font size, margin, and padding**; do not alter button width, colors, borders, icons, positioning, or behavior as part of density changes. The shared runtime CSS is `wwwroot/css/mobileButtonDensity.css`. Preserve icon-only, close, pagination, and shell/navigation controls and required touch ergonomics.
