@@ -100,6 +100,15 @@
             return value;
         }
 
+        function verifiedTarget(row) {
+            const value = targetValue(row);
+            if (!validId(value)) return false;
+            const key = state.softwareId+":"+row.mapType+":"+value;
+            if (state.preview.has(key)) return true;
+            return String(row.sepidar?.id) === value &&
+                String(row.sepidar?.title || "").includes("سپیدار");
+        }
+
         function targetPreview(row) {
             const value = targetValue(row);
             if (row.status === "saved" || row.status === "pending" && !value) return row.sepidar;
@@ -158,7 +167,7 @@
                 : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" placeholder="شناسه معادل در نرم‌افزار" value="'+escape(value)+'" />';
             return '<div class="lmr-map-action"><label><span>معادل مورد تأیید</span>'+control+'</label>'+
                 '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one '+
-                    (!validId(value) ? "disabled" : "")+'>ثبت این نگاشت</button></div>';
+                    (!verifiedTarget(row) ? "disabled" : "")+'>ثبت این نگاشت</button></div>';
         }
 
         function card(row) {
@@ -186,7 +195,7 @@
                 '<header class="lmr-item-head">'+
                     (mappable ? '<label class="lmr-item-select"><input type="checkbox" data-select-map '+
                         (state.selected.has(row.key) ? "checked " : "")+
-                        (!validId(targetValue(row)) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
+                        (!verifiedTarget(row) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
                     '<b class="lmr-type">'+escape(typeTitle(row))+'</b>'+
                     '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
                     '<span class="lmr-short-reason">'+escape(title[0])+'</span>'+
@@ -299,7 +308,7 @@
         function selection() {
             get("lmrSelectedCount").textContent=format.format(state.selected.size)+" مورد انتخاب‌شده";
             saveSelected.disabled=!state.selected.size||state.processing;
-            const selectable=state.currentRows.filter(x=>canMap(x)&&validId(targetValue(x)));
+            const selectable=state.currentRows.filter(x=>canMap(x)&&verifiedTarget(x));
             selectAll.disabled=!selectable.length||state.processing;
             selectAll.checked=selectable.length>0&&selectable.every(x=>state.selected.has(x.key));
             selectAll.indeterminate=!selectAll.checked&&selectable.some(x=>state.selected.has(x.key));
@@ -384,7 +393,7 @@
         }
 
         function payload(row) {
-            if(!canMap(row)||!validId(targetValue(row)))return null;
+            if(!canMap(row)||!verifiedTarget(row))return null;
             return {entityId:row.crm.id,mapType:Number(row.mapType),exEntityId:targetValue(row)};
         }
 
@@ -425,6 +434,7 @@
                 showLoading:false,showError:false,timeout:30000});
             if(!isActive()||state.targets.get(row.key)!==id)return;
             if(result?.target)state.preview.set(key,result.target);
+            else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا قابل بررسی نیست.");
             const existing=[...records.querySelectorAll("[data-key]")].find(x=>x.dataset.key===row.key);
             if(existing){
                 const open=!existing.querySelector(".lmr-expanded").hidden;
@@ -434,6 +444,7 @@
                     replaced.querySelector(".lmr-expanded").hidden=false;
                     replaced.querySelector("[data-expand]").setAttribute("aria-expanded","true");
                 }
+                selection();
             }
         }
 
@@ -459,9 +470,9 @@
                 const id=event.target.value.trim();
                 state.targets.set(row.key,id);state.selected.delete(row.key);
                 const button=container.querySelector("[data-map-one]");
-                if(button)button.disabled=!validId(id);
+                if(button)button.disabled=!verifiedTarget(row);
                 const check=container.querySelector("[data-select-map]");
-                if(check){check.checked=false;check.disabled=!validId(id);}
+                if(check){check.checked=false;check.disabled=!verifiedTarget(row);}
                 selection();preview(row,id);
             }else if(event.target.matches("[data-select-map]")){
                 const item=payload(row);
