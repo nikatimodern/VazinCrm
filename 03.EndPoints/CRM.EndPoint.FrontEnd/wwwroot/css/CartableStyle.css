@@ -1391,12 +1391,54 @@
         margin-inline-start: auto;
     }
 
+    /* Let status controls share the first row with the collapsed search icon. */
+    #cartableWorkspace .cartable-list-toolbar {
+        column-gap: 4px;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > div:has(> .filter-switch) {
+        display: flex;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: calc(100% - 38px);
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch {
+        flex: 0 1 auto;
+        gap: 2px;
+        padding: 2px;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch .filter-switch-item {
+        flex: 0 0 auto;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch label {
+        padding-inline: 4px;
+        font-size: 11px;
+    }
+
     /* Never scroll the radio/action toolbar horizontally; wrap when necessary. */
     #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch {
         display: flex;
         flex-wrap: wrap;
         min-width: 0;
         max-width: 100%;
+    }
+
+    /* The group-payment action occupies its own row, above search / statuses / count. */
+    #cartableWorkspace #FinancialRequestTab-pane .cartable-financial-batch-row {
+        order: -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex: 0 0 100%;
+        min-width: 0;
+        margin-block-end: 2px;
+    }
+
+    #cartableWorkspace #FinancialRequestTab-pane .cartable-financial-batch-row .financial-request-batch {
+        flex: 0 0 auto;
     }
 
     /* Financial invoices: keep deposit/refund together above the compact filter row. */
