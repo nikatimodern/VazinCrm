@@ -1465,10 +1465,6 @@
         pointer-events: auto;
     }
 
-    /* The financial invoice search has a full-width Bootstrap column on mobile. */
-    #cartableWorkspace #FinancialInvoiceTab-pane .search-group.cartable-mobile-search {
-        order: 0 !important;
-    }
 }
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
