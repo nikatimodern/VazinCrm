@@ -235,9 +235,16 @@
         }
 
         function types() {
+            const active = new Set(state.counts.filter(x=>x.softwareId===state.softwareId)
+                .map(x=>Number(x.mapType)));
+            if (state.softwareId===state.automaticId) [2,3,5].forEach(id=>active.add(id));
+            if (state.suggestionsLoaded)
+                state.rows.forEach(row=>active.add(Number(row.mapType)));
             typeSelect.replaceChildren(new Option("همه انواع", ""));
-            state.types.forEach(x=>typeSelect.add(new Option(x.title,x.value)));
-            typeSelect.value=state.type;
+            state.types.filter(x=>active.has(Number(x.value)))
+                .forEach(x=>typeSelect.add(new Option(x.title,x.value)));
+            if (!state.type || active.has(Number(state.type)))typeSelect.value=state.type;
+            else {state.type="";typeSelect.value="";}
         }
 
         function reasons() {
@@ -362,7 +369,7 @@
             if(!response){feedback("محاسبه تطبیق‌ها انجام نشد. دوباره امتحان کنید.",true);return;}
             state.rows=response.rows||[];state.summary=response.summary||{};
             state.suggestionsLoaded=true;state.targets.clear();state.preview.clear();
-            tabs();if(state.status==="saved")savedRows();else localRows();
+            types();tabs();if(state.status==="saved")savedRows();else localRows();
         }
 
         async function switchSoftware(softwareId) {
@@ -373,7 +380,7 @@
             state.status="saved";state.reason="";state.page=1;
             state.suggestionsLoaded=false;state.rows=[];state.summary=null;
             state.selected.clear();state.targets.clear();state.preview.clear();
-            ++state.requestId;tabs();await savedRows();
+            ++state.requestId;types();tabs();await savedRows();
         }
 
         function payload(row) {
@@ -404,7 +411,7 @@
                 showLoading:false});
             if(options)state.counts=options.counts||[];
             state.suggestionsLoaded=false;state.summary=null;state.rows=[];state.page=1;
-            summary();
+            types();summary();
             if(state.softwareId===state.automaticId)await calculate();
             else {state.status="saved";tabs();await savedRows();}
         }
