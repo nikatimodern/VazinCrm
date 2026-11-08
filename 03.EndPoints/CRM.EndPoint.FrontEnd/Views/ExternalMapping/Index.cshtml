@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.9" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.10" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -51,7 +51,7 @@
                 <select id="lmrSavedType"><option value="">همه انواع</option></select>
             </label>
             <label class="lmr-field lmr-size"><span>تعداد</span>
-                <select id="lmrSavedSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option></select>
+                <select id="lmrSavedSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
             </label>
         </div>
         <div id="lmrSavedFeedback" class="lmr-feedback" role="status" aria-live="polite"></div>
@@ -103,12 +103,12 @@
                 <select id="lmrProposalReason"><option value="">همه علت‌ها</option></select>
             </label>
             <label class="lmr-field lmr-size"><span>تعداد</span>
-                <select id="lmrProposalSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option></select>
+                <select id="lmrProposalSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
             </label>
         </div>
 
         <div class="lmr-selection-bar" id="lmrSelectionActions" hidden>
-            <label><input id="lmrSelectPage" type="checkbox" /> انتخاب موارد این صفحه</label>
+            <label><input id="lmrSelectPage" type="checkbox" /> انتخاب همه موارد نمایش‌داده‌شده</label>
             <span id="lmrSelectedCount">۰ انتخاب</span>
             <button id="lmrSaveSelected" type="button" class="lmr-btn lmr-btn-primary" disabled>ثبت انتخاب‌شده‌ها</button>
         </div>
@@ -123,5 +123,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.9" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.10" asp-append-version="true"></script>
 }
