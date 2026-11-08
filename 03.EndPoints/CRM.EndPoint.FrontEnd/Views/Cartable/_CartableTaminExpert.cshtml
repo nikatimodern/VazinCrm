@@ -84,21 +84,25 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <ul class="filter-switch">
+                    <div class="d-flex gap-2 cartable-mobile-status-filter">
+                        <button type="button" class="cartable-mobile-status-filter__toggle" aria-controls="taminPrefactorStatusOptions" aria-expanded="false" aria-label="فیلتر وضعیت پیش‌فاکتورها">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.5 7.5V19l-3 1.5v-8L4 5z" /></svg>
+                            <span class="cartable-mobile-status-filter__selected">در انتظار تایید</span>
+                        </button>
+                        <ul class="filter-switch" id="taminPrefactorStatusOptions">
                             <li class="filter-switch-item">
-                                <input type="radio" name="TFilter" id="TpfAll" value="-1" />
+                                <input type="radio" name="TFilter" id="TpfAll" value="-1" data-status-label="همه" />
                                 <label class="fbold" for="TpfAll">همه</label>
                             </li>
                             <li class="filter-switch-item">
-                                <input type="radio" name="TFilter" id="Tpf1" value="1" checked />
+                                <input type="radio" name="TFilter" id="Tpf1" value="1" data-status-label="در انتظار تایید" checked />
                                 <label class="fbold position-relative" for="Tpf1">
                                     در انتظار تایید
                                     <span class="badge-count filter-count-badge"></span>
                                 </label>
                             </li>
                             <li class="filter-switch-item">
-                                <input type="radio" name="TFilter" id="Tpf5" value="2" />
+                                <input type="radio" name="TFilter" id="Tpf5" value="2" data-status-label="تایید شده" />
                                 <label class="fbold position-relative" for="Tpf5">
                                     تایید شده
                                     <span class="badge-count filter-count-badge"></span>
