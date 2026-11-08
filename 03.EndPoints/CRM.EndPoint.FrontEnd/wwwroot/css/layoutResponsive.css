@@ -212,11 +212,12 @@
 }
 
 @media (max-width: 767px) {
-    /* No full-width header strip on phones; just a fixed handle above the page. */
+    /* Reserve a small transparent slot for the fixed handle so it never overlaps page tabs. */
     #mainHeader.crm-main-header {
         position: static;
-        height: 0;
-        min-height: 0;
+        flex: 0 0 calc(38px + env(safe-area-inset-top, 0px));
+        height: calc(38px + env(safe-area-inset-top, 0px));
+        min-height: calc(38px + env(safe-area-inset-top, 0px));
         margin: 0;
         padding: 0;
         border: 0;
@@ -227,7 +228,7 @@
     .crm-main-header .crm-mobile-header-panel {
         display: block;
         position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 36px);
+        top: calc(env(safe-area-inset-top, 0px) + 38px);
         inset-inline: 0;
         z-index: 1100;
         height: 0;
