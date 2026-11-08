@@ -443,7 +443,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             }
 
             var externalSides = new Dictionary<(string, int), MappingReportSide>();
-            var sepidar = softwareId == Sepidar1SoftwareId
+            var sepidarContext = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb
                 : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
             var quotationIds = entries.Where(x => x.TargetEntity == nameof(Quotation))
@@ -459,11 +459,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     ? new[] { x.TargetId.Value } : Array.Empty<int>()))
                 .Where(x => x > 0).Distinct().ToArray();
 
-            if (sepidar != null)
+            if (sepidarContext != null)
             {
             foreach (var batch in quotationIds.Chunk(350))
             {
-                var data = await sepidar.Quotations.AsNoTracking()
+                var data = await sepidarContext.Quotations.AsNoTracking()
                     .Where(x => batch.Contains(x.QuotationId))
                     .Select(x => new { x.QuotationId, x.Number, x.Date,
                         x.NetPriceInBaseCurrency, x.CustomerRealName, x.CustomerPartyRef, x.FiscalYearRef })
@@ -477,7 +477,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
             foreach (var batch in invoiceIds.Chunk(350))
             {
-                var data = await sepidar.SalesInvoices.AsNoTracking()
+                var data = await sepidarContext.SalesInvoices.AsNoTracking()
                     .Where(x => batch.Contains(x.InvoiceId))
                     .Select(x => new {
                         x.InvoiceId,
@@ -499,7 +499,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
             foreach (var batch in partyIds.Chunk(350))
             {
-                var data = await sepidar.Parties.AsNoTracking()
+                var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
                     .Select(x => new { x.PartyId, x.Name, x.LastName, x.IsCustomer })
                     .ToListAsync(ct);
