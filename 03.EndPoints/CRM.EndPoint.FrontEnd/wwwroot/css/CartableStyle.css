@@ -1333,6 +1333,108 @@
         font-size: 11px;
     }
 
+
+    /* All role subtabs stay on one horizontally scrollable line on phones. */
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs)::-webkit-scrollbar {
+        display: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) > .nav-item {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) .nav-link {
+        white-space: nowrap;
+    }
+
+    /* In every compact toolbar: search, radio statuses, other actions, then count. */
+    #cartableWorkspace .cartable-list-toolbar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 4px 6px;
+        min-width: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .search-group {
+        order: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > :is(.filter-switch, div:has(> .filter-switch)) {
+        order: 1;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .cartable-list-toolbar__actions {
+        order: 2;
+        margin-inline-start: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .cartable-column-count {
+        order: 3;
+        margin-inline-start: auto;
+    }
+
+    /* Never scroll the radio/action toolbar horizontally; wrap when necessary. */
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch {
+        display: flex;
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* Financial invoices: keep deposit/refund together above the compact filter row. */
+    #cartableWorkspace .cartable-invoice-toolbar {
+        justify-content: flex-start !important;
+        gap: 4px 6px !important;
+        padding-inline: 2px !important;
+        min-width: 0;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-actions {
+        order: 0;
+        flex: 0 0 100%;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    #cartableWorkspace .cartable-invoice-actions > button {
+        white-space: nowrap;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .search-group.cartable-mobile-search {
+        order: 1 !important;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-status {
+        order: 2;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-column-count {
+        order: 3;
+        margin-inline-start: auto;
+    }
+
     /* The search grows in-flow and moves sibling filters to the next flex row. */
     #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search {
         flex: 0 0 34px;
