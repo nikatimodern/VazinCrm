@@ -1717,6 +1717,51 @@
         pointer-events: auto;
     }
 
+    /* Match supply subtabs and their filter/search controls to the 23px role tabs. */
+    #cartableWorkspace #CTaminExpertId #taminExpertsTabs .nav-link {
+        box-sizing: border-box;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter__toggle {
+        box-sizing: border-box;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search:not(.is-search-open) {
+        flex-basis: 23px;
+        width: 23px;
+        max-width: 23px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search input {
+        box-sizing: border-box;
+        height: 23px;
+        min-height: 23px;
+        font-size: 11px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-icon {
+        box-sizing: border-box;
+        width: 23px;
+        height: 23px;
+        top: 0;
+        bottom: auto;
+        inset-inline-end: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-icon svg {
+        width: 14px;
+    }
+
 }
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
