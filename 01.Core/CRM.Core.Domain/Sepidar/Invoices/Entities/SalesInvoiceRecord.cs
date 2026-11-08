@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,6 +10,7 @@ namespace CRM.Core.Domain.Sepidar.Invoices.Entities;
 public class SalesInvoiceRecord
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int InvoiceId { get; set; }
     public int? QuotationRef { get; set; }
     public int CustomerPartyRef { get; set; }
@@ -57,4 +59,6 @@ public class SalesInvoiceRecord
     
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     public decimal? NetPrice { get; private set; }
+
+    public IList<SalesInvoiceItemRecord> InvoiceItems { get; set; } = new List<SalesInvoiceItemRecord>();
 }
