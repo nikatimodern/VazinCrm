@@ -1321,21 +1321,39 @@
         font-size: 9px;
     }
 
-    /* Reserve a small, self-sized slot for the document subtabs on phones. */
+    /* Center the compact document subtabs just below the main Cartable navigation. */
     #cartableWorkspace #CPrefactorFactorId > #allTabFactors {
         display: inline-flex !important;
         flex: 0 0 auto;
-        align-self: flex-start;
-        justify-content: flex-start;
+        align-self: center;
+        justify-content: center;
         width: max-content !important;
         max-width: 100%;
         min-height: 23px;
         gap: 3px;
-        margin: 0;
+        margin: 2px 0 0;
         padding: 0;
         border: 0 !important;
         border-radius: 0;
         background: transparent;
+    }
+
+    /* Remove both column titles/count badges and all space reserved for their row. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-column-heading {
+        display: none !important;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId #tabContentAllFactors,
+    #cartableWorkspace #CPrefactorFactorId .parent-all-factors .InfoData {
+        padding-top: 0 !important;
+    }
+
+    #cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) #CartableTabs {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) .CartableContent {
+        padding-top: 0;
     }
 
     #cartableWorkspace #CPrefactorFactorId > #allTabFactors > .nav-item {
