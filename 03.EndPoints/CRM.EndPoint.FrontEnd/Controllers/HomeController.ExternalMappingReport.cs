@@ -48,14 +48,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             var plan = await BuildLegacySepidarMappingPlanAsync(ct);
             var entries = new List<MappingReportEntry>();
 
+            // For conflicts with multiple possible Sepidar customers, display ALL
+            // candidate Party names (not just the first PartyId).
+            var candidatePartyIds = plan.CustomerConflicts
+                .SelectMany(x => x.SepidarPartyIds).Where(x => x > 0)
+                .Distinct().ToArray();
+            var partyNames = new Dictionary<int, string>();
+            foreach (var batch in candidatePartyIds.Chunk(350))
+            {
+                var parties = await sdb.Parties.AsNoTracking()
+                    .Where(x => batch.Contains(x.PartyId))
+                    .Select(x => new { x.PartyId, x.Name, x.LastName }).ToListAsync(ct);
+                foreach (var party in parties)
+                    partyNames[party.PartyId] = $"{party.Name} {party.LastName}".Trim();
+            }
+
             foreach (var conflict in plan.CustomerConflicts)
             {
+                var partyDescriptions = conflict.SepidarPartyIds.Select(id =>
+                    $"سپیدار: PartyId={id} | {partyNames.GetValueOrDefault(id, "شخص پیدا نشد")}");
+                var sources = conflict.SourceDocuments.Concat(partyDescriptions).ToArray();
                 entries.Add(new MappingReportEntry(
                     $"customer-conflict-{conflict.CustomerId}", nameof(Customer),
                     conflict.CustomerId, "customerConflict", conflict.Reason,
                     $"شناسه‌های احتمالی مشتری در سپیدار: {string.Join("، ", conflict.SepidarPartyIds)}",
                     nameof(Party), conflict.SepidarPartyIds.FirstOrDefault() is var id && id > 0 ? id : null,
-                    conflict.SourceDocuments.ToArray()));
+                    sources));
             }
 
             foreach (var issue in plan.Issues)
