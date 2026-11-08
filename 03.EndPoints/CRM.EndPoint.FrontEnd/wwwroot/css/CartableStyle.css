@@ -1258,6 +1258,25 @@
 #CPrefactorFactorId .cartable-list-toolbar { flex-shrink:0; }
 #CPrefactorFactorId .cartable-document-scroll { flex:1; min-height:0; max-height:none !important; overflow:auto; width:100%; display:flex; justify-content:center; }
 
+/* A filter-aware supply empty state fills the list area on every viewport size. */
+#cartableWorkspace #CTaminExpertId #TContentId.cartable-supply-empty {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: clamp(160px, 45dvh, 460px);
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    text-align: center;
+}
+
+#cartableWorkspace #CTaminExpertId .cartable-supply-empty__message {
+    max-width: 100%;
+    margin: 0;
+    color: #545961;
+    font: 500 13px/1.8 IRANSansMedium;
+    overflow-wrap: anywhere;
+}
+
 /* All Cartable roles share the same viewport contract. */
 #mainWrapper:has(#cartableWorkspace) { height:100dvh; min-height:0; }
 #mainContent:has(#cartableWorkspace) { display:flex; flex-direction:column; height:auto; min-height:0; padding-block-end:10px; }
