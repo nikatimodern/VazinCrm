@@ -66,8 +66,8 @@ function initCartableMobileSearch() {
         icon.addEventListener("click", event => {
             if (!mobile.matches) return;
             if (group.classList.contains("is-search-open")) {
-                // Keep the input focused so an empty search does not close after clicking the icon.
-                input.focus({ preventScroll: true });
+                // The click must search, not close the field. Refocus only if an empty search would blur.
+                if (!input.value.trim()) input.focus({ preventScroll: true });
                 return;
             }
             // The first tap only expands; the shared search handler runs on later taps.
