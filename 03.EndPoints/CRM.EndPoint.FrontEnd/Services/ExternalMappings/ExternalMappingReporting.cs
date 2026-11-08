@@ -208,7 +208,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
-            var rows = await EnrichMappingEntriesAsync(entries, Sepidar1SoftwareId, ct);
+            var reportRows = await EnrichMappingEntriesAsync(entries, Sepidar1SoftwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == Sepidar1SoftwareId
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
@@ -228,7 +228,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     ambiguous = plan.Ambiguous,
                     duplicateGroups = plan.DuplicateTargetGroups.Count
                 },
-                rows
+                rows = reportRows
             };
         }
 
