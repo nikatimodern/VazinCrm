@@ -905,7 +905,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             blockedIds.Add(document.Id);
                             AddIssue(document.EntityName, document.EntityId, crmNumber,
                                 "BlockedByCustomer", "DocumentCrmCustomerMismatch",
-                                $"Factor.CustomerId={customerId}, PreFactor.CustomerId={quotationCustomerId}");
+                                $"Factor.CustomerId={customerId}, PreFactor.CustomerId={quotationCustomerId} | {document.ExEntityName} ID={document.ExEntityId}");
                             continue;
                         }
 
@@ -917,7 +917,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         blockedIds.Add(document.Id);
                         AddIssue(document.EntityName, document.EntityId, crmNumber,
                             "BlockedByCustomer", "DocumentCustomerMissing",
-                            "مشتری CRM این سند مشخص نیست یا در جدول Customers وجود ندارد.");
+                            $"مشتری CRM این سند مشخص نیست یا در جدول Customers وجود ندارد. | {document.ExEntityName} ID={document.ExEntityId}");
                         continue;
                     }
 
@@ -926,7 +926,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         blockedIds.Add(document.Id);
                         AddIssue(document.EntityName, document.EntityId, crmNumber,
                             "BlockedByCustomer", "CustomerHasConflict",
-                            $"CustomerId={customerId.Value} دارای تعارض مپینگ است.");
+                            $"CustomerId={customerId.Value} دارای تعارض مپینگ است. | {document.ExEntityName} ID={document.ExEntityId}");
                         continue;
                     }
 
@@ -940,7 +940,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             ? "CustomerMappingPendingApproval" : "CustomerNotMapped";
                         AddIssue(document.EntityName, document.EntityId, crmNumber,
                             "BlockedByCustomer", reason,
-                            $"CustomerId={customerId.Value}; ابتدا مپینگ مشتری را ثبت یا اصلاح کنید.");
+                            $"CustomerId={customerId.Value}; ابتدا مپینگ مشتری را ثبت یا اصلاح کنید. | {document.ExEntityName} ID={document.ExEntityId}");
                         continue;
                     }
 
@@ -957,7 +957,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         blockedIds.Add(document.Id);
                         AddIssue(document.EntityName, document.EntityId, crmNumber,
                             "BlockedByCustomer", "DocumentSepidarCustomerMismatch",
-                            $"CustomerId={customerId.Value}, mapped PartyId={mappedPartyId}, document PartyId={documentPartyId}");
+                            $"CustomerId={customerId.Value}, mapped PartyId={mappedPartyId}, document PartyId={documentPartyId} | {document.ExEntityName} ID={document.ExEntityId}");
                     }
                 }
 
