@@ -1598,11 +1598,12 @@
         flex-wrap: nowrap;
         align-items: stretch;
         inset-block-start: calc(100% + 3px);
-        inset-inline-end: 0;
+        inset-inline-start: 0;
         z-index: 20;
         width: max-content;
         min-width: 148px;
-        max-width: none;
+        max-width: min(200px, calc(100vw - 32px));
+        box-sizing: border-box;
         padding: 4px;
         border: 1px solid var(--cartable-border);
         border-radius: 7px;
