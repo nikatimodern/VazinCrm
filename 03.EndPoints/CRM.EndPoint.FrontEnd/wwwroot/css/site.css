@@ -2667,15 +2667,33 @@ html.sidebar-collapsed #mainWrapper {
 	outline-offset: 2px;
 }
 @media (max-width: 767px) {
-	.crm-main-header .header-profile { padding: 0; gap: 0; }
-	.crm-main-header .header-profile .profile-name {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
+	/* Show the user name next to the avatar without crowding header actions. */
+	#mainHeader.crm-main-header .header-profile {
+		flex: 0 1 auto;
+		min-width: 0;
+		max-width: min(40vw, 160px);
+		padding: 0;
+		gap: 4px;
 	}
-	.crm-main-header .header-content { gap: 3px; }
+	#mainHeader.crm-main-header .header-profile .profile-image {
+		flex-shrink: 0;
+	}
+	#mainHeader.crm-main-header .header-profile .profile-name {
+		position: static;
+		width: auto;
+		height: auto;
+		min-width: 0;
+		overflow: hidden;
+		clip-path: none;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 10px;
+		line-height: 1.4;
+	}
+	#mainHeader.crm-main-header .header-content {
+		flex: 1 0 auto;
+		gap: 3px;
+	}
 	.crm-main-header .header-content > .header-icon-btn { width: 28px; height: 28px; }
 	.crm-main-header .header-content > .me-2 { margin-inline: 0 !important; }
 	.crm-main-header .header-chat-link { padding-inline: 8px; font-size: 11px; }
