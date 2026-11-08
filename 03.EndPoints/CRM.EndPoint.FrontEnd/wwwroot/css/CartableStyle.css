@@ -1281,8 +1281,9 @@
     display: none;
 }
 
-/* Desktop keeps the existing status radio controls visible. */
-#cartableWorkspace .cartable-mobile-status-filter__toggle {
+/* Desktop keeps the original search and radio controls unchanged. */
+#cartableWorkspace .cartable-mobile-status-filter__toggle,
+#cartableWorkspace .cartable-mobile-search-clear {
     display: none;
 }
 
