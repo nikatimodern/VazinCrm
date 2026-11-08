@@ -737,16 +737,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         : possibleParties.Count > 1 ? "MultipleSepidarParties"
                         : !validSepidarCustomers.Contains(possibleParties[0])
                             ? "PartyNotFoundOrNotCustomer"
-                        : targetSoftwareId == Sepidar1SoftwareId
-                          && customer.FinancialCustomerId.HasValue
-                          && customer.FinancialCustomerId != possibleParties[0]
-                            ? "LegacyFinancialCustomerIdMismatch"
                         : existing.Any(x => x.ExternalSoftwareId == softwareId
                           && x.MapType == ExternalMappingTypeEnum.مشتری
                           && x.ExEntityName == nameof(Party)
                           && x.ExEntityId == possibleParties[0].ToString()
                           && x.EntityId != customer.Id)
                             ? "PartyAlreadyMappedToAnotherCustomer"
+                        : targetSoftwareId == Sepidar1SoftwareId
+                          && customer.FinancialCustomerId.HasValue
+                          && customer.FinancialCustomerId != possibleParties[0]
+                            ? "LegacyFinancialCustomerIdMismatch"
                         : null;
 
                     if (reason != null)
