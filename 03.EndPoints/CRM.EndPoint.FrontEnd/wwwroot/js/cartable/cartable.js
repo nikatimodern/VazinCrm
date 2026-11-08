@@ -23,118 +23,75 @@ function initCartableViewport() {
     }, { once:true });
 }
 
-/** Keep Cartable search and status filters in one compact mobile row. */
-function initCartableMobileControls() {
-    const root = document.getElementById("cartableWorkspace");
-    if (!root) return;
+/** Animate the existing document search in-flow on mobile without changing its input styling. */
+function initCartableMobileSearch() {
+    const pane = document.getElementById("CPrefactorFactorId");
+    if (!pane) return;
 
-    const mobileQuery = window.matchMedia("(max-width: 767px)");
-    const closeSearch = group => {
-        if (!group) return;
-        group.classList.remove("is-search-open");
-        group.querySelector(".cartable-mobile-search-toggle")?.setAttribute("aria-label", "باز کردن جستجو");
-    };
-    const closeStatus = list => {
-        if (!list) return;
-        list.classList.remove("is-mobile-status-open");
-        list.parentElement?.querySelector(".cartable-mobile-filter-toggle")?.setAttribute("aria-expanded", "false");
-    };
-    const closeAll = () => {
-        root.querySelectorAll(".cartable-list-toolbar .search-group.is-search-open").forEach(closeSearch);
-        root.querySelectorAll(".cartable-list-toolbar .filter-switch.is-mobile-status-open").forEach(closeStatus);
-    };
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const searches = [];
 
-    root.querySelectorAll(".cartable-list-toolbar").forEach(toolbar => {
-        const search = toolbar.querySelector(".search-group");
-        const input = search?.querySelector("input[type='text'], input[type='search']");
-        if (input && !search.querySelector(".cartable-mobile-search-toggle")) {
-            const toggle = document.createElement("button");
-            toggle.type = "button";
-            toggle.className = "cartable-mobile-search-toggle";
-            toggle.setAttribute("aria-label", "باز کردن جستجو");
-            toggle.setAttribute("aria-controls", input.id);
-            toggle.innerHTML = search.querySelector(".search-icon")?.innerHTML ?? "⌕";
-            search.append(toggle);
+    pane.querySelectorAll(".cartable-list-toolbar .search-group").forEach(group => {
+        const input = group.querySelector("input[type='text'], input[type='search']");
+        const icon = group.querySelector(".search-icon");
+        if (!input || !icon) return;
 
-            const syncQuery = () => toggle.classList.toggle("has-query", input.value.trim().length > 0);
-            syncQuery();
-            input.addEventListener("input", syncQuery);
-            toggle.addEventListener("click", () => {
-                if (!mobileQuery.matches) return;
-                const shouldOpen = !search.classList.contains("is-search-open");
-                closeAll();
-                if (shouldOpen) {
-                    search.classList.add("is-search-open");
-                    toggle.setAttribute("aria-label", "بستن جستجو");
-                    input.focus();
-                }
-            });
-            input.addEventListener("keydown", event => {
-                if (event.key === "Escape" && mobileQuery.matches) {
-                    closeSearch(search);
-                    toggle.focus();
-                }
-            });
-        }
+        group.classList.add("cartable-mobile-search");
+        icon.setAttribute("role", "button");
+        icon.setAttribute("tabindex", "0");
+        icon.setAttribute("aria-label", "باز کردن جستجو");
+        icon.setAttribute("aria-controls", input.id);
 
-        const statusList = toolbar.querySelector(".filter-switch");
-        if (statusList && !statusList.parentElement.querySelector(".cartable-mobile-filter-toggle")) {
-            const toggle = document.createElement("button");
-            toggle.type = "button";
-            toggle.className = "cartable-mobile-filter-toggle";
-            toggle.setAttribute("aria-expanded", "false");
-            toggle.setAttribute("aria-label", "انتخاب وضعیت");
-            const label = document.createElement("span");
-            label.className = "cartable-mobile-status-label";
-            toggle.append(label);
-            statusList.parentElement.insertBefore(toggle, statusList);
+        const expand = () => {
+            group.classList.add("is-search-open");
+            icon.setAttribute("aria-expanded", "true");
+        };
+        const collapse = () => {
+            if (input.value.trim()) return;
+            group.classList.remove("is-search-open");
+            icon.setAttribute("aria-expanded", "false");
+        };
+        const syncViewport = () => {
+            if (!mobile.matches) {
+                group.classList.remove("is-search-open");
+                icon.setAttribute("aria-expanded", "false");
+            } else if (input.value.trim()) {
+                expand();
+            }
+        };
 
-            const updateLabel = () => {
-                const selectedLabel = statusList.querySelector("input[type='radio']:checked")?.nextElementSibling;
-                const textNodes = selectedLabel ? Array.from(selectedLabel.childNodes).filter(node => node.nodeType === Node.TEXT_NODE) : [];
-                label.textContent = textNodes.map(node => node.textContent).join(" ").trim()
-                    || selectedLabel?.textContent.trim() || "وضعیت";
-            };
-            updateLabel();
-            statusList.addEventListener("change", event => {
-                if (!event.target.matches("input[type='radio']")) return;
-                updateLabel();
-                closeStatus(statusList);
-            });
-            toggle.addEventListener("click", () => {
-                if (!mobileQuery.matches) return;
-                const shouldOpen = !statusList.classList.contains("is-mobile-status-open");
-                closeAll();
-                if (shouldOpen) {
-                    statusList.classList.add("is-mobile-status-open");
-                    toggle.setAttribute("aria-expanded", "true");
-                }
-            });
-        }
+        icon.addEventListener("click", () => {
+            if (!mobile.matches) return;
+            expand();
+            input.focus();
+        });
+        icon.addEventListener("keydown", event => {
+            if (!mobile.matches || (event.key !== "Enter" && event.key !== " ")) return;
+            event.preventDefault();
+            expand();
+            input.focus();
+        });
+        input.addEventListener("input", () => {
+            if (mobile.matches && input.value.trim()) expand();
+        });
+        input.addEventListener("focus", () => {
+            if (mobile.matches) expand();
+        });
+        input.addEventListener("blur", () => {
+            // A filled search remains expanded after blur; an empty one can collapse.
+            window.setTimeout(() => {
+                if (mobile.matches && document.activeElement !== input) collapse();
+            }, 150);
+        });
+
+        syncViewport();
+        searches.push(syncViewport);
     });
 
-    const onPointerDown = event => {
-        root.querySelectorAll(".cartable-list-toolbar").forEach(toolbar => {
-            const search = toolbar.querySelector(".search-group.is-search-open");
-            if (search && !search.contains(event.target)) closeSearch(search);
-            const status = toolbar.querySelector(".filter-switch.is-mobile-status-open");
-            const toggle = toolbar.querySelector(".cartable-mobile-filter-toggle");
-            if (status && !status.contains(event.target) && !toggle?.contains(event.target)) closeStatus(status);
-        });
-    };
-    const onKeyDown = event => {
-        if (event.key === "Escape" && mobileQuery.matches) closeAll();
-    };
-    const onResize = () => {
-        if (!mobileQuery.matches) closeAll();
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("resize", onResize);
+    const onViewportChange = () => searches.forEach(sync => sync());
+    mobile.addEventListener("change", onViewportChange);
     window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
-        document.removeEventListener("pointerdown", onPointerDown);
-        document.removeEventListener("keydown", onKeyDown);
-        window.removeEventListener("resize", onResize);
+        mobile.removeEventListener("change", onViewportChange);
     }, { once: true });
 }
 
@@ -145,7 +102,7 @@ let fromWarning = false;
 document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("cartableWorkspace"));
     initCartableViewport();
-    initCartableMobileControls();
+    initCartableMobileSearch();
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
