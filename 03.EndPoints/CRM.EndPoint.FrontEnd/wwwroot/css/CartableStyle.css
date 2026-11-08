@@ -1394,6 +1394,12 @@
         row-gap: 0 !important;
     }
 
+    /* Once the search and status move into the tab row, remove their empty old row. */
+    #cartableWorkspace #CTaminExpertId:has(.cartable-tamin-top-controls > .cartable-mobile-status-filter)
+    #TaminPrefactorTab-pane .cartable-list-toolbar {
+        display: none;
+    }
+
     #cartableWorkspace #CTaminExpertId :is(#TaminPrefactorTab-pane, #TaminInvoiceTab-pane) .cartable-list-toolbar {
         padding-bottom: 0;
     }
