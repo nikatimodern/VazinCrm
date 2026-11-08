@@ -82,11 +82,6 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
             try
             {
-                content = content
-                    .Replace("```json", "")
-                    .Replace("```", "")
-                    .Trim();
-
                 resultData = JsonSerializer.Deserialize<SupplyFactorAiDto>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
 
@@ -171,6 +166,11 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                     return new AiGapgptResult<SummaryModel>
                         { Success = false, Error = "AI returned an empty response.", ElapsedSeconds = aiDuration };
                 }
+
+                content = content
+                    .Replace("```json", "")
+                    .Replace("```", "")
+                    .Trim();
 
                 var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
                 logger.LogInformation("Gemini Audio Processing completed in {Elapsed}s.", aiDuration);
