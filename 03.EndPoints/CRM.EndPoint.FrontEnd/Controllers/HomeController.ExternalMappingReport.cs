@@ -72,7 +72,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     $"customer-conflict-{conflict.CustomerId}", nameof(Customer),
                     conflict.CustomerId, "customerConflict", conflict.Reason,
                     $"شناسه‌های احتمالی مشتری در سپیدار: {string.Join("، ", conflict.SepidarPartyIds)}",
-                    nameof(Party), conflict.SepidarPartyIds.FirstOrDefault() is var id && id > 0 ? id : null,
+                    nameof(Party), conflict.SepidarPartyIds.Count > 0 && conflict.SepidarPartyIds[0] > 0
+                        ? conflict.SepidarPartyIds[0] : (int?)null,
                     sources));
             }
 
