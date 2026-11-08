@@ -89,17 +89,24 @@
             return reasons[code] || [code || "نیازمند بررسی", "اطلاعات دو طرف را مقایسه کنید و علت اختلاف را بررسی کنید."];
         }
 
-        function renderSide(side, origin) {
-            const items = [
-                ["شماره / کد", side.number],
-                ["مبلغ نهایی (ریال)", side.amount == null ? null : Number(side.amount).toLocaleString("en-US")],
-                ["تاریخ", side.date],
-                ["مشتری / نام", side.customer]
-            ];
+        function renderSide(side, origin, kind, amountMismatch) {
+            const items = kind === "Customer"
+                ? [
+                    ["کد / شناسه مشتری", side.number],
+                    ["نام مشتری", side.customer]
+                ]
+                : [
+                    ["شماره سند", side.number],
+                    ["مبلغ نهایی (ریال)", side.amount == null ? null : Number(side.amount).toLocaleString("en-US")],
+                    ["تاریخ", side.date],
+                    ["مشتری", side.customer]
+                ];
             return '<section class="lmr-side ' + origin + '">' +
                 '<div class="lmr-side-title"><span>' + escape(side.title) + '</span><span class="lmr-side-id" title="' + escape(side.id) + '">ID: ' + escape(side.id) + '</span></div>' +
                 '<div class="lmr-side-body">' +
-                items.map(([label, value]) => '<div class="lmr-pair"><span>' + escape(label) + '</span><strong>' + escape(text(value)) + '</strong></div>').join("") +
+                items.map(([label, value]) => '<div class="lmr-pair ' +
+                    (amountMismatch && label === "مبلغ نهایی (ریال)" ? "is-mismatch" : "") +
+                    '"><span>' + escape(label) + '</span><strong>' + escape(text(value)) + '</strong></div>').join("") +
                 '<div class="lmr-pair wide"><span>اطلاعات تکمیلی</span><strong>' + escape(text(side.extra)) + '</strong></div>' +
                 '</div></section>';
         }
@@ -107,6 +114,9 @@
         function renderCard(row) {
             const reason = reasonInfo(row.reason);
             const hasIssue = row.status !== "pending" && row.status !== "saved";
+            const amountMismatch = row.kind !== "Customer" &&
+                row.crm?.amount != null && row.sepidar?.amount != null &&
+                Number(row.crm.amount) !== Number(row.sepidar.amount);
             const explanation = row.sources?.length
                 ? row.details + "\n\nاسناد مرتبط:\n" + row.sources.join("\n")
                 : row.details;
@@ -115,9 +125,9 @@
                 '<div class="lmr-record-title"><span class="lmr-record-type">' + escape(kindNames[row.kind] || row.kind) + '</span><strong>' + escape(reason[0]) + '</strong></div>' +
                 '<span class="lmr-state lmr-state-' + escape(row.status === "customerConflict" ? "conflict" : row.status) + '">' +
                 escape(statusNames[row.status] || row.status) + '</span></div>' +
-                '<div class="lmr-compare">' + renderSide(row.crm, "crm") +
+                '<div class="lmr-compare">' + renderSide(row.crm, "crm", row.kind, amountMismatch) +
                 '<div class="lmr-compare-symbol"><i class="fas fa-exchange-alt" aria-hidden="true"></i></div>' +
-                renderSide(row.sepidar, "sepidar") + '</div>' +
+                renderSide(row.sepidar, "sepidar", row.kind, amountMismatch) + '</div>' +
                 '<div class="lmr-reason ' + (hasIssue ? "has-issue" : "") + '">' +
                 '<i class="fas fa-' + (hasIssue ? "exclamation-circle" : "check-circle") + '" aria-hidden="true"></i>' +
                 '<div class="lmr-reason-content"><strong>' + escape(reason[0]) + '</strong><p>' + escape(reason[1]) + '</p></div></div>' +
