@@ -121,11 +121,15 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
 
         var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
         var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
-            .Where(x => lineIds.Contains(x.QuotationItemRef))
+            .Where(x => x.QuotationItemRef.HasValue
+                && lineIds.Contains(x.QuotationItemRef.Value))
             .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1),
                 item => item.InvoiceRef, invoice => invoice.InvoiceId,
-                (item, invoice) => new { item.QuotationItemRef, item.Quantity })
-            .GroupBy(x => x.QuotationItemRef)
+                (item, invoice) => new {
+                    QuotationItemId = item.QuotationItemRef!.Value,
+                    item.Quantity
+                })
+            .GroupBy(x => x.QuotationItemId)
             .Select(x => new { QuotationItemId = x.Key, Quantity = x.Sum(y => y.Quantity) })
             .ToListAsync(ct);
 
