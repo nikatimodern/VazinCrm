@@ -200,3 +200,84 @@
 	}
 }
 
+
+
+/* The shared header is collapsible only on mobile. Desktop keeps its original layout. */
+.crm-main-header .crm-mobile-header-panel {
+    display: contents;
+}
+
+.crm-main-header .crm-mobile-header-toggle {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    #mainHeader.crm-main-header {
+        height: auto;
+        padding-block: 0;
+    }
+
+    .crm-main-header .crm-mobile-header-panel {
+        display: block;
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: height 340ms ease, opacity 280ms ease, visibility 0s linear 340ms;
+    }
+
+    .crm-main-header .crm-mobile-header-panel.is-open {
+        height: 48px;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: height 340ms ease, opacity 280ms ease;
+    }
+
+    /* Allow notification dropdowns to escape the header after opening completes. */
+    .crm-main-header .crm-mobile-header-panel.is-open.is-expanded {
+        overflow: visible;
+    }
+
+    .crm-main-header .crm-mobile-header-panel > .header-container {
+        height: 48px;
+    }
+
+    .crm-main-header .crm-mobile-header-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        margin-inline: auto;
+        padding: 0;
+        border: 1px solid #DDE1E8;
+        border-radius: 50%;
+        background: #F0F1F7;
+        color: #004944;
+        cursor: pointer;
+    }
+
+    .crm-main-header .crm-mobile-header-toggle svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 340ms ease;
+    }
+
+    .crm-main-header .crm-mobile-header-toggle[aria-expanded="true"] svg {
+        transform: rotate(180deg);
+    }
+
+    .crm-main-header .crm-mobile-header-toggle:focus-visible {
+        outline: 2px solid #5811B4;
+        outline-offset: 2px;
+    }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    .crm-main-header .crm-mobile-header-panel,
+    .crm-main-header .crm-mobile-header-toggle svg {
+        transition: none;
+    }
+}
