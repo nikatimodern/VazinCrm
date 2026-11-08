@@ -11,7 +11,7 @@ using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Entities;
-using Generics.Infrastructures.Sql;
+using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
