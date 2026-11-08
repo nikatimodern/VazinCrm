@@ -134,8 +134,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 query = query.Where(x => x.MapType == ExternalMappingTypeEnum.فاکتور);
 
             if (search.Length > 0)
+            {
+                var isNumber = int.TryParse(search, out var number);
+                var matchedIds = new HashSet<Guid>();
+
+                var customers = await db.Customers.AsNoTracking()
+                    .Where(x => (x.CompanyName != null && x.CompanyName.Contains(search))
+                        || (x.AgentName != null && x.AgentName.Contains(search))
+                        || (isNumber && x.CustomerCode == number))
+                    .Select(x => x.Id).Take(300).ToListAsync(ct);
+                matchedIds.UnionWith(customers);
+
+                var preFactors = await db.PreFactors.AsNoTracking()
+                    .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (isNumber && x.SerialNumber == number))
+                    .Select(x => x.Id).Take(300).ToListAsync(ct);
+                matchedIds.UnionWith(preFactors);
+
+                var factors = await db.Factors.AsNoTracking()
+                    .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (isNumber && x.SerialNumber == number))
+                    .Select(x => x.Id).Take(300).ToListAsync(ct);
+                matchedIds.UnionWith(factors);
+
+                var ids = matchedIds.ToArray();
                 query = query.Where(x => x.ExEntityId.Contains(search)
-                    || x.EntityId.ToString().Contains(search));
+                    || x.EntityId.ToString().Contains(search)
+                    || ids.Contains(x.EntityId));
+            }
 
             var total = await query.CountAsync(ct);
             var mappings = await query.OrderByDescending(x => x.CreateDate)
