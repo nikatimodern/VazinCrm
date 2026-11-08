@@ -1314,6 +1314,10 @@
         row-gap: 0;
     }
 
+    #cartableWorkspace #CTaminExpertId #tabContentTaminExperts {
+        border-top: 0;
+    }
+
     #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) {
         gap: 3px;
         margin-block: 0;
