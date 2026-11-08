@@ -124,6 +124,42 @@
 .lmr-pagination button.current { background:var(--map-primary);border-color:var(--map-primary);color:white; }
 .lmr-pagination button:disabled { opacity:.4;cursor:default; }
 .lmr-empty { padding:20px;text-align:center;color:var(--map-muted);font-size:13px; }
+
+/* A clear, compact ownership notice for a customer already mapped in CRM. */
+.lmr-owner-notice {
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    margin:5px 9px 8px;
+    padding:7px 10px;
+    background:var(--map-purple-soft);
+    border-inline-start:3px solid var(--map-purple);
+    border-radius:6px;
+    color:#3f2873;
+    font-size:12px;
+    line-height:1.9;
+    white-space:pre-line;
+}
+.lmr-owner-notice i { margin-top:4px; }
+.lmr-owner-notice strong { font:500 12px/1.9 IRANSansMedium,sans-serif; }
+
+/* Each mismatch gets its own CRM / external-software comparison row. */
+.lmr-mismatch-details { margin-top:8px; }
+.lmr-mismatch-details h4 { margin:0 0 7px;color:var(--map-primary);font:700 13px/1.6 IRANSansBold,sans-serif; }
+.lmr-mismatch-candidate { background:white;border:1px solid var(--map-border);border-radius:7px;overflow:hidden;margin:7px 0; }
+.lmr-mismatch-candidate h5 { margin:0;padding:7px 10px;color:var(--map-primary);font:700 12px/1.7 IRANSansBold,sans-serif;background:#f7f9fa; }
+.lmr-compare-headers, .lmr-compare-field { display:grid;grid-template-columns:minmax(125px,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:6px 10px; }
+.lmr-compare-headers { color:var(--map-muted);font-size:11px;background:#f0f1f7; }
+.lmr-compare-field { border-top:1px solid #EDF0F3;font-size:12px; }
+.lmr-compare-label { color:var(--map-muted); }
+.lmr-compare-field strong { font:600 12px/1.6 IRANSansMedium,sans-serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;direction:ltr;text-align:right; }
+.lmr-compare-field strong:last-child { color:var(--map-danger); }
+.lmr-mismatch-other { padding:5px 10px;color:var(--map-muted);font-size:11px; }
+.lmr-mismatch-other p { margin:3px 0; }
+@media(max-width:580px) {
+    .lmr-compare-headers,.lmr-compare-field { grid-template-columns:minmax(90px,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:5px;padding:6px; }
+}
+
 @media(max-width:780px) {
     .lmr-main-tabs button { flex:1 1 50%;font-size:12px;padding:7px 8px;white-space:normal;justify-content:center;text-align:center; }
     .lmr-item-footer { align-items:flex-start; }
