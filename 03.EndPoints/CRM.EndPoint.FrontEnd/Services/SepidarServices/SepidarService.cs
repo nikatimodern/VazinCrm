@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
@@ -1348,6 +1350,165 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await transaction.RollbackAsync(ct);
             throw;
         }
+    }
+
+    public async Task<int> AddInvoiceAsync(
+        Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    {
+        if (preview == null || preview.Items == null || preview.Items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+        if (!factor.DateMiladi.HasValue)
+            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
+
+        var quotation = await sepidarContext.Quotations.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
+            ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
+        if (quotation.FiscalYearRef != preview.FiscalYearRef)
+            throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, ct);
+        try
+        {
+            var invoiceNumber = await sepidarContext.GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
+            var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
+            var now = DateTime.Now;
+
+            var invoice = new SalesInvoiceRecord {
+                InvoiceId = invoiceId,
+                QuotationRef = quotation.QuotationId,
+                CustomerPartyRef = quotation.CustomerPartyRef,
+                CustomerRealName = quotation.CustomerRealName,
+                CustomerRealName_En = quotation.CustomerRealName_En,
+                SaleTypeRef = quotation.SaleTypeRef,
+                PartyAddressRef = quotation.PartyAddressRef,
+                Number = invoiceNumber,
+                Date = factor.DateMiladi!.Value, // فعلا
+                CurrencyRef = quotation.CurrencyRef,
+                SLRef = 725, // فعلا
+                DeliveryLocationRef = quotation.DeliveryLocationRef,
+                State = 1, // ثبت: 1 | ابطال شده: 2
+                Price = preview.Price,
+                PriceInBaseCurrency = preview.Price,
+                Discount = preview.Discount,
+                DiscountInBaseCurrency = preview.Discount,
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = preview.Tax,
+                TaxInBaseCurrency = preview.Tax,
+                Duty = 0,
+                DutyInBaseCurrency = 0,
+                NetPriceInBaseCurrency = preview.NetPrice,
+                Rate = quotation.Rate,
+                Version = 1,
+                Creator = 1,
+                CreationDate = now,
+                LastModifier = 1,
+                LastModificationDate = now,
+                FiscalYearRef = quotation.FiscalYearRef,
+                VoucherRef = null, // فعلا
+                BaseOnInventoryDelivery = false,
+                OrderRef = null,
+                ShouldControlCustomerCredit = true,
+                Guid = null,
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+                AgreementRef = null,
+                TaxPayerBillIssueDateTime = factor.DateMiladi,
+                SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
+                Description = null,
+                SignatureRef = null
+            };
+
+            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(
+                invoiceId, preview.Items, quotation.Rate, ct);
+
+            sepidarContext.SalesInvoices.Add(invoice);
+            await sepidarContext.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return invoiceId;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    // Mirrors GenerateQuotationItemsAsync: allocate all item IDs before building
+    // the navigation collection, then save the parent and children together.
+    private async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(
+        int invoiceId, List<SepidarInvoiceExportItemPreview> items, decimal rate,
+        CancellationToken ct = default)
+    {
+        if (items == null || items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+        var itemCount = items.Count;
+        var lastItemId = await GetNextIdAsync("SLS.InvoiceItem", itemCount, ct);
+        var firstItemId = lastItemId - itemCount + 1;
+        var invoiceItems = new List<SalesInvoiceItemRecord>(itemCount);
+
+        for (var index = 0; index < itemCount; index++)
+        {
+            var item = items[index];
+            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 ||
+                item.QuotationItemId <= 0)
+                throw new InvalidOperationException(
+                    $"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
+
+                invoiceItems.Add(new SalesInvoiceItemRecord {
+                    InvoiceItemID = firstItemId + index,
+                    InvoiceRef = invoiceId,
+                    RowID = item.RowId,
+                    ItemRef = item.ItemRef,
+                    TracingRef = null,
+                    StockRef = item.StockRef,
+                    Quantity = item.Quantity,
+                    SecondaryQuantity = null,
+                    Fee = item.Fee,
+                    Price = item.Price,
+                    PriceInBaseCurrency = item.Price,
+                    Discount = item.Discount,
+                    DiscountInBaseCurrency = item.Discount,
+                    PriceInfoDiscountRate = 0,
+                    PriceInfoPriceDiscount = 0,
+                    PriceInfoPercentDiscount = 0,
+                    CustomerDiscount = 0,
+                    CustomerDiscountRate = 0,
+                    Addition = 0,
+                    AdditionInBaseCurrency = 0,
+                    Tax = item.Tax,
+                    TaxInBaseCurrency = item.Tax,
+                    Duty = 0,
+                    DutyInBaseCurrency = 0,
+                    NetPriceInBaseCurrency = item.NetPrice,
+                    Rate = rate,
+                    QuotationItemRef = item.QuotationItemId,
+                    Description = null,
+                    Description_En = null,
+                    DiscountInvoiceItemRef = null,
+                    ProductPackRef = null,
+                    ProductPackQuantity = null,
+                    AggregateAmountDiscountRate = 0,
+                    AggregateAmountPriceDiscount = 0,
+                    AggregateAmountPercentDiscount = 0,
+                    OrderItemRef = null,
+                    AdditionFactor_VatEffective = 0,
+                    AdditionFactorInBaseCurrency_VatEffective = 0,
+                    AdditionFactor_VatIneffective = 0,
+                    AdditionFactorInBaseCurrency_VatIneffective = 0,
+                    DiscountItemGroupRef = null,
+                    BankFeeForCurrencySale = 0,
+                    BankFeeForCurrencySaleInBaseCurrency = 0,
+                    IsAggregateDiscountInvoiceItem = false,
+                    TaxPayerCurrencyPurchaseRate = 0
+                });
+        }
+
+        return invoiceItems;
     }
 
     private async Task<List<QuotationItem>> GenerateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
