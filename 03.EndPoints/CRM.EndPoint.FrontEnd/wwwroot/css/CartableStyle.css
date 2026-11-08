@@ -1334,6 +1334,11 @@
     }
 
 
+    /* Remove the document list container border only on mobile. */
+    #cartableWorkspace .parent-all-factors .InfoData {
+        border: none;
+    }
+
     /* All role subtabs stay on one horizontally scrollable line on phones. */
     #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) {
         display: flex !important;
