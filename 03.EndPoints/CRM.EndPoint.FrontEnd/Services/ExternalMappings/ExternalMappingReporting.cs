@@ -283,7 +283,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 throw new ArgumentException("نوع نگاشت معتبر نیست.");
 
             page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 5, 40);
+            // pageSize=0 requests all saved mappings for the selected software/filter.
+            if (pageSize != 0)
+                pageSize = Math.Clamp(pageSize, 5, 40);
             search = (search ?? "").Trim();
             if (search.Length > 80) search = search[..80];
 
@@ -335,9 +337,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             }
 
             var total = await query.CountAsync(ct);
-            var mappings = await query.OrderByDescending(x => x.CreateDate)
-                .ThenBy(x => x.EntityId).Skip((page - 1) * pageSize)
-                .Take(pageSize).Select(x => new {
+            var ordered = query.OrderByDescending(x => x.CreateDate)
+                .ThenBy(x => x.EntityId);
+            var selected = pageSize == 0 ? ordered
+                : ordered.Skip((page - 1) * pageSize).Take(pageSize);
+            var mappings = await selected.Select(x => new {
                     x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId
                 }).ToListAsync(ct);
 
