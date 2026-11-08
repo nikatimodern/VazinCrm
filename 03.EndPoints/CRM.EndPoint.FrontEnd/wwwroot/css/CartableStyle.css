@@ -1333,39 +1333,44 @@
         font-size: 11px;
     }
 
-    /* Expand within the flex layout so radio filters and actions wrap naturally. */
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search {
+    /* The search grows in-flow and moves sibling filters to the next flex row. */
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search {
         flex: 0 0 34px;
         width: 34px;
         max-width: 34px;
         transition: flex-basis 260ms ease, max-width 260ms ease;
     }
 
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search:not(.is-search-open) input {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search:not(.is-search-open) input {
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search .search-icon {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search .search-icon {
         cursor: pointer;
     }
 
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search.is-search-open {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search.is-search-open {
         flex-basis: 100%;
         width: 100%;
         max-width: 100%;
     }
 
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search.is-search-open input {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search.is-search-open input {
         visibility: visible;
         opacity: 1;
         pointer-events: auto;
     }
+
+    /* The financial invoice search has a full-width Bootstrap column on mobile. */
+    #cartableWorkspace #FinancialInvoiceTab-pane .search-group.cartable-mobile-search {
+        order: 0 !important;
+    }
 }
 
 @media (max-width: 767px) and (prefers-reduced-motion: reduce) {
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search {
         transition: none;
     }
 }
