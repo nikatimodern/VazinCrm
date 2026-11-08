@@ -123,8 +123,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
         var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
             .Where(x => lineIds.Contains(x.QuotationItemRef))
-            .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1
-                    && x.Guid != factor.Id),
+            .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1),
                 item => item.InvoiceRef, invoice => invoice.InvoiceId,
                 (item, invoice) => new { item.QuotationItemRef, item.Quantity })
             .GroupBy(x => x.QuotationItemRef)
@@ -164,67 +163,14 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         Factor factor, PreFactor preFactor, int quotationId, CancellationToken ct = default)
     {
         var preview = await PreviewAsync(factor, preFactor, quotationId, ct);
-        // Invoice numbers belong to Sepidar, not CRM. A stable CRM factor GUID is
-        // used to identify safe retries if Sepidar insertion succeeded before CRM mapping.
-        var existing = await context.SalesInvoices.AsNoTracking()
-            .Where(x => x.Guid == factor.Id)
-            .ToListAsync(ct);
-        if (existing.Count > 0)
-        {
-            if (existing.Count != 1)
-                throw new InvalidOperationException("بیش از یک فاکتور سپیدار با شناسه این فاکتور CRM وجود دارد.");
-
-            var prior = existing[0];
-            var priorItems = await context.SalesInvoiceItems.AsNoTracking()
-                .Where(x => x.InvoiceRef == prior.InvoiceId).ToListAsync(ct);
-            var same = prior.QuotationRef == quotationId
-                && prior.FiscalYearRef == preview.FiscalYearRef
-                && prior.CustomerPartyRef > 0
-                && prior.Price == preview.Price
-                && prior.Discount == preview.Discount
-                && prior.Tax == preview.Tax
-                && prior.NetPriceInBaseCurrency == preview.NetPrice
-                && priorItems.Count == preview.Items.Count
-                && preview.Items.All(line => priorItems.Any(item =>
-                    item.QuotationItemRef == line.QuotationItemId
-                    && item.Quantity == line.Quantity
-                    && item.Fee == line.Fee
-                    && item.Price == line.Price
-                    && item.Discount == line.Discount
-                    && item.Tax == line.Tax));
-            if (same)
-                return prior.InvoiceId;
-
-            throw new InvalidOperationException(
-                "این فاکتور CRM قبلاً با اطلاعات متفاوت در سپیدار ثبت شده است.");
-        }
-
         var quotation = await context.Quotations.AsNoTracking()
             .SingleAsync(x => x.QuotationId == quotationId, ct);
-
-        // SLRef is an accounting account reference. Never hard-code it from a screenshot.
-        // Only use the existing, unambiguous setup for this customer and sale type.
-        var accounts = await context.SalesInvoices.AsNoTracking()
-            .Where(x => x.CustomerPartyRef == quotation.CustomerPartyRef
-                && x.SaleTypeRef == quotation.SaleTypeRef
-                && x.FiscalYearRef == quotation.FiscalYearRef
-                && x.CurrencyRef == quotation.CurrencyRef)
-            .Select(x => x.SLRef).Distinct().Take(2).ToListAsync(ct);
-
-        if (accounts.Count != 1 || accounts[0] <= 0)
-            throw new InvalidOperationException(
-                "حساب فروش (SLRef) برای این مشتری و نوع فروش در سپیدار به شکل یکتا مشخص نیست؛ ابتدا تنظیم حساب را بررسی کنید.");
 
         await using var transaction = await context.Database.BeginTransactionAsync(
             IsolationLevel.Serializable, ct);
         try
         {
-            // Recheck the stable identity and allocate the number within the same
-            // serializable transaction to prevent duplicate invoice numbering.
-            if (await context.SalesInvoices.AsNoTracking()
-                    .AnyAsync(x => x.Guid == factor.Id, ct))
-                throw new InvalidOperationException("فاکتور CRM در این فاصله در سپیدار ثبت شده است؛ دوباره بررسی کنید.");
-
+            // Allocate the next invoice number in the selected fiscal year.
             var invoiceNumber = await context.GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
             var invoiceId = await context.GetNextIdAsync("SLS.Invoice", ct: ct);
             var lastItemId = await context.GetNextIdAsync("SLS.InvoiceItem", preview.Items.Count, ct);
@@ -242,7 +188,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 Number = invoiceNumber,
                 Date = factor.DateMiladi!.Value, // فعلا
                 CurrencyRef = quotation.CurrencyRef,
-                SLRef = accounts[0],
+                SLRef = 725, // فعلا
                 DeliveryLocationRef = quotation.DeliveryLocationRef,
                 State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,

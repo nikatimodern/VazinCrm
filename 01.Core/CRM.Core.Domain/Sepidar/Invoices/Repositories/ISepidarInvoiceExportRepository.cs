@@ -11,7 +11,7 @@ public interface ISepidarInvoiceExportRepository
     Task<SepidarInvoiceExportPreview> PreviewAsync(Factor factor, PreFactor preFactor, int quotationId,
         CancellationToken cancellationToken = default);
 
-    // Idempotent by the originating CRM Factor GUID; Sepidar assigns its own number on save.
+    // Sepidar assigns the visible invoice number on save; the caller must check ExternalMapping to avoid duplicates.
     Task<int> CreateAsync(Factor factor, PreFactor preFactor, int quotationId,
         CancellationToken cancellationToken = default);
 }

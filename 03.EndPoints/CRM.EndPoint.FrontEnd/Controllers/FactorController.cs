@@ -3298,8 +3298,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (invoiceAlreadyLinked)
                     return Conflict("این فاکتور سپیدار قبلاً به فاکتور دیگری در CRM متصل شده است.");
 
-                // The Sepidar transaction is committed first. If CRM save fails,
-                // a retry reuses the invoice with the same number and quotation.
+                // The Sepidar insert commits before the CRM mapping is saved.
+                // If CRM mapping save fails, review the Sepidar invoice before retrying to avoid duplication.
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 db.ExternalMappings.Add(new ExternalMapping {
                     ExternalSoftwareId = request.ExternalSoftwareId,
