@@ -71,6 +71,19 @@ function initMobileHeaderCollapse() {
         }
     });
 
+    // Dismiss the floating header when clicking/touching anywhere outside its tools and handle.
+    document.addEventListener("pointerdown", event => {
+        if (!mobile.matches || !panel.classList.contains("is-open")) return;
+        if (panel.contains(event.target) || toggle.contains(event.target)) return;
+        setOpen(false);
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape" || !mobile.matches || !panel.classList.contains("is-open")) return;
+        setOpen(false);
+        toggle.focus({ preventScroll: true });
+    });
+
     mobile.addEventListener("change", syncViewport);
     syncViewport();
 }
