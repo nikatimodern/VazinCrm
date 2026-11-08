@@ -20,8 +20,11 @@
             .buttonPurple, .buttonPurple2, .buttonPurple3,
             .buttonGray, .buttonGray2,
             .buttonRed, .buttonOrange, .buttonOrange2,
-            .buttonCancel, .buttonCancel2, .buttonCancel3,
-            .buttonClose, .buttonUpdate
+            .buttonCancel, .buttonCancel2, .buttonCancel3, .buttonCancel-white,
+            .buttonClose, .buttonUpdate, .buttonYellow, .buttonDisabled,
+            .buttonCusPartial, .button_border,
+            .btn1, .btnTable, .btnLeft, .btnCenter, .btnRight,
+            .btnRightRed, .btnLeftGreen, .btn-purple, .btn-outline-purple
         ):not(.crm-mobile-density-exempt),
         .filter-switch label:not(.crm-mobile-density-exempt),
         .nav-tabs .nav-link:not(.crm-mobile-density-exempt),
