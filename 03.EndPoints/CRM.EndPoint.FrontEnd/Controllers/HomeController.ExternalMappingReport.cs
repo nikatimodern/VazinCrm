@@ -308,14 +308,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             {
                 var data = await sdb.SalesInvoices.AsNoTracking()
                     .Where(x => batch.Contains(x.InvoiceId))
-                    .Select(x => new { x.InvoiceId, x.Number, x.Date,
-                        x.NetPriceInBaseCurrency, x.CustomerRealName, x.CustomerPartyRef, x.FiscalYearRef })
+                    .Select(x => new {
+                        x.InvoiceId,
+                        Number = (int?)x.Number,
+                        Date = (DateTime?)x.Date,
+                        Amount = (decimal?)x.NetPriceInBaseCurrency,
+                        x.CustomerRealName,
+                        PartyId = (int?)x.CustomerPartyRef,
+                        FiscalYearId = (int?)x.FiscalYearRef
+                    })
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Invoice), x.InvoiceId)] = new MappingReportSide(
-                        "فاکتور سپیدار ۱", x.InvoiceId.ToString(), x.Number.ToString(),
-                        FormatLegacyPersianDate(x.Date), x.NetPriceInBaseCurrency,
-                        x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
+                        "فاکتور سپیدار ۱", x.InvoiceId.ToString(), x.Number?.ToString() ?? "-",
+                        x.Date.HasValue ? FormatLegacyPersianDate(x.Date.Value) : "-",
+                        x.Amount, x.CustomerRealName,
+                        $"PartyId: {x.PartyId} | FiscalYearRef: {x.FiscalYearId}");
             }
 
             foreach (var batch in partyIds.Chunk(350))
