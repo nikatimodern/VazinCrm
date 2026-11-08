@@ -87,11 +87,62 @@
 
         function canMap(row) {
             return row.status !== "saved" && row.status !== "blocked" &&
+                !["PartyAlreadyMappedToAnotherCustomer", "ExistingDuplicateCustomerParty",
+                    "ExistingCustomerMappingMismatch"].includes(row.reason) &&
+                // Duplicate-party conflicts must be resolved by selecting one CRM customer.
+                (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
                 [2,3,5].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
+        function selectedCrm(row) {
+            if (!row.crmCandidates?.length) return row.crm;
+            const selected = state.crmTargets.get(row.key);
+            return row.crmCandidates.find(item => item.id === selected)?.crm ||
+                { title: "مشتری CRM را انتخاب کنید", id: "", customer: "", number: "" };
+        }
+
+        function consolidateDuplicateParties(rows) {
+            const groups = new Map();
+            const result = [];
+            for (const row of rows) {
+                if (row.status !== "customerConflict" ||
+                    row.reason !== "DuplicateCrmCustomersForParty" ||
+                    !validId(row.sepidar?.id)) {
+                    result.push(row);
+                    continue;
+                }
+                const partyId = String(row.sepidar.id);
+                if (!groups.has(partyId)) groups.set(partyId, []);
+                groups.get(partyId).push(row);
+            }
+            for (const [partyId, matches] of groups) {
+                const uniqueCrm = new Map();
+                matches.forEach(row => uniqueCrm.set(row.crm.id, {
+                    id: row.crm.id,
+                    crm: row.crm,
+                    name: row.crm.customer || row.crm.title || "بدون نام",
+                    code: row.crm.number
+                }));
+                if (uniqueCrm.size < 2) {
+                    result.push(...matches);
+                    continue;
+                }
+                const item = matches[0];
+                result.push({
+                    ...item,
+                    key: "duplicate-party-" + partyId,
+                    crmCandidates: [...uniqueCrm.values()],
+                    sources: [...new Set(matches.flatMap(row => row.sources || []))],
+                    details: "برای این مشتری نرم‌افزار مالی، چند مشتری CRM پیدا شده است. " +
+                        "یک مشتری CRM را انتخاب کنید؛ مشتریان دیگر نگاشت نمی‌شوند."
+                });
+            }
+            return result;
+        }
+
         function targetValue(row) {
+            if (row.crmCandidates?.length) return String(row.sepidar.id);
             if (state.targets.has(row.key)) return state.targets.get(row.key);
             const value = row.status === "pending" && row.options?.length === 1
                 ? String(row.options[0].id) : "";
@@ -102,6 +153,10 @@
         function verifiedTarget(row) {
             const value = targetValue(row);
             if (!validId(value)) return false;
+            if (row.crmCandidates?.length)
+                return !!state.crmTargets.get(row.key) &&
+                    row.crmCandidates.some(item => item.id === state.crmTargets.get(row.key))
+                    && !!row.sepidar?.customer;
             const key = state.softwareId+":"+row.mapType+":"+value;
             if (state.preview.has(key)) return true;
             return row.status === "pending" && row.options?.length === 1 &&
@@ -110,6 +165,7 @@
         }
 
         function targetPreview(row) {
+            if (row.crmCandidates?.length) return row.sepidar;
             const value = targetValue(row);
             if (row.status === "saved" || row.status === "pending" && !value) return row.sepidar;
             if (!value) return {title:"معادل انتخاب نشده",number:"",customer:"",id:""};
@@ -153,6 +209,20 @@
 
         function inputTarget(row) {
             if (!canMap(row)) return "";
+            if (row.crmCandidates?.length) {
+                const chosen = state.crmTargets.get(row.key) || "";
+                return '<div class="lmr-map-action lmr-crm-choice">' +
+                    '<label><span>انتخاب مشتری CRM برای این مشتری ' + escape(state.softwareTitle) + '</span>' +
+                    '<select data-crm-target aria-label="انتخاب مشتری CRM">' +
+                    '<option value="">مشتری CRM را انتخاب کنید</option>' +
+                    row.crmCandidates.map(item =>
+                        '<option value="' + escape(item.id) + '" ' +
+                        (chosen === item.id ? "selected" : "") + '>' +
+                        escape(item.name) + ' — کد ' + escape(show(item.code)) + '</option>'
+                    ).join("") + '</select></label>' +
+                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+            }
             const value = targetValue(row);
             const ready = row.status === "pending" && row.options?.length === 1;
             if (ready)
@@ -177,16 +247,12 @@
         function card(row) {
             const title = reason(row);
             const isCustomer = Number(row.mapType) === 5;
-            const left = row.crm || {};
+            const left = selectedCrm(row) || {};
             const right = targetPreview(row) || {};
             const mappable = canMap(row);
             const stateClass = row.status === "saved" ? "saved" :
                 row.status === "pending" ? "proposal" : "problem";
             const related = (row.sources || []).filter(Boolean);
-            const relatedPreview = row.status === "customerConflict" && related.length
-                ? '<p class="lmr-source-preview">'+escape(related[0])+
-                    (related.length>1 ? ' <strong>('+escape(format.format(related.length-1))+' مورد دیگر در توضیحات)</strong>' : '')+
-                    '</p>' : '';
             const crmName = left.customer || left.title;
             const extName = right.customer || right.title;
             const leftNum = left.number;
@@ -204,7 +270,6 @@
                     '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
                     (row.status === "pending" || row.status === "saved" ? "" :
                         '<span class="lmr-short-reason">'+escape(title[0])+'</span>')+
-                    '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
                 '</header>'+
                 '<div class="lmr-pair">'+
                     '<div class="lmr-pair-side"><span>CRM</span><strong>'+escape(show(crmName))+'</strong>'+
@@ -217,8 +282,10 @@
                 '</div>'+
                 (row.status === "pending" || row.status === "saved" ? "" :
                     '<div class="lmr-one-line">'+escape(title[1])+'</div>')+
-                relatedPreview+
-                inputTarget(row)+
+                '<footer class="lmr-item-footer">'+
+                    '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
+                    inputTarget(row)+
+                '</footer>'+
                 '<div class="lmr-expanded" hidden>'+
                     '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
                     (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
@@ -378,6 +445,7 @@
                 (!model.type || Number(row.mapType) === Number(model.type)) &&
                 (model.status === "pending" || !model.reason || row.reason === model.reason) &&
                 (!keyword || [row.crm?.customer, row.crm?.number, row.crm?.id,
+                    ...(row.crmCandidates || []).flatMap(item => [item.name, item.code]),
                     row.sepidar?.customer, row.sepidar?.number,
                     row.details, ...(row.sources || [])]
                     .join(" ").toLocaleLowerCase("fa").includes(keyword)));
@@ -443,13 +511,14 @@
                 feedback("proposal", "محاسبه پیشنهادها ناموفق بود.", true);
                 return;
             }
-            model.rows = result.rows || [];
+            model.rows = consolidateDuplicateParties(result.rows || []);
             model.summary = result.summary || {};
             model.loaded = true;
             model.page = 1;
             state.selected.clear();
             state.targets.clear();
             state.preview.clear();
+            state.crmTargets.clear();
             fillTypes("proposal");
             updateSummary();
             renderProposals();
@@ -479,7 +548,7 @@
 
         function payload(row) {
             if (!canMap(row) || !verifiedTarget(row)) return null;
-            return { entityId: row.crm.id, mapType: Number(row.mapType),
+            return { entityId: selectedCrm(row).id, mapType: Number(row.mapType),
                 exEntityId: targetValue(row) };
         }
 
@@ -514,6 +583,7 @@
             state.selected.clear();
             state.targets.clear();
             state.preview.clear();
+            state.crmTargets.clear();
             state.proposal.loaded = false;
             state.proposal.rows = [];
             state.proposal.summary = null;
@@ -582,7 +652,20 @@
             const panel = event.target.closest("[data-key]");
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
-            if (event.target.matches("[data-map-target]")) {
+            if (event.target.matches("[data-crm-target]")) {
+                const id = event.target.value;
+                state.crmTargets.set(row.key, id);
+                state.selected.delete(row.key);
+                const expanded = !panel.querySelector(".lmr-expanded").hidden;
+                panel.outerHTML = card(row);
+                const updated = [...proposalRoot.querySelectorAll("[data-key]")]
+                    .find(item => item.dataset.key === row.key);
+                if (expanded && updated) {
+                    updated.querySelector(".lmr-expanded").hidden = false;
+                    updated.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
+                }
+                updateSelection();
+            } else if (event.target.matches("[data-map-target]")) {
                 const id = event.target.value.trim();
                 state.targets.set(row.key, id);
                 state.selected.delete(row.key);
