@@ -3287,7 +3287,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return Conflict("این فاکتور قبلاً در نرم‌افزار انتخاب‌شده ثبت شده است.");
 
                 var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
-                var invoiceId = await repository.CreateAsync(factor, preFactor, quotationId, ct);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+                var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, ct);
 
                 var invoiceAlreadyLinked = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
                     x.EntityId != factor.Id
