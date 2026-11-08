@@ -2,6 +2,7 @@
     var canAccessFinancialExpert = User.IsAdmin() || User.IsFinancialExpert();
     var canAccessFinancialAdmin = false; //User.IsAdmin() || User.IsFinancialAdmin();
     var canAccessSalesExpert = User.IsAdmin() || User.IsSalesExpert();
+    var showSalesExpertCartableTab = false; // Temporarily disabled on all viewport sizes.
     var canAccessSalesAdmin = User.IsAdmin() || User.IsSalesAdmin();
     var canAccessTaminExpert = User.IsAdmin() || User.IsTamin() || User.IsManagingDirector();
     var canAccessManagingDirector = User.IsAdmin() || User.IsManagingDirector();
@@ -24,7 +25,7 @@
                 <p>مدیر مالی</p>
             </div>
         }
-        @if (canAccessSalesExpert) {
+        @if (showSalesExpertCartableTab && canAccessSalesExpert) {
             <div class="TCar" id="TSalesExpertId" onclick="GetCartable('TSalesExpertId')">
                 <span class="badge-count cartable-tab-count d-none"></span>
                 <p>کارشناس فروش</p>
@@ -61,7 +62,7 @@
             <partial name="_CartableFinancialAdmin" /> @*کارتابل مدیر مالی*@
         }
 
-        @if (canAccessSalesExpert) {
+        @if (showSalesExpertCartableTab && canAccessSalesExpert) {
             <partial name="_CartableSalesExpert" /> @*کارتابل کارشناس فروش*@
         }
 
