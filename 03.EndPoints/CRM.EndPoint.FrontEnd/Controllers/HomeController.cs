@@ -38,7 +38,7 @@ using CRM.Core.Domain.Deals.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
-    public class HomeController : Controller {
+    public partial class HomeController : Controller {
         private readonly IWebHostEnvironment appEnvironment;
         private readonly IConfiguration conf;
         private readonly UserManager<AppUser> userManager;
