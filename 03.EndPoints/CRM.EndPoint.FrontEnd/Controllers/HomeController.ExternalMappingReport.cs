@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -193,6 +194,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             });
         }
 
+        private static string FormatLegacyPersianDate(DateTime date)
+        {
+            var calendar = new PersianCalendar();
+            return $"{calendar.GetYear(date):0000}/{calendar.GetMonth(date):00}/{calendar.GetDayOfMonth(date):00}";
+        }
+
         private static int? ExtractLegacyTargetId(string details, string targetName)
         {
             if (string.IsNullOrEmpty(details)) return null;
@@ -274,7 +281,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 foreach (var x in data)
                     externalSides[(nameof(Quotation), x.QuotationId)] = new MappingReportSide(
                         "پیش‌فاکتور سپیدار ۱", x.QuotationId.ToString(), x.Number.ToString(),
-                        x.Date.ToString("yyyy/MM/dd"), x.NetPriceInBaseCurrency,
+                        FormatLegacyPersianDate(x.Date), x.NetPriceInBaseCurrency,
                         x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
             }
 
@@ -288,7 +295,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 foreach (var x in data)
                     externalSides[(nameof(Invoice), x.InvoiceId)] = new MappingReportSide(
                         "فاکتور سپیدار ۱", x.InvoiceId.ToString(), x.Number.ToString(),
-                        x.Date.ToString("yyyy/MM/dd"), x.NetPriceInBaseCurrency,
+                        FormatLegacyPersianDate(x.Date), x.NetPriceInBaseCurrency,
                         x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
             }
 
