@@ -37,6 +37,17 @@ function initCartableMobileSearch() {
         if (!input || !icon) return;
 
         group.classList.add("cartable-mobile-search");
+        const clearButton = group.querySelector(".cartable-mobile-search-clear");
+        const syncClearState = () => group.classList.toggle("has-search-value", Boolean(input.value));
+
+        clearButton?.addEventListener("click", event => {
+            event.preventDefault();
+            input.value = "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            if (mobile.matches) input.focus({ preventScroll: true });
+            // Reuse the existing magnifier handler to refresh the list with an empty search.
+            icon.click();
+        });
 
         const expand = () => {
             group.classList.add("is-search-open");
@@ -93,6 +104,7 @@ function initCartableMobileSearch() {
             if (mobile.matches) expand();
         });
         input.addEventListener("input", () => {
+            syncClearState();
             if (mobile.matches && input.value.trim()) expand();
         });
         input.addEventListener("blur", () => {
@@ -101,6 +113,7 @@ function initCartableMobileSearch() {
             }, 150);
         });
 
+        syncClearState();
         syncViewport();
         searches.push(syncViewport);
     });
