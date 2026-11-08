@@ -37,11 +37,6 @@ function initCartableMobileSearch() {
         if (!input || !icon) return;
 
         group.classList.add("cartable-mobile-search");
-        icon.setAttribute("role", "button");
-        icon.setAttribute("tabindex", "0");
-        icon.setAttribute("aria-label", "باز کردن جستجو");
-        icon.setAttribute("aria-controls", input.id);
-
         const expand = () => {
             group.classList.add("is-search-open");
             icon.setAttribute("aria-expanded", "true");
@@ -54,10 +49,16 @@ function initCartableMobileSearch() {
         const syncViewport = () => {
             if (!mobile.matches) {
                 group.classList.remove("is-search-open");
-                icon.setAttribute("aria-expanded", "false");
-            } else if (input.value.trim()) {
-                expand();
+                ["role", "tabindex", "aria-label", "aria-controls", "aria-expanded"]
+                    .forEach(attribute => icon.removeAttribute(attribute));
+                return;
             }
+            icon.setAttribute("role", "button");
+            icon.setAttribute("tabindex", "0");
+            icon.setAttribute("aria-label", "باز کردن جستجو");
+            icon.setAttribute("aria-controls", input.id);
+            icon.setAttribute("aria-expanded", group.classList.contains("is-search-open") ? "true" : "false");
+            if (input.value.trim()) expand();
         };
 
         icon.addEventListener("click", () => {
