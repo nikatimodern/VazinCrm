@@ -32,12 +32,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         private sealed record MappingReportEntry(
             string Key, string Kind, Guid EntityId, string Status,
             string Reason, string Details, string TargetEntity, int? TargetId,
-            string[] Sources, int MapType, string TargetRaw = null);
+            string[] Sources, int MapType, string TargetRaw = null, int[] CandidateIds = null);
 
         private sealed record MappingReportRow(
             string Key, string Kind, string Status, string Reason,
             string Details, string[] Sources,
-            MappingReportSide Crm, MappingReportSide Sepidar, int MapType);
+            MappingReportSide Crm, MappingReportSide Sepidar, int MapType,
+            List<MappingReportTargetOption> Options);
+
+        private sealed record MappingReportTargetOption(int Id, string Title, string Description);
 
         [Authorize(Roles = AppRoles.Admin)]
         [HttpGet]
@@ -51,11 +54,73 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             var plan = await BuildLegacySepidarMappingPlanAsync(ct);
             var entries = new List<MappingReportEntry>();
 
-            // For conflicts with multiple possible Sepidar customers, display ALL
-            // candidate Party names (not just the first PartyId).
-            var candidatePartyIds = plan.CustomerConflicts
-                .SelectMany(x => x.SepidarPartyIds).Where(x => x > 0)
+            // Render references in business language: which CRM customer belongs to
+            // which Sepidar invoice/quotation and which Sepidar customer it uses.
+            var evidence = new List<(Guid CustomerId, string Type, int ExternalId)>();
+            foreach (var conflict in plan.CustomerConflicts)
+            {
+                foreach (var source in conflict.SourceDocuments)
+                {
+                    var crmMatch = Regex.Match(source, @"CustomerId=([0-9a-fA-F-]{36})");
+                    var crmId = crmMatch.Success && Guid.TryParse(crmMatch.Groups[1].Value, out var parsed)
+                        ? parsed : conflict.CustomerId;
+                    foreach (Match m in Regex.Matches(source, @"(Quotation|Invoice):(\d+)"))
+                        if (int.TryParse(m.Groups[2].Value, out var documentId))
+                            evidence.Add((crmId, m.Groups[1].Value, documentId));
+                }
+            }
+
+            var relatedCustomerIds = evidence.Select(x => x.CustomerId)
+                .Concat(plan.CustomerConflicts.Select(x => x.CustomerId))
                 .Distinct().ToArray();
+            var crmCustomerNames = new Dictionary<Guid, (string Name, int Code)>();
+            foreach (var batch in relatedCustomerIds.Chunk(350))
+            {
+                var rows = await db.Customers.AsNoTracking()
+                    .Where(x => batch.Contains(x.Id))
+                    .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName })
+                    .ToListAsync(ct);
+                foreach (var row in rows)
+                {
+                    var name = $"{row.CompanyName} {row.AgentName}".Trim();
+                    crmCustomerNames[row.Id] = (string.IsNullOrWhiteSpace(name)
+                        ? $"مشتری کد {row.CustomerCode}" : name, row.CustomerCode);
+                }
+            }
+
+            var quoteIds = evidence.Where(x => x.Type == "Quotation")
+                .Select(x => x.ExternalId).Distinct().ToArray();
+            var invoiceIds = evidence.Where(x => x.Type == "Invoice")
+                .Select(x => x.ExternalId).Distinct().ToArray();
+
+            var linkedDocuments = new Dictionary<(string Type, int Id),
+                (int Number, int PartyId)>();
+            foreach (var batch in quoteIds.Chunk(350))
+            {
+                var rows = await sdb.Quotations.AsNoTracking()
+                    .Where(x => batch.Contains(x.QuotationId))
+                    .Select(x => new { x.QuotationId, x.Number, x.CustomerPartyRef })
+                    .ToListAsync(ct);
+                foreach (var row in rows)
+                    linkedDocuments[("Quotation", row.QuotationId)] = (row.Number, row.CustomerPartyRef);
+            }
+            foreach (var batch in invoiceIds.Chunk(350))
+            {
+                var rows = await sdb.SalesInvoices.AsNoTracking()
+                    .Where(x => batch.Contains(x.InvoiceId))
+                    .Select(x => new {
+                        x.InvoiceId, Number = (int?)x.Number,
+                        PartyId = (int?)x.CustomerPartyRef
+                    }).ToListAsync(ct);
+                foreach (var row in rows)
+                    linkedDocuments[("Invoice", row.InvoiceId)] =
+                        (row.Number ?? row.InvoiceId, row.PartyId ?? 0);
+            }
+
+            var candidatePartyIds = plan.CustomerConflicts
+                .SelectMany(x => x.SepidarPartyIds)
+                .Concat(linkedDocuments.Values.Select(x => x.PartyId))
+                .Where(x => x > 0).Distinct().ToArray();
             var partyNames = new Dictionary<int, string>();
             foreach (var batch in candidatePartyIds.Chunk(350))
             {
@@ -68,16 +133,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
             foreach (var conflict in plan.CustomerConflicts)
             {
+                var related = evidence
+                    .Where(x => x.CustomerId == conflict.CustomerId
+                        || conflict.SourceDocuments.Any(source =>
+                            source.Contains($"CustomerId={x.CustomerId}")))
+                    .Distinct()
+                    .Select(x => {
+                        var crmName = crmCustomerNames.GetValueOrDefault(x.CustomerId);
+                        var crmTitle = !string.IsNullOrWhiteSpace(crmName.Name)
+                            ? $"{crmName.Name} (کد {crmName.Code})"
+                            : $"شناسه مشتری CRM: {x.CustomerId}";
+                        if (!linkedDocuments.TryGetValue((x.Type, x.ExternalId), out var document))
+                            return $"مشتری CRM «{crmTitle}» ← { (x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور") } سپیدار با شناسه {x.ExternalId} (پیدا نشد)";
+                        var partyTitle = partyNames.GetValueOrDefault(document.PartyId, "نام ثبت نشده");
+                        var typeTitle = x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور";
+                        return $"مشتری CRM «{crmTitle}» ← {typeTitle} سپیدار شماره {document.Number} ← مشتری سپیدار «{partyTitle}» (کد {document.PartyId})";
+                    }).Distinct().ToArray();
+
                 var partyDescriptions = conflict.SepidarPartyIds.Select(id =>
-                    $"سپیدار: PartyId={id} | {partyNames.GetValueOrDefault(id, "شخص پیدا نشد")}");
-                var sources = conflict.SourceDocuments.Concat(partyDescriptions).ToArray();
+                    $"گزینه مشتری سپیدار: «{partyNames.GetValueOrDefault(id, "نام ثبت نشده")}» (کد {id})");
+
+                var sources = related.Concat(partyDescriptions).ToArray();
                 entries.Add(new MappingReportEntry(
                     $"customer-conflict-{conflict.CustomerId}", nameof(Customer),
                     conflict.CustomerId, "customerConflict", conflict.Reason,
-                    $"شناسه‌های احتمالی مشتری در سپیدار: {string.Join("، ", conflict.SepidarPartyIds)}",
+                    $"این مشتری CRM به {conflict.SepidarPartyIds.Count} مشتری احتمالی در سپیدار مربوط شده است. ردیف‌های مرتبط را باز کنید تا ارتباط هر پیش‌فاکتور یا فاکتور روشن شود.",
                     nameof(Party), conflict.SepidarPartyIds.Count > 0 && conflict.SepidarPartyIds[0] > 0
                         ? conflict.SepidarPartyIds[0] : (int?)null,
-                    sources, (int)ExternalMappingTypeEnum.مشتری));
+                    sources, (int)ExternalMappingTypeEnum.مشتری, null,
+                    conflict.SepidarPartyIds.ToArray()));
             }
 
             foreach (var issue in plan.Issues)
@@ -104,7 +188,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     issue.EntityId, status, issue.Reason,
                     issue.Details, targetName, targetId, relatedDocuments,
                     kind == nameof(PreFactor) ? (int)ExternalMappingTypeEnum.پیش_فاکتور
-                        : (int)ExternalMappingTypeEnum.فاکتور));
+                        : (int)ExternalMappingTypeEnum.فاکتور,
+                    null, ExtractLegacyCandidateIds(issue.Details, targetName)));
             }
 
             foreach (var mapping in plan.Pending)
@@ -115,7 +200,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     mapping.EntityId, "pending", "ReadyForReview",
                     "این ارتباط فقط پیشنهاد شده و هنوز در ExternalMapping ذخیره نشده است.",
                     mapping.ExEntityName, targetId > 0 ? targetId : null, Array.Empty<string>(),
-                    (int)mapping.MapType, mapping.ExEntityId));
+                    (int)mapping.MapType, mapping.ExEntityId,
+                    targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
             var rows = await EnrichMappingEntriesAsync(entries, Sepidar1SoftwareId, ct);
@@ -248,6 +334,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                 ? id : null;
         }
 
+        private static int[] ExtractLegacyCandidateIds(string details, string targetName)
+        {
+            if (string.IsNullOrWhiteSpace(details)) return Array.Empty<int>();
+            var prefix = targetName == nameof(Quotation) ? "QuotationIds?"
+                : targetName == nameof(Invoice) ? "InvoiceIds?" : "PartyIds?";
+            var pattern = @"(?:" + prefix + @"|ID)=(\d+(?:\s*,\s*\d+)*)";
+            return Regex.Matches(details, pattern).Cast<Match>()
+                .SelectMany(x => Regex.Matches(x.Groups[1].Value, @"\d+").Cast<Match>())
+                .Select(x => int.TryParse(x.Value, out var id) ? id : 0)
+                .Where(x => x > 0).Distinct().ToArray();
+        }
+
         private async Task<List<MappingReportRow>> EnrichMappingEntriesAsync(
             List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
         {
@@ -348,12 +446,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             var sepidar = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb
                 : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
-            var quotationIds = entries.Where(x => x.TargetEntity == nameof(Quotation) && x.TargetId > 0)
-                .Select(x => x.TargetId!.Value).Distinct().ToArray();
-            var invoiceIds = entries.Where(x => x.TargetEntity == nameof(Invoice) && x.TargetId > 0)
-                .Select(x => x.TargetId!.Value).Distinct().ToArray();
-            var partyIds = entries.Where(x => x.TargetEntity == nameof(Party) && x.TargetId > 0)
-                .Select(x => x.TargetId!.Value).Distinct().ToArray();
+            var quotationIds = entries.Where(x => x.TargetEntity == nameof(Quotation))
+                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
+                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
+                .Where(x => x > 0).Distinct().ToArray();
+            var invoiceIds = entries.Where(x => x.TargetEntity == nameof(Invoice))
+                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
+                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
+                .Where(x => x > 0).Distinct().ToArray();
+            var partyIds = entries.Where(x => x.TargetEntity == nameof(Party))
+                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
+                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
+                .Where(x => x > 0).Distinct().ToArray();
 
             if (sepidar != null)
             {
@@ -423,8 +527,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         ? "شناسه ثبت‌شده در نرم‌افزار انتخاب‌شده"
                         : "برای این وضعیت معادل قطعی مشخص نیست.");
 
+                var options = (entry.CandidateIds ?? Array.Empty<int>())
+                    .Distinct().Where(id => id > 0)
+                    .Select(id => {
+                        var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
+                        return new MappingReportTargetOption(id,
+                            candidate?.Customer is { Length: > 0 } ? candidate.Customer
+                                : candidate?.Number ?? $"{entry.TargetEntity} شماره {id}",
+                            candidate != null
+                                ? $"کد {id} | شماره {candidate.Number}"
+                                : $"شناسه {id}");
+                    }).ToList();
+
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
-                    entry.Reason, entry.Details, entry.Sources, crm, sepidar, entry.MapType);
+                    entry.Reason, entry.Details, entry.Sources, crm, sepidar,
+                    entry.MapType, options);
             }).ToList();
         }
     }
