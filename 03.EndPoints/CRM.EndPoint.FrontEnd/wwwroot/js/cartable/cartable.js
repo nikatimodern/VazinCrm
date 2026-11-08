@@ -23,20 +23,21 @@ function initCartableViewport() {
     }, { once:true });
 }
 
-/** Animate the existing document search in-flow on mobile without changing its input styling. */
+/** Keep the existing search handlers, but use the first mobile icon click only to expand. */
 function initCartableMobileSearch() {
-    const pane = document.getElementById("CPrefactorFactorId");
-    if (!pane) return;
+    const root = document.getElementById("cartableWorkspace");
+    if (!root) return;
 
     const mobile = window.matchMedia("(max-width: 767px)");
     const searches = [];
 
-    pane.querySelectorAll(".cartable-list-toolbar .search-group").forEach(group => {
+    root.querySelectorAll(".cartable-pane .search-group").forEach(group => {
         const input = group.querySelector("input[type='text'], input[type='search']");
         const icon = group.querySelector(".search-icon");
         if (!input || !icon) return;
 
         group.classList.add("cartable-mobile-search");
+
         const expand = () => {
             group.classList.add("is-search-open");
             icon.setAttribute("aria-expanded", "true");
@@ -55,31 +56,40 @@ function initCartableMobileSearch() {
             }
             icon.setAttribute("role", "button");
             icon.setAttribute("tabindex", "0");
-            icon.setAttribute("aria-label", "باز کردن جستجو");
+            icon.setAttribute("aria-label", "جستجو");
             icon.setAttribute("aria-controls", input.id);
             icon.setAttribute("aria-expanded", group.classList.contains("is-search-open") ? "true" : "false");
             if (input.value.trim()) expand();
         };
 
-        icon.addEventListener("click", () => {
-            if (!mobile.matches) return;
+        // Capture the first click before initSearchInput's regular click-to-search handler.
+        icon.addEventListener("click", event => {
+            if (!mobile.matches || group.classList.contains("is-search-open")) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
             expand();
-            input.focus();
-        });
+            input.focus({ preventScroll: true });
+        }, true);
+
         icon.addEventListener("keydown", event => {
             if (!mobile.matches || (event.key !== "Enter" && event.key !== " ")) return;
             event.preventDefault();
+            event.stopPropagation();
+            if (group.classList.contains("is-search-open")) {
+                icon.click();
+                return;
+            }
             expand();
-            input.focus();
+            input.focus({ preventScroll: true });
+        });
+
+        input.addEventListener("focus", () => {
+            if (mobile.matches) expand();
         });
         input.addEventListener("input", () => {
             if (mobile.matches && input.value.trim()) expand();
         });
-        input.addEventListener("focus", () => {
-            if (mobile.matches) expand();
-        });
         input.addEventListener("blur", () => {
-            // A filled search remains expanded after blur; an empty one can collapse.
             window.setTimeout(() => {
                 if (mobile.matches && document.activeElement !== input) collapse();
             }, 150);
