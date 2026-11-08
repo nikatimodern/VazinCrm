@@ -184,7 +184,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                         && x.ExEntityId == targetId.Value.ToString())
                     : null;
                 var relatedDocuments = relatedGroup?.CrmDocuments
-                    .Select(x => $"CRM {x.EntityName} شماره {x.SerialNumber} | ID={x.EntityId} | مبلغ={x.PaymentAmount}")
+                    .Select(x => $"{(x.EntityName == nameof(PreFactor) ? "پیش‌فاکتور" : "فاکتور")} CRM شماره {x.SerialNumber} با مبلغ {x.PaymentAmount:N0} ریال")
                     .ToArray() ?? Array.Empty<string>();
                 entries.Add(new MappingReportEntry(
                     $"issue-{kind}-{issue.EntityId}-{issue.Reason}", kind,
