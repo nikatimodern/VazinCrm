@@ -8,6 +8,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
@@ -1027,6 +1028,55 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         }
 
         return result;
+    }
+
+    // Reuse the selected Sepidar service/context for all readable preview references.
+    // Item and stock lookups include historical (possibly inactive) records because
+    // the exported invoice must use exactly the entities stored on the quotation.
+    public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(
+        SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    {
+        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
+            ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
+
+        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
+            ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
+        preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
+            ? customer.FullName
+            : $"{customer.DlCode} - {customer.FullName}";
+
+        var saleType = (await GetSaleTypes(ct))
+            .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
+            ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
+        preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
+
+        var itemIds = preview.Items.Select(x => x.ItemRef).Distinct().ToArray();
+        var stockIds = preview.Items.Select(x => x.StockRef).Distinct().ToArray();
+
+        var items = await sepidarContext.Items.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemID))
+            .Select(x => new { x.ItemID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.ItemID, ct);
+
+        var stocks = await sepidarContext.Stocks.AsNoTracking()
+            .Where(x => stockIds.Contains(x.StockID))
+            .Select(x => new { x.StockID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.StockID, ct);
+
+        foreach (var line in preview.Items)
+        {
+            if (!items.TryGetValue(line.ItemRef, out var item))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: کالای متصل به پیش‌فاکتور سپیدار ({line.ItemRef}) پیدا نشد.");
+            if (!stocks.TryGetValue(line.StockRef, out var stock))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: انبار متصل به پیش‌فاکتور سپیدار ({line.StockRef}) پیدا نشد.");
+
+            line.ItemTitle = $"{item.Code} - {TextService.NormalizePersianText(item.Title)}";
+            line.StockTitle = $"{stock.Code} - {TextService.NormalizePersianText(stock.Title)}";
+        }
+
+        return preview;
     }
 
     //--------------------------------------------------------- QUOTATION ---------------------------------------------------------
