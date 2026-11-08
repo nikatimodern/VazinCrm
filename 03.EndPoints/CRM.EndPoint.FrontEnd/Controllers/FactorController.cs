@@ -3257,6 +3257,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
                 var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+                await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
                 return Ok(new { softwareTitle, preview });
             }
             catch (InvalidOperationException ex)
