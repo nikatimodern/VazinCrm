@@ -23,7 +23,7 @@
             !(typeof PageRuntime !== "undefined" && PageRuntime.current?.signal?.aborted);
 
         const statusNames = {
-            saved:"ثبت‌شده", pending:"پیشنهادی", customerConflict:"تعارض مشتری",
+            saved:"ثبت‌شده", pending:"آماده ثبت", customerConflict:"تعارض مشتری",
             ambiguous:"نگاشت مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
         };
         const reasonNames = {
@@ -274,6 +274,7 @@
                 button.setAttribute("aria-pressed", String(active));
             });
             get("lmrSelectionActions").hidden = !state.proposal.loaded ||
+                state.proposal.status === "blocked" ||
                 !state.manualIds.includes(state.softwareId);
         }
 
