@@ -603,11 +603,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     .Distinct().Where(id => id > 0)
                     .Select(id => {
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
+                        var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
+                            : entry.TargetEntity == nameof(Invoice) ? "فاکتور" : "مشتری";
+                        var readableTitle = candidate == null
+                            ? $"{itemType} با شناسه {id}"
+                            : entry.TargetEntity == nameof(Party)
+                                ? candidate.Customer
+                                : $"{itemType} شماره {candidate.Number} — {candidate.Customer}";
                         return new MappingReportTargetOption(id,
-                            candidate?.Customer is { Length: > 0 } ? candidate.Customer
-                                : candidate?.Number ?? $"{entry.TargetEntity} شماره {id}",
+                            readableTitle,
                             candidate != null
-                                ? $"کد {id} | شماره {candidate.Number}"
+                                ? $"شناسه {id} | شماره {candidate.Number}"
                                 : $"شناسه {id}");
                     }).ToList();
 
