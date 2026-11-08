@@ -1378,10 +1378,10 @@
         display: none;
     }
 
-    /* The supply pane's p-2 and gap-3 create empty bands around its subtabs. */
+    /* Override Bootstrap's !important gap-3 on the mobile supply pane. */
     #cartableWorkspace #CTaminExpertId {
         padding-block: 0 !important;
-        row-gap: 0;
+        row-gap: 0 !important;
     }
 
     #cartableWorkspace #CTaminExpertId #tabContentTaminExperts {
