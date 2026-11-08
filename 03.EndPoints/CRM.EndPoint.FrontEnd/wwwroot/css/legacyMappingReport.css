@@ -78,6 +78,7 @@
 .lmr-pair { display: flex; flex-direction: column; min-width: 0; }
 .lmr-pair span { color: var(--lmr-muted); font-size: 10px; }
 .lmr-pair strong { color: #212529; font: 500 12px/1.6 IRANSansMedium,sans-serif; overflow-wrap: anywhere; }
+.lmr-pair.is-mismatch strong { color: var(--lmr-danger); font-family: IRANSansBold,sans-serif; background: var(--lmr-danger-light); border-radius: 4px; padding-inline: 4px; width: fit-content; }
 .lmr-pair.wide { grid-column: 1/-1; }
 .lmr-side-id { color: var(--lmr-muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: left; }
 .lmr-compare-symbol { display: grid; place-items: center; color: var(--lmr-muted); }
