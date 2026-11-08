@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -10,7 +11,6 @@ using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
 
@@ -100,7 +100,8 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 RowId = lines.Count + 1,
                 QuotationItemId = quotationItem.QuotationItemID,
                 ItemRef = quotationItem.ItemRef,
-                ItemTitle = factorItem.ProductSmallName ?? factorItem.Product,
+                CrmProductTitle = $"{factorItem.ProductSmallName} {factorItem.Product}".Trim(),
+                ItemTitle = string.Empty, // Resolved from the linked Sepidar quotation item by SepidarService.
                 StockRef = quotationItem.StockRef,
                 StockTitle = quotationItem.StockRef.ToString(CultureInfo.InvariantCulture),
                 Quantity = quantity,
@@ -122,7 +123,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
             .Where(x => lineIds.Contains(x.QuotationItemRef))
             .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1
-                    && !(x.Number == factor.SerialNumber && x.QuotationRef == quotationId)),
+                    && x.Guid != factor.Id),
                 item => item.InvoiceRef, invoice => invoice.InvoiceId,
                 (item, invoice) => new { item.QuotationItemRef, item.Quantity })
             .GroupBy(x => x.QuotationItemRef)
@@ -153,8 +154,9 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         return new SepidarInvoiceExportPreview {
             QuotationId = quotationId,
             QuotationNumber = quotation.Number,
-            InvoiceNumber = factor.SerialNumber,
+            InvoiceNumber = null, // Assigned at creation from the last number in Sepidar fiscal year.
             InvoiceDate = factor.DateMiladi.Value,
+            InvoiceDateText = factor.Date,
             CustomerName = quotation.CustomerRealName,
             SaleTypeRef = quotation.SaleTypeRef,
             FiscalYearRef = quotation.FiscalYearRef,
@@ -170,37 +172,39 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         Factor factor, PreFactor preFactor, int quotationId, CancellationToken ct = default)
     {
         var preview = await PreviewAsync(factor, preFactor, quotationId, ct);
+        // Invoice numbers belong to Sepidar, not CRM. A stable CRM factor GUID is
+        // used to identify safe retries if Sepidar insertion succeeded before CRM mapping.
         var existing = await context.SalesInvoices.AsNoTracking()
-            .Where(x => x.Number == factor.SerialNumber && x.FiscalYearRef == preview.FiscalYearRef)
-            .Select(x => new { x.InvoiceId, x.QuotationRef }).ToListAsync(ct);
-
-        if (existing.Count != 0)
+            .Where(x => x.Guid == factor.Id)
+            .ToListAsync(ct);
+        if (existing.Count > 0)
         {
-            if (existing.Count == 1 && existing[0].QuotationRef == quotationId)
-            {
-                var priorInvoice = await context.SalesInvoices.AsNoTracking()
-                    .SingleAsync(x => x.InvoiceId == existing[0].InvoiceId, ct);
-                var priorItems = await context.SalesInvoiceItems.AsNoTracking()
-                    .Where(x => x.InvoiceRef == priorInvoice.InvoiceId).ToListAsync(ct);
+            if (existing.Count != 1)
+                throw new InvalidOperationException("بیش از یک فاکتور سپیدار با شناسه این فاکتور CRM وجود دارد.");
 
-                var isSameInvoice = priorInvoice.Price == preview.Price
-                    && priorInvoice.Discount == preview.Discount
-                    && priorInvoice.Tax == preview.Tax
-                    && priorInvoice.NetPriceInBaseCurrency == preview.NetPrice
-                    && priorItems.Count == preview.Items.Count
-                    && preview.Items.All(line => priorItems.Any(item =>
-                        item.QuotationItemRef == line.QuotationItemId
-                        && item.Quantity == line.Quantity
-                        && item.Fee == line.Fee
-                        && item.Price == line.Price
-                        && item.Discount == line.Discount
-                        && item.Tax == line.Tax));
+            var prior = existing[0];
+            var priorItems = await context.SalesInvoiceItems.AsNoTracking()
+                .Where(x => x.InvoiceRef == prior.InvoiceId).ToListAsync(ct);
+            var same = prior.QuotationRef == quotationId
+                && prior.FiscalYearRef == preview.FiscalYearRef
+                && prior.CustomerPartyRef > 0
+                && prior.Price == preview.Price
+                && prior.Discount == preview.Discount
+                && prior.Tax == preview.Tax
+                && prior.NetPriceInBaseCurrency == preview.NetPrice
+                && priorItems.Count == preview.Items.Count
+                && preview.Items.All(line => priorItems.Any(item =>
+                    item.QuotationItemRef == line.QuotationItemId
+                    && item.Quantity == line.Quantity
+                    && item.Fee == line.Fee
+                    && item.Price == line.Price
+                    && item.Discount == line.Discount
+                    && item.Tax == line.Tax));
+            if (same)
+                return prior.InvoiceId;
 
-                if (isSameInvoice)
-                    return priorInvoice.InvoiceId;
-            }
-
-            throw new InvalidOperationException("شماره فاکتور در این سال مالی قبلاً برای سند متفاوتی استفاده شده است.");
+            throw new InvalidOperationException(
+                "این فاکتور CRM قبلاً با اطلاعات متفاوت در سپیدار ثبت شده است.");
         }
 
         var quotation = await context.Quotations.AsNoTracking()
@@ -219,17 +223,19 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             throw new InvalidOperationException(
                 "حساب فروش (SLRef) برای این مشتری و نوع فروش در سپیدار به شکل یکتا مشخص نیست؛ ابتدا تنظیم حساب را بررسی کنید.");
 
-        await using var transaction = await context.Database.BeginTransactionAsync(ct);
+        await using var transaction = await context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, ct);
         try
         {
-            // Check again inside the transaction to reduce duplicate submissions.
+            // Recheck the stable identity and allocate the number within the same
+            // serializable transaction to prevent duplicate invoice numbering.
             if (await context.SalesInvoices.AsNoTracking()
-                    .AnyAsync(x => x.Number == factor.SerialNumber
-                        && x.FiscalYearRef == preview.FiscalYearRef, ct))
-                throw new InvalidOperationException("در فاصله پیش‌نمایش تا ثبت، شماره فاکتور در سپیدار استفاده شده است.");
+                    .AnyAsync(x => x.Guid == factor.Id, ct))
+                throw new InvalidOperationException("فاکتور CRM در این فاصله در سپیدار ثبت شده است؛ دوباره بررسی کنید.");
 
-            var invoiceId = await NextIdAsync("SLS.Invoice", 1, ct);
-            var lastItemId = await NextIdAsync("SLS.InvoiceItem", preview.Items.Count, ct);
+            var invoiceNumber = await context.GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
+            var invoiceId = await context.GetNextIdAsync("SLS.Invoice", ct: ct);
+            var lastItemId = await context.GetNextIdAsync("SLS.InvoiceItem", preview.Items.Count, ct);
             var firstItemId = lastItemId - preview.Items.Count + 1;
             var now = DateTime.Now;
 
@@ -241,7 +247,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 CustomerRealName_En = quotation.CustomerRealName_En,
                 SaleTypeRef = quotation.SaleTypeRef,
                 PartyAddressRef = quotation.PartyAddressRef,
-                Number = factor.SerialNumber,
+                Number = invoiceNumber,
                 Date = factor.DateMiladi!.Value,
                 CurrencyRef = quotation.CurrencyRef,
                 SLRef = accounts[0],
@@ -269,7 +275,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 BaseOnInventoryDelivery = false,
                 OrderRef = null,
                 ShouldControlCustomerCredit = true,
-                Guid = null,
+                Guid = factor.Id, // Stable idempotency key for retries.
                 AdditionFactor_VatEffective = 0,
                 AdditionFactorInBaseCurrency_VatEffective = 0,
                 AdditionFactor_VatIneffective = 0,
@@ -334,7 +340,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 });
             }
 
-//            await context.SaveChangesAsync(ct);
+            await context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             return invoiceId;
         }
@@ -345,30 +351,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         }
     }
 
-    private async Task<int> NextIdAsync(string table, int count, CancellationToken ct)
-    {
-        var connection = context.Database.GetDbConnection();
-        await using var command = connection.CreateCommand();
-        command.CommandText = @"
-DECLARE @Id int;
-EXEC FMK.spGetNextId @TableName = @TableName, @Id = @Id OUTPUT, @IncValue = @IncValue;
-SELECT @Id;";
-        var tableParameter = command.CreateParameter();
-        tableParameter.ParameterName = "@TableName";
-        tableParameter.Value = table;
-        command.Parameters.Add(tableParameter);
 
-        var countParameter = command.CreateParameter();
-        countParameter.ParameterName = "@IncValue";
-        countParameter.Value = count;
-        command.Parameters.Add(countParameter);
-
-        var currentTransaction = context.Database.CurrentTransaction;
-        if (currentTransaction != null)
-            command.Transaction = currentTransaction.GetDbTransaction();
-
-        return Convert.ToInt32(await command.ExecuteScalarAsync(ct));
-    }
 }
 
 public sealed class Sepidar1InvoiceExportRepository(Sepidar1ContextDb db) : SepidarInvoiceExportRepository(db) { }
