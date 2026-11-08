@@ -259,6 +259,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                          || m.MapType == ExternalMappingTypeEnum.مشتری)
                 .ToListAsync(ct);
 
+            // A customer mapping explicitly confirmed in ExternalMapping takes priority
+            // over the old FinancialCustomerId for matching Sepidar 1 records.
+            foreach (var mappedCustomer in existing.Where(x =>
+                x.ExternalSoftwareId == Sepidar1SoftwareId
+                && x.MapType == ExternalMappingTypeEnum.مشتری
+                && x.EntityName == nameof(Customer)
+                && x.ExEntityName == nameof(Party)))
+            {
+                if (int.TryParse(mappedCustomer.ExEntityId, out var partyId) && partyId > 0)
+                    financialCustomerIds[mappedCustomer.EntityId] = partyId;
+            }
+
             var existingSources = existing
                 .Select(m => (m.ExternalSoftwareId, m.EntityName, m.EntityId, m.MapType))
                 .ToHashSet();
@@ -776,13 +788,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         .Select(x => int.TryParse(x.ExEntityId, out var id) ? id : 0)
                         .Distinct().ToList() ?? new List<int>();
 
-                    var reason = possibleParties.Count > 1 ? "MultipleSepidarParties"
+                    // An existing, valid customer mapping resolves the CRM customer choice.
+                    // Individual quotations/invoices referencing another Party are still
+                    // rejected separately by DocumentSepidarCustomerMismatch below.
+                    var reason = savedMappings != null
+                        ? savedPartyIds.Count != 1 || savedPartyIds[0] <= 0
+                          || savedMappings.Any(x => x.ExEntityName != nameof(Party))
+                            ? "ExistingCustomerMappingMismatch"
+                            : !validSepidarCustomers.Contains(savedPartyIds[0])
+                                && !await sdb.Parties.AsNoTracking()
+                                    .AnyAsync(x => x.PartyId == savedPartyIds[0] && x.IsCustomer, ct)
+                                    ? "PartyNotFoundOrNotCustomer"
+                            : existing.Any(x => x.ExternalSoftwareId == softwareId
+                                && x.MapType == ExternalMappingTypeEnum.مشتری
+                                && x.ExEntityName == nameof(Party)
+                                && x.EntityId != customer.Id
+                                && x.ExEntityId == savedPartyIds[0].ToString())
+                                ? "ExistingDuplicateCustomerParty"
+                            : null
+                        : possibleParties.Count > 1 ? "MultipleSepidarParties"
                         : !validSepidarCustomers.Contains(possibleParties[0])
                             ? "PartyNotFoundOrNotCustomer"
-                        : savedMappings != null
-                          && (savedPartyIds.Count != 1 || savedPartyIds[0] != possibleParties[0]
-                              || savedMappings.Any(x => x.ExEntityName != nameof(Party)))
-                            ? "ExistingCustomerMappingMismatch"
                         : customer.FinancialCustomerId.HasValue
                           && customer.FinancialCustomerId != possibleParties[0]
                             ? "LegacyFinancialCustomerIdMismatch"
