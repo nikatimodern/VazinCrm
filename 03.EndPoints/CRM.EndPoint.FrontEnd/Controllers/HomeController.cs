@@ -846,8 +846,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                             "DuplicateCrmCustomersForParty",
                             new List<int> { candidate.SepidarPartyId },
                             customerCandidates.Where(x => x.SepidarPartyId == candidate.SepidarPartyId)
-                                .Select(x => $"CRM CustomerId={x.CustomerId}; {x.SourceDocument}")
-                                .ToList()));
+                                .Select(x => {
+                                    var name = customersById.GetValueOrDefault(x.CustomerId)?.CompanyName ?? "-";
+                                    return $"مشتری CRM: {name} | CustomerId={x.CustomerId} | {x.SourceDocument}";
+                                }).ToList()));
                         continue;
                     }
 
