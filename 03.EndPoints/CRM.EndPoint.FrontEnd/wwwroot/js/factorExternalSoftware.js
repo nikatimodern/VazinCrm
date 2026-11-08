@@ -56,7 +56,7 @@ function renderExternalFactorPreview(data) {
             <div class="external-mapping-stage-content">
                 <div class="external-mapping-stage-title">بررسی نهایی فاکتور</div>
                 <div class="external-mapping-stage-subtitle">
-                    قبل از ثبت در نرم‌افزار مالی، اطلاعات را بررسی کنید
+                    پیش‌فاکتور سپیدار شماره ${escape(preview.quotationNumber)}؛ اطلاعات را بررسی کنید
                 </div>
             </div>
             <span class="external-mapping-step">مرحله ۱ از ۱</span>
@@ -82,10 +82,6 @@ function renderExternalFactorPreview(data) {
                 <div class="ex-preview-field">
                     <span class="ex-preview-label">نرم‌افزار مقصد:</span>
                     <strong class="ex-preview-software">${escape(data.softwareTitle)}</strong>
-                </div>
-                <div class="ex-preview-field">
-                    <span class="ex-preview-label">پیش‌فاکتور مربوط:</span>
-                    <strong>${escape(preview.quotationNumber)}</strong>
                 </div>
             </div>
             <div class="table-responsive">
