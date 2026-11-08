@@ -13,6 +13,8 @@
         const selectAll = get("lmrSelectPage");
         const saveSelected = get("lmrSaveSelected");
         const proposalTabs = get("lmrProposalStatusTabs");
+        const mainTabs = get("lmrMainTabs");
+        const proposalReason = get("lmrProposalReason");
         const token = page.querySelector('input[name="__RequestVerificationToken"]')?.value;
         const format = new Intl.NumberFormat("fa-IR");
         const escape = value => escapeHtml(String(value ?? ""));
@@ -64,9 +66,10 @@
 
         const state = {
             softwareId: "", softwareTitle: "", autoIds: [], manualIds: [],
-            types: [], counts: [], selected: new Map(), targets: new Map(), preview: new Map(),
+            types: [], counts: [], selected: new Map(), targets: new Map(), crmTargets: new Map(), preview: new Map(),
+            activeTab: "saved",
             saved: { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: 0 },
-            proposal: { search: "", type: "", status: "pending", page: 1, size: 10,
+            proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
             processing: false
         };
@@ -276,6 +279,36 @@
             get("lmrSelectionActions").hidden = !state.proposal.loaded ||
                 state.proposal.status === "blocked" ||
                 !state.manualIds.includes(state.softwareId);
+            const showReason = state.proposal.status !== "pending";
+            get("lmrProposalReasonBox").hidden = !showReason;
+            proposalReason.disabled = !showReason || !state.proposal.loaded;
+            updateReasonOptions();
+        }
+
+        function updateReasonOptions() {
+            const p = state.proposal;
+            const codes = [...new Set(p.rows
+                .filter(row => row.status === p.status &&
+                    (!p.type || Number(row.mapType) === Number(p.type)))
+                .map(row => row.reason))];
+            codes.sort((a, b) => reason({reason:a})[0].localeCompare(reason({reason:b})[0], "fa"));
+            proposalReason.replaceChildren(new Option("همه علت‌ها", ""));
+            codes.forEach(code => proposalReason.add(new Option(reason({reason:code})[0], code)));
+            if (!codes.includes(p.reason) || p.status === "pending") p.reason = "";
+            proposalReason.value = p.reason;
+        }
+
+        function switchMainTab(which) {
+            if (which !== "saved" && which !== "proposal") return;
+            state.activeTab = which;
+            get("lmrSavedPanel").hidden = which !== "saved";
+            get("lmrProposalPanel").hidden = which !== "proposal";
+            mainTabs.querySelectorAll("[data-main-tab]").forEach(button => {
+                const active = button.dataset.mainTab === which;
+                button.classList.toggle("is-active", active);
+                button.setAttribute("aria-selected", String(active));
+                button.tabIndex = active ? 0 : -1;
+            });
         }
 
         function drawPages(which, total) {
@@ -295,10 +328,12 @@
                 if (index === model.page && !disabled) button.classList.add("current");
                 pages.append(button);
             };
+            add("اول", 1, model.page === 1);
             add("قبلی", model.page - 1, model.page === 1);
             for (let i = Math.max(1, model.page - 2); i <= Math.min(limit, model.page + 2); i++)
                 add(format.format(i), i, false);
             add("بعدی", model.page + 1, model.page === limit);
+            add("آخر", limit, model.page === limit);
             const first = total ? (model.page - 1) * model.size + 1 : 0;
             get(prefix + "PageInfo").textContent = format.format(first) + " تا " +
                 format.format(Math.min(total, model.page * model.size)) +
@@ -341,6 +376,7 @@
             const filtered = model.rows.filter(row =>
                 row.status === model.status &&
                 (!model.type || Number(row.mapType) === Number(model.type)) &&
+                (model.status === "pending" || !model.reason || row.reason === model.reason) &&
                 (!keyword || [row.crm?.customer, row.crm?.number, row.crm?.id,
                     row.sepidar?.customer, row.sepidar?.number,
                     row.details, ...(row.sources || [])]
@@ -423,11 +459,12 @@
             state.softwareId = softwareSelect.value;
             state.softwareTitle = softwareSelect.selectedOptions[0]?.textContent || "نرم‌افزار خارجی";
             state.saved = { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: state.saved.request + 1 };
-            state.proposal = { search: "", type: "", status: "pending", page: 1, size: 10,
+            state.proposal = { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: state.proposal.request + 1, calculating: false };
             state.selected.clear();
             state.targets.clear();
             state.preview.clear();
+            state.crmTargets.clear();
             get("lmrSavedSearch").value = "";
             get("lmrProposalSearch").value = "";
             get("lmrSavedSize").value = "10";
@@ -583,14 +620,29 @@
             if (!button) return;
             state.proposal.status = button.dataset.status;
             state.proposal.page = 1;
+            state.proposal.reason = "";
             renderProposals();
+        });
+
+        proposalReason.addEventListener("change", () => {
+            state.proposal.reason = proposalReason.value;
+            state.proposal.page = 1;
+            renderProposals();
+        });
+
+        mainTabs.addEventListener("click", event => {
+            const button = event.target.closest("[data-main-tab]");
+            if (button) switchMainTab(button.dataset.mainTab);
         });
 
         function changeFilter(which, field, value) {
             state[which][field] = value;
             state[which].page = 1;
             if (which === "saved") loadSaved();
-            else renderProposals();
+            else {
+                state.proposal.reason = "";
+                renderProposals();
+            }
         }
         get("lmrSavedType").addEventListener("change", e =>
             changeFilter("saved", "type", e.target.value));
@@ -657,6 +709,7 @@
             }
             if (typeof enableMomentumScrollScope === "function")
                 enableMomentumScrollScope(page);
+            switchMainTab("saved");
             await changeSoftware();
         })();
     }
