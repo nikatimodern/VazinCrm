@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.7" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -21,7 +21,16 @@
         </label>
     </header>
 
-    <section class="lmr-section lmr-saved-section" aria-labelledby="lmrSavedTitle">
+    <nav id="lmrMainTabs" class="lmr-main-tabs" role="tablist" aria-label="بخش‌های مدیریت نگاشت">
+        <button type="button" id="lmrSavedTab" role="tab" data-main-tab="saved" aria-controls="lmrSavedPanel" aria-selected="true" class="is-active">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> نگاشت‌های ثبت‌شده
+        </button>
+        <button type="button" id="lmrProposalTab" role="tab" data-main-tab="proposal" aria-controls="lmrProposalPanel" aria-selected="false">
+            <i class="fas fa-search" aria-hidden="true"></i> بررسی و ثبت نگاشت‌های جدید
+        </button>
+    </nav>
+
+    <section id="lmrSavedPanel" role="tabpanel" aria-labelledby="lmrSavedTab" class="lmr-section lmr-saved-section">
         <header class="lmr-section-head">
             <div class="lmr-section-name">
                 <div class="lmr-section-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
@@ -53,7 +62,7 @@
         </footer>
     </section>
 
-    <section class="lmr-section lmr-proposal-section" aria-labelledby="lmrProposalTitle">
+    <section id="lmrProposalPanel" role="tabpanel" aria-labelledby="lmrProposalTab" class="lmr-section lmr-proposal-section" hidden>
         <header class="lmr-section-head">
             <div class="lmr-section-name">
                 <div class="lmr-section-icon"><i class="fas fa-search" aria-hidden="true"></i></div>
@@ -89,6 +98,9 @@
             <label class="lmr-field"><span>نوع نگاشت</span>
                 <select id="lmrProposalType"><option value="">همه انواع</option></select>
             </label>
+            <label id="lmrProposalReasonBox" class="lmr-field lmr-reason" hidden><span>علت</span>
+                <select id="lmrProposalReason"><option value="">همه علت‌ها</option></select>
+            </label>
             <label class="lmr-field lmr-size"><span>تعداد</span>
                 <select id="lmrProposalSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option></select>
             </label>
@@ -110,5 +122,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.6" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.7" asp-append-version="true"></script>
 }
