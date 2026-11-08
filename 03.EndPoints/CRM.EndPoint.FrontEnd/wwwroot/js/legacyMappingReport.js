@@ -118,7 +118,11 @@
                 const m = extra.match(/FinancialCustomerId:\s*(\d+)/);
                 return m ? "کد مالی قدیمی مشتری: " + m[1] : "";
             }
-            if (isCrm && extra.includes("CustomerId:")) return "";
+            if (isCrm && extra.includes("CustomerId:")) {
+                const financial = extra.match(/شماره مالی:\s*([^|]+)/);
+                return financial && financial[1].trim() && financial[1].trim() !== "null"
+                    ? "شماره فاکتور مالی: " + financial[1].trim() : "";
+            }
             if (!isCrm && extra.includes("PartyId:")) {
                 const m = extra.match(/PartyId:\s*(\d+)/);
                 return m ? "کد مشتری مرتبط در نرم‌افزار: "+m[1] : "";
