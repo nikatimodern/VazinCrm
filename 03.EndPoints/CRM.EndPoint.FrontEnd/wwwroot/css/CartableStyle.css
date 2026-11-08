@@ -1438,10 +1438,10 @@
         display: none;
     }
 
-    /* Override Bootstrap's !important gap-3 on the mobile supply pane. */
+    /* Keep a 2px gap between the supply tabs and their content on mobile. */
     #cartableWorkspace #CTaminExpertId {
         padding-block: 0 !important;
-        row-gap: 0 !important;
+        row-gap: 2px !important;
     }
 
     #cartableWorkspace #CTaminExpertId #tabContentTaminExperts {
