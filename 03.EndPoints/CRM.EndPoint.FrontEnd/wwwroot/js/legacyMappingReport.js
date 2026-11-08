@@ -7,17 +7,12 @@
         page.dataset.initialized = "1";
 
         const get = id => page.querySelector("#" + id);
-        const records = get("lmrRecords");
-        const info = get("lmrFeedback");
         const softwareSelect = get("lmrSoftware");
-        const typeSelect = get("lmrType");
-        const reasonSelect = get("lmrReason");
-        const searchInput = get("lmrSearch");
-        const pageSizeSelect = get("lmrPageSize");
-        const statusButtons = get("lmrStatusTabs");
-        const selectBar = get("lmrSelectionActions");
+        const savedRoot = get("lmrSavedRecords");
+        const proposalRoot = get("lmrProposalRecords");
         const selectAll = get("lmrSelectPage");
         const saveSelected = get("lmrSaveSelected");
+        const proposalTabs = get("lmrProposalStatusTabs");
         const token = page.querySelector('input[name="__RequestVerificationToken"]')?.value;
         const format = new Intl.NumberFormat("fa-IR");
         const escape = value => escapeHtml(String(value ?? ""));
@@ -63,16 +58,17 @@
             InvoiceQuotationMismatch:["پیش‌فاکتور فاکتور فرق دارد","فاکتور سپیدار به پیش‌فاکتور دیگری مرتبط است."],
             InvoiceMultipleFieldMismatch:["چند اختلاف در فاکتور","مشتری، مبلغ، شماره مالی و سال مالی را بررسی کنید."],
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
-            ReadyForReview:["معادل پیشنهاد شده است","این رابطه فقط از روی مقایسه محاسبه شده و هنوز ذخیره نشده است."],
+            ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["نگاشت ذخیره‌شده","این رابطه قبلاً در جدول ExternalMapping ثبت شده است."]
         };
 
         const state = {
-            softwareId:"", softwareTitle:"", automaticId:"", manualIds:[],
-            types:[], counts:[], status:"saved", type:"", reason:"", search:"",
-            page:1, size:10, rows:[], saved:[], savedTotal:0, suggestionsLoaded:false,
-            summary:null, selected:new Map(), targets:new Map(), preview:new Map(),
-            currentRows:[], requestId:0, processing:false, calculating:false
+            softwareId: "", softwareTitle: "", autoIds: [], manualIds: [],
+            types: [], counts: [], selected: new Map(), targets: new Map(), preview: new Map(),
+            saved: { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: 0 },
+            proposal: { search: "", type: "", status: "pending", page: 1, size: 10,
+                loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
+            processing: false
         };
 
         function reason(row) {
@@ -105,8 +101,8 @@
             if (!validId(value)) return false;
             const key = state.softwareId+":"+row.mapType+":"+value;
             if (state.preview.has(key)) return true;
-            return String(row.sepidar?.id) === value &&
-                String(row.sepidar?.title || "").includes("سپیدار");
+            return row.status === "pending" && row.options?.length === 1 &&
+                String(row.sepidar?.id) === value && !!row.sepidar?.customer;
         }
 
         function targetPreview(row) {
@@ -123,10 +119,7 @@
         function readableExtra(row, side, isCrm) {
             let extra = side?.extra || "";
             if (!extra.trim()) return "";
-            if (isCrm && row.mapType === 5) {
-                const m = extra.match(/FinancialCustomerId:\s*(\d+)/);
-                return m ? "کد مالی قدیمی مشتری: " + m[1] : "";
-            }
+            if (isCrm && Number(row.mapType) === 5) return "";
             if (isCrm && extra.includes("CustomerId:")) {
                 const financial = extra.match(/شماره مالی:\s*([^|]+)/);
                 return financial && financial[1].trim() && financial[1].trim() !== "null"
@@ -157,17 +150,24 @@
         function inputTarget(row) {
             if (!canMap(row)) return "";
             const value = targetValue(row);
+            const ready = row.status === "pending" && row.options?.length === 1;
+            if (ready)
+                return '<div class="lmr-map-action lmr-ready-action">' +
+                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+
             const options = row.options || [];
             const control = options.length ?
-                '<select data-map-target aria-label="معادل تأییدشده">'+
-                    '<option value="">معادل صحیح را انتخاب کنید</option>'+
-                    options.map(opt => '<option value="'+escape(opt.id)+'" '+
-                        (String(opt.id)===value ? "selected" : "")+'>'+escape(opt.title)+
-                        ' (کد '+escape(opt.id)+')</option>').join("")+'</select>'
-                : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" placeholder="شناسه معادل در نرم‌افزار" value="'+escape(value)+'" />';
-            return '<div class="lmr-map-action"><label><span>معادل مورد تأیید</span>'+control+'</label>'+
-                '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one '+
-                    (!verifiedTarget(row) ? "disabled" : "")+'>ثبت این نگاشت</button></div>';
+                '<select data-map-target aria-label="انتخاب معادل">' +
+                    '<option value="">معادل صحیح را انتخاب کنید</option>' +
+                    options.map(opt => '<option value="' + escape(opt.id) + '" ' +
+                        (String(opt.id) === value ? "selected" : "") + '>' + escape(opt.title) +
+                        ' (کد ' + escape(opt.id) + ')</option>').join("") + '</select>'
+                : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" ' +
+                    'placeholder="شناسه معادل در نرم‌افزار" value="' + escape(value) + '" />';
+            return '<div class="lmr-map-action"><label><span>معادل انتخابی</span>' + control + '</label>' +
+                '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
         }
 
         function card(row) {
@@ -180,7 +180,7 @@
                 row.status === "pending" ? "proposal" : "problem";
             const related = (row.sources || []).filter(Boolean);
             const relatedPreview = row.status === "customerConflict" && related.length
-                ? '<p class="lmr-source-preview">نمونه ارتباط: '+escape(related[0])+
+                ? '<p class="lmr-source-preview">'+escape(related[0])+
                     (related.length>1 ? ' <strong>('+escape(format.format(related.length-1))+' مورد دیگر در توضیحات)</strong>' : '')+
                     '</p>' : '';
             const crmName = left.customer || left.title;
@@ -198,7 +198,8 @@
                         (!verifiedTarget(row) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
                     '<b class="lmr-type">'+escape(typeTitle(row))+'</b>'+
                     '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
-                    '<span class="lmr-short-reason">'+escape(title[0])+'</span>'+
+                    (row.status === "pending" || row.status === "saved" ? "" :
+                        '<span class="lmr-short-reason">'+escape(title[0])+'</span>')+
                     '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
                 '</header>'+
                 '<div class="lmr-pair">'+
@@ -210,345 +211,441 @@
                     (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
                         ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
                 '</div>'+
-                '<div class="lmr-one-line">'+escape(title[1])+'</div>'+
+                (row.status === "pending" || row.status === "saved" ? "" :
+                    '<div class="lmr-one-line">'+escape(title[1])+'</div>')+
                 relatedPreview+
                 inputTarget(row)+
                 '<div class="lmr-expanded" hidden>'+
                     '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
                     (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
                         '<ul>'+related.map(line => '<li>'+escape(line)+'</li>').join("")+'</ul></div>' : '')+
-                    (row.details && row.status !== "saved" ? '<details class="lmr-technical"><summary>شرح فنی برای بررسی دقیق‌تر</summary><p>'+
+                    (row.details && row.status !== "saved" && row.status !== "pending" ? '<details class="lmr-technical"><summary>شرح فنی برای بررسی دقیق‌تر</summary><p>'+
                         escape(row.details)+'</p></details>' : '')+
                 '</div></article>';
         }
 
-        function feedback(message="",error=false) {
-            info.hidden=!message;info.textContent=message;
-            info.classList.toggle("lmr-error",error);
+        function feedback(section, message = "", error = false) {
+            const element = get(section === "saved" ? "lmrSavedFeedback" : "lmrProposalFeedback");
+            element.textContent = message;
+            element.hidden = !message;
+            element.classList.toggle("lmr-error", error);
         }
 
-        function summary() {
-            const saved = state.counts.filter(x=>x.softwareId===state.softwareId)
-                .reduce((sum,x)=>sum+Number(x.count),0);
-            get("lmrSavedCount").textContent=format.format(saved);
-            const stats = state.suggestionsLoaded ? state.summary : null;
-            get("lmrPendingCount").textContent=stats ?
-                format.format((stats.pendingCustomers||0)+(stats.pendingDocuments||0)) : "—";
-            get("lmrCustomerConflicts").textContent=stats ? format.format(stats.customerConflicts||0) : "—";
-            get("lmrBlockedCount").textContent=stats ?
-                format.format((stats.blockedDocuments||0)+(stats.ambiguous||0)) : "—";
-            get("lmrSuggestedSource").hidden=state.softwareId!==state.automaticId;
-            get("lmrCompute").disabled=state.softwareId!==state.automaticId || state.calculating;
-            get("lmrComputeLabel").textContent=state.suggestionsLoaded
+        function updateSummary() {
+            const count = state.counts.filter(x => x.softwareId === state.softwareId)
+                .reduce((sum, x) => sum + Number(x.count), 0);
+            get("lmrSavedCount").textContent = format.format(count);
+            const stats = state.proposal.loaded ? state.proposal.summary : null;
+            get("lmrProposalStats").hidden = !stats;
+            if (stats) {
+                get("lmrPendingCount").textContent = format.format(
+                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0));
+                get("lmrCustomerConflicts").textContent = format.format(stats.customerConflicts || 0);
+                get("lmrBlockedCount").textContent = format.format(
+                    (stats.blockedDocuments || 0) + (stats.ambiguous || 0));
+            }
+            const supported = state.autoIds.includes(state.softwareId);
+            get("lmrCompute").disabled = !supported || state.proposal.calculating;
+            get("lmrComputeLabel").textContent = state.proposal.loaded
                 ? "محاسبه مجدد پیشنهادها" : "محاسبه پیشنهادها";
         }
 
-        function types() {
-            const active = new Set(state.counts.filter(x=>x.softwareId===state.softwareId)
-                .map(x=>Number(x.mapType)));
-            if (state.softwareId===state.automaticId) [2,3,5].forEach(id=>active.add(id));
-            if (state.suggestionsLoaded)
-                state.rows.forEach(row=>active.add(Number(row.mapType)));
-            typeSelect.replaceChildren(new Option("همه انواع", ""));
-            state.types.filter(x=>active.has(Number(x.value)))
-                .forEach(x=>typeSelect.add(new Option(x.title,x.value)));
-            if (!state.type || active.has(Number(state.type)))typeSelect.value=state.type;
-            else {state.type="";typeSelect.value="";}
+        function fillTypes(which) {
+            const select = get(which === "saved" ? "lmrSavedType" : "lmrProposalType");
+            const current = state[which].type;
+            const values = which === "saved"
+                ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
+                    .map(x => Number(x.mapType)))
+                : new Set([2, 3, 5]);
+            if (which === "proposal" && state.proposal.loaded)
+                state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
+            select.replaceChildren(new Option("همه انواع", ""));
+            state.types.filter(x => values.has(Number(x.value)))
+                .forEach(x => select.add(new Option(x.title, x.value)));
+            state[which].type = current && values.has(Number(current)) ? current : "";
+            select.value = state[which].type;
         }
 
-        function reasons() {
-            const choices = [...new Set(state.rows.filter(x=>x.status===state.status &&
-                (!state.type || Number(x.mapType)===Number(state.type))).map(x=>x.reason))];
-            choices.sort((a,b)=>reasonNames[a]?.[0]?.localeCompare(reasonNames[b]?.[0]||b,"fa")||0);
-            reasonSelect.replaceChildren(new Option("همه علت‌ها",""));
-            choices.forEach(x=>reasonSelect.add(new Option(reasonNames[x]?.[0]||x,x)));
-            if (!choices.includes(state.reason)) state.reason="";
-            reasonSelect.value=state.reason;
-            reasonSelect.disabled=state.status==="saved" || !state.suggestionsLoaded;
-        }
-
-        function tabs() {
-            statusButtons.querySelectorAll("[data-status]").forEach(button=>{
-                const active=button.dataset.status===state.status;
-                button.classList.toggle("is-active",active);
-                button.setAttribute("aria-pressed",active?"true":"false");
+        function updateProposalTabs() {
+            proposalTabs.querySelectorAll("[data-status]").forEach(button => {
+                const active = button.dataset.status === state.proposal.status;
+                button.classList.toggle("is-active", active);
+                button.setAttribute("aria-pressed", String(active));
             });
-            const label={
-                saved:"نگاشت‌های ذخیره‌شده",pending:"پیشنهادهای محاسبه‌شده",
-                customerConflict:"تعارض مشتریان",ambiguous:"پیش‌فاکتورها و فاکتورهای مبهم",
-                blocked:"منتظر تعیین تکلیف مشتری",notMatched:"موارد بدون معادل قطعی"
-            }[state.status];
-            get("lmrSectionTitle").textContent=label;
-            selectBar.hidden=state.status==="saved" || !state.manualIds.includes(state.softwareId);
-            reasons();summary();
+            get("lmrSelectionActions").hidden = !state.proposal.loaded ||
+                !state.manualIds.includes(state.softwareId);
         }
 
-        function pagination(total) {
-            const max=Math.max(1,Math.ceil(total/state.size));
-            state.page=Math.min(max,Math.max(1,state.page));
-            const p=get("lmrPagination");p.replaceChildren();
-            function add(label,numberValue,disabled) {
-                const button=document.createElement("button");
-                button.type="button";button.textContent=label;
-                button.dataset.page=String(numberValue);
-                button.disabled=disabled;
-                if(numberValue===state.page&&!disabled)button.classList.add("current");
-                p.append(button);
-            }
-            add("قبلی",state.page-1,state.page===1);
-            for(let i=Math.max(1,state.page-2);i<=Math.min(max,state.page+2);i++)
-                add(format.format(i),i,false);
-            add("بعدی",state.page+1,state.page===max);
-            const first=total?(state.page-1)*state.size+1:0;
-            get("lmrPageInfo").textContent=format.format(first)+" تا "+
-                format.format(Math.min(total,state.page*state.size))+" از "+format.format(total);
-            get("lmrResultCount").textContent=format.format(total)+" مورد";
+        function drawPages(which, total) {
+            const model = state[which];
+            const prefix = which === "saved" ? "lmrSaved" : "lmrProposal";
+            const pages = get(prefix + "Pagination");
+            const limit = Math.max(1, Math.ceil(total / model.size));
+            model.page = Math.min(Math.max(1, model.page), limit);
+            pages.replaceChildren();
+
+            const add = (label, index, disabled) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = label;
+                button.dataset.page = String(index);
+                button.disabled = disabled;
+                if (index === model.page && !disabled) button.classList.add("current");
+                pages.append(button);
+            };
+            add("قبلی", model.page - 1, model.page === 1);
+            for (let i = Math.max(1, model.page - 2); i <= Math.min(limit, model.page + 2); i++)
+                add(format.format(i), i, false);
+            add("بعدی", model.page + 1, model.page === limit);
+            const first = total ? (model.page - 1) * model.size + 1 : 0;
+            get(prefix + "PageInfo").textContent = format.format(first) + " تا " +
+                format.format(Math.min(total, model.page * model.size)) +
+                " از " + format.format(total);
         }
 
-        function selection() {
-            get("lmrSelectedCount").textContent=format.format(state.selected.size)+" مورد انتخاب‌شده";
-            saveSelected.disabled=!state.selected.size||state.processing;
-            const selectable=state.currentRows.filter(x=>canMap(x)&&verifiedTarget(x));
-            selectAll.disabled=!selectable.length||state.processing;
-            selectAll.checked=selectable.length>0&&selectable.every(x=>state.selected.has(x.key));
-            selectAll.indeterminate=!selectAll.checked&&selectable.some(x=>state.selected.has(x.key));
+        function updateSelection() {
+            const rows = state.proposal.visible;
+            const available = rows.filter(x => canMap(x) && verifiedTarget(x));
+            get("lmrSelectedCount").textContent = format.format(state.selected.size) + " انتخاب";
+            saveSelected.disabled = state.processing || state.selected.size === 0;
+            selectAll.disabled = state.processing || available.length === 0;
+            selectAll.checked = available.length > 0 &&
+                available.every(x => state.selected.has(x.key));
+            selectAll.indeterminate = !selectAll.checked &&
+                available.some(x => state.selected.has(x.key));
         }
 
-        function render(items,total) {
-            state.currentRows=items;
-            records.innerHTML=items.length?items.map(card).join(""):
-                '<div class="lmr-empty">در این فیلتر موردی وجود ندارد.</div>';
-            feedback();
-            pagination(total);selection();
+        function renderSaved(rows, total) {
+            savedRoot.innerHTML = rows.length ? rows.map(card).join("") :
+                '<div class="lmr-empty">نگاشت ثبت‌شده‌ای با این فیلتر پیدا نشد.</div>';
+            feedback("saved");
+            drawPages("saved", total);
         }
 
-        function localRows() {
-            if (!state.suggestionsLoaded) {
-                records.replaceChildren();
-                get("lmrResultCount").textContent="—";
-                feedback(state.softwareId===state.automaticId ?
-                    "پیشنهادها در CRM ذخیره نمی‌شوند. برای ساخت فهرست تازه، «محاسبه دوباره پیشنهادها» را بزنید." :
-                    "برای این نرم‌افزار، محاسبه خودکار پیشنهادها فعلاً پشتیبانی نمی‌شود؛ نگاشت‌های ثبت‌شده قابل مشاهده‌اند.");
+        function renderProposals() {
+            const model = state.proposal;
+            if (!model.loaded) {
+                proposalRoot.replaceChildren();
+                get("lmrProposalPageInfo").textContent = "—";
+                get("lmrProposalPagination").replaceChildren();
+                get("lmrSelectionActions").hidden = true;
+                if (!state.autoIds.includes(state.softwareId))
+                    feedback("proposal", "برای این نرم‌افزار هنوز الگوریتم تطبیق خودکار تعریف نشده است. نگاشت‌های ثبت‌شده در بخش بالا قابل مشاهده‌اند.");
+                else
+                    feedback("proposal", "برای دریافت پیشنهادهای جدید، دکمه «محاسبه پیشنهادها» را انتخاب کنید.");
                 return;
             }
-            const keyword=state.search.trim().toLocaleLowerCase("fa");
-            const filtered=state.rows.filter(row=>{
-                if(row.status!==state.status) return false;
-                if(state.type&&Number(row.mapType)!==Number(state.type)) return false;
-                if(state.reason&&row.reason!==state.reason) return false;
-                if(!keyword) return true;
-                return [row.crm?.customer,row.crm?.number,row.crm?.id,row.crm?.extra,
-                    row.sepidar?.customer,row.sepidar?.number,row.sepidar?.id,
-                    row.details,...(row.sources||[])].join(" ").toLocaleLowerCase("fa").includes(keyword);
-            });
-            state.page=Math.min(state.page,Math.max(1,Math.ceil(filtered.length/state.size)));
-            const first=(state.page-1)*state.size;
-            render(filtered.slice(first,first+state.size),filtered.length);
+            const keyword = model.search.trim().toLocaleLowerCase("fa");
+            const filtered = model.rows.filter(row =>
+                row.status === model.status &&
+                (!model.type || Number(row.mapType) === Number(model.type)) &&
+                (!keyword || [row.crm?.customer, row.crm?.number, row.crm?.id,
+                    row.sepidar?.customer, row.sepidar?.number,
+                    row.details, ...(row.sources || [])]
+                    .join(" ").toLocaleLowerCase("fa").includes(keyword)));
+            model.page = Math.min(model.page, Math.max(1, Math.ceil(filtered.length / model.size)));
+            const start = (model.page - 1) * model.size;
+            model.visible = filtered.slice(start, start + model.size);
+            proposalRoot.innerHTML = model.visible.length
+                ? model.visible.map(card).join("")
+                : '<div class="lmr-empty">موردی مطابق این فیلتر پیدا نشد.</div>';
+            feedback("proposal");
+            drawPages("proposal", filtered.length);
+            updateProposalTabs();
+            updateSelection();
         }
 
-        async function savedRows() {
-            if(!state.softwareId)return;
-            const requestId=++state.requestId;
-            const softwareId=state.softwareId;
-            records.replaceChildren();feedback("در حال خواندن نگاشت‌های ذخیره‌شده از دیتابیس CRM…");
-            const response=await sendApiRequest({
-                url:"/ExternalMapping/GetSavedExternalMappings",
-                params:{softwareId,mapType:state.type||undefined,search:state.search,page:state.page,pageSize:state.size},
-                timeout:90000,showLoading:false
+        async function loadSaved() {
+            const model = state.saved;
+            if (!state.softwareId) return;
+            const request = ++model.request;
+            const softwareId = state.softwareId;
+            savedRoot.replaceChildren();
+            feedback("saved", "در حال خواندن نگاشت‌های ثبت‌شده…");
+            const result = await sendApiRequest({
+                url: "/ExternalMapping/GetSavedExternalMappings",
+                params: { softwareId, mapType: model.type || undefined, search: model.search,
+                    page: model.page, pageSize: model.size },
+                showLoading: false, timeout: 90000
             });
-            if(!isActive()||requestId!==state.requestId||softwareId!==state.softwareId)return;
-            if(!response){feedback("دریافت نگاشت‌های ذخیره‌شده موفق نبود.",true);return;}
-            state.saved=response.rows||[];state.savedTotal=Number(response.total||0);
-            const max=Math.max(1,Math.ceil(state.savedTotal/state.size));
-            if(state.page>max){state.page=max;await savedRows();return;}
-            render(state.saved,state.savedTotal);
+            if (!isActive() || request !== model.request || softwareId !== state.softwareId) return;
+            if (!result) {
+                feedback("saved", "دریافت نگاشت‌های ثبت‌شده ناموفق بود.", true);
+                return;
+            }
+            model.rows = result.rows || [];
+            model.total = Number(result.total || 0);
+            const max = Math.max(1, Math.ceil(model.total / model.size));
+            if (model.page > max) {
+                model.page = max;
+                await loadSaved();
+                return;
+            }
+            renderSaved(model.rows, model.total);
         }
 
         async function calculate() {
-            if(state.calculating||state.softwareId!==state.automaticId)return;
+            const model = state.proposal;
+            if (model.calculating || !state.autoIds.includes(state.softwareId)) return;
             const softwareId = state.softwareId;
-            state.calculating=true;state.selected.clear();summary();
-            records.replaceChildren();
-            feedback("در حال محاسبه تطبیق مشتریان، پیش‌فاکتورها و فاکتورها… هیچ نگاشتی ذخیره نمی‌شود.");
-            const response=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingReview",
-                showLoading:false,timeout:180000});
-            if(!isActive())return;
-            state.calculating=false;summary();
-            if(softwareId !== state.softwareId)return;
-            if(!response){feedback("محاسبه تطبیق‌ها انجام نشد. دوباره امتحان کنید.",true);return;}
-            state.rows=response.rows||[];state.summary=response.summary||{};
-            state.suggestionsLoaded=true;state.targets.clear();state.preview.clear();
-            types();tabs();if(state.status==="saved")savedRows();else localRows();
+            const request = ++model.request;
+            model.calculating = true;
+            updateSummary();
+            proposalRoot.replaceChildren();
+            feedback("proposal", "در حال محاسبه تطبیق‌های " + state.softwareTitle + "…");
+            const result = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingReview",
+                params: { softwareId },
+                showLoading: false, timeout: 180000
+            });
+            if (!isActive() || softwareId !== state.softwareId || request !== model.request) return;
+            model.calculating = false;
+            if (!result) {
+                updateSummary();
+                feedback("proposal", "محاسبه پیشنهادها ناموفق بود.", true);
+                return;
+            }
+            model.rows = result.rows || [];
+            model.summary = result.summary || {};
+            model.loaded = true;
+            model.page = 1;
+            state.selected.clear();
+            state.targets.clear();
+            state.preview.clear();
+            fillTypes("proposal");
+            updateSummary();
+            renderProposals();
         }
 
-        async function switchSoftware(softwareId) {
-            state.softwareId=softwareId;
-            state.softwareTitle=softwareSelect.selectedOptions[0]?.textContent||"نرم‌افزار مقصد";
-            state.type="";typeSelect.value="";
-            state.search="";searchInput.value="";
-            state.status="saved";state.reason="";state.page=1;
-            state.suggestionsLoaded=false;state.rows=[];state.summary=null;
-            state.selected.clear();state.targets.clear();state.preview.clear();
-            ++state.requestId;types();tabs();await savedRows();
+        async function changeSoftware() {
+            state.softwareId = softwareSelect.value;
+            state.softwareTitle = softwareSelect.selectedOptions[0]?.textContent || "نرم‌افزار خارجی";
+            state.saved = { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: state.saved.request + 1 };
+            state.proposal = { search: "", type: "", status: "pending", page: 1, size: 10,
+                loaded: false, rows: [], visible: [], summary: null, request: state.proposal.request + 1, calculating: false };
+            state.selected.clear();
+            state.targets.clear();
+            state.preview.clear();
+            get("lmrSavedSearch").value = "";
+            get("lmrProposalSearch").value = "";
+            get("lmrSavedSize").value = "10";
+            get("lmrProposalSize").value = "10";
+            fillTypes("saved");
+            fillTypes("proposal");
+            updateSummary();
+            updateProposalTabs();
+            renderProposals();
+            await loadSaved();
         }
 
         function payload(row) {
-            if(!canMap(row)||!verifiedTarget(row))return null;
-            return {entityId:row.crm.id,mapType:Number(row.mapType),exEntityId:targetValue(row)};
+            if (!canMap(row) || !verifiedTarget(row)) return null;
+            return { entityId: row.crm.id, mapType: Number(row.mapType),
+                exEntityId: targetValue(row) };
         }
 
         async function save(items) {
-            if(state.processing||!items.length)return;
-            const customers=items.filter(x=>x.mapType===5).length;
-            if(customers&&customers!==items.length){
-                toastifyError("ابتدا مشتری‌ها را جداگانه نگاشت کنید و بعد سراغ فاکتورها و پیش‌فاکتورها بروید.");return;
+            if (state.processing || !items.length) return;
+            if (items.some(x => x.mapType === 5) && items.some(x => x.mapType !== 5)) {
+                toastifyError("ابتدا مشتری‌ها را ثبت کنید، سپس پیش‌فاکتورها و فاکتورها را.");
+                return;
             }
-            const ok=await confirmAlert({title:"تأیید ثبت نگاشت",
-                text:"آیا از ثبت "+format.format(items.length)+" نگاشت انتخاب‌شده در «"+state.softwareTitle+
-                    "» مطمئن هستید؟ فقط ارتباط آن‌ها در CRM ذخیره می‌شود.",
-                icon:"question",confirmText:"ثبت نگاشت",cancelText:"انصراف"});
-            if(!ok)return;
-            state.processing=true;selection();
-            const result=await sendApiRequest({url:"/ExternalMapping/SaveSelectedExternalMappings",
-                method:"POST",headers:{"RequestVerificationToken":token},
-                data:{externalSoftwareId:state.softwareId,items},timeout:120000,successMsg:null});
-            state.processing=false;
-            if(!result?.count){selection();return;}
-            toastifySuccess(format.format(result.count)+" نگاشت در CRM ثبت شد.");
-            state.selected.clear();state.targets.clear();
-            const options=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingWorkspaceOptions",
-                showLoading:false});
-            if(options)state.counts=options.counts||[];
-            state.suggestionsLoaded=false;state.summary=null;state.rows=[];state.page=1;
-            types();summary();
-            if(state.softwareId===state.automaticId)await calculate();
-            else {state.status="saved";tabs();await savedRows();}
+            const agreed = await confirmAlert({
+                title: "تأیید نگاشت",
+                text: "ثبت " + format.format(items.length) + " نگاشت در «" +
+                    state.softwareTitle + "» انجام شود؟",
+                icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
+            });
+            if (!agreed) return;
+            state.processing = true;
+            updateSelection();
+            const result = await sendApiRequest({
+                url: "/ExternalMapping/SaveSelectedExternalMappings",
+                method: "POST",
+                headers: { "RequestVerificationToken": token },
+                data: { externalSoftwareId: state.softwareId, items },
+                timeout: 120000, successMsg: null
+            });
+            state.processing = false;
+            if (!result?.count) {
+                updateSelection();
+                return;
+            }
+            toastifySuccess(format.format(result.count) + " نگاشت ثبت شد.");
+            state.selected.clear();
+            state.targets.clear();
+            state.preview.clear();
+            state.proposal.loaded = false;
+            state.proposal.rows = [];
+            state.proposal.summary = null;
+            state.proposal.visible = [];
+            updateProposalTabs();
+            renderProposals();
+            const options = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+            });
+            if (options) state.counts = options.counts || [];
+            fillTypes("saved");
+            updateSummary();
+            await loadSaved();
         }
 
-        async function preview(row,id) {
-            if(!validId(id))return;
-            const key=state.softwareId+":"+row.mapType+":"+id;
-            if(state.preview.has(key))return;
-            const result=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingTargetDetails",
-                params:{softwareId:state.softwareId,mapType:row.mapType,targetId:id},
-                showLoading:false,showError:false,timeout:30000});
-            if(!isActive()||state.targets.get(row.key)!==id)return;
-            if(result?.target)state.preview.set(key,result.target);
-            else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا قابل بررسی نیست.");
-            const existing=[...records.querySelectorAll("[data-key]")].find(x=>x.dataset.key===row.key);
-            if(existing){
-                const open=!existing.querySelector(".lmr-expanded").hidden;
-                existing.outerHTML=card(row);
-                const replaced=[...records.querySelectorAll("[data-key]")].find(x=>x.dataset.key===row.key);
-                if(open&&replaced){
-                    replaced.querySelector(".lmr-expanded").hidden=false;
-                    replaced.querySelector("[data-expand]").setAttribute("aria-expanded","true");
-                }
-                selection();
+        async function preview(row, id) {
+            if (!validId(id)) return;
+            const key = state.softwareId + ":" + row.mapType + ":" + id;
+            if (state.preview.has(key)) return;
+            const softwareId = state.softwareId;
+            const result = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingTargetDetails",
+                params: { softwareId, mapType: row.mapType, targetId: Number(id) },
+                showLoading: false, showError: false, timeout: 30000
+            });
+            if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
+            if (result?.target) state.preview.set(key, result.target);
+            else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
+            const old = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(x => x.dataset.key === row.key);
+            if (!old) return;
+            const expanded = !old.querySelector(".lmr-expanded").hidden;
+            old.outerHTML = card(row);
+            const next = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(x => x.dataset.key === row.key);
+            if (next && expanded) {
+                next.querySelector(".lmr-expanded").hidden = false;
+                next.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
             }
+            updateSelection();
         }
 
-        records.addEventListener("click",async event=>{
-            const cardElement=event.target.closest("[data-key]");
-            if(!cardElement)return;
-            const row=state.currentRows.find(x=>x.key===cardElement.dataset.key);
-            if(!row)return;
-            if(event.target.closest("[data-expand]")){
-                const expanded=cardElement.querySelector(".lmr-expanded");
-                expanded.hidden=!expanded.hidden;
-                cardElement.querySelector("[data-expand]").setAttribute("aria-expanded",String(!expanded.hidden));
-            }else if(event.target.closest("[data-map-one]")){
-                const item=payload(row);if(item)await save([item]);
+        function toggleDetails(root, event) {
+            const button = event.target.closest("[data-expand]");
+            if (!button || !root.contains(button)) return false;
+            const panel = button.closest("[data-key]")?.querySelector(".lmr-expanded");
+            if (!panel) return false;
+            panel.hidden = !panel.hidden;
+            button.setAttribute("aria-expanded", String(!panel.hidden));
+            return true;
+        }
+
+        savedRoot.addEventListener("click", event => toggleDetails(savedRoot, event));
+        proposalRoot.addEventListener("click", async event => {
+            if (toggleDetails(proposalRoot, event)) return;
+            const panel = event.target.closest("[data-key]");
+            const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
+            if (!row) return;
+            if (event.target.closest("[data-map-one]")) {
+                const item = payload(row);
+                if (item) await save([item]);
             }
         });
 
-        records.addEventListener("change",event=>{
-            const container=event.target.closest("[data-key]");
-            const row=state.currentRows.find(x=>x.key===container?.dataset.key);
-            if(!row)return;
-            if(event.target.matches("[data-map-target]")){
-                const id=event.target.value.trim();
-                state.targets.set(row.key,id);state.selected.delete(row.key);
-                const button=container.querySelector("[data-map-one]");
-                if(button)button.disabled=!verifiedTarget(row);
-                const check=container.querySelector("[data-select-map]");
-                if(check){check.checked=false;check.disabled=!verifiedTarget(row);}
-                selection();preview(row,id);
-            }else if(event.target.matches("[data-select-map]")){
-                const item=payload(row);
-                if(event.target.checked&&item)state.selected.set(row.key,item);
+        proposalRoot.addEventListener("change", event => {
+            const panel = event.target.closest("[data-key]");
+            const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
+            if (!row) return;
+            if (event.target.matches("[data-map-target]")) {
+                const id = event.target.value.trim();
+                state.targets.set(row.key, id);
+                state.selected.delete(row.key);
+                const button = panel.querySelector("[data-map-one]");
+                if (button) button.disabled = !verifiedTarget(row);
+                const checkbox = panel.querySelector("[data-select-map]");
+                if (checkbox) { checkbox.checked = false; checkbox.disabled = !verifiedTarget(row); }
+                updateSelection();
+                preview(row, id);
+            } else if (event.target.matches("[data-select-map]")) {
+                const item = payload(row);
+                if (event.target.checked && item) state.selected.set(row.key, item);
                 else state.selected.delete(row.key);
-                selection();
+                updateSelection();
             }
         });
 
-        selectAll.addEventListener("change",()=>{
-            state.currentRows.forEach(row=>{
-                const item=payload(row);
-                if(!item)return;
-                if(selectAll.checked)state.selected.set(row.key,item);
+        selectAll.addEventListener("change", () => {
+            state.proposal.visible.forEach(row => {
+                const item = payload(row);
+                if (!item) return;
+                if (selectAll.checked) state.selected.set(row.key, item);
                 else state.selected.delete(row.key);
             });
-            records.querySelectorAll("[data-key]").forEach(cardElement=>{
-                const check=cardElement.querySelector("[data-select-map]");
-                if(check)check.checked=state.selected.has(cardElement.dataset.key);
+            proposalRoot.querySelectorAll("[data-key]").forEach(panel => {
+                const check = panel.querySelector("[data-select-map]");
+                if (check) check.checked = state.selected.has(panel.dataset.key);
             });
-            selection();
+            updateSelection();
         });
-        saveSelected.addEventListener("click",()=>save([...state.selected.values()]));
+        saveSelected.addEventListener("click", () => save([...state.selected.values()]));
 
-        statusButtons.addEventListener("click",event=>{
-            const button=event.target.closest("[data-status]");if(!button)return;
-            state.status=button.dataset.status;state.page=1;state.reason="";
-            tabs();if(state.status==="saved")savedRows();else localRows();
+        proposalTabs.addEventListener("click", event => {
+            const button = event.target.closest("[data-status]");
+            if (!button) return;
+            state.proposal.status = button.dataset.status;
+            state.proposal.page = 1;
+            renderProposals();
         });
-        get("lmrPagination").addEventListener("click",event=>{
-            const button=event.target.closest("[data-page]");
-            if(!button||button.disabled)return;
-            state.page=Number(button.dataset.page);
-            if(state.status==="saved")savedRows();else localRows();
-        });
-        typeSelect.addEventListener("change",()=>{
-            state.type=typeSelect.value;state.page=1;state.reason="";
-            reasons();if(state.status==="saved")savedRows();else localRows();
-        });
-        reasonSelect.addEventListener("change",()=>{
-            state.reason=reasonSelect.value;state.page=1;localRows();
-        });
-        searchInput.addEventListener("input",debounce(()=>{
-            state.search=searchInput.value.trim();state.page=1;
-            if(state.status==="saved")savedRows();else localRows();
-        },350));
-        pageSizeSelect.addEventListener("change",()=>{
-            state.size=Number(pageSizeSelect.value);state.page=1;
-            if(state.status==="saved")savedRows();else localRows();
-        });
-        softwareSelect.addEventListener("change",()=>switchSoftware(softwareSelect.value));
-        get("lmrRefreshSaved").addEventListener("click",()=>{
-            state.status="saved";state.page=1;tabs();savedRows();
-        });
-        get("lmrCompute").addEventListener("click",calculate);
 
-        (async()=>{
-            feedback("در حال دریافت فهرست نرم‌افزارهای خارجی…");
-            const result=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingWorkspaceOptions",
-                showLoading:false});
-            if(!isActive())return;
-            if(!result){feedback("فهرست نرم‌افزارها دریافت نشد.",true);return;}
-            state.types=result.mapTypes||[];
-            state.counts=result.counts||[];
-            state.automaticId=result.automaticMatchingSoftwareId;
-            state.manualIds=result.supportedManualSoftwareIds||[];
+        function changeFilter(which, field, value) {
+            state[which][field] = value;
+            state[which].page = 1;
+            if (which === "saved") loadSaved();
+            else renderProposals();
+        }
+        get("lmrSavedType").addEventListener("change", e =>
+            changeFilter("saved", "type", e.target.value));
+        get("lmrProposalType").addEventListener("change", e =>
+            changeFilter("proposal", "type", e.target.value));
+        get("lmrSavedSearch").addEventListener("input", debounce(e =>
+            changeFilter("saved", "search", e.target.value.trim()), 350));
+        get("lmrProposalSearch").addEventListener("input", debounce(e =>
+            changeFilter("proposal", "search", e.target.value.trim()), 250));
+        get("lmrSavedSize").addEventListener("change", e =>
+            changeFilter("saved", "size", Number(e.target.value)));
+        get("lmrProposalSize").addEventListener("change", e =>
+            changeFilter("proposal", "size", Number(e.target.value)));
+
+        for (const which of ["saved", "proposal"]) {
+            const container = get((which === "saved" ? "lmrSaved" : "lmrProposal") + "Pagination");
+            container.addEventListener("click", event => {
+                const button = event.target.closest("[data-page]");
+                if (!button || button.disabled) return;
+                state[which].page = Number(button.dataset.page);
+                if (which === "saved") loadSaved();
+                else renderProposals();
+            });
+        }
+
+        softwareSelect.addEventListener("change", changeSoftware);
+        get("lmrRefreshSaved").addEventListener("click", loadSaved);
+        get("lmrCompute").addEventListener("click", calculate);
+
+        (async () => {
+            feedback("saved", "در حال دریافت نرم‌افزارهای خارجی…");
+            const response = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+            });
+            if (!isActive()) return;
+            if (!response) {
+                feedback("saved", "فهرست نرم‌افزارها دریافت نشد.", true);
+                return;
+            }
+            state.types = response.mapTypes || [];
+            state.counts = response.counts || [];
+            state.autoIds = response.supportedAutomaticSoftwareIds || [];
+            state.manualIds = response.supportedManualSoftwareIds || [];
             softwareSelect.replaceChildren();
-            (result.software||[]).forEach(s=>softwareSelect.add(new Option(s.title,s.id)));
-            types();
-            if(!softwareSelect.value){feedback("هنوز نرم‌افزار خارجی در سیستم ثبت نشده است.");return;}
-            if(typeof enableMomentumScrollScope==="function")enableMomentumScrollScope(page);
-            await switchSoftware(softwareSelect.value);
+            (response.software || []).forEach(x =>
+                softwareSelect.add(new Option(x.title, x.id)));
+            if (!softwareSelect.value) {
+                feedback("saved", "نرم‌افزار خارجی ثبت نشده است.");
+                return;
+            }
+            if (typeof enableMomentumScrollScope === "function")
+                enableMomentumScrollScope(page);
+            await changeSoftware();
         })();
     }
 
-    if(document.readyState==="loading")
-        document.addEventListener("DOMContentLoaded",initializeMappingManager,{once:true});
+    if (document.readyState === "loading")
+        document.addEventListener("DOMContentLoaded", initializeMappingManager, { once: true });
     else initializeMappingManager();
 })();
