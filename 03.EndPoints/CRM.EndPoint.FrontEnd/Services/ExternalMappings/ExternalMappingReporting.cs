@@ -453,6 +453,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             }
 
             var externalSides = new Dictionary<(string, int), MappingReportSide>();
+            var softwareTitle = await db.ExternalSoftwares.AsNoTracking()
+                .Where(x => x.Id == softwareId)
+                .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
             var sepidarContext = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb
                 : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
@@ -480,7 +483,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Quotation), x.QuotationId)] = new MappingReportSide(
-                        "پیش‌فاکتور سپیدار ۱", x.QuotationId.ToString(), x.Number.ToString(),
+                        "پیش‌فاکتور " + softwareTitle, x.QuotationId.ToString(), x.Number.ToString(),
                         FormatLegacyPersianDate(x.Date), x.NetPriceInBaseCurrency,
                         x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
             }
@@ -501,7 +504,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Invoice), x.InvoiceId)] = new MappingReportSide(
-                        "فاکتور سپیدار ۱", x.InvoiceId.ToString(), x.Number?.ToString() ?? "-",
+                        "فاکتور " + softwareTitle, x.InvoiceId.ToString(), x.Number?.ToString() ?? "-",
                         x.Date.HasValue ? FormatLegacyPersianDate(x.Date.Value) : "-",
                         x.Amount, x.CustomerRealName,
                         $"PartyId: {x.PartyId} | FiscalYearRef: {x.FiscalYearId}");
@@ -515,7 +518,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
-                        "مشتری سپیدار ۱", x.PartyId.ToString(), x.PartyId.ToString(),
+                        "مشتری " + softwareTitle, x.PartyId.ToString(), x.PartyId.ToString(),
                         "", null, $"{x.Name} {x.LastName}".Trim(),
                         x.IsCustomer ? "مشتری فعال در فهرست اشخاص" : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
             }
