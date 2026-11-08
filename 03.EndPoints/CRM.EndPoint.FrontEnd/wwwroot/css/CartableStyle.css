@@ -1602,6 +1602,7 @@
         z-index: 20;
         width: max-content;
         min-width: 148px;
+        max-width: none;
         padding: 4px;
         border: 1px solid var(--cartable-border);
         border-radius: 7px;
