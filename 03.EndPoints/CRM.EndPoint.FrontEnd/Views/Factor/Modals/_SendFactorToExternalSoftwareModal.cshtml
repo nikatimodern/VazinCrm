@@ -1,20 +1,28 @@
 <div class="modal fade" id="sendFactorToExternalSoftwareModal" tabindex="-1"
-     data-bs-backdrop="static" aria-labelledby="sendFactorToExternalSoftwareTitle" data-bs-focus="false">
+     data-bs-backdrop="static" data-bs-focus="false" aria-labelledby="sendFactorToExternalSoftwareTitle">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-        <div class="modal-content">
+        <div class="modal-content external-mapping-modal">
             <div class="modal-header">
-                <h5 class="modal-title" id="sendFactorToExternalSoftwareTitle">بررسی انتقال فاکتور به سپیدار</h5>
+                <div class="external-mapping-heading">
+                    <span class="external-mapping-icon"><i class="fas fa-desktop"></i></span>
+                    <div>
+                        <h5 class="modal-title external-mapping-title" id="sendFactorToExternalSoftwareTitle">نرم‌افزار مالی</h5>
+                        <div class="external-mapping-subtitle" id="sendFactorToExternalSoftwareSubtitle">نرم‌افزار ۱ از ۱</div>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <div class="modal-body">
-                <div id="externalFactorPreviewContent" class="external-prefactor-preview" aria-live="polite"></div>
+                <div id="externalFactorPreviewContent" class="external-mapping-card" aria-live="polite"></div>
                 <p class="text-muted small mt-3 mb-0">
-                    در این مرحله فقط فاکتور و ردیف‌های آن در سپیدار ثبت می‌شوند؛ خروج انبار و سند حسابداری صادر نمی‌شوند.
+                    در این مرحله فقط فاکتور در سپیدار ثبت می‌شود؛ خروج انبار و سند حسابداری صادر نمی‌شوند.
                 </p>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
-                <button type="button" class="buttonGray" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" id="confirmSendExternalFactorBtn" class="buttonGreen0">تأیید و ثبت در سپیدار</button>
+            <div class="modal-footer justify-content-end gap-2">
+                <button type="button" class="buttonCancel-white" data-bs-dismiss="modal">
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i> برگشت
+                </button>
+                <button type="button" id="confirmSendExternalFactorBtn" class="buttonGreen0">تأیید و ثبت در نرم‌افزار</button>
             </div>
         </div>
     </div>
