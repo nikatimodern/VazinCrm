@@ -298,9 +298,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     //const tabId = location.hash?.split("=")[1];
     const { tab = "TPrefactorFactorId", sub } = getUrlParams();
-    if (document.getElementById(tab)) {
-        GetCartable(tab, sub);
-    }
+    // A temporarily unavailable tab (including a bookmarked URL) falls back to the default.
+    const activeTab = document.getElementById(tab) ? tab : "TPrefactorFactorId";
+    GetCartable(activeTab, activeTab === tab ? sub : undefined);
 });
 
 const exportExcelPreFactors = async () => {
@@ -397,6 +397,7 @@ const exportExcelFactors = async () => {
 };*/
 
 const GetCartable = (tabId, subId) => {
+    if (!document.getElementById(tabId)) return;
     setUrlParams({ tab: tabId, sub: subId });
     document.querySelectorAll(".cartable-pane").forEach(el => el.classList.add("d-none"));
     document.querySelectorAll(".TCar").forEach(async (item) => {
