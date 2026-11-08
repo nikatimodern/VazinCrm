@@ -936,47 +936,5 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     ex);
             }
         }
-
-        // NOT CALLED from Index or any public route.
-        // This write method must only be wired to an administrator-only one-time POST
-        // AFTER the user has reviewed the candidate counts and approved the migration.
-        private async Task<int> ApplyLegacySepidarMappingPlanAsync(Guid targetSoftwareId, CancellationToken ct = default)
-        {
-            var plan = await BuildLegacySepidarMappingPlanAsync(targetSoftwareId, ct);
-            if (plan.Pending.Count == 0) return 0;
-
-            await using var transaction = await db.Database.BeginTransactionAsync(ct);
-            try
-            {
-                // Never overwrite an existing mapping or silently reuse a target record.
-                var live = await db.ExternalMappings.AsNoTracking()
-                    .Where(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                             || x.MapType == ExternalMappingTypeEnum.فاکتور
-                             || x.MapType == ExternalMappingTypeEnum.مشتری)
-                    .ToListAsync(ct);
-
-                foreach (var candidate in plan.Pending)
-                {
-                    if (live.Any(x => x.ExternalSoftwareId == candidate.ExternalSoftwareId
-                        && ((x.EntityName == candidate.EntityName
-                             && x.EntityId == candidate.EntityId
-                             && x.MapType == candidate.MapType)
-                            || (x.ExEntityName == candidate.ExEntityName
-                                && x.ExEntityId == candidate.ExEntityId))))
-                        throw new InvalidOperationException(
-                            "نگاشت‌های مالی هنگام آماده‌سازی تغییر کرده‌اند؛ پیش‌نمایش را دوباره تهیه کنید.");
-                }
-
-                db.ExternalMappings.AddRange(plan.Pending);
-                await db.SaveChangesAsync(ct);
-                await transaction.CommitAsync(ct);
-                return plan.Pending.Count;
-            }
-            catch
-            {
-                await transaction.RollbackAsync(ct);
-                throw;
-            }
-        }
     }
 }
