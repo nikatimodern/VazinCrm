@@ -64,7 +64,13 @@ function initCartableMobileSearch() {
 
         // Capture the first click before initSearchInput's regular click-to-search handler.
         icon.addEventListener("click", event => {
-            if (!mobile.matches || group.classList.contains("is-search-open")) return;
+            if (!mobile.matches) return;
+            if (group.classList.contains("is-search-open")) {
+                // Keep the input focused so an empty search does not close after clicking the icon.
+                input.focus({ preventScroll: true });
+                return;
+            }
+            // The first tap only expands; the shared search handler runs on later taps.
             event.preventDefault();
             event.stopImmediatePropagation();
             expand();
