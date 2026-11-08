@@ -1272,6 +1272,11 @@
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
 
+/* Desktop keeps the existing status radio controls visible. */
+#cartableWorkspace .cartable-mobile-status-filter__toggle {
+    display: none;
+}
+
 /* Only the Cartable navigation and document search use compact mobile layout. */
 @media (max-width: 767px) {
     #cartableWorkspace #CartableTabs {
@@ -1548,6 +1553,73 @@
     #cartableWorkspace .cartable-invoice-toolbar > .cartable-column-count {
         order: 3;
         margin-inline-start: auto;
+    }
+
+    /* Supply pre-factor status is a small dropdown on mobile, keeping the original radios. */
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter {
+        position: relative;
+        flex: 0 0 auto;
+        max-width: none;
+        z-index: 5;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 30px;
+        padding: 3px 7px;
+        border: 1px solid var(--cartable-border);
+        border-radius: 6px;
+        background: #F0F1F7;
+        color: var(--cartable-primary);
+        font: 500 11px/1.5 IRANSansMedium;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle:focus-visible {
+        outline: 2px solid var(--cartable-secondary);
+        outline-offset: 2px;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter__toggle svg {
+        flex-shrink: 0;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter > .filter-switch {
+        display: none;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter.is-open > .filter-switch {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        inset-block-start: calc(100% + 3px);
+        inset-inline-end: 0;
+        z-index: 20;
+        width: max-content;
+        min-width: 148px;
+        padding: 4px;
+        border: 1px solid var(--cartable-border);
+        border-radius: 7px;
+        background: #fff;
+        box-shadow: 0 6px 18px rgb(0 0 0 / 12%);
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch-item,
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch label {
+        width: 100%;
+    }
+
+    #cartableWorkspace #TaminPrefactorTab-pane .cartable-mobile-status-filter .filter-switch label {
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        padding-inline: 8px;
+        cursor: pointer;
     }
 
     /* The search grows in-flow and moves sibling filters to the next flex row. */
