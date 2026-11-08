@@ -102,7 +102,8 @@
             const key = state.softwareId+":"+row.mapType+":"+value;
             if (state.preview.has(key)) return true;
             return row.status === "pending" && row.options?.length === 1 &&
-                String(row.sepidar?.id) === value && !!row.sepidar?.customer;
+                String(row.sepidar?.id) === value &&
+                !!row.sepidar?.title && !row.sepidar.title.includes("مشخص نیست");
         }
 
         function targetPreview(row) {
@@ -614,8 +615,22 @@
             });
         }
 
+        async function refreshSaved() {
+            const softwareId = state.softwareId;
+            const options = await sendApiRequest({
+                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+            });
+            if (!isActive() || softwareId !== state.softwareId) return;
+            if (options) {
+                state.counts = options.counts || [];
+                fillTypes("saved");
+                updateSummary();
+            }
+            await loadSaved();
+        }
+
         softwareSelect.addEventListener("change", changeSoftware);
-        get("lmrRefreshSaved").addEventListener("click", loadSaved);
+        get("lmrRefreshSaved").addEventListener("click", refreshSaved);
         get("lmrCompute").addEventListener("click", calculate);
 
         (async () => {
