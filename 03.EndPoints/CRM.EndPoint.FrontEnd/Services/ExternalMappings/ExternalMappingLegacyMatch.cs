@@ -142,9 +142,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 x.EntityName == nameof(Factor) && x.Status == "NotMatched");
         }
 
-        private async Task<LegacyMappingPlan> BuildLegacySepidarMappingPlanAsync(CancellationToken ct)
+        private async Task<LegacyMappingPlan> BuildLegacySepidarMappingPlanAsync(Guid targetSoftwareId, CancellationToken ct)
         {
-            // This method only READS data. It never calls Add/Update/SaveChanges.
+            // This method is read-only; use the selected Sepidar context throughout.
+            if (targetSoftwareId != Sepidar1SoftwareId && targetSoftwareId != Sepidar2SoftwareId)
+                throw new ArgumentException("محاسبه پیشنهاد فقط برای نرم‌افزارهای سپیدار پشتیبانی می‌شود.");
+
+            var sepidar = targetSoftwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb : s2Db;
             var readStage = "CRM.PreFactors";
             try
             {
@@ -167,9 +172,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(c => new LegacyCustomerRow(c.Id, c.CompanyName, c.FinancialCustomerId))
                 .ToListAsync(ct);
             var customersById = customers.ToDictionary(x => x.Id);
-            var financialCustomerIds = customers
-                .Where(x => x.FinancialCustomerId.HasValue)
-                .ToDictionary(x => x.Id, x => x.FinancialCustomerId!.Value);
+            // FinancialCustomerId is historical Sepidar 1 data, never a Sepidar 2 PartyId.
+            var financialCustomerIds = targetSoftwareId == Sepidar1SoftwareId
+                ? customers.Where(x => x.FinancialCustomerId.HasValue)
+                    .ToDictionary(x => x.Id, x => x.FinancialCustomerId!.Value)
+                : new Dictionary<Guid, int>();
 
             readStage = "CRM.ExternalMappings";
             var existing = await db.ExternalMappings.AsNoTracking()
@@ -178,10 +185,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                          || m.MapType == ExternalMappingTypeEnum.مشتری)
                 .ToListAsync(ct);
 
-            // A customer mapping explicitly confirmed in ExternalMapping takes priority
-            // over the old FinancialCustomerId for matching Sepidar 1 records.
+            // Existing mappings for the chosen software take priority over old customer IDs.
             foreach (var mappedCustomer in existing.Where(x =>
-                x.ExternalSoftwareId == Sepidar1SoftwareId
+                x.ExternalSoftwareId == targetSoftwareId
                 && x.MapType == ExternalMappingTypeEnum.مشتری
                 && x.EntityName == nameof(Customer)
                 && x.ExEntityName == nameof(Party)))
@@ -197,15 +203,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(m => (m.ExternalSoftwareId, m.ExEntityName, m.ExEntityId))
                 .ToHashSet();
 
-            // Historical backfill is restricted to Sepidar 1 only.
             readStage = "CRM.ExternalSoftwares";
             var configuredSoftwareIds = await db.ExternalSoftwares.AsNoTracking()
-                .Where(x => x.Id == Sepidar1SoftwareId)
+                .Where(x => x.Id == targetSoftwareId)
                 .Select(x => x.Id)
                 .ToListAsync(ct);
+            if (configuredSoftwareIds.Count == 0)
+                throw new ArgumentException("نرم‌افزار انتخاب‌شده در CRM ثبت نشده است.");
 
-            readStage = "Sepidar1.FMK.FiscalYear";
-            var financialYears = await sdb.FiscalYears.AsNoTracking()
+            readStage = "Sepidar.FMK.FiscalYear";
+            var financialYears = await sepidar.FiscalYears.AsNoTracking()
                 .Select(x => new { x.FiscalYearId, x.Title, x.StartDate, x.EndDate })
                 .ToListAsync(ct);
 
@@ -308,7 +315,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             foreach (var softwareId in configuredSoftwareIds)
             {
-                var sepidar = (SepidarContextDbBase)sdb;
+                // Process exactly one selected external software per calculation.
 
                 var numbers = preFactors
                     .Where(x => x.SerialNumber > 0)
@@ -317,7 +324,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var quotations = new List<LegacyQuotationRow>();
                 foreach (var batch in numbers.Chunk(400))
                 {
-                    readStage = "Sepidar1.SLS.Quotation";
+                    readStage = "Sepidar.SLS.Quotation";
                     quotations.AddRange(await sepidar.Quotations.AsNoTracking()
                         .Where(x => batch.Contains(x.Number))
                         .Select(x => new LegacyQuotationRow(
@@ -343,7 +350,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         notMatched++;
                         AddIssue(nameof(PreFactor), pf.Id, pf.SerialNumber.ToString(),
                             "NotMatched", "QuotationNumberNotFound",
-                            $"هیچ پیش‌فاکتوری در سپیدار ۱ با Number={pf.SerialNumber} پیدا نشد.");
+                            $"هیچ پیش‌فاکتوری در نرم‌افزار انتخاب‌شده با Number={pf.SerialNumber} پیدا نشد.");
                         continue;
                     }
 
@@ -428,13 +435,13 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     quotationByPreFactor[map.EntityId] = int.Parse(map.ExEntityId);
 
                 var quotationIds = quotationByPreFactor.Values.Distinct().ToArray();
-                var legacyInvoiceIds = factors.Where(f => f.SepidarId > 0)
+                var legacyInvoiceIds = factors.Where(f => targetSoftwareId == Sepidar1SoftwareId && f.SepidarId > 0)
                     .Select(f => f.SepidarId!.Value).Distinct().ToArray();
 
                 var invoices = new Dictionary<int, LegacyInvoiceRow>();
                 foreach (var batch in quotationIds.Chunk(400))
                 {
-                    readStage = "Sepidar1.SLS.Invoice";
+                    readStage = "Sepidar.SLS.Invoice";
                     var rows = await sepidar.SalesInvoices.AsNoTracking()
                         .Where(x => x.QuotationRef.HasValue && batch.Contains(x.QuotationRef.Value))
                         .Select(x => new LegacyInvoiceRow(
@@ -448,7 +455,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 foreach (var batch in legacyInvoiceIds.Chunk(400))
                 {
-                    readStage = "Sepidar1.SLS.Invoice";
+                    readStage = "Sepidar.SLS.Invoice";
                     var rows = await sepidar.SalesInvoices.AsNoTracking()
                         .Where(x => batch.Contains(x.InvoiceId))
                         .Select(x => new LegacyInvoiceRow(
@@ -477,9 +484,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     quotationByPreFactor.TryGetValue(factor.PfactorId, out var quotationId);
                     List<LegacyInvoiceRow> matches;
 
-                    if (factor.SepidarId > 0)
+                    if (targetSoftwareId == Sepidar1SoftwareId && factor.SepidarId > 0)
                     {
-                        // Old Factor.SepidarId points to Sepidar1; it is not a Sepidar2 reference.
+                        // Old Factor.SepidarId only points to Sepidar 1.
                         matches = invoices.TryGetValue(factor.SepidarId.Value, out var invoice)
                             ? new List<LegacyInvoiceRow> { invoice } : new List<LegacyInvoiceRow>();
                     }
@@ -496,7 +503,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         && IsInLegacyFiscalYear(factor.Date, factor.DateMiladi, financialYear)
                         && invoice.NetPrice == factor.PaymentAmount
                         && (quotationId <= 0 || invoice.QuotationRef == quotationId)
-                        && (string.IsNullOrWhiteSpace(factor.SnFinancial)
+                        && (targetSoftwareId != Sepidar1SoftwareId
+                            || string.IsNullOrWhiteSpace(factor.SnFinancial)
                             || (int.TryParse(factor.SnFinancial, out var financialNumber)
                                 && invoice.Number == financialNumber))
                         && (!factor.CustomerId.HasValue
@@ -516,7 +524,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var crmNumber = factor.SnFinancial ?? factor.SepidarId?.ToString() ?? "-";
                         if (candidateInvoices.Count == 0)
                         {
-                            var reason = factor.SepidarId > 0 ? "InvoiceIdNotFound"
+                            var reason = targetSoftwareId == Sepidar1SoftwareId && factor.SepidarId > 0 ? "InvoiceIdNotFound"
                                 : quotationId == 0 ? "RelatedQuotationNotMapped"
                                 : "InvoiceForQuotationNotFound";
                             AddIssue(nameof(Factor), factor.Id, crmNumber,
@@ -536,7 +544,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                     differences.Add($"مبلغ نهایی: CRM={factor.PaymentAmount}, Sepidar={invoice.NetPrice}");
                                 if (quotationId > 0 && invoice.QuotationRef != quotationId)
                                     differences.Add($"QuotationRef: expected={quotationId}, actual={invoice.QuotationRef}");
-                                if (!string.IsNullOrWhiteSpace(factor.SnFinancial)
+                                if (targetSoftwareId == Sepidar1SoftwareId
+                                    && !string.IsNullOrWhiteSpace(factor.SnFinancial)
                                     && (!int.TryParse(factor.SnFinancial, out var number)
                                         || invoice.Number != number))
                                     differences.Add($"شماره مالی: CRM={factor.SnFinancial}, Sepidar={invoice.Number}");
@@ -601,7 +610,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => int.TryParse(x.ExEntityId, out var id) ? id : 0)
                     .Where(x => x > 0).Distinct().ToArray();
 
-                readStage = "Sepidar1.SLS.Quotation customer references";
+                readStage = "Sepidar.SLS.Quotation customer references";
                 var quotationParties = new Dictionary<int, int?>();
                 foreach (var batch in quotationIdsForCustomers.Chunk(400))
                 {
@@ -617,7 +626,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         quotationParties[row.QuotationId] = row.PartyId;
                 }
 
-                readStage = "Sepidar1.SLS.Invoice customer references";
+                readStage = "Sepidar.SLS.Invoice customer references";
                 var invoiceParties = new Dictionary<int, int?>();
                 foreach (var batch in invoiceIdsForCustomers.Chunk(400))
                 {
@@ -674,7 +683,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 // Check actual GNR.Party rows; don't use a document's PartyRef blindly.
                 var partyIds = evidence.Select(x => x.SepidarPartyId).Distinct().ToArray();
-                readStage = "Sepidar1.GNR.Party customer validation";
+                readStage = "Sepidar.GNR.Party customer validation";
                 var validSepidarCustomers = new HashSet<int>();
                 foreach (var batch in partyIds.Chunk(400))
                 {
@@ -715,7 +724,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                           || savedMappings.Any(x => x.ExEntityName != nameof(Party))
                             ? "ExistingCustomerMappingMismatch"
                             : !validSepidarCustomers.Contains(savedPartyIds[0])
-                                && !await sdb.Parties.AsNoTracking()
+                                && !await sepidar.Parties.AsNoTracking()
                                     .AnyAsync(x => x.PartyId == savedPartyIds[0] && x.IsCustomer, ct)
                                     ? "PartyNotFoundOrNotCustomer"
                             : existing.Any(x => x.ExternalSoftwareId == softwareId
@@ -915,7 +924,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return new LegacyMappingPlan(
                 alreadyMapped, notMatched, ambiguous, pending, issues, duplicateTargetGroups,
                 customerConflicts,
-                existing.Count(x => x.ExternalSoftwareId == Sepidar1SoftwareId
+                existing.Count(x => x.ExternalSoftwareId == targetSoftwareId
                     && x.MapType == ExternalMappingTypeEnum.مشتری
                     && x.EntityName == nameof(Customer)));
             }
@@ -930,9 +939,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         // NOT CALLED from Index or any public route.
         // This write method must only be wired to an administrator-only one-time POST
         // AFTER the user has reviewed the candidate counts and approved the migration.
-        private async Task<int> ApplyLegacySepidarMappingPlanAsync(CancellationToken ct = default)
+        private async Task<int> ApplyLegacySepidarMappingPlanAsync(Guid targetSoftwareId, CancellationToken ct = default)
         {
-            var plan = await BuildLegacySepidarMappingPlanAsync(ct);
+            var plan = await BuildLegacySepidarMappingPlanAsync(targetSoftwareId, ct);
             if (plan.Pending.Count == 0) return 0;
 
             await using var transaction = await db.Database.BeginTransactionAsync(ct);
