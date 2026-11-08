@@ -35,7 +35,7 @@
                     </div>
                 }
                 @if (Model._Type < 2 && Model.loc != 2) {
-                    <input class="input-date fbold sdate" data-onSelect="onSelectEditTaskDate" data-id="@item.Id" value="@(item.Date != null && item.Date.Length > 0 ? item.Date : "")" placeholder="تاریخ" data-mask-date onfocus="handleFocusEditable(this, from = 'date')" onblur="handleBlurEditable('@item.Id',this,'date', '@Model._Type')">
+                    <input class="input-date fbold sdate" data-onSelect="onSelectEditTaskDate" data-id="@item.Id" value="@(item.Date != null && item.Date.Length > 0 ? item.Date : "")" placeholder="تاریخ" data-mask-date onfocus="handleFocusEditable(this, from = 'date')" onblur="handleBlurEditable('@item.Id',this,'date', '@Model._Type')" autocomplete="off" />
                 } else {
                     <span class="fbold">@item.Date</span>
                 }
