@@ -10,6 +10,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
+using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
