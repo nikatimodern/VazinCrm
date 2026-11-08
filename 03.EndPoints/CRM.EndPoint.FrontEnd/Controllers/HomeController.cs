@@ -100,9 +100,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
 
 
-
-                // Historical external mappings are managed explicitly from the admin mapping workspace.
-
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
             }
