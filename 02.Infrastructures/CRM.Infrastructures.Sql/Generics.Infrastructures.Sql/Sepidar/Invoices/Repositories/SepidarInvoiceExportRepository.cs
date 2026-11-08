@@ -104,7 +104,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 CrmProductTitle = $"{factorItem.ProductSmallName} {factorItem.Product}".Trim(),
                 ItemTitle = string.Empty, // Resolved from the linked Sepidar quotation item by SepidarService.
                 StockRef = quotationItem.StockRef,
-                StockTitle = quotationItem.StockRef.ToString(CultureInfo.InvariantCulture),
+                StockTitle = string.Empty, // Filled by SepidarService from the mapped StockRef.
                 Quantity = quantity,
                 Fee = factorItem.UnitAmount,
                 Price = price,
@@ -142,15 +142,6 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 throw new InvalidOperationException(
                     $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({line.Quantity + previousQuantity:N3}) از تعداد پیش‌فاکتور سپیدار ({quotedQuantity:N3}) بیشتر می‌شود.");
         }
-
-        var stockIds = lines.Select(x => x.StockRef).Distinct().ToArray();
-        var stocks = await context.Stocks.AsNoTracking()
-            .Where(x => stockIds.Contains(x.StockID))
-            .Select(x => new { x.StockID, x.Title })
-            .ToDictionaryAsync(x => x.StockID, x => x.Title, ct);
-        foreach (var line in lines)
-            line.StockTitle = stocks.GetValueOrDefault(line.StockRef)
-                ?? line.StockRef.ToString(CultureInfo.InvariantCulture);
 
         return new SepidarInvoiceExportPreview {
             QuotationId = quotationId,
