@@ -390,10 +390,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers
                     .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName, x.FinancialCustomerId })
                     .ToListAsync(ct);
                 foreach (var x in data)
+                {
+                    var customerName = $"{x.CompanyName} {x.AgentName}".Trim();
+                    if (string.IsNullOrWhiteSpace(customerName))
+                        customerName = $"مشتری با کد {x.CustomerCode}";
+
                     crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
                         "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
-                        "", null, $"{x.CompanyName} {x.AgentName}".Trim(),
+                        "", null, customerName,
                         $"FinancialCustomerId: {x.FinancialCustomerId}");
+                }
             }
 
             // All map types can be viewed, including cash, accounting and cost centers.
