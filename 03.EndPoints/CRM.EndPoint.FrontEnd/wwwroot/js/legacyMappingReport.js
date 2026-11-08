@@ -244,6 +244,76 @@
                     (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
         }
 
+        // Break technical mismatch strings into readable, per-field comparisons.
+        // Example: QuotationId=5: مبلغ ناخالص: CRM=351000000, Sepidar=1900000000/0000
+        function formatComparisonValue(value) {
+            const raw = String(value ?? "").trim();
+            // Sepidar's legacy decimal formatting sometimes uses / as separator.
+            const normalized = raw.replace(/[۰-۹]/g, c => String("۰۱۲۳۴۵۶۷۸۹".indexOf(c)))
+                .replace(/[٠-٩]/g, c => String("٠١٢٣٤٥٦٧٨٩".indexOf(c)))
+                .replace(/\//g, ".").replace(/,/g, "");
+            if (/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) {
+                const n = Number(normalized);
+                if (Number.isFinite(n)) return n.toLocaleString("fa-IR", { maximumFractionDigits: 4 });
+            }
+            return raw;
+        }
+
+        function renderMismatchDetails(row) {
+            if (!row.details || !["notMatched", "ambiguous"].includes(row.status)) return "";
+
+            // Different candidate invoices/quotations are separated by " | ".
+            const chunks = row.details.split(/\s+\|\s+(?=(?:Quotation|Invoice)Id=\d+:)/);
+            const sections = chunks.map(chunk => {
+                const candidate = chunk.match(/^(Quotation|Invoice)Id=(\d+):\s*([\s\S]*)$/);
+                if (!candidate) return "";
+
+                const candidateId = candidate[2];
+                const kind = candidate[1] === "Quotation" ? "پیش‌فاکتور" : "فاکتور";
+                const option = (row.options || []).find(x => String(x.id) === candidateId);
+                const title = option && option.title
+                    ? option.title
+                    : kind + " احتمالی با شناسه " + candidateId;
+                const differences = candidate[3].split(/;\s*/).filter(Boolean);
+                const tableRows = [];
+                const other = [];
+
+                for (const difference of differences) {
+                    const pair = difference.match(/^(.+?):\s*CRM=([^,;]+),\s*Sepidar=(.+)$/);
+                    const customer = difference.match(/^مشتری:\s*CRM SepidarPartyId=(\d+),\s*Sepidar=(\d+)$/);
+                    const related = difference.match(/^QuotationRef:\s*expected=(\d+),\s*actual=(\d+)$/);
+                    const text = pair || customer || related;
+                    if (!text) {
+                        other.push(difference);
+                        continue;
+                    }
+                    const label = customer ? "کد مشتری سپیدار برای مشتری CRM" :
+                        related ? "پیش‌فاکتور مرتبط" : pair[1].trim();
+                    const crmValue = customer || related ? text[1] : pair[2];
+                    const sepidarValue = customer || related ? text[2] : pair[3];
+                    const isMoney = label.includes("مبلغ");
+                    tableRows.push('<div class="lmr-compare-field">' +
+                        '<span class="lmr-compare-label">' + escape(label + (isMoney ? " (ریال)" : "")) + '</span>' +
+                        '<strong>' + escape(formatComparisonValue(crmValue)) + '</strong>' +
+                        '<strong>' + escape(formatComparisonValue(sepidarValue)) + '</strong></div>');
+                }
+
+                if (!tableRows.length && !other.length) return "";
+                const header = '<div class="lmr-compare-headers"><span>مورد اختلاف</span><span>CRM</span><span>' +
+                    escape(state.softwareTitle) + '</span></div>';
+                return '<section class="lmr-mismatch-candidate">' +
+                    '<h5>' + escape(title) + '</h5>' +
+                    (tableRows.length ? header + tableRows.join("") : "") +
+                    (other.length ? '<div class="lmr-mismatch-other">' +
+                        other.map(line => '<p>' + escape(line) + '</p>').join("") + '</div>' : "") +
+                    '</section>';
+            }).filter(Boolean);
+
+            if (!sections.length) return "";
+            return '<div class="lmr-mismatch-details"><h4>مقایسه موارد اختلاف</h4>' +
+                sections.join("") + '</div>';
+        }
+
         function card(row) {
             const title = reason(row);
             const isCustomer = Number(row.mapType) === 5;
@@ -280,8 +350,13 @@
                     (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
                         ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
                 '</div>'+
-                (row.status === "pending" || row.status === "saved" ? "" :
-                    '<div class="lmr-one-line">'+escape(title[1])+'</div>')+
+                (row.reason === "PartyAlreadyMappedToAnotherCustomer" ||
+                    row.reason === "ExistingDuplicateCustomerParty"
+                    ? '<div class="lmr-owner-notice"><i class="fas fa-link" aria-hidden="true"></i><strong>' +
+                        escape(row.details || "نگاشت قبلی این مشتری را بررسی کنید.") +
+                        '</strong></div>'
+                    : row.status === "pending" || row.status === "saved" ? "" :
+                        '<div class="lmr-one-line">' + escape(title[1]) + '</div>')+
                 '<footer class="lmr-item-footer">'+
                     '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
                     inputTarget(row)+
@@ -290,8 +365,13 @@
                     '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
                     (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
                         '<ul>'+related.map(line => '<li>'+escape(line)+'</li>').join("")+'</ul></div>' : '')+
-                    (row.details && row.status !== "saved" && row.status !== "pending" ? '<details class="lmr-technical"><summary>شرح فنی برای بررسی دقیق‌تر</summary><p>'+
-                        escape(row.details)+'</p></details>' : '')+
+                    renderMismatchDetails(row) +
+                    (row.details && row.status !== "saved" && row.status !== "pending" &&
+                        !renderMismatchDetails(row) &&
+                        row.reason !== "PartyAlreadyMappedToAnotherCustomer" &&
+                        row.reason !== "ExistingDuplicateCustomerParty"
+                            ? '<div class="lmr-technical"><h4>توضیحات تکمیلی</h4><p>' +
+                                escape(row.details) + '</p></div>' : '')+
                 '</div></article>';
         }
 
