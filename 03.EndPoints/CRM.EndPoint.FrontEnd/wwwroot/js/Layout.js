@@ -1,3 +1,46 @@
+/** Collapse the shared header on phones, leaving its tools available behind a centered toggle. */
+function initMobileHeaderCollapse() {
+    const panel = document.getElementById("crmMobileHeaderPanel");
+    const toggle = document.getElementById("crmMobileHeaderToggle");
+    if (!panel || !toggle) return;
+
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const setOpen = (open) => {
+        panel.classList.remove("is-expanded");
+        panel.classList.toggle("is-open", open);
+        panel.inert = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "بستن ابزارهای بالای صفحه" : "نمایش ابزارهای بالای صفحه");
+        if (open && reducedMotion.matches) panel.classList.add("is-expanded");
+    };
+
+    const syncViewport = () => {
+        if (mobile.matches) {
+            setOpen(false);
+        } else {
+            panel.classList.remove("is-open", "is-expanded");
+            panel.inert = false;
+            toggle.setAttribute("aria-expanded", "false");
+        }
+    };
+
+    toggle.addEventListener("click", () => {
+        if (mobile.matches) setOpen(!panel.classList.contains("is-open"));
+    });
+
+    panel.addEventListener("transitionend", event => {
+        if (event.target === panel && event.propertyName === "height" && mobile.matches
+            && panel.classList.contains("is-open")) {
+            panel.classList.add("is-expanded");
+        }
+    });
+
+    mobile.addEventListener("change", syncViewport);
+    syncViewport();
+}
+
 var showFlag = 0;
 
 
@@ -52,6 +95,7 @@ let mySer = new MyService();
 let CrmSer = new CrmService();
 let myDate = new GetDate();
 document.addEventListener("DOMContentLoaded", async () => {
+    initMobileHeaderCollapse();
     await GetUserLogin();
     
     setting = await GetSetting();
