@@ -1272,276 +1272,100 @@
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
 
-/* Cartable's mobile controls: compact navigation, one-row document filters, and accessible popovers. */
-#cartableWorkspace .cartable-mobile-search-toggle,
-#cartableWorkspace .cartable-mobile-filter-toggle {
-    display: none;
-}
-
+/* Only the Cartable navigation and document search use compact mobile layout. */
 @media (max-width: 767px) {
     #cartableWorkspace #CartableTabs {
         flex-wrap: nowrap !important;
         justify-content: flex-start !important;
         overflow-x: auto;
-        overscroll-behavior-inline: contain;
-        scroll-snap-type: x proximity;
         scrollbar-width: none;
-        gap: 5px;
-        padding: 0 2px 5px;
-        width: 100%;
+        gap: 4px;
+        padding-bottom: 5px;
     }
-    #cartableWorkspace #CartableTabs::-webkit-scrollbar,
-    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs, #salesExpertsTabs)::-webkit-scrollbar {
+
+    #cartableWorkspace #CartableTabs::-webkit-scrollbar {
         display: none;
     }
+
     #cartableWorkspace #CartableTabs .TCar {
         flex: 0 0 auto;
         width: auto;
-        min-width: max-content;
-        min-height: 36px;
-        height: 36px;
-        padding: 5px 10px;
+        min-width: 0;
+        height: 32px;
+        min-height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
         white-space: nowrap;
-        scroll-snap-align: start;
-    }
-    #cartableWorkspace .CartableContent {
-        padding: 2px;
-        border-radius: 9px;
-    }
-    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs, #salesExpertsTabs) {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        justify-content: flex-start !important;
-        overflow-x: auto;
-        overscroll-behavior-inline: contain;
-        scrollbar-width: none;
-        gap: 4px;
-        padding: 2px 2px 5px;
-        min-height: 38px;
-    }
-    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs, #salesExpertsTabs) .nav-item {
-        flex: 0 0 auto;
-        width: auto;
-    }
-    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs, #salesExpertsTabs) .nav-link {
-        min-height: 34px;
-        padding: 5px 9px;
-        white-space: nowrap;
-        font-size: 12px;
-    }
-    #cartableWorkspace #allTabFactors {
-        min-height: 38px;
-        padding: 2px;
-        gap: 3px;
-        border-bottom: none !important;
-    }
-    #cartableWorkspace #allTabFactors .nav-link {
-        margin-bottom: 0 !important;
-        min-height: 34px;
-        padding: 5px 8px;
-        font-size: 12px;
-    }
-    #cartableWorkspace #CPrefactorFactorId #tabContentAllFactors {
-        padding: 2px !important;
-        gap: 2px !important;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-column-heading {
-        min-height: 25px;
-        padding: 2px 4px;
-        gap: 5px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-column-heading h2 {
-        font-size: 12px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-column-count {
-        font-size: 11px;
-        padding: 2px 6px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .parent-all-factors .InfoData {
-        padding: 2px !important;
-        border: 0;
     }
 
-    #cartableWorkspace .cartable-list-toolbar {
-        position: relative;
-        z-index: 2;
-        gap: 5px;
-        padding-bottom: 4px;
-        min-height: 42px;
-        align-items: center;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar {
-        flex-wrap: nowrap;
-    }
-    #cartableWorkspace .cartable-list-toolbar .search-group {
-        flex: 0 0 38px;
-        width: 38px;
-        max-width: 38px;
-        height: 38px;
-        min-width: 0;
-        order: 0;
-    }
-    #cartableWorkspace .cartable-list-toolbar .search-group .search-icon,
-    #cartableWorkspace .cartable-list-toolbar .search-group:not(.is-search-open) input {
-        display: none;
-    }
-    #cartableWorkspace .cartable-mobile-search-toggle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        width: 38px;
-        height: 38px;
-        padding: 8px;
-        border: 1px solid var(--cartable-border);
-        border-radius: 7px;
-        background: #F3EDFC;
-        color: var(--cartable-secondary);
-        cursor: pointer;
-    }
-    #cartableWorkspace .cartable-mobile-search-toggle svg {
-        width: 19px;
-        height: 19px;
-    }
-    #cartableWorkspace .cartable-mobile-search-toggle.has-query::after {
-        content: "";
-        position: absolute;
-        inset-block-start: 4px;
-        inset-inline-start: 4px;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--cartable-primary);
-    }
-    #cartableWorkspace .cartable-list-toolbar .search-group.is-search-open {
-        position: absolute;
-        inset: 0 0 auto;
-        z-index: 5;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        box-sizing: border-box;
-        flex: 0 0 100%;
-        width: 100%;
-        max-width: none;
-        height: 42px;
+    #cartableWorkspace #allTabFactors {
         padding: 2px;
-        border-radius: 8px;
-        background: #fff;
-        box-shadow: 0 2px 9px rgb(0 0 0 / 9%);
+        gap: 3px;
     }
-    #cartableWorkspace .cartable-list-toolbar .search-group.is-search-open input {
-        display: block;
-        flex: 1 1 auto;
-        width: auto;
-        min-width: 0;
-        min-height: 38px;
-        padding-inline: 10px !important;
-        font-size: 16px;
+
+    #cartableWorkspace #allTabFactors .nav-link {
+        padding: 4px 8px;
+        font-size: 12px;
     }
-    #cartableWorkspace .cartable-list-toolbar .search-group.is-search-open .cartable-mobile-search-toggle {
-        flex: 0 0 38px;
+
+    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) {
+        gap: 4px;
+        padding-bottom: 5px;
     }
-    #cartableWorkspace .cartable-mobile-filter-toggle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-        min-width: 88px;
-        max-width: min(40vw, 155px);
-        min-height: 38px;
-        padding: 5px 9px;
-        border: 1px solid var(--cartable-border);
-        border-radius: 7px;
-        background: #E7F3F0;
-        color: var(--cartable-primary);
-        font: 500 12px/1.5 IRANSansMedium;
-        text-align: start;
+
+    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .nav-link {
+        min-height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    #cartableWorkspace .cartable-column-heading {
+        padding: 3px 4px 5px;
+        gap: 5px;
+    }
+
+    #cartableWorkspace .cartable-column-heading h2 {
+        font-size: 14px;
+    }
+
+    #cartableWorkspace .cartable-column-count {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+
+    /* Expand within the flex layout so radio filters and actions wrap naturally. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search {
+        flex: 0 0 34px;
+        width: 34px;
+        max-width: 34px;
+        transition: flex-basis 260ms ease, max-width 260ms ease;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search:not(.is-search-open) input {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search .search-icon {
         cursor: pointer;
     }
-    #cartableWorkspace .cartable-mobile-status-label {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    #cartableWorkspace .cartable-mobile-filter-toggle::after {
-        content: "⌄";
-        flex: 0 0 auto;
-        font: 700 17px/1 sans-serif;
-    }
-    #cartableWorkspace .cartable-mobile-filter-toggle[aria-expanded="true"]::after {
-        transform: rotate(180deg);
-    }
-    #cartableWorkspace .cartable-list-toolbar .filter-switch {
-        display: none !important;
-        margin: 0;
-    }
-    #cartableWorkspace .cartable-list-toolbar .filter-switch.is-mobile-status-open {
-        position: absolute;
-        z-index: 6;
-        inset-block-start: calc(100% + 2px);
-        inset-inline-start: 0;
-        display: flex !important;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 2px;
-        width: min(260px, 100%);
-        max-height: min(320px, 60dvh);
-        overflow-y: auto;
-        padding: 5px;
-        border: 1px solid var(--cartable-border);
-        border-radius: 9px;
-        background: #fff;
-        box-shadow: 0 5px 18px rgb(0 0 0 / 13%);
-    }
-    #cartableWorkspace .cartable-list-toolbar .filter-switch.is-mobile-status-open .filter-switch-item,
-    #cartableWorkspace .cartable-list-toolbar .filter-switch.is-mobile-status-open label {
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search.is-search-open {
+        flex-basis: 100%;
         width: 100%;
+        max-width: 100%;
     }
-    #cartableWorkspace .cartable-list-toolbar .filter-switch.is-mobile-status-open label {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 38px;
-        padding: 7px 10px;
-        white-space: normal;
-        text-align: start;
-    }
-    #cartableWorkspace .cartable-list-toolbar__actions {
-        margin-inline-start: auto;
-        gap: 4px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar__actions > :is(.btnFilter, .buttonExcel) {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 38px;
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        margin: 0;
-        padding: 7px;
-        border-radius: 7px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar__actions svg {
-        width: 19px !important;
-        height: 19px;
-    }
-    #cartableWorkspace .cartable-mobile-search-toggle:focus-visible,
-    #cartableWorkspace .cartable-mobile-filter-toggle:focus-visible {
-        outline: 2px solid var(--cartable-secondary);
-        outline-offset: 2px;
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search.is-search-open input {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
     }
 }
 
-@media (max-width: 359px) {
-    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar {
-        gap: 3px;
-    }
-    #cartableWorkspace #CPrefactorFactorId .cartable-mobile-filter-toggle {
-        min-width: 70px;
-        max-width: 105px;
-        padding-inline: 6px;
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar .search-group.cartable-mobile-search {
+        transition: none;
     }
 }
