@@ -37,6 +37,7 @@ using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.Menu;
 using CRM.EndPoint.FrontEnd.Services.PushNotification;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
+using CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 using CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.EndPoint.FrontEnd.Services.ViewRender;
@@ -178,6 +179,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<PreFactorService>();
+            services.AddScoped<ExternalMappingService>();
             services.AddSingleton<ExcelExportService>();
 
             services.AddScoped<ISmsIrService, SmsIrService>();
