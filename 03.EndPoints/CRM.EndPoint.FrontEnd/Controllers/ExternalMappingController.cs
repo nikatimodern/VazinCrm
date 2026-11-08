@@ -74,6 +74,40 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             }
         }
 
+        public sealed class DeleteExternalMappingRequest
+        {
+            public Guid SoftwareId { get; set; }
+            public Guid MappingId { get; set; }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteExternalMapping(
+            [FromBody] DeleteExternalMappingRequest request, CancellationToken ct)
+        {
+            if (request == null)
+                return BadRequest("نگاشت انتخاب نشده است.");
+
+            try
+            {
+                await mappings.DeleteExternalMappingAsync(
+                    request.SoftwareId, request.MappingId, ct);
+                return Ok(new { deleted = true });
+            }
+            catch (ExternalMappingService.MappingConflictException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveSelectedExternalMappings(
