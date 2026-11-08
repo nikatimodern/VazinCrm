@@ -771,6 +771,9 @@
                     }
                     if (failed) break;
                 }
+            } catch (error) {
+                failed = true;
+                // Earlier batches may already have been committed. Report their count.
             } finally {
                 state.processing = false;
                 softwareSelect.disabled = false;
@@ -868,6 +871,7 @@
         });
 
         proposalRoot.addEventListener("change", event => {
+            if (state.processing) return;
             const panel = event.target.closest("[data-key]");
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
@@ -903,6 +907,7 @@
         });
 
         selectAll.addEventListener("change", () => {
+            if (state.processing) return;
             state.proposal.visible.forEach(row => {
                 const item = payload(row);
                 if (!item) return;
