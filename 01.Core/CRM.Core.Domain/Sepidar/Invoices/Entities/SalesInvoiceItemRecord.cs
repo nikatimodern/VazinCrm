@@ -5,11 +5,8 @@ namespace CRM.Core.Domain.Sepidar.Invoices.Entities;
 
 // Write model for SLS.InvoiceItem. Do not remap the existing vwInvoiceItem read model.
 [Table("InvoiceItem", Schema = "SLS")]
-public class SalesInvoiceItemRecord
-{
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
-    public int InvoiceItemID { get; set; }
+public class SalesInvoiceItemRecord {
+    [Key] public int InvoiceItemID { get; set; }
     public int InvoiceRef { get; set; }
     public int RowID { get; set; }
     public int ItemRef { get; set; }
@@ -35,7 +32,7 @@ public class SalesInvoiceItemRecord
     public decimal DutyInBaseCurrency { get; set; }
     public decimal NetPriceInBaseCurrency { get; set; }
     public decimal Rate { get; set; }
-    public int QuotationItemRef { get; set; }
+    public int? QuotationItemRef { get; set; }
     public string Description { get; set; }
     public string Description_En { get; set; }
     public int? DiscountInvoiceItemRef { get; set; }
@@ -54,4 +51,8 @@ public class SalesInvoiceItemRecord
     public decimal BankFeeForCurrencySaleInBaseCurrency { get; set; }
     public bool IsAggregateDiscountInvoiceItem { get; set; }
     public decimal TaxPayerCurrencyPurchaseRate { get; set; }
+
+
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    public decimal? NetPrice { get; private set; }
 }

@@ -3239,13 +3239,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
-        public async Task<IActionResult> PrepareExternalFactor(
-            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
             try
             {
-                var (factor, preFactor, quotationId, softwareTitle) =
-                    await GetMappedFactorForExportAsync(request, ct);
+                var (factor, preFactor, quotationId, softwareTitle) = await GetMappedFactorForExportAsync(request, ct);
 
                 var alreadySent = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
                     x.EntityId == factor.Id && x.EntityName == nameof(Factor)

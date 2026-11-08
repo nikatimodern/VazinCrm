@@ -261,8 +261,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<int> GetNextIdAsync(
-        string tableName, int incValue = 1, CancellationToken ct = default)
+    private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken ct = default)
     {
         var connection = sepidarContext.Database.GetDbConnection();
         var openedHere = connection.State != ConnectionState.Open;
@@ -279,7 +278,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                     @TableName = @TableName,
                     @Id = @Id OUTPUT,
                     @IncValue = @IncValue;
-                SELECT @Id;";
+                SELECT @Id;
+            ";
 
             var tableParameter = command.CreateParameter();
             tableParameter.ParameterName = "@TableName";
@@ -295,7 +295,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             if (transaction != null)
                 command.Transaction = transaction.GetDbTransaction();
 
-            return Convert.ToInt32(await command.ExecuteScalarAsync(ct));
+            var result = await command.ExecuteScalarAsync(ct);
+
+            return Convert.ToInt32(result);
         }
         finally
         {
@@ -1033,55 +1035,6 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         return result;
     }
 
-    // Reuse the selected Sepidar service/context for all readable preview references.
-    // Item and stock lookups include historical (possibly inactive) records because
-    // the exported invoice must use exactly the entities stored on the quotation.
-    public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(
-        SepidarInvoiceExportPreview preview, CancellationToken ct = default)
-    {
-        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
-
-        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
-                       ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
-        preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
-            ? customer.FullName
-            : $"{customer.DlCode} - {customer.FullName}";
-
-        var saleType = (await GetSaleTypes(ct))
-                       .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
-                       ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
-        preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
-
-        var itemIds = preview.Items.Select(x => x.ItemRef).Distinct().ToArray();
-        var stockIds = preview.Items.Select(x => x.StockRef).Distinct().ToArray();
-
-        var items = await sepidarContext.Items.AsNoTracking()
-            .Where(x => itemIds.Contains(x.ItemID))
-            .Select(x => new { x.ItemID, x.Code, x.Title })
-            .ToDictionaryAsync(x => x.ItemID, ct);
-
-        var stocks = await sepidarContext.Stocks.AsNoTracking()
-            .Where(x => stockIds.Contains(x.StockID))
-            .Select(x => new { x.StockID, x.Code, x.Title })
-            .ToDictionaryAsync(x => x.StockID, ct);
-
-        foreach (var line in preview.Items)
-        {
-            if (!items.TryGetValue(line.ItemRef, out var item))
-                throw new InvalidOperationException(
-                    $"ردیف {line.RowId}: کالای متصل به پیش‌فاکتور سپیدار ({line.ItemRef}) پیدا نشد.");
-            if (!stocks.TryGetValue(line.StockRef, out var stock))
-                throw new InvalidOperationException(
-                    $"ردیف {line.RowId}: انبار متصل به پیش‌فاکتور سپیدار ({line.StockRef}) پیدا نشد.");
-
-            line.ItemTitle = $"{item.Code} - {TextService.NormalizePersianText(item.Title)}";
-            line.StockTitle = $"{stock.Code} - {TextService.NormalizePersianText(stock.Title)}";
-        }
-
-        return preview;
-    }
-
     //--------------------------------------------------------- QUOTATION ---------------------------------------------------------
 
     public async Task<Quotation> GetQuotationAsync(int id, CancellationToken ct = default)
@@ -1391,175 +1344,6 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         }
     }
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
-    {
-        if (preview == null || preview.Items == null || preview.Items.Count == 0)
-            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
-        if (!factor.DateMiladi.HasValue)
-            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
-
-        var quotation = await sepidarContext.Quotations.AsNoTracking()
-                            .SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
-        if (quotation.FiscalYearRef != preview.FiscalYearRef)
-            throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
-
-        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable, ct);
-        try
-        {
-            var invoiceNumber = await GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
-            var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
-            var now = DateTime.Now;
-
-            var invoice = new SalesInvoiceRecord {
-                InvoiceId = invoiceId,
-                QuotationRef = quotation.QuotationId,
-                CustomerPartyRef = quotation.CustomerPartyRef,
-                CustomerRealName = quotation.CustomerRealName,
-                CustomerRealName_En = quotation.CustomerRealName_En,
-                SaleTypeRef = quotation.SaleTypeRef,
-                PartyAddressRef = quotation.PartyAddressRef,
-                Number = invoiceNumber,
-                Date = factor.DateMiladi!.Value, // فعلا
-                CurrencyRef = quotation.CurrencyRef,
-                SLRef = 725, // فعلا
-                DeliveryLocationRef = quotation.DeliveryLocationRef,
-                State = 1, // ثبت: 1 | ابطال شده: 2
-                Price = preview.Price,
-                PriceInBaseCurrency = preview.Price,
-                Discount = preview.Discount,
-                DiscountInBaseCurrency = preview.Discount,
-                Addition = 0,
-                AdditionInBaseCurrency = 0,
-                Tax = preview.Tax,
-                TaxInBaseCurrency = preview.Tax,
-                Duty = 0,
-                DutyInBaseCurrency = 0,
-                NetPriceInBaseCurrency = preview.NetPrice,
-                Rate = quotation.Rate,
-                Version = 1,
-                Creator = 1,
-                CreationDate = now,
-                LastModifier = 1,
-                LastModificationDate = now,
-                FiscalYearRef = quotation.FiscalYearRef,
-                VoucherRef = null, // فعلا
-                BaseOnInventoryDelivery = false,
-                OrderRef = null,
-                ShouldControlCustomerCredit = true,
-                Guid = null,
-                AdditionFactor_VatEffective = 0,
-                AdditionFactorInBaseCurrency_VatEffective = 0,
-                AdditionFactor_VatIneffective = 0,
-                AdditionFactorInBaseCurrency_VatIneffective = 0,
-                AgreementRef = null,
-                TaxPayerBillIssueDateTime = factor.DateMiladi,
-                SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
-                Description = null,
-                SignatureRef = null
-            };
-
-            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
-
-            sepidarContext.SalesInvoices.Add(invoice);
-            await sepidarContext.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-            return invoiceId;
-        }
-        catch
-        {
-            await transaction.RollbackAsync(ct);
-            throw;
-        }
-    }
-
-    private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
-    {
-        // The number must be allocated in the same transaction as the invoice insert.
-        if (sepidarContext.Database.CurrentTransaction == null)
-            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
-
-        var lastNumber = await sepidarContext.SalesInvoices.AsNoTracking()
-            .Where(x => x.FiscalYearRef == fiscalYearId)
-            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
-
-        return checked(lastNumber + 1);
-    }
-
-    // Mirrors GenerateQuotationItemsAsync: allocate all item IDs before building
-    // the navigation collection, then save the parent and children together.
-    private async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(int invoiceId, List<SepidarInvoiceExportItemPreview> items,
-        decimal rate,
-        CancellationToken ct = default)
-    {
-        if (items == null || items.Count == 0)
-            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
-
-        var itemCount = items.Count;
-        var lastItemId = await GetNextIdAsync("SLS.InvoiceItem", itemCount, ct);
-        var firstItemId = lastItemId - itemCount + 1;
-        var invoiceItems = new List<SalesInvoiceItemRecord>(itemCount);
-
-        for (var index = 0; index < itemCount; index++)
-        {
-            var item = items[index];
-            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 ||
-                item.QuotationItemId <= 0)
-                throw new InvalidOperationException(
-                    $"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
-
-            invoiceItems.Add(new SalesInvoiceItemRecord {
-                InvoiceItemID = firstItemId + index,
-                InvoiceRef = invoiceId,
-                RowID = item.RowId,
-                ItemRef = item.ItemRef,
-                TracingRef = null,
-                StockRef = item.StockRef,
-                Quantity = item.Quantity,
-                SecondaryQuantity = null,
-                Fee = item.Fee,
-                Price = item.Price,
-                PriceInBaseCurrency = item.Price,
-                Discount = item.Discount,
-                DiscountInBaseCurrency = item.Discount,
-                PriceInfoDiscountRate = 0,
-                PriceInfoPriceDiscount = 0,
-                PriceInfoPercentDiscount = 0,
-                CustomerDiscount = 0,
-                CustomerDiscountRate = 0,
-                Addition = 0,
-                AdditionInBaseCurrency = 0,
-                Tax = item.Tax,
-                TaxInBaseCurrency = item.Tax,
-                Duty = 0,
-                DutyInBaseCurrency = 0,
-                NetPriceInBaseCurrency = item.NetPrice,
-                Rate = rate,
-                QuotationItemRef = item.QuotationItemId,
-                Description = null,
-                Description_En = null,
-                DiscountInvoiceItemRef = null,
-                ProductPackRef = null,
-                ProductPackQuantity = null,
-                AggregateAmountDiscountRate = 0,
-                AggregateAmountPriceDiscount = 0,
-                AggregateAmountPercentDiscount = 0,
-                OrderItemRef = null,
-                AdditionFactor_VatEffective = 0,
-                AdditionFactorInBaseCurrency_VatEffective = 0,
-                AdditionFactor_VatIneffective = 0,
-                AdditionFactorInBaseCurrency_VatIneffective = 0,
-                DiscountItemGroupRef = null,
-                BankFeeForCurrencySale = 0,
-                BankFeeForCurrencySaleInBaseCurrency = 0,
-                IsAggregateDiscountInvoiceItem = false,
-                TaxPayerCurrencyPurchaseRate = 0
-            });
-        }
-
-        return invoiceItems;
-    }
 
     private async Task<List<QuotationItem>> GenerateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
         CancellationToken ct = default)
@@ -1699,7 +1483,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (validStockIds.Count != selectedStockIds.Count)
             throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
 
-        await AddItamAsync(request, ct);
+        await AddItemAsync(request, ct);
     }
 
     private async Task CheckItemCodeAsync(string code, CancellationToken ct = default)
@@ -1713,7 +1497,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"کد محصول {code} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task AddItamAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
+    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -1792,5 +1576,224 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
 
         return lastCode;
+    }
+
+
+    //--------------------------------------------------------- Invoice ---------------------------------------------------------
+
+    // Reuse the selected Sepidar service/context for all readable preview references.
+    // Item and stock lookups include historical (possibly inactive) records because
+    // the exported invoice must use exactly the entities stored on the quotation.
+    public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(
+        SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    {
+        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
+                        ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
+
+        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
+                       ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
+        preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
+            ? customer.FullName
+            : $"{customer.DlCode} - {customer.FullName}";
+
+        var saleType = (await GetSaleTypes(ct))
+                       .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
+                       ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
+        preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
+
+        var itemIds = preview.Items.Select(x => x.ItemRef).Distinct().ToArray();
+        var stockIds = preview.Items.Select(x => x.StockRef).Distinct().ToArray();
+
+        var items = await sepidarContext.Items.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemID))
+            .Select(x => new { x.ItemID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.ItemID, ct);
+
+        var stocks = await sepidarContext.Stocks.AsNoTracking()
+            .Where(x => stockIds.Contains(x.StockID))
+            .Select(x => new { x.StockID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.StockID, ct);
+
+        foreach (var line in preview.Items)
+        {
+            if (!items.TryGetValue(line.ItemRef, out var item))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: کالای متصل به پیش‌فاکتور سپیدار ({line.ItemRef}) پیدا نشد.");
+            if (!stocks.TryGetValue(line.StockRef, out var stock))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: انبار متصل به پیش‌فاکتور سپیدار ({line.StockRef}) پیدا نشد.");
+
+            line.ItemTitle = $"{item.Code} - {TextService.NormalizePersianText(item.Title)}";
+            line.StockTitle = $"{stock.Code} - {TextService.NormalizePersianText(stock.Title)}";
+        }
+
+        return preview;
+    }
+
+
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    {
+        if (preview == null || preview.Items == null || preview.Items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+        if (!factor.DateMiladi.HasValue)
+            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
+
+        var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
+                        ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
+
+        if (quotation.FiscalYearRef != preview.FiscalYearRef)
+            throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, ct);
+        try
+        {
+            var invoiceNumber = await GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
+            var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
+            var now = DateTime.Now;
+
+            var invoice = new SalesInvoiceRecord {
+                InvoiceId = invoiceId,
+                QuotationRef = quotation.QuotationId,
+                CustomerPartyRef = quotation.CustomerPartyRef,
+                CustomerRealName = quotation.CustomerRealName,
+                CustomerRealName_En = quotation.CustomerRealName_En,
+                SaleTypeRef = quotation.SaleTypeRef,
+                PartyAddressRef = quotation.PartyAddressRef,
+                Number = invoiceNumber,
+                Date = factor.DateMiladi!.Value, // فعلا
+                CurrencyRef = quotation.CurrencyRef,
+                SLRef = 725, // فعلا
+                DeliveryLocationRef = quotation.DeliveryLocationRef,
+                State = 1, // ثبت: 1 | ابطال شده: 2
+                Price = preview.Price,
+                PriceInBaseCurrency = preview.Price,
+                Discount = preview.Discount,
+                DiscountInBaseCurrency = preview.Discount,
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = preview.Tax,
+                TaxInBaseCurrency = preview.Tax,
+                Duty = 0,
+                DutyInBaseCurrency = 0,
+                NetPriceInBaseCurrency = preview.NetPrice,
+                Rate = quotation.Rate,
+                Version = 1,
+                Creator = 1,
+                CreationDate = now,
+                LastModifier = 1,
+                LastModificationDate = now,
+                FiscalYearRef = quotation.FiscalYearRef,
+                VoucherRef = null, // فعلا
+                BaseOnInventoryDelivery = false,
+                OrderRef = null,
+                ShouldControlCustomerCredit = true,
+                Guid = null,
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+                AgreementRef = null,
+                TaxPayerBillIssueDateTime = factor.DateMiladi,
+                SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
+                Description = null,
+                SignatureRef = null
+            };
+
+            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
+
+            sepidarContext.SalesInvoices.Add(invoice);
+            await sepidarContext.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return invoiceId;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
+
+        var lastNumber = await sepidarContext.SalesInvoices.AsNoTracking()
+            .Where(x => x.FiscalYearRef == fiscalYearId)
+            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
+
+        return checked(lastNumber + 1);
+    }
+
+    private async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(int invoiceId, List<SepidarInvoiceExportItemPreview> items,
+        decimal rate,
+        CancellationToken ct = default)
+    {
+        if (items == null || items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+        var itemCount = items.Count;
+        var lastItemId = await GetNextIdAsync("SLS.InvoiceItem", itemCount, ct);
+        var firstItemId = lastItemId - itemCount + 1;
+        var invoiceItems = new List<SalesInvoiceItemRecord>(itemCount);
+
+        for (var index = 0; index < itemCount; index++)
+        {
+            var item = items[index];
+            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId <= 0)
+                throw new InvalidOperationException($"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
+
+            invoiceItems.Add(new SalesInvoiceItemRecord {
+                InvoiceItemID = firstItemId + index,
+                InvoiceRef = invoiceId,
+                RowID = item.RowId,
+                ItemRef = item.ItemRef,
+                TracingRef = null,
+                StockRef = item.StockRef,
+                Quantity = item.Quantity,
+                SecondaryQuantity = null,
+                Fee = item.Fee,
+                Price = item.Price,
+                PriceInBaseCurrency = item.Price,
+                Discount = item.Discount,
+                DiscountInBaseCurrency = item.Discount,
+                PriceInfoDiscountRate = 0,
+                PriceInfoPriceDiscount = 0,
+                PriceInfoPercentDiscount = 0,
+                CustomerDiscount = 0,
+                CustomerDiscountRate = 0,
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = item.Tax,
+                TaxInBaseCurrency = item.Tax,
+                Duty = 0,
+                DutyInBaseCurrency = 0,
+                NetPriceInBaseCurrency = item.NetPrice,
+                Rate = rate,
+                QuotationItemRef = item.QuotationItemId,
+                Description = null,
+                Description_En = null,
+                DiscountInvoiceItemRef = null,
+                ProductPackRef = null,
+                ProductPackQuantity = null,
+                AggregateAmountDiscountRate = 0,
+                AggregateAmountPriceDiscount = 0,
+                AggregateAmountPercentDiscount = 0,
+                OrderItemRef = null,
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+                DiscountItemGroupRef = null,
+                BankFeeForCurrencySale = 0,
+                BankFeeForCurrencySaleInBaseCurrency = 0,
+                IsAggregateDiscountInvoiceItem = false,
+                TaxPayerCurrencyPurchaseRate = 0
+            });
+        }
+
+        return invoiceItems;
     }
 }
