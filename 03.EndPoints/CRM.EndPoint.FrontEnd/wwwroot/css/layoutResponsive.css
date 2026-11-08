@@ -212,18 +212,25 @@
 }
 
 @media (max-width: 767px) {
+    /* Keep the page at the same position while the tools slide over its content. */
     #mainHeader.crm-main-header {
-        height: auto;
+        height: 26px;
+        min-height: 26px;
         padding-block: 0;
     }
 
     .crm-main-header .crm-mobile-header-panel {
         display: block;
+        position: absolute;
+        top: 100%;
+        inset-inline: 0;
+        z-index: 1;
         height: 0;
         overflow: hidden;
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
+        background: #fff;
         transition: height 340ms ease, opacity 280ms ease, visibility 0s linear 340ms;
     }
 
@@ -232,6 +239,7 @@
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
+        box-shadow: 0 8px 20px rgb(0 0 0 / 14%);
         transition: height 340ms ease, opacity 280ms ease;
     }
 
@@ -246,6 +254,8 @@
 
     .crm-main-header .crm-mobile-header-toggle {
         display: flex;
+        position: relative;
+        z-index: 2;
         align-items: center;
         justify-content: center;
         width: 26px;
