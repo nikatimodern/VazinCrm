@@ -1324,6 +1324,20 @@
 
     #cartableWorkspace #CTaminExpertId #tabContentTaminExperts {
         border-top: 0;
+        padding-block: 0 !important;
+    }
+
+    /* Remove unused vertical space between supply filters and their lists. */
+    #cartableWorkspace #TaminPrefactorTab-pane > .gap-3 {
+        row-gap: 0 !important;
+    }
+
+    #cartableWorkspace #CTaminExpertId :is(#TaminPrefactorTab-pane, #TaminInvoiceTab-pane) .cartable-list-toolbar {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace #taminInvoiceContentId {
+        margin-block-start: 0 !important;
     }
 
     #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) {
