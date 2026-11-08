@@ -352,7 +352,7 @@
             const softwareId=state.softwareId;
             records.replaceChildren();feedback("در حال خواندن نگاشت‌های ذخیره‌شده از دیتابیس CRM…");
             const response=await sendApiRequest({
-                url:"/Home/GetSavedExternalMappings",
+                url:"/ExternalMapping/GetSavedExternalMappings",
                 params:{softwareId,mapType:state.type||undefined,search:state.search,page:state.page,pageSize:state.size},
                 timeout:90000,showLoading:false
             });
@@ -370,7 +370,7 @@
             state.calculating=true;state.selected.clear();summary();
             records.replaceChildren();
             feedback("در حال محاسبه تطبیق مشتریان، پیش‌فاکتورها و فاکتورها… هیچ نگاشتی ذخیره نمی‌شود.");
-            const response=await sendApiRequest({url:"/Home/GetExternalMappingReview",
+            const response=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingReview",
                 showLoading:false,timeout:180000});
             if(!isActive())return;
             state.calculating=false;summary();
@@ -409,14 +409,14 @@
                 icon:"question",confirmText:"ثبت نگاشت",cancelText:"انصراف"});
             if(!ok)return;
             state.processing=true;selection();
-            const result=await sendApiRequest({url:"/Home/SaveSelectedExternalMappings",
+            const result=await sendApiRequest({url:"/ExternalMapping/SaveSelectedExternalMappings",
                 method:"POST",headers:{"RequestVerificationToken":token},
                 data:{externalSoftwareId:state.softwareId,items},timeout:120000,successMsg:null});
             state.processing=false;
             if(!result?.count){selection();return;}
             toastifySuccess(format.format(result.count)+" نگاشت در CRM ثبت شد.");
             state.selected.clear();state.targets.clear();
-            const options=await sendApiRequest({url:"/Home/GetExternalMappingWorkspaceOptions",
+            const options=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingWorkspaceOptions",
                 showLoading:false});
             if(options)state.counts=options.counts||[];
             state.suggestionsLoaded=false;state.summary=null;state.rows=[];state.page=1;
@@ -429,7 +429,7 @@
             if(!validId(id))return;
             const key=state.softwareId+":"+row.mapType+":"+id;
             if(state.preview.has(key))return;
-            const result=await sendApiRequest({url:"/Home/GetExternalMappingTargetDetails",
+            const result=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingTargetDetails",
                 params:{softwareId:state.softwareId,mapType:row.mapType,targetId:id},
                 showLoading:false,showError:false,timeout:30000});
             if(!isActive()||state.targets.get(row.key)!==id)return;
@@ -531,7 +531,7 @@
 
         (async()=>{
             feedback("در حال دریافت فهرست نرم‌افزارهای خارجی…");
-            const result=await sendApiRequest({url:"/Home/GetExternalMappingWorkspaceOptions",
+            const result=await sendApiRequest({url:"/ExternalMapping/GetExternalMappingWorkspaceOptions",
                 showLoading:false});
             if(!isActive())return;
             if(!result){feedback("فهرست نرم‌افزارها دریافت نشد.",true);return;}
