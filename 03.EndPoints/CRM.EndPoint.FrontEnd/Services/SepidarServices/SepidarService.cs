@@ -259,46 +259,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken ct = default)
-    {
-        var connection = sepidarContext.Database.GetDbConnection();
-
-        await using var command = connection.CreateCommand();
-
-        command.CommandText = @"
-            DECLARE @Id INT;
-
-            EXEC FMK.spGetNextId
-                @TableName = @TableName,
-                @Id = @Id OUTPUT,
-                @IncValue = @IncValue;
-
-            SELECT @Id;
-        ";
-
-        var tableParameter = command.CreateParameter();
-        tableParameter.ParameterName = "@TableName";
-        tableParameter.Value = tableName;
-
-        var incParameter = command.CreateParameter();
-        incParameter.ParameterName = "@IncValue";
-        incParameter.Value = incValue;
-
-        command.Parameters.Add(tableParameter);
-        command.Parameters.Add(incParameter);
-
-        var transaction = sepidarContext.Database.CurrentTransaction;
-
-        if (transaction != null)
-        {
-            command.Transaction = transaction.GetDbTransaction();
-        }
-
-        var result = await command.ExecuteScalarAsync(ct);
-
-
-        return Convert.ToInt32(result);
-    }
+    private Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken ct = default)
+        => sepidarContext.GetNextIdAsync(tableName, incValue, ct);
 
 
     private async Task<int> GetBankAccountIdByDlRefAsync(int dlRef, CancellationToken ct = default)
