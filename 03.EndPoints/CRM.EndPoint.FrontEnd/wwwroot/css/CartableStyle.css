@@ -1289,13 +1289,25 @@
 
 /* Only the Cartable navigation and document search use compact mobile layout. */
 @media (max-width: 767px) {
+    /* Reserve a dedicated mobile row for the main Cartable tabs. */
+    #cartableWorkspace {
+        row-gap: 3px;
+    }
+
     #cartableWorkspace #CartableTabs {
+        flex: 0 0 29px;
+        box-sizing: border-box;
+        height: 29px;
+        min-height: 29px;
+        align-items: center;
         flex-wrap: nowrap !important;
         justify-content: flex-start !important;
         overflow-x: auto;
+        overflow-y: hidden;
         scrollbar-width: none;
         gap: 4px;
-        padding-bottom: 3px;
+        margin: 0;
+        padding: 3px 0 !important;
     }
 
     #cartableWorkspace #CartableTabs::-webkit-scrollbar {
@@ -1331,7 +1343,7 @@
         max-width: 100%;
         min-height: 23px;
         gap: 3px;
-        margin: 2px 0 0;
+        margin: 0;
         padding: 0;
         border: 0 !important;
         border-radius: 0;
