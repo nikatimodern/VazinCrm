@@ -1332,6 +1332,20 @@
         font-size: 11px;
     }
 
+    /* Keep the document list flush with the filters when no advanced filters are selected. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-filter-chips:has(> .ContentFilter:empty) {
+        display: none;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-document-scroll {
+        margin-block-start: 0;
+        padding-block-start: 0;
+    }
+
     #cartableWorkspace .cartable-column-heading {
         padding: 3px 4px 5px;
         gap: 5px;
