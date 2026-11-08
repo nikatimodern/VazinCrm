@@ -212,19 +212,24 @@
 }
 
 @media (max-width: 767px) {
-    /* Keep the page at the same position while the tools slide over its content. */
+    /* No full-width header strip on phones; just a fixed handle above the page. */
     #mainHeader.crm-main-header {
-        height: 26px;
-        min-height: 26px;
-        padding-block: 0;
+        position: static;
+        height: 0;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
     }
 
     .crm-main-header .crm-mobile-header-panel {
         display: block;
-        position: absolute;
-        top: 100%;
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 36px);
         inset-inline: 0;
-        z-index: 1;
+        z-index: 1100;
         height: 0;
         overflow: hidden;
         opacity: 0;
@@ -254,13 +259,16 @@
 
     .crm-main-header .crm-mobile-header-toggle {
         display: flex;
-        position: relative;
-        z-index: 2;
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1101;
         align-items: center;
         justify-content: center;
         width: 48px;
         height: 24px;
-        margin-inline: auto;
+        margin: 0;
         padding: 0;
         border: 1px solid #DDE1E8;
         border-radius: 8px;
