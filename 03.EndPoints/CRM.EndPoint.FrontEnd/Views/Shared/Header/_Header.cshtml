@@ -7,7 +7,8 @@
 }
 
 <header id="mainHeader" class="crm-main-header">
-    <div class="header-container">
+    <div class="crm-mobile-header-panel" id="crmMobileHeaderPanel">
+        <div class="header-container">
         <button id="expandMenuIcon" onclick="toggleMenu()">
             <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
         </button>
@@ -67,6 +68,18 @@
             </div>
         </div>
     </div>
+    </div>
+    <button type="button"
+            id="crmMobileHeaderToggle"
+            class="crm-mobile-header-toggle"
+            aria-controls="crmMobileHeaderPanel"
+            aria-expanded="false"
+            aria-label="نمایش ابزارهای بالای صفحه">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+        </svg>
+    </button>
 </header>
 
 
