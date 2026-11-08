@@ -1418,12 +1418,31 @@
         font-size: 11px;
     }
 
-    /* Never scroll the radio/action toolbar horizontally; wrap when necessary. */
+    /* Keep all Cartable radio filters the same compact size, including financial invoices. */
     #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch {
         display: flex;
         flex-wrap: wrap;
+        flex: 0 1 auto;
+        gap: 2px;
+        padding: 2px;
         min-width: 0;
         max-width: 100%;
+    }
+
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch .filter-switch-item {
+        flex: 0 0 auto;
+    }
+
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch label {
+        min-height: 22px;
+        padding: 0 4px;
+        font: 500 11px/1.5 IRANSansMedium;
+        white-space: nowrap;
+    }
+
+    /* Keep advanced filter / Excel at the opposite (left) edge of the document toolbar. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar > .cartable-list-toolbar__actions {
+        margin-inline-start: auto;
     }
 
     /* The group-payment action occupies its own row, above search / statuses / count. */
