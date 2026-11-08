@@ -1280,7 +1280,7 @@
         overflow-x: auto;
         scrollbar-width: none;
         gap: 4px;
-        padding-bottom: 5px;
+        padding-bottom: 3px;
     }
 
     #cartableWorkspace #CartableTabs::-webkit-scrollbar {
@@ -1291,11 +1291,19 @@
         flex: 0 0 auto;
         width: auto;
         min-width: 0;
-        height: 32px;
-        min-height: 32px;
-        padding: 4px 8px;
-        font-size: 12px;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        gap: 4px;
+        font-size: 11px;
         white-space: nowrap;
+    }
+
+    #cartableWorkspace #CartableTabs .TCar > .cartable-tab-count {
+        min-width: 19px;
+        height: 16px;
+        padding: 0 4px;
+        font-size: 9px;
     }
 
     #cartableWorkspace #allTabFactors {
