@@ -9,7 +9,6 @@ namespace CRM.Core.Domain.Sepidar.Invoices.Entities;
 public class SalesInvoiceRecord
 {
     [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int InvoiceId { get; set; }
     public int? QuotationRef { get; set; }
     public int CustomerPartyRef { get; set; }
@@ -55,4 +54,7 @@ public class SalesInvoiceRecord
     public int? SettlementType { get; set; }
     public string Description { get; set; }
     public int? SignatureRef { get; set; }
+    
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    public decimal? NetPrice { get; private set; }
 }

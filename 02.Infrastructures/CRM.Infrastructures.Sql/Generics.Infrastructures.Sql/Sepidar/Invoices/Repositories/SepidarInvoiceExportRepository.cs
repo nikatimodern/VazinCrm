@@ -131,7 +131,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             .Select(x => new { QuotationItemId = x.Key, Quantity = x.Sum(y => y.Quantity) })
             .ToListAsync(ct);
 
-        var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
+        /*var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
         foreach (var line in lines)
         {
             var quotedQuantity = quotationItemsByRow.Values
@@ -141,7 +141,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             if (line.Quantity + previousQuantity > quotedQuantity)
                 throw new InvalidOperationException(
                     $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({line.Quantity + previousQuantity:N3}) از تعداد پیش‌فاکتور سپیدار ({quotedQuantity:N3}) بیشتر می‌شود.");
-        }
+        }*/
 
         return new SepidarInvoiceExportPreview {
             QuotationId = quotationId,
@@ -240,11 +240,11 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 SaleTypeRef = quotation.SaleTypeRef,
                 PartyAddressRef = quotation.PartyAddressRef,
                 Number = invoiceNumber,
-                Date = factor.DateMiladi!.Value,
+                Date = factor.DateMiladi!.Value, // فعلا
                 CurrencyRef = quotation.CurrencyRef,
                 SLRef = accounts[0],
                 DeliveryLocationRef = quotation.DeliveryLocationRef,
-                State = 1, // Sample approved invoice: active
+                State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,
                 PriceInBaseCurrency = preview.Price,
                 Discount = preview.Discount,
@@ -258,23 +258,23 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 NetPriceInBaseCurrency = preview.NetPrice,
                 Rate = quotation.Rate,
                 Version = 1,
-                Creator = quotation.Creator,
+                Creator = 1,
                 CreationDate = now,
-                LastModifier = quotation.Creator,
+                LastModifier = 1,
                 LastModificationDate = now,
                 FiscalYearRef = quotation.FiscalYearRef,
-                VoucherRef = null,
+                VoucherRef = null, // فعلا
                 BaseOnInventoryDelivery = false,
                 OrderRef = null,
                 ShouldControlCustomerCredit = true,
-                Guid = factor.Id, // Stable idempotency key for retries.
+                Guid = null,
                 AdditionFactor_VatEffective = 0,
                 AdditionFactorInBaseCurrency_VatEffective = 0,
                 AdditionFactor_VatIneffective = 0,
                 AdditionFactorInBaseCurrency_VatIneffective = 0,
                 AgreementRef = null,
                 TaxPayerBillIssueDateTime = factor.DateMiladi,
-                SettlementType = 1, // Sample approved invoice: default settlement
+                SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
                 Description = null,
                 SignatureRef = null
             };
@@ -332,7 +332,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 });
             }
 
-            await context.SaveChangesAsync(ct);
+//            await context.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
             return invoiceId;
         }
