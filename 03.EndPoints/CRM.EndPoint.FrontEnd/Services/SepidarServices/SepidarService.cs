@@ -1633,7 +1633,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
     {
-        if (preview == null || preview.Items == null || preview.Items.Count == 0)
+        if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
 
         if (!factor.DateMiladi.HasValue)
@@ -1645,8 +1645,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
 
-        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable, ct);
+        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
         {
             var invoiceNumber = await GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
@@ -1661,7 +1660,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 CustomerRealName_En = quotation.CustomerRealName_En,
                 SaleTypeRef = quotation.SaleTypeRef,
                 PartyAddressRef = quotation.PartyAddressRef,
-                Number = invoiceNumber,
+                Number = invoiceNumber,  // فعلا
                 Date = factor.DateMiladi!.Value, // فعلا
                 CurrencyRef = quotation.CurrencyRef,
                 SLRef = 725, // فعلا

@@ -147,6 +147,7 @@ document.addEventListener("click", async event => {
             url: "/Factor/SendFactorToExternalSoftware",
             method: "POST",
             data: state.request,
+            timeout: 0,
             successMsg: "فاکتور با موفقیت در سپیدار ثبت شد",
         });
         if (!result?.invoiceId) return;

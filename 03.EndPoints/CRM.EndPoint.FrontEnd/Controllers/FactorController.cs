@@ -36,6 +36,7 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
@@ -3232,7 +3233,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (mapping == null || mapping.ExEntityName != nameof(Quotation)
                 || !int.TryParse(mapping.ExEntityId, out var quotationId) || quotationId <= 0)
-                throw new InvalidOperationException("پیش‌فاکتور این فاکتور در نرم‌افزار انتخاب‌شده مپ نشده است.");
+                throw new InvalidOperationException("پیش‌فاکتور این فاکتور در نرم‌افزار انتخاب‌شده ثبت نشده است.");
 
             return (factor, preFactor, quotationId, software.Title);
         }
@@ -3268,13 +3269,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
-        public async Task<IActionResult> SendFactorToExternalSoftware(
-            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
             try
             {
-                var (factor, preFactor, quotationId, _) =
-                    await GetMappedFactorForExportAsync(request, ct);
+                var (factor, preFactor, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
 
                 var alreadySent = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
                     x.EntityId == factor.Id && x.EntityName == nameof(Factor)
@@ -3310,7 +3309,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     MapTypeTxt = nameof(ExternalMappingTypeEnum.فاکتور),
                     UserCreatorID = user.Id,
                     UserCreator = user.FullName,
-                    ExEntityName = nameof(CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice),
+                    ExEntityName = nameof(Invoice),
                     ExEntityId = invoiceId.ToString()
                 });
                 await db.SaveChangesAsync(ct);
@@ -3323,7 +3322,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (DbUpdateException ex)
             {
                 logger.LogError(ex, "Sepidar factor export CRM mapping save failed");
-                return StatusCode(500, "ثبت فاکتور انجام شده یا وضعیت آن نامشخص است؛ قبل از تلاش مجدد، ارتباط مالی را بررسی کنید.");
+                return BadRequest("ثبت فاکتور انجام شده یا وضعیت آن نامشخص است؛ قبل از تلاش مجدد، ارتباط مالی را بررسی کنید.");
             }
         }
 

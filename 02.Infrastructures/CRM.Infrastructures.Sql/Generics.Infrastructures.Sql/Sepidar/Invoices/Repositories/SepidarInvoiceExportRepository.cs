@@ -14,16 +14,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
 
-public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase context)
-    : ISepidarInvoiceExportRepository
-{
-    public async Task<SepidarInvoiceExportPreview> PreviewAsync(
-        Factor factor, PreFactor preFactor, int quotationId, CancellationToken ct = default)
+public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase context) : ISepidarInvoiceExportRepository {
+    public async Task<SepidarInvoiceExportPreview> PreviewAsync(Factor factor, PreFactor preFactor, int quotationId, CancellationToken ct = default)
     {
         var quotation = await context.Quotations.AsNoTracking()
-            .Include(x => x.QuotationItems)
-            .SingleOrDefaultAsync(x => x.QuotationId == quotationId, ct)
-            ?? throw new InvalidOperationException($"پیش‌فاکتور نگاشت‌شده در سپیدار پیدا نشد (شناسه: {quotationId}).");
+                            .Include(x => x.QuotationItems)
+                            .SingleOrDefaultAsync(x => x.QuotationId == quotationId, ct)
+                        ?? throw new InvalidOperationException($"پیش‌فاکتور نگاشت‌شده در سپیدار پیدا نشد (شناسه: {quotationId}).");
 
         if (factor.PfactorID != preFactor.Id)
             throw new InvalidOperationException("فاکتور با پیش‌فاکتور انتخاب‌شده مطابقت ندارد.");
@@ -38,7 +35,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
 
         if (fiscalYear == null || factor.DateMiladi.Value.Date < fiscalYear.StartDate.Date
-            || factor.DateMiladi.Value.Date > fiscalYear.EndDate.Date)
+                               || factor.DateMiladi.Value.Date > fiscalYear.EndDate.Date)
             throw new InvalidOperationException($"تاریخ فاکتور ({factor.DateMiladi:yyyy/MM/dd}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         if (quotation.CustomerPartyRef <= 0 || quotation.SaleTypeRef <= 0)
@@ -50,7 +47,8 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             .Where(x => !x.IsDeleted).OrderBy(x => x.Row).ToList();
 
         if (preFactorItems.Count == 0 || factorItems.Count == 0)
-            throw new InvalidOperationException($"پیش‌فاکتور یا فاکتور ردیف معتبر ندارد (پیش‌فاکتور: {preFactorItems.Count}، فاکتور: {factorItems.Count}).");
+            throw new InvalidOperationException(
+                $"پیش‌فاکتور یا فاکتور ردیف معتبر ندارد (پیش‌فاکتور: {preFactorItems.Count}، فاکتور: {factorItems.Count}).");
 
         if (factorItems.Any(x => !x.PfItemId.HasValue)
             || factorItems.Select(x => x.PfItemId).Distinct().Count() != factorItems.Count)
@@ -87,14 +85,16 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
 
             // Source quotation can contain more quantity than this invoice (partial invoicing).
             if (quantity > quotationItem.Quantity)
-                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور ({quantity:N3}) از پیش‌فاکتور سپیدار ({quotationItem.Quantity:N3}) بیشتر است.");
+                throw new InvalidOperationException(
+                    $"ردیف {factorItem.Row}: مقدار فاکتور ({quantity:N3}) از پیش‌فاکتور سپیدار ({quotationItem.Quantity:N3}) بیشتر است.");
 
             var price = Math.Round(quantity * factorItem.UnitAmount);
             var discount = factorItem.Discount;
             var tax = factorItem.TaxAmount;
             if (price < 0 || discount < 0 || discount > price || tax < 0
                 || factorItem.TotalAmount != price - discount + tax)
-                throw new InvalidOperationException($"ردیف {factorItem.Row}: مبلغ فاکتور ({factorItem.TotalAmount:N0}) با مبلغ محاسبه‌شده ({price - discount + tax:N0}) برابر نیست.");
+                throw new InvalidOperationException(
+                    $"ردیف {factorItem.Row}: مبلغ فاکتور ({factorItem.TotalAmount:N0}) با مبلغ محاسبه‌شده ({price - discount + tax:N0}) برابر نیست.");
 
             lines.Add(new SepidarInvoiceExportItemPreview {
                 RowId = lines.Count + 1,
@@ -117,23 +117,23 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             || lines.Sum(x => x.Discount) != factor.Discount
             || lines.Sum(x => x.Tax) != factor.TotalTax
             || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
-            throw new InvalidOperationException($"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ نهایی: {factor.PaymentAmount:N0}).");
+            throw new InvalidOperationException(
+                $"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ نهایی: {factor.PaymentAmount:N0}).");
 
-        var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
-        // Reuse the configured Invoice -> InvoiceItems navigation.
+        /*var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
+
         var previousQuantities = await context.SalesInvoices.AsNoTracking()
             .Where(invoice => invoice.State == 1)
             .SelectMany(invoice => invoice.InvoiceItems)
-            .Where(item => item.QuotationItemRef.HasValue
-                && lineIds.Contains(item.QuotationItemRef.Value))
-            .GroupBy(item => item.QuotationItemRef!.Value)
+            .Where(item => item.QuotationItemRef.HasValue && lineIds.Contains(item.QuotationItemRef.Value))
+            .GroupBy(item => item.QuotationItemRef.Value)
             .Select(group => new {
                 QuotationItemId = group.Key,
                 Quantity = group.Sum(item => item.Quantity)
             })
             .ToListAsync(ct);
 
-        /*var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
+        var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
         foreach (var line in lines)
         {
             var quotedQuantity = quotationItemsByRow.Values
@@ -161,10 +161,8 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             Items = lines
         };
     }
-
-
-
 }
 
 public sealed class Sepidar1InvoiceExportRepository(Sepidar1ContextDb db) : SepidarInvoiceExportRepository(db) { }
+
 public sealed class Sepidar2InvoiceExportRepository(Sepidar2ContextDb db) : SepidarInvoiceExportRepository(db) { }
