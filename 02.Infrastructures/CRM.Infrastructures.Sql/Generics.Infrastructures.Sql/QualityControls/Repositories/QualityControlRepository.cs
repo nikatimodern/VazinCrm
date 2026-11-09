@@ -282,29 +282,23 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     {
         if (!await VisibleDeals(access).AnyAsync(deal => deal.Id == request.DealId, cancellationToken))
             return new(404, "سفارش یافت نشد یا به آن دسترسی ندارید.");
-        var control = await db.QualityControls.Include(item => item.Answers)
-            .FirstOrDefaultAsync(item => item.DealId == request.DealId, cancellationToken);
-        if (control == null ? request.RowVersion != null
-            : request.RowVersion == null || !control.RowVersion.SequenceEqual(request.RowVersion))
+        // A no-response action is only valid before a quality control record exists.
+        // Never replace or delete answers from an already reviewed order.
+        if (request.RowVersion != null)
             return Conflict();
+        if (await db.QualityControls.AnyAsync(item => item.DealId == request.DealId, cancellationToken))
+            return new(409, "برای این سفارش کنترل کیفیت ثبت شده است. برای تغییر پاسخ‌ها از ویرایش کنترل کیفیت استفاده کنید.");
 
         var now = DateTime.Now;
-        if (control == null)
+        var control = new QualityControl
         {
-            control = new QualityControl { Id = Guid.NewGuid(), DealId = request.DealId };
-            Stamp(control, access, now, persianNow, true);
-            db.QualityControls.Add(control);
-        }
-        else
-        {
-            db.Entry(control).Property(item => item.RowVersion).OriginalValue = request.RowVersion!;
-            Stamp(control, access, now, persianNow, false);
-            // An unanswered control must have no answers. This removal is only for
-            // a confirmed user action; the migration/backfill never deletes answers.
-            db.QualityControlAnswers.RemoveRange(control.Answers);
-        }
+            Id = Guid.NewGuid(),
+            DealId = request.DealId,
+            Status = QualityControlOutcome.NoResponse
+        };
+        Stamp(control, access, now, persianNow, true);
+        db.QualityControls.Add(control);
 
-        control.Status = QualityControlOutcome.NoResponse;
         try
         {
             await db.SaveChangesAsync(cancellationToken);

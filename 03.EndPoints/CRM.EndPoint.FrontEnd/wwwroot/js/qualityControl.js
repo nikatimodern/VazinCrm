@@ -115,12 +115,17 @@
                     <div class="qc-record-field "><span class="qc-field-label">ثبت‌کننده</span>${escapeHtml(row.userCreator || "-")}</div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت سفارش</span><span class="qc-badge qc-badge-${row.financialApproved ? "green" : "gray"}">${row.financialApproved ? "تحویل شده" : "تحویل نشده"}</span></div>
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
-                    <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span>${row.rowVersion ? `
+                    <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span>${row.status === 0 ? `
+                        <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
+                        <button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">عدم پاسخ</button>`
+                        : row.status === 4 ? `
+                        <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
+                        <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
+                        : row.rowVersion ? `
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" data-qc-view="true" title="نمایش کنترل کیفیت" aria-label="نمایش کنترل کیفیت"><i class="fa fa-eye" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" title="ویرایش کنترل کیفیت" aria-label="ویرایش کنترل کیفیت"><i class="fa fa-pencil" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion)}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
-                        : `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`}
-                        ${row.status === 4 ? "" : `<button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}" data-qc-serial="${escapeHtml(row.serialNumber)}" data-qc-has-answers="${Boolean(row.rowVersion)}">عدم پاسخ</button>`}</div>
+                        : "—"}</div>
                 </article>`;
             }).join("");
         }
@@ -266,9 +271,7 @@
             try {
                 const confirmed = await confirmAlert({
                     title: "ثبت عدم پاسخ",
-                    text: button.dataset.qcHasAnswers === "true"
-                        ? `پاسخ‌های ثبت‌شده کنترل کیفیت سفارش ${button.dataset.qcSerial} حذف می‌شوند و وضعیت آن «عدم پاسخ» خواهد شد. ادامه می‌دهید؟`
-                        : `کنترل کیفیت سفارش ${button.dataset.qcSerial} بدون پاسخ ثبت شود؟`,
+                    text: `کنترل کیفیت سفارش ${button.dataset.qcSerial} بدون پاسخ ثبت شود؟`,
                     confirmText: "ثبت عدم پاسخ",
                 });
                 if (!confirmed || !isActive()) return;
