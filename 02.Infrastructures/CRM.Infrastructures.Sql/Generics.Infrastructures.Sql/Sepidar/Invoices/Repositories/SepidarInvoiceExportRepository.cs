@@ -120,17 +120,17 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             throw new InvalidOperationException($"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ نهایی: {factor.PaymentAmount:N0}).");
 
         var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
-        var previousQuantities = await context.SalesInvoiceItems.AsNoTracking()
-            .Where(x => x.QuotationItemRef.HasValue
-                && lineIds.Contains(x.QuotationItemRef.Value))
-            .Join(context.SalesInvoices.AsNoTracking().Where(x => x.State == 1),
-                item => item.InvoiceRef, invoice => invoice.InvoiceId,
-                (item, invoice) => new {
-                    QuotationItemId = item.QuotationItemRef!.Value,
-                    item.Quantity
-                })
-            .GroupBy(x => x.QuotationItemId)
-            .Select(x => new { QuotationItemId = x.Key, Quantity = x.Sum(y => y.Quantity) })
+        // Reuse the configured Invoice -> InvoiceItems navigation.
+        var previousQuantities = await context.SalesInvoices.AsNoTracking()
+            .Where(invoice => invoice.State == 1)
+            .SelectMany(invoice => invoice.InvoiceItems)
+            .Where(item => item.QuotationItemRef.HasValue
+                && lineIds.Contains(item.QuotationItemRef.Value))
+            .GroupBy(item => item.QuotationItemRef!.Value)
+            .Select(group => new {
+                QuotationItemId = group.Key,
+                Quantity = group.Sum(item => item.Quantity)
+            })
             .ToListAsync(ct);
 
         /*var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
