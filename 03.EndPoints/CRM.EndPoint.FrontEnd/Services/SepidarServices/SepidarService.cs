@@ -1969,7 +1969,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             };
 
             delivery.Items = await GenerateInventoryDeliveryItemsAsync(
-                deliveryId, deliveryNumber, invoice.InvoiceItems
+                deliveryId, invoice.Number, invoice.InvoiceItems
                     .Where(x => x.StockRef == group.Key)
                     .OrderBy(x => x.RowID).ToList(), costOfGoodsAccountId, ct);
 
