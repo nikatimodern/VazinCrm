@@ -6,6 +6,7 @@ using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes.Entities;
 using CRM.Core.Domain.Sepidar.FiscalYears.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities;
 using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
@@ -26,6 +27,8 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<Invoice> vwInvoice { get; set; }
     public DbSet<SalesInvoiceRecord> SalesInvoices { get; set; }
     public DbSet<SalesInvoiceItemRecord> SalesInvoiceItems { get; set; }
+    public DbSet<InventoryDeliveryRecord> InventoryDeliveries { get; set; }
+    public DbSet<InventoryDeliveryItemRecord> InventoryDeliveryItems { get; set; }
     public DbSet<InvoiceItem> vwInvoiceItem { get; set; }
     public DbSet<PaymentHeader> PaymentHeaders { get; set; }
     public DbSet<FiscalYear> FiscalYears { get; set; }
