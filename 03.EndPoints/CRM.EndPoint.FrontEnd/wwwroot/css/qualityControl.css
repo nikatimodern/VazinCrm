@@ -73,6 +73,9 @@
 .quality-control-page .qc-button-danger:hover { background: var(--color-danger-light); }
 .quality-control-page .qc-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
 .quality-control-page .qc-actions .qc-button { padding: .4rem .5rem; font-size: .85rem; }
+.quality-control-page .qc-actions .qc-button-no-response { border-color: var(--color-secondary); color: var(--color-secondary); }
+.quality-control-page .qc-actions .qc-button-no-response:hover { background: var(--color-secondary-light); }
+.quality-control-page .qc-filter-item input:disabled + label { opacity: .45; cursor: not-allowed; }
 .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 32px; padding-inline: 0; flex-shrink: 0; }
 @media (max-width: 767px) {
     .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 44px; }
@@ -82,7 +85,7 @@
 .quality-control-page .qc-records, .quality-control-page .qc-record-list { min-width: 0; }
 .quality-control-page .qc-records-scroll { min-width: 0; overflow-x: auto; padding-bottom: .25rem; }
 .quality-control-page .qc-record-header,
-.quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 160px 115px; align-items: center; gap: .65rem; min-width: 1155px; padding: .9rem 1rem; border-radius: 11px; }
+.quality-control-page .qc-record-card { display: grid; grid-template-columns: 40px 90px minmax(130px, 1.5fr) minmax(130px, 1.3fr) 115px minmax(90px, 1fr) 105px 160px 200px; align-items: center; gap: .65rem; min-width: 1155px; padding: .9rem 1rem; border-radius: 11px; }
 .quality-control-page .qc-record-header { background: var(--color-primary); color: var(--color-surface); font-family: IRANSansBold; font-size: .85rem; margin-bottom: .7rem; }
 .quality-control-page .qc-record-header button { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; }
 .quality-control-page .qc-record-header button[data-qc-sort="status"] { white-space: nowrap; }
