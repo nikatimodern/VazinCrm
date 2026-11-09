@@ -51,6 +51,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<SaleType> SaleTypes { get; set; }
     public DbSet<Stock> Stocks { get; set; }
     public DbSet<ItemStock> ItemStocks { get; set; }
+    public DbSet<ItemStockSummary> ItemStockSummaries { get; set; }
     public DbSet<Unit> Units { get; set; }
 
 
@@ -89,6 +90,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<SaleType>().ToTable("SaleType", "SLS");
         modelBuilder.Entity<Stock>().ToTable("Stock", "INV");
         modelBuilder.Entity<ItemStock>().ToTable("ItemStock", "INV");
+        modelBuilder.Entity<ItemStockSummary>().ToTable("ItemStockSummary", "INV");
         modelBuilder.Entity<Unit>().ToTable("Unit", "INV");
     }
 
