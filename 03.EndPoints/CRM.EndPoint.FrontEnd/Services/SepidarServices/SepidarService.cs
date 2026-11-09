@@ -1710,7 +1710,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             var summaryTable = CreateInventorySummaryTable(invoice.InvoiceItems, invoice.FiscalYearRef);
             await LockInventoryStockSummaryAsync(summaryTable, ct);
             await UpdateInventoryStockSummaryAsync(summaryTable, ct);
-            var balancesBefore = await ReadInventoryStockBalancesAsync(summaryTable, ct);
+            var balancesBefore = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
             ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore);
 
             sepidarContext.SalesInvoices.Add(invoice);
@@ -1720,7 +1720,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await AddInventoryDeliveryAsync(invoice, ct);
             await UpdateInventoryStockSummaryAsync(summaryTable, ct);
 
-            var balancesAfter = await ReadInventoryStockBalancesAsync(summaryTable, ct);
+            var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
             ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter);
 
             await transaction.CommitAsync(ct);
@@ -1831,33 +1831,46 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
-        DataTable summaryTable, CancellationToken ct)
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId, CancellationToken ct)
     {
-        const string sql = @"
-            SELECT
-                t.StockID, t.ItemID, t.TracingID,
-                ISNULL(SUM(s.Quantity), 0) AS PhysicalQuantity,
-                ISNULL(SUM(s.SaleQuantity), 0) AS UndeliveredSaleQuantity
-            FROM @SummaryTable AS t
-            JOIN INV.Item AS i ON i.ItemID = t.ItemID
-            LEFT JOIN INV.ItemStockSummary AS s
-                ON s.StockRef = t.StockID
-                AND s.ItemRef = t.ItemID
-                AND s.FiscalYearRef = t.FiscalYearID
-                AND ISNULL(s.TracingRef, 0) = ISNULL(t.TracingID, 0)
-                AND s.UnitRef = i.UnitRef
-            GROUP BY t.StockID, t.ItemID, t.TracingID;";
+        var keys = invoiceItems
+            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
+            .Distinct()
+            .ToArray();
 
-        await using var command = CreateInventorySummaryCommand(sql, CommandType.Text, summaryTable);
-        var balances = new Dictionary<InventoryStockKey, InventoryStockBalance>();
-        await using var reader = await command.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
+        var stockRefs = keys.Select(x => x.StockRef).Distinct().ToArray();
+        var itemRefs = keys.Select(x => x.ItemRef).Distinct().ToArray();
+
+        // Query the mapped INV.ItemStockSummary entity. Use the item's primary unit,
+        // as the summary can contain an additional row for the secondary unit.
+        var summaries = await sepidarContext.ItemStockSummaries.AsNoTracking()
+            .Where(x => x.FiscalYearRef == fiscalYearId
+                && stockRefs.Contains(x.StockRef)
+                && itemRefs.Contains(x.ItemRef)
+                && x.UnitRef == x.Item.UnitRef)
+            .Select(x => new {
+                x.StockRef,
+                x.ItemRef,
+                x.TracingRef,
+                x.Quantity,
+                x.SaleQuantity
+            })
+            .ToListAsync(ct);
+
+        var balances = keys.ToDictionary(
+            x => x, _ => new InventoryStockBalance(0m, 0m));
+
+        foreach (var summary in summaries)
         {
-            var key = new InventoryStockKey(
-                reader.GetInt32(0), reader.GetInt32(1),
-                reader.IsDBNull(2) ? null : reader.GetInt32(2));
-            balances.Add(key, new InventoryStockBalance(reader.GetDecimal(3), reader.GetDecimal(4)));
+            var key = new InventoryStockKey(summary.StockRef, summary.ItemRef, summary.TracingRef);
+            if (!balances.TryGetValue(key, out var current))
+                continue;
+
+            balances[key] = new InventoryStockBalance(
+                current.PhysicalQuantity + summary.Quantity,
+                current.UndeliveredSaleQuantity + (summary.SaleQuantity ?? 0m));
         }
+
         return balances;
     }
 
