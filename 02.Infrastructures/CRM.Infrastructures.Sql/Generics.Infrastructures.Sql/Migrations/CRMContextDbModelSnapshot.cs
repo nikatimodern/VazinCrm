@@ -3575,6 +3575,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<CRM.Core.Domain.QualityControls.Models.QualityControlOutcome?>("Status")
+                        .HasConversion<byte>()
+                        .HasColumnType("tinyint");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -3607,7 +3611,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasIndex("DealId")
                         .IsUnique();
 
-                    b.ToTable("QualityControls");
+                    b.ToTable("QualityControls", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControls_Status", "[Status] IN (1, 2, 4)");
+                        });
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlAnswer", b =>
