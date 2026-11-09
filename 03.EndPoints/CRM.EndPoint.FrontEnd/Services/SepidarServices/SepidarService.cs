@@ -1667,7 +1667,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Number = invoiceNumber, // فعلا
                 Date = factor.DateMiladi!.Value, // فعلا
                 CurrencyRef = quotation.CurrencyRef,
-                SLRef = 725, // فعلا
+                SLRef = await GetAccountIdByMoeinCodeAsync("1201", ct),
                 DeliveryLocationRef = quotation.DeliveryLocationRef,
                 State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,
