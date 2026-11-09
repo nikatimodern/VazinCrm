@@ -25,6 +25,7 @@
             0: { label: "بررسی نشده", color: "gray" },
             1: { label: "بدون مغایرت", color: "green" },
             2: { label: "دارای مغایرت", color: "red" },
+            4: { label: "عدم پاسخ", color: "gray" },
         };
         let tableRequest = null;
         let formRequest = null;
@@ -36,6 +37,7 @@
         let readOnly = false;
         let saving = false;
         let deleting = false;
+        let markingNoResponse = false;
         let viewingDocument = false;
 
         const body = page.querySelector("#qcRecordList");
@@ -117,9 +119,8 @@
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" data-qc-view="true" title="نمایش کنترل کیفیت" aria-label="نمایش کنترل کیفیت"><i class="fa fa-eye" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" title="ویرایش کنترل کیفیت" aria-label="ویرایش کنترل کیفیت"><i class="fa fa-pencil" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion)}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
-                        : row.financialApproved
-                            ? `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`
-                            : "—"}</div>
+                        : `<button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>`}
+                        ${row.status === 4 ? "" : `<button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}" data-qc-serial="${escapeHtml(row.serialNumber)}">عدم پاسخ</button>`}</div>
                 </article>`;
             }).join("");
         }
@@ -224,17 +225,44 @@
             if (event.target.matches('[name="qcFinancialStatus"], [name="qcStatus"]')) loadTable(true);
         });
         page.addEventListener("click", event => {
+            const noResponseButton = event.target.closest("[data-qc-no-response-id]");
+            if (noResponseButton) { markNoResponse(noResponseButton); return; }
             const deleteButton = event.target.closest("[data-qc-delete-id]");
             if (deleteButton) {
                 deleteControl(deleteButton);
                 return;
             }
             const button = event.target.closest("[data-qc-deal-id]");
-            if (button && !saving && !deleting) openForm(button.dataset.qcDealId, button.dataset.qcView === "true");
+            if (button && !saving && !deleting && !markingNoResponse) openForm(button.dataset.qcDealId, button.dataset.qcView === "true");
         });
 
+        async function markNoResponse(button) {
+            if (markingNoResponse || deleting || saving || loading || !isActive()) return;
+            markingNoResponse = true;
+            button.disabled = true;
+            try {
+                const confirmed = await confirmAlert({
+                    title: "ثبت عدم پاسخ",
+                    text: `وضعیت کنترل کیفیت سفارش ${button.dataset.qcSerial} به «عدم پاسخ» تغییر کند؟`,
+                    confirmText: "ثبت عدم پاسخ",
+                });
+                if (!confirmed || !isActive()) return;
+                const result = await sendApiRequest({
+                    url: "/QualityControl/MarkNoResponse",
+                    method: "POST",
+                    headers: { RequestVerificationToken: form.querySelector('[name="__RequestVerificationToken"]').value },
+                    data: { dealId: button.dataset.qcNoResponseId, rowVersion: button.dataset.qcVersion || null },
+                    successMsg: "وضعیت کنترل کیفیت به عدم پاسخ تغییر کرد.",
+                });
+                if (result && isActive()) await loadTable();
+            } finally {
+                markingNoResponse = false;
+                if (button.isConnected) button.disabled = false;
+            }
+        }
+
         async function deleteControl(button) {
-            if (deleting || saving || loading || !isActive()) return;
+            if (deleting || saving || markingNoResponse || loading || !isActive()) return;
             deleting = true;
             button.disabled = true;
             try {
@@ -337,7 +365,7 @@
             rowVersion = result.rowVersion ?? null;
             description.value = result.description ?? "";
             if (readOnly) {
-                renderReadOnlyResult(result.questions, result.description);
+                renderReadOnlyResult(result.questions, result.description, result.noResponse);
                 readOnlyResult.hidden = false;
             } else {
                 renderQuestions(result.questions);
@@ -462,7 +490,14 @@
             }
         });
 
-        function renderReadOnlyResult(items, notes) {
+        function renderReadOnlyResult(items, notes, noResponse = false) {
+            if (noResponse) {
+                const message = document.createElement("p");
+                message.className = "qc-result-heading";
+                message.textContent = "وضعیت کنترل کیفیت: عدم پاسخ";
+                readOnlyResult.replaceChildren(message);
+                return;
+            }
             const fragment = document.createDocumentFragment();
             const heading = document.createElement("h3");
             heading.className = "qc-result-heading";

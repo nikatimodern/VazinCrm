@@ -3575,6 +3575,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<bool>("NoResponse")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 

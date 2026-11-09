@@ -9,7 +9,8 @@ public enum QualityControlStatus
     NotReviewed = 0,
     NoDiscrepancy = 1,
     HasDiscrepancy = 2,
-    Reviewed = 3
+    Reviewed = 3,
+    NoResponse = 4
 }
 
 public sealed record QualityControlAccess(string UserId, string UserName, bool ReadAll);
@@ -55,7 +56,7 @@ public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title
 }
 public sealed record QualityControlPaymentTotal(string Currency, string Amount);
 public sealed record QualityControlDealCounts(int PreFactor, int Factor, int Accountancy, int OrderHead, int Report, int SupplyFactor);
-public sealed record QualityControlForm(QualityControlDeal Deal, string? Description, byte[]? RowVersion, IReadOnlyList<QualityControlQuestionDto> Questions);
+public sealed record QualityControlForm(QualityControlDeal Deal, string? Description, byte[]? RowVersion, IReadOnlyList<QualityControlQuestionDto> Questions, bool NoResponse);
 
 public sealed class SaveQualityControlRequest
 {
@@ -66,5 +67,6 @@ public sealed class SaveQualityControlRequest
 }
 
 public sealed record QualityControlAnswerInput(Guid QuestionId, int? Answer);
+public sealed record MarkQualityControlNoResponseRequest(Guid DealId, byte[]? RowVersion);
 public sealed record DeleteQualityControlRequest(Guid DealId, byte[]? RowVersion);
 public sealed record QualityControlSaveResult(int StatusCode, string? Message = null, QualityControlStatus? Status = null, byte[]? RowVersion = null);
