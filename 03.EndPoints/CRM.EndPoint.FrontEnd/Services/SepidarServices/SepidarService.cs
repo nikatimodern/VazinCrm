@@ -1707,13 +1707,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
             invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
             var stockCodes = await GetInventoryStockCodesAsync(invoice.InvoiceItems, ct);
+            var itemCodes = await GetInventoryItemCodesAsync(invoice.InvoiceItems, ct);
 
             // Lock and recalculate affected inventory rows before writing either document.
             var summaryTable = CreateInventorySummaryTable(invoice.InvoiceItems, invoice.FiscalYearRef); // آماده‌سازی فهرست کالاها و انبارها
             await LockInventoryStockSummaryAsync(summaryTable, ct); // قفل‌گذاری و آماده‌سازی رکوردهای موجودی
             await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه مجدد موجودی قبل از ثبت
             var balancesBefore = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct); // خواندن موجودی فعلی
-            ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes); // بررسی کافی‌بودن موجودی
+            ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // بررسی کافی‌بودن موجودی
 
             sepidarContext.SalesInvoices.Add(invoice);
 //            await sepidarContext.SaveChangesAsync(ct);
@@ -1723,7 +1724,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه موجودی بعد از خروج
 
             var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
-            ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes);
+            ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes);
 
             await transaction.CommitAsync(ct);
             return invoiceId;
@@ -1767,6 +1768,20 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException("انبار یکی از ردیف‌های فاکتور در سپیدار پیدا نشد.");
 
         return stockCodes;
+    }
+
+    private async Task<Dictionary<int, string>> GetInventoryItemCodesAsync(
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    {
+        var itemRefs = invoiceItems.Select(x => x.ItemRef).Distinct().ToArray();
+        var itemCodes = await sepidarContext.Items.AsNoTracking()
+            .Where(x => itemRefs.Contains(x.ItemID))
+            .ToDictionaryAsync(x => x.ItemID, x => x.Code, ct);
+
+        if (itemCodes.Count != itemRefs.Length)
+            throw new InvalidOperationException("کالای یکی از ردیف‌های فاکتور در سپیدار پیدا نشد.");
+
+        return itemCodes;
     }
 
     private async Task AcquireSepidarInvoiceExportLockAsync(CancellationToken ct)
@@ -1892,12 +1907,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private static void ValidateInventoryAvailability(IEnumerable<SalesInvoiceItemRecord> invoiceItems,
         IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> balances,
-        IReadOnlyDictionary<int, int> stockCodes)
+        IReadOnlyDictionary<int, int> stockCodes,
+        IReadOnlyDictionary<int, string> itemCodes)
     {
         foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
         {
             if (!balances.TryGetValue(group.Key, out var balance))
-                throw new InvalidOperationException($"موجودی کالای {group.Key.ItemRef} در انبار {stockCodes[group.Key.StockRef]} قابل بررسی نیست.");
+                throw new InvalidOperationException($"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} قابل بررسی نیست.");
 
             // Existing undelivered invoices also represent demand against physical stock.
             // Open quotation reservations are deliberately not subtracted here: the
@@ -1906,7 +1922,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             var needed = group.Sum(x => x.Quantity);
             if (available < needed)
                 throw new InvalidOperationException(
-                    $"موجودی کالای {group.Key.ItemRef} در انبار {stockCodes[group.Key.StockRef]} کافی نیست. " +
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} کافی نیست. " +
                     $"موجودی قابل خروج: {FormatInventoryQuantity(available)}، مقدار درخواستی: {FormatInventoryQuantity(needed)}.");
         }
     }
@@ -1915,7 +1931,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         IEnumerable<SalesInvoiceItemRecord> invoiceItems,
         IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> before,
         IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> after,
-        IReadOnlyDictionary<int, int> stockCodes)
+        IReadOnlyDictionary<int, int> stockCodes,
+        IReadOnlyDictionary<int, string> itemCodes)
     {
         foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
         {
@@ -1925,7 +1942,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             var expected = previous.PhysicalQuantity - group.Sum(x => x.Quantity);
             if (expected < 0 || current.PhysicalQuantity != expected)
                 throw new InvalidOperationException(
-                    $"موجودی کالای {group.Key.ItemRef} در انبار {stockCodes[group.Key.StockRef]} پس از ثبت خروج با مقدار مورد انتظار مطابقت ندارد.");
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} پس از ثبت خروج با مقدار مورد انتظار مطابقت ندارد.");
         }
     }
 
