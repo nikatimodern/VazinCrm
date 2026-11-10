@@ -83,36 +83,27 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             if (quotationItem.ItemRef <= 0 || quotationItem.StockRef <= 0)
                 throw new InvalidOperationException($"ردیف {factorItem.Row}: کالا یا انبار پیش‌فاکتور سپیدار نامعتبر است.");
 
-            // The older quotation exporter assigned RowID by collection order.
-            // Verify the original quantity and fee before trusting the row correspondence.
-            if (!decimal.TryParse(sourceItem.WeightCount, NumberStyles.Number,
-                    CultureInfo.InvariantCulture, out var sourceQuantity)
-                || sourceQuantity != quotationItem.Quantity
-                || sourceItem.UnitAmount != quotationItem.Fee)
-                throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: تعداد یا قیمت CRM با سپیدار متفاوت است (تعداد: {FormatErrorNumber(sourceItem.WeightCount)}/{FormatErrorNumber(quotationItem.Quantity)}، قیمت: {FormatErrorNumber(sourceItem.UnitAmount)}/{FormatErrorNumber(quotationItem.Fee)}).");
-
+            // Sepidar's quotation supplies the item/stock mapping only. The CRM
+            // invoice is authoritative for quantity, unit price, discount, tax
+            // and net amount; they can differ from the earlier quotation.
             if (!decimal.TryParse(factorItem.WeightCount, NumberStyles.Number,
                     CultureInfo.InvariantCulture, out var quantity) || quantity <= 0)
-                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({FormatErrorNumber(factorItem.WeightCount)}).");
-
-            // Source quotation can contain more quantity than this invoice (partial invoicing).
-            var alreadyUsed = quotationItem.UsedQuantity ?? 0m;
-            if (alreadyUsed < 0 || alreadyUsed > quotationItem.Quantity)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
-            if (quantity > quotationItem.Quantity - alreadyUsed)
-                throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مقدار درخواستی ({FormatErrorNumber(quantity)}) از مانده قابل فاکتور " +
-                    $"پیش‌فاکتور سپیدار ({FormatErrorNumber(quotationItem.Quantity - alreadyUsed)}) بیشتر است.");
+                    $"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({FormatErrorNumber(factorItem.WeightCount)}).");
 
-            var price = Math.Round(quantity * factorItem.UnitAmount);
+            var fee = factorItem.UnitAmount;
             var discount = factorItem.Discount;
             var tax = factorItem.TaxAmount;
-            if (price < 0 || discount < 0 || discount > price || tax < 0
-                || factorItem.TotalAmount != price - discount + tax)
+            var netPrice = factorItem.TotalAmount;
+
+            // CRM stores the final line amount after discount and tax.
+            // Reconstruct the before-discount/tax price from CRM amounts,
+            // without taking the quotation price or recalculating CRM's rounding.
+            var price = netPrice + discount - tax;
+            if (fee < 0 || price < 0 || netPrice < 0 || discount < 0 ||
+                discount > price || tax < 0)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مبلغ فاکتور ({FormatErrorNumber(factorItem.TotalAmount)}) با مبلغ محاسبه‌شده ({FormatErrorNumber(price - discount + tax)}) برابر نیست.");
+                    $"ردیف {factorItem.Row}: مبلغ، قیمت، تخفیف یا مالیات فاکتور CRM نامعتبر است.");
 
             lines.Add(new SepidarInvoiceExportItemPreview {
                 RowId = lines.Count + 1,
@@ -123,11 +114,11 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 StockRef = quotationItem.StockRef,
                 StockTitle = string.Empty, // Filled by SepidarService from the mapped StockRef.
                 Quantity = quantity,
-                Fee = factorItem.UnitAmount,
+                Fee = fee,
                 Price = price,
                 Discount = discount,
                 Tax = tax,
-                NetPrice = factorItem.TotalAmount
+                NetPrice = netPrice
             });
         }
 
@@ -137,31 +128,6 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
             throw new InvalidOperationException(
                 $"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {FormatErrorNumber(lines.Sum(x => x.NetPrice))}، مبلغ نهایی: {FormatErrorNumber(factor.PaymentAmount)}).");
-
-        /*var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
-
-        var previousQuantities = await context.SalesInvoices.AsNoTracking()
-            .Where(invoice => invoice.State == 1)
-            .SelectMany(invoice => invoice.InvoiceItems)
-            .Where(item => item.QuotationItemRef.HasValue && lineIds.Contains(item.QuotationItemRef.Value))
-            .GroupBy(item => item.QuotationItemRef.Value)
-            .Select(group => new {
-                QuotationItemId = group.Key,
-                Quantity = group.Sum(item => item.Quantity)
-            })
-            .ToListAsync(ct);
-
-        var previousByItem = previousQuantities.ToDictionary(x => x.QuotationItemId, x => x.Quantity);
-        foreach (var line in lines)
-        {
-            var quotedQuantity = quotationItemsByRow.Values
-                .Single(x => x.QuotationItemID == line.QuotationItemId).Quantity;
-
-            var previousQuantity = previousByItem.GetValueOrDefault(line.QuotationItemId);
-            if (line.Quantity + previousQuantity > quotedQuantity)
-                throw new InvalidOperationException(
-                    $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({FormatErrorNumber(line.Quantity + previousQuantity)}) از تعداد پیش‌فاکتور سپیدار ({FormatErrorNumber(quotedQuantity)}) بیشتر می‌شود.");
-        }*/
 
         return new SepidarInvoiceExportPreview {
             QuotationId = quotationId,
