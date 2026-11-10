@@ -19,16 +19,11 @@ namespace Generics.Infrastructures.Sql {
             base.OnModelCreating(modelBuilder);
 
 
-            modelBuilder.Entity<AppUser>().HasOne(u => u.Position)
-                .WithOne()
-                .HasForeignKey<AppUser>(f => f.PositionId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-
-            modelBuilder.Entity<BaseAdmin>().HasKey(f => f.Id);
-            modelBuilder.Entity<BaseAdmin>().HasQueryFilter(f => f.IsDeleted == false);
-
-            // Explicit registration; CRMContextDb excludes these configurations from its scan.
+            // The old method was declared without "override" and its configurations were
+            // never part of the effective Identity model. Keep the existing AppUser/Position
+            // relationship and BaseAdmin mapping by convention, as in the existing migrations.
+            // Re-applying the old WithOne/NoAction settings here would change the Identity schema.
+            // Only the access catalog configurations are newly registered in this context.
             modelBuilder.ApplyConfiguration(new AccessEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AccessPermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessRolePermissionConfiguration());
