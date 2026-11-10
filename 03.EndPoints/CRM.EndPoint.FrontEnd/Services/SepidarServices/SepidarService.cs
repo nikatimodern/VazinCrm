@@ -1652,8 +1652,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
         if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date ||
             invoiceDate.Date > fiscalYear.EndDate.Date)
-            throw new InvalidOperationException(
-                $"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try

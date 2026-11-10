@@ -2,7 +2,7 @@ let externalFactorExportState = null;
 
 async function sendFactorToExternalSoftware(factorId) {
     if (!factorId) return;
-
+    
     await showExternalSoftwareModal(factorId, {
         mapType: 3,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
@@ -10,21 +10,21 @@ async function sendFactorToExternalSoftware(factorId) {
                 toastifyError("برای هر انتقال فقط یک نرم‌افزار مقصد انتخاب کنید.");
                 return;
             }
-
+            
             const request = {
                 factorId: entityIds[0],
                 externalSoftwareId: externalSoftwareIds[0],
             };
-
+            
             const result = await sendApiRequest({
                 url: "/Factor/PrepareExternalFactor",
                 method: "POST",
                 data: request,
                 successMsg: null,
             });
-
+            
             if (!result?.preview?.items?.length) return;
-
+            
             externalFactorExportState = { request, processing: false };
             document.getElementById("externalFactorPreviewContent").innerHTML =
                 renderExternalFactorPreview(result);
@@ -41,13 +41,13 @@ function renderExternalFactorPreview(data) {
         maximumFractionDigits: 4,
     });
     const money = value => `${number(value)} ریال`;
-
+    
     const date = preview.invoiceDateText || preview.invoiceDate?.split("T")[0] || "-";
     document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
         data.softwareTitle || "نرم‌افزار مالی";
     document.getElementById("sendFactorToExternalSoftwareSubtitle").textContent =
         "نرم‌افزار ۱ از ۱";
-
+    
     return `
         <div class="external-mapping-stage-info">
             <div class="external-mapping-stage-icon">
@@ -71,7 +71,7 @@ function renderExternalFactorPreview(data) {
                     <label class="ex-preview-label" for="externalFactorInvoiceNumber">شماره فاکتور:</label>
                     <input id="externalFactorInvoiceNumber" type="text" inputmode="numeric"
                            autocomplete="off" maxlength="15" dir="ltr"
-                           class="ex-preview-invoice-number" placeholder="-">
+                           class="ex-preview-invoice-number digitNumber" placeholder="-">
                 </div>
                 <div class="ex-preview-field">
                     <span class="ex-preview-label">تاریخ:</span>
@@ -141,46 +141,45 @@ function renderExternalFactorPreview(data) {
 function parseExternalFactorInvoiceNumber() {
     const input = document.getElementById("externalFactorInvoiceNumber");
     if (!input) return { error: "فیلد شماره فاکتور پیدا نشد." };
-
+    
     const normalized = input.value.trim()
-        .replace(/[۰-۹]/g, char => String(char.charCodeAt(0) - 0x06F0))
-        .replace(/[٠-٩]/g, char => String(char.charCodeAt(0) - 0x0660))
-        .replace(/[٬,\s]/g, "");
-
+                            .replace(/[۰-۹]/g, char => String(char.charCodeAt(0) - 0x06F0))
+                            .replace(/[٠-٩]/g, char => String(char.charCodeAt(0) - 0x0660))
+                            .replace(/[٬,\s]/g, "");
+    
     if (!normalized) return { number: null };
     if (!/^\d+$/.test(normalized)) {
         return { error: "شماره فاکتور باید فقط شامل رقم باشد." };
     }
-
+    
     const number = Number(normalized);
     if (!Number.isInteger(number) || number <= 0 || number > 2147483647) {
         return { error: "شماره فاکتور باید عدد صحیح بین ۱ تا ۲٬۱۴۷٬۴۸۳٬۶۴۷ باشد." };
     }
-
+    
     return { number };
 }
 
 function setExternalFactorInvoiceNumberInvalid(invalid) {
-    document.getElementById("externalFactorInvoiceNumber")
-        ?.classList.toggle("is-invalid", invalid);
+    document.getElementById("externalFactorInvoiceNumber")?.classList.toggle("is-invalid", invalid);
 }
 
 async function validateExternalFactorInvoiceNumber() {
     const state = externalFactorExportState;
     if (!state) return false;
-
+    
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
         setExternalFactorInvoiceNumberInvalid(true);
         toastifyError(parsed.error);
         return false;
     }
-
+    
     if (parsed.number == null) {
         setExternalFactorInvoiceNumberInvalid(false);
         return true;
     }
-
+    
     try {
         const result = await sendApiRequest({
             url: "/Factor/CheckExternalFactorInvoiceNumber",
@@ -190,17 +189,17 @@ async function validateExternalFactorInvoiceNumber() {
             showError: false,
             successMsg: null,
         });
-
+        
         // Do not display a stale error after the number changes or the modal closes.
         if (externalFactorExportState !== state ||
             parseExternalFactorInvoiceNumber().number !== parsed.number) return false;
-
+        
         if (!result || typeof result.available !== "boolean") {
             setExternalFactorInvoiceNumberInvalid(true);
             toastifyError("امکان بررسی شماره فاکتور وجود ندارد.");
             return false;
         }
-
+        
         setExternalFactorInvoiceNumberInvalid(!result.available);
         if (!result.available) {
             toastifyError(result.message ||
@@ -229,25 +228,25 @@ document.addEventListener("change", async event => {
 
 document.addEventListener("click", async event => {
     if (!event.target.closest("#confirmSendExternalFactorBtn")) return;
-
+    
     const state = externalFactorExportState;
     if (!state || state.processing) return;
-
+    
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
         setExternalFactorInvoiceNumberInvalid(true);
         toastifyError(parsed.error);
         return;
     }
-
+    
     state.processing = true;
     const button = document.getElementById("confirmSendExternalFactorBtn");
     toggleElementsDisabled(button, true);
-
+    
     try {
         // Early check improves UX; the server checks again inside the write transaction.
         if (parsed.number != null && !await validateExternalFactorInvoiceNumber()) return;
-
+        
         const result = await sendApiRequest({
             url: "/Factor/SendFactorToExternalSoftware",
             method: "POST",
@@ -256,7 +255,7 @@ document.addEventListener("click", async event => {
             successMsg: "فاکتور با موفقیت در سپیدار ثبت شد",
         });
         if (!result?.invoiceId) return;
-
+        
         ModalToggle("sendFactorToExternalSoftwareModal", "hide");
         if (typeof refreshFactorPartial === "function") await refreshFactorPartial();
     } finally {
