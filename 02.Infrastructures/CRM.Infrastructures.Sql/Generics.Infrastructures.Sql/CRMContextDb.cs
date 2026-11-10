@@ -37,6 +37,8 @@ namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
+        public DbSet<CRM.Core.Domain.AccessCatalog.Entities.AccessEntity> AccessEntities { get; set; }
+        public DbSet<CRM.Core.Domain.AccessCatalog.Entities.AccessPermission> AccessPermissions { get; set; }
         public DbSet<Accountancy> Accountancies { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote> ReleaseNotes { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem> ReleaseNoteItems { get; set; }

@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using CRM.Core.ApplicationServices.AccessCatalog.Services;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Infrastructures.Sql.AccessCatalog;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Administration.Dtos;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -22,6 +25,9 @@ public static class AdminServicesRegistration
     public static IServiceCollection AddAdminServices(this IServiceCollection services)
     {
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
+        services.AddScoped<IAccessCatalogRepository, AccessCatalogRepository>();
+        services.AddScoped<IAccessModelCatalog, AccessModelCatalog>();
+        services.AddScoped<AccessCatalogAdministration>();
         services.AddScoped<IQueryHandler<GetAdminPageQuery, List<AdminRole>>, GetAdminPageQueryHandler>();
         services.AddScoped<IQueryHandler<GetAdminUsersQuery, AdminUserPage>, GetAdminUsersQueryHandler>();
         services.AddScoped<IQueryHandler<GetAdminUserQuery, AppUser?>, GetAdminUserQueryHandler>();
