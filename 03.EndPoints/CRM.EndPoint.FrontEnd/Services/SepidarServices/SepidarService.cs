@@ -1717,7 +1717,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // بررسی کافی‌بودن موجودی
 
             sepidarContext.SalesInvoices.Add(invoice);
-//            await sepidarContext.SaveChangesAsync(ct);
+            await sepidarContext.SaveChangesAsync(ct);
 
             // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
             await AddInventoryDeliveryAsync(invoice, stockCodes, ct); // ثبت خروج انبار
@@ -2019,7 +2019,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             sepidarContext.InventoryDeliveries.Add(delivery);
         }
 
-//        await sepidarContext.SaveChangesAsync(ct);
+        await sepidarContext.SaveChangesAsync(ct);
     }
 
     private async Task<List<InventoryDeliveryItemRecord>> GenerateInventoryDeliveryItemsAsync(int deliveryId, int invoiceNumber,
