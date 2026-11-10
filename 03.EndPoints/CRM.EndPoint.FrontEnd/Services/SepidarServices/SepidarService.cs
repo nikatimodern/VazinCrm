@@ -216,6 +216,59 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
+    // FMK.Configuration stores ACC.Account.AccountId and ACC.DL.DLId,
+    // not the hierarchical Moein/DL codes shown in Sepidar's UI.
+    private async Task<int> GetRequiredSepidarSettingIdAsync(string key, CancellationToken ct)
+    {
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == key)
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count != 1 ||
+            !int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ||
+            id <= 0)
+            throw new InvalidOperationException(
+                $"تنظیم «{key}» در سپیدار وجود ندارد یا شناسه معتبر و بزرگ‌تر از صفر ندارد.");
+
+        return id;
+    }
+
+    private async Task<int> GetConfiguredAccountIdAsync(string key, CancellationToken ct)
+    {
+        var accountId = await GetRequiredSepidarSettingIdAsync(key, ct);
+        if (!await sepidarContext.Accounts.AsNoTracking()
+                .AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException(
+                $"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
+
+        return accountId;
+    }
+
+    private async Task<int> GetConfiguredDlIdAsync(string key, CancellationToken ct)
+    {
+        var dlId = await GetRequiredSepidarSettingIdAsync(key, ct);
+        if (!await sepidarContext.DLs.AsNoTracking()
+                .AnyAsync(x => x.DLId == dlId && x.IsActive, ct))
+            throw new InvalidOperationException(
+                $"تفصیلی معرفی‌شده در تنظیم «{key}» (شناسه {dlId}) در سپیدار پیدا نشد یا غیرفعال است.");
+
+        return dlId;
+    }
+
+    private async Task<int> GetSalesAccountIdAsync(SaleType? saleType, CancellationToken ct)
+    {
+        // An account configured on the actual sale type takes precedence.
+        // A missing, deleted, inactive or tracking-required account falls back
+        // to Sepidar's global SalesPartSalesSL setting, never a hard-coded code.
+        if (saleType?.PartSalesSLRef is int accountId && accountId > 0 &&
+            await sepidarContext.Accounts.AsNoTracking().AnyAsync(
+                x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+            return accountId;
+
+        return await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
+    }
+
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(moeinCode))
@@ -412,7 +465,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TotalAmountInBaseCurrency = cash.Amount,
 
                 // اگر کارمزد وجود دارد
-                BankFeeSlRef = cash.Fee > 0 ? await GetAccountIdByMoeinCodeAsync("7704", ct) : null
+                BankFeeSlRef = cash.Fee > 0 ? await GetConfiguredAccountIdAsync("BankFeeSlRef", ct) : null
             };
 
 
@@ -615,7 +668,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
                     RowNumber = voucherItems.Count + 1,
 
-                    AccountSLRef = await GetAccountIdByMoeinCodeAsync("7704", ct),
+                    AccountSLRef = await GetConfiguredAccountIdAsync("BankFeeSlRef", ct),
 
                     DLRef = null,
 
@@ -645,7 +698,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
 
-            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // تفاوت بین دو فانکشن مشترک
+            var bankAccountSlRef = await GetConfiguredAccountIdAsync("PettyCashSL", ct); // حساب تنخواه تعریف‌شده در تنظیمات سپیدار
             var creditItem = new VoucherItem {
                 VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                 VoucherRef = voucher.VoucherId,
@@ -843,7 +896,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
         var bankAccount = await GetBankAccountByIdAsync(ct, paymentDraft.BankAccountRef.Value);
 
-        var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1001", ct);
+        var bankAccountSlRef = await GetConfiguredAccountIdAsync("BankAmountAccount", ct);
 
         var bankDl = await GetDlByIdAsync(bankAccount.DlRef, ct);
 
@@ -1682,7 +1735,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Number = invoiceNumber,
                 Date = invoiceDate,
                 CurrencyRef = quotation.CurrencyRef,
-                SLRef = await GetAccountIdByMoeinCodeAsync("1201", ct), // حسابهاي دريافتني تجاري
+                SLRef = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct), // حسابهاي دريافتني تجاري
                 DeliveryLocationRef = quotation.DeliveryLocationRef,
                 State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,
@@ -1798,18 +1851,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             !await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == customer.DLRef && x.IsActive, ct))
             throw new InvalidOperationException("حساب تفصیلی فعال مشتری برای سند فروش در سپیدار پیدا نشد.");
 
-        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct)
-            ?? throw new InvalidOperationException("نوع فروش فاکتور سپیدار پیدا نشد.");
-        // Sales accounts are configured per sale type in SLS.SaleType, not in
-        // FMK.Configuration or on INV.Item. Never hard-code code 5001 here.
-        if (!saleType.PartSalesSLRef.HasValue || saleType.PartSalesSLRef.Value <= 0)
-            throw new InvalidOperationException(
-                $"حساب فروش کالا برای نوع فروش «{saleType.Title}» در تنظیمات سپیدار مشخص نشده است.");
-
-        var receivableAccountId = await GetAccountIdByMoeinCodeAsync("1201", ct);
-        var salesAccountId = saleType.PartSalesSLRef.Value;
+        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct);
+        var receivableAccountId = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct);
+        var salesAccountId = await GetSalesAccountIdAsync(saleType, ct);
         int? taxAccountId = taxAmount > 0
-            ? await GetAccountIdByMoeinCodeAsync("3112", ct)
+            ? await GetConfiguredAccountIdAsync("TaxPayableSL", ct)
             : null;
 
         var accountIds = new[] { receivableAccountId, salesAccountId }
@@ -1823,20 +1869,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
             throw new InvalidOperationException("یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
 
-        // In the confirmed Sepidar sample, code 6011 is the tax authority DL (232).
-        // Resolve by code, not hard-coded DLId; fail safely if not configured in Sepidar 2.
-        int? taxDlRef = null;
-        if (taxAccountId.HasValue)
-        {
-            var taxDl = await sepidarContext.DLs.AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Code == "6011", ct);
-            if (taxDl == null || !taxDl.IsActive)
-                throw new InvalidOperationException("تفصیلی اداره امور مالیاتی با کد 6011 در سپیدار پیدا نشد یا غیرفعال است. تنظیمات تفصیلی مالیات را بررسی کنید.");
-            taxDlRef = taxDl.DLId;
-        }
+        int? taxDlRef = taxAccountId.HasValue
+            ? await GetConfiguredDlIdAsync("ValueAddedTaxDL", ct)
+            : null;
 
         var baseDescription =
-            $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType.Title}";
+            $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType?.Title ?? "نامشخص"}";
         var now = DateTime.Now;
         var voucherNumber = await GetNextVoucherNumberAsync(invoice.FiscalYearRef, ct);
         var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
@@ -2250,10 +2288,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (!receiverDlRef.HasValue || receiverDlRef.Value <= 0)
             throw new InvalidOperationException("تفصیلی مشتری فاکتور سپیدار پیدا نشد.");
 
-        var costOfGoodsAccountId = await GetAccountIdByMoeinCodeAsync("6001", ct);
+        var costOfGoodsAccountId = await GetConfiguredAccountIdAsync("SalesPartFinalCostSL", ct);
         if (!await sepidarContext.Accounts.AsNoTracking()
                 .AnyAsync(x => x.AccountId == costOfGoodsAccountId && x.IsActive, ct))
-            throw new InvalidOperationException("حساب معین 6001 سپیدار فعال نیست.");
+            throw new InvalidOperationException("حساب بهای تمام‌شده تنظیم‌شده در سپیدار فعال نیست.");
 
         var now = DateTime.Now;
         foreach (var group in invoice.InvoiceItems.GroupBy(x => x.StockRef).OrderBy(x => x.Key))
