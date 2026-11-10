@@ -261,16 +261,21 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<int> GetSalesAccountIdAsync(SaleType? saleType, CancellationToken ct)
     {
-        // Prefer the account configured on this sale type. The global
-        // SalesPartSalesSL setting was empty in the verified Sepidar data,
-        // so preserve the original 5001 Moein-code fallback until that
-        // configuration is confirmed for both Sepidar databases.
+        // Prefer the account defined for the selected sale type.
+        // If it is absent or invalid, use the Sepidar configuration setting.
+        // Never silently fall back to a hard-coded Moein code.
         if (saleType?.PartSalesSLRef is int accountId && accountId > 0 &&
             await sepidarContext.Accounts.AsNoTracking().AnyAsync(
                 x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
             return accountId;
 
-        return await GetAccountIdByMoeinCodeAsync("5001", ct);
+        var configuredAccountId = await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
+        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(
+                x => x.AccountId == configuredAccountId && x.HasTracking, ct))
+            throw new InvalidOperationException(
+                "حساب فروش کالا در تنظیم «SalesPartSalesSL» نیاز به شماره پیگیری دارد و برای سند فروش قابل استفاده نیست.");
+
+        return configuredAccountId;
     }
 
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
