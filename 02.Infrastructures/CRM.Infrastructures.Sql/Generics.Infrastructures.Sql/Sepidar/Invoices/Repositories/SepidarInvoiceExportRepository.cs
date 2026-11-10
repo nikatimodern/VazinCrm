@@ -15,6 +15,15 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
 
 public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase context) : ISepidarInvoiceExportRepository {
+    // Preserve significant decimal digits and grouping while hiding trailing fractional zeros.
+    private static string FormatErrorNumber(decimal value)
+        => value.ToString("#,0.############################", CultureInfo.InvariantCulture);
+
+    private static string FormatErrorNumber(string? value)
+        => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
+            ? FormatErrorNumber(number)
+            : value ?? string.Empty;
+
     public async Task<SepidarInvoiceExportPreview> PreviewAsync(Factor factor, PreFactor preFactor, int quotationId, CancellationToken ct = default)
     {
         var quotation = await context.Quotations.AsNoTracking()
@@ -77,16 +86,16 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 || sourceQuantity != quotationItem.Quantity
                 || sourceItem.UnitAmount != quotationItem.Fee)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: تعداد یا قیمت CRM با سپیدار متفاوت است (تعداد: {sourceItem.WeightCount}/{quotationItem.Quantity:N3}، قیمت: {sourceItem.UnitAmount:N0}/{quotationItem.Fee:N0}).");
+                    $"ردیف {factorItem.Row}: تعداد یا قیمت CRM با سپیدار متفاوت است (تعداد: {FormatErrorNumber(sourceItem.WeightCount)}/{FormatErrorNumber(quotationItem.Quantity)}، قیمت: {FormatErrorNumber(sourceItem.UnitAmount)}/{FormatErrorNumber(quotationItem.Fee)}).");
 
             if (!decimal.TryParse(factorItem.WeightCount, NumberStyles.Number,
                     CultureInfo.InvariantCulture, out var quantity) || quantity <= 0)
-                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({factorItem.WeightCount}).");
+                throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({FormatErrorNumber(factorItem.WeightCount)}).");
 
             // Source quotation can contain more quantity than this invoice (partial invoicing).
             if (quantity > quotationItem.Quantity)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مقدار فاکتور ({quantity:N3}) از پیش‌فاکتور سپیدار ({quotationItem.Quantity:N3}) بیشتر است.");
+                    $"ردیف {factorItem.Row}: مقدار فاکتور ({FormatErrorNumber(quantity)}) از پیش‌فاکتور سپیدار ({FormatErrorNumber(quotationItem.Quantity)}) بیشتر است.");
 
             var price = Math.Round(quantity * factorItem.UnitAmount);
             var discount = factorItem.Discount;
@@ -94,7 +103,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             if (price < 0 || discount < 0 || discount > price || tax < 0
                 || factorItem.TotalAmount != price - discount + tax)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مبلغ فاکتور ({factorItem.TotalAmount:N0}) با مبلغ محاسبه‌شده ({price - discount + tax:N0}) برابر نیست.");
+                    $"ردیف {factorItem.Row}: مبلغ فاکتور ({FormatErrorNumber(factorItem.TotalAmount)}) با مبلغ محاسبه‌شده ({FormatErrorNumber(price - discount + tax)}) برابر نیست.");
 
             lines.Add(new SepidarInvoiceExportItemPreview {
                 RowId = lines.Count + 1,
@@ -118,7 +127,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             || lines.Sum(x => x.Tax) != factor.TotalTax
             || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
             throw new InvalidOperationException(
-                $"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {lines.Sum(x => x.NetPrice):N0}، مبلغ نهایی: {factor.PaymentAmount:N0}).");
+                $"مبالغ ردیف‌های فاکتور با جمع کل CRM برابر نیست (جمع ردیف‌ها: {FormatErrorNumber(lines.Sum(x => x.NetPrice))}، مبلغ نهایی: {FormatErrorNumber(factor.PaymentAmount)}).");
 
         /*var lineIds = lines.Select(x => x.QuotationItemId).ToArray();
 
@@ -142,7 +151,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             var previousQuantity = previousByItem.GetValueOrDefault(line.QuotationItemId);
             if (line.Quantity + previousQuantity > quotedQuantity)
                 throw new InvalidOperationException(
-                    $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({line.Quantity + previousQuantity:N3}) از تعداد پیش‌فاکتور سپیدار ({quotedQuantity:N3}) بیشتر می‌شود.");
+                    $"ردیف {line.RowId}: مجموع فاکتورهای صادرشده ({FormatErrorNumber(line.Quantity + previousQuantity)}) از تعداد پیش‌فاکتور سپیدار ({FormatErrorNumber(quotedQuantity)}) بیشتر می‌شود.");
         }*/
 
         return new SepidarInvoiceExportPreview {
