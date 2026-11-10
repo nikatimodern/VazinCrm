@@ -8342,6 +8342,39 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	overflow-wrap: anywhere;
 }
 
+#sendFactorToExternalSoftwareModal .ex-preview-invoice-number {
+	box-sizing: border-box;
+	width: 86px;
+	min-width: 0;
+	height: 26px;
+	min-height: 26px;
+	padding: 2px 6px;
+	border: 1px solid #d9e5e0;
+	border-radius: 6px;
+	background: #fff;
+	color: #263a35;
+	font: 500 12px/1.5 IRANSans, sans-serif;
+	text-align: center;
+	outline: 0;
+	box-shadow: none;
+}
+
+#sendFactorToExternalSoftwareModal .ex-preview-invoice-number::placeholder {
+	color: #788781;
+	opacity: 1;
+}
+
+#sendFactorToExternalSoftwareModal .ex-preview-invoice-number:focus {
+	border-color: #04857c;
+	box-shadow: 0 0 0 1px rgba(4, 133, 124, .12);
+}
+
+#sendFactorToExternalSoftwareModal .ex-preview-invoice-number.is-invalid,
+#sendFactorToExternalSoftwareModal .ex-preview-invoice-number.is-invalid:focus {
+	border-color: #cf4457;
+	box-shadow: none;
+}
+
 
 .ex-preview-customer {
 	grid-column: span 2;
