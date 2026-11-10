@@ -702,7 +702,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var pf = await db.PreFactors.Where(f => f.Id == id).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
 
 
-                pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین;
                 pf.PftypeTxt = nameof(PreFactorEnum.در_انتظار_تایید_مسئول_تامین).Replace("_", " ");
@@ -842,7 +841,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 pf.AcceptedFinancial = null;
 
-                pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مالی);
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مالی;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
@@ -1393,8 +1391,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var oldPfactor = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var pfactor = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
             if (pfactor == null) return NotFound("پیش‌فاکتور یافت نشد.");
-            if (pfactor.Pftype != (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری &&
-                pfactor.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مشتری)
+
+            if (pfactor.Pftype != (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری && pfactor.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مشتری)
                 return Conflict("پیش‌فاکتور در مرحله ارسال یا تایید مشتری نیست.");
 
             pfactor.PrePftype = pfactor.Pftype;
@@ -2193,7 +2191,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     code <= (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
                     return Conflict("برای عبور از مرحله تایید مشتری، ابتدا پیش‌فاکتور باید توسط مشتری یا به صورت دستی تایید شود.");
 
-                pf.RecordReturn(code);
+                
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = code;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(code);
@@ -2610,7 +2608,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var pf = await db.PreFactors.Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
             var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
-            pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
             pf.PrePftype = pf.Pftype;
             pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین;
             pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
@@ -3063,7 +3060,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (pf.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مالی &&
                     pf.Pftype <= (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
                 {
-                    pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مالی);
                     pf.PrePftype = pf.Pftype;
                     pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مالی;
                     pf.AcceptedFinancial = null;
