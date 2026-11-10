@@ -55,7 +55,19 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
 
         if (entity is null)
         {
-            entity = new AccessEntity { Key = draft.Key.Trim(), DbContextName = draft.DbContextName, ModelFullName = draft.ModelFullName };
+            entity = new AccessEntity
+            {
+                Key = draft.Key.Trim(),
+                DbContextName = draft.DbContextName,
+                ModelFullName = draft.ModelFullName,
+                Permissions =
+                [
+                    new AccessPermission { Key = "View", Title = "مشاهده", IsActive = true },
+                    new AccessPermission { Key = "Create", Title = "ایجاد", IsActive = true },
+                    new AccessPermission { Key = "Edit", Title = "ویرایش", IsActive = true },
+                    new AccessPermission { Key = "Delete", Title = "حذف", IsActive = true }
+                ]
+            };
             repository.Add(entity);
         }
         entity.Title = draft.Title.Trim();
