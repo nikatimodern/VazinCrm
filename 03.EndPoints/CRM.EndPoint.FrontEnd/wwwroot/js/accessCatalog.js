@@ -332,7 +332,7 @@
             button.type = "button";
             button.dataset.selectRole = role.id;
             button.setAttribute("aria-pressed", String(role.id === currentRoleId));
-            button.append(text("strong", role.name), text("small", "Role ID: " + role.id));
+            button.append(text("strong", role.name));
             rolesList.append(button);
         }
     }
@@ -342,6 +342,8 @@
         root.querySelector("[data-role-selected]").textContent = total + " دسترسی انتخاب شده";
         root.querySelector("[data-action='save-role']").disabled = !roleReady || roleSaving || !roleDirty();
         root.querySelector("[data-action='reset-role']").disabled = !roleReady || roleSaving || !roleDirty();
+        for (const input of roleGroups.querySelectorAll("[data-role-permission-id], [data-role-entity-toggle]"))
+            input.disabled = !roleReady || roleSaving;
         root.querySelector("[data-role-subtitle]").textContent = !currentRole() ? "برای شروع یک نقش انتخاب کنید." :
             !roleReady ? "در حال دریافت مجوزها..." :
             roleDirty() ? "تغییرات ذخیره‌نشده" : "همه تغییرات ذخیره شده‌اند.";
@@ -480,7 +482,7 @@
     }
 
     async function switchMainTab(next) {
-        if (next === activeTab) return;
+        if (next === activeTab || roleSaving) return;
         if (activeTab === "roles" && !await confirmDiscardRoleChanges()) return;
         activeTab = next;
         for (const tab of root.querySelectorAll("[data-main-tab]")) {
@@ -496,12 +498,15 @@
     }
 
     async function switchRole(roleId) {
-        if (roleId === currentRoleId || !await confirmDiscardRoleChanges()) return;
+        if (roleSaving || roleId === currentRoleId || !await confirmDiscardRoleChanges()) return;
         await selectRole(roleId);
     }
 
     function editRolePermission(input) {
-        if (!roleReady || roleSaving) return;
+        if (!roleReady || roleSaving) {
+            input.checked = !input.checked;
+            return;
+        }
         if (input.dataset.rolePermissionId) {
             if (input.checked) roleChosen.add(input.dataset.rolePermissionId);
             else roleChosen.delete(input.dataset.rolePermissionId);
@@ -558,7 +563,7 @@
         const action = target.dataset.action;
         if (action === "reload-roles") {
             void (async () => {
-                if (await confirmDiscardRoleChanges()) await loadRoleTab();
+                if (!roleSaving && await confirmDiscardRoleChanges()) await loadRoleTab();
             })();
         }
         else if (action === "save-role") void saveRolePermissions();

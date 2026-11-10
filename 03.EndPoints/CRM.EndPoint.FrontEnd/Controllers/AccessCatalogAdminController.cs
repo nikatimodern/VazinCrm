@@ -1,7 +1,7 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-#nullable enable
 using CRM.Core.ApplicationServices.AccessCatalog.Services;
 using CRM.Core.ApplicationServices.Security;
 using Microsoft.AspNetCore.Authorization;
