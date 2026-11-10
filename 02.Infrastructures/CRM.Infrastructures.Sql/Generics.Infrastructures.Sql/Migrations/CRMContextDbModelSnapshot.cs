@@ -52,6 +52,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.ToTable("AccessPermissions");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessRolePermission", b =>
+                {
+                    b.Property<string>("RoleId").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("AccessPermissionId").HasColumnType("uniqueidentifier");
+                    b.HasKey("RoleId", "AccessPermissionId");
+                    b.HasIndex("AccessPermissionId");
+                    b.ToTable("AccessRolePermissions");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ASetting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7684,6 +7693,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                     b.Navigation("AccessEntity");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessRolePermission", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.AccessCatalog.Entities.AccessPermission", "AccessPermission")
+                        .WithMany()
+                        .HasForeignKey("AccessPermissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.Navigation("AccessPermission");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessEntity", b =>
