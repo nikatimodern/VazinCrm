@@ -1806,8 +1806,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
 
         if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
-            throw new InvalidOperationException(
-                "یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
+            throw new InvalidOperationException("یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
 
         // In the confirmed Sepidar sample, code 6011 is the tax authority DL (232).
         // Resolve by code, not hard-coded DLId; fail safely if not configured in Sepidar 2.
@@ -1817,8 +1816,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             var taxDl = await sepidarContext.DLs.AsNoTracking()
                 .SingleOrDefaultAsync(x => x.Code == "6011", ct);
             if (taxDl == null || !taxDl.IsActive)
-                throw new InvalidOperationException(
-                    "تفصیلی اداره امور مالیاتی با کد 6011 در سپیدار پیدا نشد یا غیرفعال است. تنظیمات تفصیلی مالیات را بررسی کنید.");
+                throw new InvalidOperationException("تفصیلی اداره امور مالیاتی با کد 6011 در سپیدار پیدا نشد یا غیرفعال است. تنظیمات تفصیلی مالیات را بررسی کنید.");
             taxDlRef = taxDl.DLId;
         }
 
