@@ -483,7 +483,10 @@
 
     async function switchMainTab(next) {
         if (next === activeTab || roleSaving) return;
-        if (activeTab === "roles" && !await confirmDiscardRoleChanges()) return;
+        if (activeTab === "roles" && !await confirmDiscardRoleChanges()) {
+            root.querySelector("[data-main-tab='roles']").focus();
+            return;
+        }
         activeTab = next;
         for (const tab of root.querySelectorAll("[data-main-tab]")) {
             const active = tab.dataset.mainTab === next;
@@ -585,6 +588,19 @@
         else if (action === "delete-permission") void deleteItem("Permission", target.dataset.id);
         else if (action === "reload") void loadEntities();
     }, { signal });
+    root.querySelector(".ac-main-tabs").addEventListener("keydown", event => {
+        const tab = event.target.closest("[data-main-tab]");
+        if (!tab || !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const tabs = [...root.querySelectorAll("[data-main-tab]")];
+        const position = tabs.indexOf(tab);
+        const nextIndex = event.key === "Home" ? 0 :
+            event.key === "End" ? tabs.length - 1 :
+            (position + (event.key === "ArrowLeft" ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[nextIndex].focus();
+        void switchMainTab(tabs[nextIndex].dataset.mainTab);
+    }, { signal });
+
     root.querySelector("[data-entity-search]").addEventListener("input", renderEntities, { signal });
     root.querySelector("[data-role-search]").addEventListener("input", renderRoles, { signal });
     root.querySelector("[data-role-permission-search]").addEventListener("input", renderRolePermissions, { signal });
