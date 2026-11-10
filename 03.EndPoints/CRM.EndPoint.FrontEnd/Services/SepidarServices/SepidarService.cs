@@ -23,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
+using CRM.Framework;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -1638,14 +1639,20 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
 
-        if (!factor.DateMiladi.HasValue)
-            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
-
         var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
                         ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
 
         if (quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        // Sepidar's invoice date is today even if the CRM factor has an older date.
+        var invoiceDate = DateTime.Today;
+        var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
+        if (fiscalYear == null || invoiceDate < fiscalYear.StartDate.Date ||
+            invoiceDate > fiscalYear.EndDate.Date)
+            throw new InvalidOperationException(
+                $"تاریخ روز ({BaseServices.GetDatePersian(invoiceDate)}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
@@ -1666,7 +1673,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 SaleTypeRef = quotation.SaleTypeRef,
                 PartyAddressRef = quotation.PartyAddressRef,
                 Number = invoiceNumber, // فعلا
-                Date = factor.DateMiladi!.Value, // فعلا
+                Date = invoiceDate,
                 CurrencyRef = quotation.CurrencyRef,
                 SLRef = await GetAccountIdByMoeinCodeAsync("1201", ct), // حسابهاي دريافتني تجاري
                 DeliveryLocationRef = quotation.DeliveryLocationRef,
@@ -1699,7 +1706,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 AdditionFactor_VatIneffective = 0,
                 AdditionFactorInBaseCurrency_VatIneffective = 0,
                 AgreementRef = null,
-                TaxPayerBillIssueDateTime = factor.DateMiladi,
+                TaxPayerBillIssueDateTime = invoiceDate,
                 SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
                 Description = null,
                 SignatureRef = null
@@ -1715,6 +1722,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه مجدد موجودی قبل از ثبت
             var balancesBefore = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct); // خواندن موجودی فعلی
             ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // بررسی کافی‌بودن موجودی
+
+            // The quotation item tracks the cumulative quantity already invoiced.
+            // Both this update and the invoice/delivery inserts share one SQL transaction.
+            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct);
 
             sepidarContext.SalesInvoices.Add(invoice);
             await sepidarContext.SaveChangesAsync(ct);
@@ -1734,6 +1745,52 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await transaction.RollbackAsync(ct);
             throw;
         }
+    }
+
+    private async Task UpdateQuotationUsedQuantitiesAsync(
+        int quotationId, IReadOnlyCollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
+
+        if (invoiceItems.Count == 0 || invoiceItems.Any(x => !x.QuotationItemRef.HasValue || x.Quantity <= 0))
+            throw new InvalidOperationException("ردیف‌های فاکتور باید مقدار معتبر و ردیف پیش‌فاکتور مرتبط داشته باشند.");
+
+        var quantities = invoiceItems
+            .GroupBy(x => x.QuotationItemRef!.Value)
+            .ToDictionary(x => x.Key, x => x.Sum(item => item.Quantity));
+        var quotationItemIds = quantities.Keys.ToArray();
+
+        var quotationItems = await sepidarContext.QuotationItems
+            .Where(x => x.QuotationRef == quotationId && quotationItemIds.Contains(x.QuotationItemID))
+            .ToListAsync(ct);
+
+        if (quotationItems.Count != quantities.Count)
+            throw new InvalidOperationException("بعضی از ردیف‌های فاکتور به پیش‌فاکتور سپیدار انتخاب‌شده تعلق ندارند.");
+
+        var quotationItemsById = quotationItems.ToDictionary(x => x.QuotationItemID);
+        foreach (var invoiceItem in invoiceItems)
+        {
+            var quotationItem = quotationItemsById[invoiceItem.QuotationItemRef!.Value];
+            if (quotationItem.ItemRef != invoiceItem.ItemRef || quotationItem.StockRef != invoiceItem.StockRef)
+                throw new InvalidOperationException(
+                    $"ردیف {invoiceItem.RowID}: کالا یا انبار با پیش‌فاکتور سپیدار مطابقت ندارد.");
+        }
+
+        foreach (var quotationItem in quotationItems)
+        {
+            var used = quotationItem.UsedQuantity ?? 0m;
+            var added = quantities[quotationItem.QuotationItemID];
+            if (used < 0m || used > quotationItem.Quantity || added > quotationItem.Quantity - used)
+                throw new InvalidOperationException(
+                    $"ردیف {quotationItem.RowID}: مقدار درخواستی ({FormatInventoryQuantity(added)}) " +
+                    $"از مانده قابل فاکتور پیش‌فاکتور سپیدار ({FormatInventoryQuantity(quotationItem.Quantity - used)}) بیشتر است.");
+
+            // Never overwrite previous partial invoices; accumulate their quantity.
+            quotationItem.UsedQuantity = used + added;
+        }
+
+        // The caller saves these tracked changes together with the new invoice.
     }
 
     private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
