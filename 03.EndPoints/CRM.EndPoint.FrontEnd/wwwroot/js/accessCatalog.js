@@ -89,16 +89,24 @@
             return;
         }
         for (const item of filtered) {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "ac-entity-item" + (item.id === currentEntityId ? " is-selected" : "");
-            btn.dataset.entityId = item.id;
-            btn.setAttribute("aria-pressed", String(item.id === currentEntityId));
+            const row = text("div", null, "ac-entity-item" + (item.id === currentEntityId ? " is-selected" : ""));
+            const select = document.createElement("button");
+            select.type = "button";
+            select.className = "ac-entity-select";
+            select.dataset.selectEntity = item.id;
+            select.setAttribute("aria-pressed", String(item.id === currentEntityId));
+            select.setAttribute("aria-label", "نمایش دسترسی‌های " + item.title);
             const meta = text("span", null, "ac-entity-meta");
             meta.append(text("strong", item.title), text("small", item.key + " · " + item.permissionCount + " دسترسی"));
             const badge = text("span", item.isActive ? "فعال" : "غیرفعال", "ac-pill" + (item.isActive ? "" : " is-off"));
-            btn.append(meta, badge);
-            entityList.append(btn);
+            select.append(meta, badge);
+            const actions = text("div", null, "ac-entity-actions");
+            actions.append(
+                actionButton("ویرایش انتیتی " + item.title, "edit-entity", item.id),
+                actionButton("حذف انتیتی " + item.title, "delete-entity", item.id, true)
+            );
+            row.append(select, actions);
+            entityList.append(row);
         }
     }
 
@@ -108,8 +116,6 @@
         const hasEntity = !!item;
         root.querySelector("[data-selected-title]").textContent = hasEntity ? "دسترسی‌های " + item.title : "دسترسی‌های انتیتی";
         root.querySelector("[data-selected-key]").textContent = hasEntity ? item.key + " · " + item.modelFullName : "برای شروع یک انتیتی انتخاب کنید.";
-        root.querySelector("[data-action='edit-entity']").disabled = !hasEntity;
-        root.querySelector("[data-action='delete-entity']").disabled = !hasEntity;
         root.querySelector("[data-action='new-permission']").disabled = !hasEntity;
         if (!hasEntity) { showEmpty(permissionList, "یک انتیتی را از فهرست انتخاب کنید."); return; }
         if (!permissions.length) {
@@ -297,14 +303,17 @@
     }
 
     root.addEventListener("click", event => {
-        const item = event.target.closest("[data-entity-id]");
-        if (item) { void selectEntity(item.dataset.entityId); return; }
         const target = event.target.closest("[data-action]");
-        if (!target || target.disabled) return;
+        if (!target) {
+            const select = event.target.closest("[data-select-entity]");
+            if (select) void selectEntity(select.dataset.selectEntity);
+            return;
+        }
+        if (target.disabled) return;
         const action = target.dataset.action;
         if (action === "new-entity") openEntityEditor();
-        else if (action === "edit-entity") openEntityEditor(selectedEntity());
-        else if (action === "delete-entity") void deleteItem("Entity", currentEntityId);
+        else if (action === "edit-entity") openEntityEditor(entities.find(x => x.id === target.dataset.id));
+        else if (action === "delete-entity") void deleteItem("Entity", target.dataset.id);
         else if (action === "new-permission") openPermissionEditor();
         else if (action === "preset-permission") {
             openPermissionEditor();

@@ -31,7 +31,10 @@
 #accessCatalog .ac-search:focus-within { border-color: var(--ac-primary); outline: 2px solid var(--ac-primary-light); }
 #accessCatalog .ac-search input { flex: 1; border: 0; outline: 0; min-width: 0; height: 34px; background: transparent; color: inherit; font-size: 13px; }
 #accessCatalog .ac-entities { padding: 4px 8px 10px; max-height: 64vh; overflow-y: auto; }
-#accessCatalog .ac-entity-item { text-align: right; width: 100%; border: 1px solid transparent; background: transparent; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 6px; margin: 2px 0; }
+#accessCatalog .ac-entity-item { width: 100%; border: 1px solid transparent; background: transparent; padding: 3px; border-radius: 8px; display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+#accessCatalog .ac-entity-select { flex: 1; min-width: 0; padding: 6px; border: 0; background: transparent; text-align: right; display: flex; justify-content: space-between; align-items: center; gap: 6px; cursor: pointer; border-radius: 6px; color: inherit; }
+#accessCatalog .ac-entity-actions { display: flex; flex-shrink: 0; align-items: center; gap: 4px; }
+#accessCatalog .ac-entity-select:focus-visible { outline: 2px solid var(--ac-secondary); outline-offset: -1px; }
 #accessCatalog .ac-entity-item:hover { background: #F8FAFA; }
 #accessCatalog .ac-entity-item.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
 #accessCatalog .ac-entity-item strong { font-size: 13px; display: block; }
@@ -84,7 +87,7 @@
     #accessCatalog .ac-header h1 { font-size: 16px; }
     #accessCatalog .ac-panel-heading { padding: 9px; }
     #accessCatalog .ac-toolbar-actions { width: 100%; }
-    #accessCatalog .ac-entity-item { padding: 7px; }
+    #accessCatalog .ac-entity-item { padding: 3px; }
 }
 
 #accessCatalog .ac-presets { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; margin: -6px 0 12px; }
