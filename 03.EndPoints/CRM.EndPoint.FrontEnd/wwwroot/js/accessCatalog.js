@@ -113,7 +113,18 @@
         root.querySelector("[data-action='new-permission']").disabled = !hasEntity;
         if (!hasEntity) { showEmpty(permissionList, "یک انتیتی را از فهرست انتخاب کنید."); return; }
         if (!permissions.length) {
-            showEmpty(permissionList, "هنوز دسترسی تعریف نشده است. از «افزودن دسترسی» استفاده کنید.", "fa-key");
+            showEmpty(permissionList, "هنوز دسترسی تعریف نشده است. می‌توانید یکی از مجوزهای پیشنهادی را انتخاب کنید.", "fa-key");
+            const presets = text("div", null, "ac-presets");
+            for (const item of [{ key: "View", title: "مشاهده" }, { key: "Create", title: "ایجاد" },
+                                { key: "Edit", title: "ویرایش" }, { key: "Delete", title: "حذف" }]) {
+                const btn = text("button", "+ " + item.title, "ac-btn ac-btn-muted");
+                btn.type = "button";
+                btn.dataset.action = "preset-permission";
+                btn.dataset.key = item.key;
+                btn.dataset.title = item.title;
+                presets.append(btn);
+            }
+            permissionList.append(presets);
             return;
         }
         for (const permission of permissions) {
@@ -296,6 +307,12 @@
         else if (action === "edit-entity") openEntityEditor(selectedEntity());
         else if (action === "delete-entity") void deleteItem("Entity", currentEntityId);
         else if (action === "new-permission") openPermissionEditor();
+        else if (action === "preset-permission") {
+            openPermissionEditor();
+            field(permissionForm, "key").value = target.dataset.key;
+            field(permissionForm, "title").value = target.dataset.title;
+            updateKeyPreview();
+        }
         else if (action === "edit-permission") openPermissionEditor(permissions.find(x => x.id === target.dataset.id));
         else if (action === "delete-permission") void deleteItem("Permission", target.dataset.id);
         else if (action === "reload") void loadEntities();

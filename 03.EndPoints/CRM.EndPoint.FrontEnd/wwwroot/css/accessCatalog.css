@@ -86,3 +86,5 @@
     #accessCatalog .ac-toolbar-actions { width: 100%; }
     #accessCatalog .ac-entity-item { padding: 7px; }
 }
+
+#accessCatalog .ac-presets { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; margin: -6px 0 12px; }
