@@ -1740,9 +1740,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
             // The accounting voucher, stock delivery and invoice must commit or roll back together.
             var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct);
+            sepidarContext.Vouchers.Add(voucher);
+            await sepidarContext.SaveChangesAsync(ct);
+
+            // Set the invoice FK only after the voucher exists in SQL Server.
             invoice.VoucherRef = voucher.VoucherId;
             invoice.Version = 2;
-            sepidarContext.Vouchers.Add(voucher);
             await sepidarContext.SaveChangesAsync(ct);
 
             await transaction.CommitAsync(ct);
@@ -1812,9 +1815,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         int? taxDlRef = null;
         if (taxAccountId.HasValue)
         {
-            var taxDl = await GetDlByCodeAsync("6011", ct);
-            if (!taxDl.IsActive)
-                throw new InvalidOperationException("حساب تفصیلی اداره امور مالیاتی (6011) در سپیدار فعال نیست.");
+            var taxDl = await sepidarContext.DLs.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Code == "6011", ct);
+            if (taxDl == null || !taxDl.IsActive)
+                throw new InvalidOperationException(
+                    "تفصیلی اداره امور مالیاتی با کد 6011 در سپیدار پیدا نشد یا غیرفعال است. تنظیمات تفصیلی مالیات را بررسی کنید.");
             taxDlRef = taxDl.DLId;
         }
 
