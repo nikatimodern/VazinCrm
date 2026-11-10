@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Core.Domain.AppUsers.Repositories;
 
 namespace CRM.Core.ApplicationServices.AccessCatalog.Services;
 
@@ -9,12 +10,56 @@ public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, stri
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive);
 public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null);
+public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
+public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
+public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
 
-public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models)
+public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models, IAdminUserRepository adminUsers)
 {
     private static readonly Regex KeyPattern = new("^[A-Za-z][A-Za-z0-9]{0,63}$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public IReadOnlyList<AccessModelOption> Candidates() => models.GetCandidates();
+
+    public Task<List<AdminRole>> RolesAsync(CancellationToken ct) => adminUsers.GetRolesAsync(ct);
+
+    public async Task<IReadOnlyList<RoleAccessEntityInfo>> RoleCatalogAsync(CancellationToken ct) =>
+        (await repository.ListAsync(ct)).Where(e => e.IsActive).OrderBy(e => e.Title)
+            .Select(e => new RoleAccessEntityInfo(e.Id, e.Key, e.Title,
+                e.Permissions.Where(p => p.IsActive).OrderBy(p => p.Title)
+                    .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title))
+                    .ToArray())).ToArray();
+
+    public async Task<IReadOnlyList<Guid>?> RolePermissionsAsync(string roleId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(roleId) ||
+            !(await adminUsers.GetRolesAsync(ct)).Any(r => r.Id == roleId))
+            return null;
+        return await repository.GetRolePermissionIdsAsync(roleId, ct);
+    }
+
+    public async Task<AccessCatalogResult> SaveRolePermissionsAsync(RolePermissionsSaveDraft? draft, CancellationToken ct)
+    {
+        if (draft is null || string.IsNullOrWhiteSpace(draft.RoleId) || draft.RoleId.Length > 450 ||
+            draft.PermissionIds is null || draft.PermissionIds.Length > 5000)
+            return new(400, "اطلاعات نقش یا مجوزها معتبر نیست.");
+        if (!(await adminUsers.GetRolesAsync(ct)).Any(r => r.Id == draft.RoleId))
+            return new(404, "نقش موردنظر پیدا نشد.");
+
+        var activeIds = (await repository.ListAsync(ct)).Where(e => e.IsActive)
+            .SelectMany(e => e.Permissions.Where(p => p.IsActive).Select(p => p.Id)).ToHashSet();
+        var requested = draft.PermissionIds.ToHashSet();
+        if (requested.Count != draft.PermissionIds.Length || requested.Any(id => !activeIds.Contains(id)))
+            return new(400, "یک یا چند دسترسی تکراری، غیرفعال یا نامعتبر است.");
+        try
+        {
+            await repository.ReplaceActiveRolePermissionsAsync(draft.RoleId, activeIds.ToArray(), requested.ToArray(), ct);
+            return new(200);
+        }
+        catch (AccessCatalogConflictException)
+        {
+            return new(409, "دسترسی‌های نقش هم‌زمان تغییر کرده‌اند. فهرست را دوباره دریافت کنید.");
+        }
+    }
 
     public async Task<IReadOnlyList<AccessEntityInfo>> EntitiesAsync(CancellationToken ct) =>
         (await repository.ListAsync(ct))
@@ -127,6 +172,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     {
         var permission = await repository.FindPermissionAsync(id, ct);
         if (permission is null) return new(404, "دسترسی پیدا نشد.");
+        if (await repository.PermissionHasRoleAssignmentsAsync(id, ct))
+            return new(409, "این دسترسی به نقش اختصاص داده شده و قابل حذف نیست.");
         repository.Remove(permission);
         await repository.SaveAsync(ct);
         return new(200);

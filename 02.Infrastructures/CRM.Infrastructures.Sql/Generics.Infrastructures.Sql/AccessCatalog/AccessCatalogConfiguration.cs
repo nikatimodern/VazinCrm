@@ -34,3 +34,16 @@ public sealed class AccessPermissionConfiguration : IEntityTypeConfiguration<Acc
         permission.HasIndex(x => new { x.AccessEntityId, x.Key }).IsUnique();
     }
 }
+
+public sealed class AccessRolePermissionConfiguration : IEntityTypeConfiguration<AccessRolePermission>
+{
+    public void Configure(EntityTypeBuilder<AccessRolePermission> entity)
+    {
+        entity.ToTable("AccessRolePermissions");
+        entity.HasKey(x => new { x.RoleId, x.AccessPermissionId });
+        entity.Property(x => x.RoleId).IsRequired().HasMaxLength(450);
+        entity.HasIndex(x => x.AccessPermissionId);
+        entity.HasOne(x => x.AccessPermission).WithMany()
+            .HasForeignKey(x => x.AccessPermissionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

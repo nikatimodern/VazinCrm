@@ -99,3 +99,89 @@
     overscroll-behavior: contain;
     scroll-behavior: auto;
 }
+
+/* Access-management tabs and role-to-permission matrix. */
+#accessCatalog [hidden] { display: none !important; }
+#accessCatalog .ac-main-tabs {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+    margin-bottom: 10px; border-bottom: 1px solid var(--ac-border);
+}
+#accessCatalog .ac-main-tabs button {
+    border: 0; border-bottom: 2px solid transparent; background: transparent;
+    color: var(--ac-muted); font-size: 12px; font-weight: 600;
+    min-height: 34px; padding: 7px 13px; cursor: pointer;
+}
+#accessCatalog .ac-main-tabs button.is-active {
+    color: var(--ac-primary-dark); border-bottom-color: var(--ac-primary);
+}
+#accessCatalog .ac-main-tabs button:hover { background: var(--ac-primary-light); }
+#accessCatalog .ac-role-layout { grid-template-columns: minmax(220px, .78fr) minmax(0, 1.92fr); }
+#accessCatalog .ac-roles-list {
+    padding: 4px 8px 10px; max-height: 63vh; overflow-y: auto;
+}
+#accessCatalog .ac-role-item {
+    display: block; width: 100%; text-align: right; border: 1px solid transparent;
+    background: transparent; color: inherit; border-radius: 7px; cursor: pointer;
+    padding: 9px 10px; margin-block: 2px;
+}
+#accessCatalog .ac-role-item strong { display: block; font-size: 13px; }
+#accessCatalog .ac-role-item small { display: block; color: var(--ac-muted); font-size: 10px; direction: ltr; text-align: right; }
+#accessCatalog .ac-role-item:hover { background: #F8FAFA; }
+#accessCatalog .ac-role-item.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
+#accessCatalog .ac-role-detail-heading { flex-wrap: wrap; }
+#accessCatalog .ac-role-tools {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 0; gap: 10px; flex-wrap: wrap;
+}
+#accessCatalog .ac-role-search { margin: 0; flex: 1; min-width: min(230px,100%); }
+#accessCatalog .ac-selected-count {
+    font-size: 11px; font-weight: 600; border-radius: 6px;
+    background: var(--ac-primary-light); color: var(--ac-primary-dark); padding: 4px 8px;
+}
+#accessCatalog .ac-role-notice { margin: 8px 12px 0; border-radius: 7px; padding: 8px 10px; background: #F8FAFA; color: var(--ac-muted); font-size: 11px; }
+#accessCatalog .ac-role-notice i { color: var(--ac-secondary); margin-inline-end: 3px; }
+#accessCatalog .ac-role-error { margin: 8px 12px 0; }
+#accessCatalog .ac-role-groups { padding: 10px 12px 12px; max-height: 65vh; overflow-y: auto; }
+#accessCatalog .ac-role-group { border: 1px solid var(--ac-border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+#accessCatalog .ac-role-group-header {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    background: #F8FAFA; padding: 9px 11px; gap: 9px;
+    border-bottom: 1px solid var(--ac-border);
+}
+#accessCatalog .ac-role-group-all { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; font-weight: 700; margin: 0; }
+#accessCatalog .ac-role-group-all small { font-size: 10px; color: var(--ac-muted); font-weight: 400; direction: ltr; }
+#accessCatalog .ac-role-group-count { font-size: 11px; color: var(--ac-muted); white-space: nowrap; }
+#accessCatalog .ac-role-choices {
+    display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 0; padding: 4px 8px;
+}
+#accessCatalog .ac-role-choice {
+    display: flex; align-items: flex-start; gap: 7px; border-radius: 6px;
+    padding: 7px 6px; cursor: pointer; min-width: 0; font-size: 12px; margin: 0;
+}
+#accessCatalog .ac-role-choice:hover { background: var(--ac-primary-light); }
+#accessCatalog .ac-role-choice span { display: block; min-width: 0; overflow-wrap: anywhere; }
+#accessCatalog .ac-role-choice small { display: block; color: var(--ac-muted); font-size: 10px; direction: ltr; text-align: right; }
+#accessCatalog .ac-role-choice input, #accessCatalog .ac-role-group-all input {
+    flex-shrink: 0; width: 15px; height: 15px; margin: 1px 0 0; accent-color: var(--ac-primary);
+}
+#accessCatalog .ac-future-panel { text-align: center; padding: 26px 12px; max-width: 700px; margin-inline: auto; }
+#accessCatalog .ac-future-panel > i { font-size: 24px; color: var(--ac-muted); display: block; margin-bottom: 10px; }
+#accessCatalog .ac-future-panel h2 { margin-bottom: 8px; }
+#accessCatalog .ac-future-panel p { color: var(--ac-muted); font-size: 12px; margin: 0; }
+@media (max-width: 991px) {
+    #accessCatalog .ac-role-choices { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 767px) {
+    #accessCatalog .ac-role-layout { grid-template-columns: minmax(0,1fr); gap: 9px; }
+    #accessCatalog .ac-roles-list { max-height: 26vh; }
+    #accessCatalog .ac-role-groups { max-height: none; }
+    #accessCatalog .ac-role-choices { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    #accessCatalog .ac-main-tabs { flex-wrap: nowrap; overflow-x: auto; }
+    #accessCatalog .ac-main-tabs button { flex-shrink: 0; padding: 9px; }
+    #accessCatalog .ac-role-detail-heading .ac-toolbar-actions { width: 100%; }
+    #accessCatalog .ac-role-choice { min-height: 39px; }
+}
+@media (max-width: 390px) {
+    #accessCatalog .ac-role-choices { grid-template-columns: minmax(0,1fr); }
+}

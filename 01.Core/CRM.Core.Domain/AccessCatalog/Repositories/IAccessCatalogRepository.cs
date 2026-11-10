@@ -20,6 +20,9 @@ public interface IAccessCatalogRepository
     Task<bool> EntityKeyExistsAsync(string key, Guid? exceptId, CancellationToken ct);
     Task<bool> ModelExistsAsync(string contextName, string modelFullName, Guid? exceptId, CancellationToken ct);
     Task<bool> PermissionKeyExistsAsync(Guid entityId, string key, Guid? exceptId, CancellationToken ct);
+    Task<bool> PermissionHasRoleAssignmentsAsync(Guid permissionId, CancellationToken ct);
+    Task<IReadOnlyList<Guid>> GetRolePermissionIdsAsync(string roleId, CancellationToken ct);
+    Task ReplaceActiveRolePermissionsAsync(string roleId, IReadOnlyCollection<Guid> activePermissionIds, IReadOnlyCollection<Guid> chosenIds, CancellationToken ct);
     void Add(AccessEntity entity);
     void Add(AccessPermission permission);
     void Remove(AccessEntity entity);

@@ -1,7 +1,7 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-#nullable enable
 using CRM.Core.ApplicationServices.AccessCatalog.Services;
 using CRM.Core.ApplicationServices.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +29,25 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
         var result = await administration.PermissionsAsync(entityId, ct);
         return result is null ? NotFound(new { message = "انتیتی پیدا نشد." }) : Json(result);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Roles(CancellationToken ct) =>
+        Json(await administration.RolesAsync(ct));
+
+    [HttpGet]
+    public async Task<IActionResult> RoleCatalog(CancellationToken ct) =>
+        Json(await administration.RoleCatalogAsync(ct));
+
+    [HttpGet]
+    public async Task<IActionResult> RolePermissions(string roleId, CancellationToken ct)
+    {
+        var ids = await administration.RolePermissionsAsync(roleId, ct);
+        return ids is null ? NotFound(new { message = "نقش موردنظر پیدا نشد." }) : Json(ids);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
+    public async Task<IActionResult> SaveRolePermissions([FromBody] RolePermissionsSaveDraft draft, CancellationToken ct) =>
+        Result(await administration.SaveRolePermissionsAsync(draft, ct));
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
     public async Task<IActionResult> SaveEntity(Guid? id, [FromBody] AccessEntityDraft draft, CancellationToken ct) =>
