@@ -1,6 +1,7 @@
 using CRM.Core.Domain.Sepidar.Accounts.Entites;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.Cashes.Entities;
+using CRM.Core.Domain.Sepidar.Configurations.Entities;
 using CRM.Core.Domain.Sepidar.Currencies.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes.Entities;
@@ -24,6 +25,7 @@ public abstract class SepidarContextDbBase : DbContext {
 
 
     public DbSet<ExtraData> ExtraData { get; set; }
+    public DbSet<SepidarConfiguration> SepidarConfigurations { get; set; }
     public DbSet<Invoice> vwInvoice { get; set; }
     public DbSet<SalesInvoiceRecord> SalesInvoices { get; set; }
     public DbSet<SalesInvoiceItemRecord> SalesInvoiceItems { get; set; }
@@ -65,6 +67,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<SalesInvoiceRecord>().ToTable("Invoice", "SLS");
         modelBuilder.Entity<SalesInvoiceItemRecord>().ToTable("InvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
+        modelBuilder.Entity<SepidarConfiguration>().ToTable("Configuration", "FMK");
 
 
         modelBuilder.Entity<PaymentDraft>().ToTable("PaymentDraft", "RPA");
