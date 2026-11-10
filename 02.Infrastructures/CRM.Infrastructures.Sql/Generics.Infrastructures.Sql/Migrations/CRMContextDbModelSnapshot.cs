@@ -22,45 +22,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessEntity", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
-                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
-                    b.Property<string>("DbContextName").IsRequired().HasMaxLength(128).HasColumnType("nvarchar(128)");
-                    b.Property<string>("Description").HasMaxLength(1000).HasColumnType("nvarchar(1000)");
-                    b.Property<bool>("IsActive").HasColumnType("bit");
-                    b.Property<string>("Key").IsRequired().HasMaxLength(64).HasColumnType("nvarchar(64)");
-                    b.Property<string>("ModelFullName").IsRequired().HasMaxLength(400).HasColumnType("nvarchar(400)");
-                    b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
-                    b.HasKey("Id");
-                    b.HasIndex("Key").IsUnique();
-                    b.HasIndex("DbContextName", "ModelFullName").IsUnique();
-                    b.ToTable("AccessEntities");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessPermission", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
-                    b.Property<Guid>("AccessEntityId").HasColumnType("uniqueidentifier");
-                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
-                    b.Property<string>("Description").HasMaxLength(1000).HasColumnType("nvarchar(1000)");
-                    b.Property<bool>("IsActive").HasColumnType("bit");
-                    b.Property<string>("Key").IsRequired().HasMaxLength(64).HasColumnType("nvarchar(64)");
-                    b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
-                    b.HasKey("Id");
-                    b.HasIndex("AccessEntityId", "Key").IsUnique();
-                    b.ToTable("AccessPermissions");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessRolePermission", b =>
-                {
-                    b.Property<string>("RoleId").HasMaxLength(450).HasColumnType("nvarchar(450)");
-                    b.Property<Guid>("AccessPermissionId").HasColumnType("uniqueidentifier");
-                    b.HasKey("RoleId", "AccessPermissionId");
-                    b.HasIndex("AccessPermissionId");
-                    b.ToTable("AccessRolePermissions");
-                });
-
             modelBuilder.Entity("CRM.Core.Domain.ASettings.Entities.ASetting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7683,31 +7644,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
             modelBuilder.Entity("CRM.Core.Domain.Supplies.Entities.SupplyFactorItem", b =>
                 {
                     b.Navigation("Allocations");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessPermission", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.AccessCatalog.Entities.AccessEntity", "AccessEntity")
-                        .WithMany("Permissions")
-                        .HasForeignKey("AccessEntityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                    b.Navigation("AccessEntity");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessRolePermission", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.AccessCatalog.Entities.AccessPermission", "AccessPermission")
-                        .WithMany()
-                        .HasForeignKey("AccessPermissionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                    b.Navigation("AccessPermission");
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessEntity", b =>
-                {
-                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Warehouses.Entities.Warehouse", b =>
