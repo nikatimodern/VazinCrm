@@ -702,6 +702,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var pf = await db.PreFactors.Where(f => f.Id == id).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
 
 
+                pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین;
                 pf.PftypeTxt = nameof(PreFactorEnum.در_انتظار_تایید_مسئول_تامین).Replace("_", " ");
@@ -841,6 +842,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 pf.AcceptedFinancial = null;
 
+                pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مالی);
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مالی;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
@@ -2608,6 +2610,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var pf = await db.PreFactors.Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
             var userTamin = await udb.Users.AsNoTracking().Where(f => f.Id == usId.ToString()).FirstOrDefaultAsync();
 
+            pf.RecordReturn((int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین);
             pf.PrePftype = pf.Pftype;
             pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین;
             pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
