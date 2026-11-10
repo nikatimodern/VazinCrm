@@ -1258,6 +1258,25 @@
 #CPrefactorFactorId .cartable-list-toolbar { flex-shrink:0; }
 #CPrefactorFactorId .cartable-document-scroll { flex:1; min-height:0; max-height:none !important; overflow:auto; width:100%; display:flex; justify-content:center; }
 
+/* A filter-aware supply empty state fills the list area on every viewport size. */
+#cartableWorkspace #CTaminExpertId #TContentId.cartable-supply-empty {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: clamp(160px, 45dvh, 460px);
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    text-align: center;
+}
+
+#cartableWorkspace #CTaminExpertId .cartable-supply-empty__message {
+    max-width: 100%;
+    margin: 0;
+    color: #545961;
+    font: 500 13px/1.8 IRANSansMedium;
+    overflow-wrap: anywhere;
+}
+
 /* All Cartable roles share the same viewport contract. */
 #mainWrapper:has(#cartableWorkspace) { height:100dvh; min-height:0; }
 #mainContent:has(#cartableWorkspace) { display:flex; flex-direction:column; height:auto; min-height:0; padding-block-end:10px; }
@@ -1270,3 +1289,608 @@
 #cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex; flex-direction:column; }
 #cartableWorkspace .cartable-viewport-fill > :not(.cartable-viewport-fill):not(.cartable-viewport-scroll) { flex-shrink:0; }
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
+
+
+/* The wrapper has no layout effect on desktop; only mobile combines tabs and controls. */
+#cartableWorkspace .cartable-tamin-nav-row {
+    display: contents;
+}
+
+#cartableWorkspace .cartable-tamin-top-controls {
+    display: none;
+}
+
+/* Desktop keeps the original search and radio controls unchanged. */
+#cartableWorkspace .cartable-mobile-status-filter__toggle,
+#cartableWorkspace .cartable-mobile-search-clear {
+    display: none;
+}
+
+/* Only the Cartable navigation and document search use compact mobile layout. */
+@media (max-width: 767px) {
+    /* Reserve a dedicated mobile row for the main Cartable tabs. */
+    #cartableWorkspace {
+        row-gap: 3px;
+    }
+
+    #cartableWorkspace #CartableTabs {
+        flex: 0 0 29px;
+        box-sizing: border-box;
+        height: 29px;
+        min-height: 29px;
+        align-items: center;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        gap: 4px;
+        margin: 0;
+        padding: 3px 0 !important;
+    }
+
+    #cartableWorkspace #CartableTabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    #cartableWorkspace #CartableTabs .TCar {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 0;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        gap: 4px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    #cartableWorkspace #CartableTabs .TCar > .cartable-tab-count {
+        min-width: 19px;
+        height: 16px;
+        padding: 0 4px;
+        font-size: 9px;
+    }
+
+    /* Center the compact document subtabs just below the main Cartable navigation. */
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors {
+        display: inline-flex !important;
+        flex: 0 0 auto;
+        align-self: center;
+        justify-content: center;
+        width: max-content !important;
+        max-width: 100%;
+        min-height: 23px;
+        gap: 3px;
+        margin: 0;
+        padding: 0;
+        border: 0 !important;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    /* Remove both column titles/count badges and all space reserved for their row. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-column-heading {
+        display: none !important;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId #tabContentAllFactors,
+    #cartableWorkspace #CPrefactorFactorId .parent-all-factors .InfoData {
+        padding-top: 0 !important;
+    }
+
+    #cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) #CartableTabs {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace:has(#CPrefactorFactorId:not(.d-none)) .CartableContent {
+        padding-top: 0;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors > .nav-item {
+        flex: 0 0 auto !important;
+        width: max-content !important;
+        max-width: none;
+        min-width: 0;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors .nav-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: auto !important;
+        height: 23px;
+        min-height: 23px;
+        margin: 0 !important;
+        padding: 1px 6px;
+        border: 1px solid #DDE1E8 !important;
+        border-radius: 7px !important;
+        background-color: #fff !important;
+        color: #004944 !important;
+        font: 500 11px/1.3 IRANSansMedium;
+        white-space: nowrap;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId > #allTabFactors .nav-link.active {
+        border-color: #004944 !important;
+        background-color: #004944 !important;
+        color: #fff !important;
+    }
+
+    /* The magnifier stays in the subtab row; opening search creates a full-width second row. */
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 23px auto;
+        grid-template-rows: auto auto;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        column-gap: 4px;
+        row-gap: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row:has(.cartable-mobile-search.is-search-open) {
+        row-gap: 3px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row > #taminExpertsTabs {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+    /* contents lets the input participate in the outer grid without duplicating it. */
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls,
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search {
+        display: contents;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-icon {
+        grid-column: 2;
+        grid-row: 1;
+        position: static;
+        inset: auto;
+        width: 23px;
+        height: 23px;
+        padding: 3px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter {
+        grid-column: 3;
+        grid-row: 1;
+        display: flex;
+        min-width: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search input {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: none;
+        width: 100%;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-group.cartable-mobile-search.is-search-open input {
+        display: block;
+        box-sizing: border-box;
+        height: 32px;
+        min-height: 32px;
+        padding-inline: 10px 34px !important;
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-search-clear {
+        display: none;
+        grid-column: 1 / -1;
+        grid-row: 2;
+        z-index: 1;
+        justify-self: end;
+        align-self: center;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        margin-inline-end: 4px;
+        padding: 0;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: #545961;
+        cursor: pointer;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-search.is-search-open.has-search-value .cartable-mobile-search-clear {
+        display: inline-flex;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-search-clear:focus-visible {
+        outline: 2px solid var(--cartable-secondary);
+        outline-offset: -2px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter.is-open > .filter-switch {
+        inset-inline-start: auto;
+        inset-inline-end: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-column-count {
+        display: none;
+    }
+
+    /* Invoices retain their existing filters within their own tab. */
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-nav-row:has(#TaminInvoiceTab.active) .cartable-tamin-top-controls {
+        display: none;
+    }
+
+    /* Keep a 2px gap between the supply tabs and their content on mobile. */
+    #cartableWorkspace #CTaminExpertId {
+        padding-block: 0 !important;
+        row-gap: 2px !important;
+    }
+
+    #cartableWorkspace #CTaminExpertId #tabContentTaminExperts {
+        border-top: 0;
+        padding-block: 0 !important;
+    }
+
+    /* Remove unused vertical space between supply filters and their lists. */
+    #cartableWorkspace #TaminPrefactorTab-pane > .gap-3 {
+        row-gap: 0 !important;
+    }
+
+    /* Once the search and status move into the tab row, remove their empty old row. */
+    #cartableWorkspace #CTaminExpertId:has(.cartable-tamin-top-controls > .cartable-mobile-status-filter)
+    #TaminPrefactorTab-pane .cartable-list-toolbar {
+        display: none;
+    }
+
+    #cartableWorkspace #CTaminExpertId :is(#TaminPrefactorTab-pane, #TaminInvoiceTab-pane) .cartable-list-toolbar {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace #taminInvoiceContentId {
+        margin-block-start: 0 !important;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) {
+        gap: 3px;
+        margin-block: 0;
+        padding-block: 0;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #ManagingDirectorTabs, #taminExpertsTabs) .nav-link {
+        min-height: 30px;
+        margin-block: 0;
+        padding: 3px 7px;
+        gap: 4px;
+        font-size: 11px;
+    }
+
+    /* Keep the document list flush with the filters when no advanced filters are selected. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar {
+        padding-bottom: 0;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-filter-chips:has(> .ContentFilter:empty) {
+        display: none;
+    }
+
+    #cartableWorkspace #CPrefactorFactorId .cartable-document-scroll {
+        margin-block-start: 0;
+        padding-block-start: 0;
+    }
+
+    #cartableWorkspace .cartable-column-heading {
+        padding: 3px 4px 5px;
+        gap: 5px;
+    }
+
+    #cartableWorkspace .cartable-column-heading h2 {
+        font-size: 14px;
+    }
+
+    #cartableWorkspace .cartable-column-count {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+
+
+    /* Remove the document list container border only on mobile. */
+    #cartableWorkspace .parent-all-factors .InfoData {
+        border: none;
+    }
+
+    /* All role subtabs stay on one horizontally scrollable line on phones. */
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs)::-webkit-scrollbar {
+        display: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) > .nav-item {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: none;
+    }
+
+    #cartableWorkspace :is(#financialExpertsTabs, #taminExpertsTabs, #ManagingDirectorTabs, #salesExpertsTabs) .nav-link {
+        white-space: nowrap;
+    }
+
+    /* In every compact toolbar: search, radio statuses, other actions, then count. */
+    #cartableWorkspace .cartable-list-toolbar {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 4px 6px;
+        min-width: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .search-group {
+        order: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > :is(.filter-switch, div:has(> .filter-switch)) {
+        order: 1;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .cartable-list-toolbar__actions {
+        order: 2;
+        margin-inline-start: 0;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > .cartable-column-count {
+        order: 3;
+        margin-inline-start: auto;
+    }
+
+    /* Let status controls share the first row with the collapsed search icon. */
+    #cartableWorkspace .cartable-list-toolbar {
+        column-gap: 4px;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar > div:has(> .filter-switch) {
+        display: flex;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: calc(100% - 38px);
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch {
+        flex: 0 1 auto;
+        gap: 2px;
+        padding: 2px;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch .filter-switch-item {
+        flex: 0 0 auto;
+    }
+
+    #cartableWorkspace .cartable-list-toolbar .filter-switch label {
+        padding-inline: 4px;
+        font-size: 11px;
+    }
+
+    /* Keep all Cartable radio filters the same compact size, including financial invoices. */
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch {
+        display: flex;
+        flex-wrap: wrap;
+        flex: 0 1 auto;
+        gap: 2px;
+        padding: 2px;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch .filter-switch-item {
+        flex: 0 0 auto;
+    }
+
+    #cartableWorkspace :is(.cartable-list-toolbar, .cartable-invoice-status) .filter-switch label {
+        min-height: 22px;
+        padding: 0 4px;
+        font: 500 11px/1.5 IRANSansMedium;
+        white-space: nowrap;
+    }
+
+    /* Keep advanced filter / Excel at the opposite (left) edge of the document toolbar. */
+    #cartableWorkspace #CPrefactorFactorId .cartable-list-toolbar > .cartable-list-toolbar__actions {
+        margin-inline-start: auto;
+    }
+
+    /* The group-payment action occupies its own row, above search / statuses / count. */
+    #cartableWorkspace #FinancialRequestTab-pane .cartable-financial-batch-row {
+        order: -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex: 0 0 100%;
+        min-width: 0;
+        margin-block-end: 2px;
+    }
+
+    #cartableWorkspace #FinancialRequestTab-pane .cartable-financial-batch-row .financial-request-batch {
+        flex: 0 0 auto;
+    }
+
+    /* Financial invoices: keep deposit/refund together above the compact filter row. */
+    #cartableWorkspace .cartable-invoice-toolbar {
+        justify-content: flex-start !important;
+        gap: 4px 6px !important;
+        padding-inline: 2px !important;
+        min-width: 0;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-actions {
+        order: 0;
+        flex: 0 0 100%;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    #cartableWorkspace .cartable-invoice-actions > button {
+        white-space: nowrap;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .search-group.cartable-mobile-search {
+        order: 1 !important;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-status {
+        order: 2;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace .cartable-invoice-toolbar > .cartable-column-count {
+        order: 3;
+        margin-inline-start: auto;
+    }
+
+    /* Supply pre-factor status is a small dropdown on mobile, keeping the original radios. */
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter {
+        position: relative;
+        flex: 0 0 auto;
+        max-width: none;
+        z-index: 5;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 30px;
+        padding: 3px 7px;
+        border: 1px solid var(--cartable-border);
+        border-radius: 6px;
+        background: #F0F1F7;
+        color: var(--cartable-primary);
+        font: 500 11px/1.5 IRANSansMedium;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle:focus-visible {
+        outline: 2px solid var(--cartable-secondary);
+        outline-offset: 2px;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter__toggle svg {
+        flex-shrink: 0;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter > .filter-switch {
+        display: none;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter.is-open > .filter-switch {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        inset-block-start: calc(100% + 3px);
+        inset-inline-start: 0;
+        z-index: 20;
+        width: max-content;
+        min-width: 148px;
+        max-width: min(200px, calc(100vw - 32px));
+        box-sizing: border-box;
+        padding: 4px;
+        border: 1px solid var(--cartable-border);
+        border-radius: 7px;
+        background: #fff;
+        box-shadow: 0 6px 18px rgb(0 0 0 / 12%);
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch-item,
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch label {
+        width: 100%;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-mobile-status-filter .filter-switch label {
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        padding-inline: 8px;
+        cursor: pointer;
+    }
+
+    /* The search grows in-flow and moves sibling filters to the next flex row. */
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search {
+        flex: 0 0 34px;
+        width: 34px;
+        max-width: 34px;
+        transition: flex-basis 260ms ease, max-width 260ms ease;
+    }
+
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search:not(.is-search-open) input {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search .search-icon {
+        cursor: pointer;
+    }
+
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search.is-search-open {
+        flex-basis: 100%;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search.is-search-open input {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Match supply subtabs and their filter/search controls to the 23px role tabs. */
+    #cartableWorkspace #CTaminExpertId #taminExpertsTabs .nav-link {
+        box-sizing: border-box;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .cartable-mobile-status-filter__toggle {
+        box-sizing: border-box;
+        height: 23px;
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    #cartableWorkspace #CTaminExpertId .cartable-tamin-top-controls .search-icon svg {
+        width: 14px;
+    }
+
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+    #cartableWorkspace .cartable-pane .search-group.cartable-mobile-search {
+        transition: none;
+    }
+}

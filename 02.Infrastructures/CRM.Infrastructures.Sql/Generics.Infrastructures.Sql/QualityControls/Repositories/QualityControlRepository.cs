@@ -33,13 +33,30 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 || (deal.CustomerName != null && deal.CustomerName.Contains(search))
                 || (deal.CusCompanyName != null && deal.CusCompanyName.Contains(search)));
         }
-        deals = request.Status switch {
-            QualityControlStatus.NotReviewed => deals.Where(deal => !db.QualityControls.Any(control => control.DealId == deal.Id)),
-            QualityControlStatus.NoDiscrepancy => deals.Where(deal => db.QualityControls.Any(control => control.DealId == deal.Id)
-                && !db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)),
-            QualityControlStatus.HasDiscrepancy => deals.Where(deal => db.QualityControlAnswers
-                .Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)),
-            QualityControlStatus.Reviewed => deals.Where(deal => db.QualityControls.Any(control => control.DealId == deal.Id)),
+        // Legacy rows have Status = NULL until the separate backfill is run.
+        // For those rows only, derive the outcome from existing answers.
+        deals = request.Status switch
+        {
+            QualityControlStatus.NotReviewed => deals.Where(deal =>
+                !db.QualityControls.Any(control => control.DealId == deal.Id)),
+            QualityControlStatus.Reviewed => deals.Where(deal =>
+                db.QualityControls.Any(control => control.DealId == deal.Id)),
+            QualityControlStatus.NoDiscrepancy => deals.Where(deal =>
+                db.QualityControls.Any(control => control.DealId == deal.Id &&
+                    (control.Status == QualityControlOutcome.NoDiscrepancy ||
+                     (control.Status == null &&
+                      db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id) &&
+                      !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id && answer.Answer == 1))))),
+            QualityControlStatus.HasDiscrepancy => deals.Where(deal =>
+                db.QualityControls.Any(control => control.DealId == deal.Id &&
+                    (control.Status == QualityControlOutcome.HasDiscrepancy ||
+                     (control.Status == null &&
+                      db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id && answer.Answer == 1))))),
+            QualityControlStatus.NoResponse => deals.Where(deal =>
+                db.QualityControls.Any(control => control.DealId == deal.Id &&
+                    (control.Status == QualityControlOutcome.NoResponse ||
+                     (control.Status == null &&
+                      !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id))))),
             _ => deals
         };
         var financialCounts = await deals.GroupBy(_ => 1)
@@ -60,10 +77,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             "userCreator" => descending ? deals.OrderByDescending(deal => deal.UserCreator) : deals.OrderBy(deal => deal.UserCreator),
             "financialApproved" => descending ? deals.OrderByDescending(deal => deal.FinancialStatus) : deals.OrderBy(deal => deal.FinancialStatus),
             "status" => descending
-                ? deals.OrderByDescending(deal => !db.QualityControls.Any(control => control.DealId == deal.Id) ? 0
-                    : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1) ? 2 : 1)
-                : deals.OrderBy(deal => !db.QualityControls.Any(control => control.DealId == deal.Id) ? 0
-                    : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1) ? 2 : 1),
+                ? deals.OrderByDescending(deal => db.QualityControls.Where(control => control.DealId == deal.Id)
+                        .Select(control => control.Status == QualityControlOutcome.NoResponse ? 4
+                            : control.Status == QualityControlOutcome.HasDiscrepancy ? 2
+                            : control.Status == QualityControlOutcome.NoDiscrepancy ? 1
+                            : !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id) ? 4
+                            : db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id && answer.Answer == 1) ? 2 : 1)
+                        .FirstOrDefault())
+                : deals.OrderBy(deal => db.QualityControls.Where(control => control.DealId == deal.Id)
+                        .Select(control => control.Status == QualityControlOutcome.NoResponse ? 4
+                            : control.Status == QualityControlOutcome.HasDiscrepancy ? 2
+                            : control.Status == QualityControlOutcome.NoDiscrepancy ? 1
+                            : !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id) ? 4
+                            : db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id && answer.Answer == 1) ? 2 : 1)
+                        .FirstOrDefault()),
             _ => descending ? deals.OrderByDescending(deal => deal.CreateDate) : deals.OrderBy(deal => deal.CreateDate)
         };
         var data = await ordered.ThenByDescending(deal => deal.Id)
@@ -77,8 +104,17 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 FinancialApproved = deal.FinancialStatus == DealFinancialStausEnum.تایید_شده,
                 Status = !db.QualityControls.Any(control => control.DealId == deal.Id)
                     ? QualityControlStatus.NotReviewed
-                    : db.QualityControlAnswers.Any(answer => answer.QualityControl.DealId == deal.Id && answer.Answer == 1)
-                        ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy
+                    : db.QualityControls.Any(control => control.DealId == deal.Id &&
+                        (control.Status == QualityControlOutcome.NoResponse ||
+                         (control.Status == null &&
+                          !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id))))
+                        ? QualityControlStatus.NoResponse
+                    : db.QualityControls.Any(control => control.DealId == deal.Id &&
+                        (control.Status == QualityControlOutcome.HasDiscrepancy ||
+                         (control.Status == null &&
+                          db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id && answer.Answer == 1))))
+                        ? QualityControlStatus.HasDiscrepancy
+                        : QualityControlStatus.NoDiscrepancy
             }).ToListAsync(cancellationToken);
         return new QualityControlListResult(request.Draw, recordsTotal, recordsFiltered, data, financialCounts);
     }
@@ -156,7 +192,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     answer.SortOrderSnapshot, answer.Answer);
         }
         return new QualityControlForm(deal, control?.Description, control?.RowVersion,
-            questions.Values.OrderBy(question => question.SortOrder).ThenBy(question => question.Id).ToList());
+            questions.Values.OrderBy(question => question.SortOrder).ThenBy(question => question.Id).ToList(),
+            control != null && (control.Status == QualityControlOutcome.NoResponse || (control.Status == null && control.Answers.Count == 0)));
     }
 
     public async Task<QualityControlSaveResult> SaveAsync(SaveQualityControlRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken)
@@ -198,6 +235,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             Stamp(control, access, now, persianNow, false);
         }
         control.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        control.Status = inputs.Any(answer => answer.Answer == 1)
+            ? QualityControlOutcome.HasDiscrepancy : QualityControlOutcome.NoDiscrepancy;
         var existingAnswers = control.Answers.ToDictionary(answer => answer.QuestionId);
         foreach (var input in inputs)
         {
@@ -236,6 +275,43 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var status = control.Answers.Any(answer => answer.Answer == 1)
             ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy;
         return new(200, "کنترل کیفیت با موفقیت ثبت شد.", status, control.RowVersion);
+    }
+
+    public async Task<QualityControlSaveResult> MarkNoResponseAsync(MarkQualityControlNoResponseRequest request,
+        QualityControlAccess access, string persianNow, CancellationToken cancellationToken)
+    {
+        if (!await VisibleDeals(access).AnyAsync(deal => deal.Id == request.DealId, cancellationToken))
+            return new(404, "سفارش یافت نشد یا به آن دسترسی ندارید.");
+        // A no-response action is only valid before a quality control record exists.
+        // Never replace or delete answers from an already reviewed order.
+        if (request.RowVersion != null)
+            return Conflict();
+        if (await db.QualityControls.AnyAsync(item => item.DealId == request.DealId, cancellationToken))
+            return new(409, "برای این سفارش کنترل کیفیت ثبت شده است. برای تغییر پاسخ‌ها از ویرایش کنترل کیفیت استفاده کنید.");
+
+        var now = DateTime.Now;
+        var control = new QualityControl
+        {
+            Id = Guid.NewGuid(),
+            DealId = request.DealId,
+            Status = QualityControlOutcome.NoResponse
+        };
+        Stamp(control, access, now, persianNow, true);
+        db.QualityControls.Add(control);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict();
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            return Conflict();
+        }
+        return new(200, "وضعیت کنترل کیفیت به عدم پاسخ تغییر کرد.", QualityControlStatus.NoResponse, control.RowVersion);
     }
 
     public async Task<QualityControlSaveResult> DeleteAsync(DeleteQualityControlRequest request, QualityControlAccess access, CancellationToken cancellationToken)

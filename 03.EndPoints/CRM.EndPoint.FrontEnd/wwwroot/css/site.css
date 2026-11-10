@@ -2667,15 +2667,33 @@ html.sidebar-collapsed #mainWrapper {
 	outline-offset: 2px;
 }
 @media (max-width: 767px) {
-	.crm-main-header .header-profile { padding: 0; gap: 0; }
-	.crm-main-header .header-profile .profile-name {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
+	/* Show the user name next to the avatar without crowding header actions. */
+	#mainHeader.crm-main-header .header-profile {
+		flex: 0 1 auto;
+		min-width: 0;
+		max-width: min(40vw, 160px);
+		padding: 0;
+		gap: 4px;
 	}
-	.crm-main-header .header-content { gap: 3px; }
+	#mainHeader.crm-main-header .header-profile .profile-image {
+		flex-shrink: 0;
+	}
+	#mainHeader.crm-main-header .header-profile .profile-name {
+		position: static;
+		width: auto;
+		height: auto;
+		min-width: 0;
+		overflow: hidden;
+		clip-path: none;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 10px;
+		line-height: 1.4;
+	}
+	#mainHeader.crm-main-header .header-content {
+		flex: 1 0 auto;
+		gap: 3px;
+	}
 	.crm-main-header .header-content > .header-icon-btn { width: 28px; height: 28px; }
 	.crm-main-header .header-content > .me-2 { margin-inline: 0 !important; }
 	.crm-main-header .header-chat-link { padding-inline: 8px; font-size: 11px; }
@@ -2866,6 +2884,119 @@ html.sidebar-collapsed #mainWrapper {
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
+}
+
+/* Compact profile details only on phones. Keep desktop and other modals unchanged. */
+@media (max-width: 767px) {
+    #UserSetting .profile-modal-dialog {
+        max-width: min(420px, calc(100vw - 16px));
+        margin: 8px auto;
+    }
+
+    #UserSetting .profile-modal {
+        max-height: calc(100dvh - 16px);
+    }
+
+    #UserSetting .profile-modal-header {
+        padding: 8px 12px;
+    }
+
+    #UserSetting .profile-modal-header h1 {
+        margin-top: 1px;
+        margin-bottom: 0;
+        font-size: 16px;
+    }
+
+    #UserSetting .profile-modal-subtitle {
+        font-size: 10px;
+    }
+
+    #UserSetting .profile-modal-body {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 9px 12px 12px;
+    }
+
+    #UserSetting .profile-modal-body > .px-2 {
+        padding-inline: 0 !important;
+    }
+
+    #UserSetting .profile-image-section {
+        margin-bottom: 8px;
+    }
+
+    #UserSetting .profile-image-wrapper {
+        width: 96px;
+        height: 96px;
+        padding: 2px;
+    }
+
+    #UserSetting .profile-delete-image {
+        margin-top: 4px;
+    }
+
+    #UserSetting .profile-image-upload {
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    #UserSetting .profile-file-name {
+        min-width: 0;
+        height: 30px;
+        min-height: 30px;
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+
+    #UserSetting .profile-upload-btn {
+        min-width: 90px;
+        min-height: 30px;
+        padding: 3px 8px !important;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    #UserSetting .profile-upload-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    #UserSetting .profile-information {
+        gap: 8px;
+    }
+
+    #UserSetting .profile-field label {
+        margin-bottom: 3px;
+        font-size: 12px;
+    }
+
+    #UserSetting .profile-input {
+        height: 32px;
+        min-height: 32px;
+        padding-right: 32px !important;
+        font-size: 12px;
+    }
+
+    #UserSetting .profile-input-wrapper > svg {
+        right: 10px;
+        width: 15px;
+        height: 15px;
+    }
+
+    #UserSetting .profile-actions {
+        margin-top: 12px;
+        padding-top: 8px;
+        gap: 6px;
+    }
+
+    #UserSetting .profile-save-btn,
+    #UserSetting .profile-logout-btn {
+        min-height: 28px !important;
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+        gap: 4px;
+    }
 }
 
 

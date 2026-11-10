@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/qualityControl.css?release=7.5.1" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/qualityControl.css?release=7.5.5" asp-append-version="true" />
 }
 
 <section id="qualityControlPage" class="quality-control-page" dir="rtl" aria-labelledby="qualityControlHeading">
@@ -35,28 +35,20 @@
                     </ul>
                 </fieldset>
                 <fieldset class="qc-filter-group">
-                    <legend>وضعیت کنترل کیفیت</legend>
+                    <legend>وضعیت بررسی</legend>
                     <ul class="qc-filter-options">
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcStatus" id="qcStatusAll" value="" checked />
-                            <label for="qcStatusAll">همه</label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcStatus" id="qcStatusUnchecked" value="0" />
-                            <label for="qcStatusUnchecked">بررسی نشده</label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcStatus" id="qcStatusReviewed" value="3" />
-                            <label for="qcStatusReviewed">بررسی شده</label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcStatus" id="qcStatusMatched" value="1" />
-                            <label for="qcStatusMatched">بدون مغایرت</label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcStatus" id="qcStatusMismatched" value="2" />
-                            <label for="qcStatusMismatched">دارای مغایرت</label>
-                        </li>
+                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewAll" value="" checked /><label for="qcReviewAll">همه</label></li>
+                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewUnchecked" value="0" /><label for="qcReviewUnchecked">بررسی نشده</label></li>
+                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewChecked" value="3" /><label for="qcReviewChecked">بررسی شده</label></li>
+                    </ul>
+                </fieldset>
+                <fieldset class="qc-filter-group">
+                    <legend>نتیجه کنترل کیفیت (بررسی‌شده‌ها)</legend>
+                    <ul class="qc-filter-options">
+                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusAll" value="" checked /><label for="qcStatusAll">همه</label></li>
+                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusMatched" value="1" /><label for="qcStatusMatched">بدون مغایرت</label></li>
+                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusMismatched" value="2" /><label for="qcStatusMismatched">دارای مغایرت</label></li>
+                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusNoResponse" value="4" /><label for="qcStatusNoResponse">عدم پاسخ</label></li>
                     </ul>
                 </fieldset>
             </div>
@@ -156,8 +148,8 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/deal/deal-documents.js?release=7.5.1" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
-    <script src="~/js/qualityControl.js?release=7.5.1" asp-append-version="true"></script>
+    <script src="~/js/deal/deal-documents.js?release=7.5.5" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
+    <script src="~/js/qualityControl.js?release=7.5.5" asp-append-version="true"></script>
 }
 
 <partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />

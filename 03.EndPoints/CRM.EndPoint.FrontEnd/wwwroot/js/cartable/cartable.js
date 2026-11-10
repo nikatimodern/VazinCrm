@@ -23,6 +23,200 @@ function initCartableViewport() {
     }, { once:true });
 }
 
+/** Keep the existing search handlers, but use the first mobile icon click only to expand. */
+function initCartableMobileSearch() {
+    const root = document.getElementById("cartableWorkspace");
+    if (!root) return;
+
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const searches = [];
+
+    root.querySelectorAll(".cartable-pane .search-group").forEach(group => {
+        const input = group.querySelector("input[type='text'], input[type='search']");
+        const icon = group.querySelector(".search-icon");
+        if (!input || !icon) return;
+
+        group.classList.add("cartable-mobile-search");
+        const clearButton = group.querySelector(".cartable-mobile-search-clear");
+        const syncClearState = () => group.classList.toggle("has-search-value", Boolean(input.value));
+
+        clearButton?.addEventListener("click", event => {
+            event.preventDefault();
+            input.value = "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            if (mobile.matches) input.focus({ preventScroll: true });
+            // Reuse the existing magnifier handler to refresh the list with an empty search.
+            icon.click();
+        });
+
+        const expand = () => {
+            group.classList.add("is-search-open");
+            icon.setAttribute("aria-expanded", "true");
+        };
+        const collapse = () => {
+            if (input.value.trim()) return;
+            group.classList.remove("is-search-open");
+            icon.setAttribute("aria-expanded", "false");
+        };
+        const syncViewport = () => {
+            if (!mobile.matches) {
+                group.classList.remove("is-search-open");
+                ["role", "tabindex", "aria-label", "aria-controls", "aria-expanded"]
+                    .forEach(attribute => icon.removeAttribute(attribute));
+                return;
+            }
+            icon.setAttribute("role", "button");
+            icon.setAttribute("tabindex", "0");
+            icon.setAttribute("aria-label", "جستجو");
+            icon.setAttribute("aria-controls", input.id);
+            icon.setAttribute("aria-expanded", group.classList.contains("is-search-open") ? "true" : "false");
+            if (input.value.trim()) expand();
+        };
+
+        // Capture the first click before initSearchInput's regular click-to-search handler.
+        icon.addEventListener("click", event => {
+            if (!mobile.matches) return;
+            if (group.classList.contains("is-search-open")) {
+                // The click must search, not close the field. Refocus only if an empty search would blur.
+                if (!input.value.trim()) input.focus({ preventScroll: true });
+                return;
+            }
+            // The first tap only expands; the shared search handler runs on later taps.
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            expand();
+            input.focus({ preventScroll: true });
+        }, true);
+
+        icon.addEventListener("keydown", event => {
+            if (!mobile.matches || (event.key !== "Enter" && event.key !== " ")) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (group.classList.contains("is-search-open")) {
+                icon.click();
+                return;
+            }
+            expand();
+            input.focus({ preventScroll: true });
+        });
+
+        input.addEventListener("focus", () => {
+            if (mobile.matches) expand();
+        });
+        input.addEventListener("input", () => {
+            syncClearState();
+            if (mobile.matches && input.value.trim()) expand();
+        });
+        input.addEventListener("blur", () => {
+            window.setTimeout(() => {
+                if (mobile.matches && document.activeElement !== input) collapse();
+            }, 150);
+        });
+
+        syncClearState();
+        syncViewport();
+        searches.push(syncViewport);
+    });
+
+    const onViewportChange = () => searches.forEach(sync => sync());
+    mobile.addEventListener("change", onViewportChange);
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        mobile.removeEventListener("change", onViewportChange);
+    }, { once: true });
+}
+
+/** Present the existing supply pre-factor radio filters as a compact mobile dropdown. */
+function initCartableMobileStatusFilter() {
+    const filter = document.querySelector("#TaminPrefactorTab-pane .cartable-mobile-status-filter");
+    if (!filter) return;
+
+    const toggle = filter.querySelector(".cartable-mobile-status-filter__toggle");
+    const selectedLabel = filter.querySelector(".cartable-mobile-status-filter__selected");
+    const options = filter.querySelector(".filter-switch");
+    const mobile = window.matchMedia("(max-width: 767px)");
+
+    const syncLabel = () => {
+        const checked = filter.querySelector('input[name="TFilter"]:checked');
+        selectedLabel.textContent = checked?.dataset.statusLabel ?? "همه";
+    };
+    const close = () => {
+        filter.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+    };
+
+    toggle.addEventListener("click", () => {
+        const open = filter.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", String(open));
+    });
+
+    // A click also closes when the chosen radio was already selected.
+    options.addEventListener("click", event => {
+        if (!event.target.matches('input[name="TFilter"]')) return;
+        syncLabel();
+        close();
+    });
+    options.addEventListener("change", syncLabel);
+
+    const onOutsideClick = event => {
+        if (!filter.contains(event.target)) close();
+    };
+    const onEscape = event => {
+        if (event.key !== "Escape" || !filter.classList.contains("is-open")) return;
+        close();
+        toggle.focus();
+    };
+    const onViewportChange = () => close();
+
+    document.addEventListener("pointerdown", onOutsideClick);
+    document.addEventListener("keydown", onEscape);
+    mobile.addEventListener("change", onViewportChange);
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        document.removeEventListener("pointerdown", onOutsideClick);
+        document.removeEventListener("keydown", onEscape);
+        mobile.removeEventListener("change", onViewportChange);
+    }, { once: true });
+
+    syncLabel();
+}
+
+/** Keep supply pre-factor controls in the top row on mobile without cloning inputs. */
+function initCartableTaminMobileToolbar() {
+    const root = document.getElementById("CTaminExpertId");
+    const destination = root?.querySelector(".cartable-tamin-top-controls");
+    const pane = root?.querySelector("#TaminPrefactorTab-pane");
+    const search = pane?.querySelector(".cartable-list-toolbar__search");
+    const status = pane?.querySelector(".cartable-mobile-status-filter");
+    if (!destination || !search || !status) return;
+
+    const originalSearchParent = search.parentElement;
+    const originalStatusParent = status.parentElement;
+    const searchNext = search.nextSibling;
+    const statusNext = status.nextSibling;
+    const mobile = window.matchMedia("(max-width: 767px)");
+
+    const update = () => {
+        if (mobile.matches) {
+            destination.append(search, status);
+        } else {
+            if (search.parentElement !== originalSearchParent) {
+                originalSearchParent.insertBefore(search, searchNext);
+            }
+            if (status.parentElement !== originalStatusParent) {
+                originalStatusParent.insertBefore(status, statusNext);
+            }
+        }
+    };
+
+    update();
+    mobile.addEventListener("change", update);
+    window.PageRuntime?.current?.signal?.addEventListener("abort", () => {
+        mobile.removeEventListener("change", update);
+        // Restore the original markup for page-navigation cleanup.
+        if (search.parentElement !== originalSearchParent) originalSearchParent.insertBefore(search, searchNext);
+        if (status.parentElement !== originalStatusParent) originalStatusParent.insertBefore(status, statusNext);
+    }, { once: true });
+}
+
 let filConfigSession = null;
 let fromWarning = false;
 
@@ -30,6 +224,9 @@ let fromWarning = false;
 document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("cartableWorkspace"));
     initCartableViewport();
+    initCartableMobileSearch();
+    initCartableMobileStatusFilter();
+    initCartableTaminMobileToolbar();
     showTaminDropdown();
     
     //////////////////////preFactor//////////////////////
@@ -101,9 +298,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     //const tabId = location.hash?.split("=")[1];
     const { tab = "TPrefactorFactorId", sub } = getUrlParams();
-    if (document.getElementById(tab)) {
-        GetCartable(tab, sub);
-    }
+    // A temporarily unavailable tab (including a bookmarked URL) falls back to the default.
+    const activeTab = document.getElementById(tab) ? tab : "TPrefactorFactorId";
+    GetCartable(activeTab, activeTab === tab ? sub : undefined);
 });
 
 const exportExcelPreFactors = async () => {
@@ -200,6 +397,7 @@ const exportExcelFactors = async () => {
 };*/
 
 const GetCartable = (tabId, subId) => {
+    if (!document.getElementById(tabId)) return;
     setUrlParams({ tab: tabId, sub: subId });
     document.querySelectorAll(".cartable-pane").forEach(el => el.classList.add("d-none"));
     document.querySelectorAll(".TCar").forEach(async (item) => {
@@ -351,7 +549,28 @@ const GetPreFactorTaminExpert = async () => {
         skeleton: { target: "#TContentId" },
         params: { serVal: val, type },
         onSuccess: (res) => {
-            document.getElementById("TContentId").innerHTML = res.data.html;
+            const container = document.getElementById("TContentId");
+            const isEmpty = Number(res.data.count) === 0;
+            container.classList.toggle("cartable-supply-empty", isEmpty);
+
+            if (isEmpty) {
+                const status = {
+                    "-1": "هیچ پیش‌فاکتوری وجود ندارد.",
+                    "1": "هیچ پیش‌فاکتوری در انتظار تأیید وجود ندارد.",
+                    "2": "هیچ پیش‌فاکتور تأییدشده‌ای وجود ندارد.",
+                };
+                const selectedStatus = document.querySelector('input[name="TFilter"]:checked')?.dataset.statusLabel ?? "همه";
+                const message = document.createElement("p");
+                message.className = "cartable-supply-empty__message";
+                message.setAttribute("role", "status");
+                message.textContent = val
+                    ? `برای «${val}» در وضعیت «${selectedStatus}» نتیجه‌ای یافت نشد.`
+                    : (status[type] ?? "هیچ پیش‌فاکتوری یافت نشد.");
+                container.replaceChildren(message);
+            } else {
+                container.innerHTML = res.data.html;
+            }
+
             document.getElementById("T_CountId").textContent = res.data.count;
             updateFilterSwitchState({
                 wrapperSelector: "#TaminPrefactorTab-pane",
