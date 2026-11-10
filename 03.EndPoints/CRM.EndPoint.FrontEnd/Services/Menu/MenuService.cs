@@ -496,6 +496,19 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
             #endregion
 
+            #region مدیریت سطح دسترسی
+
+            new MenuItem {
+                Id = "accessCatalog",
+                Title = "مدیریت سطح دسترسی",
+                Url = "/AccessCatalogAdmin/Index",
+                IconHtml = MenuIcons.Settings,
+                Roles = [AppRoles.Admin],
+                DisplayOrder = 14
+            },
+
+            #endregion
+
             #region سفارشات باز معوقه
 
             new MenuItem {

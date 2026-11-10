@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "مدیریت سطح دسترسی";
+}
+<section id="accessCatalog" class="ac-page" dir="rtl">
+    @Html.AntiForgeryToken()
+    <header class="ac-header">
+        <div>
+            <h1>مدیریت سطح دسترسی</h1>
+            <p>تعریف انتیتی‌های قابل کنترل و مجوزهای مربوط به هر کدام</p>
+        </div>
+        <button class="ac-btn ac-btn-primary" type="button" data-action="new-entity">
+            <i class="fas fa-plus" aria-hidden="true"></i> افزودن انتیتی
+        </button>
+    </header>
+
+    <div class="ac-layout">
+        <aside class="ac-panel ac-entity-panel" aria-label="فهرست انتیتی‌ها">
+            <div class="ac-panel-heading">
+                <h2>انتیتی‌ها <span class="ac-count" data-entity-count>۰</span></h2>
+                <button type="button" class="ac-icon-button" data-action="reload" title="تازه‌سازی" aria-label="تازه‌سازی">
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                </button>
+            </div>
+            <label class="ac-search">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input type="search" data-entity-search placeholder="جست‌وجوی انتیتی..." maxlength="150" aria-label="جست‌وجوی انتیتی" />
+            </label>
+            <div class="ac-entities" data-entities aria-live="polite">
+                <p class="ac-muted">در حال دریافت اطلاعات...</p>
+            </div>
+        </aside>
+        <section class="ac-panel ac-permission-panel" aria-label="دسترسی‌های انتیتی">
+            <div class="ac-panel-heading ac-permission-heading">
+                <div>
+                    <h2 data-selected-title>دسترسی‌های انتیتی</h2>
+                    <p data-selected-key>برای شروع یک انتیتی انتخاب کنید.</p>
+                </div>
+                <div class="ac-toolbar-actions">
+                    <button type="button" class="ac-btn ac-btn-muted" data-action="edit-entity" disabled>ویرایش انتیتی</button>
+                    <button type="button" class="ac-btn ac-btn-primary" data-action="new-permission" disabled>
+                        <i class="fas fa-plus" aria-hidden="true"></i> افزودن دسترسی
+                    </button>
+                </div>
+            </div>
+            <div class="ac-permission-guide">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                تعریف دسترسی در این مرحله فقط برای ثبت در فهرست است و هنوز روی عملیات برنامه اعمال نمی‌شود.
+            </div>
+            <div class="ac-permissions" data-permissions aria-live="polite">
+                <div class="ac-empty"><i class="fas fa-shield-alt" aria-hidden="true"></i><p>یک انتیتی را از فهرست انتخاب کنید.</p></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal fade" id="acEntityModal" tabindex="-1" aria-hidden="true" aria-labelledby="acEntityModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content ac-modal" data-entity-form>
+                <div class="modal-header"><h2 class="modal-title" id="acEntityModalTitle">انتیتی جدید</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="ac-fields">
+                        <label>مدل از DbContext
+                            <select name="model" required data-model-select><option value="">انتخاب مدل...</option></select>
+                        </label>
+                        <label>عنوان فارسی
+                            <input name="title" maxlength="150" required placeholder="مانند سفارشات" />
+                        </label>
+                        <label>کلید یکتا
+                            <input name="key" maxlength="64" dir="ltr" required pattern="[A-Za-z][A-Za-z0-9]*" placeholder="Orders" />
+                        </label>
+                        <label>توضیحات (اختیاری)
+                            <textarea name="description" maxlength="1000" rows="2"></textarea>
+                        </label>
+                        <label class="ac-check"><input type="checkbox" name="isActive" checked /> فعال</label>
+                    </div>
+                    <p class="ac-error" data-entity-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit">ذخیره انتیتی</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acPermissionModal" tabindex="-1" aria-hidden="true" aria-labelledby="acPermissionModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content ac-modal" data-permission-form>
+                <div class="modal-header"><h2 class="modal-title" id="acPermissionModalTitle">دسترسی جدید</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="ac-form-context" data-permission-entity></p>
+                    <div class="ac-fields">
+                        <label>عنوان دسترسی
+                            <input name="title" maxlength="150" required placeholder="مانند مشاهده" />
+                        </label>
+                        <label>کلید دسترسی
+                            <input name="key" maxlength="64" dir="ltr" required pattern="[A-Za-z][A-Za-z0-9]*" placeholder="View" />
+                        </label>
+                        <p class="ac-key-preview" data-key-preview></p>
+                        <label>توضیحات (اختیاری)
+                            <textarea name="description" maxlength="1000" rows="2"></textarea>
+                        </label>
+                        <label class="ac-check"><input type="checkbox" name="isActive" checked /> فعال</label>
+                    </div>
+                    <p class="ac-error" data-permission-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit">ذخیره دسترسی</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+@section Styles {
+    <link rel="stylesheet" href="~/css/accessCatalog.css?release=7.5.5" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/accessCatalog.js?release=7.5.5" asp-append-version="true"></script>
+}

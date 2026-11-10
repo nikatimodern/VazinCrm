@@ -1,0 +1,89 @@
+#accessCatalog {
+    --ac-primary: var(--color-primary-action, #00665C);
+    --ac-primary-dark: var(--color-primary, #004944);
+    --ac-primary-light: var(--color-primary-light, #E7F3F0);
+    --ac-secondary: var(--color-secondary, #5811B4);
+    --ac-border: var(--color-border, #DDE1E8);
+    --ac-muted: var(--color-text-muted, #545961);
+    --ac-danger: var(--color-danger, #C2185B);
+    color: var(--color-text, #212529);
+    width: 100%;
+    padding: 12px;
+    max-width: 1440px;
+    margin-inline: auto;
+}
+#acAccessCatalog { box-sizing: border-box; }
+#acAccessCatalog *, #accessCatalog * { box-sizing: border-box; }
+#accessCatalog .ac-header, #accessCatalog .ac-panel-heading, #accessCatalog .ac-toolbar-actions {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+#accessCatalog .ac-header { margin-bottom: 12px; flex-wrap: wrap; }
+#accessCatalog h1 { font-size: 19px; font-weight: 700; margin: 0 0 3px; color: var(--ac-primary-dark); }
+#accessCatalog h2 { font-size: 15px; font-weight: 700; margin: 0; }
+#accessCatalog .ac-header p, #accessCatalog .ac-panel-heading p {
+    font-size: 12px; color: var(--ac-muted); margin: 0;
+}
+#accessCatalog .ac-layout { display: grid; grid-template-columns: minmax(235px, 0.82fr) minmax(0, 1.9fr); align-items: start; gap: 12px; }
+#accessCatalog .ac-panel { background: #fff; border: 1px solid var(--ac-border); border-radius: 10px; min-width: 0; overflow: hidden; }
+#accessCatalog .ac-panel-heading { padding: 12px; border-bottom: 1px solid var(--ac-border); }
+#accessCatalog .ac-panel-heading > div:first-child { min-width: 0; }
+#accessCatalog .ac-count { display: inline-block; font-size: 11px; font-weight: 500; border-radius: 6px; background: #F0F1F7; padding: 1px 6px; margin-inline-start: 4px; }
+#accessCatalog .ac-search { margin: 10px 12px; border: 1px solid var(--ac-border); border-radius: 7px; display: flex; align-items: center; gap: 7px; padding-inline: 9px; color: var(--ac-muted); }
+#accessCatalog .ac-search:focus-within { border-color: var(--ac-primary); outline: 2px solid var(--ac-primary-light); }
+#accessCatalog .ac-search input { flex: 1; border: 0; outline: 0; min-width: 0; height: 34px; background: transparent; color: inherit; font-size: 13px; }
+#accessCatalog .ac-entities { padding: 4px 8px 10px; max-height: 64vh; overflow-y: auto; }
+#accessCatalog .ac-entity-item { text-align: right; width: 100%; border: 1px solid transparent; background: transparent; padding: 9px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 6px; margin: 2px 0; }
+#accessCatalog .ac-entity-item:hover { background: #F8FAFA; }
+#accessCatalog .ac-entity-item.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
+#accessCatalog .ac-entity-item strong { font-size: 13px; display: block; }
+#accessCatalog .ac-entity-item small { color: var(--ac-muted); font-size: 11px; direction: ltr; display: inline-block; }
+#accessCatalog .ac-entity-item .ac-entity-meta { min-width: 0; overflow-wrap: anywhere; }
+#accessCatalog .ac-pill { padding: 3px 6px; border-radius: 6px; color: var(--ac-primary-dark); background: var(--ac-primary-light); white-space: nowrap; font-size: 11px; }
+#accessCatalog .ac-pill.is-off { color: var(--ac-muted); background: #F0F1F7; }
+#accessCatalog .ac-permission-heading { flex-wrap: wrap; }
+#accessCatalog .ac-permission-heading [data-selected-key] { direction: ltr; display: inline-block; font-size: 11px; }
+#accessCatalog .ac-toolbar-actions { justify-content: flex-start; gap: 7px; flex-wrap: wrap; }
+#accessCatalog .ac-permission-guide { color: var(--ac-muted); font-size: 12px; background: #F8FAFA; margin: 10px 12px 0; padding: 8px 10px; border-radius: 7px; }
+#accessCatalog .ac-permission-guide i { color: var(--ac-secondary); margin-inline-end: 4px; }
+#accessCatalog .ac-permissions { padding: 10px 12px 14px; min-height: 170px; }
+#accessCatalog .ac-permission-item { border: 1px solid var(--ac-border); border-radius: 8px; padding: 9px 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+#accessCatalog .ac-permission-item strong { font-size: 13px; }
+#accessCatalog .ac-permission-item small { display: block; color: var(--ac-muted); font-size: 11px; direction: ltr; text-align: right; margin-top: 2px; overflow-wrap: anywhere; }
+#accessCatalog .ac-permission-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+#accessCatalog .ac-btn { background: white; border: 1px solid var(--ac-border); color: var(--ac-muted); font-size: 12px; border-radius: 7px; padding: 6px 10px; min-height: 32px; cursor: pointer; white-space: nowrap; }
+#accessCatalog .ac-btn-primary { background: var(--ac-primary); border-color: var(--ac-primary); color: white; }
+#accessCatalog .ac-btn-primary:hover { background: var(--ac-primary-dark); }
+#accessCatalog .ac-btn-muted:hover, #accessCatalog .ac-icon-button:hover { background: #F0F1F7; }
+#accessCatalog .ac-icon-button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--ac-border); border-radius: 6px; width: 29px; height: 29px; background: #fff; cursor: pointer; color: var(--ac-muted); }
+#accessCatalog .ac-icon-button.is-danger { color: var(--ac-danger); }
+#accessCatalog button:disabled { opacity: .48; cursor: not-allowed; }
+#accessCatalog button:focus-visible, #accessCatalog input:focus-visible, #accessCatalog textarea:focus-visible, #accessCatalog select:focus-visible { outline: 2px solid var(--ac-secondary); outline-offset: 2px; }
+#accessCatalog .ac-empty { padding: 24px 10px; text-align: center; color: var(--ac-muted); font-size: 13px; }
+#accessCatalog .ac-empty i { font-size: 24px; color: #838E98; display: block; margin-bottom: 10px; }
+#accessCatalog .ac-empty p { margin: 0; }
+#accessCatalog .ac-muted { padding: 15px; color: var(--ac-muted); font-size: 12px; margin: 0; }
+#accessCatalog .ac-modal { border: 0; border-radius: 10px; overflow: visible; }
+#accessCatalog .ac-modal .modal-header, #accessCatalog .ac-modal .modal-footer { padding: 10px 14px; }
+#accessCatalog .ac-modal .modal-body { padding: 12px 14px; }
+#accessCatalog .ac-modal .modal-title { font-size: 15px; font-weight: 700; }
+#accessCatalog .ac-close { color: var(--ac-muted); background: transparent; border: 0; font-size: 24px; line-height: 1; cursor: pointer; }
+#accessCatalog .ac-fields { display: grid; gap: 10px; }
+#accessCatalog .ac-fields label:not(.ac-check) { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+#accessCatalog .ac-fields input:not([type=checkbox]), #accessCatalog .ac-fields select, #accessCatalog .ac-fields textarea { border: 1px solid var(--ac-border); border-radius: 7px; padding: 6px 9px; background: #fff; font-size: 13px; color: inherit; width: 100%; min-width: 0; }
+#accessCatalog .ac-fields input:not([type=checkbox]), #accessCatalog .ac-fields select { min-height: 35px; }
+#accessCatalog .ac-fields textarea { resize: vertical; }
+#accessCatalog .ac-fields .ac-check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+#accessCatalog .ac-form-context, #accessCatalog .ac-key-preview { color: var(--ac-muted); font-size: 12px; margin: 0; direction: ltr; text-align: right; }
+#accessCatalog .ac-key-preview { font-weight: 600; }
+#accessCatalog .ac-error { color: var(--ac-danger); font-size: 12px; padding-top: 8px; margin: 0; }
+#accessCatalog .ts-wrapper { min-height: 35px; }
+#accessCatalog .ts-control { min-height: 35px; border-color: var(--ac-border); border-radius: 7px; }
+@media (max-width: 767px) {
+    #accessCatalog { padding: 7px; }
+    #accessCatalog .ac-layout { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+    #accessCatalog .ac-entities { max-height: 30vh; }
+    #accessCatalog .ac-header h1 { font-size: 16px; }
+    #accessCatalog .ac-panel-heading { padding: 9px; }
+    #accessCatalog .ac-toolbar-actions { width: 100%; }
+    #accessCatalog .ac-entity-item { padding: 7px; }
+}
