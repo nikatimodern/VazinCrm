@@ -7,10 +7,11 @@ using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Generics.Infrastructures.Sql;
 
 namespace CRM.Infrastructures.Sql.AccessCatalog;
 
-public sealed class AccessCatalogRepository(CRMContextDb db) : IAccessCatalogRepository
+public sealed class AccessCatalogRepository(UserContextDb db) : IAccessCatalogRepository
 {
     public async Task<IReadOnlyList<AccessEntity>> ListAsync(CancellationToken ct) =>
         await db.AccessEntities.AsNoTracking().Include(x => x.Permissions).ToListAsync(ct);

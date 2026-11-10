@@ -32,14 +32,12 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
 using Microsoft.EntityFrameworkCore;
+using CRM.Infrastructures.Sql.AccessCatalog;
 
 namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
-        public DbSet<CRM.Core.Domain.AccessCatalog.Entities.AccessEntity> AccessEntities { get; set; }
-        public DbSet<CRM.Core.Domain.AccessCatalog.Entities.AccessPermission> AccessPermissions { get; set; }
-        public DbSet<CRM.Core.Domain.AccessCatalog.Entities.AccessRolePermission> AccessRolePermissions { get; set; }
         public DbSet<Accountancy> Accountancies { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote> ReleaseNotes { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem> ReleaseNoteItems { get; set; }
@@ -130,7 +128,11 @@ namespace CRM.Infrastructures.Sql {
         {
             //GetEnumerableOfType();
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+            // Access security tables belong to the Identity database, not to CRMContextDb.
+            modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly, type =>
+                type != typeof(AccessEntityConfiguration) &&
+                type != typeof(AccessPermissionConfiguration) &&
+                type != typeof(AccessRolePermissionConfiguration));
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
 

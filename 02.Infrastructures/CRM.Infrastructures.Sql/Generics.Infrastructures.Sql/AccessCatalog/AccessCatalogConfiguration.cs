@@ -1,6 +1,7 @@
 using CRM.Core.Domain.AccessCatalog.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.AspNetCore.Identity;
 
 namespace CRM.Infrastructures.Sql.AccessCatalog;
 
@@ -45,5 +46,7 @@ public sealed class AccessRolePermissionConfiguration : IEntityTypeConfiguration
         entity.HasIndex(x => x.AccessPermissionId);
         entity.HasOne(x => x.AccessPermission).WithMany()
             .HasForeignKey(x => x.AccessPermissionId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<IdentityRole>().WithMany()
+            .HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
     }
 }
