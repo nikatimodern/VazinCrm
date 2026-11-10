@@ -225,11 +225,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .Select(x => x.Value)
             .ToListAsync(ct);
 
-        if (values.Count != 1 ||
-            !int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ||
-            id <= 0)
+        if (values.Count != 1)
             throw new InvalidOperationException(
-                $"تنظیم «{key}» در سپیدار وجود ندارد یا شناسه معتبر و بزرگ‌تر از صفر ندارد.");
+                $"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+
+        if (!int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            || id <= 0)
+            throw new InvalidOperationException(
+                $"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
 
         return id;
     }
