@@ -261,15 +261,16 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<int> GetSalesAccountIdAsync(SaleType? saleType, CancellationToken ct)
     {
-        // An account configured on the actual sale type takes precedence.
-        // A missing, deleted, inactive or tracking-required account falls back
-        // to Sepidar's global SalesPartSalesSL setting, never a hard-coded code.
+        // Prefer the account configured on this sale type. The global
+        // SalesPartSalesSL setting was empty in the verified Sepidar data,
+        // so preserve the original 5001 Moein-code fallback until that
+        // configuration is confirmed for both Sepidar databases.
         if (saleType?.PartSalesSLRef is int accountId && accountId > 0 &&
             await sepidarContext.Accounts.AsNoTracking().AnyAsync(
                 x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
             return accountId;
 
-        return await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
+        return await GetAccountIdByMoeinCodeAsync("5001", ct);
     }
 
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
@@ -468,7 +469,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TotalAmountInBaseCurrency = cash.Amount,
 
                 // اگر کارمزد وجود دارد
-                BankFeeSlRef = cash.Fee > 0 ? await GetConfiguredAccountIdAsync("BankFeeSlRef", ct) : null
+                BankFeeSlRef = cash.Fee > 0 ? await GetAccountIdByMoeinCodeAsync("7704", ct) : null
             };
 
 
@@ -671,7 +672,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
                     RowNumber = voucherItems.Count + 1,
 
-                    AccountSLRef = await GetConfiguredAccountIdAsync("BankFeeSlRef", ct),
+                    AccountSLRef = await GetAccountIdByMoeinCodeAsync("7704", ct),
 
                     DLRef = null,
 
@@ -701,7 +702,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
 
-            var bankAccountSlRef = await GetConfiguredAccountIdAsync("PettyCashSL", ct); // حساب تنخواه تعریف‌شده در تنظیمات سپیدار
+            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // PettyCashSL در تنظیمات فعلی خالی است؛ حفظ کد قبلی
             var creditItem = new VoucherItem {
                 VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                 VoucherRef = voucher.VoucherId,
