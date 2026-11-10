@@ -66,18 +66,20 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public bool HasReturned { get; set; }
         public int? ReturnFromPftype { get; set; }
 
-        public void RecordReturn()
+        /// <summary>Preserves the highest workflow stage from which this pre-factor has been returned.</summary>
+        public void RecordReturn(int targetPftype)
         {
-            if (!HasReturned)
-                ReturnFromPftype = Pftype;
+            const int firstStage = (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
+            const int lastStage = (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
+
+            if (Pftype <= firstStage ||
+                Pftype > lastStage ||
+                targetPftype < firstStage ||
+                targetPftype >= Pftype)
+                return;
 
             HasReturned = true;
-        }
-
-        public void ClearReturn()
-        {
-            HasReturned = false;
-            ReturnFromPftype = null;
+            ReturnFromPftype = Math.Max(ReturnFromPftype ?? Pftype, Pftype);
         }
 
         public bool Accepted { get; set; } = false;
