@@ -1136,6 +1136,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 SaleTypeId = x.SaleTypeId,
                 Number = x.Number,
                 Title = TextService.NormalizePersianText(x.Title),
+                PartSalesSLRef = x.PartSalesSLRef,
+                ServiceSalesSLRef = x.ServiceSalesSLRef,
+                PartSalesReturnSLRef = x.PartSalesReturnSLRef,
+                ServiceSalesReturnSLRef = x.ServiceSalesReturnSLRef,
+                PartSalesDiscountSLRef = x.PartSalesDiscountSLRef,
+                ServiceSalesDiscountSLRef = x.ServiceSalesDiscountSLRef,
+                SalesAdditionSLRef = x.SalesAdditionSLRef,
             })
             .SingleOrDefaultAsync(ct);
     }
@@ -1791,8 +1798,16 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             !await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == customer.DLRef && x.IsActive, ct))
             throw new InvalidOperationException("حساب تفصیلی فعال مشتری برای سند فروش در سپیدار پیدا نشد.");
 
+        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct)
+            ?? throw new InvalidOperationException("نوع فروش فاکتور سپیدار پیدا نشد.");
+        // Sales accounts are configured per sale type in SLS.SaleType, not in
+        // FMK.Configuration or on INV.Item. Never hard-code code 5001 here.
+        if (!saleType.PartSalesSLRef.HasValue || saleType.PartSalesSLRef.Value <= 0)
+            throw new InvalidOperationException(
+                $"حساب فروش کالا برای نوع فروش «{saleType.Title}» در تنظیمات سپیدار مشخص نشده است.");
+
         var receivableAccountId = await GetAccountIdByMoeinCodeAsync("1201", ct);
-        var salesAccountId = await GetAccountIdByMoeinCodeAsync("5001", ct);
+        var salesAccountId = saleType.PartSalesSLRef.Value;
         int? taxAccountId = taxAmount > 0
             ? await GetAccountIdByMoeinCodeAsync("3112", ct)
             : null;
@@ -1820,8 +1835,6 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             taxDlRef = taxDl.DLId;
         }
 
-        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct)
-            ?? throw new InvalidOperationException("نوع فروش فاکتور سپیدار پیدا نشد.");
         var baseDescription =
             $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType.Title}";
         var now = DateTime.Now;
