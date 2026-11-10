@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using CRM.Core.ApplicationServices.AccessCatalog.Services;
 using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 

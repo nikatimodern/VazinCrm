@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using CRM.Core.Domain.AccessCatalog.Entities;
 
 namespace CRM.Core.Domain.AccessCatalog.Repositories;

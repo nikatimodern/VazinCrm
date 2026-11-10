@@ -12,8 +12,7 @@
     max-width: 1440px;
     margin-inline: auto;
 }
-#acAccessCatalog { box-sizing: border-box; }
-#acAccessCatalog *, #accessCatalog * { box-sizing: border-box; }
+#accessCatalog, #accessCatalog * { box-sizing: border-box; }
 #accessCatalog .ac-header, #accessCatalog .ac-panel-heading, #accessCatalog .ac-toolbar-actions {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }

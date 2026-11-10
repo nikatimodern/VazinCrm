@@ -109,6 +109,7 @@
         root.querySelector("[data-selected-title]").textContent = hasEntity ? "دسترسی‌های " + item.title : "دسترسی‌های انتیتی";
         root.querySelector("[data-selected-key]").textContent = hasEntity ? item.key + " · " + item.modelFullName : "برای شروع یک انتیتی انتخاب کنید.";
         root.querySelector("[data-action='edit-entity']").disabled = !hasEntity;
+        root.querySelector("[data-action='delete-entity']").disabled = !hasEntity;
         root.querySelector("[data-action='new-permission']").disabled = !hasEntity;
         if (!hasEntity) { showEmpty(permissionList, "یک انتیتی را از فهرست انتخاب کنید."); return; }
         if (!permissions.length) {
@@ -293,6 +294,7 @@
         const action = target.dataset.action;
         if (action === "new-entity") openEntityEditor();
         else if (action === "edit-entity") openEntityEditor(selectedEntity());
+        else if (action === "delete-entity") void deleteItem("Entity", currentEntityId);
         else if (action === "new-permission") openPermissionEditor();
         else if (action === "edit-permission") openPermissionEditor(permissions.find(x => x.id === target.dataset.id));
         else if (action === "delete-permission") void deleteItem("Permission", target.dataset.id);

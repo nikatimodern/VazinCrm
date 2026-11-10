@@ -1,4 +1,7 @@
-using CRM.Core.ApplicationServices.AccessCatalog.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.AccessCatalog;

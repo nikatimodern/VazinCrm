@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using Microsoft.Data.SqlClient;
