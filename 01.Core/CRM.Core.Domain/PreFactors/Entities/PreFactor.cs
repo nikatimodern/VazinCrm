@@ -63,6 +63,22 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public FinancialStepEnum? FinancialStep { get; set; } = null;
         public DateTime? PftypeChangeDate { get; set; }
         public string PftypeChangeDateTxt { get; set; }
+        public bool HasReturned { get; set; }
+        public int? ReturnFromPftype { get; set; }
+
+        public void RecordReturn()
+        {
+            if (!HasReturned)
+                ReturnFromPftype = Pftype;
+
+            HasReturned = true;
+        }
+
+        public void ClearReturn()
+        {
+            HasReturned = false;
+            ReturnFromPftype = null;
+        }
 
         public bool Accepted { get; set; } = false;
         public DateTime? AcceptedDate { get; set; }

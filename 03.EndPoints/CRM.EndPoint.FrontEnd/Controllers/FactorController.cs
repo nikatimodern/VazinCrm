@@ -396,6 +396,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.UserModify = user.FullName;
             pf.UserModifyID = user.Id;
 
+            pf.RecordReturn();
             pf.PrePftype = pf.Pftype;
             pf.Pftype = set.SmallOffice ? (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری : (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
             pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
@@ -1284,6 +1285,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.AcceptedDate = DateTime.Now;
             pf.AcceptedDateTxt = dtService.GetDateTimePersian();
             pf.AcceptedTerms = true;
+            pf.ClearReturn();
 
             pf.ModifyDate = DateTime.Now;
             pf.ModifyDateTxt = dtService.GetDateTimePersian();
@@ -1392,9 +1394,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             await _logSystemService.LogChange(oldPfactor, pfactor, LogActionEnum.تغییر_وضعیت, user);
             await db.SaveChangesAsync();
-            //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
+
             await smsQueue.QueueAsync(new SmsJob {
-                PatternType = pfactor.AcceptedDate.HasValue
+                PatternType = pfactor.HasReturned && pfactor.ReturnFromPftype > (int)PreFactorEnum.در_انتظار_تایید_مشتری
                     ? SmsPatternType.ReacceptEditedPfactorToCustomer
                     : SmsPatternType.AcceptPfactorToCustomer,
                 Mobile = toNumber,
@@ -2169,6 +2171,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         break;
                     }
                 }
+
+                if (code >= (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین &&
+                    code < pf.Pftype && pf.Pftype <= (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
+                    pf.RecordReturn();
 
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = code;
@@ -3037,6 +3043,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (pf.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مالی)
                 {
+                    pf.RecordReturn();
                     pf.PrePftype = pf.Pftype;
                     pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مالی;
                     pf.AcceptedFinancial = null;

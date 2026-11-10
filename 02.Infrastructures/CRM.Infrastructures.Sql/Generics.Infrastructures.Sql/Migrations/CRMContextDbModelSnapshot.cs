@@ -3184,6 +3184,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<int?>("FinancialStep")
                         .HasColumnType("int");
 
+                    b.Property<bool>("HasReturned")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -3221,6 +3224,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<decimal>("ReciveAmount")
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
+
+                    b.Property<int?>("ReturnFromPftype")
+                        .HasColumnType("int");
 
                     b.Property<int>("SerialNumber")
                         .HasColumnType("int");
