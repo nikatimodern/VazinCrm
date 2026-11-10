@@ -9,6 +9,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
+using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,15 +38,18 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         if (factor.ParentReturnedId.HasValue || factor.Returned)
             throw new InvalidOperationException($"صدور فاکتور برگشتی پشتیبانی نمی‌شود (شماره فاکتور: {factor.SerialNumber}).");
 
-        if (factor.SerialNumber <= 0 || !factor.DateMiladi.HasValue)
-            throw new InvalidOperationException("شماره یا تاریخ فاکتور CRM معتبر نیست.");
+        if (factor.SerialNumber <= 0)
+            throw new InvalidOperationException("شماره فاکتور CRM معتبر نیست.");
 
         var fiscalYear = await context.FiscalYears.AsNoTracking()
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
 
-        if (fiscalYear == null || factor.DateMiladi.Value.Date < fiscalYear.StartDate.Date
-                               || factor.DateMiladi.Value.Date > fiscalYear.EndDate.Date)
-            throw new InvalidOperationException($"تاریخ فاکتور ({factor.DateMiladi:yyyy/MM/dd}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+        // The Sepidar invoice date is the issuance date, not the CRM document date.
+        var invoiceDate = DateTime.Today;
+        if (fiscalYear == null || invoiceDate < fiscalYear.StartDate.Date
+                               || invoiceDate > fiscalYear.EndDate.Date)
+            throw new InvalidOperationException(
+                $"تاریخ روز ({BaseServices.GetDatePersian(invoiceDate)}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         if (quotation.CustomerPartyRef <= 0 || quotation.SaleTypeRef <= 0)
             throw new InvalidOperationException("مشتری یا نوع فروش پیش‌فاکتور سپیدار نامعتبر است.");
@@ -93,9 +97,14 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
                 throw new InvalidOperationException($"ردیف {factorItem.Row}: مقدار فاکتور نامعتبر است ({FormatErrorNumber(factorItem.WeightCount)}).");
 
             // Source quotation can contain more quantity than this invoice (partial invoicing).
-            if (quantity > quotationItem.Quantity)
+            var alreadyUsed = quotationItem.UsedQuantity ?? 0m;
+            if (alreadyUsed < 0 || alreadyUsed > quotationItem.Quantity)
                 throw new InvalidOperationException(
-                    $"ردیف {factorItem.Row}: مقدار فاکتور ({FormatErrorNumber(quantity)}) از پیش‌فاکتور سپیدار ({FormatErrorNumber(quotationItem.Quantity)}) بیشتر است.");
+                    $"ردیف {factorItem.Row}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
+            if (quantity > quotationItem.Quantity - alreadyUsed)
+                throw new InvalidOperationException(
+                    $"ردیف {factorItem.Row}: مقدار درخواستی ({FormatErrorNumber(quantity)}) از مانده قابل فاکتور " +
+                    $"پیش‌فاکتور سپیدار ({FormatErrorNumber(quotationItem.Quantity - alreadyUsed)}) بیشتر است.");
 
             var price = Math.Round(quantity * factorItem.UnitAmount);
             var discount = factorItem.Discount;
@@ -158,8 +167,8 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             QuotationId = quotationId,
             QuotationNumber = quotation.Number,
             InvoiceNumber = null, // Assigned at creation from the last number in Sepidar fiscal year.
-            InvoiceDate = factor.DateMiladi.Value,
-            InvoiceDateText = factor.Date,
+            InvoiceDate = invoiceDate,
+            InvoiceDateText = BaseServices.GetDatePersian(invoiceDate),
             CustomerName = quotation.CustomerRealName,
             SaleTypeRef = quotation.SaleTypeRef,
             FiscalYearRef = quotation.FiscalYearRef,
