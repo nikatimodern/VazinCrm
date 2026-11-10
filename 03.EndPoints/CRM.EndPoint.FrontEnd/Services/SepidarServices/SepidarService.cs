@@ -23,7 +23,6 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
-using CRM.Framework;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -1639,20 +1638,22 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
 
+        if (!factor.DateMiladi.HasValue)
+            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
+
         var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
                         ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
 
         if (quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
 
-        // Sepidar's invoice date is today even if the CRM factor has an older date.
-        var invoiceDate = DateTime.Today;
+        var invoiceDate = factor.DateMiladi.Value;
         var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
-        if (fiscalYear == null || invoiceDate < fiscalYear.StartDate.Date ||
-            invoiceDate > fiscalYear.EndDate.Date)
+        if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date ||
+            invoiceDate.Date > fiscalYear.EndDate.Date)
             throw new InvalidOperationException(
-                $"تاریخ روز ({BaseServices.GetDatePersian(invoiceDate)}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+                $"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
