@@ -63,6 +63,24 @@ namespace CRM.Core.Domain.PreFactors.Entities {
         public FinancialStepEnum? FinancialStep { get; set; } = null;
         public DateTime? PftypeChangeDate { get; set; }
         public string PftypeChangeDateTxt { get; set; }
+        public bool HasReturned { get; set; }
+        public int? ReturnFromPftype { get; set; }
+
+        /// <summary>Preserves the highest workflow stage from which this pre-factor has been returned.</summary>
+        public void RecordReturn(int targetPftype)
+        {
+            const int firstStage = (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
+            const int lastStage = (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد;
+
+            if (Pftype <= firstStage ||
+                Pftype > lastStage ||
+                targetPftype < firstStage ||
+                targetPftype >= Pftype)
+                return;
+
+            HasReturned = true;
+            ReturnFromPftype = Math.Max(ReturnFromPftype ?? Pftype, Pftype);
+        }
 
         public bool Accepted { get; set; } = false;
         public DateTime? AcceptedDate { get; set; }

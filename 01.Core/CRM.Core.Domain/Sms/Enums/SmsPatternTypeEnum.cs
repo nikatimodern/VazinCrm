@@ -28,5 +28,8 @@ public enum SmsPatternType {
     ChatReminder,
 
     [Description("نظرسنجی مشتری")] 
-    CustomerFeedback
+    CustomerFeedback,
+
+    [Description("تأیید مجدد پیش‌فاکتور ویرایش‌شده مشتری")]
+    ReacceptEditedPfactorToCustomer
 }

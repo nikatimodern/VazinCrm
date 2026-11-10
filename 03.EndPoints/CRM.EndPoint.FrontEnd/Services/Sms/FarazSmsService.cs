@@ -170,6 +170,14 @@ public class FarazSmsService {
                 };
                 break;
 
+            case SmsPatternType.ReacceptEditedPfactorToCustomer:
+                patternCode = config.Patterns.ReacceptEditedPfactorToCustomer;
+                attrs = new Dictionary<string, string> {
+                    ["number"] = job.SerialNumber,
+                    ["link"] = job.PfactorId?.ToString().Substring(0, 7)
+                };
+                break;
+
             // تایید پیش‌فاکتور توسط تامین
             case SmsPatternType.AcceptPfactorToTamin:
                 patternCode = config.Patterns.AcceptPfactorToTamin;

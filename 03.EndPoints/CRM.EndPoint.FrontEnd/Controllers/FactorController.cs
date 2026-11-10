@@ -396,8 +396,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             pf.UserModify = user.FullName;
             pf.UserModifyID = user.Id;
 
+            var targetPftype = set.SmallOffice
+                ? (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری
+                : (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
+            pf.RecordReturn(targetPftype);
             pf.PrePftype = pf.Pftype;
-            pf.Pftype = set.SmallOffice ? (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری : (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین;
+            pf.Pftype = targetPftype;
             pf.PftypeTxt = Service.GetTypeTxtPfactor(pf.Pftype);
 
             if (set.SetAmountByRoleType != SetAmountRoleEnum.فروش)
@@ -1144,6 +1148,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.Id);
                 var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == model.Id);
+                if (pf == null) return NotFound("پیش‌فاکتور یافت نشد.");
+                if (pf.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مشتری)
+                    return Conflict("پیش‌فاکتور در مرحله تایید مشتری نیست.");
 
                 pf.AgentName = model.AgentName?.Trim();
 
@@ -1218,7 +1225,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var set = await db.ASettings.FirstOrDefaultAsync();
                 var oldPf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
                 var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == id);
-
+                if (pf == null) return NotFound("پیش‌فاکتور یافت نشد.");
+                if (pf.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مشتری)
+                    return Conflict("پیش‌فاکتور در مرحله تایید مشتری نیست.");
 
                 (pf, var cus) = await AcceptCustomerPreFactor(pf, set.SmallOffice);
                 pf.UserModify = user.FullName;
@@ -1381,6 +1390,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldPfactor = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var pfactor = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
+            if (pfactor == null) return NotFound("پیش‌فاکتور یافت نشد.");
+
+            if (pfactor.Pftype != (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری && pfactor.Pftype != (int)PreFactorEnum.در_انتظار_تایید_مشتری)
+                return Conflict("پیش‌فاکتور در مرحله ارسال یا تایید مشتری نیست.");
 
             pfactor.PrePftype = pfactor.Pftype;
             pfactor.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مشتری;
@@ -1392,9 +1405,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             await _logSystemService.LogChange(oldPfactor, pfactor, LogActionEnum.تغییر_وضعیت, user);
             await db.SaveChangesAsync();
-            //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
+
             await smsQueue.QueueAsync(new SmsJob {
-                PatternType = SmsPatternType.AcceptPfactorToCustomer,
+                PatternType = pfactor.HasReturned && pfactor.ReturnFromPftype > (int)PreFactorEnum.در_انتظار_تایید_مشتری
+                    ? SmsPatternType.ReacceptEditedPfactorToCustomer
+                    : SmsPatternType.AcceptPfactorToCustomer,
                 Mobile = toNumber,
                 SerialNumber = pfactor.SerialNumber.ToString(),
                 PfactorId = id,
@@ -2168,6 +2183,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     }
                 }
 
+                if (pf == null) return NotFound("پیش‌فاکتور یافت نشد.");
+
+                // Customer approval is required before entering post-approval workflow stages.
+                if (pf.Pftype <= (int)PreFactorEnum.در_انتظار_تایید_مشتری &&
+                    code > (int)PreFactorEnum.در_انتظار_تایید_مشتری &&
+                    code <= (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
+                    return Conflict("برای عبور از مرحله تایید مشتری، ابتدا پیش‌فاکتور باید توسط مشتری یا به صورت دستی تایید شود.");
+
+                
                 pf.PrePftype = pf.Pftype;
                 pf.Pftype = code;
                 pf.PftypeTxt = Service.GetTypeTxtPfactor(code);
@@ -3033,7 +3057,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
 
 
-                if (pf.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مالی)
+                if (pf.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مالی &&
+                    pf.Pftype <= (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد)
                 {
                     pf.PrePftype = pf.Pftype;
                     pf.Pftype = (int)PreFactorEnum.در_انتظار_تایید_مالی;
