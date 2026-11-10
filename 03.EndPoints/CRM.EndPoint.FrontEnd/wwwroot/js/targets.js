@@ -253,11 +253,36 @@
     function renderSummary() {
         const box = el('targetPreviousSummary');
         box.hidden = step === 0;
-        const annual = metricList().map(metric =>
-            `<span>${html(metric.title)}: <strong class="target-summary-number">${html(formatted(valueOf('yearly', metric.code) || '—'))}</strong> ${html(metric.unit)}</span>`).join('');
-        const current = step >= 1 && step <= 2 ? `<span>ماه ${months[activeMonth - 1]}</span>` : '';
-        el('targetSummaryContent').innerHTML = `<div class="target-summary-content">
-            <span>سال <strong class="target-summary-number">${html(state.year)}</strong></span>${annual}${current}</div>`;
+        el('targetSummaryYear').textContent = `سال ${state.year || '—'}`;
+
+        const metrics = metricList();
+        const groups = [
+            { title: 'فروش سالانه', codes: ['sales_amount', 'conversion_rate'] },
+            { title: 'مشتریان جدید', codes: ['new_customer_count', 'new_customer_sales'] },
+            { title: 'مشتریان بازجذب‌شده', codes: ['reactivated_customer_count', 'reactivated_customer_sales'] }
+        ];
+        const groupedCodes = new Set(groups.flatMap(group => group.codes));
+        const remaining = metrics.filter(metric => !groupedCodes.has(metric.code));
+        if (remaining.length)
+            groups.push({ title: 'سایر شاخص‌ها', codes: remaining.map(metric => metric.code) });
+
+        const cards = groups.map((group, index) => {
+            const rows = group.codes.map(code => metrics.find(metric => metric.code === code))
+                .filter(Boolean)
+                .map(metric => `<div class="target-summary-metric">
+                    <span class="target-summary-metric-label">${html(metric.title)}</span>
+                    <span class="target-summary-metric-value">
+                        <strong class="target-summary-number">${html(formatted(valueOf('yearly', metric.code) || '—'))}</strong>
+                        <span class="target-summary-unit">${html(metric.unit)}</span>
+                    </span>
+                </div>`).join('');
+            return rows ? `<section class="target-summary-card">
+                <h4><span aria-hidden="true">${index + 1}</span>${html(group.title)}</h4>
+                ${rows}
+            </section>` : '';
+        }).join('');
+
+        el('targetSummaryContent').innerHTML = `<div class="target-summary-content">${cards}</div>`;
     }
 
     function renderAnnual() {
