@@ -8,18 +8,20 @@
             <h1>مدیریت سطح دسترسی</h1>
             <p>تعریف انتیتی‌های قابل کنترل و مجوزهای مربوط به هر کدام</p>
         </div>
-        <button class="ac-btn ac-btn-primary" type="button" data-action="new-entity">
-            <i class="fas fa-plus" aria-hidden="true"></i> افزودن انتیتی
-        </button>
     </header>
 
     <div class="ac-layout">
         <aside class="ac-panel ac-entity-panel" aria-label="فهرست انتیتی‌ها">
             <div class="ac-panel-heading">
                 <h2>انتیتی‌ها <span class="ac-count" data-entity-count>۰</span></h2>
-                <button type="button" class="ac-icon-button" data-action="reload" title="تازه‌سازی" aria-label="تازه‌سازی">
-                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                </button>
+                <div class="ac-toolbar-actions">
+                    <button type="button" class="ac-btn ac-btn-primary" data-action="new-entity">
+                        <i class="fas fa-plus" aria-hidden="true"></i> افزودن انتیتی
+                    </button>
+                    <button type="button" class="ac-icon-button" data-action="reload" title="تازه‌سازی" aria-label="تازه‌سازی">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
             <label class="ac-search">
                 <i class="fas fa-search" aria-hidden="true"></i>
