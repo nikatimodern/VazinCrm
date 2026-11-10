@@ -10,6 +10,16 @@
         </div>
     </header>
 
+    <nav class="ac-main-tabs" role="tablist" aria-label="بخش‌های مدیریت سطح دسترسی">
+        <button type="button" id="acCatalogTab" data-main-tab="catalog" class="is-active"
+                role="tab" aria-controls="acCatalogPanel" aria-selected="true">انتیتی‌ها و دسترسی‌ها</button>
+        <button type="button" id="acRolesTab" data-main-tab="roles"
+                role="tab" aria-controls="acRolesPanel" aria-selected="false">دسترسی نقش‌ها</button>
+        <button type="button" id="acUsersTab" data-main-tab="users"
+                role="tab" aria-controls="acUsersPanel" aria-selected="false">دسترسی کاربران</button>
+    </nav>
+
+    <div id="acCatalogPanel" role="tabpanel" aria-labelledby="acCatalogTab">
     <div class="ac-layout">
         <aside class="ac-panel ac-entity-panel" aria-label="فهرست انتیتی‌ها">
             <div class="ac-panel-heading">
@@ -51,6 +61,68 @@
                 <div class="ac-empty"><i class="fas fa-shield-alt" aria-hidden="true"></i><p>یک انتیتی را از فهرست انتخاب کنید.</p></div>
             </div>
         </section>
+    </div>
+    </div>
+
+    <div id="acRolesPanel" role="tabpanel" aria-labelledby="acRolesTab" hidden>
+        <div class="ac-layout ac-role-layout">
+            <aside class="ac-panel" aria-label="فهرست نقش‌ها">
+                <div class="ac-panel-heading">
+                    <h2>نقش‌ها <span class="ac-count" data-role-count>۰</span></h2>
+                    <button class="ac-icon-button" type="button" data-action="reload-roles"
+                            title="تازه‌سازی نقش‌ها" aria-label="تازه‌سازی نقش‌ها">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <label class="ac-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" data-role-search placeholder="جست‌وجوی نقش..." aria-label="جست‌وجوی نقش" maxlength="150" />
+                </label>
+                <div class="ac-roles-list" data-roles-list aria-live="polite">
+                    <p class="ac-muted">برای مشاهده نقش‌ها این تب را انتخاب کنید.</p>
+                </div>
+            </aside>
+            <section class="ac-panel" aria-label="مجوزهای نقش انتخاب‌شده">
+                <div class="ac-panel-heading ac-role-detail-heading">
+                    <div>
+                        <h2 data-role-title>دسترسی‌های نقش</h2>
+                        <p data-role-subtitle>برای شروع یک نقش انتخاب کنید.</p>
+                    </div>
+                    <div class="ac-toolbar-actions">
+                        <button class="ac-btn ac-btn-muted" type="button" data-action="reset-role" disabled>بازگرداندن تغییرات</button>
+                        <button class="ac-btn ac-btn-primary" type="button" data-action="save-role" disabled>
+                            <i class="fas fa-save" aria-hidden="true"></i> ذخیره دسترسی‌ها
+                        </button>
+                    </div>
+                </div>
+                <div class="ac-role-tools">
+                    <label class="ac-search ac-role-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-role-permission-search placeholder="جست‌وجوی انتیتی یا مجوز..."
+                               aria-label="جست‌وجوی دسترسی‌ها" maxlength="150" />
+                    </label>
+                    <span class="ac-selected-count" data-role-selected>۰ دسترسی انتخاب شده</span>
+                </div>
+                <p class="ac-role-notice">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    این تنظیمات فعلاً فقط ثبت و نگهداری می‌شوند؛ اعمال مجوز روی عملیات برنامه در مرحله بعد انجام می‌شود.
+                </p>
+                <p class="ac-error ac-role-error" data-role-error role="alert" hidden></p>
+                <div class="ac-role-groups" data-role-groups aria-live="polite">
+                    <div class="ac-empty"><i class="fas fa-user-shield" aria-hidden="true"></i>
+                        <p>یک نقش انتخاب کنید تا مجوزهای انتیتی‌ها نمایش داده شوند.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="acUsersPanel" class="ac-users-panel" role="tabpanel" aria-labelledby="acUsersTab" hidden>
+        <div class="ac-panel ac-future-panel">
+            <i class="fas fa-users-cog" aria-hidden="true"></i>
+            <h2>دسترسی اختصاصی کاربران</h2>
+            <p>این بخش در مرحله بعد و پس از تأیید تخصیص مجوز به نقش‌ها تکمیل می‌شود.</p>
+        </div>
     </div>
 
     <div class="modal fade" id="acEntityModal" tabindex="-1" aria-hidden="true" aria-labelledby="acEntityModalTitle">
