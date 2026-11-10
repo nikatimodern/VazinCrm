@@ -46,19 +46,30 @@ public sealed class AccessCatalogRepository(UserContextDb db) : IAccessCatalogRe
     public async Task ReplaceActiveRolePermissionsAsync(string roleId, IReadOnlyCollection<Guid> activePermissionIds,
         IReadOnlyCollection<Guid> chosenIds, CancellationToken ct)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        var active = activePermissionIds.ToArray();
-        var desired = chosenIds.ToHashSet();
-        var existing = await db.AccessRolePermissions.Where(x => x.RoleId == roleId && active.Contains(x.AccessPermissionId))
-            .ToListAsync(ct);
-        var present = existing.Select(x => x.AccessPermissionId).ToHashSet();
-        db.AccessRolePermissions.RemoveRange(existing.Where(x => !desired.Contains(x.AccessPermissionId)));
-        foreach (var id in desired.Where(id => !present.Contains(id)))
-            db.AccessRolePermissions.Add(new AccessRolePermission { RoleId = roleId, AccessPermissionId = id });
-        try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 2601 or 2627)
-        { throw new AccessCatalogConflictException(); }
-        await transaction.CommitAsync(ct);
+        // UserContextDb enables SQL Server retry; a manual transaction must run inside its execution strategy.
+        var strategy = db.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retried transaction must not reuse entity state from the previous failed attempt.
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(ct);
+            var active = activePermissionIds.ToArray();
+            var desired = chosenIds.ToHashSet();
+            var existing = await db.AccessRolePermissions
+                .Where(x => x.RoleId == roleId && active.Contains(x.AccessPermissionId))
+                .ToListAsync(ct);
+            var present = existing.Select(x => x.AccessPermissionId).ToHashSet();
+            db.AccessRolePermissions.RemoveRange(existing.Where(x => !desired.Contains(x.AccessPermissionId)));
+            foreach (var id in desired.Where(id => !present.Contains(id)))
+                db.AccessRolePermissions.Add(new AccessRolePermission { RoleId = roleId, AccessPermissionId = id });
+            try { await db.SaveChangesAsync(ct); }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 2601 or 2627 or 547)
+            {
+                throw new AccessCatalogConflictException();
+            }
+            await transaction.CommitAsync(ct);
+            return true;
+        });
     }
 
     public void Add(AccessEntity entity) => db.AccessEntities.Add(entity);
