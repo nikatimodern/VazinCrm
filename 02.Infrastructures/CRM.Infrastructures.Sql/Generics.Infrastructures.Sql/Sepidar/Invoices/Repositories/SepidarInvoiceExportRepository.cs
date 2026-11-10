@@ -9,7 +9,6 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
-using CRM.Framework;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,18 +37,17 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         if (factor.ParentReturnedId.HasValue || factor.Returned)
             throw new InvalidOperationException($"صدور فاکتور برگشتی پشتیبانی نمی‌شود (شماره فاکتور: {factor.SerialNumber}).");
 
-        if (factor.SerialNumber <= 0)
-            throw new InvalidOperationException("شماره فاکتور CRM معتبر نیست.");
+        if (factor.SerialNumber <= 0 || !factor.DateMiladi.HasValue)
+            throw new InvalidOperationException("شماره یا تاریخ فاکتور CRM معتبر نیست.");
 
         var fiscalYear = await context.FiscalYears.AsNoTracking()
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
 
-        // The Sepidar invoice date is the issuance date, not the CRM document date.
-        var invoiceDate = DateTime.Today;
-        if (fiscalYear == null || invoiceDate < fiscalYear.StartDate.Date
-                               || invoiceDate > fiscalYear.EndDate.Date)
+        var invoiceDate = factor.DateMiladi.Value;
+        if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date
+                               || invoiceDate.Date > fiscalYear.EndDate.Date)
             throw new InvalidOperationException(
-                $"تاریخ روز ({BaseServices.GetDatePersian(invoiceDate)}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+                $"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
 
         if (quotation.CustomerPartyRef <= 0 || quotation.SaleTypeRef <= 0)
             throw new InvalidOperationException("مشتری یا نوع فروش پیش‌فاکتور سپیدار نامعتبر است.");
@@ -134,7 +132,7 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             QuotationNumber = quotation.Number,
             InvoiceNumber = null, // Assigned at creation from the last number in Sepidar fiscal year.
             InvoiceDate = invoiceDate,
-            InvoiceDateText = BaseServices.GetDatePersian(invoiceDate),
+            InvoiceDateText = factor.Date,
             CustomerName = quotation.CustomerRealName,
             SaleTypeRef = quotation.SaleTypeRef,
             FiscalYearRef = quotation.FiscalYearRef,
