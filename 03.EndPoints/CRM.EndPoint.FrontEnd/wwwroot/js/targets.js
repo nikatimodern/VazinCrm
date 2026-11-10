@@ -22,6 +22,7 @@
     let tableMode = false;
     let sending = false;
     let changed = false;
+    let closeConfirmationPending = false;
     let modalInstance;
     const form = el('targetWizardForm');
     const modal = el('targetWizard');
@@ -716,10 +717,25 @@
         renderMonthly();
     });
     modal.addEventListener('hide.bs.modal', event => {
-        if (!changed) return;
-        const approved = window.confirm('تغییرات ذخیره نشده‌اند. مودال بسته شود؟');
-        if (!approved) event.preventDefault();
-        else changed = false;
+        if (!changed || closeConfirmationPending) return;
+
+        event.preventDefault();
+        closeConfirmationPending = true;
+
+        confirmAlert({
+            title: 'تغییرات ذخیره نشده‌اند',
+            text: 'آیا می‌خواهید مودال بسته شود؟',
+            icon: 'warning',
+            confirmText: 'بله، ببند',
+            cancelText: 'ادامه ویرایش',
+        }).then(approved => {
+            if (!approved) return;
+
+            changed = false;
+            ModalToggle(modal, 'hide');
+        }).finally(() => {
+            closeConfirmationPending = false;
+        });
     });
     form.addEventListener('submit', event => event.preventDefault());
 
