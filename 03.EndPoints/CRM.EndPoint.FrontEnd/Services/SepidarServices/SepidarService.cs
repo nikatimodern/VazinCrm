@@ -1748,7 +1748,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     private async Task UpdateQuotationUsedQuantitiesAsync(
-        int quotationId, IReadOnlyCollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+        int quotationId, ICollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
