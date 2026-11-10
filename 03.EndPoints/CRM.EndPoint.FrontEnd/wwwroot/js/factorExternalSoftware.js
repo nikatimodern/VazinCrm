@@ -42,8 +42,6 @@ function renderExternalFactorPreview(data) {
     });
     const money = value => `${number(value)} ریال`;
 
-    // The invoice has no Sepidar number until the actual insert is committed.
-    const invoiceNumber = preview.invoiceNumber ?? "-";
     const date = preview.invoiceDateText || preview.invoiceDate?.split("T")[0] || "-";
     document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
         data.softwareTitle || "نرم‌افزار مالی";
@@ -70,8 +68,15 @@ function renderExternalFactorPreview(data) {
                     <strong>${escape(preview.saleTypeTitle)}</strong>
                 </div>
                 <div class="ex-preview-field">
-                    <span class="ex-preview-label">شماره فاکتور:</span>
-                    <strong>${escape(invoiceNumber)}</strong>
+                    <label class="ex-preview-label" for="externalFactorInvoiceNumber">شماره فاکتور:</label>
+                    <div class="d-flex flex-column" style="gap: 2px; max-width: 190px;">
+                        <input id="externalFactorInvoiceNumber" type="text" inputmode="numeric"
+                               autocomplete="off" maxlength="15" dir="ltr"
+                               class="form-control form-control-sm" style="height: 30px; padding: 3px 6px;"
+                               placeholder="خودکار (شماره بعدی)">
+                        <small id="externalFactorInvoiceNumberFeedback" class="text-muted" role="status"
+                               style="font-size: 11px;">خالی بماند، شماره بعدی ثبت می‌شود.</small>
+                    </div>
                 </div>
                 <div class="ex-preview-field">
                     <span class="ex-preview-label">تاریخ:</span>
@@ -137,20 +142,118 @@ function renderExternalFactorPreview(data) {
         </div>`;
 }
 
+
+function parseExternalFactorInvoiceNumber() {
+    const input = document.getElementById("externalFactorInvoiceNumber");
+    if (!input) return { error: "فیلد شماره فاکتور پیدا نشد." };
+
+    const normalized = input.value.trim()
+        .replace(/[۰-۹]/g, char => String(char.charCodeAt(0) - 0x06F0))
+        .replace(/[٠-٩]/g, char => String(char.charCodeAt(0) - 0x0660))
+        .replace(/[٬,\s]/g, "");
+
+    if (!normalized) return { number: null };
+    if (!/^\d+$/.test(normalized)) {
+        return { error: "شماره فاکتور باید فقط شامل رقم باشد." };
+    }
+
+    const number = Number(normalized);
+    if (!Number.isInteger(number) || number <= 0 || number > 2147483647) {
+        return { error: "شماره فاکتور باید عدد صحیح بین ۱ تا ۲٬۱۴۷٬۴۸۳٬۶۴۷ باشد." };
+    }
+
+    return { number };
+}
+
+function setExternalFactorInvoiceNumberFeedback(message, tone = "neutral") {
+    const feedback = document.getElementById("externalFactorInvoiceNumberFeedback");
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = tone === "error" ? "text-danger"
+        : tone === "success" ? "text-success" : "text-muted";
+}
+
+async function validateExternalFactorInvoiceNumber() {
+    const state = externalFactorExportState;
+    if (!state) return false;
+
+    const parsed = parseExternalFactorInvoiceNumber();
+    if (parsed.error) {
+        setExternalFactorInvoiceNumberFeedback(parsed.error, "error");
+        return false;
+    }
+
+    if (parsed.number == null) {
+        setExternalFactorInvoiceNumberFeedback("خالی بماند، شماره بعدی ثبت می‌شود.");
+        return true;
+    }
+
+    setExternalFactorInvoiceNumberFeedback("در حال بررسی شماره در سال مالی سپیدار...");
+    try {
+        const result = await sendApiRequest({
+            url: "/Factor/CheckExternalFactorInvoiceNumber",
+            method: "POST",
+            data: { ...state.request, invoiceNumber: parsed.number },
+            showLoading: false,
+            showError: false,
+            successMsg: null,
+        });
+
+        // Ignore a response for an old value or a preview modal that was closed.
+        if (externalFactorExportState !== state ||
+            parseExternalFactorInvoiceNumber().number !== parsed.number) return false;
+
+        if (!result || typeof result.available !== "boolean") {
+            setExternalFactorInvoiceNumberFeedback("بررسی شماره انجام نشد؛ دوباره تلاش کنید.", "error");
+            return false;
+        }
+
+        setExternalFactorInvoiceNumberFeedback(
+            result.message || (result.available ? "این شماره آزاد است." : "این شماره تکراری است."),
+            result.available ? "success" : "error");
+        return result.available;
+    } catch {
+        if (externalFactorExportState === state)
+            setExternalFactorInvoiceNumberFeedback("ارتباط برای بررسی شماره برقرار نشد.", "error");
+        return false;
+    }
+}
+
+document.addEventListener("input", event => {
+    if (event.target.id !== "externalFactorInvoiceNumber") return;
+    setExternalFactorInvoiceNumberFeedback("برای بررسی شماره از فیلد خارج شوید.");
+});
+
+document.addEventListener("change", async event => {
+    if (event.target.id !== "externalFactorInvoiceNumber") return;
+    await validateExternalFactorInvoiceNumber();
+});
+
 document.addEventListener("click", async event => {
     if (!event.target.closest("#confirmSendExternalFactorBtn")) return;
 
     const state = externalFactorExportState;
     if (!state || state.processing) return;
+
+    const parsed = parseExternalFactorInvoiceNumber();
+    if (parsed.error) {
+        setExternalFactorInvoiceNumberFeedback(parsed.error, "error");
+        toastifyError(parsed.error);
+        return;
+    }
+
     state.processing = true;
     const button = document.getElementById("confirmSendExternalFactorBtn");
     toggleElementsDisabled(button, true);
 
     try {
+        // Early check improves UX; the server checks again inside the write transaction.
+        if (parsed.number != null && !await validateExternalFactorInvoiceNumber()) return;
+
         const result = await sendApiRequest({
             url: "/Factor/SendFactorToExternalSoftware",
             method: "POST",
-            data: state.request,
+            data: { ...state.request, invoiceNumber: parsed.number },
             timeout: 0,
             successMsg: "فاکتور با موفقیت در سپیدار ثبت شد",
         });
