@@ -1633,7 +1633,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default, int? requestedInvoiceNumber = null)
     {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1661,7 +1661,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Serialize CRM exports, including inventory numbers and stock checks, per Sepidar database.
             await AcquireSepidarInvoiceExportLockAsync(ct); // جلوگیری از ثبت همزمان توسط مسیر خروجی CRM
 
-            var invoiceNumber = await GetNextInvoiceNumberAsync(preview.FiscalYearRef, ct);
+            var invoiceNumber = await ResolveInvoiceNumberAsync(preview.FiscalYearRef, requestedInvoiceNumber, ct);
             var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
             var now = DateTime.Now;
 
@@ -1673,7 +1673,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 CustomerRealName_En = quotation.CustomerRealName_En,
                 SaleTypeRef = quotation.SaleTypeRef,
                 PartyAddressRef = quotation.PartyAddressRef,
-                Number = invoiceNumber, // فعلا
+                Number = invoiceNumber,
                 Date = invoiceDate,
                 CurrencyRef = quotation.CurrencyRef,
                 SLRef = await GetAccountIdByMoeinCodeAsync("1201", ct), // حسابهاي دريافتني تجاري
@@ -1793,6 +1793,51 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
         // The caller saves these tracked changes together with the new invoice.
     }
+
+    // For a manual number, verify uniqueness inside the invoice/delivery transaction.
+    // The serializable transaction and CRM export application lock protect cooperating exports.
+    private async Task<int> ResolveInvoiceNumberAsync(
+        int fiscalYearId, int? requestedInvoiceNumber, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
+
+        if (!requestedInvoiceNumber.HasValue)
+            return await GetNextInvoiceNumberAsync(fiscalYearId, ct);
+
+        if (requestedInvoiceNumber.Value <= 0)
+            throw new InvalidOperationException("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+        if (!await IsInvoiceNumberAvailableForFiscalYearAsync(fiscalYearId, requestedInvoiceNumber.Value, ct))
+            throw new InvalidOperationException(
+                $"شماره فاکتور {requestedInvoiceNumber.Value} قبلاً در این سال مالی سپیدار ثبت شده است.");
+
+        return requestedInvoiceNumber.Value;
+    }
+
+    // Used only to provide early feedback in preview. Registration always rechecks.
+    public async Task<bool> IsInvoiceNumberAvailableAsync(
+        int quotationId, int requestedInvoiceNumber, CancellationToken ct = default)
+    {
+        if (requestedInvoiceNumber <= 0)
+            throw new InvalidOperationException("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+        var fiscalYearRef = await sepidarContext.Quotations.AsNoTracking()
+            .Where(x => x.QuotationId == quotationId)
+            .Select(x => (int?)x.FiscalYearRef)
+            .SingleOrDefaultAsync(ct);
+
+        if (!fiscalYearRef.HasValue)
+            throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
+
+        return await IsInvoiceNumberAvailableForFiscalYearAsync(
+            fiscalYearRef.Value, requestedInvoiceNumber, ct);
+    }
+
+    private async Task<bool> IsInvoiceNumberAvailableForFiscalYearAsync(
+        int fiscalYearId, int requestedInvoiceNumber, CancellationToken ct)
+        => !await sepidarContext.SalesInvoices.AsNoTracking()
+            .AnyAsync(x => x.FiscalYearRef == fiscalYearId && x.Number == requestedInvoiceNumber, ct);
 
     private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
     {
