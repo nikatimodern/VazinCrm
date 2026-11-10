@@ -3269,6 +3269,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
+        public async Task<IActionResult> CheckExternalFactorInvoiceNumber(
+            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                if (request?.InvoiceNumber is not int invoiceNumber || invoiceNumber <= 0)
+                    return BadRequest("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+                var (_, _, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+
+                var available = await sepidarService.IsInvoiceNumberAvailableAsync(quotationId, invoiceNumber, ct);
+                return Ok(new {
+                    available,
+                    message = available
+                        ? "شماره فاکتور در سال مالی پیش‌فاکتور سپیدار قابل استفاده است."
+                        : $"شماره فاکتور {invoiceNumber} قبلاً در این سال مالی سپیدار ثبت شده است."
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
         public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
             try
@@ -3287,7 +3315,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
-                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, ct);
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, ct, request.InvoiceNumber);
 
                 var invoiceAlreadyLinked = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
                     x.EntityId != factor.Id
