@@ -18,7 +18,7 @@
     const csrf = root.querySelector("input[name=__RequestVerificationToken]").value;
     let entities = [], permissions = [], currentEntityId = null, entityEditId = null, permissionEditId = null;
     let saving = false, requestGeneration = 0, modelSelect = null;
-    const cleanupScroll = typeof enableMomentumScrollScope === "function" ? enableMomentumScrollScope(root) : null;
+    const cleanupScroll = typeof enableMomentumScroll === "function" ? enableMomentumScroll(entityList) : null;
 
     const dispose = () => {
         lifetime.abort();
@@ -151,8 +151,7 @@
         }
         if (typeof TomSelect === "function") {
             modelSelect = new TomSelect(modelInput, {
-                create: false, allowEmptyOption: true, maxItems: 1, searchField: ["text", "value"],
-                dropdownParent: entityModal.querySelector(".modal-content")
+                create: false, allowEmptyOption: true, maxItems: 1, searchField: ["text", "value"]
             });
         }
     }
