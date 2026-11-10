@@ -23,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
+using CRM.Framework;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -1695,7 +1696,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 LastModifier = 1,
                 LastModificationDate = now,
                 FiscalYearRef = quotation.FiscalYearRef,
-                VoucherRef = null, // فعلا
+                VoucherRef = null, // Set after posting the sales accounting voucher.
                 BaseOnInventoryDelivery = false,
                 OrderRef = null,
                 ShouldControlCustomerCredit = true,
@@ -1736,6 +1737,16 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
             ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes);
 
+            // The accounting voucher, stock delivery and invoice must commit or roll back together.
+            var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct);
+            sepidarContext.Vouchers.Add(voucher);
+            await sepidarContext.SaveChangesAsync(ct);
+
+            // Set the invoice FK only after the voucher exists in SQL Server.
+            invoice.VoucherRef = voucher.VoucherId;
+            invoice.Version = 2;
+            await sepidarContext.SaveChangesAsync(ct);
+
             await transaction.CommitAsync(ct);
             return invoiceId;
         }
@@ -1744,6 +1755,158 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await transaction.RollbackAsync(ct);
             throw;
         }
+    }
+
+    private const string SalesInvoiceIssuerEntityName =
+        "SG.Sales.InvoiceManagement.Common.DsInvoice, " +
+        "SG.Sales.InvoiceManagement.Common, " +
+        "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+
+    private async Task<Voucher> AddSalesInvoiceVoucherAsync(SalesInvoiceRecord invoice, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("سند حسابداری فروش باید داخل تراکنش فاکتور ثبت شود.");
+
+        if (invoice.VoucherRef.HasValue)
+            throw new InvalidOperationException("برای این فاکتور قبلاً سند حسابداری ثبت شده است.");
+
+        // Standard domestic invoice: one receivable debit, sales credit, optional VAT credit.
+        // Special postings (such as account 843/924 in some native Sepidar vouchers)
+        // need a confirmed business rule and must not be inferred from the invoice total.
+        if (invoice.Addition != 0 || invoice.Duty != 0)
+            throw new InvalidOperationException("ثبت سند حسابداری فاکتور با اضافات یا عوارض نیاز به تنظیم حساب‌های مربوطه دارد.");
+
+        var saleAmount = invoice.Price - invoice.Discount;
+        var taxAmount = invoice.Tax;
+        var netAmount = invoice.NetPriceInBaseCurrency;
+
+        if (saleAmount <= 0 || taxAmount < 0 || netAmount <= 0 || saleAmount + taxAmount != netAmount)
+            throw new InvalidOperationException("مبالغ فروش، مالیات و مبلغ نهایی فاکتور برای صدور سند حسابداری تراز نیستند.");
+
+        var customer = await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == invoice.CustomerPartyRef)
+            .Select(x => new { x.DLRef })
+            .SingleOrDefaultAsync(ct);
+        if (customer is null || customer.DLRef <= 0 ||
+            !await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == customer.DLRef && x.IsActive, ct))
+            throw new InvalidOperationException("حساب تفصیلی فعال مشتری برای سند فروش در سپیدار پیدا نشد.");
+
+        var receivableAccountId = await GetAccountIdByMoeinCodeAsync("1201", ct);
+        var salesAccountId = await GetAccountIdByMoeinCodeAsync("5001", ct);
+        int? taxAccountId = taxAmount > 0
+            ? await GetAccountIdByMoeinCodeAsync("3112", ct)
+            : null;
+
+        var accountIds = new[] { receivableAccountId, salesAccountId }
+            .Concat(taxAccountId.HasValue ? new[] { taxAccountId.Value } : Array.Empty<int>())
+            .ToArray();
+        var accountStates = await sepidarContext.Accounts.AsNoTracking()
+            .Where(x => accountIds.Contains(x.AccountId))
+            .Select(x => new { x.AccountId, x.IsActive, x.HasTracking })
+            .ToListAsync(ct);
+
+        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
+            throw new InvalidOperationException(
+                "یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
+
+        // In the confirmed Sepidar sample, code 6011 is the tax authority DL (232).
+        // Resolve by code, not hard-coded DLId; fail safely if not configured in Sepidar 2.
+        int? taxDlRef = null;
+        if (taxAccountId.HasValue)
+        {
+            var taxDl = await sepidarContext.DLs.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Code == "6011", ct);
+            if (taxDl == null || !taxDl.IsActive)
+                throw new InvalidOperationException(
+                    "تفصیلی اداره امور مالیاتی با کد 6011 در سپیدار پیدا نشد یا غیرفعال است. تنظیمات تفصیلی مالیات را بررسی کنید.");
+            taxDlRef = taxDl.DLId;
+        }
+
+        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct)
+            ?? throw new InvalidOperationException("نوع فروش فاکتور سپیدار پیدا نشد.");
+        var baseDescription =
+            $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType.Title}";
+        var now = DateTime.Now;
+        var voucherNumber = await GetNextVoucherNumberAsync(invoice.FiscalYearRef, ct);
+        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucher = new Voucher {
+            VoucherId = voucherId,
+            Number = voucherNumber,
+            Date = invoice.Date,
+            ReferenceNumber = voucherNumber,
+            SecondaryNumber = null,
+            State = 1,
+            Type = 2,
+            FiscalYearRef = invoice.FiscalYearRef,
+            Description = baseDescription[..Math.Min(baseDescription.Length, 250)],
+            Description_En = baseDescription[..Math.Min(baseDescription.Length, 250)],
+            Version = 1,
+            Creator = invoice.Creator,
+            CreationDate = now,
+            LastModifier = invoice.LastModifier,
+            LastModificationDate = now,
+            DailyNumber = await GetNextVoucherDailyNumberAsync(invoice.Date, invoice.FiscalYearRef, ct),
+            IssuerSystem = 0, // Observed in native invoice accounting vouchers.
+            IsMerged = false,
+            MergedIssuerSystem = null
+        };
+
+        var customerDescription = baseDescription;
+        var salesDescription = $"{baseDescription} به {invoice.CustomerRealName}".Trim();
+        customerDescription = customerDescription[..Math.Min(customerDescription.Length, 250)];
+        salesDescription = salesDescription[..Math.Min(salesDescription.Length, 250)];
+
+        var items = new List<VoucherItem>();
+        var rowCount = taxAccountId.HasValue ? 3 : 2;
+        var lastVoucherItemId = await GetNextIdAsync("ACC.VoucherItem", rowCount, ct);
+        var firstVoucherItemId = lastVoucherItemId - rowCount + 1;
+
+        // Existing GetVoucherItemDlRefAsync respects the account's HasDL setting.
+        var customerDlRef = await GetVoucherItemDlRefAsync(receivableAccountId, customer.DLRef, ct);
+        if (!customerDlRef.HasValue)
+            throw new InvalidOperationException("حساب دریافتنی فروش باید دارای تفصیلی مشتری باشد.");
+
+        void AddRow(int accountSlRef, int? dlRef, decimal debit, decimal credit, string description)
+        {
+            items.Add(new VoucherItem {
+                VoucherItemId = firstVoucherItemId + items.Count,
+                VoucherRef = voucherId,
+                RowNumber = items.Count + 1,
+                AccountSLRef = accountSlRef,
+                DLRef = dlRef,
+                Debit = debit,
+                Credit = credit,
+                CurrencyRef = null,
+                CurrencyRate = null,
+                CurrencyDebit = null,
+                CurrencyCredit = null,
+                TrackingNumber = null,
+                TrackingDate = null,
+                IssuerEntityName = SalesInvoiceIssuerEntityName,
+                IssuerEntityRef = invoice.InvoiceId,
+                Description = description,
+                Description_En = description,
+                Version = 1
+            });
+        }
+
+        AddRow(receivableAccountId, customerDlRef, netAmount, 0m, customerDescription);
+        var salesDlRef = await GetVoucherItemDlRefAsync(salesAccountId, customer.DLRef, ct);
+        AddRow(salesAccountId, salesDlRef, 0m, saleAmount, salesDescription);
+
+        if (taxAccountId.HasValue)
+        {
+            var vatDlRef = await GetVoucherItemDlRefAsync(taxAccountId.Value, taxDlRef!.Value, ct);
+            if (!vatDlRef.HasValue)
+                throw new InvalidOperationException("حساب مالیات فروش باید تفصیلی اداره مالیاتی داشته باشد.");
+            AddRow(taxAccountId.Value, vatDlRef, 0m, taxAmount, salesDescription);
+        }
+
+        if (items.Sum(x => x.Debit ?? 0m) != items.Sum(x => x.Credit ?? 0m))
+            throw new InvalidOperationException("سند حسابداری فاکتور تراز نیست.");
+
+        voucher.VoucherItems = items;
+        return voucher;
     }
 
     private async Task UpdateQuotationUsedQuantitiesAsync(
