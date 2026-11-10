@@ -69,14 +69,9 @@ function renderExternalFactorPreview(data) {
                 </div>
                 <div class="ex-preview-field">
                     <label class="ex-preview-label" for="externalFactorInvoiceNumber">شماره فاکتور:</label>
-                    <div class="d-flex flex-column" style="gap: 2px; max-width: 190px;">
-                        <input id="externalFactorInvoiceNumber" type="text" inputmode="numeric"
-                               autocomplete="off" maxlength="15" dir="ltr"
-                               class="form-control form-control-sm" style="height: 30px; padding: 3px 6px;"
-                               placeholder="خودکار (شماره بعدی)">
-                        <small id="externalFactorInvoiceNumberFeedback" class="text-muted" role="status"
-                               style="font-size: 11px;">خالی بماند، شماره بعدی ثبت می‌شود.</small>
-                    </div>
+                    <input id="externalFactorInvoiceNumber" type="text" inputmode="numeric"
+                           autocomplete="off" maxlength="15" dir="ltr"
+                           class="ex-preview-invoice-number" placeholder="-">
                 </div>
                 <div class="ex-preview-field">
                     <span class="ex-preview-label">تاریخ:</span>
@@ -165,12 +160,9 @@ function parseExternalFactorInvoiceNumber() {
     return { number };
 }
 
-function setExternalFactorInvoiceNumberFeedback(message, tone = "neutral") {
-    const feedback = document.getElementById("externalFactorInvoiceNumberFeedback");
-    if (!feedback) return;
-    feedback.textContent = message;
-    feedback.className = tone === "error" ? "text-danger"
-        : tone === "success" ? "text-success" : "text-muted";
+function setExternalFactorInvoiceNumberInvalid(invalid) {
+    document.getElementById("externalFactorInvoiceNumber")
+        ?.classList.toggle("is-invalid", invalid);
 }
 
 async function validateExternalFactorInvoiceNumber() {
@@ -179,16 +171,16 @@ async function validateExternalFactorInvoiceNumber() {
 
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
-        setExternalFactorInvoiceNumberFeedback(parsed.error, "error");
+        setExternalFactorInvoiceNumberInvalid(true);
+        toastifyError(parsed.error);
         return false;
     }
 
     if (parsed.number == null) {
-        setExternalFactorInvoiceNumberFeedback("خالی بماند، شماره بعدی ثبت می‌شود.");
+        setExternalFactorInvoiceNumberInvalid(false);
         return true;
     }
 
-    setExternalFactorInvoiceNumberFeedback("در حال بررسی شماره در سال مالی سپیدار...");
     try {
         const result = await sendApiRequest({
             url: "/Factor/CheckExternalFactorInvoiceNumber",
@@ -199,33 +191,39 @@ async function validateExternalFactorInvoiceNumber() {
             successMsg: null,
         });
 
-        // Ignore a response for an old value or a preview modal that was closed.
+        // Do not display a stale error after the number changes or the modal closes.
         if (externalFactorExportState !== state ||
             parseExternalFactorInvoiceNumber().number !== parsed.number) return false;
 
         if (!result || typeof result.available !== "boolean") {
-            setExternalFactorInvoiceNumberFeedback("بررسی شماره انجام نشد؛ دوباره تلاش کنید.", "error");
+            setExternalFactorInvoiceNumberInvalid(true);
+            toastifyError("امکان بررسی شماره فاکتور وجود ندارد.");
             return false;
         }
 
-        setExternalFactorInvoiceNumberFeedback(
-            result.message || (result.available ? "این شماره آزاد است." : "این شماره تکراری است."),
-            result.available ? "success" : "error");
+        setExternalFactorInvoiceNumberInvalid(!result.available);
+        if (!result.available) {
+            toastifyError(result.message ||
+                `شماره فاکتور ${parsed.number} قبلاً در این سال مالی ثبت شده است.`);
+        }
         return result.available;
     } catch {
-        if (externalFactorExportState === state)
-            setExternalFactorInvoiceNumberFeedback("ارتباط برای بررسی شماره برقرار نشد.", "error");
+        if (externalFactorExportState === state) {
+            setExternalFactorInvoiceNumberInvalid(true);
+            toastifyError("امکان بررسی شماره فاکتور وجود ندارد.");
+        }
         return false;
     }
 }
 
 document.addEventListener("input", event => {
     if (event.target.id !== "externalFactorInvoiceNumber") return;
-    setExternalFactorInvoiceNumberFeedback("برای بررسی شماره از فیلد خارج شوید.");
+    setExternalFactorInvoiceNumberInvalid(false);
 });
 
 document.addEventListener("change", async event => {
     if (event.target.id !== "externalFactorInvoiceNumber") return;
+    // A blank input preserves automatic numbering and needs no backend check.
     await validateExternalFactorInvoiceNumber();
 });
 
@@ -237,7 +235,7 @@ document.addEventListener("click", async event => {
 
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
-        setExternalFactorInvoiceNumberFeedback(parsed.error, "error");
+        setExternalFactorInvoiceNumberInvalid(true);
         toastifyError(parsed.error);
         return;
     }
