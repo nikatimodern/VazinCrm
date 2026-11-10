@@ -155,7 +155,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 8px;
-    padding-block: 6px;
+    padding-block: 0;
     border-block-end: 1px solid #edf0f3;
 }
 .target-summary-metric:last-child { border-block-end: 0; }
@@ -163,7 +163,7 @@
     min-width: 0;
     color: var(--target-muted);
     font-size: 11px;
-    line-height: 1.6;
+    line-height: 1.3;
 }
 .target-summary-metric-value {
     display: inline-flex;
