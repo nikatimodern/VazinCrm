@@ -37,7 +37,9 @@ async function sendFactorToExternalSoftware(factorId) {
 function renderExternalFactorPreview(data) {
     const preview = data.preview;
     const escape = value => escapeHtml(String(value ?? "-"));
-    const number = value => Number(value ?? 0).toLocaleString("fa-IR");
+    const number = value => Number(value ?? 0).toLocaleString("fa-IR", {
+        maximumFractionDigits: 4,
+    });
     const money = value => `${number(value)} ریال`;
 
     // The invoice has no Sepidar number until the actual insert is committed.
@@ -94,6 +96,7 @@ function renderExternalFactorPreview(data) {
                             <th>انبار</th>
                             <th>تعداد</th>
                             <th>قیمت واحد</th>
+                            <th>مبلغ کالا</th>
                             <th>تخفیف</th>
                             <th>مالیات</th>
                             <th>مبلغ نهایی</th>
@@ -108,6 +111,7 @@ function renderExternalFactorPreview(data) {
                                 <td>${escape(item.stockTitle)}</td>
                                 <td>${number(item.quantity)}</td>
                                 <td>${number(item.fee)}</td>
+                                <td>${number(item.price)}</td>
                                 <td>${number(item.discount)}</td>
                                 <td>${number(item.tax)}</td>
                                 <td class="fbold">${number(item.netPrice)}</td>
