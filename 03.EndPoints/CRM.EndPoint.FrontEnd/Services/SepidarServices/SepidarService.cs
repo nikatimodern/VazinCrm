@@ -1781,13 +1781,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         {
             var used = quotationItem.UsedQuantity ?? 0m;
             var added = quantities[quotationItem.QuotationItemID];
-            if (used < 0m || used > quotationItem.Quantity || added > quotationItem.Quantity - used)
+            // The CRM invoice may legitimately exceed the quotation's quantity.
+            // UsedQuantity is the cumulative invoiced quantity, not a cap.
+            if (used < 0m)
                 throw new InvalidOperationException(
-                    $"ردیف {quotationItem.RowID}: مقدار درخواستی ({FormatInventoryQuantity(added)}) " +
-                    $"از مانده قابل فاکتور پیش‌فاکتور سپیدار ({FormatInventoryQuantity(quotationItem.Quantity - used)}) بیشتر است.");
+                    $"ردیف {quotationItem.RowID}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
 
-            // Never overwrite previous partial invoices; accumulate their quantity.
-            quotationItem.UsedQuantity = used + added;
+            quotationItem.UsedQuantity = checked(used + added);
         }
 
         // The caller saves these tracked changes together with the new invoice.
