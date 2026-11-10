@@ -150,7 +150,7 @@ public class PreFactorService(
         if (targetDict.TryGetValue(pf.Pftype, out var newStatus))
         {
             if (type == 2)
-                pf.RecordReturn();
+                pf.RecordReturn(newStatus);
 
             pf.PrePftype = currentStatus;
             pf.Pftype = newStatus;
