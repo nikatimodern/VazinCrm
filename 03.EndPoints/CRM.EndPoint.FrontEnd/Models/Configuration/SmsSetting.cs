@@ -8,6 +8,7 @@
 
     public class SmsPatterns {
         public string AcceptPfactorToCustomer { get; set; }
+        public string ReacceptEditedPfactorToCustomer { get; set; }
         public string AcceptedSalesAdminToCustomer { get; set; }
         public string ReadyToDeliverToCustomer { get; set; }
         public string OtpLogin { get; set; }

@@ -1394,7 +1394,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             await db.SaveChangesAsync();
             //var res = await smsServ.SendAcceptPfactorToCustomer(toNumber, pfactor.SerialNumber, id);
             await smsQueue.QueueAsync(new SmsJob {
-                PatternType = SmsPatternType.AcceptPfactorToCustomer,
+                PatternType = pfactor.AcceptedDate.HasValue
+                    ? SmsPatternType.ReacceptEditedPfactorToCustomer
+                    : SmsPatternType.AcceptPfactorToCustomer,
                 Mobile = toNumber,
                 SerialNumber = pfactor.SerialNumber.ToString(),
                 PfactorId = id,
