@@ -41,7 +41,7 @@
                         }
                         <div class="pf-finance-card__controls supply-card__controls">
                             @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
-                                <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-outline-success")" style="min-width: 90px"
+                                <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-success")" style="min-width: 90px"
                                         onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
                                     @if (!item.SupplyMismatch && !item.NoSupply) {
                                         <i class="fa fa-check me-1" aria-hidden="true"></i>
@@ -70,7 +70,7 @@
                             </div>
 
                             @if (item.Pftype is (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش or (int)PreFactorEnum.در_انتظار_تایید_مالی or (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
-                                <button type="button" style="border-radius:5px;height:fit-content; " class="buttonGreen" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">
+                                <button type="button" class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">
                                     حواله تولید
                                 </button>
                             }
