@@ -1052,21 +1052,11 @@
 	gap: 6px;
 	padding-block: 5px;
 }
-.factor-card__financial-actions {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	flex-wrap: wrap;
-	gap: 6px;
-	padding-top: 7px;
-	margin-top: 4px;
-	border-top: 1px solid var(--pf-border);
-}
-.factor-card__status { display:flex; align-items:center; gap:6px; min-width:0; }
-.factor-card__transfer-required { display:inline-block; max-width:190px; font-size:10px; line-height:1.35; color:#ae2534; }
+.factor-card__operation-row { align-items:center; }
+.factor-card__status { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; min-width:0; }
 .factor-card__status .buttonGray:disabled { opacity:.5; cursor:not-allowed; }
 .factor-card__status:not(:has(> *)) { display:none; }
-.factor-card__financial-actions button,
+.factor-card__operation-row .factor-card__status button,
 .factor-card__external button:is(.buttonBlue, .buttonBlue2) {
 	min-height: 28px;
 	margin: 0;
@@ -1075,11 +1065,6 @@
 	box-shadow: none;
 	white-space: nowrap;
 	font: 500 11px/1.5 IRANSansMedium;
-}
-.factor-card__financial-actions .sf-sales-manage-allocations {
-	background: var(--pf-card-background);
-	border-color: var(--pf-border);
-	color: var(--pf-operation-accent);
 }
 .factor-card__status .buttonCancel3 { background:#C2185B; color:#fff; }
 .factor-card__status .buttonGray { background:var(--pf-operation-accent); color:#fff; }
