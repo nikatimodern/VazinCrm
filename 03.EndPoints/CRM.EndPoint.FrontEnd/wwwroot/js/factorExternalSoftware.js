@@ -1,3 +1,83 @@
+let externalFactorHistory = { factorId: null, serialNumber: null };
+
+async function showFactorExternalSoftwaresModal(factorId, serialNumber) {
+    if (!factorId) return;
+
+    externalFactorHistory = { factorId, serialNumber };
+    const modal = document.getElementById("externalSoftwareFactorsModal");
+    if (!modal) return;
+
+    modal.querySelector(".modal-title").textContent = `مدیریت ارسال فاکتور ${serialNumber}`;
+    document.getElementById("externalSoftwareFactors").innerHTML =
+        '<div class="external-pf-empty">در حال دریافت سوابق ثبت...</div>';
+
+    ModalToggle("externalSoftwareFactorsModal", "show");
+    await loadFactorExternalSoftwares(factorId);
+}
+
+async function loadFactorExternalSoftwares(factorId) {
+    await sendApiRequest({
+        url: "/Factor/GetExternalSoftwareFactors",
+        params: { factorId },
+        onSuccess: result => {
+            if (externalFactorHistory.factorId === factorId)
+                renderExternalSoftwareFactors(result.data ?? []);
+        },
+    });
+}
+
+function renderExternalSoftwareFactors(items = []) {
+    const container = document.getElementById("externalSoftwareFactors");
+    if (!container) return;
+
+    if (!items.length) {
+        container.innerHTML =
+            '<div class="external-pf-empty">این فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.</div>';
+        return;
+    }
+
+    const escape = value => escapeHtml(String(value ?? "—"));
+    container.innerHTML = items.map(item => `
+        <div class="external-pf-card">
+            <div class="external-pf-info">
+                <div class="external-pf-field">
+                    <span class="external-pf-label">نرم‌افزار:</span>
+                    <span class="external-pf-value external-pf-software">${escape(item.externalSoftwareTitle)}</span>
+                </div>
+                <div class="external-pf-field">
+                    <span class="external-pf-label">تاریخ ثبت:</span>
+                    <span class="external-pf-value">${escape(item.creationDate)}</span>
+                </div>
+                <div class="external-pf-field">
+                    <span class="external-pf-label">شماره فاکتور:</span>
+                    <span class="external-pf-value">${escape(item.externalFactorNumber)}</span>
+                </div>
+                <div class="external-pf-field">
+                    <span class="external-pf-label">مشتری:</span>
+                    <span class="external-pf-value" title="${escape(item.customerName)}">${escape(item.customerName)}</span>
+                </div>
+            </div>
+            ${item.viewUrl ? `
+                <div class="external-pf-actions">
+                    <a class="external-pf-action external-pf-view" href="${escape(item.viewUrl)}"
+                       target="_blank" rel="noopener noreferrer" aria-label="مشاهده فاکتور ثبت شده">
+                        <i class="fa fa-eye" aria-hidden="true"></i>
+                        مشاهده
+                    </a>
+                </div>
+            ` : ""}
+        </div>
+    `).join("");
+}
+
+document.addEventListener("click", async event => {
+    if (!event.target.closest("#sendExternalFactorBtn")) return;
+    if (!externalFactorHistory.factorId) return;
+
+    ModalToggle("externalSoftwareFactorsModal", "hide");
+    await sendFactorToExternalSoftware(externalFactorHistory.factorId);
+});
+
 let externalFactorExportState = null;
 
 async function sendFactorToExternalSoftware(factorId) {
@@ -256,6 +336,14 @@ document.addEventListener("click", async event => {
         });
         if (!result?.invoiceId) return;
         
+        // Return to the financial history after the confirmation modal finishes closing.
+        const shouldReturnToHistory = externalFactorHistory.factorId === state.request.factorId;
+        if (shouldReturnToHistory) {
+            document.getElementById("sendFactorToExternalSoftwareModal")
+                .addEventListener("hidden.bs.modal", () => {
+                    showFactorExternalSoftwaresModal(state.request.factorId, externalFactorHistory.serialNumber);
+                }, { once: true });
+        }
         ModalToggle("sendFactorToExternalSoftwareModal", "hide");
         if (typeof refreshFactorPartial === "function") await refreshFactorPartial();
     } finally {
