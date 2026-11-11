@@ -57,6 +57,12 @@
                                 <label style="font-family:'IRANSansBold';">@item.PfactorSerialNumber</label>
                             }
                         </div>
+                        @if (item.DealSerialNumber != null) {
+                            <div class="justify-content-between" style="display:flex;align-items:center;gap:6px">
+                                <label style="color:gray">سریال سفارش:</label>
+                                <label style="font-family:'IRANSansBold'">@item.DealSerialNumber</label>
+                            </div>
+                        }
                         @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
                             <div class="justify-content-between flex-wrap" style="display:flex;align-items:center;gap:6px">
                                 <label style="color:gray">فاکتور مالی :</label>
@@ -90,10 +96,7 @@
                             <label style="color:gray">کارشناس فروش:</label>
                             <label style="text-align:center; font-family:'IRANSansBold'">@item.SelerFullName</label>
                         </div>
-                        <div class="flex-row " style=" display:flex;align-items:center; justify-content:center;gap:6px;">
-                            <label style="color:gray">ثبت شده توسط:</label>
-                            <label style="font-family:'IRANSansBold'">@item.UserCreator</label>
-                        </div>
+
                     </div>
 
                     <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
