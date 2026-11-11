@@ -27,7 +27,9 @@ public sealed class ReleaseNoteRepository(CRMContextDb db) : IReleaseNoteReposit
         Convert.ToBase64String(x.RowVersion), x.Roles.Select(r => r.RoleName).ToList(),
         x.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).Select(i => new ReleaseNoteItemData(i.Id, i.Title, i.Description, i.Type, i.SortOrder, i.ImageUrl, i.LearnMoreUrl)).ToList()));
     private static Task<List<ReleaseNoteData>> Project(IQueryable<ReleaseNote> query, CancellationToken ct) => Projection(query).ToListAsync(ct);
-    public async Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
+    private static Version ParseVersion(string version) =>
+        Version.TryParse(version.Split('-')[0], out var parsed) ? parsed : new Version(0, 0, 0);
+    public Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
     {
         var q = db.ReleaseNotes.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(x => x.Title.Contains(search) || x.Version.Contains(search));
@@ -41,16 +43,37 @@ public sealed class ReleaseNoteRepository(CRMContextDb db) : IReleaseNoteReposit
             .ToList();
     }
     public async Task<ReleaseNoteData?> GetAsync(Guid id, CancellationToken ct) => (await Project(db.ReleaseNotes.AsNoTracking().Where(x => x.Id == id), ct)).SingleOrDefault();
-    public Task<List<ReleaseNoteData>> GetVisibleAsync(ReleaseNoteReader reader, bool unseenOnly, DateTime now, CancellationToken ct) =>
-        Project(Visible(db.ReleaseNotes.AsNoTracking(), reader, now, unseenOnly).OrderByDescending(x => unseenOnly && x.IsImportant).ThenByDescending(x => x.PublishDate).ThenByDescending(x => x.CreateDate), ct);
-    public Task<string?> GetLatestVisibleVersionAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct) =>
-        Visible(db.ReleaseNotes.AsNoTracking(), reader, now, false)
-            .OrderByDescending(x => x.PublishDate).ThenByDescending(x => x.CreateDate)
-            .Select(x => x.Version).FirstOrDefaultAsync(ct);
-    public Task<ReleaseNoteVersionInfo?> GetLatestVisibleVersionInfoAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct) =>
-        Visible(db.ReleaseNotes.AsNoTracking(), reader, now, false)
-            .OrderByDescending(x => x.PublishDate).ThenByDescending(x => x.CreateDate)
-            .Select(x => new ReleaseNoteVersionInfo(x.Version, x.PublishDate)).FirstOrDefaultAsync(ct);
+    public async Task<List<ReleaseNoteData>> GetVisibleAsync(ReleaseNoteReader reader, bool unseenOnly, DateTime now, CancellationToken ct)
+    {
+        var releases = await Project(Visible(db.ReleaseNotes.AsNoTracking(), reader, now, unseenOnly), ct);
+        return releases
+            .OrderByDescending(x => unseenOnly && x.IsImportant)
+            .ThenByDescending(x => ParseVersion(x.Version))
+            .ThenBy(x => x.Version.Contains('-'))
+            .ThenByDescending(x => x.PublishDate)
+            .ThenByDescending(x => x.CreateDate)
+            .ToList();
+    }
+    public async Task<string?> GetLatestVisibleVersionAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct) =>
+        (await GetLatestVisibleVersionInfoAsync(reader, now, ct))?.Version;
+
+    public async Task<ReleaseNoteVersionInfo?> GetLatestVisibleVersionInfoAsync(ReleaseNoteReader reader, DateTime now, CancellationToken ct)
+    {
+        // SQL string ordering treats 7.5.9 as newer than 7.5.10. Only retrieve the fields needed
+        // and compare the numeric version components after the visibility filter is applied.
+        var releases = await Visible(db.ReleaseNotes.AsNoTracking(), reader, now, false)
+            .Select(x => new { x.Version, x.PublishDate, x.CreateDate })
+            .ToListAsync(ct);
+
+        var latest = releases
+            .OrderByDescending(x => ParseVersion(x.Version))
+            .ThenBy(x => x.Version.Contains('-')) // Stable release precedes a prerelease of the same version.
+            .ThenByDescending(x => x.PublishDate)
+            .ThenByDescending(x => x.CreateDate)
+            .FirstOrDefault();
+
+        return latest is null ? null : new ReleaseNoteVersionInfo(latest.Version, latest.PublishDate);
+    }
     public async Task<(ReleaseNoteMutation Result, Guid Id)> SaveDraftAsync(ReleaseNote draft, Guid? id, byte[]? expectedVersion, CancellationToken ct)
     {
         var entity = draft;
