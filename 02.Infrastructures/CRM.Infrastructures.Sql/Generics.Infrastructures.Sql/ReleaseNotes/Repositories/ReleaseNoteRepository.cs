@@ -29,7 +29,7 @@ public sealed class ReleaseNoteRepository(CRMContextDb db) : IReleaseNoteReposit
     private static Task<List<ReleaseNoteData>> Project(IQueryable<ReleaseNote> query, CancellationToken ct) => Projection(query).ToListAsync(ct);
     private static Version ParseVersion(string version) =>
         Version.TryParse(version.Split('-')[0], out var parsed) ? parsed : new Version(0, 0, 0);
-    public Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
+    public async Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
     {
         var q = db.ReleaseNotes.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(x => x.Title.Contains(search) || x.Version.Contains(search));
