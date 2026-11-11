@@ -98,12 +98,6 @@
                         </div>
                     }
                     <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@(string.IsNullOrWhiteSpace(item.UserCreator) ? "-" : item.UserCreator)</strong></div>
-                    @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
-                        <div class="factor-card__external">
-                            <label style="color:gray">فاکتور مالی :</label>
-                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                        </div>
-                    }
 
                 </section>
             </div>
