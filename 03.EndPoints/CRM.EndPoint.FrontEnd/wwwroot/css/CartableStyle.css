@@ -1280,6 +1280,43 @@
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
 
+/* Supply invoices: keep the toolbar fixed and let only the DataTables body scroll. */
+#cartableWorkspace #CTaminExpertId:has(#TaminInvoiceTab-pane.active) {
+    overflow: hidden;
+}
+
+#cartableWorkspace #CTaminExpertId:has(#TaminInvoiceTab-pane.active) :is(
+    #tabContentTaminExperts,
+    #TaminInvoiceTab-pane.active,
+    #TaminInvoiceTab-pane.active > .w-100,
+    #taminInvoiceContentId,
+    #taminInvoiceContentId .dt-container,
+    #taminInvoiceContentId .dt-scroll
+) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+#cartableWorkspace #CTaminExpertId #TaminInvoiceTab-pane.active > .w-100 > .cartable-list-toolbar,
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId .dt-scroll-head {
+    flex: 0 0 auto;
+}
+
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId {
+    overflow: hidden;
+}
+
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId .dt-scroll-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto;
+}
+
 /* The wrapper has no layout effect on desktop; only mobile combines tabs and controls. */
 #cartableWorkspace .cartable-tamin-nav-row {
     display: contents;
