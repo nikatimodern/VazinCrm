@@ -16,6 +16,7 @@ using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Infrastructures.Sql.Querying;
 using Microsoft.EntityFrameworkCore;
 using CRM.Core.Domain.Factors.Enum;
+using CRM.Core.Domain.ASettings.Enums;
 
 namespace CRM.Infrastructures.Sql.Cartables.Repositories;
 public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
@@ -109,6 +110,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         }
 
         var fList = await fListQ.AsNoTracking().ToListAsync(ct);
+        await FillExternalFinancialMappingStateAsync(fList, ct);
         return fList;
     }
 
