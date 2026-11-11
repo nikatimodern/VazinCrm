@@ -326,45 +326,67 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(moeinCode))
-            throw new Exception("کد معین خالی است.");
+            throw new InvalidOperationException("کد معین خالی است.");
 
-        // مثال:
-        // 7704 -> 7 / 7 / 04
+        moeinCode = moeinCode.Trim();
 
-        var parts = new List<string> {
-            moeinCode.Substring(0, 1)
+        // Sepidar stores the lengths of account group, general ledger and subsidiary
+        // segments separately. Read the selected Sepidar database's own settings.
+        string[] lengthKeys = ["CLAccountLength", "GLAccountLength", "SLAccountLength"];
+        var configuredLengths = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => lengthKeys.Contains(x.Key.Trim()))
+            .Select(x => new { x.Key, x.Value })
+            .ToListAsync(cancellationToken);
+
+        int GetRequiredLength(string key)
+        {
+            var matches = configuredLengths
+                .Where(x => x.Key.Trim() == key)
+                .ToList();
+
+            if (matches.Count != 1 ||
+                !int.TryParse(matches[0].Value?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var length) ||
+                length <= 0)
+                throw new InvalidOperationException($"طول کد حساب در تنظیم «{key}» سپیدار پیدا نشد یا نامعتبر است.");
+
+            return length;
+        }
+
+        var groupLength = GetRequiredLength("CLAccountLength");
+        var generalLength = GetRequiredLength("GLAccountLength");
+        var subsidiaryLength = GetRequiredLength("SLAccountLength");
+        var totalLength = checked(groupLength + generalLength + subsidiaryLength);
+
+        if (totalLength > 10)
+            throw new InvalidOperationException("مجموع طول سطوح کد حساب در تنظیمات سپیدار بیشتر از ۱۰ رقم است.");
+
+        if (moeinCode.Length != totalLength || moeinCode.Any(c => c < '0' || c > '9'))
+            throw new InvalidOperationException(
+                $"کد معین «{moeinCode}» باید مطابق تنظیمات سپیدار، {totalLength} رقم باشد (گروه: {groupLength}، کل: {generalLength}، معین: {subsidiaryLength}).");
+
+        var parts = new[] {
+            moeinCode.Substring(0, groupLength),
+            moeinCode.Substring(groupLength, generalLength),
+            moeinCode.Substring(groupLength + generalLength, subsidiaryLength)
         };
 
-        if (moeinCode.Length >= 2)
-            parts.Add(moeinCode.Substring(1, 1));
-
-        if (moeinCode.Length > 2)
-            parts.Add(moeinCode.Substring(2));
-
         var parentId = -5;
-
         foreach (var code in parts)
         {
-            var accounts = await sepidarContext.Accounts
+            var accountIds = await sepidarContext.Accounts.AsNoTracking()
                 .Where(x => x.ParentAccountRef == parentId && x.Code == code)
-                .Select(x => new {
-                    x.AccountId,
-                    x.Code,
-                    x.Title
-                })
+                .Select(x => x.AccountId)
                 .ToListAsync(cancellationToken);
 
-            if (accounts.Count == 0)
-            {
-                throw new Exception($"بخش {code} از کد معین {moeinCode} در سپیدار پیدا نشد. ParentAccountRef = {parentId}");
-            }
+            if (accountIds.Count == 0)
+                throw new InvalidOperationException(
+                    $"بخش «{code}» از کد معین «{moeinCode}» در سپیدار پیدا نشد (ParentAccountRef = {parentId}).");
 
-            if (accounts.Count > 1)
-            {
-                throw new Exception($"برای کد {code} و ParentAccountRef = {parentId} چند حساب پیدا شد.");
-            }
+            if (accountIds.Count > 1)
+                throw new InvalidOperationException(
+                    $"برای بخش «{code}» از کد معین «{moeinCode}» چند حساب در سپیدار پیدا شد.");
 
-            parentId = accounts[0].AccountId;
+            parentId = accountIds[0];
         }
 
         return parentId;
