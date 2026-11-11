@@ -1218,6 +1218,8 @@
 .supply-card__controls { border-top:0; padding-top:0; }
 .supply-card__controls button { width:auto; min-height:28px; padding:4px 8px !important; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
 .supply-card__controls .btn-secondary, .supply-card__controls .buttonGreen { background:var(--pf-operation-accent); color:#fff; }
+.supply-card__controls .btn-success { background:#00665C; border-color:#00665C; color:#fff; }
+.supply-card__controls .btn-success:hover { background:#004944; border-color:#004944; color:#fff; }
 .supply-card__controls .btn-outline-danger { border-color:#C2185B; background:#FCE8F0; color:#C2185B; }
 #cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGreen2 { background:#00665C; color:#fff; box-shadow:none; border-radius:5px; }
 #cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) :is(.buttonCancel3,.buttonCancel2) { background:#C2185B; color:#fff; box-shadow:none; border-radius:5px; }
