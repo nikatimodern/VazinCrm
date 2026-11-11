@@ -11,10 +11,10 @@ public sealed class AccountRepository(CRMContextDb db) : IAccountRepository
 {
     public Task<List<AccountCustomer>> GetCustomersByMobileAsync(string? mobile, CancellationToken cancellationToken) =>
         db.Customers.AsNoTracking().Where(c => c.Mobile == mobile)
-            .Select(c => new AccountCustomer(c.Id, c.CompanyName, c.AgentName, c.RoleTypeTxt)).ToListAsync(cancellationToken);
+            .Select(c => new AccountCustomer(c.Id, c.CompanyName, c.AgentName, c.RoleTypeTxt,c.RoleType)).ToListAsync(cancellationToken);
     public Task<AccountCustomer?> FindCustomerByMobileAsync(string mobile, CancellationToken cancellationToken) =>
         db.Customers.AsNoTracking().Where(c => c.Mobile == mobile)
-            .Select(c => new AccountCustomer(c.Id, c.CompanyName, c.AgentName, c.RoleTypeTxt)).FirstOrDefaultAsync(cancellationToken);
+            .Select(c => new AccountCustomer(c.Id, c.CompanyName, c.AgentName, c.RoleTypeTxt,c.RoleType )).FirstOrDefaultAsync(cancellationToken);
     public async Task ReassignChatsAsync(string mobile, string userId, CancellationToken cancellationToken)
     {
         var chats = await db.MainChats.Where(c => c.ToUserId == mobile).ToListAsync(cancellationToken);

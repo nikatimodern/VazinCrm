@@ -2,8 +2,10 @@ using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Accounts.Abstractions;
 using CRM.Core.ApplicationServices.Accounts.Dtos;
 using CRM.Core.ApplicationServices.Accounts.Services;
+using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.AppUsers.Repositories;
+using CRM.Core.Domain.Customers.Enum;
 
 namespace CRM.Core.ApplicationServices.Accounts.Commands.VerifyOtp;
 
@@ -29,8 +31,26 @@ public sealed class VerifyOtpCommandHandler(IAccountRequestContext context, IAcc
             if (!result.Succeeded)
                 return new(405, "", Errors: result.Errors.Select(e => e.Code == "DuplicateUserName" ? $"نام کاربری '{user.UserName}' قبلاً ثبت شده است." : e.Description).ToList());
             await repository.ReassignChatsAsync(request.Mobile, user.Id, cancellationToken);
-            foreach (var role in customer?.RoleTypeTxt?.Split(" ", StringSplitOptions.RemoveEmptyEntries) ?? [])
-                await users.AddToRoleAsync(user, role, cancellationToken);
+
+            if (customer.RoleType == RoleTypeEnum.تامین_کننده) {
+                await users.AddToRoleAsync(user, "تامین کننده", cancellationToken);
+                user.IsSupplier = true;
+            }
+            else if (customer.RoleType == RoleTypeEnum.مشتری)
+            {
+                await users.AddToRoleAsync(user, "مشتری", cancellationToken);
+                user.IsCustomer = true;
+            }
+            else if (customer.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
+            {
+                await users.AddToRoleAsync(user, "تامین کننده", cancellationToken);
+                await users.AddToRoleAsync(user, "مشتری", cancellationToken);
+
+                user.IsCustomer = true;
+                user.IsCustomer = true;
+
+            }
+
             await audit.WriteAsync(user, AccountAuditAction.Created, customer?.RoleTypeTxt, cancellationToken);
             accounts.Add(user);
         }
