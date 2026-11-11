@@ -13,6 +13,9 @@
         <div class="InfoDataItem_Prefactor pf-accepted-card__content pf-finance-card">
             <div class="pf-accepted-card__facts" aria-label="مشخصات پیش‌فاکتور">
                 <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><strong>@preFactor.SerialNumber</strong></div>
+                @if (preFactor.DealSerialNumber != null) {
+                    <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@preFactor.DealSerialNumber</strong></div>
+                }
                 <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@preFactor.Date</strong></div>
                 <div class="pf-accepted-card__fact"><span>تاریخ تأیید</span><strong>@(string.IsNullOrEmpty(preFactor.AcceptedDateTxt) ? "-" : preFactor.AcceptedDateTxt.Substring(0, 10))</strong></div>
             </div>
