@@ -19,6 +19,9 @@
             <div class="pf-accepted-card__facts" aria-label="مشخصات فاکتور">
                 <div class="pf-accepted-card__fact"><span>سریال فاکتور</span><strong>@item.SerialNumber</strong></div>
                 <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><button type="button" class="pf-accepted-card__amount-link" onclick="showPrefac('@item.PfactorSerialNumber')">@item.PfactorSerialNumber</button></div>
+                @if (item.DealSerialNumber != null) {
+                    <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@item.DealSerialNumber</strong></div>
+                }
                 <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@item.Date</strong></div>
             </div>
             <div class="pf-accepted-card__body">
@@ -27,7 +30,7 @@
                     <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</strong></div>
                     <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</strong></div>
                     <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.SelerFullName</strong></div>
-                    <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@item.UserCreator</strong></div>
+
                 </section>
                 <section class="pf-accepted-card__section pf-accepted-card__financial factor-card__financial">
                     <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
