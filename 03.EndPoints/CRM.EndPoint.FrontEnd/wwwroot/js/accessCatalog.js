@@ -396,7 +396,9 @@
             const heading = text("span");
             heading.append(text("strong", entity.title), text("small", entity.key));
             allLabel.append(toggle, heading);
-            header.append(allLabel, text("span", null, "ac-role-group-count"));
+            const groupCount = text("span", null, "ac-role-group-count");
+            groupCount.dataset.roleGroupCount = entity.id;
+            header.append(allLabel, groupCount);
             const grid = text("div", null, "ac-role-choices");
             for (const permission of selected) {
                 const label = text("label", null, "ac-role-choice");
@@ -531,10 +533,10 @@
     async function saveRolePermissions() {
         if (roleSaving || !roleReady || !roleDirty() || !currentRoleId) return;
         roleSaving = true;
-        syncRoleState();
-        showError("role", "");
         const roleId = currentRoleId;
         try {
+            syncRoleState();
+            showError("role", "");
             const result = await post("SaveRolePermissions", {
                 roleId, permissionIds: [...roleChosen]
             });
