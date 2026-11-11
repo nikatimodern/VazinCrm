@@ -20,12 +20,10 @@
                 <div class="pf-accepted-card__body">
                     <section class="pf-accepted-card__section pf-accepted-card__customer">
                         <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
-                        <div class="pf-accepted-card__row">
-                            <span>شرکت</span><strong>@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</strong></div>
-                        <div class="pf-accepted-card__row">
-                            <span>نماینده</span><strong>@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</strong></div>
-                        <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@item.UserCreator</strong></div>
-                        <div class="pf-accepted-card__row"><span>در اختیار</span><strong>@item.UserTaminTxt</strong></div>
+                        <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(item.CustomerEntity?.CustomerCode.ToString() ?? item.CustomerCode?.ToString() ?? "-")</strong></div>
+                        <div class="pf-accepted-card__row"><span>مشتری</span><strong>@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</strong></div>
+                        <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.UserCreator</strong></div>
+                        <div class="pf-accepted-card__row"><span>کارشناس تأمین</span><strong>@(string.IsNullOrWhiteSpace(item.UserTaminTxt) ? "-" : item.UserTaminTxt)</strong></div>
                     </section>
                     <section class="pf-accepted-card__section pf-accepted-card__financial">
                         <h3><span>اطلاعات تأمین</span><i class="fa fa-industry" aria-hidden="true"></i></h3>
