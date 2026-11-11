@@ -31,7 +31,32 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         6 => Read(db.Factors.Where(f => f.Id == id), ct),
         7 => Read(db.Factors.Where(f => f.CustomerId == id && f.status == FactorStatus.تایید_شده), ct),
         _ => Task.FromResult<List<Factor>?>(null)};
-    private static async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct) => await query.AsNoTracking().ToListAsync(ct);
+    private async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct)
+    {
+        var factors = await query.AsNoTracking().ToListAsync(ct);
+        await FillExternalFinancialMappingStateAsync(factors, ct);
+        return factors;
+    }
+
+    private async Task FillExternalFinancialMappingStateAsync(IList<Factor> factors, CancellationToken ct)
+    {
+        if (factors.Count == 0)
+            return;
+
+        var factorIds = factors.Select(x => x.Id).ToArray();
+        var mappedIds = await db.ExternalMappings.AsNoTracking()
+            .Where(x => factorIds.Contains(x.EntityId)
+                && x.EntityName == nameof(Factor)
+                && x.MapType == ExternalMappingTypeEnum.فاکتور
+                && x.ExEntityId != null && x.ExEntityId != "")
+            .Select(x => x.EntityId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var mappedSet = mappedIds.ToHashSet();
+        foreach (var factor in factors)
+            factor.HasExternalFinancialMapping = mappedSet.Contains(factor.Id);
+    }
     public async Task<IList<PreFactor>> GetPreFactorsAsync(QueryFilter filter, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
         var pListQ = db.PreFactors.Include(p => p.Deal).Include(p => p.CustomerEntity).OrderByDescending(p => p.DateMiladi).ThenByDescending(p => p.CreateDate).AsQueryable();
