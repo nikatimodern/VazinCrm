@@ -1227,6 +1227,7 @@
 .supply-card__steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .supply-card__steps .completedTrack { display:flex; align-items:center; justify-content:center; font-size:14px; }
 .supply-card__warning { padding:4px 7px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:12px; }
+.supply-card__controls { border-top:0; padding-top:0; }
 .supply-card__controls button { width:auto; min-height:28px; padding:4px 8px !important; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
 .supply-card__controls .btn-secondary, .supply-card__controls .buttonGreen { background:var(--pf-operation-accent); color:#fff; }
 .supply-card__controls .btn-outline-danger { border-color:#C2185B; background:#FCE8F0; color:#C2185B; }
