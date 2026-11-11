@@ -81,7 +81,6 @@ async function sendApiRequest(
     let response = null, requestError = null;
     if (globalLoading) updateApiLoading(true);
     try {
-        console.log("API Timeout:", config.timeout, config.url);
         response = await axios(config);
     } catch (error) {
         requestError = error;
