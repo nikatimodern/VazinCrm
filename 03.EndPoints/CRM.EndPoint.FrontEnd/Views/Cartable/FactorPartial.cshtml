@@ -63,12 +63,6 @@
                                 <label style="font-family:'IRANSansBold'">@item.DealSerialNumber</label>
                             </div>
                         }
-                        @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
-                            <div class="justify-content-between flex-wrap" style="display:flex;align-items:center;gap:6px">
-                                <label style="color:gray">فاکتور مالی :</label>
-                                <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                            </div>
-                        }
 
                         <div class="justify-content-between" style="display:flex;align-items:center; gap:6px">
                             <label style="color:gray">تاریخ:</label>
