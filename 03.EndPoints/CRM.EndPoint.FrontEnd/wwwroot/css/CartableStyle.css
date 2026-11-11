@@ -1180,37 +1180,124 @@
 @media (max-width:991px) { :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card { border-radius:10px !important; } }
 
 /* Financial order DataTable, including its cloned scroll header. */
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) { color:#212529; font:400 13px/1.7 IRANSans; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-container { --bs-border-color:#DDE1E8; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) table { --bs-table-bg:#fff; --bs-table-color:#212529; --bs-table-striped-bg:color-mix(in srgb,#F0F1F7 55%,#fff); --bs-table-striped-color:#212529; --bs-table-hover-bg:#E7F3F0; --bs-table-hover-color:#212529; border-color:#DDE1E8; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) thead th { background:#E7F3F0; color:#004944; border-color:#DDE1E8; font:700 13px/1.6 IRANSansBold; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) tbody td { border-color:#DDE1E8; font-size:13px; line-height:1.7; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-scroll { border:1px solid #DDE1E8; border-radius:8px; overflow:hidden; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-scroll-body { border-bottom:1px solid #DDE1E8; scrollbar-color:#00665C transparent; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-search { gap:6px; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-search input { min-height:34px; max-width:100%; padding:6px 10px; border:1px solid #DDE1E8; border-radius:7px; color:#212529; background:#fff; font-size:12px; text-align:start; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(.dt-search input,.dt-length select):focus { border-color:#5811B4; box-shadow:0 0 0 3px rgb(88 17 180 / 9%); outline:none; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-length select { min-height:32px; border-color:#DDE1E8; border-radius:6px; font-size:12px; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-info, :is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .dt-length { color:#545961; font-size:12px; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:36px; min-height:28px; padding:3px 6px; border:1px solid transparent; border-radius:6px; background:#E7F3F0; color:#004944; cursor:pointer; font:500 12px/1.5 IRANSansMedium; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action:hover { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .deal-document-action svg { width:17px; height:17px; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(.financial-deal-approve,.financial-deal-reopen) { min-height:28px; padding:4px 9px; border:1px solid transparent; border-radius:5px; box-shadow:none; font:500 12px/1.5 IRANSansMedium; white-space:nowrap; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-approve { background:#00665C; color:#fff; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-approve:hover { background:#004944; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-reopen { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--open { color:#5811B4; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--failed { color:#C2185B; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .financial-deal-state--success { color:#00665C; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) tr.tableRow-bgGreen > :is(td, th) { background-color:#E7F3F0 !important; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-link { min-width:30px; min-height:30px; padding:4px 9px; border-color:#DDE1E8; color:#004944; background:#fff; font-size:12px; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-item.active .page-link { background:#5811B4; border-color:#5811B4; color:#fff; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-link:focus-visible { box-shadow:0 0 0 3px rgb(88 17 180 / 12%); }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) .page-item.disabled .page-link { color:#838E98; background:#F0F1F7; }
-:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId) :is(button,a):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) { color:#212529; font:400 13px/1.7 IRANSans; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-container { --bs-border-color:#DDE1E8; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) table { --bs-table-bg:#fff; --bs-table-color:#212529; --bs-table-striped-bg:color-mix(in srgb,#F0F1F7 55%,#fff); --bs-table-striped-color:#212529; --bs-table-hover-bg:#E7F3F0; --bs-table-hover-color:#212529; border-color:#DDE1E8; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) thead th { background:#E7F3F0; color:#004944; border-color:#DDE1E8; font:700 13px/1.6 IRANSansBold; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) tbody td { border-color:#DDE1E8; font-size:13px; line-height:1.7; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-scroll { border:1px solid #DDE1E8; border-radius:8px; overflow:hidden; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-scroll-body { border-bottom:1px solid #DDE1E8; scrollbar-color:#00665C transparent; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-search { gap:6px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-search input { min-height:34px; max-width:100%; padding:6px 10px; border:1px solid #DDE1E8; border-radius:7px; color:#212529; background:#fff; font-size:12px; text-align:start; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) :is(.dt-search input,.dt-length select):focus { border-color:#5811B4; box-shadow:0 0 0 3px rgb(88 17 180 / 9%); outline:none; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-length select { min-height:32px; border-color:#DDE1E8; border-radius:6px; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-info, :is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .dt-length { color:#545961; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .deal-document-action { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:36px; min-height:28px; padding:3px 6px; border:1px solid transparent; border-radius:6px; background:#E7F3F0; color:#004944; cursor:pointer; font:500 12px/1.5 IRANSansMedium; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .deal-document-action:hover { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .deal-document-action svg { width:17px; height:17px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) :is(.financial-deal-approve,.financial-deal-reopen) { min-height:28px; padding:4px 9px; border:1px solid transparent; border-radius:5px; box-shadow:none; font:500 12px/1.5 IRANSansMedium; white-space:nowrap; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-approve { background:#00665C; color:#fff; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-approve:hover { background:#004944; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-reopen { background:#F3EDFC; color:#5811B4; border-color:rgb(88 17 180 / 15%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-state--open { color:#5811B4; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-state--failed { color:#C2185B; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .financial-deal-state--success { color:#00665C; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) tr.tableRow-bgGreen > :is(td, th) { background-color:#E7F3F0 !important; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .page-link { min-width:30px; min-height:30px; padding:4px 9px; border-color:#DDE1E8; color:#004944; background:#fff; font-size:12px; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .page-item.active .page-link { background:#5811B4; border-color:#5811B4; color:#fff; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .page-link:focus-visible { box-shadow:0 0 0 3px rgb(88 17 180 / 12%); }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) .page-item.disabled .page-link { color:#838E98; background:#F0F1F7; }
+:is(#FinancialDealContentId, #MDTransferContentId, #taminInvoiceContentId, #FinancialExpertInvoiceContentId) :is(button,a):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
 
 .pf-finance-card__controls > .pf-finance-card__reject { background:#FCE8F0; border-color:#C2185B; color:#C2185B; }
 
+/* Finance invoice toolbar uses the same compact CRM palette as supply. */
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar {
+    gap: 7px 10px;
+    min-width: 0;
+    padding-block: 2px 5px;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar > .search-group {
+    min-width: 150px;
+    flex: 1 1 240px;
+    max-width: 380px;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar .form-control {
+    border-color: #DDE1E8;
+    border-radius: 7px;
+    background-color: #fff;
+    color: #212529;
+    box-shadow: none;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar .form-control:focus {
+    border-color: #00665C;
+    box-shadow: 0 0 0 2px rgb(0 102 92 / 12%);
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar .search-icon {
+    color: #00665C;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 4px 9px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    box-shadow: none;
+    font: 500 12px/1.5 IRANSansMedium;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > .deposit-btn {
+    background: #00665C;
+    border-color: #00665C;
+    color: #fff;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > .deposit-btn:hover {
+    background: #004944;
+    border-color: #004944;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > .backward-btn {
+    background: #C2185B;
+    border-color: #C2185B;
+    color: #fff;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > .backward-btn:hover {
+    background: #9C1249;
+    border-color: #9C1249;
+}
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions > button:focus-visible {
+    outline: 2px solid #5811B4;
+    outline-offset: 2px;
+}
+
+/* Keep financial payment actions compact and aligned with supply invoices. */
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable :is(.buttonGray,.buttonGreen2,.buttonCancel3,.buttonBlue2) {
+    min-height: 28px;
+    padding: 3px 8px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    box-shadow: none;
+    font: 500 12px/1.5 IRANSansMedium;
+}
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonGray:hover {
+    background: #E7F3F0;
+    color: #004944;
+    border-color: #A3B8B3;
+}
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonGreen2:hover {
+    background: #004944;
+}
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonCancel3:hover {
+    background: #9C1249;
+}
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonBlue2 {
+    background: #F3EDFC;
+    color: #5811B4;
+    border-color: #DDE1E8;
+}
+#cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonBlue2:hover {
+    background: #E8DAFC;
+}
 /* Supply workflow and remaining cartable tables. */
 .supply-card__steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .supply-card__steps .completedTrack { display:flex; align-items:center; justify-content:center; font-size:14px; }
@@ -1221,13 +1308,13 @@
 .supply-card__controls .btn-success { background:#00665C; border-color:#00665C; color:#fff; }
 .supply-card__controls .btn-success:hover { background:#004944; border-color:#004944; color:#fff; }
 .supply-card__controls .btn-outline-danger { border-color:#C2185B; background:#FCE8F0; color:#C2185B; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGreen2 { background:#00665C; color:#fff; box-shadow:none; border-radius:5px; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) :is(.buttonCancel3,.buttonCancel2) { background:#C2185B; color:#fff; box-shadow:none; border-radius:5px; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGray { background:#F3EDFC; color:#5811B4; border:1px solid #DDE1E8; box-shadow:none; border-radius:5px; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) button { font-size:12px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) .buttonGreen2 { background:#00665C; color:#fff; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) :is(.buttonCancel3,.buttonCancel2) { background:#C2185B; color:#fff; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) .buttonGray { background:#F3EDFC; color:#5811B4; border:1px solid #DDE1E8; box-shadow:none; border-radius:5px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) button { font-size:12px; }
 #cartableWorkspace :is(#CTaminExpertId,#CManagingDirectorId) { min-width:0; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .dt-empty { padding:24px 10px !important; color:#545961; font-size:13px; }
-#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .dt-layout-row { flex-wrap:wrap; gap:8px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) .dt-empty { padding:24px 10px !important; color:#545961; font-size:13px; }
+#cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId,#FinancialExpertInvoiceContentId) .dt-layout-row { flex-wrap:wrap; gap:8px; }
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group { flex-wrap:nowrap; min-width:0; }
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .input-group input { min-width:0; font-size:13px; border-color:#A3B8B3; }
 #cartableWorkspace :is(#MDRequestAmountContentId,#FinancialRequestContentId) .acceptedAmountPercent { flex:0 0 auto; width:66px; font-size:12px; }
@@ -1314,6 +1401,42 @@
 }
 
 #cartableWorkspace #CTaminExpertId #taminInvoiceContentId .dt-scroll-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto;
+}
+
+/* Financial invoices: one vertical scroller in the DataTables body only. */
+#cartableWorkspace #CFinancialExpertId:has(#FinancialInvoiceTab-pane.active) {
+    overflow: hidden;
+}
+#cartableWorkspace #CFinancialExpertId:has(#FinancialInvoiceTab-pane.active) > .d-flex.flex-column.w-100,
+#cartableWorkspace #CFinancialExpertId:has(#FinancialInvoiceTab-pane.active) :is(
+    #tabContentFinancialExperts,
+    #FinancialInvoiceTab-pane.active,
+    #FinancialInvoiceTab-pane.active > .w-100,
+    #FinancialExpertInvoiceContentId,
+    #FinancialExpertInvoiceContentId .dt-container,
+    #FinancialExpertInvoiceContentId .dt-layout-row:has(.dt-scroll),
+    #FinancialExpertInvoiceContentId .dt-layout-cell:has(> .dt-scroll),
+    #FinancialExpertInvoiceContentId .dt-scroll
+) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+}
+#cartableWorkspace #CFinancialExpertId #FinancialInvoiceTab-pane.active > .w-100 > .cartable-invoice-toolbar,
+#cartableWorkspace #CFinancialExpertId #FinancialExpertInvoiceContentId .dt-scroll-head {
+    flex: 0 0 auto;
+}
+#cartableWorkspace #CFinancialExpertId #FinancialExpertInvoiceContentId {
+    overflow: hidden;
+}
+#cartableWorkspace #CFinancialExpertId #FinancialExpertInvoiceContentId .dt-scroll-body {
     flex: 1 1 0%;
     min-height: 0;
     height: auto !important;
