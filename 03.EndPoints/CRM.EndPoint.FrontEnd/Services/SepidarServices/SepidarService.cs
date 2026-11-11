@@ -226,13 +226,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
 
         if (values.Count != 1)
-            throw new InvalidOperationException(
-                $"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
 
-        if (!int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
-            || id <= 0)
-            throw new InvalidOperationException(
-                $"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
+        if (!int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0)
+            throw new InvalidOperationException($"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
 
         return id;
     }
@@ -240,10 +237,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     private async Task<int> GetConfiguredAccountIdAsync(string key, CancellationToken ct)
     {
         var accountId = await GetRequiredSepidarSettingIdAsync(key, ct);
-        if (!await sepidarContext.Accounts.AsNoTracking()
-                .AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
-            throw new InvalidOperationException(
-                $"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
+        if (!await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException($"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
 
         return accountId;
     }
@@ -251,27 +246,26 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     private async Task<int> GetConfiguredDlIdAsync(string key, CancellationToken ct)
     {
         var dlId = await GetRequiredSepidarSettingIdAsync(key, ct);
-        if (!await sepidarContext.DLs.AsNoTracking()
-                .AnyAsync(x => x.DLId == dlId && x.IsActive, ct))
-            throw new InvalidOperationException(
-                $"تفصیلی معرفی‌شده در تنظیم «{key}» (شناسه {dlId}) در سپیدار پیدا نشد یا غیرفعال است.");
+
+        if (!await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == dlId && x.IsActive, ct))
+            throw new InvalidOperationException($"تفصیلی معرفی‌شده در تنظیم «{key}» (شناسه {dlId}) در سپیدار پیدا نشد یا غیرفعال است.");
 
         return dlId;
     }
 
-    private async Task<int> GetSalesAccountIdAsync(SaleType? saleType, CancellationToken ct)
+    private async Task<int> GetSalesAccountIdAsync(SaleType saleType, CancellationToken ct)
     {
         // Prefer the account defined for the selected sale type.
         // If it is absent or invalid, use the Sepidar configuration setting.
         // Never silently fall back to a hard-coded Moein code.
-        if (saleType?.PartSalesSLRef is int accountId && accountId > 0 &&
-            await sepidarContext.Accounts.AsNoTracking().AnyAsync(
-                x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+        if (saleType?.PartSalesSLRef is int accountId and > 0 &&
+            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+        {
             return accountId;
+        }
 
         var configuredAccountId = await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
-        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(
-                x => x.AccountId == configuredAccountId && x.HasTracking, ct))
+        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == configuredAccountId && x.HasTracking, ct))
             throw new InvalidOperationException(
                 "حساب فروش کالا در تنظیم «SalesPartSalesSL» نیاز به شماره پیگیری دارد و برای سند فروش قابل استفاده نیست.");
 
@@ -1703,7 +1697,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default, int? requestedInvoiceNumber = null)
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default,
+        int? requestedInvoiceNumber = null)
     {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -2235,7 +2230,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
         {
             if (!balances.TryGetValue(group.Key, out var balance))
-                throw new InvalidOperationException($"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} قابل بررسی نیست.");
+                throw new InvalidOperationException(
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} قابل بررسی نیست.");
 
             // Existing undelivered invoices also represent demand against physical stock.
             // Open quotation reservations are deliberately not subtracted here: the
