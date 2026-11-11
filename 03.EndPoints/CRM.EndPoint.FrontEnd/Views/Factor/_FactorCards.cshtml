@@ -35,14 +35,9 @@
                 <section class="pf-accepted-card__section pf-accepted-card__financial factor-card__financial">
                     <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
                     <div class="pf-accepted-card__row"><span>مبلغ</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:N0}")</bdi> <small>@(item.CurrencyTypeTxt ?? "ريال")</small></strong></div>
-                    @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
-                        <div class="factor-card__external">
-                            <label style="color:gray">فاکتور مالی :</label>
-                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                        </div>
-                    }
-
-                    <div class="factor-card__financial-actions">
+                    @if (Model._Setting?.FactorTowStep == true || isReturnFactor || item.Returned) {
+                        <div class="pf-accepted-card__row factor-card__operation-row">
+                            <span>عملیات</span>
                     <div class="factor-card__status">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
@@ -100,13 +95,16 @@
                                 }
 
                     </div>
-                        @if (canManageAllocations) {
-                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
-                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
-                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
-                            </button>
-                        }
-                    </div>
+                        </div>
+                    }
+                    <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@(string.IsNullOrWhiteSpace(item.UserCreator) ? "-" : item.UserCreator)</strong></div>
+                    @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
+                        <div class="factor-card__external">
+                            <label style="color:gray">فاکتور مالی :</label>
+                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
+                        </div>
+                    }
+
                 </section>
             </div>
             <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
@@ -122,6 +120,16 @@
                         </span></button>
                     }
 
+
+                    @if (canManageAllocations) {
+                        <button type="button" class="flex-center" aria-label="مدیریت تخصیص آیتم‌های فروش"
+                                data-title-right="تخصیص‌ها" data-allocation-script="@allocationScript"
+                                style="color:var(--DarkColor);" onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')">
+                            <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                                <i class="fa fa-exchange-alt"></i>
+                            </span>
+                        </button>
+                    }
 
                     <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
                             onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
