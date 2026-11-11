@@ -507,6 +507,10 @@
             root.querySelector("[data-main-tab='users']").focus();
             return;
         }
+        if (activeTab === "users" && userSearchTimer !== null) {
+            clearTimeout(userSearchTimer);
+            userSearchTimer = null;
+        }
         activeTab = next;
         for (const tab of root.querySelectorAll("[data-main-tab]")) {
             const active = tab.dataset.mainTab === next;
@@ -991,6 +995,7 @@
         if (userSearchTimer !== null) clearTimeout(userSearchTimer);
         userSearchTimer = setTimeout(() => {
             userSearchTimer = null;
+            if (activeTab !== "users" || signal.aborted) return;
             void (async () => {
                 if (!await confirmDiscardUserChanges()) {
                     root.querySelector("[data-users-search]").value = userSearchTerm;
