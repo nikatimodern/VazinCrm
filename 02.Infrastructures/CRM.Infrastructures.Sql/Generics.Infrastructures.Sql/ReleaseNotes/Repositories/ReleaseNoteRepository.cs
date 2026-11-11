@@ -27,12 +27,18 @@ public sealed class ReleaseNoteRepository(CRMContextDb db) : IReleaseNoteReposit
         Convert.ToBase64String(x.RowVersion), x.Roles.Select(r => r.RoleName).ToList(),
         x.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).Select(i => new ReleaseNoteItemData(i.Id, i.Title, i.Description, i.Type, i.SortOrder, i.ImageUrl, i.LearnMoreUrl)).ToList()));
     private static Task<List<ReleaseNoteData>> Project(IQueryable<ReleaseNote> query, CancellationToken ct) => Projection(query).ToListAsync(ct);
-    public Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
+    public async Task<List<ReleaseNoteData>> GetAdminListAsync(string? search, ReleaseNoteStatus? status, CancellationToken ct)
     {
         var q = db.ReleaseNotes.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(x => x.Title.Contains(search) || x.Version.Contains(search));
         if (status.HasValue) q = q.Where(x => x.Status == status);
-        return Project(q.OrderByDescending(x => x.CreateDate), ct);
+        var notes = await Project(q, ct);
+
+        return notes
+            .OrderByDescending(x => Version.Parse(x.Version.Split('-')[0]))
+            .ThenBy(x => x.Version.Contains('-'))
+            .ThenByDescending(x => x.CreateDate)
+            .ToList();
     }
     public async Task<ReleaseNoteData?> GetAsync(Guid id, CancellationToken ct) => (await Project(db.ReleaseNotes.AsNoTracking().Where(x => x.Id == id), ct)).SingleOrDefault();
     public Task<List<ReleaseNoteData>> GetVisibleAsync(ReleaseNoteReader reader, bool unseenOnly, DateTime now, CancellationToken ct) =>
