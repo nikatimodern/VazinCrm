@@ -880,7 +880,10 @@
         if (!userReady || userSaving) return;
         if (value === "inherit") userOverrides.delete(id);
         else userOverrides.set(id, value === "allow");
-        syncUserState();
+        if (root.querySelector("[data-user-only-overrides]").checked)
+            renderUserPermissions();
+        else
+            syncUserState();
     }
 
     async function saveUserAccess() {
@@ -908,7 +911,10 @@
             }
         } finally {
             userSaving = false;
-            if (!signal.aborted) syncUserState();
+            if (!signal.aborted) {
+                renderUsers();
+                syncUserState();
+            }
         }
     }
 
