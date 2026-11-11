@@ -57,36 +57,10 @@
                                 <label style="font-family:'IRANSansBold';">@item.PfactorSerialNumber</label>
                             }
                         </div>
-                        @if (Model._Setting?.Sepidar == true) {
+                        @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
                             <div class="justify-content-between flex-wrap" style="display:flex;align-items:center;gap:6px">
                                 <label style="color:gray">فاکتور مالی :</label>
-
-                                @if (item.SnFinancial == null) {
-                                    if (item.status == FactorStatus.ابطال_شده) {
-                                        <label class="fbold">ابطال شده</label>
-                                    } else {
-                                        if (User.IsAdmin() || User.IsFinancial()) {
-                                            <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                انتخاب از سپیدار
-                                            </button>
-                                        } else {
-                                            <span>-</span>
-                                        }
-                                    }
-                                } else {
-                                    if (isAdminOrFinancial) {
-                                        <div class="buttonGroup">
-                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                <i style="font-size:10px" class="fa fa-pencil"></i>
-                                            </button>
-                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                        </div>
-                                    } else {
-                                        @*  <label class="fbold">@item.SnFinancial</label> *@
-                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                    }
-                                }
-
+                                <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
                             </div>
                         }
 
@@ -140,9 +114,15 @@
                                             <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
-                                            <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @passType)">
+                                            <button class="buttonGray" style="font-size: 13px;"
+                                                    disabled="@(!item.HasExternalFinancialMapping)"
+                                                    title="@(item.HasExternalFinancialMapping ? "تأیید فاکتور" : "ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید")"
+                                                    onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
+                                            @if (!item.HasExternalFinancialMapping) {
+                                                <small class="factor-card__transfer-required">ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید.</small>
+                                            }
                                         } else {
                                             <div class="fbold" style="color:#CC9900">
                                                 در دست تایید
@@ -212,14 +192,10 @@
                     }
 
 
-                    @if (isAdminOrFinancial && Model._Setting?.Sepidar == true
-                        && item.status == FactorStatus.تایید_شده && !isReturnFactor && !item.Returned) {
-                        <button type="button" class="flex-center" data-title-right="ارسال فاکتور به نرم‌افزار مالی"
-                                aria-label="ارسال فاکتور به سپیدار"
-                                onclick="sendFactorToExternalSoftware('@item.Id')">
-                            <i class="fa fa-paper-plane"></i>
-                        </button>
-                    }
+                    <button type="button" class="flex-center" data-title-right="ارتباط مالی" aria-label="ارتباط مالی"
+                            onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                        <i class="fa fa-link" aria-hidden="true"></i>
+                    </button>
 
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="fa fa-eye"></i>
