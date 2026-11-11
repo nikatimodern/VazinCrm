@@ -1291,6 +1291,8 @@
     #TaminInvoiceTab-pane.active > .w-100,
     #taminInvoiceContentId,
     #taminInvoiceContentId .dt-container,
+    #taminInvoiceContentId .dt-layout-row:has(.dt-scroll),
+    #taminInvoiceContentId .dt-layout-cell:has(> .dt-scroll),
     #taminInvoiceContentId .dt-scroll
 ) {
     display: flex;
