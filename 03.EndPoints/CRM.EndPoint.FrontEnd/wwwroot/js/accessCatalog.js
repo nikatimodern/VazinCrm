@@ -819,6 +819,10 @@
         renderUsers();
         if (id) await selectUser(id);
         else {
+            userRoleIds = new Set();
+            userOverrides = new Map();
+            userOriginalRoles = new Set();
+            userOriginalOverrides = new Map();
             renderUserRoles();
             renderUserPermissions();
         }
@@ -830,6 +834,8 @@
         ++userSelectionGeneration;
         userReady = false;
         showError("user", "");
+        renderUserRoles();
+        syncUserState();
         showEmpty(usersList, "در حال دریافت کاربران...", "fa-spinner");
         showEmpty(userPermissions, "در حال دریافت دسترسی‌ها...", "fa-spinner");
         const [allRoles, catalog, grants] = await Promise.all([
