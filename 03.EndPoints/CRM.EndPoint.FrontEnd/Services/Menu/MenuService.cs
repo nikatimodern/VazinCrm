@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.ReleaseNotes.Repositories;
+using CRM.Core.ApplicationServices.ReleaseNotes.Services;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -29,8 +30,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var filteredMenus = Filter(menus, roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
-            var reader = new ReleaseNoteReader(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", [.. roles],
-                roles.Contains(AppRoles.Customer), roles.Any(role => role != AppRoles.Customer));
+            // Match the exact audience/role resolution used by the release history.
+            var reader = await serviceProvider.GetRequiredService<ReleaseNoteAccess>().ReaderAsync(default);
             var latest = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
                 .GetLatestVisibleVersionInfoAsync(reader, DateTime.UtcNow, default);
             versionMenu.Title = latest is null ? "نسخه" : $"نسخه {latest.Version}";
