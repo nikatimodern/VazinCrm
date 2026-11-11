@@ -80,21 +80,17 @@
                     <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
                     <div class="col-12 col-md-5 flex-wrap flex-row flex-md-column gap-2 px-2 justify-content-around" style="text-align:center; display:flex;align-items:center">
-                        @*                         <div style="width:100%;display:flex;justify-content:space-between">
-                            <label style="width:20%;">کد مشتری:</label>
-                            <label style="width:80%;text-align:center; font-family:'IRANSansBold'"> </label>
-                        </div> *@
-                        <div style=" display:flex;align-items:center;gap:6px">
-                            <label style="color:gray">شرکت:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</label>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
+                            <label style="color:gray">کد مشتری:</label>
+                            <label style="font-family:'IRANSansBold'">@(item.CustomerCode?.ToString() ?? "-")</label>
                         </div>
-                        <div style=" display:flex;align-items:center; gap:6px">
-                            <label style="color:gray">نماینده:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</label>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
+                            <label style="color:gray">مشتری:</label>
+                            <label style="font-family:'IRANSansBold'">@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</label>
                         </div>
-                        <div style=" display:flex;align-items:center; gap:6px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
                             <label style="color:gray">کارشناس فروش:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@item.SelerFullName</label>
+                            <label style="font-family:'IRANSansBold'">@item.SelerFullName</label>
                         </div>
 
                     </div>
