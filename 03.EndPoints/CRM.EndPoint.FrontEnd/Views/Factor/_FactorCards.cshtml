@@ -32,48 +32,27 @@
                 <section class="pf-accepted-card__section pf-accepted-card__financial factor-card__financial">
                     <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
                     <div class="pf-accepted-card__row"><span>مبلغ</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:N0}")</bdi> <small>@(item.CurrencyTypeTxt ?? "ريال")</small></strong></div>
-                        @if (Model._Setting?.Sepidar == true) {
-                            <div class="factor-card__external">
-                                <label style="color:gray">فاکتور مالی :</label>
-
-                                @if (item.SnFinancial == null) {
-                                    if (item.status == FactorStatus.ابطال_شده) {
-                                        <label class="fbold">ابطال شده</label>
-                                    } else {
-                                        if (User.IsAdmin() || User.IsFinancial()) {
-                                            <button type="button" class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                انتخاب از سپیدار
-                                            </button>
-                                        } else {
-                                            <span>-</span>
-                                        }
-                                    }
-                                } else {
-                                    if (isAdminOrFinancial) {
-                                        <div class="buttonGroup">
-                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                <i style="font-size:10px" class="fa fa-pencil"></i>
-                                            </button>
-                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                        </div>
-                                    } else {
-                                        @*  <label class="fbold">@item.SnFinancial</label> *@
-                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                    }
-                                }
-
-                            </div>
-                        }
-
+                    @if (!string.IsNullOrWhiteSpace(item.SnFinancial) && item.SepidarId.HasValue) {
+                        <div class="factor-card__external">
+                            <label style="color:gray">فاکتور مالی :</label>
+                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
+                        </div>
+                    }
 
                     <div class="factor-card__financial-actions">
                     <div class="factor-card__status">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
                                         if (isAdminOrFinancial) {
-                                            <button type="button" class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @passType)">
+                                            <button type="button" class="buttonGray" style="font-size: 13px;"
+                                                    disabled="@(!item.HasExternalFinancialMapping)"
+                                                    title="@(item.HasExternalFinancialMapping ? "تأیید فاکتور" : "ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید")"
+                                                    onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
+                                            @if (!item.HasExternalFinancialMapping) {
+                                                <small class="factor-card__transfer-required">ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید.</small>
+                                            }
                                             <button type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
@@ -143,16 +122,12 @@
                     }
 
 
-                    @if (isAdminOrFinancial && Model._Setting?.Sepidar == true
-                        && item.status == FactorStatus.تایید_شده && !isReturnFactor && !item.Returned) {
-                        <button type="button" class="flex-center" aria-label="ارسال فاکتور به سپیدار"
-                                data-title-right="ارسال فاکتور به نرم‌افزار مالی"
-                                onclick="sendFactorToExternalSoftware('@item.Id')">
-                            <span class="pf-accepted-card__action-icon" aria-hidden="true">
-                                <i class="fa fa-paper-plane"></i>
-                            </span>
-                        </button>
-                    }
+                    <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
+                            onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                        <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="fa fa-link"></i>
+                        </span>
+                    </button>
 
                     <button type="button" class="flex-center" aria-label="نمایش فاکتور" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="fa fa-eye"></i>
