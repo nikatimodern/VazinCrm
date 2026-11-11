@@ -1,6 +1,6 @@
 @section Styles {
 
-    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.0.5" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.5" asp-append-version="true" />
 }
 
 
@@ -76,7 +76,7 @@
 
                                     <div class="col-12 col-sm-6 col-lg-4">
                                         <label>تاریخ پرداخت</label>
-                                        <input class="sdate form-control" name="transferDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required />
+                                        <input class="sdate form-control" name="transferDate" type="text" placeholder="تاریخ پرداخت" data-mask-date required autocomplete="off"/>
                                     </div>
                                 </div>
 
@@ -125,7 +125,7 @@
 
 @section Scripts {
     <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("transferWorkspace")));</script>
-    <script src="~/js/Transfer.js?release=7.0.5" data-page-bindings="transferTbl,transferModel,transferData,transferAttachment,transferModal,transferFields,showModalTransfer,setTransferModalUI,loadTransferAccounts,cancelTransferModal,submitTransferModal,getAllTransfersDt,editTransfer,deleteTransfer,changeStatusTransfer" asp-append-version="true"></script>
+    <script src="~/js/Transfer.js?release=7.5.5" data-page-bindings="transferTbl,transferModel,transferData,transferAttachment,transferModal,transferFields,showModalTransfer,setTransferModalUI,loadTransferAccounts,cancelTransferModal,submitTransferModal,getAllTransfersDt,editTransfer,deleteTransfer,changeStatusTransfer" asp-append-version="true"></script>
     <script data-page-bindings="">
         document.addEventListener("DOMContentLoaded", async () => {
             getAllTransfersDt("#transferTable");

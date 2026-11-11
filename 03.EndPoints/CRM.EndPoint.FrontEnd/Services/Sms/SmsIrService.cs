@@ -124,6 +124,15 @@ public sealed class SmsIrService : ISmsIrService {
                     ];
                     break;
 
+                case SmsPatternType.ReacceptEditedPfactorToCustomer:
+                    patternCode = _smsConfig.Patterns.ReacceptEditedPfactorToCustomer;
+
+                    parameters = [
+                        new VerifySendParameter("number", job.SerialNumber),
+                        new VerifySendParameter("link", job.PfactorId?.ToString().Substring(0, 7))
+                    ];
+                    break;
+
                 // تایید پیش‌فاکتور توسط تامین
                 case SmsPatternType.AcceptPfactorToTamin:
                     patternCode = _smsConfig.Patterns.AcceptPfactorToTamin;

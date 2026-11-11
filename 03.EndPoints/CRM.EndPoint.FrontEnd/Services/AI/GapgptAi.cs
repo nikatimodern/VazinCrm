@@ -49,7 +49,7 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
 
         try
         {
-           var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
+            var response = await httpClient.PostAsJsonAsync("chat/completions", requestBody, cancellationToken: ct);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -166,6 +166,11 @@ public class GapgptAi(HttpClient httpClient, AiPrompts aiPrompts, ILogger<Gapgpt
                     return new AiGapgptResult<SummaryModel>
                         { Success = false, Error = "AI returned an empty response.", ElapsedSeconds = aiDuration };
                 }
+
+                content = content
+                    .Replace("```json", "")
+                    .Replace("```", "")
+                    .Trim();
 
                 var resultData = JsonSerializer.Deserialize<SummaryModel>(content);
                 logger.LogInformation("Gemini Audio Processing completed in {Elapsed}s.", aiDuration);

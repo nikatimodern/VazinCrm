@@ -55,7 +55,9 @@ namespace CRM.EndPoint.FrontEnd {
 
         private static string _Decode(string EncodeText)
         {
-            return EnCodeDeCode.Decrypt(EncodeText);
+            var connection = EnCodeDeCode.Decrypt(EncodeText);
+
+            return connection;
         }
 
 

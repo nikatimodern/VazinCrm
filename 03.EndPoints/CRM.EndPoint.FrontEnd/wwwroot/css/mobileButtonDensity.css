@@ -1,0 +1,39 @@
+/* Vazin CRM mobile action density.
+ * Only sizing/spacing: height, font-size, margin and padding.
+ * Preserve width, color, borders, icons, interaction and desktop presentation.
+ */
+@media (max-width: 767px) {
+    :is(#mainContent, .modal, .offcanvas, .swal2-popup) :is(
+        button:not(
+            .crm-mobile-density-exempt, .btn-close, .swal2-close,
+            .buttonExcel, .buttonPrint, .btnFilter,
+            .dt-paging-button, .cartable-mobile-search-clear,
+            .search-icon, .icon-button, .btn-icon
+        ):not(:has(> svg:only-child, > i:only-child)),
+        a.btn:not(.crm-mobile-density-exempt, .btn-close),
+        input:is([type="button"], [type="submit"], [type="reset"]):not(.crm-mobile-density-exempt),
+        :is(a, div, span):is(
+            .crm-mobile-dense-action,
+            .button, .buttonGreen, .buttonGreen0, .buttonGreen1,
+            .buttonGreen2, .buttonGreen3, .buttonGreen-wide,
+            .buttonBlue, .buttonBlue2,
+            .buttonPurple, .buttonPurple2, .buttonPurple3,
+            .buttonGray, .buttonGray2,
+            .buttonRed, .buttonOrange, .buttonOrange2,
+            .buttonCancel, .buttonCancel2, .buttonCancel3, .buttonCancel-white,
+            .buttonClose, .buttonUpdate, .buttonYellow, .buttonDisabled,
+            .buttonCusPartial, .button_border,
+            .btn1, .btnTable, .btnLeft, .btnCenter, .btnRight,
+            .btnRightRed, .btnLeftGreen, .btn-purple, .btn-outline-purple
+        ):not(.crm-mobile-density-exempt),
+        .filter-switch label:not(.crm-mobile-density-exempt),
+        .nav-tabs .nav-link:not(.crm-mobile-density-exempt),
+        .nav-pills .nav-link:not(.crm-mobile-density-exempt)
+    ) {
+        height: auto !important;
+        min-height: 23px !important;
+        font-size: 11px !important;
+        margin-block: 0 !important;
+        padding: 1px 5px !important;
+    }
+}

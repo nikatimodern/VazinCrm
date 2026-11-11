@@ -200,3 +200,64 @@
 	}
 }
 
+
+
+/* Mobile: restore the standard fixed top header while reducing its contents ~20%. */
+@media (max-width: 767px) {
+    #mainHeader.crm-main-header .header-content {
+        gap: 2px;
+    }
+
+    #mainHeader.crm-main-header .header-content > .header-icon-btn {
+        width: 22px;
+        height: 22px;
+    }
+
+    #mainHeader.crm-main-header .header-content > .header-icon-btn > svg,
+    #mainHeader.crm-main-header #notification-icon > svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    #mainHeader.crm-main-header #notification-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    #mainHeader.crm-main-header .header-profile .profile-image {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    #mainHeader.crm-main-header .header-chat-link {
+        min-height: 26px;
+        padding: 3px 6px;
+        font-size: 9px;
+    }
+
+    #mainHeader.crm-main-header .header-content .badge-count {
+        min-width: 14px;
+        height: 14px;
+        padding: 1px 3px;
+        border-width: 1px;
+        font-size: 8px;
+    }
+
+    #mainHeader.crm-main-header .header-content .notification-icon-badge {
+        width: 6px;
+        height: 6px;
+    }
+
+    #mainHeader.crm-main-header .header-action-btn {
+        width: 26px;
+        height: 26px;
+    }
+
+    #mainHeader.crm-main-header .header-action-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}

@@ -1,0 +1,58 @@
+@model List<CRM.Core.Domain.ReleaseNotes.Repositories.ReleaseNoteData>
+@using CRM.Core.Domain.ReleaseNotes.Entities
+@using CRM.Core.ApplicationServices.ReleaseNotes.Services
+<section class="rn rn-page rn-history" id="releaseNotesHistory">
+    <header class="rn-toolbar rn-history-heading"><h1>تغییرات نسخه‌های سامانه</h1><span class="rn-muted">تازه‌ها، بهبودها و رفع اشکال‌ها</span></header>
+    <div class="rn-history-tools">
+        <label class="rn-history-search"><span class="visually-hidden">جستجو در تغییرات نسخه‌ها</span><i class="fa fa-search" aria-hidden="true"></i><input type="search" data-history-search placeholder="جستجو در نسخه‌ها و تغییرات…" autocomplete="off" /></label>
+        <div class="rn-history-filters" role="group" aria-label="نوع تغییر">
+            <button type="button" class="rn-history-filter active" data-history-type="all" aria-pressed="true">همه</button>
+            <button type="button" class="rn-history-filter" data-history-type="1" aria-pressed="false">قابلیت جدید</button>
+            <button type="button" class="rn-history-filter" data-history-type="2" aria-pressed="false">بهبود</button>
+            <button type="button" class="rn-history-filter" data-history-type="3" aria-pressed="false">رفع مشکل</button>
+        </div>
+    </div>
+    @if (Model.Count == 0) { <div class="rn-empty">هنوز تغییری برای نمایش وجود ندارد.</div> }
+    <p class="rn-empty" data-history-empty hidden>موردی مطابق جستجو یا فیلتر پیدا نشد.</p>
+    <div class="rn-history-list">
+    @foreach (var note in Model) {
+        <article class="rn-release rn-history-card" data-history-card>
+            <header class="rn-history-card-head">
+                <span class="rn-version" dir="ltr">@note.Version</span><h2>@note.Title</h2>
+                @if (note.IsImportant) { <span class="rn-tag">مهم</span> }
+                <time>@CRM.Framework.BaseServices.GetDatePersian(note.PublishDate)</time>
+                <button type="button" class="rn-history-expand" data-history-expand aria-expanded="false" aria-label="نمایش توضیحات نسخه @note.Version"><i class="fa fa-chevron-down" aria-hidden="true"></i></button>
+            </header>
+            <div class="rn-history-body">
+                @if (!string.IsNullOrWhiteSpace(note.Description)) { <p class="rn-description rn-history-note" hidden>@note.Description</p> }
+                @foreach (var item in note.Items) {
+                    <div class="rn-history-item" data-history-item data-type="@((int)item.Type)">
+                        @{
+                            var iconClass = item.Type switch {
+                                ReleaseNoteItemType.NewFeature => "fa-plus-circle",
+                                ReleaseNoteItemType.Improvement => "fa-magic",
+                                ReleaseNoteItemType.BugFix => "fa-wrench",
+                                _ => "fa-info-circle"
+                            };
+                        }
+                        <span class="rn-tag rn-change-type rn-type-@((int)item.Type)">
+                            <i class="fas rn-type-icon @iconClass" aria-hidden="true"></i>
+                            @(item.Type == ReleaseNoteItemType.NewFeature ? "قابلیت جدید" : item.Type == ReleaseNoteItemType.Improvement ? "بهبود" : "رفع مشکل")
+                        </span>
+                        <div class="rn-history-item-content"><h3>@item.Title</h3>
+                            @if (!string.IsNullOrWhiteSpace(item.Description)) { <p class="rn-history-item-summary">@item.Description</p> }
+                            @if ((!string.IsNullOrWhiteSpace(item.ImageUrl) && ReleaseNoteAdministration.SafeUrl(item.ImageUrl)) || (!string.IsNullOrWhiteSpace(item.LearnMoreUrl) && ReleaseNoteAdministration.SafeUrl(item.LearnMoreUrl))) {
+                                <div class="rn-history-item-extra" hidden>
+                                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl) && ReleaseNoteAdministration.SafeUrl(item.ImageUrl)) { <img src="@item.ImageUrl" loading="lazy" alt="@item.Title" referrerpolicy="no-referrer" /> }
+                                    @if (!string.IsNullOrWhiteSpace(item.LearnMoreUrl) && ReleaseNoteAdministration.SafeUrl(item.LearnMoreUrl)) { <a href="@item.LearnMoreUrl" target="_blank" rel="noopener noreferrer">بیشتر بدانید ↗</a> }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </article>
+    }
+    </div>
+</section>
+@section Scripts { <script src="~/js/releaseNotesHistory.js?release=7.5.5" asp-append-version="true"></script> }

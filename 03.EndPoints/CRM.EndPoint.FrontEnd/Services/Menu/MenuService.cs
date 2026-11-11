@@ -12,6 +12,7 @@ using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
+using CRM.Core.Domain.ReleaseNotes.Repositories;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -26,6 +27,16 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var menus = BuildMenus(user);
 
         var filteredMenus = Filter(menus, roles);
+        var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
+        if (versionMenu is not null) {
+            var reader = new ReleaseNoteReader(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", [.. roles],
+                roles.Contains(AppRoles.Customer), roles.Any(role => role != AppRoles.Customer));
+            var latest = await serviceProvider.GetRequiredService<IReleaseNoteRepository>()
+                .GetLatestVisibleVersionInfoAsync(reader, DateTime.UtcNow, default);
+            versionMenu.Title = latest is null ? "نسخه" : $"نسخه {latest.Version}";
+            if (latest?.PublishDate is DateTime publishDate)
+                versionMenu.Subtitle = CRM.Framework.BaseServices.GetDatePersian(publishDate);
+        }
 
         await SetBadgeCountsAsync(filteredMenus);
 
@@ -547,6 +558,15 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.FinancialExpert
                 ],
                 DisplayOrder = 999
+            },
+            new MenuItem {
+                Id = "releaseNotes",
+                Title = "نسخه",
+                OnClick = "showReleaseNotesHistory()",
+                ClassName = "menu-release-notes",
+                IconHtml = "",
+                IsStandalone = true,
+                DisplayOrder = 1000
             }
 
             #endregion

@@ -138,7 +138,6 @@ public class PreFactorService(
         };
 
 
-        pf.PrePftype = pf.Pftype;
         var targetDict = type switch {
             1 => acceptedDict,
             2 => rejectDict,
@@ -150,6 +149,10 @@ public class PreFactorService(
         var currentStatus = pf.Pftype;
         if (targetDict.TryGetValue(pf.Pftype, out var newStatus))
         {
+            if (type == 2)
+                pf.RecordReturn(newStatus);
+
+            pf.PrePftype = currentStatus;
             pf.Pftype = newStatus;
         } else
         {

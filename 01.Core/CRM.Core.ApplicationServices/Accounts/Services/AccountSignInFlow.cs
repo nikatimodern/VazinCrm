@@ -9,6 +9,7 @@ public sealed class AccountSignInFlow(IAccountAuthentication authentication, IAc
     public async Task<AccountRedirect> CompleteAsync(AppUser user, string? returnUrl, CancellationToken cancellationToken)
     {
         await authentication.SignInAsync(user, DateTimeOffset.Now.AddDays(2), cancellationToken);
+        context.SetSession("ReleaseNotesSession", Guid.NewGuid().ToString("N"));
         var ua = context.UserAgent.ToLower();
         var device = ua.Contains("mobi") || ua.Contains("iphone") || ua.Contains("android") ? "Mobile" : ua.Contains("ipad") || ua.Contains("tablet") ? "Tablet" : "Desktop";
         var os = ua.Contains("windows") ? "Windows" : ua.Contains("android") ? "Android" : ua.Contains("iphone") ? "iOS" : ua.Contains("mac") ? "macOS" : ua.Contains("linux") ? "Linux" : "Unknown";

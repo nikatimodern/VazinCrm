@@ -24,14 +24,25 @@
     </div>
 } else if (string.IsNullOrEmpty(Model.Url)) {
     // Menu button
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")" data-tooltip-left="@Model.Title" onclick="@Model.OnClick">
+    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")" data-tooltip-left="@(string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title} - {Model.Subtitle}")" aria-label="@(Model.Id == "releaseNotes" ? (string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title}، {Model.Subtitle}") : null)" onclick="@Model.OnClick">
         @Html.Raw(Model.IconHtml)
         <span class="menu-item-title">
             <span>@Model.Title</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) {
+                <small class="menu-release-date">@Model.Subtitle</small>
+            }
             @if (Model.BadgeCount > 0) {
                 <span class="badge-count badge-count-menuItem @(Model.Id == "warnings" ? "badge-count-warning" : "")">@Model.BadgeCount</span>
             }
         </span>
+        @if (Model.Id == "releaseNotes") {
+            <span class="menu-release-compact" aria-hidden="true">
+                <span dir="ltr">@Model.Title.Replace("نسخه ", "")</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) {
+                    <small dir="ltr">@Model.Subtitle</small>
+                }
+            </span>
+        }
     </button>
 } else {
     // Menu link

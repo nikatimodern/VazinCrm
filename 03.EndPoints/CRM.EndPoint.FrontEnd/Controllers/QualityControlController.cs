@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControl;
 using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControl;
+using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlNoResponse;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlDeals;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlForm;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlQuestions;
@@ -51,6 +52,15 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             return BadRequest(new { message = "اطلاعات حذف معتبر نیست." });
         var result = await requests.CommandAsync(new DeleteQualityControlCommand(request), ct);
         return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkNoResponse([FromBody] MarkQualityControlNoResponseRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات درخواست معتبر نیست." });
+        var result = await requests.CommandAsync(new MarkQualityControlNoResponseCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status, rowVersion = result.RowVersion });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

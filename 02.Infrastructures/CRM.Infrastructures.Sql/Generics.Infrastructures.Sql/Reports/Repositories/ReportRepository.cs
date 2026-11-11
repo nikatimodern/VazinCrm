@@ -40,7 +40,7 @@ public sealed class ReportRepository : IReportRepository
     public async Task<List<Report>> SearchAsync(ReportSearch search, Guid? dealId, string userId, bool canReadAllSatisfaction, CancellationToken cancellationToken)
     {
         var qData = _db.Reports.AsNoTracking().Include(r => r.CallRecording.Participants)
-            .OrderByDescending(r => r.CreateDate).AsQueryable();
+            .OrderByDescending(r => r.RegDate).AsQueryable();
         if (dealId != null)
         {
             qData = qData.Where(f => f.DealId == dealId);
