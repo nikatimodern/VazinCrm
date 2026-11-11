@@ -50,9 +50,7 @@
                                                     onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
-                                            @if (!item.HasExternalFinancialMapping) {
-                                                <small class="factor-card__transfer-required">ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید.</small>
-                                            }
+
                                             <button type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
