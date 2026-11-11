@@ -259,17 +259,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (string.IsNullOrEmpty(settingValue))
             return await GetAccountIdByMoeinCodeAsync("7704", ct);
 
-        if (!int.TryParse(settingValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var accountId)
-            || accountId < 0)
+        if (!int.TryParse(settingValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var accountId) || accountId < 0)
             throw new InvalidOperationException("شناسه حساب کارمزد بانکی در تنظیم «BankFeeSlRef» نامعتبر است.");
 
         if (accountId == 0)
             return await GetAccountIdByMoeinCodeAsync("7704", ct);
 
-        if (!await sepidarContext.Accounts.AsNoTracking()
-                .AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
-            throw new InvalidOperationException(
-                $"حساب کارمزد بانکی تنظیم‌شده در سپیدار (شناسه {accountId}) پیدا نشد یا غیرفعال است.");
+        if (!await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException($"حساب کارمزد بانکی تنظیم‌شده در سپیدار (شناسه {accountId}) پیدا نشد یا غیرفعال است.");
 
         return accountId;
     }
@@ -1728,8 +1725,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, CancellationToken ct = default,
-        int? requestedInvoiceNumber = null)
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int? requestedInvoiceNumber = null,
+        CancellationToken ct = default)
     {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1820,7 +1817,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
             // The quotation item tracks the cumulative quantity already invoiced.
             // Both this update and the invoice/delivery inserts share one SQL transaction.
-            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct);
+            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور
 
             sepidarContext.SalesInvoices.Add(invoice);
             await sepidarContext.SaveChangesAsync(ct);
@@ -1833,7 +1830,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes);
 
             // The accounting voucher, stock delivery and invoice must commit or roll back together.
-            var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct);
+            var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct); // سند حسابداری
             sepidarContext.Vouchers.Add(voucher);
             await sepidarContext.SaveChangesAsync(ct);
 
@@ -1993,8 +1990,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         return voucher;
     }
 
-    private async Task UpdateQuotationUsedQuantitiesAsync(
-        int quotationId, ICollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    private async Task UpdateQuotationUsedQuantitiesAsync(int quotationId, ICollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
@@ -2019,8 +2015,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         {
             var quotationItem = quotationItemsById[invoiceItem.QuotationItemRef!.Value];
             if (quotationItem.ItemRef != invoiceItem.ItemRef || quotationItem.StockRef != invoiceItem.StockRef)
-                throw new InvalidOperationException(
-                    $"ردیف {invoiceItem.RowID}: کالا یا انبار با پیش‌فاکتور سپیدار مطابقت ندارد.");
+                throw new InvalidOperationException($"ردیف {invoiceItem.RowID}: کالا یا انبار با پیش‌فاکتور سپیدار مطابقت ندارد.");
         }
 
         foreach (var quotationItem in quotationItems)
@@ -2030,8 +2025,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // The CRM invoice may legitimately exceed the quotation's quantity.
             // UsedQuantity is the cumulative invoiced quantity, not a cap.
             if (used < 0m)
-                throw new InvalidOperationException(
-                    $"ردیف {quotationItem.RowID}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
+                throw new InvalidOperationException($"ردیف {quotationItem.RowID}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
 
             quotationItem.UsedQuantity = checked(used + added);
         }

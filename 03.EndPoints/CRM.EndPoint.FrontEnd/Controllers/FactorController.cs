@@ -3315,16 +3315,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
-                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, ct, request.InvoiceNumber);
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, request.InvoiceNumber,ct);
 
-                var invoiceAlreadyLinked = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
-                    x.EntityId != factor.Id
-                    && x.EntityName == nameof(Factor)
-                    && x.ExternalSoftwareId == request.ExternalSoftwareId
-                    && x.MapType == ExternalMappingTypeEnum.فاکتور
-                    && x.ExEntityId == invoiceId.ToString(), ct);
-                if (invoiceAlreadyLinked)
-                    return Conflict("این فاکتور سپیدار قبلاً به فاکتور دیگری در CRM متصل شده است.");
 
                 // The Sepidar insert commits before the CRM mapping is saved.
                 // If CRM mapping save fails, review the Sepidar invoice before retrying to avoid duplication.
