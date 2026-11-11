@@ -185,3 +185,57 @@
 @media (max-width: 390px) {
     #accessCatalog .ac-role-choices { grid-template-columns: minmax(0,1fr); }
 }
+
+/* User access tab: compact staff list, live role grants, and per-user overrides. */
+#accessCatalog .ac-users-list { padding: 4px 8px 8px; max-height: 62vh; overflow-y: auto; }
+#accessCatalog .ac-user-item { width: 100%; border: 1px solid transparent; background: transparent; color: inherit;
+    padding: 8px 10px; border-radius: 7px; display: block; text-align: right; cursor: pointer; margin-block: 2px; }
+#accessCatalog .ac-user-item:hover { background: #F8FAFA; }
+#accessCatalog .ac-user-item.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
+#accessCatalog .ac-user-item strong { display: block; font-size: 13px; }
+#accessCatalog .ac-user-item small { display: block; color: var(--ac-muted); font-size: 11px; overflow-wrap: anywhere; }
+#accessCatalog .ac-users-pagination { display: flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 8px; border-top: 1px solid var(--ac-border); }
+#accessCatalog .ac-users-pagination span { font-size: 11px; color: var(--ac-muted); }
+#accessCatalog .ac-user-role-section { border-bottom: 1px solid var(--ac-border); padding: 10px 12px; }
+#accessCatalog .ac-user-role-header { display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; font-size: 12px; margin-bottom: 7px; }
+#accessCatalog .ac-user-role-header span { font-size: 11px; color: var(--ac-muted); }
+#accessCatalog .ac-user-role-list { display: flex; flex-wrap: wrap; gap: 6px; }
+#accessCatalog .ac-user-role-choice { display: inline-flex; gap: 5px; align-items: center;
+    padding: 5px 8px; border-radius: 7px; border: 1px solid var(--ac-border); font-size: 12px;
+    background: #fff; cursor: pointer; min-height: 32px; margin: 0; }
+#accessCatalog .ac-user-role-choice.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
+#accessCatalog .ac-user-role-choice input,
+#accessCatalog .ac-user-only-overrides input { accent-color: var(--ac-primary); width: 15px; height: 15px; margin: 0; }
+#accessCatalog .ac-user-role-section > p { font-size: 11px; color: var(--ac-muted); margin: 7px 0 0; }
+#accessCatalog .ac-user-only-overrides { display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; white-space: nowrap; cursor: pointer; margin: 0; }
+#accessCatalog .ac-user-tools { display: flex; justify-content: flex-end; padding: 8px 12px 0; }
+#accessCatalog .ac-user-permission-groups { padding-top: 8px; }
+#accessCatalog .ac-user-permission-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding: 8px; }
+#accessCatalog .ac-user-permission-item { min-width: 0; padding: 7px; border: 1px solid var(--ac-border);
+    border-radius: 7px; display: grid; gap: 6px; }
+#accessCatalog .ac-user-permission-title { display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; flex-wrap: wrap; }
+#accessCatalog .ac-user-permission-title strong { font-size: 12px; }
+#accessCatalog .ac-user-permission-title small { font-size: 10px; color: var(--ac-muted); direction: ltr; }
+#accessCatalog .ac-user-permission-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 7px; }
+#accessCatalog .ac-user-override-select { min-height: 32px; border: 1px solid var(--ac-border); border-radius: 6px;
+    font-size: 12px; background: #fff; color: inherit; padding: 4px 8px; max-width: 100%; }
+#accessCatalog .ac-user-effective { display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+    color: var(--ac-muted); font-weight: 600; }
+#accessCatalog .ac-user-effective.is-allowed { color: var(--ac-primary-dark); }
+#accessCatalog .ac-user-effective.is-denied { color: var(--ac-danger); }
+#accessCatalog .ac-user-sources { font-size: 10px; color: var(--ac-muted); line-height: 1.5; overflow-wrap: anywhere; }
+#accessCatalog .ac-user-permission-item.is-custom { border-color: #B8D9D0; }
+@media (max-width: 991px) {
+    #accessCatalog .ac-user-permission-grid { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 767px) {
+    #accessCatalog .ac-users-list { max-height: 27vh; }
+    #accessCatalog .ac-user-permission-groups { max-height: none; }
+    #accessCatalog .ac-user-role-choice { min-height: 40px; }
+    #accessCatalog .ac-user-override-select { min-height: 39px; }
+    #accessCatalog .ac-user-permission-item { padding: 7px; }
+}
