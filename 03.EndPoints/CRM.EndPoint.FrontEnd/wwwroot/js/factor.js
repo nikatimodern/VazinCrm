@@ -899,7 +899,8 @@ async function openSalesFactorAllocationWorkspace(button, id) {
                     document.head.append(script);
                 });
             }
-            button.querySelector("span").textContent = "در حال دریافت…";
+            // Footer allocation actions are icon-only; keep the icon intact during lazy loading.
+            button.querySelector("i")?.classList.add("fa-spin");
             await salesFactorAllocationAssets;
         }
         await showSalesFactorAllocations(id);
