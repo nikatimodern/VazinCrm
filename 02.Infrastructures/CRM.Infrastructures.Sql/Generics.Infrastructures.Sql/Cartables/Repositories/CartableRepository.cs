@@ -141,7 +141,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableSupplyData> GetSupplyAsync(string? search, int type, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
-        var queryBase = db.PreFactors.AsQueryable();
+        var queryBase = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
@@ -189,7 +189,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableFinancialData> GetFinancialAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.OrderByDescending(g => g.ModifyDate).AsQueryable();
+        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).OrderByDescending(g => g.ModifyDate).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             baseQuery = baseQuery.Where(f => f.AgentName.Contains(search) || f.Customer.Contains(search) || f.SerialNumber == searchNumber);
@@ -219,7 +219,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableSalesData> GetSalesAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.AsQueryable();
+        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
