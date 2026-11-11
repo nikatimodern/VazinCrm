@@ -243,6 +243,34 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         return accountId;
     }
 
+    private async Task<int> GetBankFeeAccountIdAsync(CancellationToken ct)
+    {
+        // BankFeeSlRef is an ACC.Account.AccountId. Older Sepidar installations
+        // can leave this setting empty or zero; keep the original Moein fallback.
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == "BankFeeSlRef")
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count > 1)
+            throw new InvalidOperationException("تنظیم «BankFeeSlRef» در سپیدار بیش از یک بار تعریف شده است.");
+
+        var settingValue = values.SingleOrDefault()?.Trim();
+        if (string.IsNullOrEmpty(settingValue) || settingValue == "0")
+            return await GetAccountIdByMoeinCodeAsync("7704", ct);
+
+        if (!int.TryParse(settingValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var accountId)
+            || accountId <= 0)
+            throw new InvalidOperationException("شناسه حساب کارمزد بانکی در تنظیم «BankFeeSlRef» نامعتبر است.");
+
+        if (!await sepidarContext.Accounts.AsNoTracking()
+                .AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException(
+                $"حساب کارمزد بانکی تنظیم‌شده در سپیدار (شناسه {accountId}) پیدا نشد یا غیرفعال است.");
+
+        return accountId;
+    }
+
     private async Task<int> GetConfiguredDlIdAsync(string key, CancellationToken ct)
     {
         var dlId = await GetRequiredSepidarSettingIdAsync(key, ct);
@@ -468,7 +496,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TotalAmountInBaseCurrency = cash.Amount,
 
                 // اگر کارمزد وجود دارد
-                BankFeeSlRef = cash.Fee > 0 ? await GetAccountIdByMoeinCodeAsync("7704", ct) : null
+                BankFeeSlRef = cash.Fee > 0 ? await GetBankFeeAccountIdAsync(ct) : null
             };
 
 
@@ -671,7 +699,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
                     RowNumber = voucherItems.Count + 1,
 
-                    AccountSLRef = await GetAccountIdByMoeinCodeAsync("7704", ct),
+                    AccountSLRef = await GetBankFeeAccountIdAsync(ct),
 
                     DLRef = null,
 
