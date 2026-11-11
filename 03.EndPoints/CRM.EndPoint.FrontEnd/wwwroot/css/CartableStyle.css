@@ -1145,6 +1145,7 @@
 #cartableWorkspace :is(#tabContentFinancialExperts, #tabContentManagingDirector, #tabContentTaminExperts) { border-top:1px solid #DDE1E8; }
 .pf-accepted-card__content.InfoDataItem_Prefactor.pf-finance-card { grid-template-areas:"facts" "body" "actions" "description"; }
 .pf-finance-card__controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:7px; border-top:1px solid var(--pf-border); }
+#cartableWorkspace :is(#CSalesAdminId, #CFinancialExpertId) .pf-accepted-card__financial > .pf-finance-card__controls { border-top:0; padding-top:0; }
 .pf-finance-card__controls > button { display:inline-flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; min-height:28px; padding:4px 9px; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
 .pf-finance-card__controls > .pf-finance-card__button { background:var(--pf-operation-accent); color:#fff; }
 .pf-finance-card__invoice > span { display:inline-flex; align-items:center; justify-content:center; min-width:20px; min-height:20px; padding-inline:4px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:11px; }
