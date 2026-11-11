@@ -234,6 +234,29 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         return id;
     }
 
+    private async Task<bool> GetRequiredSepidarBooleanSettingAsync(string key, CancellationToken ct)
+    {
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == key)
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count != 1)
+            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+
+        var value = values[0]?.Trim();
+        if (bool.TryParse(value, out var result))
+            return result;
+
+        if (value == "1")
+            return true;
+
+        if (value == "0")
+            return false;
+
+        throw new InvalidOperationException($"مقدار تنظیم «{key}» در سپیدار باید True/False یا 1/0 باشد.");
+    }
+
     private async Task<int> GetConfiguredAccountIdAsync(string key, CancellationToken ct)
     {
         var accountId = await GetRequiredSepidarSettingIdAsync(key, ct);
@@ -508,12 +531,15 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             sepidarContext.PaymentHeaders.Add(paymentHeader);
             await sepidarContext.SaveChangesAsync(ct);
 
-            // Add Voucher & VoucherItem
-            var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
-            paymentHeader.Voucher = voucher;
-            paymentHeader.Version = 2;
+            // The payment document is always saved; its accounting voucher is optional.
+            if (await GetRequiredSepidarBooleanSettingAsync("PaymentAutoVoucher", ct))
+            {
+                var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
+                paymentHeader.Voucher = voucher;
+                paymentHeader.Version = 2;
+                await sepidarContext.SaveChangesAsync(ct);
+            }
 
-            await sepidarContext.SaveChangesAsync(ct);
             await trans.CommitAsync(ct);
 
             return (nameof(PaymentHeader), paymentHeader.PaymentHeaderId.ToString());
@@ -1752,6 +1778,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Serialize CRM exports, including inventory numbers and stock checks, per Sepidar database.
             await AcquireSepidarInvoiceExportLockAsync(ct); // جلوگیری از ثبت همزمان توسط مسیر خروجی CRM
 
+            // Read Sepidar behavior flags by configuration key, not ConfigurationID.
+            var issueInventoryDelivery = await GetRequiredSepidarBooleanSettingAsync("SalesAutomaticallyIssueInventoryDelivery", ct);
+            var controlSaleStock = await GetRequiredSepidarBooleanSettingAsync("SaleControlStockQuantiy", ct);
+            var issueSalesVoucher = await GetRequiredSepidarBooleanSettingAsync("SalesInvoiceAutomaticVoucher", ct);
+
             var invoiceNumber = await ResolveInvoiceNumberAsync(preview.FiscalYearRef, requestedInvoiceNumber, ct);
             var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
             var now = DateTime.Now;
@@ -1813,7 +1844,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await LockInventoryStockSummaryAsync(summaryTable, ct); // قفل‌گذاری و آماده‌سازی رکوردهای موجودی
             await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه مجدد موجودی قبل از ثبت
             var balancesBefore = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct); // خواندن موجودی فعلی
-            ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // بررسی کافی‌بودن موجودی
+            if (controlSaleStock)
+                ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // کنترل موجودی در صورت فعال بودن تنظیم
 
             // The quotation item tracks the cumulative quantity already invoiced.
             // Both this update and the invoice/delivery inserts share one SQL transaction.
@@ -1823,21 +1855,30 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             await sepidarContext.SaveChangesAsync(ct);
 
             // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
-            await AddInventoryDeliveryAsync(invoice, stockCodes, ct); // ثبت خروج انبار
-            await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه موجودی بعد از خروج
+            if (issueInventoryDelivery)
+                await AddInventoryDeliveryAsync(invoice, stockCodes, ct); // ثبت خروج انبار در صورت فعال بودن تنظیم
 
-            var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
-            ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes);
+            // Always refresh the summary: even without delivery, an invoice changes undelivered sale quantities.
+            await UpdateInventoryStockSummaryAsync(summaryTable, ct);
 
-            // The accounting voucher, stock delivery and invoice must commit or roll back together.
-            var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct); // سند حسابداری
-            sepidarContext.Vouchers.Add(voucher);
-            await sepidarContext.SaveChangesAsync(ct);
+            if (issueInventoryDelivery)
+            {
+                var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
+                ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes, controlSaleStock);
+            }
 
-            // Set the invoice FK only after the voucher exists in SQL Server.
-            invoice.VoucherRef = voucher.VoucherId;
-            invoice.Version = 2;
-            await sepidarContext.SaveChangesAsync(ct);
+            // The sales voucher is optional; all enabled documents share the invoice SQL transaction.
+            if (issueSalesVoucher)
+            {
+                var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct); // سند حسابداری فروش
+                sepidarContext.Vouchers.Add(voucher);
+                await sepidarContext.SaveChangesAsync(ct);
+
+                // Set the invoice FK only after the voucher exists in SQL Server.
+                invoice.VoucherRef = voucher.VoucherId;
+                invoice.Version = 2;
+                await sepidarContext.SaveChangesAsync(ct);
+            }
 
             await transaction.CommitAsync(ct);
             return invoiceId;
@@ -2275,7 +2316,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> before,
         IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> after,
         IReadOnlyDictionary<int, int> stockCodes,
-        IReadOnlyDictionary<int, string> itemCodes)
+        IReadOnlyDictionary<int, string> itemCodes,
+        bool controlSaleStock)
     {
         foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
         {
@@ -2283,7 +2325,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 throw new InvalidOperationException("خلاصه موجودی پس از ثبت خروج انبار قابل بررسی نیست.");
 
             var expected = previous.PhysicalQuantity - group.Sum(x => x.Quantity);
-            if (expected < 0 || current.PhysicalQuantity != expected)
+            if ((controlSaleStock && expected < 0) || current.PhysicalQuantity != expected)
                 throw new InvalidOperationException(
                     $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} پس از ثبت خروج با مقدار مورد انتظار مطابقت ندارد.");
         }
