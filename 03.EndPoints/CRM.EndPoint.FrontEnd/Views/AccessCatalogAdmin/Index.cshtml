@@ -118,10 +118,81 @@
     </div>
 
     <div id="acUsersPanel" class="ac-users-panel" role="tabpanel" aria-labelledby="acUsersTab" hidden>
-        <div class="ac-panel ac-future-panel">
-            <i class="fas fa-users-cog" aria-hidden="true"></i>
-            <h2>دسترسی اختصاصی کاربران</h2>
-            <p>این بخش در مرحله بعد و پس از تأیید تخصیص مجوز به نقش‌ها تکمیل می‌شود.</p>
+        <div class="ac-layout ac-role-layout">
+            <aside class="ac-panel" aria-label="کاربران">
+                <div class="ac-panel-heading">
+                    <h2>کاربران <span class="ac-count" data-users-count>۰</span></h2>
+                    <button type="button" class="ac-icon-button" data-action="reload-users" title="تازه‌سازی" aria-label="تازه‌سازی کاربران">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <label class="ac-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" data-users-search maxlength="150" placeholder="نام، نام کاربری یا تلفن..."
+                           aria-label="جست‌وجوی کاربران" />
+                </label>
+                <div class="ac-users-list" data-users-list aria-live="polite">
+                    <p class="ac-muted">برای نمایش کاربران این تب را انتخاب کنید.</p>
+                </div>
+                <div class="ac-users-pagination">
+                    <button class="ac-btn ac-btn-muted" type="button" data-action="user-prev" disabled>قبلی</button>
+                    <span data-users-page>صفحه ۱</span>
+                    <button class="ac-btn ac-btn-muted" type="button" data-action="user-next" disabled>بعدی</button>
+                </div>
+            </aside>
+            <section class="ac-panel" aria-label="نقش‌ها و دسترسی‌های کاربر">
+                <div class="ac-panel-heading ac-role-detail-heading">
+                    <div>
+                        <h2 data-user-title>دسترسی‌های کاربر</h2>
+                        <p data-user-position>برای شروع یک کاربر را انتخاب کنید.</p>
+                        <p data-user-subtitle></p>
+                    </div>
+                    <div class="ac-toolbar-actions">
+                        <button class="ac-btn ac-btn-muted" type="button" data-action="reset-user" disabled>بازگرداندن تغییرات</button>
+                        <button class="ac-btn ac-btn-primary" type="button" data-action="save-user" disabled>
+                            <i class="fas fa-save" aria-hidden="true"></i> ذخیره دسترسی‌های کاربر
+                        </button>
+                    </div>
+                </div>
+                <div class="ac-user-role-section">
+                    <div class="ac-user-role-header">
+                        <strong>نقش‌های کاربر</strong>
+                        <span data-user-roles-count>۰ نقش</span>
+                    </div>
+                    <div class="ac-user-role-list" data-user-roles>
+                        <p class="ac-muted">نقش‌ها پس از انتخاب کاربر نمایش داده می‌شوند.</p>
+                    </div>
+                    <p>سمت کاری کاربر مستقل از نقش‌هاست و در این صفحه تغییر نمی‌کند.</p>
+                </div>
+                <div class="ac-role-tools">
+                    <label class="ac-search ac-role-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-user-permission-search maxlength="150"
+                               placeholder="جست‌وجوی مجوز یا انتیتی..." aria-label="جست‌وجوی دسترسی‌های کاربر" />
+                    </label>
+                    <label class="ac-user-only-overrides">
+                        <input type="checkbox" data-user-only-overrides />
+                        فقط استثناهای اختصاصی
+                    </label>
+                    <span class="ac-selected-count" data-user-effective-count>۰ مجوز مؤثر</span>
+                </div>
+                <p class="ac-role-notice">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    مجوزهای نقش‌ها پویا هستند. «محدودیت اختصاصی» بر همه نقش‌ها اولویت دارد و
+                    «اجازه اختصاصی» دسترسی مستقلی ایجاد می‌کند. اعمال واقعی مجوزها روی عملیات برنامه در مرحله بعد است.
+                </p>
+                <div class="ac-user-tools">
+                    <button class="ac-btn ac-btn-muted" type="button" data-action="user-clear-overrides" disabled>
+                        بازگرداندن همه مجوزها به نقش‌ها
+                    </button>
+                </div>
+                <p class="ac-error ac-role-error" data-user-error role="alert" hidden></p>
+                <div class="ac-role-groups ac-user-permission-groups" data-user-permissions aria-live="polite">
+                    <div class="ac-empty"><i class="fas fa-user-shield" aria-hidden="true"></i>
+                        <p>یک کاربر انتخاب کنید تا مجوزهای مؤثر او نمایش داده شوند.</p>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
