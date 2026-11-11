@@ -563,6 +563,8 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
     $.post(`/Factor/AddFactor?unlinkSepidar=${unlinkSepidar}`, factor, async (res) => {
         FLshowLoading(false);
         if (res.status === 200) {
+            toastifySuccess("فاکتور با موفقیت ثبت شد.");
+            cancelFactor();
             if (type === 0) {
                 await refreshFactorPartial();
                 await GetPreFactorPartial();
@@ -582,8 +584,6 @@ const submitFactorOK = async (type, unlinkSepidar = false) => {
             } else if (type === 6) {
                 await getAllFactorsModal(factor.id, 6);
             }
-            toastifySuccess("فاکتور با موفقیت ثبت شد.");
-            cancelFactor();
             FLshowLoading(false);
         } else if (res.status === 201) {
             FLshowLoading(false);
@@ -882,7 +882,8 @@ let salesFactorAllocationAssets = null;
 async function openSalesFactorAllocationWorkspace(button, id) {
     if (button.disabled) return;
     const label = button.innerHTML;
-    button.disabled = true; button.setAttribute("aria-busy", "true");
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
     try {
         if (typeof showSalesFactorAllocations !== "function") {
             if (!salesFactorAllocationAssets) {
@@ -890,17 +891,24 @@ async function openSalesFactorAllocationWorkspace(button, id) {
                     const script = document.createElement("script");
                     script.src = button.dataset.allocationScript;
                     script.onload = resolve;
-                    script.onerror = () => { script.remove(); salesFactorAllocationAssets = null; reject(new Error("allocation-assets")); };
+                    script.onerror = () => {
+                        script.remove();
+                        salesFactorAllocationAssets = null;
+                        reject(new Error("allocation-assets"));
+                    };
                     document.head.append(script);
                 });
             }
-            button.querySelector("span").textContent = "در حال دریافت…";
+            // Footer allocation actions are icon-only; keep the icon intact during lazy loading.
+            button.querySelector("i")?.classList.add("fa-spin");
             await salesFactorAllocationAssets;
         }
         await showSalesFactorAllocations(id);
     } catch {
         toastifyError("پنجره تخصیص باز نشد؛ دوباره تلاش کنید.");
     } finally {
-        button.innerHTML = label; button.disabled = false; button.removeAttribute("aria-busy");
+        button.innerHTML = label;
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
     }
 }

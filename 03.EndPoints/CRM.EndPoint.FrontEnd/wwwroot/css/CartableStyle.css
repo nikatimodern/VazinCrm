@@ -1052,19 +1052,11 @@
 	gap: 6px;
 	padding-block: 5px;
 }
-.factor-card__financial-actions {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	flex-wrap: wrap;
-	gap: 6px;
-	padding-top: 7px;
-	margin-top: 4px;
-	border-top: 1px solid var(--pf-border);
-}
-.factor-card__status { display:flex; align-items:center; gap:6px; min-width:0; }
+.factor-card__operation-row { align-items:center; }
+.factor-card__status { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; min-width:0; }
+.factor-card__status .buttonGray:disabled { opacity:.5; cursor:not-allowed; }
 .factor-card__status:not(:has(> *)) { display:none; }
-.factor-card__financial-actions button,
+.factor-card__operation-row .factor-card__status button,
 .factor-card__external button:is(.buttonBlue, .buttonBlue2) {
 	min-height: 28px;
 	margin: 0;
@@ -1073,11 +1065,6 @@
 	box-shadow: none;
 	white-space: nowrap;
 	font: 500 11px/1.5 IRANSansMedium;
-}
-.factor-card__financial-actions .sf-sales-manage-allocations {
-	background: var(--pf-card-background);
-	border-color: var(--pf-border);
-	color: var(--pf-operation-accent);
 }
 .factor-card__status .buttonCancel3 { background:#C2185B; color:#fff; }
 .factor-card__status .buttonGray { background:var(--pf-operation-accent); color:#fff; }
@@ -1158,6 +1145,7 @@
 #cartableWorkspace :is(#tabContentFinancialExperts, #tabContentManagingDirector, #tabContentTaminExperts) { border-top:1px solid #DDE1E8; }
 .pf-accepted-card__content.InfoDataItem_Prefactor.pf-finance-card { grid-template-areas:"facts" "body" "actions" "description"; }
 .pf-finance-card__controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:6px; padding-top:7px; border-top:1px solid var(--pf-border); }
+#cartableWorkspace :is(#CSalesAdminId, #CFinancialExpertId) .pf-accepted-card__financial > .pf-finance-card__controls { border-top:0; padding-top:0; }
 .pf-finance-card__controls > button { display:inline-flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px; min-height:28px; padding:4px 9px; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
 .pf-finance-card__controls > .pf-finance-card__button { background:var(--pf-operation-accent); color:#fff; }
 .pf-finance-card__invoice > span { display:inline-flex; align-items:center; justify-content:center; min-width:20px; min-height:20px; padding-inline:4px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:11px; }
@@ -1227,8 +1215,11 @@
 .supply-card__steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .supply-card__steps .completedTrack { display:flex; align-items:center; justify-content:center; font-size:14px; }
 .supply-card__warning { padding:4px 7px; border-radius:5px; background:#FCE8F0; color:#C2185B; font-size:12px; }
+.supply-card__controls { border-top:0; padding-top:0; }
 .supply-card__controls button { width:auto; min-height:28px; padding:4px 8px !important; border:1px solid var(--pf-border); border-radius:5px; background:var(--pf-card-background); color:var(--pf-operation-accent); font:500 12px/1.5 IRANSansMedium; }
 .supply-card__controls .btn-secondary, .supply-card__controls .buttonGreen { background:var(--pf-operation-accent); color:#fff; }
+.supply-card__controls .btn-success { background:#00665C; border-color:#00665C; color:#fff; }
+.supply-card__controls .btn-success:hover { background:#004944; border-color:#004944; color:#fff; }
 .supply-card__controls .btn-outline-danger { border-color:#C2185B; background:#FCE8F0; color:#C2185B; }
 #cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) .buttonGreen2 { background:#00665C; color:#fff; box-shadow:none; border-radius:5px; }
 #cartableWorkspace :is(#MDTransferContentId,#taminInvoiceContentId) :is(.buttonCancel3,.buttonCancel2) { background:#C2185B; color:#fff; box-shadow:none; border-radius:5px; }
@@ -1286,10 +1277,49 @@
 #cartableWorkspace .cartable-pane:not(.d-none) { display:flex; flex-direction:column; flex:1; min-height:0; overflow:auto; }
 #cartableWorkspace .cartable-viewport-fill { flex:1; min-height:0; min-width:0; }
 #cartableWorkspace .cartable-viewport-fill:not(.tab-pane):not(.d-none):not(.d-xxl-grid),
-#cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex; flex-direction:column; }
+#cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex !important; flex-direction:column; }
 #cartableWorkspace .cartable-viewport-fill > :not(.cartable-viewport-fill):not(.cartable-viewport-scroll) { flex-shrink:0; }
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
+
+/* Supply invoices: keep the toolbar fixed and let only the DataTables body scroll. */
+#cartableWorkspace #CTaminExpertId:has(#TaminInvoiceTab-pane.active) {
+    overflow: hidden;
+}
+
+#cartableWorkspace #CTaminExpertId:has(#TaminInvoiceTab-pane.active) :is(
+    #tabContentTaminExperts,
+    #TaminInvoiceTab-pane.active,
+    #TaminInvoiceTab-pane.active > .w-100,
+    #taminInvoiceContentId,
+    #taminInvoiceContentId .dt-container,
+    #taminInvoiceContentId .dt-layout-row:has(.dt-scroll),
+    #taminInvoiceContentId .dt-layout-cell:has(> .dt-scroll),
+    #taminInvoiceContentId .dt-scroll
+) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+#cartableWorkspace #CTaminExpertId #TaminInvoiceTab-pane.active > .w-100 > .cartable-list-toolbar,
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId .dt-scroll-head {
+    flex: 0 0 auto;
+}
+
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId {
+    overflow: hidden;
+}
+
+#cartableWorkspace #CTaminExpertId #taminInvoiceContentId .dt-scroll-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto;
+}
 
 /* The wrapper has no layout effect on desktop; only mobile combines tabs and controls. */
 #cartableWorkspace .cartable-tamin-nav-row {

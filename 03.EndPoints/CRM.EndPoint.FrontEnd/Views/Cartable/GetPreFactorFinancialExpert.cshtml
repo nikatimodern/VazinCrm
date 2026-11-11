@@ -13,15 +13,19 @@
         <div class="InfoDataItem_Prefactor pf-accepted-card__content pf-finance-card">
             <div class="pf-accepted-card__facts" aria-label="مشخصات پیش‌فاکتور">
                 <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><strong>@preFactor.SerialNumber</strong></div>
+                @if (preFactor.DealSerialNumber != null) {
+                    <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@preFactor.DealSerialNumber</strong></div>
+                }
                 <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@preFactor.Date</strong></div>
                 <div class="pf-accepted-card__fact"><span>تاریخ تأیید</span><strong>@(string.IsNullOrEmpty(preFactor.AcceptedDateTxt) ? "-" : preFactor.AcceptedDateTxt.Substring(0, 10))</strong></div>
             </div>
             <div class="pf-accepted-card__body">
                 <section class="pf-accepted-card__section pf-accepted-card__customer">
                     <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
-                    <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(preFactor.Customer) ? "-" : preFactor.Customer)</strong></div>
-                    <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(preFactor.AgentName) ? "-" : preFactor.AgentName)</strong></div>
+                    <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(preFactor.CustomerEntity?.CustomerCode.ToString() ?? preFactor.CustomerCode?.ToString() ?? "-")</strong></div>
+                    <div class="pf-accepted-card__row"><span>مشتری</span><strong>@preFactor.Customer @(string.IsNullOrWhiteSpace(preFactor.Customer) || string.IsNullOrWhiteSpace(preFactor.AgentName) ? "" : " | ")@preFactor.AgentName</strong></div>
                     <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@preFactor.UserCreator</strong></div>
+                    <div class="pf-accepted-card__row"><span>کارشناس تأمین</span><strong>@(string.IsNullOrWhiteSpace(preFactor.UserTaminTxt) ? "-" : preFactor.UserTaminTxt)</strong></div>
                 </section>
                 <section class="pf-accepted-card__section pf-accepted-card__financial">
                     <h3><span>بررسی مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
@@ -59,15 +63,15 @@
                 </section>
             </div>
             <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
-                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-eye"></i>
                     </span></button>
                     @if (preFactor.CustomerId != null) {
-                        <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                             <i class="mp fa fa-user"></i>
                         </span></button>
                     }
-                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-paperclip"></i>
                     </span></button>
             </div></div>

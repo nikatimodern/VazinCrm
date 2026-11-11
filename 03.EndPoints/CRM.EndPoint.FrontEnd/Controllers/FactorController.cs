@@ -36,7 +36,11 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
+using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.Invoices.Repositories;
+using CRM.Infrastructures.Sql.Sepidar.Invoices.Repositories;
 using CRM.Core.Domain.Sms.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.Core.Domain.SystemWarnings.Enums;
@@ -75,11 +79,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly TaskServices ts;
         private readonly Sepidar1Service sepidar1Service;
         private readonly Sepidar2Service sepidar2Service;
+        private readonly Sepidar1InvoiceExportRepository sepidar1InvoiceExportRepository;
+        private readonly Sepidar2InvoiceExportRepository sepidar2InvoiceExportRepository;
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
 
         public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, Sepidar1Service sepidar1Service,
             Sepidar2Service sepidar2Service,
+            Sepidar1InvoiceExportRepository sepidar1InvoiceExportRepository,
+            Sepidar2InvoiceExportRepository sepidar2InvoiceExportRepository,
             UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, Service GenService,
             FileSaver fileSaver,
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
@@ -91,6 +99,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.ts = ts;
             this.sepidar1Service = sepidar1Service;
             this.sepidar2Service = sepidar2Service;
+            this.sepidar1InvoiceExportRepository = sepidar1InvoiceExportRepository;
+            this.sepidar2InvoiceExportRepository = sepidar2InvoiceExportRepository;
             this.userManager = userManager;
             this.signInManager = signInManager;
             genService = GenService;
@@ -187,8 +197,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         fac.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
                         break;
                     case 2:
-                        if (string.IsNullOrEmpty(fac.SnFinancial))
-                            return BadRequest("شماره فاکتور مالی وارد نشده است!");
+                        // Approval is allowed only after at least one confirmed external invoice mapping.
+                        var sentToFinancialSoftware = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                            x.EntityId == fac.Id && x.EntityName == nameof(Factor)
+                            && x.MapType == ExternalMappingTypeEnum.فاکتور
+                            && x.ExEntityId != null && x.ExEntityId != "");
+                        if (!sentToFinancialSoftware)
+                            return BadRequest("ابتدا فاکتور را به حداقل یک نرم‌افزار مالی ارسال کنید.");
 
                         fac.status = FactorStatus.تایید_شده;
                         fac.statusTxt = nameof(FactorStatus.تایید_شده).Replace("_", " ");
@@ -867,7 +882,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpGet]
-        public async Task<IActionResult> PreviewFactorSepidarPrint(int id)
+        public async Task<IActionResult> PreviewFactorSepidarPrint(int id, Guid? softwareId = null)
         {
             try
             {
@@ -877,11 +892,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 //                    .Where(f => f.Id == id).FirstOrDefaultAsync();
                 //var customer = await db.Customers.Where(f => f.Id == factor.CustomerId).FirstOrDefaultAsync();
 
-                var s1 = await sepidar1Service.GetInvoiceWithItemsAsync(id);
+                var service = softwareId.HasValue ? GetSepidarService(softwareId.Value) : sepidar1Service;
+                if (service == null) return BadRequest("نرم‌افزار مالی انتخاب‌شده پشتیبانی نمی‌شود.");
+
+                var s1 = await service.GetInvoiceWithItemsAsync(id);
 
                 if (s1 == null) return NotFound();
 
-                s1.ExtraDescription = sepidar1Service.GetNoteInvoice(s1.InvoiceId);
+                s1.ExtraDescription = service.GetNoteInvoice(s1.InvoiceId);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 SepidarFactorViewModel model = new SepidarFactorViewModel() {
@@ -3199,6 +3217,170 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+
+        private ISepidarInvoiceExportRepository GetSepidarInvoiceExportRepository(Guid softwareId)
+        {
+            if (softwareId == Sepidar1SoftwareId)
+                return sepidar1InvoiceExportRepository;
+            if (softwareId == Sepidar2SoftwareId)
+                return sepidar2InvoiceExportRepository;
+            return null;
+        }
+
+        private async Task<(Factor factor, PreFactor preFactor, int quotationId, string softwareTitle)>
+            GetMappedFactorForExportAsync(SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            if (request == null || request.FactorId == Guid.Empty || request.ExternalSoftwareId == Guid.Empty)
+                throw new InvalidOperationException("شناسه فاکتور یا نرم‌افزار مقصد معتبر نیست.");
+
+            if (GetSepidarInvoiceExportRepository(request.ExternalSoftwareId) == null)
+                throw new InvalidOperationException("نرم‌افزار مقصد پشتیبانی نمی‌شود.");
+
+            var software = await db.ExternalSoftwares.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == request.ExternalSoftwareId, ct);
+            if (software == null)
+                throw new InvalidOperationException("نرم‌افزار مقصد پیدا نشد.");
+
+            var factor = await db.Factors.AsNoTracking()
+                .Include(x => x.FactorItems)
+                .SingleOrDefaultAsync(x => x.Id == request.FactorId, ct);
+
+            if (factor == null)
+                throw new InvalidOperationException("فاکتور CRM پیدا نشد.");
+
+            // Sending precedes final CRM approval; prevent canceled and returned invoices.
+            if (factor.status == FactorStatus.ابطال_شده || factor.Returned || factor.ParentReturnedId.HasValue)
+                throw new InvalidOperationException("فاکتور ابطال‌شده یا برگشتی قابل انتقال نیست.");
+
+            var preFactor = await db.PreFactors.AsNoTracking()
+                .Include(x => x.PreFactorItems)
+                .SingleOrDefaultAsync(x => x.Id == factor.PfactorID, ct);
+            if (preFactor == null)
+                throw new InvalidOperationException("پیش‌فاکتور مربوط به فاکتور CRM پیدا نشد.");
+
+            var mapping = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.EntityId == preFactor.Id
+                    && x.EntityName == nameof(PreFactor)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                .Select(x => new { x.ExEntityName, x.ExEntityId })
+                .SingleOrDefaultAsync(ct);
+
+            if (mapping == null || mapping.ExEntityName != nameof(Quotation)
+                || !int.TryParse(mapping.ExEntityId, out var quotationId) || quotationId <= 0)
+                throw new InvalidOperationException("پیش‌فاکتور این فاکتور در نرم‌افزار انتخاب‌شده ثبت نشده است.");
+
+            return (factor, preFactor, quotationId, software.Title);
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var (factor, preFactor, quotationId, softwareTitle) = await GetMappedFactorForExportAsync(request, ct);
+
+                var alreadySent = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                    x.EntityId == factor.Id && x.EntityName == nameof(Factor)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور, ct);
+
+                if (alreadySent)
+                    return Conflict("این فاکتور قبلاً در نرم‌افزار انتخاب‌شده ثبت شده است.");
+
+                var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
+                var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+                await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
+                return Ok(new { softwareTitle, preview });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        public async Task<IActionResult> CheckExternalFactorInvoiceNumber(
+            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                if (request?.InvoiceNumber is not int invoiceNumber || invoiceNumber <= 0)
+                    return BadRequest("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+                var (_, _, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+
+                var available = await sepidarService.IsInvoiceNumberAvailableAsync(quotationId, invoiceNumber, ct);
+                return Ok(new {
+                    available,
+                    message = available
+                        ? "شماره فاکتور در سال مالی پیش‌فاکتور سپیدار قابل استفاده است."
+                        : $"شماره فاکتور {invoiceNumber} قبلاً در این سال مالی سپیدار ثبت شده است."
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var (factor, preFactor, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
+
+                var alreadySent = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                    x.EntityId == factor.Id && x.EntityName == nameof(Factor)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور, ct);
+
+                if (alreadySent)
+                    return Conflict("این فاکتور قبلاً در نرم‌افزار انتخاب‌شده ثبت شده است.");
+
+                var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
+                var sepidarService = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
+                var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, request.InvoiceNumber,ct);
+
+
+                // The Sepidar insert commits before the CRM mapping is saved.
+                // If CRM mapping save fails, review the Sepidar invoice before retrying to avoid duplication.
+                var user = await userManager.GetUserAsync(HttpContext.User);
+                db.ExternalMappings.Add(new ExternalMapping {
+                    ExternalSoftwareId = request.ExternalSoftwareId,
+                    EntityName = nameof(Factor),
+                    EntityId = factor.Id,
+                    MapType = ExternalMappingTypeEnum.فاکتور,
+                    MapTypeTxt = nameof(ExternalMappingTypeEnum.فاکتور),
+                    UserCreatorID = user.Id,
+                    UserCreator = user.FullName,
+                    ExEntityName = nameof(Invoice),
+                    ExEntityId = invoiceId.ToString()
+                });
+                await db.SaveChangesAsync(ct);
+                return Ok(new { invoiceId });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (DbUpdateException ex)
+            {
+                logger.LogError(ex, "Sepidar factor export CRM mapping save failed");
+                return BadRequest("ثبت فاکتور انجام شده یا وضعیت آن نامشخص است؛ قبل از تلاش مجدد، ارتباط مالی را بررسی کنید.");
+            }
+        }
+
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> GetAllSepidarStocksPartial([FromBody] SendToExternalSoftwaresDto request)
@@ -3671,6 +3853,59 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
+        {
+            if (factorId == Guid.Empty)
+                return BadRequest("شناسه فاکتور معتبر نیست.");
+
+            var factor = await db.Factors.AsNoTracking()
+                .Where(x => x.Id == factorId)
+                .Select(x => new { x.Id, x.Customer })
+                .SingleOrDefaultAsync(ct);
+
+            if (factor == null)
+                return NotFound("فاکتور پیدا نشد.");
+
+            var mappings = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.EntityId == factorId && x.EntityName == nameof(Factor)
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور)
+                .OrderByDescending(x => x.CreateDate)
+                .Select(x => new {
+                    x.ExternalSoftwareId,
+                    SoftwareTitle = x.ExternalSoftware.Title,
+                    x.ExEntityId,
+                    x.CreateDateTxt
+                })
+                .ToListAsync(ct);
+
+            var result = new List<object>();
+            foreach (var mapping in mappings)
+            {
+                var service = GetSepidarService(mapping.ExternalSoftwareId);
+                var invoiceIdValid = int.TryParse(mapping.ExEntityId, out var invoiceId) && invoiceId > 0;
+                var invoice = service != null && invoiceIdValid
+                    ? await service.GetInvoiceSummaryAsync(invoiceId)
+                    : null;
+
+                result.Add(new {
+                    mapping.ExternalSoftwareId,
+                    ExternalSoftwareTitle = mapping.SoftwareTitle,
+                    ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
+                    CreationDate = mapping.CreateDateTxt,
+                    CustomerName = invoice?.CustomerPartyName ?? factor.Customer ?? "—",
+                    ViewUrl = invoice != null && service != null
+                        ? Url.Action("PreviewFactorSepidarPrint", "Factor", new {
+                            id = invoiceId, softwareId = mapping.ExternalSoftwareId
+                        })
+                        : null
+                });
+            }
+
+            return Ok(result);
+        }
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpGet]

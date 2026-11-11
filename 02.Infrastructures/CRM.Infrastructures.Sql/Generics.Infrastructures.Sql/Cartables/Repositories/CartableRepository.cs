@@ -16,6 +16,7 @@ using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Infrastructures.Sql.Querying;
 using Microsoft.EntityFrameworkCore;
 using CRM.Core.Domain.Factors.Enum;
+using CRM.Core.Domain.ASettings.Enums;
 
 namespace CRM.Infrastructures.Sql.Cartables.Repositories;
 public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
@@ -30,7 +31,32 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         6 => Read(db.Factors.Where(f => f.Id == id), ct),
         7 => Read(db.Factors.Where(f => f.CustomerId == id && f.status == FactorStatus.تایید_شده), ct),
         _ => Task.FromResult<List<Factor>?>(null)};
-    private static async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct) => await query.AsNoTracking().ToListAsync(ct);
+    private async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct)
+    {
+        var factors = await query.AsNoTracking().ToListAsync(ct);
+        await FillExternalFinancialMappingStateAsync(factors, ct);
+        return factors;
+    }
+
+    private async Task FillExternalFinancialMappingStateAsync(IList<Factor> factors, CancellationToken ct)
+    {
+        if (factors.Count == 0)
+            return;
+
+        var factorIds = factors.Select(x => x.Id).ToArray();
+        var mappedIds = await db.ExternalMappings.AsNoTracking()
+            .Where(x => factorIds.Contains(x.EntityId)
+                && x.EntityName == nameof(Factor)
+                && x.MapType == ExternalMappingTypeEnum.فاکتور
+                && x.ExEntityId != null && x.ExEntityId != "")
+            .Select(x => x.EntityId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var mappedSet = mappedIds.ToHashSet();
+        foreach (var factor in factors)
+            factor.HasExternalFinancialMapping = mappedSet.Contains(factor.Id);
+    }
     public async Task<IList<PreFactor>> GetPreFactorsAsync(QueryFilter filter, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
         var pListQ = db.PreFactors.Include(p => p.Deal).Include(p => p.CustomerEntity).OrderByDescending(p => p.DateMiladi).ThenByDescending(p => p.CreateDate).AsQueryable();
@@ -109,12 +135,13 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         }
 
         var fList = await fListQ.AsNoTracking().ToListAsync(ct);
+        await FillExternalFinancialMappingStateAsync(fList, ct);
         return fList;
     }
 
     public async Task<CartableSupplyData> GetSupplyAsync(string? search, int type, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
-        var queryBase = db.PreFactors.AsQueryable();
+        var queryBase = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
@@ -162,7 +189,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableFinancialData> GetFinancialAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.OrderByDescending(g => g.ModifyDate).AsQueryable();
+        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).OrderByDescending(g => g.ModifyDate).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             baseQuery = baseQuery.Where(f => f.AgentName.Contains(search) || f.Customer.Contains(search) || f.SerialNumber == searchNumber);
@@ -192,7 +219,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableSalesData> GetSalesAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.AsQueryable();
+        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;

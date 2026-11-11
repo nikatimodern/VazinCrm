@@ -114,15 +114,15 @@
                                     }
                                 </div>
                                 <div style=" display:flex;flex-direction:column;  justify-content:space-evenly !important">
-                                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@item.Id')">
+                                    <button class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@item.Id')">
                                         <i class="mp fa fa-eye"></i>
                                     </button>
                                     @if (item.CustomerId != null) {
-                                        <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
+                                        <button class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')">
                                             <i class="mp fa fa-user"></i>
                                         </button>
                                     }
-                                    <button class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پیوست ها" onclick="AttachDoc('@item.Id')">
+                                    <button class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" data-title-right="پیوست ها" onclick="AttachDoc('@item.Id')">
                                         <i class="mp fa fa-paperclip"></i>
                                     </button>
                                 </div>
