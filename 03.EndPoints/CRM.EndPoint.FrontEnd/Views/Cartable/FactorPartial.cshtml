@@ -97,16 +97,17 @@
 
                     <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
-                    <div class="col-12 col-md-3 d-flex flex-column align-items-center row-gap-2 px-3 text-center">
-                        <div class="d-flex align-items-center justify-content-center flex-md-column justify-content-md-evenly row-gap-2" style="column-gap: 24px">
-                            <div class="flex-center flex-md-column" style="gap:6px">
-                                <label style="color:gray">مبلغ:</label>
-                                <label class="fbold" style="color:@(isReturnFactor ? "darkred" : "")">
-                                    <span>@($"{item.PaymentAmount:N0}")</span>
-                                    <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span>
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center gap-1 gap-md-2">
+                    <div class="col-12 col-md-3 d-flex flex-column align-items-stretch row-gap-2 px-3">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <label style="color:gray">مبلغ:</label>
+                            <strong style="color:@(isReturnFactor ? "darkred" : "")">
+                                @($"{item.PaymentAmount:N0}") <small>@(item.CurrencyTypeTxt ?? "ريال")</small>
+                            </strong>
+                        </div>
+                        @if (Model._Setting?.FactorTowStep == true || isReturnFactor || item.Returned) {
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <label style="color:gray">عملیات:</label>
+                                <div class="d-flex align-items-center gap-1 gap-md-2 flex-wrap">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
                                         if (isAdminOrFinancial) {
@@ -161,16 +162,13 @@
                                         برگشت خورده
                                     </div>
                                 }
-
+                                </div>
                             </div>
-                        </div>
-                        @if (canManageAllocations) {
-                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
-                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
-                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
-                            </button>
                         }
-
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <label style="color:gray">ثبت شده توسط:</label>
+                            <strong>@(string.IsNullOrWhiteSpace(item.UserCreator) ? "-" : item.UserCreator)</strong>
+                        </div>
                     </div>
                     <div class="d-sm-none mt-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                 </div>
@@ -188,6 +186,15 @@
                         </button>
                     }
 
+
+                    @if (canManageAllocations) {
+                        <button type="button" class="flex-center" data-title-right="تخصیص‌ها"
+                                aria-label="مدیریت تخصیص آیتم‌های فروش" style="color:var(--DarkColor);"
+                                data-allocation-script="@allocationScript"
+                                onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')">
+                            <i class="fa fa-exchange-alt" aria-hidden="true"></i>
+                        </button>
+                    }
 
                     <button type="button" class="flex-center" data-title-right="ارتباط مالی" aria-label="ارتباط مالی"
                             onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
