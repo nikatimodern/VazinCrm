@@ -26,6 +26,8 @@ namespace CRM.Core.Domain.AppUsers.Entities {
 
         public Guid? PersonId { get; set; }
         public bool IsEmployee { get; set; }
+        public bool IsCustomer { get; set; } = false;
+        public bool IsSupplier { get; set; } = false;
         
         
         public DateTime CreateDate { get; set; } = DateTime.Now;

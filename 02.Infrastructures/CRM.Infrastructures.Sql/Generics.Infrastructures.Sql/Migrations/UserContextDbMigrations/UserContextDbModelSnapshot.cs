@@ -89,6 +89,9 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsCustomer")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -103,6 +106,9 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsEmployee")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSupplier")
                         .HasColumnType("bit");
 
                     b.Property<string>("LastName")
