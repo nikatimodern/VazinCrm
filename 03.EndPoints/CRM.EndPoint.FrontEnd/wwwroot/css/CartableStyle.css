@@ -1063,6 +1063,8 @@
 	border-top: 1px solid var(--pf-border);
 }
 .factor-card__status { display:flex; align-items:center; gap:6px; min-width:0; }
+.factor-card__transfer-required { display:inline-block; max-width:190px; font-size:10px; line-height:1.35; color:#ae2534; }
+.factor-card__status .buttonGray:disabled { opacity:.5; cursor:not-allowed; }
 .factor-card__status:not(:has(> *)) { display:none; }
 .factor-card__financial-actions button,
 .factor-card__external button:is(.buttonBlue, .buttonBlue2) {
