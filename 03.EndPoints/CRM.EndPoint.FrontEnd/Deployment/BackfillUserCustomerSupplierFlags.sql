@@ -54,6 +54,13 @@ PRINT N'User database: ' + @UserDatabase;
 PRINT N'CRM database:  ' + @CrmDatabase;
 PRINT CASE WHEN @Apply = 1 THEN N'MODE: APPLY (updates enabled)' ELSE N'MODE: PREVIEW (no updates)' END;
 
+-- Temp tables are retained until the SSMS SQL session ends. Clean up previous runs.
+DROP TABLE IF EXISTS #BFPlan;
+DROP TABLE IF EXISTS #BFPhoneCounts;
+DROP TABLE IF EXISTS #BFPhoneCandidates;
+DROP TABLE IF EXISTS #BFCustomers;
+DROP TABLE IF EXISTS #BFUsers;
+
 CREATE TABLE #BFUsers (
     UserId nvarchar(450) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY,
     UserName nvarchar(256) NULL,
