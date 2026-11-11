@@ -132,7 +132,8 @@ namespace CRM.Infrastructures.Sql {
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly, type =>
                 type != typeof(AccessEntityConfiguration) &&
                 type != typeof(AccessPermissionConfiguration) &&
-                type != typeof(AccessRolePermissionConfiguration));
+                type != typeof(AccessRolePermissionConfiguration) &&
+                type != typeof(AccessUserPermissionConfiguration));
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
 

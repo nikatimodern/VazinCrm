@@ -13,6 +13,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<AccessEntity> AccessEntities { get; set; }
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<AccessRolePermission> AccessRolePermissions { get; set; }
+        public DbSet<AccessUserPermission> AccessUserPermissions { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -27,6 +28,7 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.ApplyConfiguration(new AccessEntityConfiguration());
             modelBuilder.ApplyConfiguration(new AccessPermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessRolePermissionConfiguration());
+            modelBuilder.ApplyConfiguration(new AccessUserPermissionConfiguration());
 
 
         }

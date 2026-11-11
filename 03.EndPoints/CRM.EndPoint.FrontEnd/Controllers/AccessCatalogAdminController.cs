@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.AccessCatalog.Services;
@@ -44,6 +45,25 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
         var ids = await administration.RolePermissionsAsync(roleId, ct);
         return ids is null ? NotFound(new { message = "نقش موردنظر پیدا نشد." }) : Json(ids);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Users(string? search, int page = 1, CancellationToken ct = default) =>
+        Json(await administration.UsersAsync(search, page, ct));
+
+    [HttpGet]
+    public async Task<IActionResult> UserAccess(string userId, CancellationToken ct)
+    {
+        var data = await administration.UserAccessAsync(userId, ct);
+        return data is null ? NotFound(new { message = "کاربر پیدا نشد." }) : Json(data);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> RoleGrants(CancellationToken ct) =>
+        Json(await administration.RoleGrantsAsync(ct));
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
+    public async Task<IActionResult> SaveUserAccess([FromBody] AccessUserSaveDraft draft, CancellationToken ct) =>
+        Result(await administration.SaveUserAccessAsync(draft, User.FindFirstValue(ClaimTypes.NameIdentifier), ct));
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
     public async Task<IActionResult> SaveRolePermissions([FromBody] RolePermissionsSaveDraft draft, CancellationToken ct) =>

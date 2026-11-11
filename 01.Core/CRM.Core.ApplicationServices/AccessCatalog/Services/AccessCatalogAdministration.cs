@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.AppUsers.Repositories;
+using CRM.Core.ApplicationServices.Security;
 
 namespace CRM.Core.ApplicationServices.AccessCatalog.Services;
 
@@ -13,6 +14,9 @@ public sealed record AccessCatalogResult(int Status, string? Message = null, Gui
 public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
+public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles);
+public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
+public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides);
 
 public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models, IAdminUserRepository adminUsers)
 {
@@ -21,6 +25,67 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     public IReadOnlyList<AccessModelOption> Candidates() => models.GetCandidates();
 
     public Task<List<AdminRole>> RolesAsync(CancellationToken ct) => adminUsers.GetRolesAsync(ct);
+
+    public async Task<AccessUsersPage> UsersAsync(string? search, int page, CancellationToken ct)
+    {
+        var filter = new AdminUserFilter(Math.Max(page, 1), 25, search, "all", "all",
+            new List<string>(), DateTimeOffset.UtcNow);
+        var data = await adminUsers.GetPageAsync(filter, ct);
+        return new AccessUsersPage(data.TotalCount, data.Page, data.TotalPages,
+            data.Users.Select(u => new AccessUserListItem(u.Id,
+                string.IsNullOrWhiteSpace(u.FullName) ? u.UserName ?? "بدون نام" : u.FullName,
+                u.UserName ?? "", u.PositionTxt ?? "", u.RolsUsers?.ToArray() ?? [])).ToArray());
+    }
+
+    public Task<AccessUserState?> UserAccessAsync(string userId, CancellationToken ct) =>
+        repository.UserAccessAsync(userId, ct);
+
+    public Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct) =>
+        repository.RoleGrantsAsync(ct);
+
+    public async Task<AccessCatalogResult> SaveUserAccessAsync(AccessUserSaveDraft? draft, string? actorId, CancellationToken ct)
+    {
+        if (draft is null || string.IsNullOrWhiteSpace(draft.UserId) || draft.UserId.Length > 450 ||
+            draft.RoleIds is null || draft.RoleIds.Length > 100 || draft.Overrides is null ||
+            draft.Overrides.Length > 5000)
+            return new(400, "اطلاعات کاربر، نقش‌ها یا مجوزها معتبر نیست.");
+        var roleIds = draft.RoleIds.ToHashSet(StringComparer.Ordinal);
+        if (roleIds.Count != draft.RoleIds.Length || roleIds.Any(x => string.IsNullOrWhiteSpace(x)))
+            return new(400, "نقش‌های تکراری یا نامعتبر ارسال شده است.");
+        var allRoles = await adminUsers.GetRolesAsync(ct);
+        if (roleIds.Any(id => allRoles.All(r => r.Id != id)))
+            return new(400, "نقش نامعتبر انتخاب شده است.");
+
+        var permissionIds = (await repository.ListAsync(ct)).Where(e => e.IsActive)
+            .SelectMany(e => e.Permissions.Where(p => p.IsActive).Select(p => p.Id)).ToHashSet();
+        var overrideIds = draft.Overrides.Select(x => x.AccessPermissionId).ToArray();
+        if (overrideIds.Distinct().Count() != overrideIds.Length || overrideIds.Any(id => !permissionIds.Contains(id)))
+            return new(400, "یک یا چند دسترسی اختصاصی تکراری یا نامعتبر است.");
+
+        // An administrator must not accidentally remove their own Admin role.
+        if (string.Equals(draft.UserId, actorId, StringComparison.Ordinal))
+        {
+            var adminId = allRoles.FirstOrDefault(r => r.Name == AppRoles.Admin)?.Id;
+            if (adminId is not null && !roleIds.Contains(adminId))
+            {
+                var current = await repository.UserAccessAsync(draft.UserId, ct);
+                if (current is not null && current.RoleIds.Contains(adminId))
+                    return new(409, "امکان حذف نقش مدیر ارشد از حساب کاربری خودتان وجود ندارد.");
+            }
+        }
+
+        try
+        {
+            var result = await repository.ReplaceUserAccessAsync(draft.UserId, roleIds.ToArray(),
+                draft.Overrides, permissionIds.ToArray(), ct);
+            if (result.NotFound) return new(404, "کاربر پیدا نشد.");
+            return result.Success ? new(200) : new(409, result.Error ?? "ثبت تغییرات موفق نبود.");
+        }
+        catch (AccessCatalogConflictException)
+        {
+            return new(409, "اطلاعات دسترسی هم‌زمان تغییر کرده است. صفحه را تازه‌سازی کنید.");
+        }
+    }
 
     public async Task<IReadOnlyList<RoleAccessEntityInfo>> RoleCatalogAsync(CancellationToken ct) =>
         (await repository.ListAsync(ct)).Where(e => e.IsActive).OrderBy(e => e.Title)
@@ -173,7 +238,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var permission = await repository.FindPermissionAsync(id, ct);
         if (permission is null) return new(404, "دسترسی پیدا نشد.");
         if (await repository.PermissionHasRoleAssignmentsAsync(id, ct))
-            return new(409, "این دسترسی به نقش اختصاص داده شده و قابل حذف نیست.");
+            return new(409, "این دسترسی به نقش یا کاربر اختصاص داده شده و قابل حذف نیست.");
         repository.Remove(permission);
         await repository.SaveAsync(ct);
         return new(200);

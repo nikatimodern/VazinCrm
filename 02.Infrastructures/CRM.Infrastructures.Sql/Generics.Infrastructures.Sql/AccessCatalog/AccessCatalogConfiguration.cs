@@ -50,3 +50,18 @@ public sealed class AccessRolePermissionConfiguration : IEntityTypeConfiguration
             .HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public sealed class AccessUserPermissionConfiguration : IEntityTypeConfiguration<AccessUserPermission>
+{
+    public void Configure(EntityTypeBuilder<AccessUserPermission> entity)
+    {
+        entity.ToTable("AccessUserPermissions");
+        entity.HasKey(x => new { x.UserId, x.AccessPermissionId });
+        entity.Property(x => x.UserId).IsRequired().HasMaxLength(450);
+        entity.HasIndex(x => x.AccessPermissionId);
+        entity.HasOne(x => x.AccessPermission).WithMany()
+            .HasForeignKey(x => x.AccessPermissionId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<CRM.Core.Domain.AppUsers.Entities.AppUser>().WithMany()
+            .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
