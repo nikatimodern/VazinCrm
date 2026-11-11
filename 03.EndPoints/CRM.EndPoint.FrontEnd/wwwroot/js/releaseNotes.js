@@ -152,7 +152,7 @@
         let publishDate = "";
         if (latest.publishDate) {
             const value = String(latest.publishDate);
-            const date = new Date(value.endsWith("Z") || /[+-]\\d{2}:\\d{2}$/.test(value) ? value : value + "Z");
+            const date = new Date(value.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(value) ? value : value + "Z");
             if (!Number.isNaN(date.getTime())) {
                 publishDate = date.toLocaleDateString("fa-IR-u-nu-latn", { year: "numeric", month: "2-digit", day: "2-digit" });
             }
