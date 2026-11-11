@@ -15,9 +15,10 @@
             <div class="pf-accepted-card__body">
                 <section class="pf-accepted-card__section pf-accepted-card__customer">
                     <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
-                    <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(pf.Customer) ? "-" : pf.Customer)</strong></div>
-                    <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(pf.AgentName) ? "-" : pf.AgentName)</strong></div>
+                    <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(pf.CustomerEntity?.CustomerCode.ToString() ?? pf.CustomerCode?.ToString() ?? "-")</strong></div>
+                    <div class="pf-accepted-card__row"><span>مشتری</span><strong>@pf.Customer @(string.IsNullOrWhiteSpace(pf.Customer) || string.IsNullOrWhiteSpace(pf.AgentName) ? "" : " | ")@pf.AgentName</strong></div>
                     <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@pf.UserCreator</strong></div>
+                    <div class="pf-accepted-card__row"><span>کارشناس تأمین</span><strong>@(string.IsNullOrWhiteSpace(pf.UserTaminTxt) ? "-" : pf.UserTaminTxt)</strong></div>
                 </section>
                 <section class="pf-accepted-card__section pf-accepted-card__financial">
                     <h3><span>بررسی مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
