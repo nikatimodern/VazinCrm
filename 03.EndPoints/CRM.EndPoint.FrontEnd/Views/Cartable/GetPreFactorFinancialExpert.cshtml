@@ -63,15 +63,15 @@
                 </section>
             </div>
             <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
-                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-eye"></i>
                     </span></button>
                     @if (preFactor.CustomerId != null) {
-                        <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@preFactor.CustomerId', '@preFactor.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                             <i class="mp fa fa-user"></i>
                         </span></button>
                     }
-                    <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@preFactor.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-paperclip"></i>
                     </span></button>
             </div></div>

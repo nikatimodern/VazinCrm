@@ -1277,7 +1277,7 @@
 #cartableWorkspace .cartable-pane:not(.d-none) { display:flex; flex-direction:column; flex:1; min-height:0; overflow:auto; }
 #cartableWorkspace .cartable-viewport-fill { flex:1; min-height:0; min-width:0; }
 #cartableWorkspace .cartable-viewport-fill:not(.tab-pane):not(.d-none):not(.d-xxl-grid),
-#cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex; flex-direction:column; }
+#cartableWorkspace .cartable-viewport-fill.tab-pane.active { display:flex !important; flex-direction:column; }
 #cartableWorkspace .cartable-viewport-fill > :not(.cartable-viewport-fill):not(.cartable-viewport-scroll) { flex-shrink:0; }
 #cartableWorkspace .cartable-viewport-scroll { flex:1; min-height:0; height:auto !important; max-height:none !important; overflow:auto; }
 
