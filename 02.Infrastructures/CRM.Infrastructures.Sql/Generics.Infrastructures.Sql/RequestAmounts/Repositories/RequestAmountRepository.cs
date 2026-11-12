@@ -13,6 +13,7 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Querying;
 using CRM.Core.Domain.RequestAmounts.Repositories;
+using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Supplies.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -26,6 +27,24 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
     public Task<List<RequestAmount>> GetByPaymentAsync(Guid id, CancellationToken ct) => db.RequestAmounts.AsNoTracking().Include(r => r.RequestAmountPayments.Where(p => p.PaymentId == id)).Where(r => r.RequestAmountPayments.Any(p => p.PaymentId == id)).ToListAsync(ct);
     public Task<Payment?> GetPaymentAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Payments : db.Payments.AsNoTracking()).Include(p => p.RequestAmountPayments).FirstOrDefaultAsync(p => p.Id == id, ct);
     public Task<Accountancy?> GetCashCreditAsync(Guid id, CancellationToken ct) => db.Accountancies.FirstOrDefaultAsync(a => a.RequestAmountId == id, ct);
+    public Task<Guid?> GetCashierUserIdAsync(Guid cashierId, CancellationToken ct) =>
+        db.Cashiers.AsNoTracking().Where(c => c.Id == cashierId).Select(c => (Guid?)c.UserId).FirstOrDefaultAsync(ct);
+
+    public Task<string?> GetTargetPersonTextAsync(RequestAmountTypeEnum type, Guid targetPersonId, CancellationToken ct)
+    {
+        if (type == RequestAmountTypeEnum.تنخواه)
+            return db.Cashiers.AsNoTracking().Where(c => c.Id == targetPersonId)
+                .Select(c => c.UserTxt).FirstOrDefaultAsync(ct);
+
+        var persons = db.Customers.AsNoTracking().Where(c => c.Id == targetPersonId);
+        if (type == RequestAmountTypeEnum.عودت_به_مشتری)
+            persons = persons.Where(c => c.RoleType == RoleTypeEnum.مشتری || (int)c.RoleType == 3);
+        else
+            persons = persons.Where(c => c.RoleType == RoleTypeEnum.تامین_کننده || (int)c.RoleType == 3);
+
+        return persons.Select(c => (c.CompanyName + " " + c.AgentName).Trim()).FirstOrDefaultAsync(ct);
+    }
+
     public Task<decimal> GetPaidAmountAsync(Guid id, CancellationToken ct) => db.RequestAmountPayments.Where(p => p.RequestAmountId == id).SumAsync(p => p.Amount, ct);
     public Task<Dictionary<Guid, RequestPaymentBalance>> GetPaymentBalancesAsync(List<Guid> ids, Guid excluded, CancellationToken ct) => db.RequestAmounts.AsNoTracking().Where(r => ids.Contains(r.Id)).Select(r => new RequestPaymentBalance(r.Id, r.AcceptedAmount, r.RequestAmountPayments.Where(p => p.PaymentId != excluded).Sum(p => p.Amount))).ToDictionaryAsync(r => r.Id, ct);
     public void Add(RequestAmount item) => db.RequestAmounts.Add(item);
@@ -77,7 +96,12 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
     private IQueryable<SupplierFinancialSummaryVModel> GetSupplierFinancialSummaries()
     {
         var supplyAmounts = db.SupplyFactors.AsNoTracking().GroupBy(x => x.SupplierId).Select(g => new { SupplierId = g.Key, SupplyAmount = g.Sum(x => x.PaymentAmount), PaidAmount = 0m });
-        var paidAmounts = db.RequestAmountPayments.AsNoTracking().Where(x => x.RequestAmount.SupplierId.HasValue).GroupBy(x => x.RequestAmount.SupplierId.Value).Select(g => new { SupplierId = g.Key, SupplyAmount = 0m, PaidAmount = g.Sum(x => x.Amount) });
+        var paidAmounts = db.RequestAmountPayments.AsNoTracking()
+            .Where(x => x.RequestAmount.TargetPersonId.HasValue
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.تنخواه
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.عودت_به_مشتری)
+            .GroupBy(x => x.RequestAmount.TargetPersonId!.Value)
+            .Select(g => new { SupplierId = g.Key, SupplyAmount = 0m, PaidAmount = g.Sum(x => x.Amount) });
         return supplyAmounts.Concat(paidAmounts).GroupBy(x => x.SupplierId).Select(g => new SupplierFinancialSummaryVModel { SupplierId = g.Key, TotalSupplyAmount = g.Sum(x => x.SupplyAmount), TotalPaidAmount = g.Sum(x => x.PaidAmount), SupplierDebt = g.Sum(x => x.SupplyAmount) - g.Sum(x => x.PaidAmount) });
     }
 
@@ -96,7 +120,7 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
 
         if (!string.IsNullOrEmpty(search))
         {
-            baseQuery = baseQuery.Where(f => f.RequestNumber == searchNumber || f.Description.Contains(search) || f.SupplierTxt.Contains(search) || f.UserCreator.Contains(search) || f.CashierTxt.Contains(search) || f.RequestAmountSupplyFactor.Any(raSf => db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.SerialNumber == search)) || f.RequestAmountOrderHeads.Any(raOh => db.OrderHeads.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)));
+            baseQuery = baseQuery.Where(f => f.RequestNumber == searchNumber || f.Description.Contains(search) || f.TargetPersonTxt.Contains(search) || f.UserCreator.Contains(search) || f.RequestAmountSupplyFactor.Any(raSf => db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.SerialNumber == search)) || f.RequestAmountOrderHeads.Any(raOh => db.OrderHeads.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)));
         }
 
         var filterCounts = new Dictionary<int, int>
@@ -114,7 +138,7 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
             _ => baseQuery
         };
         var supplierFinancials = GetSupplierFinancialSummaries();
-        var data = await query.GroupJoin(supplierFinancials, ra => ra.SupplierId, sf => sf.SupplierId, (ra, financials) => new { RequestAmount = ra, Financial = financials.FirstOrDefault() }).Select(x => new RequestAmountRow { RequestAmount = x.RequestAmount, SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.SerialNumber).ToList(), OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(), CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(), TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount), SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0, TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0, TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0, }).ToListAsync(ct);
+        var data = await query.GroupJoin(supplierFinancials, ra => ra.TargetPersonId, sf => (Guid?)sf.SupplierId, (ra, financials) => new { RequestAmount = ra, Financial = financials.FirstOrDefault() }).Select(x => new RequestAmountRow { RequestAmount = x.RequestAmount, SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.SerialNumber).ToList(), OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(), CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(), TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount), SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0, TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0, TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0, }).ToListAsync(ct);
         return new(data, filterCounts);
     }
 
