@@ -463,7 +463,6 @@ async function setupSelectOptionsReqAmount() {
         async onItemAdd(supplierId) {
             selectSupplier.disable();
             const supplierSummary = await getSupplierFinancialSummary(supplierId);
-            console.log(supplierSummary);
             if (supplierSummary !== null) {
                 const debt = supplierSummary.supplierDebt;
                 const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";

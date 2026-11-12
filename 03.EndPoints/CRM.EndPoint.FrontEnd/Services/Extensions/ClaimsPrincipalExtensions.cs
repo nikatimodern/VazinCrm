@@ -35,6 +35,10 @@ public static class ClaimsPrincipalExtensions {
 
         public bool IsCustomer() => user.IsInRole(AppRoles.Customer);
 
+        public bool IsQcExpert() => user.IsInRole(AppRoles.QcExpert);
+
+        public bool IsSupplier() => user.IsInRole(AppRoles.Supplier);
+
         public string GetUserId() => user.FindFirstValue(ClaimTypes.NameIdentifier);
 
         public string[] GetRoleNames()

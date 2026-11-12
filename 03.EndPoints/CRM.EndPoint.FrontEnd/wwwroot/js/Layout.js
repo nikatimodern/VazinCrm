@@ -2014,15 +2014,10 @@ function updateBankAccountPersonField() {
         if (isPersonAccount) {
             person.disabled = false;
             new TomSelect(person, {
-                valueField: "value",
-                labelField: "text",
-                searchField: ["text"],
                 placeholder: `جستجوی ${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}`,
                 maxItems: 1,
-                create: false,
                 loadThrottle: 300,
                 shouldLoad: query => query.trim().length > 0,
-                dropdownParent: modal,
                 load(query, callback) {
                     const currentRole = selectedBankAccountPersonRole();
                     sendApiRequest({
@@ -2041,7 +2036,7 @@ function updateBankAccountPersonField() {
             person.disabled = true;
         }
     }
-    modal.querySelector("label[for='bankAccountCustomerId']").textContent =
+    modal.querySelector("#bankAccountPersonWrapper label").textContent =
         `${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}:`;
 }
 
