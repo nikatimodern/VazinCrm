@@ -8,6 +8,7 @@ namespace Generics.Infrastructures.Sql {
         public UserContextDb(DbContextOptions<UserContextDb> op) : base(op) { }
 
         public DbSet<BaseAdmin> BaseAdmins { get; set; }
+        public DbSet<OtpMobileState> OtpMobileStates { get; set; }
 
 
         protected void OnModelCreating(ModelBuilder modelBuilder) {
