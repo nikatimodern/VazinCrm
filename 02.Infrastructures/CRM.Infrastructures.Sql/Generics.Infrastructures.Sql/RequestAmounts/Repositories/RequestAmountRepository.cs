@@ -42,7 +42,7 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
         else
             persons = persons.Where(c => c.RoleType == RoleTypeEnum.تامین_کننده || (int)c.RoleType == 3);
 
-        return persons.Select(c => (c.CompanyName + " " + c.AgentName).Trim()).FirstOrDefaultAsync(ct);
+        return persons.Select(c => ((c.CompanyName ?? "") + " " + (c.AgentName ?? "")).Trim()).FirstOrDefaultAsync(ct);
     }
 
     public Task<decimal> GetPaidAmountAsync(Guid id, CancellationToken ct) => db.RequestAmountPayments.Where(p => p.RequestAmountId == id).SumAsync(p => p.Amount, ct);
