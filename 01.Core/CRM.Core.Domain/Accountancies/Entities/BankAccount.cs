@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Checks.Entities;
+using CRM.Core.Domain.Customers.Entities;
 using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.Accountancies.Entities {
@@ -21,6 +22,7 @@ namespace CRM.Core.Domain.Accountancies.Entities {
 
         public Guid? CustomerId { get; set; }
         public int? CustomerCode { get; set; }
+        public Customer Customer { get; set; }
 
 
         public List<Accountancy> Accountancies { get; set; }
