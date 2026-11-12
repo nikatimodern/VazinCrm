@@ -46,6 +46,7 @@ namespace CRM.Core.Domain.Customers.Entities
         //public IList<Factor> Factors { get; set; }
         public IList<UserCustomer> UserCustomers { get; set; }
         public IList<Accountancy> Accountancies { get; set; }
+        public IList<BankAccount> BankAccounts { get; set; }
         public IList<Contract> Contracts { get; set; }
         public IList<Contact> Contacts { get; set; }
         public IList<Deal> Deals { get; set; }
