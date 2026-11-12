@@ -21,7 +21,6 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public string BankAccountTypeTxt { get; set; }
 
         public Guid? CustomerId { get; set; }
-        public int? CustomerCode { get; set; }
         public Customer Customer { get; set; }
 
 
