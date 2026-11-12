@@ -1436,13 +1436,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             });
 
             return Ok();
-            /*if (res.code == 200)
-            {
-                return Ok(res);
-            } else
-            {
-                return BadRequest();
-            }*/
         }
 
         [Authorize]
