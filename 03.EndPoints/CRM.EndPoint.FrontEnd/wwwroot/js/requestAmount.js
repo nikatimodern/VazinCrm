@@ -408,7 +408,8 @@ let requestAmountData = {};
 let isFromOrderHead = false;
 let ohReqAmountId;
 async function showAddRequestAmountModal(ohId, ohNumber) {
-    enableMomentumScrollScope(addReqAmountModal);
+    // Keep the TomSelect dropdown on native scrolling; modal-wide momentum
+    // handlers intercept its wheel events and make the list feel sluggish.
     await setupSelectOptionsReqAmount();
     if (ohId) {
         ohReqAmountId = ohId;
