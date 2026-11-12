@@ -55,6 +55,50 @@
     #settingsSmsWorkspace .sms-tab { padding:7px; font-size:13px; }
 }
 
+/* Shared controls for the three base-item settings tables. Keep DataTables' current left/right placement. */
+#settingsCompanyWorkspace .base-item-list-panel .dt-search input {
+    width:190px;
+    max-width:100%;
+    min-height:32px;
+    height:32px;
+    margin:0;
+    padding:4px 9px;
+    border:1px solid #A3B8B3;
+    border-radius:6px;
+    background:#fff;
+    color:#212529;
+    font:400 12px/1.7 IRANSans;
+    text-align:start;
+}
+#settingsCompanyWorkspace .base-item-list-panel .dt-length select {
+    width:56px;
+    min-width:56px;
+    min-height:32px;
+    height:32px;
+    padding:3px 7px 3px 20px;
+    border:1px solid #A3B8B3;
+    border-radius:6px;
+    background-color:#fff;
+    color:#212529;
+    font:400 12px/1.7 IRANSans;
+}
+#settingsCompanyWorkspace .base-item-list-panel :is(.dt-search label,.dt-length label) {
+    margin:0;
+    color:#545961;
+    font:400 12px/1.7 IRANSans;
+}
+#settingsCompanyWorkspace .base-item-list-panel :is(.dt-search input,.dt-length select):focus {
+    outline:none;
+    border-color:#5811B4;
+    box-shadow:0 0 0 2px #F3EDFC;
+}
+@media (max-width:767px) {
+    #settingsCompanyWorkspace .base-item-list-panel .dt-search input {
+        width:150px;
+        max-width:100%;
+    }
+}
+
 /* Bank account management follows the same external-title / inner-panel structure as other settings sections. */
 #settingsCompanyWorkspace .bank-accounts-section-title { margin:0 0 3px; color:#004944; font:700 16px/1.8 IRANSansBold; }
 #settingsCompanyWorkspace .bank-accounts-panel { min-width:0; }
