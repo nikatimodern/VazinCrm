@@ -2017,7 +2017,7 @@ function updateBankAccountPersonField() {
                 valueField: "value",
                 labelField: "text",
                 searchField: ["text"],
-                placeholder: roleType === 2 ? "جستجوی تأمین‌کننده" : "جستجوی مشتری",
+                placeholder: `جستجوی ${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}`,
                 maxItems: 1,
                 create: false,
                 loadThrottle: 300,
@@ -2032,7 +2032,7 @@ function updateBankAccountPersonField() {
                         showError: false,
                     }).then(items => callback(
                         Array.isArray(items)
-                            ? items.map(person => ({ value: person.id, text: person.text }))
+                            ? items.map(person => ({ value: person.id, text: person.text?.replace("کد مشتری:", "کد شخص:") || "" }))
                             : []
                     )).catch(() => callback());
                 },
@@ -2042,7 +2042,7 @@ function updateBankAccountPersonField() {
         }
     }
     modal.querySelector("label[for='bankAccountCustomerId']").textContent =
-        roleType === 2 ? "تأمین‌کننده:" : "مشتری:";
+        `${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}:`;
 }
 
 function initializeBankAccountModal() {
@@ -2055,6 +2055,9 @@ function initializeBankAccountModal() {
         void submitAddBankAccount();
     });
     modal.addEventListener("hidden.bs.modal", resetBankAccountModal);
+    modal.addEventListener("hide.bs.modal", event => {
+        if (bankAccountModalState.saving) event.preventDefault();
+    });
     return modal;
 }
 
@@ -2079,7 +2082,7 @@ function resetBankAccountModal() {
  */
 async function toggleAddBankAccountModal(options = {}) {
     const modal = initializeBankAccountModal();
-    if (!modal) return;
+    if (!modal || bankAccountModalState.saving) return;
     if (isModalOpen(modal)) {
         ModalToggle(modal, "hide");
         return;
@@ -2168,6 +2171,7 @@ async function submitAddBankAccount() {
         if (!response || response.status !== 200) return;
 
         const onSaved = bankAccountModalState.onSaved;
+        bankAccountModalState.saving = false;
         ModalToggle(modal, "hide");
         if (onSaved) {
             try {
