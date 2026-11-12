@@ -1,6 +1,7 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Accounts.Abstractions;
 using CRM.Core.ApplicationServices.Accounts.Dtos;
+using CRM.Core.ApplicationServices.Accounts.Services;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.AppUsers.Repositories;
 
