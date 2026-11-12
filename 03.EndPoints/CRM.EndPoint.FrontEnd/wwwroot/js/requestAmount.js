@@ -415,6 +415,7 @@ async function showAddRequestAmountModal(ohId, ohNumber) {
         isFromOrderHead = true;
         requestAmountData.requestAmountType = 1;
         orderHeadsSelectedIds = [ohId];
+        addReqAmountModal.querySelector("#reqAmountOrderHead").value = String(ohNumber ?? "");
         addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
     }
     
