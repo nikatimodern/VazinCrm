@@ -1,3 +1,6 @@
+@using CRM.Core.Domain.RequestAmounts.Enums
+@using CRM.EndPoint.FrontEnd.Services.Extensions
+
 <!-- Modal addRequestAmount -->
 <div class="modal fade" id="addRequestAmountModal" tabindex="-1" role="dialog" aria-labelledby="reqAmountModalTitleId" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
@@ -12,11 +15,10 @@
                         <label for="requestAmountTypeId">نوع درخواست:</label>
                         <select id="requestAmountTypeId" class="form-select form-select-sm valueNumber" name="requestAmountType" required>
                             <option value="">انتخاب</option>
-                            <option value="1">پیش پرداخت</option>
-                            <option value="2">پرداخت فاکتور</option>
-                            <option value="3">تنخواه</option>
-                            <option value="4">بابت بدهی</option>
-                            <option value="5">بابت تضمین</option>
+                            @foreach (var requestType in Enum.GetValues<RequestAmountTypeEnum>())
+                            {
+                                <option value="@((int)requestType)">@(requestType.GetDescription())</option>
+                            }
                         </select>
                     </div>
 
