@@ -1,3 +1,5 @@
+@using CRM.Core.Domain.Accountancies.Enum
+@using CRM.EndPoint.FrontEnd.Services.Extensions
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -86,70 +88,18 @@
             <label class="fbold d-flex align-items-center gap-1 mb-1" style="font-size:large">
                 <span>اطلاعات حساب های </span>
                 <select class="form-select form-select-sm w-auto" id="bankAccountTypeId">
-                    <option value="1" selected>شرکت</option>
-                    <option value="2">تامین کننده</option>
-                    <option value="3">تنخواه دار</option>
+                    @foreach (var accountType in Enum.GetValues<BankAccountTypeEnum>())
+                    {
+                        <option value="@((int)accountType)" selected="@(accountType == BankAccountTypeEnum.شرکت)">@(accountType.GetDescription())</option>
+                    }
                 </select>
             </label>
             <div class="InfoData" style="width:100%;">
-                <form style="display:flex; flex-flow:wrap; width:100%; " id="bankAccountForm">
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
-                        <label>نام حساب</label>
-                        <input class="form-control" name="accountName" type="text" required />
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-1 p-1">
-                        <label>نام بانک</label>
-                        <input class="form-control" name="bankName" type="text" />
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
-                        <label>شماره کارت</label>
-                        <input class="form-control digitNumberString" name="cartNumber" type="text" />
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-2 p-1">
-                        <label>شماره حساب</label>
-                        <input class="form-control digitNumberString" name="accountNumber" type="text" />
-                    </div>
-                    <div class="col-12 col-sm p-1">
-                        <label>شماره شبا</label>
-                        <input class="form-control" name="shebaNumber" type="text" />
-                    </div>
-                    <div class="col-12 col-lg-auto p-1">
-                        <label>مالک حساب</label>
-                        <select class="form-select form-select-sm valueNumber" name="bankAccountType" required>
-                            <option value="">انتخاب</option>
-                            <option value="1">شرکت</option>
-                            <option value="2">تامین کننده</option>
-                            <option value="3">تنخواه دار</option>
-                        </select>
-                    </div>
+                <button type="button" class="buttonGreen2" onclick="toggleAddBankAccountModal({ bankAccountType: Number(document.getElementById('bankAccountTypeId').value), onSaved: refreshBankAccountTable })">
+                    <i class="fas fa-plus" aria-hidden="true"></i> افزودن حساب بانکی
+                </button>
 
-                    <div class="col-12 col-xl-auto p-2 d-flex flex-column justify-content-between">
-                        <label>نوع حساب</label>
-                        <div id="officialTypeBankAlert" class="d-flex align-items-center gap-3">
-                            <div class="d-flex align-items-center gap-1">
-                                <label for="officialTypeBank1">رسمی</label>
-                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBank1" data-alertId="officialTypeBankAlert" value="1" required />
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <label for="officialTypeBank0">غیر رسمی</label>
-                                <input class="valueNumber" type="radio" name="officialType" id="officialTypeBank0" data-alertId="officialTypeBankAlert" value="0" required />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-lg-auto" style="display:flex;justify-content:center;align-items:end;padding: 5px 0 5px 5px">
-                        <span id="submitBankAccountFormId" class="buttonGreen2 align-items-center justify-content-center" style="display: flex;height: 2rem;width: 3rem" type="button" onclick="submitBankAccountForm()">ثبت</span>
-                        <div id="UpBankAccountFormId" class="flex-lg-column gap-1 gap-lg-0" style="display:none;">
-                            <button class="buttonGreen2" onclick="UpBankAccountItem()" type="button" style="display:flex;justify-content:center; align-items:center;height: 24px;padding-inline: 10px">
-                                <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                            </button>
-                            <button class="buttonCancel2" onclick="UpBankAccountItemCancel()" type="button" style="display:flex;justify-content:center; align-items:center;height: 24px;padding-inline: 10px">
-                                <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-
-                <div class="line mb-3 mt-2 mt-lg-3" style="border-bottom-color: #aaa"></div>
+                <div class="line my-2" style="border-bottom-color: #aaa"></div>
                 <table class="table-hover table table-bordered table-striped" id="bankAccountTable">
                     <thead>
                     <tr>
@@ -283,7 +233,7 @@
 
 @section Scripts{
     <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsCompanyWorkspace")));</script>
-    <script data-page-bindings="AllSenfTbl,AllFamilyTbl,AllBankAccountTbl,AllImageUp,logo,MohrR,Mohr,companyId,delimageComp,getCompany,DelSenfItem,DelFamilyWayItem,DelProductItem,getAllProductBase,getAllSenf,getAllFamilyWay,modelGetBankAccounts,getAllBankAccount,formProductSubmit,formSenfSubmit,formFamilyWaySubmit,submitCompanyForm,submitBankAccountForm,updateBankAccountActive,DelBankAccountItem,DelBankAccountItemOk,bankAccountData,ShowUpdateBankAccountItem,UpBankAccountItem,UpBankAccountItemCancel">
+    <script data-page-bindings="AllSenfTbl,AllFamilyTbl,AllBankAccountTbl,AllImageUp,logo,MohrR,Mohr,companyId,delimageComp,getCompany,DelSenfItem,DelFamilyWayItem,DelProductItem,getAllProductBase,getAllSenf,getAllFamilyWay,modelGetBankAccounts,getAllBankAccount,formProductSubmit,formSenfSubmit,formFamilyWaySubmit,submitCompanyForm,refreshBankAccountTable,updateBankAccountActive,DelBankAccountItem,DelBankAccountItemOk,ShowUpdateBankAccountItem">
 
         var AllSenfTbl = null;
         var AllFamilyTbl = null;
@@ -595,7 +545,7 @@
             $("[name=\"FamilyWayTable\"]").addClass("form-control");
             $("input[type='search']").addClass("form-control");
         };
-        let modelGetBankAccounts = { _type: 1 };
+        let modelGetBankAccounts = { _type: @((int)BankAccountTypeEnum.شرکت) };
         const getAllBankAccount = () => {
             AllBankAccountTbl = $("#bankAccountTable").DataTable(
                 {
@@ -761,39 +711,7 @@
              });
         };
 
-        const submitBankAccountForm = async () => {
-            if (!await mySer.CheckValidForm("bankAccountForm")) return;
-
-            const cartNumber = document.querySelector("#bankAccountForm input[name='cartNumber']").value.trim();
-            const accountNumber = document.querySelector("#bankAccountForm input[name='accountNumber']").value.trim();
-            const shebaNumber = document.querySelector("#bankAccountForm input[name='shebaNumber']").value.trim();
-
-            const hasValue = cartNumber || accountNumber || shebaNumber;
-
-            if (!hasValue) {
-                document.querySelector("#bankAccountForm input[name='cartNumber']").focus();
-                toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
-                return;
-            }
-
-            let model = mySer.convertFormToJSON("bankAccountForm");
-            @*const bankAccountTypeElm = document.getElementById("bankAccountTypeId");
-            model.bankAccountType = Number(bankAccountTypeElm.value);*@;
-            try {
-                FLshowLoading();
-                const res = await axios.post("/Accountancy/AddBankAccount", model);
-
-                if (res.status === 200) {
-                    FLshowLoading(false);
-                    AllBankAccountTbl.ajax.reload();
-                    mySer.emptyForm("bankAccountForm");
-                    toastifySuccess("اطلاعات حساب با موفقیت ثبت شد");
-                }
-            } catch (err) {
-                console.log(err);
-                setTimeout(async () => await submitBankAccountForm(), 2000);
-            }
-        };
+        const refreshBankAccountTable = () => AllBankAccountTbl?.ajax.reload(null, false);
 
         const updateBankAccountActive = async (elm, id) => {
             try {
@@ -863,45 +781,9 @@
 
         };
 
-        let bankAccountData = {};
         const ShowUpdateBankAccountItem = async (id) => {
-            FLshowLoading();
-            const res = await axios(`/Accountancy/GetBankAccount/${id}`);
-            if (res.status === 200) {
-                bankAccountData = res.data;
-                mySer.convertJsonToForm(bankAccountData, "bankAccountForm");
-                FLshowLoading(false);
-            }
-
-            $("#UpBankAccountFormId").css("display", "flex");
-            $("#submitBankAccountFormId").css("display", "none");
+            await toggleAddBankAccountModal({ id, onSaved: refreshBankAccountTable });
         };
-        const UpBankAccountItem = async () => {
-            if (await mySer.CheckValidForm("bankAccountForm")) {
-                FLshowLoading();
-                const model = { ...bankAccountData, ...mySer.convertFormToJSON("bankAccountForm") };
-                try {
-                    const res = await axios.post(`/Accountancy/UpBankAccount`, model);
-                    if (res.status === 200) {
-                        FLshowLoading(false);
-                        AllBankAccountTbl.ajax.reload();
-                        toastifySuccess("با موفقیت ویرایش شد");
-                        UpBankAccountItemCancel();
-                    }
-                } catch (err) {
-                    console.log(err);
-                    setTimeout(async () => await UpBankAccountItem(), 3000);
-                }
-
-            }
-        };
-        const UpBankAccountItemCancel = () => {
-            bankAccountData = {};
-            $("#submitBankAccountFormId").css("display", "flex");
-            $("#UpBankAccountFormId").css("display", "none");
-            mySer.emptyForm("bankAccountForm");
-        };
-
 
         document.getElementById("bankAccountTypeId").addEventListener("change", (e) => {
             modelGetBankAccounts._type = Number(e.target.value);
