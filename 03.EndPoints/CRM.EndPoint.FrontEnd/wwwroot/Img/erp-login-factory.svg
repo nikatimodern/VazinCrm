@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 960" role="img" aria-label="Industrial facility and product rolls">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c1e8f0"/><stop offset=".72" stop-color="#f4faff"/><stop offset="1" stop-color="#d5e8ea"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d7f5f6"/><stop offset=".45" stop-color="#679ca4"/><stop offset="1" stop-color="#18464c"/></linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2=".7"><stop stop-color="#e7edef"/><stop offset=".6" stop-color="#b1c4c6"/><stop offset="1" stop-color="#7a999e"/></linearGradient>
+    <linearGradient id="ground" x2="0" y2="1"><stop stop-color="#c4d5d6"/><stop offset="1" stop-color="#718d91"/></linearGradient>
+    <linearGradient id="roll" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f9ffff"/><stop offset=".45" stop-color="#afc6cc"/><stop offset=".72" stop-color="#fff"/><stop offset="1" stop-color="#78919c"/></linearGradient>
+    <linearGradient id="metal" x2="1" y2="1"><stop stop-color="#f4ffff"/><stop offset=".4" stop-color="#6a8d98"/><stop offset=".8" stop-color="#d4ebef"/><stop offset="1" stop-color="#536b76"/></linearGradient>
+    <linearGradient id="shade" x1="0" x2="1"><stop stop-color="#004944" stop-opacity="0"/><stop offset="1" stop-color="#004944" stop-opacity=".4"/></linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="9"/></filter>
+    <pattern id="panels" width="28" height="190" patternUnits="userSpaceOnUse"><path d="M0 0V190" stroke="#6e8a8f" stroke-opacity=".48" stroke-width="3"/></pattern>
+  </defs>
+  <rect width="900" height="960" fill="url(#sky)"/>
+  <g fill="#fff" opacity=".56"><ellipse cx="195" cy="166" rx="150" ry="30"/><ellipse cx="275" cy="142" rx="90" ry="34"/><ellipse cx="680" cy="124" rx="160" ry="26"/></g>
+  <path d="M0 595L900 555V960H0Z" fill="url(#ground)"/>
+  <path d="M0 694L900 654V675L0 719Z" fill="#eef6f5" opacity=".5"/>
+  <g opacity=".7">
+    <path d="M0 210L355 75L615 139V607L0 627Z" fill="url(#wall)"/>
+    <path d="M0 210L355 75L615 139V172L352 115L0 245Z" fill="#f7ffff"/>
+    <path d="M0 245L615 174V607L0 627Z" fill="url(#panels)"/>
+    <path d="M380 179L818 244V623L380 607Z" fill="url(#glass)"/>
+    <path d="M380 179L818 244V273L380 208Z" fill="#edfafa"/>
+    <g stroke="#ecffff" stroke-opacity=".48" stroke-width="9">
+      <path d="M445 187V608M532 202V609M619 217V616M708 230V618M790 242V621"/>
+      <path d="M380 317L818 362M380 430L818 461M380 534L818 553"/>
+    </g>
+    <g fill="#234e55" opacity=".43"><path d="M410 290L454 289V589H410Z"/><path d="M554 325L620 331V596H554Z"/><path d="M712 360L778 365V611H712Z"/></g>
+    <path d="M354 141L820 226" stroke="#7e9b9e" stroke-width="8"/>
+    <path d="M0 633L900 626" stroke="#e3f0ee" stroke-width="8"/>
+  </g>
+  <g opacity=".65">
+    <path d="M40 580V428" stroke="#6f7779" stroke-width="10"/><path d="M40 450C-15 420 10 367 57 383C91 411 78 442 40 450Z" fill="#4e8566"/>
+    <path d="M94 623V425" stroke="#6b766d" stroke-width="11"/><path d="M94 458C20 429 43 356 98 381C146 348 180 432 94 458Z" fill="#42846b"/>
+    <path d="M834 634V465" stroke="#516756" stroke-width="11"/><path d="M832 513C775 478 795 407 850 427C912 424 911 502 832 513Z" fill="#357e69"/>
+  </g>
+  <path d="M0 727L900 683V960H0Z" fill="#a9bbc1" opacity=".24"/>
+  <ellipse cx="260" cy="811" rx="270" ry="39" fill="#3b5962" opacity=".23" filter="url(#soft)"/>
+  <g transform="translate(3 640)">
+    <path d="M4 180L430 152L451 201L4 238Z" fill="#655a4a"/>
+    <path d="M22 155L390 136L415 176L21 196Z" fill="#b99d70"/>
+    <g transform="translate(35 56)">
+      <g transform="translate(0 87)">
+        <path d="M0 5L237 -9L237 84L0 100Z" fill="url(#roll)"/>
+        <ellipse cx="0" cy="52" rx="45" ry="48" fill="url(#metal)"/>
+        <ellipse cx="0" cy="52" rx="25" ry="29" fill="#536f7a"/><ellipse cx="0" cy="52" rx="12" ry="15" fill="#cddde2"/>
+      </g>
+      <g transform="translate(120 84)">
+        <path d="M0 5L237 -9L237 85L0 100Z" fill="url(#roll)"/>
+        <ellipse cx="0" cy="52" rx="45" ry="48" fill="url(#metal)"/>
+        <ellipse cx="0" cy="52" rx="25" ry="29" fill="#536f7a"/><ellipse cx="0" cy="52" rx="12" ry="15" fill="#cddde2"/>
+      </g>
+      <g transform="translate(32 0)">
+        <path d="M0 5L237 -9L237 85L0 100Z" fill="url(#roll)"/>
+        <ellipse cx="0" cy="52" rx="45" ry="48" fill="url(#metal)"/>
+        <ellipse cx="0" cy="52" rx="25" ry="29" fill="#536f7a"/><ellipse cx="0" cy="52" rx="12" ry="15" fill="#cddde2"/>
+      </g>
+      <g transform="translate(161 -6)">
+        <path d="M0 5L190 -3L190 85L0 100Z" fill="url(#roll)"/>
+        <ellipse cx="0" cy="52" rx="45" ry="48" fill="url(#metal)"/>
+        <ellipse cx="0" cy="52" rx="25" ry="29" fill="#536f7a"/><ellipse cx="0" cy="52" rx="12" ry="15" fill="#cddde2"/>
+      </g>
+    </g>
+  </g>
+  <rect width="900" height="960" fill="url(#shade)"/>
+</svg>
