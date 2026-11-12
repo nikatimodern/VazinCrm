@@ -4102,12 +4102,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
-                    b.Property<Guid?>("CashierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CashierTxt")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -4147,16 +4141,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestNumber"));
 
+                    b.Property<Guid?>("TargetPersonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetPersonTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("RequestStatus")
                         .HasColumnType("int");
 
                     b.Property<string>("RequestStatusTxt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SupplierTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -4172,6 +4166,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TargetPersonId");
 
                     b.ToTable("RequestAmounts");
                 });
