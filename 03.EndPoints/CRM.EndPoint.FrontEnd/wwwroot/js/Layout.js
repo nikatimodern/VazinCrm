@@ -1976,6 +1976,213 @@ const createSupplierTomSelect = (element, items) => {
 };
 
 
+// The bank-account modal is hosted once by _Layout and can be opened by any page.
+// Page-specific refreshes are supplied through onSaved, not coupled to requestAmount.js.
+const bankAccountModalState = {
+    original: null,
+    onSaved: null,
+    personRoleType: null,
+    saving: false,
+};
+
+function getBankAccountModal() {
+    return document.getElementById("addBankAccountModal");
+}
+
+function selectedBankAccountPersonRole() {
+    const typeSelect = getBankAccountModal()?.querySelector("#bankAccountTypeModalId");
+    return Number(typeSelect?.selectedOptions[0]?.dataset.personRole || 0);
+}
+
+function updateBankAccountPersonField() {
+    const modal = getBankAccountModal();
+    if (!modal) return;
+    const person = modal.querySelector("#bankAccountCustomerId");
+    const wrapper = modal.querySelector("#bankAccountPersonWrapper");
+    const roleType = selectedBankAccountPersonRole();
+    const isPersonAccount = roleType > 0;
+
+    wrapper.classList.toggle("d-none", !isPersonAccount);
+    person.required = isPersonAccount;
+    if (roleType !== bankAccountModalState.personRoleType) {
+        // Recreate the search control when switching supplier/customer so stale
+        // TomSelect search results can never be shown for the wrong role.
+        person.tomselect?.destroy();
+        person.replaceChildren();
+        person.value = "";
+        bankAccountModalState.personRoleType = roleType;
+        if (isPersonAccount) {
+            person.disabled = false;
+            new TomSelect(person, {
+                valueField: "value",
+                labelField: "text",
+                searchField: ["text"],
+                placeholder: roleType === 2 ? "جستجوی تأمین‌کننده" : "جستجوی مشتری",
+                maxItems: 1,
+                create: false,
+                loadThrottle: 300,
+                shouldLoad: query => query.trim().length > 0,
+                dropdownParent: modal,
+                load(query, callback) {
+                    const currentRole = selectedBankAccountPersonRole();
+                    sendApiRequest({
+                        url: "/Customer/GetCustomerOp",
+                        params: { search: query.trim(), roleType: currentRole },
+                        showLoading: false,
+                        showError: false,
+                    }).then(items => callback(
+                        Array.isArray(items)
+                            ? items.map(person => ({ value: person.id, text: person.text }))
+                            : []
+                    )).catch(() => callback());
+                },
+            });
+        } else {
+            person.disabled = true;
+        }
+    }
+    modal.querySelector("label[for='bankAccountCustomerId']").textContent =
+        roleType === 2 ? "تأمین‌کننده:" : "مشتری:";
+}
+
+function initializeBankAccountModal() {
+    const modal = getBankAccountModal();
+    if (!modal || modal.dataset.bankAccountInitialized === "true") return modal;
+    modal.dataset.bankAccountInitialized = "true";
+    modal.querySelector("#bankAccountTypeModalId").addEventListener("change", updateBankAccountPersonField);
+    modal.querySelector("#addBankAccountForm").addEventListener("submit", event => {
+        event.preventDefault();
+        void submitAddBankAccount();
+    });
+    modal.addEventListener("hidden.bs.modal", resetBankAccountModal);
+    return modal;
+}
+
+function resetBankAccountModal() {
+    const modal = getBankAccountModal();
+    if (!modal) return;
+    bankAccountModalState.original = null;
+    bankAccountModalState.onSaved = null;
+    bankAccountModalState.saving = false;
+    mySer.emptyForm("addBankAccountForm");
+    modal.querySelector("#bankAccountTypeModalId").value = "";
+    updateBankAccountPersonField();
+    const submitButton = modal.querySelector("#bankAccountModalSubmitBtn");
+    submitButton.disabled = false;
+    submitButton.textContent = "ثبت";
+    modal.querySelector("#bankAccountModalTitle").textContent = "افزودن حساب بانکی";
+}
+
+/**
+ * Shared create/edit bank-account modal.
+ * @param {{id?: string, bankAccountType?: number, onSaved?: (account: object) => (void | Promise<void>)}} options
+ */
+async function toggleAddBankAccountModal(options = {}) {
+    const modal = initializeBankAccountModal();
+    if (!modal) return;
+    if (isModalOpen(modal)) {
+        ModalToggle(modal, "hide");
+        return;
+    }
+    const { id = null, bankAccountType = null, onSaved = null } = options || {};
+    const original = id ? await sendApiRequest({
+        url: "/Accountancy/GetBankAccount",
+        params: { id },
+    }) : null;
+    if (id && !original) return;
+
+    resetBankAccountModal();
+    bankAccountModalState.original = original;
+    bankAccountModalState.onSaved = typeof onSaved === "function" ? onSaved : null;
+
+    if (original) {
+        mySer.convertJsonToForm(original, "addBankAccountForm", ["customerId", "shebaNumber"]);
+        const sheba = modal.querySelector("#shebaNumberId");
+        sheba.value = (original.shebaNumber || "").replace(/^IR[\s-]*/i, "");
+        modal.querySelector("#bankAccountModalTitle").textContent = "ویرایش حساب بانکی";
+        modal.querySelector("#bankAccountModalSubmitBtn").textContent = "ذخیره تغییرات";
+
+        if (original.customerId && selectedBankAccountPersonRole() > 0) {
+            const customer = await sendApiRequest({
+                url: "/Customer/GetCustomer",
+                params: { id: original.customerId },
+            });
+            const selector = modal.querySelector("#bankAccountCustomerId").tomselect;
+            if (customer && selector) {
+                const name = [customer.companyName, customer.agentName].filter(Boolean).join(" ").trim();
+                selector.addOption({
+                    value: customer.id,
+                    text: `${name || "شخص"} (کد: ${customer.customerCode ?? "-"})`,
+                });
+                selector.setValue(customer.id, true);
+            }
+        }
+    } else if (bankAccountType != null) {
+        const typeSelect = modal.querySelector("#bankAccountTypeModalId");
+        typeSelect.value = String(bankAccountType);
+        typeSelect.dispatchEvent(new Event("change"));
+    }
+    ModalToggle(modal, "show");
+}
+
+async function submitAddBankAccount() {
+    const modal = getBankAccountModal();
+    if (!modal || bankAccountModalState.saving) return;
+    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
+
+    const cartNumber = modal.querySelector("#cartNumberId").value.trim();
+    const accountNumber = modal.querySelector("#accountNumberId").value.trim();
+    const shebaNumber = modal.querySelector("#shebaNumberId").value.trim().replace(/^IR[\s-]*/i, "");
+    if (!cartNumber && !accountNumber && !shebaNumber) {
+        modal.querySelector("#cartNumberId").focus();
+        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
+        return;
+    }
+
+    const personRole = selectedBankAccountPersonRole();
+    const personSelect = modal.querySelector("#bankAccountCustomerId");
+    const customerId = personRole ? (personSelect.tomselect?.getValue() || personSelect.value) : null;
+    if (personRole && !customerId) {
+        personSelect.tomselect?.focus();
+        return;
+    }
+
+    const model = {
+        ...(bankAccountModalState.original || {}),
+        ...mySer.convertFormToJSON("addBankAccountForm"),
+        customerId: customerId || null,
+        shebaNumber: shebaNumber ? `IR ${shebaNumber}` : "",
+    };
+    const isEdit = !!bankAccountModalState.original;
+    const submitButton = modal.querySelector("#bankAccountModalSubmitBtn");
+    bankAccountModalState.saving = true;
+    submitButton.disabled = true;
+    try {
+        const response = await sendApiRequest({
+            url: isEdit ? "/Accountancy/UpBankAccount" : "/Accountancy/AddBankAccount",
+            method: "POST",
+            data: model,
+            returnFullResponse: true,
+            successMsg: isEdit ? "با موفقیت ویرایش شد" : "اطلاعات حساب با موفقیت ثبت شد",
+        });
+        if (!response || response.status !== 200) return;
+
+        const onSaved = bankAccountModalState.onSaved;
+        ModalToggle(modal, "hide");
+        if (onSaved) {
+            try {
+                await onSaved(model);
+            } catch (error) {
+                console.error("Unable to refresh bank account options:", error);
+            }
+        }
+    } finally {
+        bankAccountModalState.saving = false;
+        submitButton.disabled = false;
+    }
+}
+
+
 function showTaminDropdown() {
     Dropdown.setupDelegate({
         container: document,
