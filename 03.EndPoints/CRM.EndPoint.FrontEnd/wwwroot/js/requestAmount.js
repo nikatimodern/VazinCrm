@@ -448,76 +448,117 @@ async function getAllRequestAmountByOrderHead(ohId) {
 
 
 let isSetupReqAmountModal = false;
+let requestTargetKind = "";
+let requestSupplierOptions = [];
+let requestCashierOptions = [];
+let requestSupplierSummaryToken = 0;
+
+function requestTargetSelect() {
+    return addReqAmountModal?.querySelector("#reqAmountTargetPersonId")?.tomselect;
+}
+
+// The option's target kind is generated from RequestAmountTypeEnum on the server.
+function updateRequestAmountTargetField() {
+    const kind = addReqAmountModal.querySelector("#requestAmountTypeId")
+        ?.selectedOptions[0]?.dataset.targetKind || "";
+    const wrapper = addReqAmountModal.querySelector("#reqAmountTargetPersonWrapper");
+    const select = addReqAmountModal.querySelector("#reqAmountTargetPersonId");
+    const dropdown = requestTargetSelect();
+    const labels = { supplier: "تأمین‌کننده", cashier: "تنخواه‌دار", customer: "مشتری" };
+    const hasTarget = Boolean(labels[kind]);
+
+    wrapper.classList.toggle("d-none", !hasTarget);
+    toggleElementsRequired(select, hasTarget);
+    addReqAmountModal.querySelector("#reqAmountTargetPersonLabel").textContent =
+        hasTarget ? `${labels[kind]}:` : "شخص مقصد:";
+
+    if (requestTargetKind !== kind && dropdown) {
+        requestTargetKind = kind;
+        requestSupplierSummaryToken++;
+        dropdown.clear(true);
+        dropdown.clearOptions();
+        const choices = kind === "supplier" ? requestSupplierOptions
+            : kind === "cashier" ? requestCashierOptions : [];
+        dropdown.addOptions(choices);
+        dropdown.refreshOptions(false);
+        dropdown.settings.placeholder = hasTarget ? `انتخاب ${labels[kind]}` : "انتخاب شخص";
+        dropdown.inputState();
+        if (kind === "cashier") {
+            const ownCashier = choices.find(x => x.target)?.value;
+            if (ownCashier) dropdown.setValue(ownCashier, true);
+        }
+        addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor").replaceChildren();
+    }
+}
+
+async function renderRequestSupplierSummary(supplierId) {
+    const container = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const token = ++requestSupplierSummaryToken;
+    container.replaceChildren();
+    if (requestTargetKind !== "supplier" || !supplierId) return;
+
+    const summary = await getSupplierFinancialSummary(supplierId);
+    if (token !== requestSupplierSummaryToken || requestTargetKind !== "supplier"
+        || requestTargetSelect()?.getValue() !== supplierId || !summary) return;
+
+    const debt = summary.supplierDebt ?? 0;
+    const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
+    const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
+    container.innerHTML = `
+        <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size:12px;color:#666">
+            <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
+                <span>جمع فاکتورها: <b dir="ltr" style="color:#333">${(summary.totalSupplyAmount ?? 0).toLocaleString()}</b> <span class="fs-small">ریال</span></span>
+                <span class="d-none d-sm-inline">|</span>
+                <span>جمع پرداختی‌ها: <b dir="ltr" style="color:#333">${(summary.totalPaidAmount ?? 0).toLocaleString()}</b> <span class="fs-small">ریال</span></span>
+            </div>
+            <div class="px-2 py-1 rounded" style="background:${debtBackground};color:${debtColor}">
+                مانده بدهی: <b dir="ltr">${debt.toLocaleString()}</b> <span class="fs-small">ریال</span>
+            </div>
+        </div>`;
+}
+
 async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    
     const [suppliersData, cashiersData] = await Promise.all([getSupplyBaseData(), getAllCashiers()]);
-    
-    const selectSupplier = new TomSelect("#reqAmountSupplierId", {
-        options: suppliersData.suppliers,
-        placeholder: "انتخاب تامین کننده",
+    if (!suppliersData || !cashiersData) return;
+
+    requestSupplierOptions = suppliersData.suppliers ?? [];
+    requestCashierOptions = cashiersData;
+
+    new TomSelect("#reqAmountTargetPersonId", {
+        options: [],
+        valueField: "value",
+        labelField: "text",
+        searchField: ["text"],
+        placeholder: "انتخاب شخص",
         maxItems: 1,
         selectOnTab: true,
-        
-        async onItemAdd(supplierId) {
-            selectSupplier.disable();
-            const supplierSummary = await getSupplierFinancialSummary(supplierId);
-            console.log(supplierSummary);
-            if (supplierSummary !== null) {
-                const debt = supplierSummary.supplierDebt;
-                const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
-                const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
-                
-                totalAmountSupFactorElm.innerHTML = `
-                    <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size: 12px;color: #666">
-                        <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
-                            <span>
-                                جمع فاکتورها:
-                                <b dir="ltr" style="color: #333">${(supplierSummary.totalSupplyAmount ?? 0)?.toLocaleString()}</b>
-                                <span class="fs-small">ریال</span>
-                            </span>
-                
-                            <span class="d-none d-sm-inline">|</span>
-                
-                            <span>
-                                جمع پرداختی‌ها:
-                                <b dir="ltr" style="color: #333">${(supplierSummary.totalPaidAmount ?? 0)?.toLocaleString()}</b>
-                                <span class="fs-small">ریال</span>
-                            </span>
-                        </div>
-                
-                        <div class="px-2 py-1 rounded" style="background: ${debtBackground};color: ${debtColor}">
-                            مانده بدهی:
-                            <b dir="ltr">${(debt ?? 0)?.toLocaleString()}</b>
-                            <span class="fs-small">ریال</span>
-                        </div>
-                    </div>
-                `;
-            }
-            selectSupplier.enable();
+        create: false,
+        loadThrottle: 300,
+        shouldLoad: query => requestTargetKind === "customer" && query.trim().length > 0,
+        load(query, callback) {
+            if (requestTargetKind !== "customer") return callback();
+            sendApiRequest({
+                url: "/Customer/GetCustomerOp",
+                params: { search: query.trim(), roleType: 1 },
+                showLoading: false,
+            }).then(result => callback(Array.isArray(result)
+                ? result.map(item => ({ value: item.id, text: item.text }))
+                : [])).catch(() => callback());
         },
-        
-        onDelete() {
-            totalAmountSupFactorElm.innerHTML = "";
+        onChange(value) {
+            void renderRequestSupplierSummary(value);
         },
     });
-    
-    new TomSelect("#reqAmountCashierId", {
-        options: cashiersData,
-        items: cashiersData.find(i => i.target)?.value,
-        placeholder: "انتخاب تنخواه دار",
-        maxItems: 1,
-        selectOnTab: true,
-    });
-    
     isSetupReqAmountModal = true;
+    updateRequestAmountTargetField();
 }
 
 
 async function getAllCashiers() {
     return await sendApiRequest({
         url: "/Cash/GetAllCashiers",
+        params: { useEntityId: true },
         showLoading: false,
     });
 }
