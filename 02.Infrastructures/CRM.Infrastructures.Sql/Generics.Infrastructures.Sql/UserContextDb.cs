@@ -9,6 +9,7 @@ namespace Generics.Infrastructures.Sql {
 
         public DbSet<BaseAdmin> BaseAdmins { get; set; }
         public DbSet<OtpMobileState> OtpMobileStates { get; set; }
+        public DbSet<PasswordLockoutState> PasswordLockoutStates { get; set; }
 
 
         protected void OnModelCreating(ModelBuilder modelBuilder) {

@@ -14,7 +14,7 @@ public interface IAccountRequestContext
 public sealed record AccountSignInResult(bool Succeeded, bool IsLockedOut);
 public interface IAccountAuthentication
 {
-    Task<AccountSignInResult> PasswordSignInAsync(AppUser user, string password, CancellationToken cancellationToken);
+    Task<AccountSignInResult> CheckPasswordAsync(AppUser user, string password, CancellationToken cancellationToken);
     Task SignInAsync(AppUser user, DateTimeOffset expiresAt, CancellationToken cancellationToken);
     Task SignOutAsync(CancellationToken cancellationToken);
 }

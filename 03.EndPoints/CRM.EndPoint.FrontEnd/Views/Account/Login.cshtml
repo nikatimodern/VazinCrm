@@ -61,11 +61,33 @@
         });
 
         const loginMsgElm = document.getElementById("LoginMsg");
+        let passwordLockoutInterval;
+        let submitting = false;
+
+        function displayPasswordLockout(seconds) {
+            clearInterval(passwordLockoutInterval);
+            const endsAt = Date.now() + seconds * 1000;
+            const render = () => {
+                const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+                if (remaining > 0) {
+                    loginMsgElm.innerText = `ورود با رمز عبور مسدود است. ${remaining} ثانیه دیگر تلاش کنید.`;
+                    loginButton.disabled = true;
+                } else {
+                    clearInterval(passwordLockoutInterval);
+                    loginMsgElm.innerText = "";
+                    if (!submitting) loginButton.disabled = false;
+                }
+            };
+            render();
+            passwordLockoutInterval = setInterval(render, 1000);
+        }
+
         document.getElementById("loginForm").addEventListener("submit", async (e) => {
             e.preventDefault();
+            if (submitting || loginButton.disabled) return;
+            submitting = true;
             toggleElementsDisabled(loginButton);
             loginButton.querySelector(".spinner-border").classList.remove("d-none");
-
 
             const model = {
                 userName: e.target.userName.value,
@@ -73,34 +95,46 @@
                 returnUrl: e.target.returnUrl.value,
             };
 
-            const token = e.target.__RequestVerificationToken.value;
-            const res = await fetch(`/Account/Login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "RequestVerificationToken": token,
-                },
-                body: JSON.stringify(model),
-            });
-            const data = await res.json();
-            loginMsgElm.innerText = "";
-            if (res.ok) {
-                goTo(data.url);
-                return;
-            }
-
-            if (res.status === 405) {
-                data.errors.forEach(err => {
-                    const pElm = document.createElement("p");
-                    pElm.innerText = err;
-                    loginMsgElm.appendChild(pElm);
+            try {
+                const res = await fetch("/Account/Login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "RequestVerificationToken": e.target.__RequestVerificationToken.value,
+                    },
+                    body: JSON.stringify(model),
                 });
-            } else {
-                loginMsgElm.innerText = data.message;
-            }
+                const data = await res.json();
+                loginMsgElm.innerText = "";
 
-            toggleElementsDisabled(loginButton, false);
-            loginButton.querySelector(".spinner-border").classList.add("d-none");
+                if (res.ok) {
+                    goTo(data.url);
+                    return;
+                }
+
+                if (res.status === 429 && data.retryAfterSeconds > 0) {
+                    displayPasswordLockout(data.retryAfterSeconds);
+                } else if (res.status === 405 && Array.isArray(data.errors)) {
+                    data.errors.forEach(err => {
+                        const pElm = document.createElement("p");
+                        pElm.innerText = err;
+                        loginMsgElm.appendChild(pElm);
+                    });
+                } else {
+                    loginMsgElm.innerText = data.message || "ورود انجام نشد.";
+                }
+            } catch {
+                loginMsgElm.innerText = "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.";
+            } finally {
+                submitting = false;
+                toggleElementsDisabled(loginButton, false);
+                loginButton.querySelector(".spinner-border").classList.add("d-none");
+                if (passwordLockoutInterval) {
+                    // The server remains authoritative even if the browser is refreshed or modified.
+                    const locked = loginMsgElm.innerText.includes("ثانیه دیگر تلاش کنید");
+                    loginButton.disabled = locked;
+                }
+            }
         });
     </script>
 }
