@@ -66,7 +66,7 @@ public class AccountController(ICqrsDispatcher requests) : Controller
     [HttpPost]
     public async Task<IActionResult> RequestOtp([FromBody] LoginOtpRequest model, [FromQuery] string type = "Login", CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid) return Ok(new { status = 405, error = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() });
+        if (!ModelState.IsValid) return Ok(new { status = 405, message = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() });
         var result = await requests.CommandAsync(new RequestOtpCommand(model.Mobile, type), cancellationToken);
         return Ok(new { status = result.Status, message = result.Message, retryAfterSeconds = result.RetryAfterSeconds });
     }

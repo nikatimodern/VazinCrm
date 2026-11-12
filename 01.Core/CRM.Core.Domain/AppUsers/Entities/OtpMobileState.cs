@@ -43,7 +43,7 @@ public sealed class OtpMobileState
         if (IsLocked(nowUtc))
             return new(OtpActionStatus.Locked, Remaining(LockedUntilUtc!.Value, nowUtc));
 
-        if (CodeHash is null || CodeSalt is null || OtpType != type || OtpExpiresAtUtc <= nowUtc)
+        if (CodeHash is null || CodeSalt is null || OtpType != type || OtpExpiresAtUtc is null || OtpExpiresAtUtc <= nowUtc)
             return new(OtpActionStatus.Expired);
 
         var matches = !string.IsNullOrWhiteSpace(code)
