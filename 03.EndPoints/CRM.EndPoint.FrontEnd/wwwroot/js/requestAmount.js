@@ -391,44 +391,13 @@ const submitReqAmountAttach = async () => {
 };
 
 
-const addBankAccountModal = document.getElementById("addBankAccountModal");
-function toggleAddBankAccountModal() {
-    mySer.emptyForm("addBankAccountForm");
-    ModalToggle(addBankAccountModal);
-}
-
-async function submitAddBankAccount() {
-    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
-    
-    const cartNumber = addBankAccountModal.querySelector("#cartNumberId").value.trim();
-    const accountNumber = addBankAccountModal.querySelector("#accountNumberId").value.trim();
-    const shebaNumber = addBankAccountModal.querySelector("#shebaNumberId").value.trim();
-    
-    const hasValue = cartNumber || accountNumber || shebaNumber;
-    
-    if (!hasValue) {
-        addBankAccountModal.querySelector("#cartNumberId").focus();
-        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
-        return;
-    }
-    
-    
-    const model = mySer.convertFormToJSON("addBankAccountForm");
-    if (model.shebaNumber?.trim()) {
-        model.shebaNumber = "IR " + model.shebaNumber.trim();
-    }
-    
-    await sendApiRequest({
-        method: "POST",
-        url: "/Accountancy/AddBankAccount",
-        data: model,
-        onSuccess: async () => {
-            toggleAddBankAccountModal();
-            await getAllBankAccounts([
-                { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
-            ], true);
-        },
-    });
+// Only the payment-page refresh stays here; the modal and save logic live in Layout.js.
+async function refreshRequestAmountBankAccountOptions() {
+    const select = document.querySelector("#reqAmountAttachModal select[name='toAccountId']");
+    if (!select) return;
+    await getAllBankAccounts([
+        { element: select, type: [2, 3], isTomSelect: true },
+    ], true);
 }
 
 /*--------------------------------------------------------------------------------*/
