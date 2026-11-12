@@ -74,6 +74,14 @@ public partial class UnifyRequestAmountTargetPerson : Migration
     {
         migrationBuilder.Sql("""
             IF EXISTS (
+                SELECT 1 FROM dbo.RequestAmounts
+                WHERE RequestAmountType = 6 AND TargetPersonId IS NOT NULL
+            )
+            BEGIN
+                THROW 50005, 'Customer refund targets cannot be represented by the legacy supplier/cashier columns.', 1;
+            END;
+
+            IF EXISTS (
                 SELECT 1
                 FROM dbo.RequestAmounts AS r
                 WHERE r.RequestAmountType = 3
