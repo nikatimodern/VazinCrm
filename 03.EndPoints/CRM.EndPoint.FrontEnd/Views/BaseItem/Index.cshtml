@@ -98,6 +98,14 @@
                                 <option value="@((int)accountType)">@(accountType.GetDescription())</option>
                             }
                         </select>
+                        <label for="bankAccountPageSize" class="bank-accounts-toolbar__filter-label">تعداد ردیف:</label>
+                        <select class="form-select form-select-sm" id="bankAccountPageSize" aria-label="تعداد ردیف حساب‌های بانکی در هر صفحه">
+                            <option value="5" selected>۵</option>
+                            <option value="10">۱۰</option>
+                            <option value="25">۲۵</option>
+                            <option value="50">۵۰</option>
+                            <option value="100">۱۰۰</option>
+                        </select>
                     </div>
                     <button type="button" class="buttonGreen2 bank-accounts-toolbar__add" onclick="openAddBankAccountFromSettings()">
                         <i class="fas fa-plus" aria-hidden="true"></i>
@@ -553,8 +561,9 @@
         const getAllBankAccount = () => {
             AllBankAccountTbl = $("#bankAccountTable").DataTable(
                 {
-                    paging: false,
-                    //lengthMenu: [5, 10, 25, 50, 100],
+                    paging: true,
+                    pageLength: 5,
+                    lengthMenu: [5, 10, 25, 50, 100],
                     processing: true,
                     serverSide: true,
                     filter: true,
@@ -616,8 +625,13 @@
                     ],
                     //layout: null,
                     layout: {
-                        bottomEnd: null,
-                        bottomStart: null,
+                        bottomEnd: "info",
+                        bottomStart: {
+                            paging: {
+                                type: "simple_numbers",
+                                buttons: 4,
+                            },
+                        },
                         topEnd: null,
                         topStart: null,
                     },
@@ -625,6 +639,9 @@
             document.getElementById("bankAccountSearchId").addEventListener("input", debounce(event => {
                 AllBankAccountTbl.search(event.target.value).draw();
             }, 300));
+            document.getElementById("bankAccountPageSize").addEventListener("change", event => {
+                AllBankAccountTbl.page.len(Number(event.target.value)).draw();
+            });
         };
 
 
