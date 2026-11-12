@@ -8,6 +8,7 @@ namespace CRM.Infrastructures.Sql.RequestAmounts.Configs {
         public void Configure(EntityTypeBuilder<RequestAmount> builder)
         {
             builder.HasKey(x => x.Id);
+            builder.HasIndex(x => x.TargetPersonId);
             builder.Property(x => x.RequestNumber).ValueGeneratedOnAdd();
 
 
