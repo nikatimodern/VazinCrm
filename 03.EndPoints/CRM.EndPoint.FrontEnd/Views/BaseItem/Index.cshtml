@@ -85,10 +85,11 @@
         </div>
 
         <div class="col-12" style="padding:4px">
+            <h2 id="bankAccountsHeading" class="bank-accounts-section-title">حساب‌های بانکی</h2>
             <section class="InfoData bank-accounts-panel" aria-labelledby="bankAccountsHeading">
                 <div class="bank-accounts-toolbar">
                     <div class="bank-accounts-toolbar__filters">
-                        <h2 id="bankAccountsHeading" class="bank-accounts-toolbar__title">حساب‌های بانکی</h2>
+                        <input type="search" id="bankAccountSearchId" class="form-control form-control-sm bank-accounts-toolbar__search" placeholder="جستجو" aria-label="جستجو در حساب‌های بانکی" />
                         <label for="bankAccountTypeId" class="bank-accounts-toolbar__filter-label">نمایش:</label>
                         <select class="form-select form-select-sm" id="bankAccountTypeId" aria-label="فیلتر حساب‌های بانکی">
                             <option value="-1" selected>همه</option>
@@ -618,15 +619,12 @@
                         bottomEnd: null,
                         bottomStart: null,
                         topEnd: null,
-                        topStart: {
-                            search: {
-                                placeholder: "جستجو",
-                            },
-                        },
+                        topStart: null,
                     },
                 });
-            $("[name=\"FamilyWayTable\"]").addClass("form-control");
-            $("input[type='search']").addClass("form-control");
+            document.getElementById("bankAccountSearchId").addEventListener("input", debounce(event => {
+                AllBankAccountTbl.search(event.target.value).draw();
+            }, 300));
         };
 
 
