@@ -42,20 +42,36 @@ public sealed class OtpMobileRepository(UserContextDb db) : IOtpMobileRepository
     private async Task<T> WithMobileLockAsync<T>(
         string mobile, bool createIfMissing, Func<OtpMobileState?, T> action, CancellationToken ct)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        await AcquireLockAsync(db.Database.GetDbConnection(), transaction.GetDbTransaction(), mobile, ct);
-
-        var state = await db.Set<OtpMobileState>().SingleOrDefaultAsync(x => x.Mobile == mobile, ct);
-        if (state is null && createIfMissing)
+        // UserContextDb enables SQL Server retrying; retry the complete transaction, not individual commands.
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            state = new OtpMobileState { Mobile = mobile };
-            db.Set<OtpMobileState>().Add(state);
-        }
+            OtpMobileState? state = null;
+            try
+            {
+                await using var transaction = await db.Database.BeginTransactionAsync(ct);
+                await AcquireLockAsync(db.Database.GetDbConnection(), transaction.GetDbTransaction(), mobile, ct);
 
-        var result = action(state);
-        await db.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
-        return result;
+                state = await db.Set<OtpMobileState>()
+                    .SingleOrDefaultAsync(x => x.Mobile == mobile, ct);
+                if (state is null && createIfMissing)
+                {
+                    state = new OtpMobileState { Mobile = mobile };
+                    db.Set<OtpMobileState>().Add(state);
+                }
+
+                var result = action(state);
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+                return result;
+            }
+            finally
+            {
+                // A failed attempt must not leave a tracked OTP entity in the next retry.
+                if (state is not null)
+                    db.Entry(state).State = EntityState.Detached;
+            }
+        });
     }
 
     private static async Task AcquireLockAsync(DbConnection connection, DbTransaction transaction, string mobile, CancellationToken ct)
