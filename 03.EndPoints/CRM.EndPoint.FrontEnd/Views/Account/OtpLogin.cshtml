@@ -123,6 +123,8 @@
         window.addEventListener("popstate", (e) => {
             if (!e.state || e.state.step !== "otp") {
                 clearInterval(otpIntervalId);
+                otpTimerVersion++;
+                mobileLoginBtn.disabled = false;
                 document.getElementById("otpLoginMsg").innerText = "";
                 document.getElementById("remainingCodeOtpLoginId").style.display = "none";
 
@@ -194,8 +196,11 @@
         }
 
         let otpIntervalId;
+        let otpTimerVersion = 0;
         function startOtpTimer() {
             clearInterval(otpIntervalId);
+            const timerVersion = ++otpTimerVersion;
+            let wasLocked = false;
             const mobile = mobileVerified || JSON.parse(sessionStorage.getItem("mobileVerified") || "null");
             if (!mobile) return;
 
@@ -203,7 +208,9 @@
                 try {
                     const response = await fetch(`/Account/CheckTimerCode?type=@ViewBag.type&mobile=${encodeURIComponent(mobile)}`);
                     const data = await response.json();
+                    if (timerVersion !== otpTimerVersion) return;
                     if (data.status === true) {
+                        wasLocked = wasLocked || data.isLocked;
                         document.getElementById("remainingSecondsOtpLogin").innerText = data.elsapsTime + " ثانیه";
                         document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
                         document.getElementById("resendOtpBtn").style.display = "none";
@@ -216,6 +223,8 @@
                         document.getElementById("remainingCodeOtpLoginId").style.display = "none";
                         otpBtn.style.display = "none";
                         mobileLoginBtn.disabled = false;
+                        if (wasLocked)
+                            otpLoginMsgElm.innerText = "زمان مسدودیت پایان یافت؛ برای ادامه کد جدید دریافت کنید.";
                         document.getElementById("resendOtpBtn").style.display =
                             document.getElementById("otpSection").style.display === "block" ? "flex" : "none";
                     }
