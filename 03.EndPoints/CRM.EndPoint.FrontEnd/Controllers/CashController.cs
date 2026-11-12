@@ -89,7 +89,7 @@ public class CashController(ICqrsDispatcher dispatcher) : Controller
     public async Task<IActionResult> GetCashier(Guid id, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashierDetailQuery(id), ct));
     public async Task<IActionResult> GetBaseCash(Guid id, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetBaseCashDetailQuery(id), ct));
     public async Task<IActionResult> GetBalanceCashier(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashierBalanceQuery(), ct));
-    public async Task<IActionResult> GetAllCashiers(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashierOptionsQuery(), ct));
+    public async Task<IActionResult> GetAllCashiers(bool useEntityId = false, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetCashierOptionsQuery(useEntityId), ct));
     public async Task<IActionResult> GetAllTafsiliCodes(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashDetailedAccountsQuery(), ct));
     public async Task<IActionResult> GetAllBaseCashCenter(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashCentersQuery(), ct));
     public async Task<IActionResult> GetAllBaseCashTitle(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashTitlesQuery(), ct));
