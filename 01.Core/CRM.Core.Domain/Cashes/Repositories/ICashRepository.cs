@@ -70,7 +70,7 @@ public interface ICashRepository
     Task<List<CashOption<Guid>>> GetCentersAsync(CancellationToken ct);
     Task<List<CashOption<Guid>>> GetTitlesAsync(bool supply, CancellationToken ct);
     Task<List<CashOption<Guid>>> GetOwnCashiersAsync(string userId, CancellationToken ct);
-    Task<List<CashierOption>> GetCashierOptionsAsync(string userId, CancellationToken ct);
+    Task<List<CashierOption>> GetCashierOptionsAsync(string userId, bool useEntityId, CancellationToken ct);
     Task<CashierBalanceDto> GetBalanceAsync(Guid userId, CancellationToken ct);
     Task<CashListTable> GetTableAsync(TableRequest table, QueryFilter filter, string userId, bool readAll, int searchNumber, CancellationToken ct);
     Task<CashTable<CashGroupRow>> GetGroupTableAsync(TableRequest table, string userId, bool readAll, int searchNumber, CancellationToken ct);

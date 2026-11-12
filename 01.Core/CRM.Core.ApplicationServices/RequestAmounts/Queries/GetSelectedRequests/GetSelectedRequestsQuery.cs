@@ -24,6 +24,8 @@ public sealed class GetSelectedRequestsQueryHandler(IRequestAmountRepository rep
     public async Task<SelectedRequests> HandleAsync(GetSelectedRequestsQuery request, CancellationToken ct)
     {
         var data = await repository.GetByIdsAsync(request.Ids, false, ct);
-        return new(data, data.Select(r => r.SupplierId).Distinct().Count() > 1 ? "در واریزی گروهی تمام درخواست ها باید برای یک تامیین کننده باشد " : null);
+        // A grouped payment must share one target and one target entity kind.
+        var targetCount = data.Select(r => (r.TargetPersonId, Kind: r.RequestAmountType.GetTargetKind())).Distinct().Count();
+        return new(data, targetCount > 1 ? "در پرداخت گروهی تمام درخواست‌ها باید برای یک شخص و از یک نوع مقصد باشند." : null);
     }
 }

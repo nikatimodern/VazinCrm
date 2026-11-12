@@ -17,7 +17,7 @@
                             <option value="">انتخاب</option>
                             @foreach (var requestType in Enum.GetValues<RequestAmountTypeEnum>())
                             {
-                                <option value="@((int)requestType)">@(requestType.GetDescription())</option>
+                                <option value="@((int)requestType)" data-target-kind="@(requestType.GetTargetKind().ToString().ToLowerInvariant())">@(requestType.GetDescription())</option>
                             }
                         </select>
                     </div>
@@ -46,17 +46,10 @@
                         </div>
                     </div>*@
 
-                    <div id="reqAmountSupplierWrapper">
-                        <label for="reqAmountSupplierId">تامین‌ کننده:</label>
-                        <select class="show-dropdown-arrow" name="supplierId" id="reqAmountSupplierId" required>
-                        </select>
+                    <div id="reqAmountTargetPersonWrapper" class="d-none">
+                        <label for="reqAmountTargetPersonId" id="reqAmountTargetPersonLabel">شخص مقصد:</label>
+                        <select class="show-dropdown-arrow" name="targetPersonId" id="reqAmountTargetPersonId"></select>
                         <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
-                    </div>
-
-                    <div id="reqAmountCashierWrapper" class="d-none">
-                        <label for="reqAmountCashierId">تنخواه دار:</label>
-                        <select class="show-dropdown-arrow" name="cashierId" id="reqAmountCashierId">
-                        </select>
                     </div>
 
                     <div id="reqAmountOrderHeadWrapper" class="d-none">

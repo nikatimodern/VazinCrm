@@ -24,11 +24,18 @@ public sealed class UpdateRequestAmountCommandHandler(IRequestAmountRepository r
         var model = request.Model;
         if (model == null)
             return new(400);
+        if (!Enum.IsDefined(model.RequestAmountType) || !model.TargetPersonId.HasValue || model.TargetPersonId.Value == Guid.Empty)
+            return new(400, "مقصد درخواست وجه معتبر نیست.");
+        var targetName = await repository.GetTargetPersonTextAsync(model.RequestAmountType, model.TargetPersonId.Value, ct);
+        if (string.IsNullOrWhiteSpace(targetName))
+            return new(400, "شخص مقصد با نقش انتخاب‌شده یافت نشد.");
+        model.TargetPersonTxt = targetName;
         await repository.BeginAsync(ct);
         try
         {
             var user = (await actor.GetAsync(ct)).User;
             model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
+            model.RequestAmountTypeTxt = model.RequestAmountType.ToString().Replace("_", " ");
             model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
             model.ModifyDate = DateTime.Now;
             model.ModifyDateTxt = dates.PersianNow();

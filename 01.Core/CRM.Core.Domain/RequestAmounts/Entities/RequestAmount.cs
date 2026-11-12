@@ -20,11 +20,9 @@ namespace CRM.Core.Domain.RequestAmounts.Entities {
         public IList<RequestAmountSupplyFactor> RequestAmountSupplyFactor { get; set; }
         public IList<RequestAmountOrderHead> RequestAmountOrderHeads { get; set; }
 
-        public Guid? SupplierId { get; set; }
-        public string SupplierTxt { get; set; }
-
-        public Guid? CashierId { get; set; } // تنخواه دار
-        public string CashierTxt { get; set; }
+        // Customer (supplier/customer role) or Cashier, determined by RequestAmountType.
+        public Guid? TargetPersonId { get; set; }
+        public string TargetPersonTxt { get; set; }
 
         public string Description { get; set; }
 

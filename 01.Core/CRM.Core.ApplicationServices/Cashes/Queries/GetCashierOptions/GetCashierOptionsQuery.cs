@@ -18,12 +18,12 @@ using CRM.Core.ApplicationServices.Cashes.Dtos;
 using CRM.Core.ApplicationServices.Cashes.Services;
 
 namespace CRM.Core.ApplicationServices.Cashes.Queries.GetCashierOptions;
-public sealed record GetCashierOptionsQuery() : IQuery<List<CashierOption>>;
+public sealed record GetCashierOptionsQuery(bool UseEntityId = false) : IQuery<List<CashierOption>>;
 public sealed class GetCashierOptionsQueryHandler(ICashRepository repository, CurrentActor actor) : IQueryHandler<GetCashierOptionsQuery, List<CashierOption>>
 {
     public async Task<List<CashierOption>> HandleAsync(GetCashierOptionsQuery request, CancellationToken ct)
     {
         var current = await actor.GetAsync(ct);
-        return await repository.GetCashierOptionsAsync(current.User.Id, ct);
+        return await repository.GetCashierOptionsAsync(current.User.Id, request.UseEntityId, ct);
     }
 }

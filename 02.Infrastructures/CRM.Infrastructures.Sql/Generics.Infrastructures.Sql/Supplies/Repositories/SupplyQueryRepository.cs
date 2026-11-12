@@ -20,6 +20,7 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Supplies.Rules;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
@@ -785,8 +786,10 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
 
         var paidAmounts = db.RequestAmountPayments
             .AsNoTracking()
-            .Where(x => x.RequestAmount.SupplierId.HasValue)
-            .GroupBy(x => x.RequestAmount.SupplierId.Value)
+            .Where(x => x.RequestAmount.TargetPersonId.HasValue
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.تنخواه
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.عودت_به_مشتری)
+            .GroupBy(x => x.RequestAmount.TargetPersonId!.Value)
             .Select(g => new {
                 SupplierId = g.Key,
                 SupplyAmount = 0m,

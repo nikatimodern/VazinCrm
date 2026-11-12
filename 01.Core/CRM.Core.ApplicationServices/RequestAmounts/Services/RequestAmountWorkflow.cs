@@ -96,7 +96,10 @@ public sealed class RequestAmountWorkflow(IRequestAmountRepository repository, I
                 {
                     acc = new Accountancy
                     {
-                        CashierId = requestAmount.CashierId,
+                        // Accountancy still stores the cashier's UserId; requests store the Cashier entity Id.
+                        CashierId = requestAmount.TargetPersonId.HasValue
+                            ? await repository.GetCashierUserIdAsync(requestAmount.TargetPersonId.Value, ct)
+                            : null,
                         RequestAmountId = requestAmount.Id,
                         InvoiceType = InvoiceTypeEnum.تنخواه,
                         InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),

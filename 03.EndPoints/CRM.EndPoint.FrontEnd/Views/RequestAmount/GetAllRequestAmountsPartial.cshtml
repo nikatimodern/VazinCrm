@@ -14,6 +14,12 @@
         var orderHeadNumbers = item.OrderHeadSerials;
         var customerNames = item.CustomerNames;
         var status = reqAmount.RequestStatus;
+        var targetKind = reqAmount.RequestAmountType.GetTargetKind();
+        var targetLabel = targetKind switch {
+            RequestAmountTargetKind.Cashier => "تنخواه‌دار",
+            RequestAmountTargetKind.Customer => "مشتری",
+            _ => "تأمین‌کننده"
+        };
         var isFullyPaid = item.TotalPaymentAmount >= reqAmount.AcceptedAmount;
         var canEditDocType = User.IsAdmin() ||
                              (User.IsFinancial() && reqAmount.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت) ||
@@ -67,22 +73,17 @@
                         }
                     </span>
                 </div>
-                @if (reqAmount.RequestAmountType == RequestAmountTypeEnum.تنخواه && !string.IsNullOrEmpty(reqAmount.CashierTxt)) {
-                    <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
-                        <span style="font-size: 13px; color: #777">تنخواه دار:</span>
-                        <span class="fbold">@reqAmount.CashierTxt</span>
-                    </div>
-                }
+
                 @if (supplyFactorSerials.Any()) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
                         <span style="font-size: 13px; color: #777">فاکتور تامین:</span>
                         <span class="fbold direction-ltr">@string.Join(", ", supplyFactorSerials)</span>
                     </div>
                 }
-                @if (!string.IsNullOrEmpty(reqAmount.SupplierTxt)) {
+                @if (!string.IsNullOrEmpty(reqAmount.TargetPersonTxt)) {
                     <div class="d-flex flex-wrap justify-content-center align-items-baseline column-gap-2 mt-2 text-center">
-                        <span style="font-size: 13px; color: #777">تامین کننده:</span>
-                        <span class="fbold">@reqAmount.SupplierTxt</span>
+                        <span style="font-size: 13px; color: #777">@targetLabel:</span>
+                        <span class="fbold">@reqAmount.TargetPersonTxt</span>
                     </div>
                 }
                 @if (orderHeadNumbers.Any()) {
@@ -113,7 +114,7 @@
                         <span style="font-size: 11px;">ريال</span>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(reqAmount.SupplierTxt)) {
+                @if (targetKind == RequestAmountTargetKind.Supplier && !string.IsNullOrEmpty(reqAmount.TargetPersonTxt)) {
                     var badgeClass = item.SupplierDebt switch {
                         > 0 => status switch {
                             RequestStatusEnum.در_انتظار_پرداخت or RequestStatusEnum.پرداخت_شده => "badge-outline-green",
