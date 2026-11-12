@@ -484,7 +484,7 @@ function updateRequestAmountTargetField() {
         dropdown.addOptions(choices);
         dropdown.refreshOptions(false);
         dropdown.settings.placeholder = hasTarget ? `انتخاب ${labels[kind]}` : "انتخاب شخص";
-        dropdown.inputState();
+        dropdown.control_input?.setAttribute("placeholder", dropdown.settings.placeholder);
         if (kind === "cashier") {
             const ownCashier = choices.find(x => x.target)?.value;
             if (ownCashier) dropdown.setValue(ownCashier, true);
@@ -544,9 +544,12 @@ async function setupSelectOptionsReqAmount() {
                 url: "/Customer/GetCustomerOp",
                 params: { search: query.trim(), roleType: 1 },
                 showLoading: false,
-            }).then(result => callback(Array.isArray(result)
-                ? result.map(item => ({ value: item.id, text: item.text }))
-                : [])).catch(() => callback());
+            }).then(result => {
+                if (requestTargetKind !== "customer") return callback();
+                callback(Array.isArray(result)
+                    ? result.map(item => ({ value: item.id, text: item.text }))
+                    : []);
+            }).catch(() => callback());
         },
         onChange(value) {
             void renderRequestSupplierSummary(value);
