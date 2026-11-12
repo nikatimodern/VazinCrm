@@ -71,5 +71,6 @@
 @media (max-width:767px) {
     #settingsCompanyWorkspace .bank-accounts-toolbar { gap:7px; }
     #settingsCompanyWorkspace .bank-accounts-toolbar__title { font-size:14px; }
-    #settingsCompanyWorkspace #bankAccountTypeId { width:132px; max-width:132px; }
+    #settingsCompanyWorkspace #bankAccountTypeId { width:142px; max-width:142px; }
+    #settingsCompanyWorkspace .bank-accounts-toolbar__add { min-height:23px; padding:1px 5px; margin-block:0; font-size:11px; }
 }
