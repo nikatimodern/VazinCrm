@@ -52,8 +52,8 @@ public partial class UnifyRequestAmountTargetPerson : Migration
             END;
 
             UPDATE r
-            SET r.TargetPersonId = CASE WHEN r.RequestAmountType = 3 THEN c.Id ELSE r.SupplierId END,
-                r.TargetPersonTxt = CASE WHEN r.RequestAmountType = 3 THEN r.CashierTxt ELSE r.SupplierTxt END
+            SET TargetPersonId = CASE WHEN r.RequestAmountType = 3 THEN c.Id ELSE r.SupplierId END,
+                TargetPersonTxt = CASE WHEN r.RequestAmountType = 3 THEN r.CashierTxt ELSE r.SupplierTxt END
             FROM dbo.RequestAmounts AS r
             LEFT JOIN dbo.Cashiers AS c
                 ON r.RequestAmountType = 3 AND (c.UserId = r.CashierId OR c.Id = r.CashierId);
@@ -111,10 +111,10 @@ public partial class UnifyRequestAmountTargetPerson : Migration
 
         migrationBuilder.Sql("""
             UPDATE r
-            SET r.SupplierId = CASE WHEN r.RequestAmountType = 3 THEN NULL ELSE r.TargetPersonId END,
-                r.SupplierTxt = CASE WHEN r.RequestAmountType = 3 THEN NULL ELSE r.TargetPersonTxt END,
-                r.CashierId = CASE WHEN r.RequestAmountType = 3 THEN c.UserId ELSE NULL END,
-                r.CashierTxt = CASE WHEN r.RequestAmountType = 3 THEN r.TargetPersonTxt ELSE NULL END
+            SET SupplierId = CASE WHEN r.RequestAmountType = 3 THEN NULL ELSE r.TargetPersonId END,
+                SupplierTxt = CASE WHEN r.RequestAmountType = 3 THEN NULL ELSE r.TargetPersonTxt END,
+                CashierId = CASE WHEN r.RequestAmountType = 3 THEN c.UserId ELSE NULL END,
+                CashierTxt = CASE WHEN r.RequestAmountType = 3 THEN r.TargetPersonTxt ELSE NULL END
             FROM dbo.RequestAmounts AS r
             LEFT JOIN dbo.Cashiers AS c ON r.RequestAmountType = 3 AND c.Id = r.TargetPersonId;
             """);
