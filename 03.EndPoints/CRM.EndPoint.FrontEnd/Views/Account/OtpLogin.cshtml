@@ -63,6 +63,7 @@
         let intervalId;
         let mobileVerified;
         let selectedUserId;
+        let otpVerifyPending = false;
         let otpBtn = document.getElementById("verifyOtpBtn");
         let mobileLoginBtn = document.getElementById("confirmCodeOtpLoginBtn");
 
@@ -161,6 +162,8 @@
 
         const otpLoginMsgElm = document.getElementById("otpLoginMsg");
         function verifyOtp() {
+            if (otpVerifyPending || otpBtn.style.display === "none") return;
+            otpVerifyPending = true;
             const inpMobileValue = document.querySelector("input[name='mobile']").value;
             const mobile = inpMobileValue ? "09" + inpMobileValue : JSON.parse(sessionStorage.getItem("mobileVerified"));
             const OtpCode = document.querySelector("input[name='otp']").value;
@@ -190,6 +193,10 @@
                       otpLoginMsgElm.innerText = data.message;
                       if (data.retryAfterSeconds > 0 || data.status === 401) startOtpTimer();
                   }
+              }).catch(() => {
+                  otpLoginMsgElm.innerText = "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.";
+              }).finally(() => {
+                  otpVerifyPending = false;
                   otpBtn.querySelector(".spinner-border").classList.add("d-none");
                   toggleElementsDisabled(otpBtn, false);
               });
