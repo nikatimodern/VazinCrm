@@ -58,7 +58,7 @@
 /* Bank account management follows the same external-title / inner-panel structure as other settings sections. */
 #settingsCompanyWorkspace .bank-accounts-section-title { margin:0 0 3px; color:#004944; font:700 16px/1.8 IRANSansBold; }
 #settingsCompanyWorkspace .bank-accounts-panel { min-width:0; }
-#settingsCompanyWorkspace .bank-accounts-toolbar { display:flex; align-items:center; flex-wrap:nowrap; gap:10px; min-width:0; margin-block-end:9px; }
+#settingsCompanyWorkspace .bank-accounts-toolbar { display:flex; align-items:center; flex-wrap:nowrap; gap:10px; min-width:0; padding-inline:6px; padding-block:2px; margin-block-end:9px; }
 #settingsCompanyWorkspace .bank-accounts-toolbar__filters { display:flex; align-items:center; flex:1 1 auto; flex-wrap:nowrap; gap:8px; min-width:0; }
 #settingsCompanyWorkspace .bank-accounts-toolbar__filter-label { flex:0 0 auto; margin:0; color:#545961; font:400 12px/1.7 IRANSans; white-space:nowrap; }
 #settingsCompanyWorkspace #bankAccountSearchId { flex:0 1 190px; width:190px; min-width:100px; min-height:32px; height:32px; padding:4px 9px; border:1px solid #A3B8B3; border-radius:6px; background:#fff; color:#212529; text-align:start; font:400 12px/1.7 IRANSans; }
