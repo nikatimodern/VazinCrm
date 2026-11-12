@@ -43,12 +43,11 @@ public partial class UnifyRequestAmountTargetPerson : Migration
             IF EXISTS (
                 SELECT 1
                 FROM dbo.RequestAmounts AS r
-                WHERE r.RequestAmountType <> 3
-                  AND r.SupplierId IS NOT NULL
-                  AND r.CashierId IS NOT NULL
+                WHERE (r.RequestAmountType = 3 AND r.SupplierId IS NOT NULL)
+                   OR (r.RequestAmountType <> 3 AND r.CashierId IS NOT NULL)
             )
             BEGIN
-                THROW 50003, 'A request has both supplier and cashier IDs. Resolve the conflicting target before migrating.', 1;
+                THROW 50003, 'RequestAmount contains an ID from the wrong target entity. Resolve it before migrating.', 1;
             END;
 
             UPDATE r
