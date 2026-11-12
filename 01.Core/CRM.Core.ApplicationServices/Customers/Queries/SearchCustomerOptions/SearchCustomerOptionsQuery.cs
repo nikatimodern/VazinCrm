@@ -11,11 +11,11 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.SearchCustomerOptions;
 
-public sealed record SearchCustomerOptionsQuery(string? Search) : IQuery<List<CustomerOption>?>;
+public sealed record SearchCustomerOptionsQuery(string? Search, int? RoleType = null) : IQuery<List<CustomerOption>?>;
 public sealed class SearchCustomerOptionsQueryHandler(ICustomerRepository repository) : IQueryHandler<SearchCustomerOptionsQuery, List<CustomerOption>?>
 {
     public async Task<List<CustomerOption>?> HandleAsync(SearchCustomerOptionsQuery request, CancellationToken ct)
     {
-        return request.Search == null ? null : await repository.SearchOptionsAsync(request.Search, ct);
+        return request.Search == null ? null : await repository.SearchOptionsAsync(request.Search, request.RoleType, ct);
     }
 }
