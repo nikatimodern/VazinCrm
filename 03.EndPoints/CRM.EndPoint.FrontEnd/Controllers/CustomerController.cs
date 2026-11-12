@@ -60,8 +60,8 @@ public sealed class CustomerController(ICqrsDispatcher requests) : Controller
     public Task<IActionResult> AddSelsToCustomers([FromBody] SelsCustomerVModel model, CancellationToken cancellationToken) =>
         Mutation(requests.CommandAsync(new AssignCustomerExpertsCommand(model.customerId, model.selExperts), cancellationToken), cancellationToken);
     [Authorize(Policy = "NotCustomerOnly"), HttpGet]
-    public async Task<IActionResult> GetCustomerOp(string search, CancellationToken cancellationToken) =>
-        Ok(await requests.QueryAsync(new SearchCustomerOptionsQuery(search), cancellationToken));
+    public async Task<IActionResult> GetCustomerOp(string search, int? roleType, CancellationToken cancellationToken) =>
+        Ok(await requests.QueryAsync(new SearchCustomerOptionsQuery(search, roleType), cancellationToken));
     [Authorize(Policy = "NotCustomerOnly"), HttpGet]
     public async Task<IActionResult> GetSuppliers(CancellationToken cancellationToken) =>
         Ok(await requests.QueryAsync(new GetCustomerSuppliersQuery(), cancellationToken));
