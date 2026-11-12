@@ -47,7 +47,12 @@ public class AccountController(ICqrsDispatcher requests) : Controller
         if (!ModelState.IsValid) return StatusCode(405, new { errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList() });
         var result = await requests.CommandAsync(new PasswordLoginCommand(details.UserName, details.Password, details.returnUrl), cancellationToken);
         if (result.Status == 200) return Ok(new { message = result.Message, url = ResolveUrl(result.Redirect) });
-        return StatusCode(result.Status, new { message = result.Message });
+        return StatusCode(result.Status, new
+        {
+            message = result.Message,
+            retryAfterSeconds = result.RetryAfterSeconds,
+            remainingAttempts = result.RemainingAttempts
+        });
     }
     public async Task<IActionResult> Home(CancellationToken cancellationToken)
     {
