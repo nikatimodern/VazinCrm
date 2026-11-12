@@ -224,3 +224,27 @@
 @media (prefers-reduced-motion: reduce) {
     .erp-login-page *, .erp-login-page *::before, .erp-login-page *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
+
+/* Keep the password reveal control keyboard-accessible without changing field geometry. */
+.erp-login-page button.erp-password-icon {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+.erp-login-page button.erp-password-icon:focus-visible {
+    outline: 2px solid var(--erp-secondary);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+.erp-login-page #LoginMsg:not(:empty),
+.erp-login-page #otpLoginMsg:not(:empty),
+.erp-login-page #resetPassErrMsg:not(:empty) {
+    color: var(--erp-danger);
+    background: #fce8f0;
+    border-radius: 8px;
+    padding: 9px 10px;
+    border: 1px solid rgba(194,24,91,.12);
+    margin-top: 11px;
+    text-align: right;
+}
