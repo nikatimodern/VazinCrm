@@ -45,8 +45,7 @@ public sealed class PasswordLoginCommandHandler(
             return Locked(attempt.RetryAfterSeconds);
 
         if (!check.Succeeded)
-            return new(404, $"نام کاربری یا رمز عبور اشتباه است! {attempt.RemainingAttempts} تلاش باقی مانده است.",
-                RemainingAttempts: attempt.RemainingAttempts);
+            return new(404, invalidCredentials);
 
         await authentication.SignOutAsync(cancellationToken);
         return new(200, "موفق", await login.CompleteAsync(user, request.ReturnUrl, cancellationToken));
