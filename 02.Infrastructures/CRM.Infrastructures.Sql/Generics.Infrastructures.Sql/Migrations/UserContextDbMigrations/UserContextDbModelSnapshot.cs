@@ -158,6 +158,26 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.ToTable("OtpMobileStates");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.PasswordLockoutState", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LockoutCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("PasswordLockoutStates");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Cartables.Entities.BaseAdmin", b =>
                 {
                     b.Property<Guid>("Id")
