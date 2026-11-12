@@ -1,3 +1,4 @@
+using System;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
