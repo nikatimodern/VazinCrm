@@ -2170,6 +2170,8 @@ async function submitAddBankAccount() {
         });
         if (!response || response.status !== 200) return;
 
+        // Saved accounts must be visible to all bank selectors after SPA navigation.
+        Object.keys(bankAccountsCache).forEach(key => delete bankAccountsCache[key]);
         const onSaved = bankAccountModalState.onSaved;
         bankAccountModalState.saving = false;
         ModalToggle(modal, "hide");
