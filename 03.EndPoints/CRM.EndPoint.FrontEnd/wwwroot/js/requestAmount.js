@@ -420,9 +420,10 @@ async function showAddRequestAmountModal(ohId, ohNumber) {
     
     if (ohId || ohReqAmountId) {
         const reqAmountTypeWrapper = addReqAmountModal.querySelector("#requestAmountTypeWrapper");
-        reqAmountTypeWrapper?.remove();
-        /*reqAmountType.value = "1";
-        toggleElementsDisabled(reqAmountType, true);*/
+        reqAmountTypeWrapper?.classList.add("d-none");
+        const typeSelect = addReqAmountModal.querySelector("#requestAmountTypeId");
+        typeSelect.value = "1";
+        typeSelect.dispatchEvent(new Event("change"));
     }
     ModalToggle(addReqAmountModal);
 }
@@ -582,21 +583,23 @@ async function getSupplierFinancialSummary(supplierId) {
 
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
-    const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");
-    const cashierSelect = addReqAmountModal.querySelector("#reqAmountCashierId");
-    
     const formData = mySer.convertFormToJSON("requestAmountForm");
+    const targetSelect = requestTargetSelect();
+    const targetPersonId = targetSelect?.getValue() || null;
+    if (!targetPersonId) {
+        targetSelect?.focus();
+        toastifyError("شخص مقصد را انتخاب کنید.");
+        return;
+    }
     const model = {
         ...requestAmountData,
         ...formData,
-        cashierId: formData.cashierId || null,
-        supplierId: formData.supplierId || null,
-        supplierTxt: supplierSelect.selectedOptions[0].innerText,
-        cashierTxt: cashierSelect.selectedOptions[0].innerText,
+        targetPersonId,
+        targetPersonTxt: targetSelect.options[targetPersonId]?.text || "",
         requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
     };
-    
+    const relatedOrderHeadId = ohReqAmountId;
     await sendApiRequest({
         method: "POST",
         url: model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount",
@@ -605,32 +608,29 @@ async function submitRequestAmountModal() {
             cancelRequestAmountModal();
             await refreshRequestAmountDom();
             const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("order") && !model.id) {
-                await showAllRequestAmountModal(ohReqAmountId);
+            if (currentPath.includes("order") && !model.id && relatedOrderHeadId) {
+                await showAllRequestAmountModal(relatedOrderHeadId);
             }
         },
     });
 }
 
-
 function cancelRequestAmountModal() {
-    ModalToggle(addReqAmountModal);
+    ModalToggle(addReqAmountModal, "hide");
     mySer.emptyForm("requestAmountForm");
     supplyFactorsSelectedIds = [];
     orderHeadsSelectedIds = [];
     requestAmountData = {};
     isFromOrderHead = false;
-    
-    const ohInputWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const ohInput = addReqAmountModal.querySelector("input#reqAmountOrderHead");
-    ohInputWrapper.classList.add("d-none");
-    toggleElementsRequired(ohInput, false);
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    totalAmountSupFactorElm.innerHTML = "";
-    /*  const reqAmountType = addReqAmountModal.querySelector("#requestAmountTypeId");
-      if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
+    ohReqAmountId = null;
+    const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    ohWrapper.classList.add("d-none");
+    toggleElementsRequired(addReqAmountModal.querySelector("#reqAmountOrderHead"), false);
+    addReqAmountModal.querySelector("#requestAmountTypeWrapper")?.classList.remove("d-none");
+    addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = "درخواست وجه";
+    addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor").replaceChildren();
+    updateRequestAmountTargetField();
 }
-
 
 async function showEditRequestAmountModal(id) {
     await showAddRequestAmountModal();
@@ -644,9 +644,21 @@ async function showEditRequestAmountModal(id) {
     const supplyFactorSerials = data.supplyFactorSerials;
     const orderHeadSerials = data.orderHeadSerials;
     
-    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
-    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
-    orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
+    // Set the type first so its target-entity switch cannot discard the selected person.
+    const typeSelect = addReqAmountModal.querySelector("#requestAmountTypeId");
+    typeSelect.value = String(requestAmountData.requestAmountType);
+    typeSelect.dispatchEvent(new Event("change"));
+    mySer.convertJsonToForm(requestAmountData, "requestAmountForm", ["requestAmountType", "targetPersonId"]);
+    const targetSelect = requestTargetSelect();
+    if (requestAmountData.targetPersonId && targetSelect) {
+        const personId = String(requestAmountData.targetPersonId);
+        if (!targetSelect.options[personId]) {
+            targetSelect.addOption({ value: personId, text: requestAmountData.targetPersonTxt || "شخص مقصد" });
+        }
+        targetSelect.setValue(personId);
+    }
+    supplyFactorsSelectedIds = (requestAmountData.requestAmountSupplyFactor || []).map(r => r.supplyFactorId);
+    orderHeadsSelectedIds = (requestAmountData.requestAmountOrderHeads || []).map(r => r.orderHeadId);
     
     const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
     if (inpElmSupplyFactor) {
@@ -667,46 +679,20 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
-    const type = Number(e.target.value);
-    
+addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", event => {
+    const type = Number(event.target.value);
     const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const cashierWrapper = addReqAmountModal.querySelector("#reqAmountCashierWrapper");
-    const supplierWrapper = addReqAmountModal.querySelector("#reqAmountSupplierWrapper");
-    
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    
-    const toggleField = (wrapper, show) => {
-        const input = wrapper.querySelector("input, select");
-        wrapper.classList.toggle("d-none", !show);
-        toggleElementsRequired(input, show);
-        
-        if (show) {
-            if (wrapper.id === "reqAmountCashierWrapper") {
-                const target = Object.values(input.tomselect.options).find(o => o.target)?.value;
-                if (target) input.tomselect.setValue(target);
-            }
-        } else {
-            if (input?.tomselect) {
-                input.tomselect.clear();
-            }
-            
-            if (wrapper.id === "reqAmountOrderHeadWrapper") {
-                orderHeadsSelectedIds = [];
-                input.value = "";
-            }
-            
-            if (wrapper.id === "reqAmountSupplierWrapper") {
-                totalAmountSupFactorElm.innerHTML = "";
-            }
-        }
-    };
-    
-    toggleField(ohWrapper, type === 1);
-    toggleField(supplierWrapper, type === 1 || type === 2 || type === 4 || type === 5);
-    toggleField(cashierWrapper, type === 3);
-});
+    const orderHeadInput = ohWrapper.querySelector("input");
+    const isAdvance = type === 1;
 
+    ohWrapper.classList.toggle("d-none", !isAdvance);
+    toggleElementsRequired(orderHeadInput, isAdvance);
+    if (!isAdvance) {
+        orderHeadsSelectedIds = [];
+        orderHeadInput.value = "";
+    }
+    updateRequestAmountTargetField();
+});
 
 const closeDocTypeSelect = (select) => {
     select.classList.add("d-none");
