@@ -1213,14 +1213,14 @@
 
 /* Finance invoice toolbar uses the same compact CRM palette as supply. */
 #cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar {
-    gap: 7px 10px;
+    gap: 6px;
     min-width: 0;
-    padding-block: 2px 5px;
+    padding-block: 0 6px;
 }
-#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar > .search-group {
-    min-width: 150px;
-    flex: 1 1 240px;
-    max-width: 380px;
+#cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-actions {
+    flex-shrink: 0;
+    gap: 6px;
+    margin-inline-start: auto;
 }
 #cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar .form-control {
     border-color: #DDE1E8;
@@ -1882,7 +1882,7 @@
         flex: 0 0 auto;
     }
 
-    /* Financial invoices: keep deposit/refund together above the compact filter row. */
+    /* Match supply's compact search/status/count order; payment actions follow on a separate row. */
     #cartableWorkspace .cartable-invoice-toolbar {
         justify-content: flex-start !important;
         gap: 4px 6px !important;
@@ -1890,9 +1890,10 @@
         min-width: 0;
     }
 
-    #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-actions {
-        order: 0;
+    #cartableWorkspace #FinancialInvoiceTab-pane .cartable-invoice-toolbar > .cartable-invoice-actions {
+        order: 4;
         flex: 0 0 100%;
+        margin-inline-start: 0;
         justify-content: flex-start !important;
         flex-wrap: nowrap;
         gap: 6px;
@@ -1903,11 +1904,11 @@
     }
 
     #cartableWorkspace .cartable-invoice-toolbar > .search-group.cartable-mobile-search {
-        order: 1 !important;
+        order: 0 !important;
     }
 
     #cartableWorkspace .cartable-invoice-toolbar > .cartable-invoice-status {
-        order: 2;
+        order: 1;
         flex: 0 1 auto;
         min-width: 0;
         max-width: 100%;
