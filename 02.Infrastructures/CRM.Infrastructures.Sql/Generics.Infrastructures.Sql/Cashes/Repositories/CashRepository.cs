@@ -47,10 +47,10 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
         return db.Cashiers.AsNoTracking().Where(c => c.UserId == id).Select(c => new CashOption<Guid>(c.Id, c.Title)).ToListAsync(ct);
     }
 
-    public Task<List<CashierOption>> GetCashierOptionsAsync(string userId, CancellationToken ct)
+    public Task<List<CashierOption>> GetCashierOptionsAsync(string userId, bool useEntityId, CancellationToken ct)
     {
         var id = Guid.Parse(userId);
-        return db.Cashiers.AsNoTracking().Select(c => new CashierOption(c.UserId, c.UserTxt, c.UserId == id)).ToListAsync(ct);
+        return db.Cashiers.AsNoTracking().Select(c => new CashierOption(useEntityId ? c.Id : c.UserId, c.UserTxt, c.UserId == id)).ToListAsync(ct);
     }
 
     public async Task<CashierBalanceDto> GetBalanceAsync(Guid id, CancellationToken ct)
