@@ -8832,7 +8832,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 #addRequestAmountModal .ts-dropdown .active { background:#E7F3F0; color:var(--request-primary); }
 #addRequestAmountModal textarea { resize:vertical; min-height:76px; }
 #addRequestAmountModal .currencyHint { color:#545961; font-size:12px; }
-#addRequestAmountModal .request-amount-modal-actions { display:flex; flex-direction:row-reverse; justify-content:flex-end; flex-wrap:wrap; gap:7px; border-top:1px solid var(--request-border); padding-top:12px; margin-top:2px; }
+#addRequestAmountModal .request-amount-modal-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:7px; border-top:1px solid var(--request-border); padding-top:12px; margin-top:2px; }
 #addRequestAmountModal .request-amount-modal-actions button { min-height:36px; min-width:76px; padding:5px 14px; border:1px solid var(--request-border); border-radius:6px; box-shadow:none; font:500 14px/1.7 IRANSansMedium; }
 #addRequestAmountModal .request-amount-modal-actions .buttonGreen3 { background:#00665C; color:#fff; border-color:#00665C; }
 #addRequestAmountModal .request-amount-modal-actions .buttonCancel2 { background:#fff; color:#545961; }
