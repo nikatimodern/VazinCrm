@@ -24,7 +24,9 @@ public partial class RemoveBankAccountCustomerCode : Migration
                       WHERE c.Id = b.CustomerId
                   )
             )
-            THROW 50001, 'BankAccounts contains CustomerId values without a matching Customer. Resolve these values before applying this migration.', 1;
+            BEGIN
+                ;THROW 50001, 'BankAccounts contains CustomerId values without a matching Customer. Resolve these values before applying this migration.', 1;
+            END
             """);
 
         migrationBuilder.CreateIndex(
