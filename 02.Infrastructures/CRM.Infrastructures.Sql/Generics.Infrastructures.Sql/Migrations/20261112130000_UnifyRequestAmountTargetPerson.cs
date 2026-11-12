@@ -72,6 +72,19 @@ public partial class UnifyRequestAmountTargetPerson : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.Sql("""
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.RequestAmounts AS r
+                WHERE r.RequestAmountType = 3
+                  AND r.TargetPersonId IS NOT NULL
+                  AND NOT EXISTS (SELECT 1 FROM dbo.Cashiers AS c WHERE c.Id = r.TargetPersonId)
+            )
+            BEGIN
+                THROW 50004, 'A cashier target no longer exists; cannot safely restore the previous UserId.', 1;
+            END;
+            """);
+
         migrationBuilder.AddColumn<Guid>(
             name: "SupplierId",
             table: "RequestAmounts",
