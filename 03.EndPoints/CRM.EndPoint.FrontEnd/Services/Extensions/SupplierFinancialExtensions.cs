@@ -1,5 +1,6 @@
 using System.Linq;
 using CRM.EndPoint.FrontEnd.Models.Supply;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,8 +20,10 @@ public static class SupplierFinancialExtensions {
 
         var paidAmounts = db.RequestAmountPayments
             .AsNoTracking()
-            .Where(x => x.RequestAmount.SupplierId.HasValue)
-            .GroupBy(x => x.RequestAmount.SupplierId.Value)
+            .Where(x => x.RequestAmount.TargetPersonId.HasValue
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.تنخواه
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.عودت_به_مشتری)
+            .GroupBy(x => x.RequestAmount.TargetPersonId!.Value)
             .Select(g => new {
                 SupplierId = g.Key,
                 SupplyAmount = 0m,
@@ -37,23 +40,5 @@ public static class SupplierFinancialExtensions {
                 SupplierDebt = g.Sum(x => x.SupplyAmount) - g.Sum(x => x.PaidAmount)
             });
 
-/*        return db.SupplyFactors
-            .AsNoTracking()
-            .GroupBy(x => x.SupplierId)
-            .Select(g => new SupplierFinancialSummaryVModel {
-                SupplierId = g.Key,
-
-                TotalSupplyAmount = g.Sum(x => x.Amount),
-
-                TotalPaidAmount = db.RequestAmountPayments
-                    .Where(p => p.RequestAmount.SupplierId.HasValue && p.RequestAmount.SupplierId.Value == g.Key)
-                    .Sum(p => p.Amount),
-
-                SupplierDebt =
-                    g.Sum(x => x.Amount) -
-                    db.RequestAmountPayments
-                        .Where(p => p.RequestAmount.SupplierId.HasValue && p.RequestAmount.SupplierId.Value == g.Key)
-                        .Sum(p => p.Amount)
-            });*/
     }
 }
