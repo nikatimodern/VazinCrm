@@ -28,8 +28,9 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
         return query.FirstOrDefaultAsync(c => c.Id == id, ct);
     }
     public Task<Customer?> GetByMobileAsync(string mobile, CancellationToken ct) => db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Mobile == mobile, ct);
-    public Task<List<CustomerOption>> SearchOptionsAsync(string search, CancellationToken ct) => db.Customers.AsNoTracking().Where(c =>
-        EF.Functions.Like(c.AgentName, "%" + search + "%") || EF.Functions.Like(c.CompanyName, "%" + search + "%") || EF.Functions.Like(c.CustomerCode.ToString(), "%" + search + "%"))
+    public Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken ct) => db.Customers.AsNoTracking()
+        .Where(c => !roleType.HasValue || (int)c.RoleType == roleType.Value || (int)c.RoleType == 3)
+        .Where(c => EF.Functions.Like(c.AgentName, "%" + search + "%") || EF.Functions.Like(c.CompanyName, "%" + search + "%") || EF.Functions.Like(c.CustomerCode.ToString(), "%" + search + "%"))
         .Select(c => new CustomerOption(c.Id, c.CompanyName + " " + c.AgentName + " کد مشتری: " + c.CustomerCode)).Take(20).ToListAsync(ct);
     public Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken ct) => db.Customers.AsNoTracking().Where(c => (int)c.RoleType == 2 || (int)c.RoleType == 3)
         .Select(c => new CustomerSupplier(c.Id, c.CompanyName, c.AgentName, c.CustomerCode)).ToListAsync(ct);
