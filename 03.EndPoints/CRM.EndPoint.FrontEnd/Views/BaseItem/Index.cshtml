@@ -15,7 +15,7 @@
     <div class="col-12" style="display:flex; flex-flow:wrap">
         <div class="col-12 col-xl-4 pt-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">اصناف</label>
-            <div class="InfoData" style="width:100%;min-height:430px;">
+            <div class="InfoData base-item-list-panel" style="width:100%;min-height:430px;">
 
                 <form id="formSenfId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
                     <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت صنف" required />
@@ -40,7 +40,7 @@
 
         <div class="col-12 col-xl-4 pt-xl-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">طریقه آشنایی</label>
-            <div class="InfoData" style="width:100%;min-height:430px;">
+            <div class="InfoData base-item-list-panel" style="width:100%;min-height:430px;">
                 <form id="formFamilyWay" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
                     <input class="form-control  w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت طریقه آشنایی" required />
                     <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formFamilyWaySubmit()">ثبت</span>
@@ -63,7 +63,7 @@
 
         <div class="col-12 col-xl-4 pt-xl-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">محصولات</label>
-            <div class="InfoData" style="width:100%;min-height:430px;">
+            <div class="InfoData base-item-list-panel" style="width:100%;min-height:430px;">
                 <form id="formProductId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
                     <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت محصول" required />
                     <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formProductSubmit()">ثبت</span>
@@ -98,14 +98,14 @@
                                 <option value="@((int)accountType)">@(accountType.GetDescription())</option>
                             }
                         </select>
-                        <label for="bankAccountPageSize" class="bank-accounts-toolbar__filter-label">تعداد ردیف:</label>
+                        <label for="bankAccountPageSize" class="bank-accounts-toolbar__filter-label">نمایش</label>
                         <select class="form-select form-select-sm" id="bankAccountPageSize" aria-label="تعداد ردیف حساب‌های بانکی در هر صفحه">
                             <option value="5" selected>۵</option>
-                            <option value="10">۱۰</option>
-                            <option value="25">۲۵</option>
-                            <option value="50">۵۰</option>
+                            <option value="20">۲۰</option>
                             <option value="100">۱۰۰</option>
+                            <option value="-1">همه</option>
                         </select>
+                        <span class="bank-accounts-toolbar__filter-label">ردیف</span>
                     </div>
                     <button type="button" class="buttonGreen2 bank-accounts-toolbar__add" onclick="openAddBankAccountFromSettings()">
                         <i class="fas fa-plus" aria-hidden="true"></i>
@@ -369,7 +369,10 @@
         const getAllProductBase = () => {
             AllProductTbl = $("#ProductTable").DataTable(
                 {
-                    lengthMenu: [5, 10, 25, 50, 100],
+                    lengthMenu: [
+                        [5, 20, 100, -1],
+                        ["۵", "۲۰", "۱۰۰", "همه"],
+                    ],
                     processing: true,
                     serverSide: true,
                     filter: true,
@@ -434,7 +437,10 @@
 
             AllSenfTbl = $("#SenfTable").DataTable(
                 {
-                    lengthMenu: [5, 10, 25, 50, 100],
+                    lengthMenu: [
+                        [5, 20, 100, -1],
+                        ["۵", "۲۰", "۱۰۰", "همه"],
+                    ],
                     processing: true,
                     serverSide: true,
                     filter: true,
@@ -498,7 +504,10 @@
         const getAllFamilyWay = () => {
             AllFamilyTbl = $("#FamilyWayTable").DataTable(
                 {
-                    lengthMenu: [5, 10, 25, 50, 100],
+                    lengthMenu: [
+                        [5, 20, 100, -1],
+                        ["۵", "۲۰", "۱۰۰", "همه"],
+                    ],
                     processing: true,
                     serverSide: true,
                     filter: true,
@@ -563,7 +572,10 @@
                 {
                     paging: true,
                     pageLength: 5,
-                    lengthMenu: [5, 10, 25, 50, 100],
+                    lengthMenu: [
+                        [5, 20, 100, -1],
+                        ["۵", "۲۰", "۱۰۰", "همه"],
+                    ],
                     processing: true,
                     serverSide: true,
                     filter: true,
