@@ -360,9 +360,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("CustomerCode")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -394,6 +391,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.ToTable("BankAccounts");
                 });
@@ -6557,6 +6556,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", "Customer")
+                        .WithMany("BankAccounts")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallParticipant", b =>
                 {
                     b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
@@ -7444,6 +7453,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
             modelBuilder.Entity("CRM.Core.Domain.Customers.Entities.Customer", b =>
                 {
                     b.Navigation("Accountancies");
+
+                    b.Navigation("BankAccounts");
 
                     b.Navigation("Contacts");
 
