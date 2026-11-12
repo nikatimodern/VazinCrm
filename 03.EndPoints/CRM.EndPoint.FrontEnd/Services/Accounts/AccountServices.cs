@@ -35,7 +35,11 @@ public sealed class AccountAuthentication(SignInManager<AppUser> signIn) : IAcco
         cancellationToken.ThrowIfCancellationRequested();
         // Validate using Identity's security checks without signing in or touching Identity's failure counter.
         var result = await signIn.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
-        return new(result.Succeeded, result.IsLockedOut);
+        // Preserve the two-factor requirement enforced by PasswordSignInAsync.
+        var requiresTwoFactor = result.Succeeded
+            && await signIn.IsTwoFactorEnabledAsync(user)
+            && !await signIn.IsTwoFactorClientRememberedAsync(user);
+        return new(result.Succeeded, result.IsLockedOut, requiresTwoFactor);
     }
     public async Task SignInAsync(AppUser user, DateTimeOffset expiresAt, CancellationToken cancellationToken)
     {

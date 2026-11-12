@@ -11,7 +11,7 @@ public interface IAccountRequestContext
     void SetSession(string key, string value);
     void ClearSession();
 }
-public sealed record AccountSignInResult(bool Succeeded, bool IsLockedOut);
+public sealed record AccountSignInResult(bool Succeeded, bool IsLockedOut, bool RequiresTwoFactor = false);
 public interface IAccountAuthentication
 {
     Task<AccountSignInResult> CheckPasswordAsync(AppUser user, string password, CancellationToken cancellationToken);

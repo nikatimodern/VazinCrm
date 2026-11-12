@@ -36,6 +36,8 @@ public sealed class PasswordLoginCommandHandler(
         var check = await authentication.CheckPasswordAsync(user, request.Password, cancellationToken);
         if (check.IsLockedOut)
             return new(403, "حساب کاربری شما غیرفعال شده است.");
+        if (check.RequiresTwoFactor)
+            return new(403, "برای این حساب تأیید دومرحله‌ای الزامی است و ورود مستقیم مجاز نیست.");
 
         // Repeat the lock check under a SQL transaction; parallel requests cannot bypass it.
         var attempt = await lockouts.RegisterAttemptAsync(user.Id, check.Succeeded, cancellationToken);
