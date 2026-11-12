@@ -12,7 +12,7 @@ public sealed record ResetAccountPasswordCommand(string NewPassword) : ICommand<
     public override string ToString() => nameof(ResetAccountPasswordCommand);
 }
 
-public sealed class ResetAccountPasswordCommandHandler(IAccountRequestContext context, IAccountUserRepository users, IAccountRepository repository, IAccountAudit audit, AccountSignInFlow login) : ICommandHandler<ResetAccountPasswordCommand, AccountOutcome>
+public sealed class ResetAccountPasswordCommandHandler(IAccountRequestContext context, IAccountUserRepository users, IAccountRepository repository, IAccountAudit audit, IOtpMobileRepository otp, AccountSignInFlow login) : ICommandHandler<ResetAccountPasswordCommand, AccountOutcome>
 {
     public async Task<AccountOutcome> HandleAsync(ResetAccountPasswordCommand request, CancellationToken cancellationToken)
     {
@@ -26,6 +26,8 @@ public sealed class ResetAccountPasswordCommandHandler(IAccountRequestContext co
         await audit.WriteAsync(user, AccountAuditAction.PasswordReset, "بازیابی رمز عبور", cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
         context.ClearSession();
-        return new(200, "رمز عبور با موفقیت تغییر یافت", await login.CompleteAsync(user, null, cancellationToken));
+        var redirect = await login.CompleteAsync(user, null, cancellationToken);
+        await otp.ResetLockoutAsync(phone, cancellationToken);
+        return new(200, "رمز عبور با موفقیت تغییر یافت", redirect);
     }
 }

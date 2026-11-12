@@ -68,7 +68,7 @@ public class AccountController(ICqrsDispatcher requests) : Controller
     {
         if (!ModelState.IsValid) return Ok(new { status = 405, error = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() });
         var result = await requests.CommandAsync(new RequestOtpCommand(model.Mobile, type), cancellationToken);
-        return Ok(new { status = result.Status, message = result.Message });
+        return Ok(new { status = result.Status, message = result.Message, retryAfterSeconds = result.RetryAfterSeconds });
     }
     [HttpGet]
     public async Task<IActionResult> SelectAccount(string userId, string type = "Login", CancellationToken cancellationToken = default)
@@ -84,13 +84,13 @@ public class AccountController(ICqrsDispatcher requests) : Controller
         if (result.Errors is not null) return Ok(new { status = result.Status, errors = result.Errors });
         if (result.Accounts is not null) return Ok(new { status = result.Status, message = result.Message, accounts = result.Accounts });
         if (result.Redirect is not null) return Ok(new { status = result.Status, message = result.Message, url = ResolveUrl(result.Redirect) });
-        return Ok(new { status = result.Status, message = result.Message });
+        return Ok(new { status = result.Status, message = result.Message, retryAfterSeconds = result.RetryAfterSeconds, remainingAttempts = result.RemainingAttempts });
     }
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> CheckTimerCode(string type, CancellationToken cancellationToken)
+    public async Task<IActionResult> CheckTimerCode(string type, string? mobile, CancellationToken cancellationToken)
     {
-        var result = await requests.CommandAsync(new CheckOtpTimerCommand(type), cancellationToken);
+        var result = await requests.CommandAsync(new CheckOtpTimerCommand(type, mobile), cancellationToken);
         return result is null ? Ok(new { status = 201, message = "خطای سرور", data = "" }) : Ok(result);
     }
     [HttpGet]
