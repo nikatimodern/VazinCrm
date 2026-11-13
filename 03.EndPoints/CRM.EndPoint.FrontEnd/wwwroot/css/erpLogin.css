@@ -234,6 +234,62 @@
     .erp-login-page .erp-login-visual { min-height:560px; }
     .erp-login-page .erp-visual-content { padding:22px; }
 }
+
+/*
+ * Desktop viewport fit: the previous 620/655/700/760px minimum heights made
+ * the login card taller than the browser's usable height on many laptops.
+ * Let the content define the card height and cap its *minimum* by the actual
+ * viewport; validation errors or short windows may still scroll naturally.
+ */
+@media (min-width: 992px) {
+    .erp-login-page {
+        height: auto;
+        min-height: 100dvh;
+        padding: 14px 18px;
+        overflow-y: auto;
+    }
+
+    .erp-login-page .parentLogin.erp-login-shell {
+        width: min(84vw, 1280px) !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+    .erp-login-page .erp-login-visual {
+        height: auto;
+        min-height: min(580px, calc(100dvh - 28px)) !important;
+    }
+
+    .erp-login-page .loginRenderBody {
+        padding: 25px 30px;
+    }
+
+    .erp-login-page .erp-visual-content {
+        padding: 26px 30px;
+    }
+
+    .erp-login-page .erp-visual-message h2 {
+        font-size: 26px;
+        line-height: 1.5;
+    }
+
+    .erp-login-page .erp-visual-message > p:last-child {
+        margin-bottom: 12px;
+    }
+
+    .erp-login-page .erp-visual-modules > div {
+        padding: 8px 4px;
+    }
+
+    .erp-login-page .erp-brand {
+        margin-bottom: 18px;
+    }
+
+    .erp-login-page .erp-login-footnote {
+        margin-top: 16px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .erp-login-page *, .erp-login-page *::before, .erp-login-page *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
