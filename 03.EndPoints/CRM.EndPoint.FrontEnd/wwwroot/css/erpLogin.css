@@ -794,7 +794,9 @@
     .erp-login-page .loginRenderBody {
         width: 37% !important;
         flex: 0 0 37%;
-        padding: clamp(18px, 2.9vw, 43px);
+        /* Remove the wasted space above the logo on desktop. */
+        align-items: flex-start;
+        padding: 18px clamp(18px, 2.9vw, 43px) 24px;
     }
     .erp-login-page .erp-login-inner { max-width: 382px; }
     .erp-login-page .erp-login-visual {
@@ -807,10 +809,11 @@
     }
     .erp-login-page .erp-brand {
         flex-direction: column;
-        gap: 1px;
-        margin-bottom: 22px;
+        gap: 0;
+        margin-bottom: 14px;
     }
-    .erp-login-page .erp-brand-logo { width: 105px; height: 78px; }
+    /* The old 78px image box left unnecessary whitespace above the brand text. */
+    .erp-login-page .erp-brand-logo { width: 105px; height: 60px; }
     .erp-login-page .erp-brand-names { align-items: center; text-align: center; }
     .erp-login-page .erp-brand-names strong { font-size: 23px; line-height: 1.5; }
     .erp-login-page .erp-brand-names small { font-size: 10px; }
@@ -818,7 +821,9 @@
     .erp-login-page .erp-auth-heading h1 { font-size: 23px; line-height: 1.55; }
     .erp-login-page .erp-auth-tabs { margin-bottom: 24px; padding: 5px; border-radius: 13px; }
     .erp-login-page .erp-auth-tabs a { font-size: 12px; padding: 10px 4px; }
-    .erp-login-page .form-group { margin-bottom: 17px; }
+    .erp-login-page .form-group { margin-bottom: 12px; }
+    /* Keep the password field close to the username field. */
+    .erp-login-page #loginForm #email_group { margin-bottom: 4px; }
     .erp-login-page .erp-auth-label { font-size: 12px; margin-bottom: 7px; }
     .erp-login-page .form-group__input { height: 48px; font-size: 13px; border-radius: 11px; }
     .erp-login-page .erp-auth-primary,
