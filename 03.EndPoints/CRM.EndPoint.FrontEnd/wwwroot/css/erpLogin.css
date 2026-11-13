@@ -654,7 +654,21 @@
     object-position: left 54%;
 }
 .erp-login-page .erp-visual-overlay {
-    background: linear-gradient(105deg, rgba(0, 65, 60, .02) 6%, rgba(0, 80, 74, .12) 36%, rgba(0, 70, 65, .43) 76%, rgba(0, 60, 56, .58) 100%);
+    /*
+     * The selected factory photo already fades to teal.
+     * Preserve its sharpness and make the remaining color transition much wider
+     * and lighter, without blurring or creating a new hard edge.
+     */
+    background: linear-gradient(
+        90deg,
+        rgba(0, 73, 68, 0) 0%,
+        rgba(0, 73, 68, 0) 30%,
+        rgba(0, 73, 68, .015) 42%,
+        rgba(0, 73, 68, .035) 53%,
+        rgba(0, 73, 68, .065) 66%,
+        rgba(0, 73, 68, .11) 80%,
+        rgba(0, 73, 68, .20) 100%
+    );
 }
 .erp-login-page .erp-visual-content {
     direction: rtl;
