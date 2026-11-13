@@ -136,6 +136,39 @@
 .erp-login-page #otpLoginMsg:empty, .erp-login-page #LoginMsg:empty, .erp-login-page #resetPassErrMsg:empty { display: none; }
 .erp-login-page .erp-otp-note { font-size: 11px; line-height: 1.9; color: var(--erp-muted); margin: 0 0 9px; }
 .erp-login-page .erp-otp-note strong { color: var(--erp-text); direction: ltr; unicode-bidi: isolate; }
+/* Password login: left-aligned values, both icons vertically centered on the input. */
+.erp-login-page #loginForm .erp-login-field {
+    position: relative;
+}
+.erp-login-page #loginForm .erp-login-field .form-group__input {
+    direction: ltr;
+    text-align: left;
+    padding: 6px 40px 6px 12px;
+    margin-bottom: 0;
+}
+.erp-login-page #loginForm .erp-login-field .form-group__input::placeholder {
+    text-align: left;
+}
+.erp-login-page #loginForm .erp-login-field .form-group__icon {
+    position: absolute;
+    top: 50%;
+    bottom: auto;
+    right: 11px;
+    left: auto;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    width: 22px;
+}
+.erp-login-page #loginForm .erp-login-field span.form-group__icon {
+    pointer-events: none;
+}
+.erp-login-page #loginForm .erp-login-field button.form-group__icon {
+    pointer-events: auto;
+}
+
 /* Keep the key icon centered to the input itself, independent of the label height. */
 .erp-login-page .erp-otp-control { position: relative; }
 .erp-login-page .erp-otp-control .form-group__icon {

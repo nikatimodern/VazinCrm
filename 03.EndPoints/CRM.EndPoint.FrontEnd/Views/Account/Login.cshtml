@@ -23,27 +23,31 @@
 
             <div class="form-group" id="email_group">
                 <label class="erp-auth-label" for="erpUserName">نام کاربری</label>
-                <span class="form-group__icon" aria-hidden="true">
-                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0 17.9 17.9 0 0 1-15 0Z"/>
-                    </svg>
-                </span>
-                <input id="erpUserName" name="userName" type="text" placeholder="نام کاربری خود را وارد کنید"
-                       autocomplete="username" autofocus class="form-group__input form-group__input--ltr" value="" />
+                <div class="erp-login-field">
+                    <span class="form-group__icon" aria-hidden="true">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0 17.9 17.9 0 0 1-15 0Z"/>
+                        </svg>
+                    </span>
+                    <input id="erpUserName" name="userName" type="text" placeholder="نام کاربری خود را وارد کنید"
+                           autocomplete="username" autofocus class="form-group__input form-group__input--ltr" value="" />
+                </div>
             </div>
 
             <div class="form-group" id="password_group">
                 <label class="erp-auth-label" for="passwordInput">رمز عبور</label>
-                <button type="button" class="form-group__icon erp-password-icon" id="togglePassword" aria-label="نمایش یا مخفی کردن رمز عبور">
-                    <svg id="eyeClosedPassword" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1 1 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5s8.57 3.01 9.96 7.18a1 1 0 0 1 0 .64C20.58 16.49 16.64 19.5 12 19.5s-8.58-3.01-9.96-7.18Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                    </svg>
-                    <svg id="eyeOpenPassword" style="display:none" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.22A10.48 10.48 0 0 0 1.93 12c1.29 4.34 5.31 7.5 10.07 7.5.99 0 1.95-.14 2.86-.4M6.23 6.23A10.45 10.45 0 0 1 12 4.5c4.76 0 8.77 3.16 10.07 7.5a10.5 10.5 0 0 1-4.3 5.77M3 3l18 18"/>
-                    </svg>
-                </button>
-                <input id="passwordInput" name="password" type="password" placeholder="رمز عبور خود را وارد کنید"
-                       autocomplete="current-password" class="form-group__input form-group__input--ltr" value="" />
+                <div class="erp-login-field">
+                    <button type="button" class="form-group__icon erp-password-icon" id="togglePassword" aria-label="نمایش یا مخفی کردن رمز عبور">
+                        <svg id="eyeClosedPassword" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1 1 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5s8.57 3.01 9.96 7.18a1 1 0 0 1 0 .64C20.58 16.49 16.64 19.5 12 19.5s-8.58-3.01-9.96-7.18Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        </svg>
+                        <svg id="eyeOpenPassword" style="display:none" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.22A10.48 10.48 0 0 0 1.93 12c1.29 4.34 5.31 7.5 10.07 7.5.99 0 1.95-.14 2.86-.4M6.23 6.23A10.45 10.45 0 0 1 12 4.5c4.76 0 8.77 3.16 10.07 7.5a10.5 10.5 0 0 1-4.3 5.77M3 3l18 18"/>
+                        </svg>
+                    </button>
+                    <input id="passwordInput" name="password" type="password" placeholder="رمز عبور خود را وارد کنید"
+                           autocomplete="current-password" class="form-group__input form-group__input--ltr" value="" />
+                </div>
             </div>
 
             <button type="submit" class="buttonGreen2 login-btn erp-auth-primary" id="login_button">
