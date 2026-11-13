@@ -123,7 +123,8 @@
 }
 
 
-.menu-nav .menu-item.menu-click-orbit > .menu-icon-frame::after {
+/* Keep the active row's orbit, but show the icon orbit while hovering/focusing it. */
+.menu-nav .menu-item.menu-click-orbit:not(:hover):not(:focus-visible) > .menu-icon-frame::after {
 	opacity: 0;
 	transform: scale(1.2);
 	animation: none;
