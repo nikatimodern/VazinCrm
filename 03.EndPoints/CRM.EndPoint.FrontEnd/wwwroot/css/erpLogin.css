@@ -196,14 +196,13 @@
 .erp-login-page .erp-login-visual { display: none; background-color: #004944; }
 .erp-login-page .erp-visual-image, .erp-login-page .erp-visual-overlay { position:absolute; inset:0; width:100%; height:100%; }
 /*
- * Image-independent hero treatment.
- * The photo occupies the left side and is fully covered by an opaque
- * gradient BEFORE its right edge (76%); no visible vertical join remains.
- * Future images can replace the <img> src without modifying this gradient.
+ * The photo is independent of branding and the contrast overlay.
+ * Fill the whole hero (no partial-width image edge/seam). Swap the src
+ * later without adjusting positioning or contrast rules.
  */
 .erp-login-page .erp-visual-image {
-    inset: 0 auto 0 0;
-    width: 76%;
+    inset: 0;
+    width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: left center;
@@ -211,13 +210,12 @@
 }
 .erp-login-page .erp-visual-overlay {
     background: linear-gradient(90deg,
-        rgba(0,73,68,.02) 0%,
-        rgba(0,73,68,.12) 26%,
-        rgba(0,73,68,.35) 40%,
-        rgba(0,73,68,.70) 53%,
-        rgba(0,73,68,.92) 63%,
-        #004944 72%,
-        #004944 100%);
+        rgba(0,73,68,.01) 0%,
+        rgba(0,73,68,.08) 32%,
+        rgba(0,73,68,.30) 51%,
+        rgba(0,73,68,.62) 70%,
+        rgba(0,73,68,.86) 88%,
+        rgba(0,73,68,.92) 100%);
     pointer-events: none;
 }
 .erp-login-page .erp-visual-content { position: relative; z-index: 1; display:flex; flex-direction:column; justify-content:space-between; height:100%; padding:32px; color:#fff; }
