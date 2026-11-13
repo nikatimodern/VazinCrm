@@ -98,8 +98,30 @@
 .erp-login-page .form-group__icon { top: auto; bottom: 8px; inset-inline-start: 11px; right: 11px; display: flex; align-items: center; height: 22px; color: #81909a; }
 .erp-login-page .form-group__icon svg { width: 20px !important; height: 20px !important; color: currentColor; }
 .erp-login-page .erp-password-icon { cursor: pointer; }
-.erp-login-page .erp-phone-prefix { direction:ltr; font-family: Arial,sans-serif; font-size: 13px; color: var(--erp-muted); position: absolute; left: 12px; bottom: 9px; z-index: 2; pointer-events: none; }
-.erp-login-page .erp-phone-input { padding-inline-start: 32px; }
+/* Mobile number is visually left-to-right: prefix + Persian digits / placeholder. */
+.erp-login-page .erp-phone-prefix {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-family: IRANSans, Tahoma, sans-serif;
+    font-size: 13px;
+    color: var(--erp-muted);
+    position: absolute;
+    left: 12px;
+    bottom: 9px;
+    z-index: 2;
+    pointer-events: none;
+}
+.erp-login-page #erpOtpMobile {
+    direction: ltr;
+    text-align: left;
+    padding-left: 43px;
+    padding-right: 38px;
+}
+.erp-login-page #erpOtpMobile::placeholder {
+    direction: ltr;
+    text-align: left;
+}
+
 .erp-login-page .erp-auth-primary,
 .erp-login-page .login-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 36px; height: 36px; padding: 4px 12px; border: 0; border-radius: 9px; background: var(--erp-primary-action); color: #fff; font-family: IRANSansBold,IRANSans,sans-serif; font-size: 13px; box-shadow: 0 3px 8px rgba(0,73,68,.16); cursor: pointer; transition: background .15s, transform .15s; }
 .erp-login-page .erp-auth-primary:hover, .erp-login-page .login-btn:hover { background: var(--erp-primary); }
@@ -114,7 +136,7 @@
 .erp-login-page #otpLoginMsg:empty, .erp-login-page #LoginMsg:empty, .erp-login-page #resetPassErrMsg:empty { display: none; }
 .erp-login-page .erp-otp-note { font-size: 11px; line-height: 1.9; color: var(--erp-muted); margin: 0 0 9px; }
 .erp-login-page .erp-otp-note strong { color: var(--erp-text); direction: ltr; unicode-bidi: isolate; }
-.erp-login-page .erp-otp-input { direction: ltr; text-align: center; font-family: Arial,sans-serif; font-size: 20px; letter-spacing: 9px; }
+.erp-login-page .erp-otp-input { direction: ltr; text-align: center; font-family: IRANSans, Tahoma, sans-serif; font-size: 20px; letter-spacing: 9px; }
 .erp-login-page .erp-otp-status { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .erp-login-page .erp-otp-status .errorLoginText { margin: 0; flex: 1 1 100%; }
 .erp-login-page .erp-resend { background: var(--erp-secondary-light); border: 1px solid #e5d4fb; color: var(--erp-secondary); border-radius: 8px; padding: 6px 10px; font-family: IRANSansMedium,IRANSans,sans-serif; font-size: 11px; }
