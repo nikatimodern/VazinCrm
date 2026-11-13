@@ -120,22 +120,32 @@
 .erp-login-page .erp-resend { background: var(--erp-secondary-light); border: 1px solid #e5d4fb; color: var(--erp-secondary); border-radius: 8px; padding: 6px 10px; font-family: IRANSansMedium,IRANSans,sans-serif; font-size: 11px; }
 .erp-login-page #remainingCodeOtpLoginId { font-size: 11px; color: var(--erp-muted); margin: 0; }
 .erp-login-page #remainingSecondsOtpLogin { color: var(--erp-secondary); direction: ltr; unicode-bidi: isolate; }
-.erp-login-page .erp-login-visual { display: none; }
+.erp-login-page .erp-login-visual { display: none; background-color: #004944; }
 .erp-login-page .erp-visual-image, .erp-login-page .erp-visual-overlay { position:absolute; inset:0; width:100%; height:100%; }
+/*
+ * Image-independent hero treatment.
+ * The photo occupies the left side and is fully covered by an opaque
+ * gradient BEFORE its right edge (76%); no visible vertical join remains.
+ * Future images can replace the <img> src without modifying this gradient.
+ */
 .erp-login-page .erp-visual-image {
     inset: 0 auto 0 0;
     width: 76%;
     height: 100%;
     object-fit: cover;
     object-position: left center;
+    display: block;
 }
 .erp-login-page .erp-visual-overlay {
     background: linear-gradient(90deg,
-        rgba(0,73,68,.03) 0%,
-        rgba(0,73,68,.16) 28%,
-        rgba(0,73,68,.64) 51%,
-        rgba(0,73,68,.96) 73%,
+        rgba(0,73,68,.02) 0%,
+        rgba(0,73,68,.12) 26%,
+        rgba(0,73,68,.35) 40%,
+        rgba(0,73,68,.70) 53%,
+        rgba(0,73,68,.92) 63%,
+        #004944 72%,
         #004944 100%);
+    pointer-events: none;
 }
 .erp-login-page .erp-visual-content { position: relative; z-index: 1; display:flex; flex-direction:column; justify-content:space-between; height:100%; padding:32px; color:#fff; }
 .erp-visual-kicker { width:fit-content; display:flex; align-items:center; direction:ltr; gap:7px; background:rgba(0,73,68,.66); padding:6px 10px; border:1px solid rgba(255,255,255,.24); border-radius:20px; font:700 11px Arial,sans-serif; letter-spacing:1px; backdrop-filter:blur(8px); }
