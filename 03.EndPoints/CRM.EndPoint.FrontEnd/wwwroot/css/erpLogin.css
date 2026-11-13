@@ -646,3 +646,210 @@
     .erp-login-page .erp-visual-content { padding: 9px 16px; }
     .erp-login-page .loginRenderBody { padding: 14px 24px 16px; }
 }
+
+/* ===== ERP showcase: approved nine-card desktop layout (uiLogin) =====
+   Cards and their text stay editable HTML. Only the factory image is raster. */
+.erp-login-page .erp-visual-image {
+    object-fit: cover;
+    object-position: left 54%;
+}
+.erp-login-page .erp-visual-overlay {
+    background: linear-gradient(105deg, rgba(0, 65, 60, .02) 6%, rgba(0, 80, 74, .12) 36%, rgba(0, 70, 65, .43) 76%, rgba(0, 60, 56, .58) 100%);
+}
+.erp-login-page .erp-visual-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(3, 140, 124, .15), rgba(0, 69, 65, .38));
+    clip-path: polygon(82% 0, 100% 0, 100% 100%, 25% 100%);
+}
+.erp-login-page .erp-visual-content {
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.erp-login-page .erp-visual-kicker {
+    width: max-content;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    gap: 7px;
+    padding: 7px 12px;
+    direction: ltr;
+    font: 700 11px/1.2 Arial, sans-serif;
+    letter-spacing: .55px;
+    color: #fff;
+    background: rgba(0, 82, 75, .64);
+    border: 1px solid rgba(255, 255, 255, .53);
+    border-radius: 22px;
+    backdrop-filter: blur(7px);
+}
+.erp-login-page .erp-visual-kicker svg { width: 16px; height: 16px; }
+.erp-login-page .erp-visual-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 2.2vh, 24px);
+    margin-top: auto;
+}
+.erp-login-page .erp-visual-message {
+    margin-top: 0;
+    margin-inline-start: 0;
+    margin-inline-end: auto;
+    width: min(80%, 510px);
+    max-width: 100%;
+    text-align: right;
+}
+.erp-login-page .erp-visual-eyebrow {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.erp-login-page .erp-visual-message h2 {
+    margin: 0 0 11px;
+    color: #fff;
+    font-size: clamp(21px, 2.05vw, 31px);
+    line-height: 1.55;
+}
+.erp-login-page .erp-visual-message > p:last-child {
+    max-width: 440px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.9;
+    color: #effffb;
+}
+.erp-login-page .erp-visual-modules {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    direction: rtl;
+}
+.erp-login-page .erp-visual-modules > .erp-module-card {
+    min-width: 0;
+    min-height: 93px;
+    padding: 9px 6px 8px;
+    border: 1px solid rgba(194, 245, 231, .48);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: rgba(9, 98, 91, .57);
+    backdrop-filter: blur(7px);
+    color: #fff;
+    text-align: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+.erp-login-page .erp-visual-modules > .erp-module-card--special {
+    border-color: rgba(195, 161, 255, .84);
+    background: linear-gradient(115deg, rgba(10, 112, 103, .75), rgba(78, 37, 135, .53));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 0 0 1px rgba(119, 68, 171, .10);
+}
+.erp-login-page .erp-module-card .erp-module-icon {
+    display: block;
+    width: 23px;
+    height: 23px;
+    min-height: 23px;
+    flex: 0 0 23px;
+    color: #f1fff9;
+}
+.erp-login-page .erp-module-title {
+    width: 100%;
+    font-family: IRANSansBold, IRANSans, sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px, .88vw, 14px);
+    line-height: 1.55;
+    color: #fff;
+}
+.erp-login-page .erp-module-description {
+    display: block;
+    width: 100%;
+    color: rgba(250, 255, 253, .93);
+    font: 400 10px/1.55 IRANSans, sans-serif;
+}
+
+/* Desktop: wide editorial photo, narrower and more focused login panel. */
+@media (min-width: 992px) {
+    .erp-login-page .parentLogin.erp-login-shell {
+        width: min(94vw, 1510px) !important;
+        min-height: min(680px, calc(100dvh - 32px)) !important;
+        border-radius: 27px;
+    }
+    .erp-login-page .loginRenderBody {
+        width: 37% !important;
+        flex: 0 0 37%;
+        padding: clamp(18px, 2.9vw, 43px);
+    }
+    .erp-login-page .erp-login-inner { max-width: 382px; }
+    .erp-login-page .erp-login-visual {
+        width: 63%;
+        flex: 0 0 63%;
+        min-height: min(680px, calc(100dvh - 32px)) !important;
+    }
+    .erp-login-page .erp-visual-content {
+        padding: clamp(22px, 2.15vw, 35px);
+    }
+    .erp-login-page .erp-brand {
+        flex-direction: column;
+        gap: 1px;
+        margin-bottom: 22px;
+    }
+    .erp-login-page .erp-brand-logo { width: 105px; height: 78px; }
+    .erp-login-page .erp-brand-names { align-items: center; text-align: center; }
+    .erp-login-page .erp-brand-names strong { font-size: 23px; line-height: 1.5; }
+    .erp-login-page .erp-brand-names small { font-size: 10px; }
+    .erp-login-page .erp-auth-heading { margin-bottom: 23px; }
+    .erp-login-page .erp-auth-heading h1 { font-size: 23px; line-height: 1.55; }
+    .erp-login-page .erp-auth-tabs { margin-bottom: 24px; padding: 5px; border-radius: 13px; }
+    .erp-login-page .erp-auth-tabs a { font-size: 12px; padding: 10px 4px; }
+    .erp-login-page .form-group { margin-bottom: 17px; }
+    .erp-login-page .erp-auth-label { font-size: 12px; margin-bottom: 7px; }
+    .erp-login-page .form-group__input { height: 48px; font-size: 13px; border-radius: 11px; }
+    .erp-login-page .erp-auth-primary,
+    .erp-login-page .login-btn { min-height: 48px; height: 48px; font-size: 14px; border-radius: 11px; }
+    .erp-login-page .erp-auth-links { margin-top: 14px; }
+    .erp-login-page .erp-auth-links a { font-size: 11.5px; }
+    .erp-login-page .erp-login-footnote { margin-top: 26px; text-align: center; }
+}
+@media (min-width: 1200px) {
+    .erp-login-page .loginRenderBody { width: 34% !important; flex: 0 0 34%; }
+    .erp-login-page .erp-login-visual { width: 66%; flex: 0 0 66%; }
+}
+@media (min-width: 992px) and (max-height: 720px) {
+    .erp-login-page .parentLogin.erp-login-shell,
+    .erp-login-page .erp-login-visual { min-height: min(580px, calc(100dvh - 24px)) !important; }
+    .erp-login-page .erp-visual-bottom { gap: 10px; }
+    .erp-login-page .erp-visual-message h2 { margin-bottom: 4px; font-size: 23px; line-height: 1.4; }
+    .erp-login-page .erp-visual-eyebrow { margin-bottom: 2px; }
+    .erp-login-page .erp-visual-modules > .erp-module-card {
+        min-height: 72px;
+        padding: 5px 4px;
+        gap: 2px;
+    }
+    .erp-login-page .erp-module-card .erp-module-icon {
+        width: 19px; height: 19px; min-height: 19px; flex-basis: 19px;
+    }
+    .erp-login-page .erp-module-title { font-size: 11px; }
+    .erp-login-page .erp-module-description { font-size: 9px; }
+    .erp-login-page .erp-brand { margin-bottom: 12px; }
+    .erp-login-page .erp-brand-logo { width: 84px; height: 60px; }
+    .erp-login-page .erp-auth-heading { margin-bottom: 12px; }
+    .erp-login-page .erp-auth-tabs { margin-bottom: 13px; }
+    .erp-login-page .erp-login-footnote { margin-top: 12px; }
+}
+
+/* Compact banners on tablets and phones; the full showcase is desktop-only. */
+@media (max-width: 991.98px) {
+    .erp-login-page .erp-visual-bottom { display: none; }
+    .erp-login-page .erp-visual-image { object-position: left 38%; }
+    .erp-login-page .erp-visual-content { justify-content: flex-start; }
+    .erp-login-page .erp-visual-kicker {
+        font-size: 9px;
+        padding: 5px 9px;
+    }
+}
+@media (max-width: 575.98px) {
+    .erp-login-page .erp-visual-kicker svg { width: 13px; height: 13px; }
+}
