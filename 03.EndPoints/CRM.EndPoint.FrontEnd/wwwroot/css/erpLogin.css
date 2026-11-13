@@ -528,3 +528,120 @@
     margin-top: 11px;
     text-align: right;
 }
+
+
+/* Shared compact auth heading. Explanatory copy was removed from the login views. */
+.erp-login-page .erp-auth-heading { margin-bottom: 10px; }
+.erp-login-page .erp-auth-heading h1 { margin-bottom: 0; }
+
+/* Keep prefix and telephone icon aligned to the input rather than its label. */
+.erp-login-page .erp-phone-control { position: relative; }
+.erp-login-page .erp-phone-control .erp-phone-prefix {
+    position: absolute;
+    top: 50%;
+    bottom: auto;
+    left: 12px;
+    width: 17px;
+    height: auto;
+    line-height: 1;
+    transform: translateY(-50%);
+    z-index: 2;
+    pointer-events: none;
+}
+.erp-login-page .erp-phone-control #erpOtpMobile {
+    direction: ltr;
+    text-align: left;
+    padding-left: 34px;
+    padding-right: 40px;
+    letter-spacing: 0;
+}
+.erp-login-page .erp-phone-control #erpOtpMobile::placeholder {
+    direction: ltr;
+    text-align: left;
+}
+.erp-login-page .erp-phone-control .form-group__icon {
+    position: absolute;
+    top: 50%;
+    bottom: auto;
+    right: 11px;
+    left: auto;
+    inset-inline-start: auto;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* A decorative banner, not a full-height panel, on phones and tablets. */
+@media (max-width: 991.98px) {
+    .erp-login-page .erp-brand { margin-bottom: 9px; }
+    .erp-login-page .erp-auth-tabs { margin-bottom: 11px; }
+    .erp-login-page .erp-login-footnote { margin-top: 11px; }
+    .erp-login-page .erp-auth-heading { margin-bottom: 9px; }
+}
+@media (max-width: 575.98px) {
+    .erp-login-page .erp-login-visual {
+        display: block;
+        height: 70px;
+        min-height: 70px;
+        flex: 0 0 70px;
+    }
+    .erp-login-page .erp-visual-content { padding: 8px 14px; }
+    .erp-login-page .loginRenderBody {
+        align-items: flex-start;
+        padding: 14px 16px 16px;
+    }
+    .erp-login-page .erp-brand-logo { width: 56px; height: 38px; }
+    .erp-login-page #historyBackIcon {
+        top: 8px;
+        background: rgba(255,255,255,.93);
+    }
+}
+@media (max-width: 575.98px) and (max-height: 720px) {
+    .erp-login-page .erp-login-visual {
+        display: block;
+        height: 54px;
+        min-height: 54px;
+        flex-basis: 54px;
+    }
+    .erp-login-page .erp-visual-content { padding: 6px 12px; }
+    .erp-login-page .loginRenderBody { padding: 10px 14px 12px; }
+    .erp-login-page .erp-brand { margin-bottom: 6px; }
+    .erp-login-page .erp-auth-heading { margin-bottom: 7px; }
+    .erp-login-page .erp-auth-tabs { margin-bottom: 8px; }
+    .erp-login-page .erp-login-footnote { margin-top: 8px; }
+}
+@media (max-width: 575.98px) and (max-height: 600px) {
+    .erp-login-page .erp-login-visual {
+        display: block;
+        height: 48px;
+        min-height: 48px;
+        flex-basis: 48px;
+    }
+}
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .erp-login-page .erp-login-visual {
+        display: block;
+        height: 90px;
+        min-height: 90px;
+        flex: 0 0 90px;
+        order: -1;
+    }
+    .erp-login-page .erp-visual-message,
+    .erp-login-page .erp-visual-modules { display: none; }
+    .erp-login-page .erp-visual-content { padding: 12px 18px; }
+    .erp-login-page .loginRenderBody { padding: 20px 28px 22px; }
+    .erp-login-page .erp-brand { margin-bottom: 12px; }
+}
+@media (min-width: 576px) and (max-width: 991.98px) and (max-height: 800px) {
+    .erp-login-page .erp-login-visual {
+        height: 68px;
+        min-height: 68px;
+        flex-basis: 68px;
+    }
+    .erp-login-page .erp-visual-content { padding: 9px 16px; }
+    .erp-login-page .loginRenderBody { padding: 14px 24px 16px; }
+}

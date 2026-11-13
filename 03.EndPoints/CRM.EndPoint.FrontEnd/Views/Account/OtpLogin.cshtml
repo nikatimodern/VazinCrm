@@ -5,7 +5,6 @@
 <div class="erp-auth-content">
     <header class="erp-auth-heading">
         <h1>@(ViewBag.type == "Forgot" ? "بازیابی رمز عبور" : "ورود به سامانه")</h1>
-        <p>@(ViewBag.type == "Forgot" ? "برای بازیابی رمز، شماره موبایل ثبت‌شده را وارد کنید." : "برای ورود سریع و امن، از کد پیامکی استفاده کنید.")</p>
     </header>
 
     @if (ViewBag.type != "Forgot")
@@ -20,15 +19,17 @@
         <form id="otpLoginForm">
             <div class="form-group">
                 <label for="erpOtpMobile" class="erp-auth-label">شماره موبایل</label>
-                <span class="erp-phone-prefix" aria-hidden="true">۰۹</span>
-                <span class="form-group__icon" aria-hidden="true">
-                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.28 6.72 15 15 15h2.25c.62 0 1.13-.5 1.13-1.13v-2.24c0-.52-.35-.97-.85-1.1l-4.42-1.1c-.44-.11-.9.05-1.17.42l-.97 1.29a1.13 1.13 0 0 1-1.21.38 12.04 12.04 0 0 1-7.14-7.14 1.13 1.13 0 0 1 .38-1.21l1.29-.97c.36-.27.53-.73.42-1.17L6.96 3.1c-.13-.5-.58-.85-1.09-.85H4.5c-1.24 0-2.25 1.01-2.25 2.25v2.25Z"/>
-                    </svg>
-                </span>
-                <input inputmode="numeric" autocomplete="tel-national" class="form-group__input form-group__input--ltr IranMobileNumber erp-phone-input"
-                       type="text" id="erpOtpMobile" name="mobile" maxlength="9"
-                       placeholder="۹۱۲۳۴۵۶۷۸" required autofocus />
+                <div class="erp-phone-control">
+                    <span class="erp-phone-prefix" aria-hidden="true">۰۹</span>
+                    <span class="form-group__icon" aria-hidden="true">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.28 6.72 15 15 15h2.25c.62 0 1.13-.5 1.13-1.13v-2.24c0-.52-.35-.97-.85-1.1l-4.42-1.1c-.44-.11-.9.05-1.17.42l-.97 1.29a1.13 1.13 0 0 1-1.21.38 12.04 12.04 0 0 1-7.14-7.14 1.13 1.13 0 0 1 .38-1.21l1.29-.97c.36-.27.53-.73.42-1.17L6.96 3.1c-.13-.5-.58-.85-1.09-.85H4.5c-1.24 0-2.25 1.01-2.25 2.25v2.25Z"/>
+                        </svg>
+                    </span>
+                    <input inputmode="numeric" autocomplete="tel-national" class="form-group__input form-group__input--ltr IranMobileNumber erp-phone-input"
+                           type="text" id="erpOtpMobile" name="mobile" maxlength="9"
+                           placeholder="۹۱۲۳۴۵۶۷۸" required autofocus />
+                </div>
             </div>
             <button id="confirmCodeOtpLoginBtn" type="submit" class="buttonGreen2 login-btn erp-auth-primary">
                 <span>دریافت کد ورود</span>
