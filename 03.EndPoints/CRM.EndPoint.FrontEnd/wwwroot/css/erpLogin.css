@@ -656,13 +656,6 @@
 .erp-login-page .erp-visual-overlay {
     background: linear-gradient(105deg, rgba(0, 65, 60, .02) 6%, rgba(0, 80, 74, .12) 36%, rgba(0, 70, 65, .43) 76%, rgba(0, 60, 56, .58) 100%);
 }
-.erp-login-page .erp-visual-overlay::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(3, 140, 124, .15), rgba(0, 69, 65, .38));
-    clip-path: polygon(82% 0, 100% 0, 100% 100%, 25% 100%);
-}
 .erp-login-page .erp-visual-content {
     direction: rtl;
     display: flex;
