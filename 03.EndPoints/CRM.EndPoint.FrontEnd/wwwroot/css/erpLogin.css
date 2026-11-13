@@ -919,3 +919,14 @@
         animation: none;
     }
 }
+
+/* Compact brand on phone widths: keep the official logo and company name only. */
+@media (max-width: 575.98px) {
+    .erp-login-page .erp-brand-en,
+    .erp-login-page .erp-brand-names small {
+        display: none;
+    }
+    .erp-login-page .erp-brand-names {
+        gap: 0;
+    }
+}
