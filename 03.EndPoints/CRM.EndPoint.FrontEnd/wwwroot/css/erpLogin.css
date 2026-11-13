@@ -72,10 +72,14 @@
 }
 .erp-login-inner { display: flex; width: 100%; max-width: 420px; flex-direction: column; align-items: stretch; min-width: 0; }
 .erp-brand { display: flex; align-items: center; justify-content: center; direction: rtl; gap: 9px; margin: 0 0 22px; }
-.erp-brand-mark { width: 44px; height: 42px; display: block; position: relative; flex: none; }
-.erp-brand-mark i, .erp-brand-mark b { display: block; position: absolute; inset: 0; border-radius: 6px; }
-.erp-brand-mark i { background: linear-gradient(165deg,#10bda4,#004944); clip-path: polygon(0 0,38% 0,62% 59%,44% 100%); }
-.erp-brand-mark b { background: linear-gradient(145deg,#9a4bdd,#5811b4); clip-path: polygon(100% 0,62% 0,33% 100%,58% 100%); }
+/* Official Vazin logo asset, used independently of the login illustrations. */
+.erp-brand-logo {
+    display: block;
+    width: 68px;
+    height: 46px;
+    object-fit: contain;
+    flex: none;
+}
 .erp-brand-names { display: flex; flex-direction: column; gap: 3px; }
 .erp-brand-names strong { font-family: IRANSansBold, IRANSans, sans-serif; font-size: 19px; line-height: 1.35; color: #20343a; }
 .erp-brand-en { direction: ltr; display: inline-block; color: var(--erp-secondary); font-family: Arial, sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -.3px; }
@@ -289,6 +293,7 @@
     .erp-login-page .erp-visual-message, .erp-login-page .erp-visual-modules { display:none; }
     .erp-login-page .loginRenderBody { padding:20px 20px 24px; }
     .erp-login-page .erp-brand { margin-bottom:16px; }
+    .erp-login-page .erp-brand-logo { width: 60px; height: 41px; }
     .erp-login-page .erp-brand-names strong { font-size:17px; }
     .erp-login-page .erp-auth-heading h1 { font-size:17px; }
     .erp-login-page .form-group__input { height:42px !important; font-size:16px; }
