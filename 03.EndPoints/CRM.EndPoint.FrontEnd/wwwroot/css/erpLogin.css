@@ -379,6 +379,128 @@
     }
 }
 
+/*
+ * Compact mobile and tablet login:
+ * shorten the decorative banner and vertical spacing when screen height is
+ * limited; preserve scrolling where content, keyboard or error text needs it.
+ */
+@media (max-width: 575.98px) {
+    .erp-login-page .erp-login-visual {
+        height: clamp(72px, 12dvh, 104px);
+        min-height: 0;
+    }
+    .erp-login-page .loginRenderBody {
+        padding: 18px 18px 20px;
+    }
+    .erp-login-page .erp-brand {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-auth-heading {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-auth-tabs {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-login-footnote {
+        margin-top: 14px;
+    }
+    .erp-login-page #historyBackIcon {
+        top: 8px;
+        background: rgba(255,255,255,.92);
+    }
+}
+
+@media (max-width: 575.98px) and (max-height: 720px) {
+    .erp-login-page .erp-login-visual {
+        height: 64px;
+        min-height: 64px;
+    }
+    .erp-login-page .erp-visual-content {
+        padding: 9px 15px;
+    }
+    .erp-login-page .loginRenderBody {
+        padding: 12px 16px 15px;
+    }
+    .erp-login-page .erp-brand {
+        margin-bottom: 8px;
+    }
+    .erp-login-page .erp-brand-logo {
+        width: 55px;
+        height: 36px;
+    }
+    .erp-login-page .erp-auth-heading {
+        margin-bottom: 9px;
+    }
+    .erp-login-page .erp-auth-heading h1 {
+        line-height: 1.5;
+        margin-bottom: 2px;
+    }
+    .erp-login-page .erp-auth-heading p {
+        line-height: 1.55;
+    }
+    .erp-login-page .erp-auth-tabs {
+        margin-bottom: 10px;
+    }
+    .erp-login-page .erp-auth-tabs a {
+        padding: 7px 4px;
+    }
+    .erp-login-page .form-group {
+        margin-bottom: 8px;
+    }
+    .erp-login-page .erp-auth-links {
+        margin-top: 8px;
+    }
+    .erp-login-page .erp-login-footnote {
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 575.98px) and (max-height: 600px) {
+    .erp-login-page .erp-login-visual {
+        display: none;
+    }
+    .erp-login-page #historyBackIcon {
+        top: 8px;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) and (max-height: 800px) {
+    .erp-login-page {
+        padding: 12px;
+        align-items: start;
+    }
+    .erp-login-page .erp-login-visual {
+        height: 82px;
+        min-height: 82px;
+    }
+    .erp-login-page .erp-visual-content {
+        padding: 12px 20px;
+    }
+    .erp-login-page .erp-visual-message,
+    .erp-login-page .erp-visual-modules {
+        display: none;
+    }
+    .erp-login-page .loginRenderBody {
+        padding: 18px 30px 20px;
+    }
+    .erp-login-page .erp-brand {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-auth-heading {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-auth-tabs {
+        margin-bottom: 12px;
+    }
+    .erp-login-page .erp-login-footnote {
+        margin-top: 12px;
+    }
+    .erp-login-page #historyBackIcon {
+        top: 10px;
+        background: rgba(255,255,255,.92);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .erp-login-page *, .erp-login-page *::before, .erp-login-page *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
