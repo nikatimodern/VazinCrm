@@ -929,4 +929,12 @@
     .erp-login-page .erp-brand-names {
         gap: 0;
     }
+
+    /* Close the empty gap highlighted between username and password on phones. */
+    .erp-login-page #loginForm #email_group {
+        margin-bottom: 2px !important;
+    }
+    .erp-login-page #loginForm #password_group {
+        margin-top: 0 !important;
+    }
 }
