@@ -47,8 +47,11 @@
 .erp-login-page #historyBackIcon {
     position: absolute;
     z-index: 10;
-    inset-inline-end: 14px;
-    left: auto;
+    /* Align with the left edge of the white login panel (not the full shell). */
+    inset-inline-start: auto;
+    inset-inline-end: auto;
+    left: 14px;
+    right: auto;
     top: 14px;
     border: 0;
     background: transparent;
@@ -61,6 +64,7 @@
 .erp-login-page #historyBackIcon:focus-visible { outline: 2px solid var(--erp-secondary); outline-offset: 2px; }
 .erp-login-page #historyBackIcon svg { width: 20px; height: 20px; color: inherit; }
 .erp-login-page .loginRenderBody {
+    position: relative;
     display: flex;
     width: 100%;
     min-width: 0;
