@@ -722,13 +722,16 @@
 .erp-login-page .erp-visual-modules {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 9px;
+    width: min(47%, 500px);
+    max-width: 100%;
+    align-self: flex-start; /* RTL: keep all nine cards inside the right half of the hero. */
+    gap: 8px;
     direction: rtl;
 }
 .erp-login-page .erp-visual-modules > .erp-module-card {
     min-width: 0;
-    min-height: 93px;
-    padding: 9px 6px 8px;
+    min-height: 76px;
+    padding: 6px 3px 5px;
     border: 1px solid rgba(194, 245, 231, .48);
     border-radius: 12px;
     display: flex;
@@ -749,25 +752,25 @@
 }
 .erp-login-page .erp-module-card .erp-module-icon {
     display: block;
-    width: 23px;
-    height: 23px;
-    min-height: 23px;
-    flex: 0 0 23px;
+    width: 20px;
+    height: 20px;
+    min-height: 20px;
+    flex: 0 0 20px;
     color: #f1fff9;
 }
 .erp-login-page .erp-module-title {
     width: 100%;
     font-family: IRANSansBold, IRANSans, sans-serif;
     font-weight: 700;
-    font-size: clamp(11px, .88vw, 14px);
-    line-height: 1.55;
+    font-size: clamp(10.5px, .77vw, 12px);
+    line-height: 1.45;
     color: #fff;
 }
 .erp-login-page .erp-module-description {
     display: block;
     width: 100%;
     color: rgba(250, 255, 253, .93);
-    font: 400 10px/1.55 IRANSans, sans-serif;
+    font: 400 9px/1.45 IRANSans, sans-serif;
 }
 
 /* Desktop: wide editorial photo, narrower and more focused login panel. */
@@ -812,6 +815,10 @@
     .erp-login-page .erp-auth-links { margin-top: 14px; }
     .erp-login-page .erp-auth-links a { font-size: 11.5px; }
     .erp-login-page .erp-login-footnote { margin-top: 26px; text-align: center; }
+}
+/* Slightly more room for legible cards at smaller desktop widths. */
+@media (min-width: 992px) and (max-width: 1250px) {
+    .erp-login-page .erp-visual-modules { width: min(57%, 440px); }
 }
 @media (min-width: 1200px) {
     .erp-login-page .loginRenderBody { width: 34% !important; flex: 0 0 34%; }
