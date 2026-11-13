@@ -136,6 +136,20 @@
 .erp-login-page #otpLoginMsg:empty, .erp-login-page #LoginMsg:empty, .erp-login-page #resetPassErrMsg:empty { display: none; }
 .erp-login-page .erp-otp-note { font-size: 11px; line-height: 1.9; color: var(--erp-muted); margin: 0 0 9px; }
 .erp-login-page .erp-otp-note strong { color: var(--erp-text); direction: ltr; unicode-bidi: isolate; }
+/* Keep the key icon centered to the input itself, independent of the label height. */
+.erp-login-page .erp-otp-control { position: relative; }
+.erp-login-page .erp-otp-control .form-group__icon {
+    position: absolute;
+    top: 50%;
+    bottom: auto;
+    inset-inline-start: 11px;
+    transform: translateY(-50%);
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
 .erp-login-page .erp-otp-input { direction: ltr; text-align: center; font-family: IRANSans, Tahoma, sans-serif; font-size: 20px; letter-spacing: 9px; }
 .erp-login-page .erp-otp-status { margin-top: 11px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .erp-login-page .erp-otp-status .errorLoginText { margin: 0; flex: 1 1 100%; }
