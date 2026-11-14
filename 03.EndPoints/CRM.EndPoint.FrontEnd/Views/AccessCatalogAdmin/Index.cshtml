@@ -131,6 +131,15 @@
                     <input type="search" data-users-search maxlength="150" placeholder="نام، نام کاربری یا تلفن..."
                            aria-label="جست‌وجوی کاربران" />
                 </label>
+                <div class="ac-user-type-filter">
+                    <label for="acUserTypeFilter">نوع کاربر</label>
+                    <select id="acUserTypeFilter" data-users-type aria-label="فیلتر نوع کاربر">
+                        <option value="employee" selected>کارمندان</option>
+                        <option value="customer">مشتریان</option>
+                        <option value="supplier">تأمین‌کنندگان</option>
+                        <option value="all">همه کاربران</option>
+                    </select>
+                </div>
                 <div class="ac-users-list" data-users-list aria-live="polite">
                     <p class="ac-muted">برای نمایش کاربران این تب را انتخاب کنید.</p>
                 </div>

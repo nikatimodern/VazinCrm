@@ -19,7 +19,20 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
     public async Task<AdminUserPage> GetPageAsync(AdminUserFilter filter, CancellationToken ct)
     {
         var query = users.Users.AsNoTracking().Where(u => !u.OrganAdmin);
-        if (filter.EmployeeType == "employee")
+        // This filter is specific to access administration. The independent user-kind
+        // flags may overlap, so a user can appear in several filtered lists.
+        // Existing employee/non-employee filters remain unchanged for other pages.
+        if (filter.UserType is not null)
+        {
+            query = filter.UserType switch
+            {
+                "employee" => query.Where(u => u.IsEmployee),
+                "customer" => query.Where(u => u.IsCustomer),
+                "supplier" => query.Where(u => u.IsSupplier),
+                _ => query
+            };
+        }
+        else if (filter.EmployeeType == "employee")
             query = query.Where(u => u.IsEmployee);
         else if (filter.EmployeeType == "nonEmployee")
             query = query.Where(u => !u.IsEmployee);

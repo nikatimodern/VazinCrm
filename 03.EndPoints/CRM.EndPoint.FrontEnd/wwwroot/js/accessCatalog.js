@@ -24,9 +24,11 @@
     let roleChosen = new Set(), roleOriginal = new Set();
     let roleReady = false, roleSaving = false, roleLoadGeneration = 0, roleSelectionGeneration = 0;
     const usersList = root.querySelector("[data-users-list]");
+    const userTypeSelect = root.querySelector("[data-users-type]");
     const userPermissions = root.querySelector("[data-user-permissions]");
     let userAvailableRoles = [], userCatalog = [], userGrantSources = new Map(), userPageItems = [];
     let userPage = 1, userPages = 1, userCount = 0, userSearchTerm = "";
+    let userType = userTypeSelect.value;
     let currentUserId = null, userRoleIds = new Set(), userOriginalRoles = new Set();
     let userOverrides = new Map(), userOriginalOverrides = new Map();
     let userReady = false, userSaving = false, userLoading = false;
@@ -617,7 +619,17 @@
             button.dataset.selectUser = person.id;
             button.setAttribute("aria-pressed", String(person.id === currentUserId));
             button.append(text("strong", person.name),
-                text("small", [person.position || "سمت کاری ثبت نشده", person.userName].filter(Boolean).join(" · ")));
+                text("small", [person.position || (person.isEmployee ? "سمت کاری ثبت نشده" : ""), person.userName].filter(Boolean).join(" · ")));
+            const kinds = [
+                person.isEmployee && "کارمند",
+                person.isCustomer && "مشتری",
+                person.isSupplier && "تأمین‌کننده"
+            ].filter(Boolean);
+            if (kinds.length) {
+                const tags = text("span", null, "ac-user-kind-tags");
+                for (const kind of kinds) tags.append(text("span", kind, "ac-user-kind-tag"));
+                button.append(tags);
+            }
             list.append(button);
         }
     }
@@ -683,6 +695,7 @@
         root.querySelector("[data-action='reset-user']").disabled = !userReady || userSaving || !userDirty();
         root.querySelector("[data-action='user-clear-overrides']").disabled = !userReady || userSaving || !userOverrides.size;
         root.querySelector("[data-users-search]").disabled = userSaving;
+        userTypeSelect.disabled = userSaving || userLoading;
         for (const checkbox of root.querySelectorAll("[data-user-role-id]"))
             checkbox.disabled = !userReady || userSaving;
         for (const label of root.querySelectorAll(".ac-user-role-choice"))
@@ -794,16 +807,18 @@
         ++userSelectionGeneration;
         userLoading = true;
         userReady = false;
+        userTypeSelect.disabled = true;
         root.querySelector("[data-action='user-prev']").disabled = true;
         root.querySelector("[data-action='user-next']").disabled = true;
         showEmpty(usersList, "در حال دریافت کاربران...", "fa-spinner");
         const data = await sendApiRequest({
             url: "/AccessCatalogAdmin/Users",
-            params: { search: root.querySelector("[data-users-search]").value.trim(), page: pageNumber },
+            params: { search: root.querySelector("[data-users-search]").value.trim(), page: pageNumber, type: userType },
             showLoading: false
         });
         if (signal.aborted || generation !== userPageGeneration || activeTab !== "users") return;
         userLoading = false;
+        userTypeSelect.disabled = userSaving;
         if (!data || !Array.isArray(data.items)) {
             showEmpty(usersList, "دریافت کاربران ناموفق بود. دوباره تلاش کنید.", "fa-exclamation-circle");
             syncUserState();
@@ -997,6 +1012,22 @@
     root.querySelector("[data-entity-search]").addEventListener("input", renderEntities, { signal });
     root.querySelector("[data-role-search]").addEventListener("input", renderRoles, { signal });
     root.querySelector("[data-role-permission-search]").addEventListener("input", renderRolePermissions, { signal });
+    userTypeSelect.addEventListener("change", () => {
+        const nextType = userTypeSelect.value;
+        if (nextType === userType) return;
+        if (userSearchTimer !== null) {
+            clearTimeout(userSearchTimer);
+            userSearchTimer = null;
+        }
+        void (async () => {
+            if (userSaving || userLoading || !await confirmDiscardUserChanges()) {
+                userTypeSelect.value = userType;
+                return;
+            }
+            userType = nextType;
+            await loadUsersPage(1, null);
+        })();
+    }, { signal });
     root.querySelector("[data-users-search]").addEventListener("input", () => {
         if (userSearchTimer !== null) clearTimeout(userSearchTimer);
         userSearchTimer = setTimeout(() => {

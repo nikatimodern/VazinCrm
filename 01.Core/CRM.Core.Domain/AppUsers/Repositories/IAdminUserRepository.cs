@@ -7,7 +7,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 
 namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
-public sealed record AdminUserFilter(int Page, int PageSize, string? Search, string EmployeeType, string AccountStatus, List<string> Roles, DateTimeOffset Now);
+public sealed record AdminUserFilter(int Page, int PageSize, string? Search, string EmployeeType, string AccountStatus, List<string> Roles, DateTimeOffset Now, string? UserType = null);
 public sealed record AdminUserPage(List<AppUser> Users, int TotalCount, int Page, int PageSize, int TotalPages);
 public sealed record AdminRoleUpdateResult(bool UserFound, AccountIdentityResult? Error, IList<string> Roles);
 public interface IAdminUserRepository

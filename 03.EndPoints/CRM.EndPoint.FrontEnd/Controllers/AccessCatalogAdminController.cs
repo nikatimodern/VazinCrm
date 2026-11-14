@@ -47,8 +47,8 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
     }
 
     [HttpGet]
-    public async Task<IActionResult> Users(string? search, int page = 1, CancellationToken ct = default) =>
-        Json(await administration.UsersAsync(search, page, ct));
+    public async Task<IActionResult> Users(string? search, string? type = "employee", int page = 1, CancellationToken ct = default) =>
+        Json(await administration.UsersAsync(search, page, type, ct));
 
     [HttpGet]
     public async Task<IActionResult> UserAccess(string userId, CancellationToken ct)

@@ -186,7 +186,28 @@
     #accessCatalog .ac-role-choices { grid-template-columns: minmax(0,1fr); }
 }
 
-/* User access tab: compact staff list, live role grants, and per-user overrides. */
+/* User access tab: account-kind filtering, live role grants, and per-user overrides. */
+#accessCatalog .ac-user-type-filter {
+    display: flex; align-items: center; gap: 8px; margin: 0 12px 10px;
+}
+#accessCatalog .ac-user-type-filter label {
+    font-size: 12px; font-weight: 600; white-space: nowrap; margin: 0;
+    color: var(--ac-muted);
+}
+#accessCatalog .ac-user-type-filter select {
+    flex: 1; min-width: 0; min-height: 34px; padding: 5px 9px;
+    border: 1px solid var(--ac-border); border-radius: 7px;
+    background: #fff; color: inherit; font-size: 12px; cursor: pointer;
+}
+#accessCatalog .ac-user-type-filter select:focus-visible {
+    outline: 2px solid var(--ac-secondary); outline-offset: 1px;
+}
+#accessCatalog .ac-user-type-filter select:disabled { opacity: .55; cursor: not-allowed; }
+#accessCatalog .ac-user-kind-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+#accessCatalog .ac-user-kind-tag {
+    display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 5px;
+    background: #f0f1f7; color: var(--ac-muted);
+}
 #accessCatalog .ac-users-list { padding: 4px 8px 8px; max-height: 62vh; overflow-y: auto; }
 #accessCatalog .ac-user-item { width: 100%; border: 1px solid transparent; background: transparent; color: inherit;
     padding: 8px 10px; border-radius: 7px; display: block; text-align: right; cursor: pointer; margin-block: 2px; }

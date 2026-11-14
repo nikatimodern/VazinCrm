@@ -14,7 +14,7 @@ public sealed record AccessCatalogResult(int Status, string? Message = null, Gui
 public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
-public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles);
+public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles, bool IsEmployee, bool IsCustomer, bool IsSupplier);
 public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
 public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides);
 
@@ -26,15 +26,18 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
 
     public Task<List<AdminRole>> RolesAsync(CancellationToken ct) => adminUsers.GetRolesAsync(ct);
 
-    public async Task<AccessUsersPage> UsersAsync(string? search, int page, CancellationToken ct)
+    public async Task<AccessUsersPage> UsersAsync(string? search, int page, string? userType, CancellationToken ct)
     {
+        // Default to employees even when the caller does not supply a valid filter.
+        var type = userType is "all" or "customer" or "supplier" ? userType : "employee";
         var filter = new AdminUserFilter(Math.Max(page, 1), 25, search, "all", "all",
-            new List<string>(), DateTimeOffset.UtcNow);
+            new List<string>(), DateTimeOffset.UtcNow, UserType: type);
         var data = await adminUsers.GetPageAsync(filter, ct);
         return new AccessUsersPage(data.TotalCount, data.Page, data.TotalPages,
             data.Users.Select(u => new AccessUserListItem(u.Id,
                 string.IsNullOrWhiteSpace(u.FullName) ? u.UserName ?? "بدون نام" : u.FullName,
-                u.UserName ?? "", u.PositionTxt ?? "", u.RolsUsers?.ToArray() ?? [])).ToArray());
+                u.UserName ?? "", u.PositionTxt ?? "", u.RolsUsers?.ToArray() ?? [],
+                u.IsEmployee, u.IsCustomer, u.IsSupplier)).ToArray());
     }
 
     public Task<AccessUserState?> UserAccessAsync(string userId, CancellationToken ct) =>
