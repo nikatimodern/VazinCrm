@@ -26,6 +26,7 @@
             1: { label: "بدون مغایرت", color: "green" },
             2: { label: "دارای مغایرت", color: "red" },
             4: { label: "عدم پاسخ", color: "gray" },
+            5: { label: "شماره نامعتبر", color: "gray" },
         };
         let tableRequest = null;
         let formRequest = null;
@@ -37,7 +38,7 @@
         let readOnly = false;
         let saving = false;
         let deleting = false;
-        let markingNoResponse = false;
+        let markingTemporaryStatus = false;
         let viewingDocument = false;
 
         const body = page.querySelector("#qcRecordList");
@@ -117,8 +118,9 @@
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
                     <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span>${row.status === 0 ? `
                         <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
-                        <button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">عدم پاسخ</button>`
-                        : row.status === 4 ? `
+                        <button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">عدم پاسخ</button>
+                        <button type="button" class="qc-button qc-button-invalid-number" data-qc-invalid-number-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">شماره نامعتبر</button>`
+                        : row.status === 4 || row.status === 5 ? `
                         <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
                         : row.rowVersion ? `
@@ -250,9 +252,9 @@
             }
         });
         page.addEventListener("click", event => {
-            const noResponseButton = event.target.closest("[data-qc-no-response-id]");
-            if (noResponseButton) {
-                markNoResponse(noResponseButton);
+            const temporaryStatusButton = event.target.closest("[data-qc-no-response-id], [data-qc-invalid-number-id]");
+            if (temporaryStatusButton) {
+                markTemporaryStatus(temporaryStatusButton);
                 return;
             }
             const deleteButton = event.target.closest("[data-qc-delete-id]");
@@ -261,36 +263,39 @@
                 return;
             }
             const button = event.target.closest("[data-qc-deal-id]");
-            if (button && !saving && !deleting && !markingNoResponse) openForm(button.dataset.qcDealId, button.dataset.qcView === "true");
+            if (button && !saving && !deleting && !markingTemporaryStatus) openForm(button.dataset.qcDealId, button.dataset.qcView === "true");
         });
 
-        async function markNoResponse(button) {
-            if (markingNoResponse || deleting || saving || loading || !isActive()) return;
-            markingNoResponse = true;
+        async function markTemporaryStatus(button) {
+            if (markingTemporaryStatus || deleting || saving || loading || !isActive()) return;
+            const invalidNumber = button.hasAttribute("data-qc-invalid-number-id");
+            const statusLabel = invalidNumber ? "شماره نامعتبر" : "عدم پاسخ";
+            const dealId = invalidNumber ? button.dataset.qcInvalidNumberId : button.dataset.qcNoResponseId;
+            markingTemporaryStatus = true;
             button.disabled = true;
             try {
                 const confirmed = await confirmAlert({
-                    title: "ثبت عدم پاسخ",
-                    text: `کنترل کیفیت سفارش ${button.dataset.qcSerial} بدون پاسخ ثبت شود؟`,
-                    confirmText: "ثبت عدم پاسخ",
+                    title: `ثبت ${statusLabel}`,
+                    text: `وضعیت کنترل کیفیت سفارش ${button.dataset.qcSerial} به «${statusLabel}» تغییر کند؟`,
+                    confirmText: `ثبت ${statusLabel}`,
                 });
                 if (!confirmed || !isActive()) return;
                 const result = await sendApiRequest({
-                    url: "/QualityControl/MarkNoResponse",
+                    url: invalidNumber ? "/QualityControl/MarkInvalidNumber" : "/QualityControl/MarkNoResponse",
                     method: "POST",
                     headers: { RequestVerificationToken: form.querySelector('[name="__RequestVerificationToken"]').value },
-                    data: { dealId: button.dataset.qcNoResponseId, rowVersion: button.dataset.qcVersion || null },
-                    successMsg: "وضعیت کنترل کیفیت به عدم پاسخ تغییر کرد.",
+                    data: { dealId, rowVersion: button.dataset.qcVersion || null },
+                    successMsg: `وضعیت کنترل کیفیت به ${statusLabel} تغییر کرد.`,
                 });
                 if (result && isActive()) await loadTable();
             } finally {
-                markingNoResponse = false;
+                markingTemporaryStatus = false;
                 if (button.isConnected) button.disabled = false;
             }
         }
 
         async function deleteControl(button) {
-            if (deleting || markingNoResponse || saving || loading || !isActive()) return;
+            if (deleting || markingTemporaryStatus || saving || loading || !isActive()) return;
             deleting = true;
             button.disabled = true;
             try {

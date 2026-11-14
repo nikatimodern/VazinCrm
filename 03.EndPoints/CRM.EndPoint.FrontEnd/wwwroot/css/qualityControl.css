@@ -76,6 +76,8 @@
 .quality-control-page .qc-actions .qc-button { padding: .4rem .5rem; font-size: .85rem; }
 .quality-control-page .qc-actions .qc-button-no-response { border-color: var(--color-secondary); color: var(--color-secondary); }
 .quality-control-page .qc-actions .qc-button-no-response:hover { background: var(--color-secondary-light); }
+.quality-control-page .qc-actions .qc-button-invalid-number { border-color: var(--color-danger); color: var(--color-danger); }
+.quality-control-page .qc-actions .qc-button-invalid-number:hover { background: var(--color-danger-light); }
 .quality-control-page .qc-filter-item input:disabled + label { opacity: .45; cursor: not-allowed; }
 .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 32px; padding-inline: 0; flex-shrink: 0; }
 @media (max-width: 767px) {

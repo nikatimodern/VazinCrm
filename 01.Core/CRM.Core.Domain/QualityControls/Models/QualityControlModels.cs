@@ -10,16 +10,18 @@ public enum QualityControlStatus
     NoDiscrepancy = 1,
     HasDiscrepancy = 2,
     Reviewed = 3,
-    NoResponse = 4
+    NoResponse = 4,
+    InvalidNumber = 5
 }
 
-// Only the three outcomes below are persisted in QualityControls.Status.
+// Only the outcomes below are persisted in QualityControls.Status.
 // NotReviewed and Reviewed are derived from the presence of a control record.
 public enum QualityControlOutcome : byte
 {
     NoDiscrepancy = 1,
     HasDiscrepancy = 2,
-    NoResponse = 4
+    NoResponse = 4,
+    InvalidNumber = 5
 }
 
 public sealed record QualityControlAccess(string UserId, string UserName, bool ReadAll);
@@ -77,5 +79,6 @@ public sealed class SaveQualityControlRequest
 
 public sealed record QualityControlAnswerInput(Guid QuestionId, int? Answer);
 public sealed record MarkQualityControlNoResponseRequest(Guid DealId, byte[]? RowVersion);
+public sealed record MarkQualityControlInvalidNumberRequest(Guid DealId, byte[]? RowVersion);
 public sealed record DeleteQualityControlRequest(Guid DealId, byte[]? RowVersion);
 public sealed record QualityControlSaveResult(int StatusCode, string? Message = null, QualityControlStatus? Status = null, byte[]? RowVersion = null);
