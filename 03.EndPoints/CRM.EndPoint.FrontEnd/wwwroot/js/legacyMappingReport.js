@@ -818,7 +818,8 @@
             } else if (savedCount > 0) {
                 feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
                     "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
-            }            return !failed && savedCount === items.length;
+            }
+            return !failed && savedCount === items.length;
         }
 
         async function preview(row, id) {
@@ -994,6 +995,165 @@
             }
             await loadSaved();
         }
+
+
+        // Manual entry uses the same server-side validation as bulk suggestions.
+        const manualModal = get("lmrManualModal");
+        const manualType = get("lmrManualType");
+        const manualCrmSelect = get("lmrManualCrmSelect");
+        const manualExternalSelect = get("lmrManualExternalSelect");
+
+        function manualTypeDetails() {
+            const type = Number(manualType.value);
+            get("lmrManualSourceKindBox").hidden = type !== 1;
+            get("lmrManualTargetKindBox").hidden = type !== 0;
+            return {
+                mapType: type,
+                sourceEntity: type === 1 ? get("lmrManualSourceKind").value : "",
+                targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
+            };
+        }
+
+        function manualFeedback(message = "", error = false) {
+            const el = get("lmrManualFeedback");
+            el.textContent = message;
+            el.classList.toggle("lmr-error", error);
+        }
+
+        function manualSubmitState() {
+            get("lmrManualConfirm").disabled = !state.manualOpen || state.processing ||
+                !manualCrmSelect.value || !validId(manualExternalSelect.value);
+        }
+
+        async function loadManualSide(side) {
+            if (!state.manualOpen || !isActive()) return;
+            const isCrm = side === "crm";
+            const select = isCrm ? manualCrmSelect : manualExternalSelect;
+            const searchInput = get(isCrm ? "lmrManualCrmSearch" : "lmrManualExternalSearch");
+            const request = ++state.manualRequests[side];
+            const softwareId = state.softwareId;
+            const typeDetails = manualTypeDetails();
+            select.replaceChildren(new Option("در حال جستجو…", ""));
+            select.disabled = true;
+            manualSubmitState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalMapping/GetManualMappingOptions",
+                    params: { softwareId, ...typeDetails, side, search: searchInput.value.trim() },
+                    showLoading: false,
+                    showError: false
+                });
+                if (!state.manualOpen || !isActive() || softwareId !== state.softwareId ||
+                    request !== state.manualRequests[side]) return;
+                select.replaceChildren(new Option("انتخاب کنید", ""));
+                if (!result?.options) {
+                    manualFeedback("دریافت اطلاعات " + (isCrm ? "CRM" : state.softwareTitle) +
+                        " ناموفق بود. دوباره جستجو کنید.", true);
+                    return;
+                }
+                for (const option of result.options) {
+                    const label = (option.title || option.id || "بدون نام") +
+                        (option.detail ? " — " + option.detail : "");
+                    select.add(new Option(label, option.id));
+                }
+                if (!result.options.length)
+                    select.options[0].textContent = "موردی پیدا نشد؛ عبارت دیگری جستجو کنید";
+                else
+                    manualFeedback();
+            } catch {
+                if (state.manualOpen && request === state.manualRequests[side])
+                    manualFeedback("جستجوی اطلاعات انجام نشد؛ دوباره تلاش کنید.", true);
+            } finally {
+                if (state.manualOpen && request === state.manualRequests[side]) {
+                    select.disabled = false;
+                    manualSubmitState();
+                }
+            }
+        }
+
+        function resetManualOptions() {
+            state.manualRequests.crm++;
+            state.manualRequests.external++;
+            manualCrmSelect.replaceChildren(new Option("انتخاب کنید", ""));
+            manualExternalSelect.replaceChildren(new Option("انتخاب کنید", ""));
+            manualFeedback();
+            manualSubmitState();
+            void loadManualSide("crm");
+            void loadManualSide("external");
+        }
+
+        function closeManualMapping() {
+            if (!state.manualOpen || state.processing) return;
+            state.manualOpen = false;
+            state.manualRequests.crm++;
+            state.manualRequests.external++;
+            manualModal.hidden = true;
+            get("lmrManualOpen").focus();
+        }
+
+        function openManualMapping() {
+            if (state.processing || !state.manualIds.includes(state.softwareId)) {
+                toastifyError("ثبت دستی برای این نرم‌افزار پشتیبانی نمی‌شود.");
+                return;
+            }
+            manualType.replaceChildren();
+            state.types.forEach(item => manualType.add(new Option(item.title, String(item.value))));
+            if (state.types.some(x => Number(x.value) === 6)) manualType.value = "6";
+            get("lmrManualCrmSearch").value = "";
+            get("lmrManualExternalSearch").value = "";
+            get("lmrManualSourceKind").value = "Accountancy";
+            get("lmrManualTargetKind").value = "PaymentHeader";
+            get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
+            state.manualOpen = true;
+            manualModal.hidden = false;
+            manualTypeDetails();
+            resetManualOptions();
+            manualType.focus();
+        }
+
+        get("lmrManualOpen").addEventListener("click", openManualMapping);
+        get("lmrManualClose").addEventListener("click", closeManualMapping);
+        get("lmrManualCancel").addEventListener("click", closeManualMapping);
+        manualModal.addEventListener("click", event => {
+            if (event.target === manualModal) closeManualMapping();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && state.manualOpen) {
+                event.preventDefault();
+                closeManualMapping();
+            }
+        });
+        manualType.addEventListener("change", resetManualOptions);
+        get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
+        get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
+        get("lmrManualCrmSearch").addEventListener("input",
+            debounce(() => { if (state.manualOpen) void loadManualSide("crm"); }, 300));
+        get("lmrManualExternalSearch").addEventListener("input",
+            debounce(() => { if (state.manualOpen) void loadManualSide("external"); }, 300));
+        manualCrmSelect.addEventListener("change", manualSubmitState);
+        manualExternalSelect.addEventListener("change", manualSubmitState);
+
+        get("lmrManualConfirm").addEventListener("click", async () => {
+            if (state.processing || !state.manualOpen) return;
+            const entityId = manualCrmSelect.value;
+            const exEntityId = manualExternalSelect.value;
+            if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(entityId) ||
+                !validId(exEntityId)) {
+                manualFeedback("رکورد CRM و معادل معتبر آن را انتخاب کنید.", true);
+                return;
+            }
+            const values = manualTypeDetails();
+            const item = {
+                entityId, mapType: values.mapType, exEntityId,
+                entityName: values.sourceEntity || null,
+                exEntityName: values.targetEntity || null
+            };
+            const success = await save([item]);
+            if (success) closeManualMapping();
+            else if (state.manualOpen)
+                manualFeedback("نگاشت ثبت نشد؛ جزئیات خطای نمایش‌داده‌شده را بررسی کنید.", true);
+            manualSubmitState();
+        });
 
         softwareSelect.addEventListener("change", changeSoftware);
         get("lmrRefreshSaved").addEventListener("click", refreshSaved);
