@@ -35,9 +35,12 @@
                 <span>دریافت کد ورود</span>
                 <div class="spinner-border spinner-border-sm d-none ms-2" role="status"></div>
             </button>
-            <div class="erp-auth-links">
-                <a asp-controller="Account" asp-action="Login">بازگشت به ورود با رمز عبور</a>
-            </div>
+            @if (ViewBag.type == "Forgot")
+            {
+                <div class="erp-auth-links">
+                    <a asp-controller="Account" asp-action="Login">بازگشت به ورود با رمز عبور</a>
+                </div>
+            }
         </form>
 
         <div id="otpSection" style="display:none;">
@@ -141,7 +144,6 @@
                         document.getElementById("otpLoginInp").value = "";
                         document.getElementById("otpLoginInp").focus();
                         document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
-                        document.getElementById("historyBackIcon").classList.remove("d-none");
                         history.pushState({ step: "otp" }, "", "/Account/OtpLogin#otp");
 
                         toastifySuccess(data.message);
@@ -171,7 +173,6 @@
                 document.getElementById("otpSection").style.display = "none";
                 document.getElementById("resendOtpBtn").style.display = "none";
 
-                document.getElementById("historyBackIcon").classList.add("d-none");
             }
         });
 
