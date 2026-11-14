@@ -638,3 +638,11 @@
     .lmr-manual-modal .lmr-manual-header .btn-close { left:12px; }
     .lmr-manual-modal .lmr-manual-header { min-height:60px; }
 }
+
+/* Same button order and spacing in both mapping tabs (RTL: final button at left). */
+.legacy-mapping-report .lmr-section-actions {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+}
