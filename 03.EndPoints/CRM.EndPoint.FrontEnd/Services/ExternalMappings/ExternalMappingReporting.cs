@@ -333,6 +333,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(centers);
 
+                var accountancies = await db.Accountancies.AsNoTracking()
+                    .Where(x => (x.CustomerName != null && x.CustomerName.Contains(search))
+                        || (isNumber && (x.fSerialNumber == number || x.pfSerialNumber == number)))
+                    .Select(x => x.Id).Take(500).ToListAsync(ct);
+                matchedIds.UnionWith(accountancies);
+
                 // Search must also find broker mappings by the CRM employee's name.
                 var employees = await userManager.Users.AsNoTracking()
                     .Where(x => (x.FirstName != null && x.FirstName.Contains(search))
@@ -343,10 +349,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     if (Guid.TryParse(userId, out var parsedUserId))
                         matchedIds.Add(parsedUserId);
 
+                // Match the saved external person's name as well as the CRM-side name.
+                var targetDb = softwareId == Sepidar1SoftwareId
+                    ? (SepidarContextDbBase)sdb : softwareId == Sepidar2SoftwareId
+                        ? (SepidarContextDbBase)s2Db : null;
+                var partyIds = targetDb == null ? Array.Empty<string>()
+                    : (await targetDb.Parties.AsNoTracking()
+                        .Where(x => x.Name.Contains(search) || x.LastName.Contains(search)
+                            || x.Dl.Code.Contains(search))
+                        .Select(x => x.PartyId).Take(500).ToListAsync(ct))
+                        .Select(x => x.ToString()).ToArray();
                 var ids = matchedIds.ToArray();
                 query = query.Where(x => x.ExEntityId.Contains(search)
                     || x.EntityId.ToString().Contains(search)
-                    || ids.Contains(x.EntityId));
+                    || ids.Contains(x.EntityId)
+                    || (x.ExEntityName == nameof(Party) && partyIds.Contains(x.ExEntityId)));
             }
 
             var total = await query.CountAsync(ct);
