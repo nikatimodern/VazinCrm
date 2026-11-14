@@ -398,7 +398,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         EntityName = entityName,
                         EntityId = item.EntityId,
                         MapType = item.MapType,
-                        MapTypeTxt = item.MapType.ToString(),
+                        MapTypeTxt = item.MapType == ExternalMappingTypeEnum.واسط
+                            ? "کارشناسان" : item.MapType.ToString(),
                         ExEntityName = externalName,
                         ExEntityId = targetId.ToString(),
                         UserCreatorID = crmUser.Id,
