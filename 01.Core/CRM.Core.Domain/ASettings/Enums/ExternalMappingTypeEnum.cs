@@ -7,4 +7,5 @@ public enum ExternalMappingTypeEnum {
     فاکتور = 3,
     مرکز_هزینه = 4,
     مشتری = 5,
+    واسط = 6,
 }
