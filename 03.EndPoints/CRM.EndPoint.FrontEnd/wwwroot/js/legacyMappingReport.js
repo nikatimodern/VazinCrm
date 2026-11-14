@@ -90,7 +90,7 @@
         function typeTitle(row) {
             return state.types.find(t => Number(t.value) === Number(row.mapType))?.title ||
                 ({ Customer:"مشتری", PreFactor:"پیش‌فاکتور", Factor:"فاکتور",
-                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری",
+                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه",
                     AppUser:"کارشناسان" }[row.kind] || show(row.kind));
         }
 
