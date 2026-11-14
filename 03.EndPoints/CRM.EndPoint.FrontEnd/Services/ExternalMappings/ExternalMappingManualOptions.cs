@@ -18,7 +18,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         {
             var defaultPair = type switch {
                 ExternalMappingTypeEnum.تنخواه => ("Cash", "PaymentHeader"),
-                ExternalMappingTypeEnum.سند_حسابداری => ("Accountancy", "Voucher"),
                 ExternalMappingTypeEnum.پیش_فاکتور => ("PreFactor", "Quotation"),
                 ExternalMappingTypeEnum.فاکتور => ("Factor", "Invoice"),
                 ExternalMappingTypeEnum.مرکز_هزینه => ("BaseCenterCash", "DL"),
@@ -28,10 +27,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             };
             var source = string.IsNullOrWhiteSpace(sourceEntity) ? defaultPair.Item1 : sourceEntity.Trim();
             var target = string.IsNullOrWhiteSpace(targetEntity) ? defaultPair.Item2 : targetEntity.Trim();
-            var sourceValid = source == defaultPair.Item1 ||
-                type == ExternalMappingTypeEnum.سند_حسابداری && source == "Cash";
+            var sourceValid = source == defaultPair.Item1;
             var targetValid = target == defaultPair.Item2 ||
-                type == ExternalMappingTypeEnum.تنخواه && target == "SepidarCash";
+                type == ExternalMappingTypeEnum.تنخواه && target == "Voucher";
             if (!sourceValid || !targetValid)
                 throw new ArgumentException("نوع مبدا یا معادل انتخاب‌شده با نوع نگاشت سازگار نیست.");
             return (source, target);
@@ -139,20 +137,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         return new { options = rows.Select(x => new { id = x.Id.ToString(),
                             title = FormatManualOption(x.Serial.ToString(), "تنخواه"), detail = TextService.NormalizePersianText(x.CostDescription ?? "") }) };
                     }
-                    case "Accountancy":
-                    {
-                        var query = db.Accountancies.AsNoTracking();
-                        if (search.Length > 0)
-                            query = query.Where(x => x.Id == guid ||
-                                (number > 0 && (x.fSerialNumber == number || x.pfSerialNumber == number)) ||
-                                (x.CustomerName != null && x.CustomerName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
-                        var rows = await query.OrderByDescending(x => x.date)
-                            .Select(x => new { x.Id, x.fSerialNumber, x.pfSerialNumber, x.CustomerName })
-                            .Take(size).ToListAsync(ct);
-                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
-                            title = FormatManualOption((x.fSerialNumber ?? x.pfSerialNumber)?.ToString(), "ثبت مالی"),
-                            detail = TextService.NormalizePersianText(x.CustomerName ?? "") }) };
-                    }
                     case "BaseCenterCash":
                     {
                         var query = db.BaseCenterCashes.AsNoTracking();
@@ -240,17 +224,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.PaymentHeaderId.ToString(),
                             title = FormatManualOption(x.Number.ToString(), "اعلامیه پرداخت"), detail = TextService.NormalizePersianText(x.Description ?? "") }) };
-                    }
-                    case "SepidarCash":
-                    {
-                        var query = targetDb.SepidarCash.AsNoTracking();
-                        if (search.Length > 0)
-                            query = query.Where(x => (number > 0 && x.CashId == number)
-                                || (x.Title != null && x.Title.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
-                        var rows = await query.OrderBy(x => x.Title)
-                            .Select(x => new { x.CashId, x.Title }).Take(size).ToListAsync(ct);
-                        return new { options = rows.Select(x => new { id = x.CashId.ToString(),
-                            title = FormatManualOption(x.CashId.ToString(), x.Title), detail = "" }) };
                     }
                     case "DL":
                     {
