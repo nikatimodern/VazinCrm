@@ -1210,6 +1210,17 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    // The expert mapping can point to any Party; only invoice export requires
+    // IsBroker. Returning null distinguishes a missing Party from IsBroker=false.
+    public async Task<bool?> GetSepidarPartyIsBrokerAsync(
+        int partyId, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == partyId)
+            .Select(x => (bool?)x.IsBroker)
+            .SingleOrDefaultAsync(ct);
+    }
+
     public async Task<SepidarBrokerOptionDto?> GetSepidarBrokerByIdAsync(
         int id, CancellationToken ct = default)
     {
