@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.12" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.13" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -141,7 +141,7 @@
                 <div class="lmr-manual-fields">
                     <label class="lmr-manual-field">
                         <span>نوع نگاشت</span>
-                        <select id="lmrManualType" required></select>
+                        <select id="lmrManualType" required><option value="">نوع نگاشت را انتخاب کنید</option></select>
                     </label>
                     <label class="lmr-manual-field" id="lmrManualSourceKindBox" hidden>
                         <span>نوع سند CRM</span>
@@ -160,31 +160,27 @@
                 </div>
                 <div class="lmr-manual-pair">
                     <div class="lmr-manual-side">
-                        <h3>رکورد CRM</h3>
+                        <div class="lmr-manual-entity-heading">
+                            <h3>رکورد CRM</h3>
+                            <small id="lmrManualCrmEntity"></small>
+                        </div>
                         <label class="lmr-manual-field">
-                            <span>جستجوی نام، شماره یا شناسه</span>
-                            <input id="lmrManualCrmSearch" type="search" autocomplete="off"
-                                   placeholder="نام یا شماره را وارد کنید" maxlength="100" />
-                        </label>
-                        <label class="lmr-manual-field">
-                            <span>رکورد موردنظر</span>
-                            <select id="lmrManualCrmSelect" required></select>
+                            <span>جستجو و انتخاب رکورد CRM</span>
+                            <select id="lmrManualCrmSelect" required aria-label="جستجو و انتخاب رکورد CRM"></select>
                         </label>
                     </div>
                     <div class="lmr-manual-side">
-                        <h3 id="lmrManualExternalTitle">معادل نرم‌افزار مالی</h3>
+                        <div class="lmr-manual-entity-heading">
+                            <h3 id="lmrManualExternalTitle">معادل نرم‌افزار مالی</h3>
+                            <small id="lmrManualExternalEntity"></small>
+                        </div>
                         <label class="lmr-manual-field">
-                            <span>جستجوی نام، شماره یا کد تفصیلی</span>
-                            <input id="lmrManualExternalSearch" type="search" autocomplete="off"
-                                   placeholder="نام یا کد را وارد کنید" maxlength="100" />
-                        </label>
-                        <label class="lmr-manual-field">
-                            <span>معادل موردنظر</span>
-                            <select id="lmrManualExternalSelect" required></select>
+                            <span>جستجو و انتخاب معادل مالی</span>
+                            <select id="lmrManualExternalSelect" required aria-label="جستجو و انتخاب معادل نرم‌افزار مالی"></select>
                         </label>
                     </div>
                 </div>
-                <p class="lmr-manual-help">فهرست هر طرف حداکثر ۴۰ نتیجه نشان می‌دهد. برای انتخاب دقیق‌تر، جستجو کنید. ثبت فقط رابطه نگاشت را در CRM ذخیره می‌کند.</p>
+                <p class="lmr-manual-help">در هر طرف با نام، شماره یا کد تفصیلی جستجو کنید. حداکثر ۴۰ نتیجه از سرور نمایش داده می‌شود؛ ثبت فقط رابطه نگاشت را در CRM ذخیره می‌کند.</p>
                 <div id="lmrManualFeedback" class="lmr-manual-feedback" role="status" aria-live="polite"></div>
             </div>
             <footer class="modal-footer lmr-manual-footer">
@@ -199,5 +195,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.12" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.13" asp-append-version="true"></script>
 }
