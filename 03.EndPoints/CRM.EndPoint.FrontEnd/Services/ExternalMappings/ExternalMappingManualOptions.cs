@@ -56,6 +56,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var names = GetMappingEntityNames((ExternalMappingTypeEnum)mapType, sourceEntity, targetEntity);
             search = TextService.NormalizePersianText(TextService.ToEnglishNumber((search ?? "").Trim()));
             if (search.Length > 100) throw new ArgumentException("عبارت جستجو بیش از حد طولانی است.");
+            // Remote selects only search after the user types; avoid loading
+            // arbitrary first-page data when the endpoint is called without a term.
+            if (search.Length < 2)
+                return new { options = Array.Empty<object>() };
             int.TryParse(search, out var number);
             Guid.TryParse(search, out var guid);
             const int size = 40;
@@ -101,7 +105,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && x.SerialNumber == number) ||
-                                (x.Customer != null && x.Customer.Contains(search)));
+                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
                             .Select(x => new { x.Id, x.SerialNumber, x.Customer })
                             .Take(size).ToListAsync(ct);
@@ -115,7 +119,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && x.SerialNumber == number) ||
-                                (x.Customer != null && x.Customer.Contains(search)));
+                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
                             .Select(x => new { x.Id, x.SerialNumber, x.Customer })
                             .Take(size).ToListAsync(ct);
@@ -128,7 +132,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && x.Serial == number) ||
-                                (x.CostDescription != null && x.CostDescription.Contains(search)));
+                                (x.CostDescription != null && x.CostDescription.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.Serial)
                             .Select(x => new { x.Id, x.Serial, x.CostDescription })
                             .Take(size).ToListAsync(ct);
@@ -141,7 +145,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && (x.fSerialNumber == number || x.pfSerialNumber == number)) ||
-                                (x.CustomerName != null && x.CustomerName.Contains(search)));
+                                (x.CustomerName != null && x.CustomerName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.date)
                             .Select(x => new { x.Id, x.fSerialNumber, x.pfSerialNumber, x.CustomerName })
                             .Take(size).ToListAsync(ct);
@@ -154,7 +158,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = db.BaseCenterCashes.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
-                                (x.Title != null && x.Title.Contains(search)) ||
+                                (x.Title != null && x.Title.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)) ||
                                 (x.Code != null && x.Code.Contains(search)));
                         var rows = await query.OrderBy(x => x.Code)
                             .Select(x => new { x.Id, x.Code, x.Title })
@@ -192,7 +196,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.Quotations.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && (x.QuotationId == number || x.Number == number))
-                                || (x.CustomerRealName != null && x.CustomerRealName.Contains(search)));
+                                || (x.CustomerRealName != null && x.CustomerRealName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.QuotationId)
                             .Select(x => new { x.QuotationId, x.Number, x.CustomerRealName })
                             .Take(size).ToListAsync(ct);
@@ -204,7 +208,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.SalesInvoices.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && (x.InvoiceId == number || x.Number == number))
-                                || (x.CustomerRealName != null && x.CustomerRealName.Contains(search)));
+                                || (x.CustomerRealName != null && x.CustomerRealName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.InvoiceId)
                             .Select(x => new { x.InvoiceId, x.Number, x.CustomerRealName })
                             .Take(size).ToListAsync(ct);
@@ -216,7 +220,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.Vouchers.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && (x.VoucherId == number || x.Number == number))
-                                || (x.Description != null && x.Description.Contains(search)));
+                                || (x.Description != null && x.Description.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.VoucherId)
                             .Select(x => new { x.VoucherId, x.Number, x.Description })
                             .Take(size).ToListAsync(ct);
@@ -228,7 +232,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.PaymentHeaders.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && (x.PaymentHeaderId == number || x.Number == number))
-                                || (x.Description != null && x.Description.Contains(search)));
+                                || (x.Description != null && x.Description.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.PaymentHeaderId)
                             .Select(x => new { x.PaymentHeaderId, x.Number, x.Description })
                             .Take(size).ToListAsync(ct);
@@ -240,7 +244,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.SepidarCash.AsNoTracking();
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && x.CashId == number)
-                                || (x.Title != null && x.Title.Contains(search)));
+                                || (x.Title != null && x.Title.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderBy(x => x.Title)
                             .Select(x => new { x.CashId, x.Title }).Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.CashId.ToString(),
@@ -251,7 +255,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var query = targetDb.DLs.AsNoTracking().Where(x => x.IsActive);
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && x.DLId == number)
-                                || x.Title.Contains(search) || x.Code.Contains(search));
+                                || x.Title.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search) || x.Code.Contains(search));
                         var rows = await query.OrderBy(x => x.Code)
                             .Select(x => new { x.DLId, x.Code, x.Title })
                             .Take(size).ToListAsync(ct);
