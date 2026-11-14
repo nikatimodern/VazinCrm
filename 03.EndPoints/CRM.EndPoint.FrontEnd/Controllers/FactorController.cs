@@ -3291,17 +3291,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (mapping == null)
                 throw new InvalidOperationException(
-                    "برای ثبت واسط این فاکتور، نگاشت کارشناس فروش در نرم‌افزار مقصد ثبت نشده است. ابتدا مدیر ارشد باید نگاشت را در صفحه مدیریت نگاشت‌ها ثبت کند.");
+                    "برای ثبت واسط این فاکتور، نگاشت کارشناس فروش با نرم‌افزار مالی انتخاب‌شده ثبت نشده است.");
 
             if (mapping.ExEntityName != nameof(Party)
                 || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
                 throw new InvalidOperationException(
-                    "نگاشت واسط این کارشناس فروش معتبر نیست. مدیر ارشد باید نگاشت را در صفحه مدیریت نگاشت‌ها اصلاح کند.");
+                    "نگاشت واسط کارشناس فروش در نرم‌افزار مالی انتخاب‌شده معتبر نیست.");
 
             var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
             if (broker == null || broker.DlRef <= 0)
                 throw new InvalidOperationException(
-                    "واسط نگاشت‌شده یا کد تفصیلی فعال آن در نرم‌افزار مقصد پیدا نشد. مدیر ارشد باید نگاشت را بررسی کند.");
+                    "واسط نگاشت‌شده در نرم‌افزار مالی پیدا نشد یا کد تفصیلی فعال ندارد.");
 
             return brokerPartyId;
         }

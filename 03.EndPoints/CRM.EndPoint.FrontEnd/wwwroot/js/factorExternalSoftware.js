@@ -219,27 +219,37 @@ function renderExternalFactorPreview(data, state) {
                     <span class="ex-preview-label">نرم‌افزار مقصد:</span>
                     <strong class="ex-preview-software">${escape(data.softwareTitle)}</strong>
                 </div>
-                <div class="ex-preview-field">
-                    <label for="externalFactorIncludeBroker" class="d-flex align-items-center gap-2 mb-0">
-                        <input id="externalFactorIncludeBroker" class="form-check-input m-0" type="checkbox"
-                               ${state.request.includeBroker ? "checked" : ""}>
-                        <span class="ex-preview-label">ثبت واسط برای این فاکتور</span>
-                    </label>
-                </div>
-                <div class="ex-preview-field">
-                    <span class="ex-preview-label">واسط فروش:</span>
-                    <strong>${data.broker ? `${escape(data.broker.fullName)} (${escape(data.broker.dlCode)})` : "بدون واسط"}</strong>
-                </div>
-                <div class="ex-preview-field">
-                    <span class="ex-preview-label">نرخ پورسانت:</span>
-                    <strong>${data.broker ? `${number(data.broker.commissionRate)}٪` : "—"}</strong>
-                </div>
-                <div class="ex-preview-field">
-                    <span class="ex-preview-label">مبلغ پورسانت:</span>
-                    <strong>${data.broker ? money(data.broker.commission) : "—"}</strong>
-                </div>
             </div>
-            <div class="table-responsive">
+            <section class="external-factor-broker" aria-label="تنظیمات واسط فروش">
+                <label for="externalFactorIncludeBroker" class="external-factor-broker-toggle ${state.request.includeBroker ? "is-active" : ""}">
+                    <input id="externalFactorIncludeBroker" type="checkbox" role="switch"
+                           class="external-factor-broker-input" ${state.request.includeBroker ? "checked" : ""}>
+                    <span class="external-factor-broker-switch" aria-hidden="true"></span>
+                    <span class="external-factor-broker-toggle-text">
+                        <span class="external-factor-broker-title">ثبت واسط برای این فاکتور</span>
+                        <span class="external-factor-broker-hint">برای ثبت واسط فروش و پورسانت این فاکتور در نرم‌افزار مالی، این گزینه را فعال کنید.</span>
+                    </span>
+                    <i class="fas fa-user-tie external-factor-broker-icon" aria-hidden="true"></i>
+                </label>
+                ${state.request.includeBroker && data.broker ? `
+                    <div class="external-factor-broker-details">
+                        <div class="external-factor-broker-detail">
+                            <span>واسط فروش</span>
+                            <strong>${escape(data.broker.fullName)}</strong>
+                            <small>کد تفصیلی: ${escape(data.broker.dlCode)}</small>
+                        </div>
+                        <div class="external-factor-broker-detail">
+                            <span>نرخ پورسانت</span>
+                            <strong>${number(data.broker.commissionRate)}٪</strong>
+                        </div>
+                        <div class="external-factor-broker-detail">
+                            <span>مبلغ پورسانت</span>
+                            <strong>${money(data.broker.commission)}</strong>
+                        </div>
+                    </div>
+                ` : ""}
+            </section>
+                        <div class="table-responsive">
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
