@@ -1155,6 +1155,8 @@
 /* Financial requests: scoped presentation; shared request workflows remain unchanged. */
 :is(#FinancialRequestContentId, #MDRequestAmountContentId) { container:financial-request-list / inline-size; }
 #FinancialRequestTab-pane .financial-request-batch { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:32px; padding:5px 10px; border:1px solid #5811B4; border-radius:6px; background:#5811B4; color:#fff; font:500 12px/1.5 IRANSansMedium; }
+/* Keep the group-payment action at the far end of the request filters row. */
+#cartableWorkspace #FinancialRequestTab-pane .cartable-financial-batch-row { display:flex; align-items:center; flex:0 0 auto; margin-inline-start:auto; }
 :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card { display:grid; grid-template-columns:minmax(0,1fr); gap:7px; padding:8px; border:1px solid #004944; border-radius:10px; background:#E7F3F0; box-shadow:0 2px 5px rgb(33 37 41 / 4%); font:400 12px/1.7 IRANSans; --layer-bg-1:#fff; --layer-bg-2:#fff; --layer-bg-3:#fff; --layer-bg-4:#fff; --layer-bg-5:#fff; }
 :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card:is(.layered-purple-light,.layered-purple) { border-color:#5811B4; background:#F3EDFC; }
 :is(#FinancialRequestContentId, #MDRequestAmountContentId) .layered-card > .layered-card__layer { width:auto; min-width:0; border:1px solid #DDE1E8; border-radius:7px; padding:9px !important; overflow-wrap:anywhere; }
