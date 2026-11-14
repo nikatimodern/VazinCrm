@@ -55,7 +55,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => new { id = x.Id, title = x.Title })
                 .ToListAsync(ct);
 
+            // Older type=1 rows are retained in the database but retired from this workspace.
             var counts = await db.ExternalMappings.AsNoTracking()
+                .Where(x => (int)x.MapType != 1)
                 .GroupBy(x => new { x.ExternalSoftwareId, x.MapType })
                 .Select(x => new { x.Key.ExternalSoftwareId, x.Key.MapType, Count = x.Count() })
                 .ToListAsync(ct);
@@ -305,20 +307,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     {
                         if (!await db.Cashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
                             throw new ArgumentException("تنخواه انتخاب‌شده در CRM پیدا نشد.");
-                        var exists = externalName == "SepidarCash"
-                            ? await targetDb.SepidarCash.AsNoTracking().AnyAsync(x => x.CashId == targetId, ct)
+                        var exists = externalName == nameof(Voucher)
+                            ? await targetDb.Vouchers.AsNoTracking().AnyAsync(x => x.VoucherId == targetId, ct)
                             : await targetDb.PaymentHeaders.AsNoTracking()
                                 .AnyAsync(x => x.PaymentHeaderId == targetId, ct);
                         if (!exists) throw new ArgumentException("معادل تنخواه در نرم‌افزار مالی پیدا نشد.");
-                    }
-                    else if (item.MapType == ExternalMappingTypeEnum.سند_حسابداری)
-                    {
-                        var sourceExists = entityName == nameof(Cash)
-                            ? await db.Cashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct)
-                            : await db.Accountancies.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct);
-                        if (!sourceExists) throw new ArgumentException("سند مبدا در CRM پیدا نشد.");
-                        if (!await targetDb.Vouchers.AsNoTracking().AnyAsync(x => x.VoucherId == targetId, ct))
-                            throw new ArgumentException("سند حسابداری در نرم‌افزار مالی پیدا نشد.");
                     }
                     else
                     {
