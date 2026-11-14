@@ -91,7 +91,7 @@
             return state.types.find(t => Number(t.value) === Number(row.mapType))?.title ||
                 ({ Customer:"مشتری", PreFactor:"پیش‌فاکتور", Factor:"فاکتور",
                     Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری",
-                    AppUser:"واسط / کاربر" }[row.kind] || show(row.kind));
+                    AppUser:"کارشناسان" }[row.kind] || show(row.kind));
         }
 
         function canMap(row) {
