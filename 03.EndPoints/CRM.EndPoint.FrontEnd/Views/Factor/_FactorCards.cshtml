@@ -19,61 +19,36 @@
             <div class="pf-accepted-card__facts" aria-label="مشخصات فاکتور">
                 <div class="pf-accepted-card__fact"><span>سریال فاکتور</span><strong>@item.SerialNumber</strong></div>
                 <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><button type="button" class="pf-accepted-card__amount-link" onclick="showPrefac('@item.PfactorSerialNumber')">@item.PfactorSerialNumber</button></div>
+                @if (item.DealSerialNumber != null) {
+                    <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@item.DealSerialNumber</strong></div>
+                }
                 <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@item.Date</strong></div>
             </div>
             <div class="pf-accepted-card__body">
                 <section class="pf-accepted-card__section pf-accepted-card__customer">
                     <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
-                    <div class="pf-accepted-card__row"><span>شرکت</span><strong>@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</strong></div>
-                    <div class="pf-accepted-card__row"><span>نماینده</span><strong>@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</strong></div>
+                    <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(item.CustomerCode?.ToString() ?? "-")</strong></div>
+                    <div class="pf-accepted-card__row"><span>مشتری</span><strong>@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</strong></div>
                     <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.SelerFullName</strong></div>
-                    <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@item.UserCreator</strong></div>
+
                 </section>
                 <section class="pf-accepted-card__section pf-accepted-card__financial factor-card__financial">
                     <h3><span>اطلاعات مالی</span><i class="fa fa-coins" aria-hidden="true"></i></h3>
                     <div class="pf-accepted-card__row"><span>مبلغ</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:N0}")</bdi> <small>@(item.CurrencyTypeTxt ?? "ريال")</small></strong></div>
-                        @if (Model._Setting?.Sepidar == true) {
-                            <div class="factor-card__external">
-                                <label style="color:gray">فاکتور مالی :</label>
-
-                                @if (item.SnFinancial == null) {
-                                    if (item.status == FactorStatus.ابطال_شده) {
-                                        <label class="fbold">ابطال شده</label>
-                                    } else {
-                                        if (User.IsAdmin() || User.IsFinancial()) {
-                                            <button type="button" class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                انتخاب از سپیدار
-                                            </button>
-                                        } else {
-                                            <span>-</span>
-                                        }
-                                    }
-                                } else {
-                                    if (isAdminOrFinancial) {
-                                        <div class="buttonGroup">
-                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                <i style="font-size:10px" class="fa fa-pencil"></i>
-                                            </button>
-                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                        </div>
-                                    } else {
-                                        @*  <label class="fbold">@item.SnFinancial</label> *@
-                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                    }
-                                }
-
-                            </div>
-                        }
-
-
-                    <div class="factor-card__financial-actions">
+                    @if (Model._Setting?.FactorTowStep == true || isReturnFactor || item.Returned) {
+                        <div class="pf-accepted-card__row factor-card__operation-row">
+                            <span>عملیات</span>
                     <div class="factor-card__status">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
                                         if (isAdminOrFinancial) {
-                                            <button type="button" class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @passType)">
+                                            <button type="button" class="buttonGray" style="font-size: 13px;"
+                                                    disabled="@(!item.HasExternalFinancialMapping)"
+                                                    title="@(item.HasExternalFinancialMapping ? "تأیید فاکتور" : "ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید")"
+                                                    onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
+
                                             <button type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
@@ -120,13 +95,10 @@
                                 }
 
                     </div>
-                        @if (canManageAllocations) {
-                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
-                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
-                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
-                            </button>
-                        }
-                    </div>
+                        </div>
+                    }
+                    <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@(string.IsNullOrWhiteSpace(item.UserCreator) ? "-" : item.UserCreator)</strong></div>
+
                 </section>
             </div>
             <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
@@ -142,6 +114,23 @@
                         </span></button>
                     }
 
+
+                    @if (canManageAllocations) {
+                        <button type="button" class="flex-center" aria-label="مدیریت تخصیص آیتم‌های فروش"
+                                data-title-right="تخصیص‌ها" data-allocation-script="@allocationScript"
+                                style="color:var(--DarkColor);" onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')">
+                            <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                                <i class="fa fa-exchange-alt"></i>
+                            </span>
+                        </button>
+                    }
+
+                    <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
+                            onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                        <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <i class="fa fa-link"></i>
+                        </span>
+                    </button>
 
                     <button type="button" class="flex-center" aria-label="نمایش فاکتور" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="fa fa-eye"></i>

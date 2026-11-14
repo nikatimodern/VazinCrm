@@ -75,6 +75,7 @@ namespace CRM.Core.Domain.Factors.Entities {
         public bool? Export { get; set; }
 
         [NotMapped] public bool Financial { get; set; } = false;
+        [NotMapped] public bool HasExternalFinancialMapping { get; set; }
 
         //public bool? Accepted { get; set; } = false;
 

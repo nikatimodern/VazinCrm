@@ -115,6 +115,8 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ICommandHandler<HandleAccountAccessDeniedCommand, bool>, HandleAccountAccessDeniedCommandHandler>();
         services.AddScoped<ICommandHandler<ToggleAccountLockoutCommand, AccountIdentityResult>, ToggleAccountLockoutCommandHandler>();
         services.AddScoped<IAccountRepository, AccountRepository>();
+        services.AddScoped<IOtpMobileRepository, OtpMobileRepository>();
+        services.AddScoped<IPasswordLockoutRepository, PasswordLockoutRepository>();
         services.AddScoped<IAccountUserRepository, AccountUserRepository>();
         services.AddScoped<IAccountRequestContext, AccountRequestContext>();
         services.AddScoped<IAccountAuthentication, AccountAuthentication>();

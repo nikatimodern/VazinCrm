@@ -11,10 +11,10 @@ public interface IAccountRequestContext
     void SetSession(string key, string value);
     void ClearSession();
 }
-public sealed record AccountSignInResult(bool Succeeded, bool IsLockedOut);
+public sealed record AccountSignInResult(bool Succeeded, bool IsLockedOut, bool RequiresTwoFactor = false);
 public interface IAccountAuthentication
 {
-    Task<AccountSignInResult> PasswordSignInAsync(AppUser user, string password, CancellationToken cancellationToken);
+    Task<AccountSignInResult> CheckPasswordAsync(AppUser user, string password, CancellationToken cancellationToken);
     Task SignInAsync(AppUser user, DateTimeOffset expiresAt, CancellationToken cancellationToken);
     Task SignOutAsync(CancellationToken cancellationToken);
 }

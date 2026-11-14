@@ -63,6 +63,7 @@
         let intervalId;
         let mobileVerified;
         let selectedUserId;
+        let otpVerifyPending = false;
         let otpBtn = document.getElementById("verifyOtpBtn");
         let mobileLoginBtn = document.getElementById("confirmCodeOtpLoginBtn");
 
@@ -109,6 +110,11 @@
                         startOtpTimer();
                     } else {
                         document.getElementById("otpLoginMsg").innerText = data.message;
+                        if (data.retryAfterSeconds > 0) {
+                            mobileVerified = mobile;
+                            sessionStorage.setItem("mobileVerified", JSON.stringify(mobile));
+                            startOtpTimer();
+                        }
                     }
                     mobileLoginBtn.querySelector(".spinner-border").classList.add("d-none");
                     toggleElementsDisabled(mobileLoginBtn, false);
@@ -118,6 +124,8 @@
         window.addEventListener("popstate", (e) => {
             if (!e.state || e.state.step !== "otp") {
                 clearInterval(otpIntervalId);
+                otpTimerVersion++;
+                mobileLoginBtn.disabled = false;
                 document.getElementById("otpLoginMsg").innerText = "";
                 document.getElementById("remainingCodeOtpLoginId").style.display = "none";
 
@@ -131,6 +139,12 @@
 
         window.addEventListener("load", () => {
             if (location.hash === "#otp") {
+                mobileVerified = JSON.parse(sessionStorage.getItem("mobileVerified") || "null");
+                if (!mobileVerified) {
+                    history.replaceState(null, "", "/Account/OtpLogin");
+                    return;
+                }
+                document.getElementById("phoneNumberLoginOtp").innerText = mobileVerified;
                 document.getElementById("otpLoginForm").style.display = "none";
                 document.getElementById("otpSection").style.display = "block";
                 document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
@@ -148,6 +162,8 @@
 
         const otpLoginMsgElm = document.getElementById("otpLoginMsg");
         function verifyOtp() {
+            if (otpVerifyPending || otpBtn.style.display === "none") return;
+            otpVerifyPending = true;
             const inpMobileValue = document.querySelector("input[name='mobile']").value;
             const mobile = inpMobileValue ? "09" + inpMobileValue : JSON.parse(sessionStorage.getItem("mobileVerified"));
             const OtpCode = document.querySelector("input[name='otp']").value;
@@ -175,36 +191,58 @@
                       });
                   } else {
                       otpLoginMsgElm.innerText = data.message;
+                      if (data.retryAfterSeconds > 0 || data.status === 401) startOtpTimer();
                   }
+              }).catch(() => {
+                  otpLoginMsgElm.innerText = "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.";
+              }).finally(() => {
+                  otpVerifyPending = false;
                   otpBtn.querySelector(".spinner-border").classList.add("d-none");
                   toggleElementsDisabled(otpBtn, false);
               });
         }
 
         let otpIntervalId;
+        let otpTimerVersion = 0;
         function startOtpTimer() {
-            otpIntervalId = setInterval(() => {
-                fetch(`/Account/CheckTimerCode?type=@ViewBag.type`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status) {
-                            document.getElementById("remainingSecondsOtpLogin").innerText = data.elsapsTime + " ثانیه";
-                            document.getElementById("resendOtpBtn").style.display = "none";
-                            document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
-                            otpBtn.style.display = "flex";
-                        } else {
-                            clearInterval(otpIntervalId);
-                            document.getElementById("resendOtpBtn").style.display = "flex";
-                            document.getElementById("remainingCodeOtpLoginId").style.display = "none";
-                            otpBtn.style.display = "none";
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err);
-                    });
-            }, 1000);
-        }
+            clearInterval(otpIntervalId);
+            const timerVersion = ++otpTimerVersion;
+            let wasLocked = false;
+            const mobile = mobileVerified || JSON.parse(sessionStorage.getItem("mobileVerified") || "null");
+            if (!mobile) return;
 
+            async function tick() {
+                try {
+                    const response = await fetch(`/Account/CheckTimerCode?type=@ViewBag.type&mobile=${encodeURIComponent(mobile)}`);
+                    const data = await response.json();
+                    if (timerVersion !== otpTimerVersion) return;
+                    if (data.status === true) {
+                        wasLocked = wasLocked || data.isLocked;
+                        document.getElementById("remainingSecondsOtpLogin").innerText = data.elsapsTime + " ثانیه";
+                        document.getElementById("remainingCodeOtpLoginId").style.display = "flex";
+                        document.getElementById("resendOtpBtn").style.display = "none";
+                        mobileLoginBtn.disabled = true;
+                        otpBtn.style.display = data.isLocked ? "none" : "flex";
+                        if (data.isLocked && !otpLoginMsgElm.innerText)
+                            otpLoginMsgElm.innerText = "تلاش‌های ناموفق بیش از حد مجاز؛ پس از پایان زمان کد جدید دریافت کنید.";
+                    } else {
+                        clearInterval(otpIntervalId);
+                        document.getElementById("remainingCodeOtpLoginId").style.display = "none";
+                        otpBtn.style.display = "none";
+                        mobileLoginBtn.disabled = false;
+                        if (wasLocked)
+                            otpLoginMsgElm.innerText = "زمان مسدودیت پایان یافت؛ برای ادامه کد جدید دریافت کنید.";
+                        document.getElementById("resendOtpBtn").style.display =
+                            document.getElementById("otpSection").style.display === "block" ? "flex" : "none";
+                    }
+                } catch (error) {
+                    console.error("OTP timer check failed", error);
+                }
+            }
+
+            tick();
+            otpIntervalId = setInterval(tick, 1000);
+        }
 
         document.getElementById("resendOtpBtn").addEventListener("click", () => {
             mobileVerified = JSON.parse(sessionStorage.getItem("mobileVerified"));
@@ -223,6 +261,7 @@
                         startOtpTimer();
                     } else {
                         document.getElementById("otpLoginMsg").innerText = data.message;
+                        if (data.retryAfterSeconds > 0) startOtpTimer();
                     }
                 });
         });

@@ -145,6 +145,36 @@
             else { error.textContent = "ثبت تأیید انجام نشد. دوباره تلاش کنید؛ در صورت تغییر وضعیت نسخه، صفحه را تازه‌سازی کنید."; error.hidden = false; }
         } finally { busy = false; ack.disabled = false; }
     });
+    function syncMenuVersion(notes) {
+        const latest = notes[0]; // HistoryData is sorted by numeric version, newest first.
+        if (!latest?.version) return;
+        const version = String(latest.version);
+        let publishDate = "";
+        if (latest.publishDate) {
+            const value = String(latest.publishDate);
+            const date = new Date(value.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(value) ? value : value + "Z");
+            if (!Number.isNaN(date.getTime())) {
+                publishDate = date.toLocaleDateString("fa-IR-u-nu-latn", { year: "numeric", month: "2-digit", day: "2-digit" });
+            }
+        }
+
+        document.querySelectorAll("#desktopNavbar .menu-release-notes, #mobileDrawerNavbar .menu-release-notes").forEach(button => {
+            const title = button.querySelector(".menu-item-title > span:first-child");
+            if (title) title.textContent = "نسخه " + version;
+            const subtitle = button.querySelector(".menu-release-date");
+            if (subtitle) subtitle.textContent = publishDate;
+
+            const compact = button.querySelector(".menu-release-compact > span:first-child");
+            if (compact) compact.textContent = version;
+            const compactDate = button.querySelector(".menu-release-compact > small");
+            if (compactDate) compactDate.textContent = publishDate;
+
+            const fullLabel = "نسخه " + version + (publishDate ? " - " + publishDate : "");
+            button.dataset.tooltipLeft = fullLabel;
+            button.setAttribute("aria-label", fullLabel);
+        });
+    }
+
     async function showHistory() {
         if (historyRequest || busy) return;
         const openModal = document.querySelector(".modal.show");
@@ -161,7 +191,10 @@
                 url: "/ReleaseNotes/HistoryData", showLoading: false, showError: false, signal: controller.signal
             });
             if (controller.signal.aborted) return;
-            if (Array.isArray(notes)) show(notes, true, "تغییرات نسخه‌ها", true);
+            if (Array.isArray(notes)) {
+                syncMenuVersion(notes);
+                show(notes, true, "تغییرات نسخه‌ها", true);
+            }
             else {
                 error.textContent = "دریافت تاریخچه تغییرات انجام نشد. دوباره تلاش کنید.";
                 error.hidden = false;

@@ -30,11 +30,16 @@ public sealed class AccountRequestContext(IHttpContextAccessor accessor, SignInM
 }
 public sealed class AccountAuthentication(SignInManager<AppUser> signIn) : IAccountAuthentication
 {
-    public async Task<AccountSignInResult> PasswordSignInAsync(AppUser user, string password, CancellationToken cancellationToken)
+    public async Task<AccountSignInResult> CheckPasswordAsync(AppUser user, string password, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var result = await signIn.PasswordSignInAsync(user, password, false, true);
-        return new(result.Succeeded, result.IsLockedOut);
+        // Validate using Identity's security checks without signing in or touching Identity's failure counter.
+        var result = await signIn.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
+        // Preserve the two-factor requirement enforced by PasswordSignInAsync.
+        var requiresTwoFactor = result.Succeeded
+            && await signIn.IsTwoFactorEnabledAsync(user)
+            && !await signIn.IsTwoFactorClientRememberedAsync(user);
+        return new(result.Succeeded, result.IsLockedOut, requiresTwoFactor);
     }
     public async Task SignInAsync(AppUser user, DateTimeOffset expiresAt, CancellationToken cancellationToken)
     {

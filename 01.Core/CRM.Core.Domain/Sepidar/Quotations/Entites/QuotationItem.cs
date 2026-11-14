@@ -15,6 +15,7 @@ public class QuotationItem {
     public int? TracingRef { get; set; }
     public int StockRef { get; set; }
 
+    [Column(TypeName = "decimal(19,4)")]
     public decimal Quantity { get; set; }
     public decimal? SecondaryQuantity { get; set; }
 
@@ -46,6 +47,7 @@ public class QuotationItem {
 
     public decimal Rate { get; set; }
 
+    [Column(TypeName = "decimal(19,4)")]
     public decimal? UsedQuantity { get; set; }
 
     [MaxLength(255)] 

@@ -12,6 +12,9 @@
             <div class="InfoDataItem_Prefactor pf-accepted-card__content supply-card">
                 <div class="pf-accepted-card__facts">
                     <div class="pf-accepted-card__fact"><span>سریال پیش‌فاکتور</span><strong>@item.SerialNumber</strong></div>
+                    @if (item.DealSerialNumber != null) {
+                        <div class="pf-accepted-card__fact"><span>سریال سفارش</span><strong>@item.DealSerialNumber</strong></div>
+                    }
                     <div class="pf-accepted-card__fact"><span>تاریخ</span><strong>@item.Date</strong></div>
                     <div class="pf-accepted-card__fact">
                         <span>تاریخ تأیید</span><strong>@(string.IsNullOrEmpty(item.AcceptedDateTxt) ? "-" : item.AcceptedDateTxt.Substring(0, 10))</strong>
@@ -20,12 +23,10 @@
                 <div class="pf-accepted-card__body">
                     <section class="pf-accepted-card__section pf-accepted-card__customer">
                         <h3><span>اطلاعات مشتری</span><i class="fa fa-user" aria-hidden="true"></i></h3>
-                        <div class="pf-accepted-card__row">
-                            <span>شرکت</span><strong>@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</strong></div>
-                        <div class="pf-accepted-card__row">
-                            <span>نماینده</span><strong>@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</strong></div>
-                        <div class="pf-accepted-card__row"><span>ثبت شده توسط</span><strong>@item.UserCreator</strong></div>
-                        <div class="pf-accepted-card__row"><span>در اختیار</span><strong>@item.UserTaminTxt</strong></div>
+                        <div class="pf-accepted-card__row"><span>کد مشتری</span><strong>@(item.CustomerEntity?.CustomerCode.ToString() ?? item.CustomerCode?.ToString() ?? "-")</strong></div>
+                        <div class="pf-accepted-card__row"><span>مشتری</span><strong>@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</strong></div>
+                        <div class="pf-accepted-card__row"><span>کارشناس فروش</span><strong>@item.UserCreator</strong></div>
+                        <div class="pf-accepted-card__row"><span>کارشناس تأمین</span><strong>@(string.IsNullOrWhiteSpace(item.UserTaminTxt) ? "-" : item.UserTaminTxt)</strong></div>
                     </section>
                     <section class="pf-accepted-card__section pf-accepted-card__financial">
                         <h3><span>اطلاعات تأمین</span><i class="fa fa-industry" aria-hidden="true"></i></h3>
@@ -43,8 +44,11 @@
                         }
                         <div class="pf-finance-card__controls supply-card__controls">
                             @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
-                                <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-outline-success")" style="min-width: 90px"
+                                <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-success")" style="min-width: 90px"
                                         onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
+                                    @if (!item.SupplyMismatch && !item.NoSupply) {
+                                        <i class="fa fa-check me-1" aria-hidden="true"></i>
+                                    }
                                     بهای تامین
                                 </button>
                                 <button type="button" class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalSetAmount('@item.Id', false)">
@@ -69,7 +73,7 @@
                             </div>
 
                             @if (item.Pftype is (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش or (int)PreFactorEnum.در_انتظار_تایید_مالی or (int)PreFactorEnum.در_انتظار_تولید or (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
-                                <button type="button" style="border-radius:5px;height:fit-content; " class="buttonGreen" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">
+                                <button type="button" class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="showModalCreateOrder(@((int)Model.Setting.SetAmountByRoleType),'@item.Id','@item.CustomerId')">
                                     حواله تولید
                                 </button>
                             }
@@ -101,17 +105,17 @@
                 <div class="pf-accepted-card__actions">
                     <div class="pf-accepted-card__action-list">
 
-                        <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="نمایش پیش فاکتور" data-title-right="نمایش پیش فاکتور" onclick="ShowPreviewPfactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-eye"></i>
                     </span></button>
 
                         @if (item.CustomerId != null) {
-                            <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پروفایل" data-title-right="پروفایل" onclick="openCustomerProfile('@item.CustomerId', '@item.SerialNumber')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                             <i class="mp fa fa-user"></i>
                         </span></button>
                         }
 
-                        <button type="button" class="mp" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        <button type="button" class="flex-center" style="color:var(--DarkColor); border:none;background-color:transparent" aria-label="پیوست ها" data-title-right="پیوست ها" onclick="AttachDoc('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-paperclip"></i>
                     </span></button>
 

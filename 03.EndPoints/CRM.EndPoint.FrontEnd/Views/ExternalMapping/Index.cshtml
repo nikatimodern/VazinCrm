@@ -1,0 +1,127 @@
+@{
+    ViewData["Title"] = "مدیریت نگاشت نرم‌افزارهای خارجی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.10" asp-append-version="true" />
+}
+
+<section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
+    @Html.AntiForgeryToken()
+
+    <header class="lmr-page-heading">
+        <div>
+            <h1>مدیریت نگاشت نرم‌افزارهای خارجی</h1>
+            <p>نگاشت اطلاعات CRM با نرم‌افزارهای مالی</p>
+        </div>
+        <label class="lmr-software">
+            <span>نرم‌افزار خارجی</span>
+            <select id="lmrSoftware" aria-label="انتخاب نرم‌افزار خارجی"></select>
+        </label>
+    </header>
+
+    <nav id="lmrMainTabs" class="lmr-main-tabs" role="tablist" aria-label="بخش‌های مدیریت نگاشت">
+        <button type="button" id="lmrSavedTab" role="tab" data-main-tab="saved" aria-controls="lmrSavedPanel" aria-selected="true" class="is-active">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> نگاشت‌های ثبت‌شده
+        </button>
+        <button type="button" id="lmrProposalTab" role="tab" data-main-tab="proposal" aria-controls="lmrProposalPanel" aria-selected="false">
+            <i class="fas fa-search" aria-hidden="true"></i> بررسی و ثبت نگاشت‌های جدید
+        </button>
+    </nav>
+
+    <section id="lmrSavedPanel" role="tabpanel" aria-labelledby="lmrSavedTab" class="lmr-section lmr-saved-section">
+        <header class="lmr-section-head">
+            <div class="lmr-section-name">
+                <div class="lmr-section-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                <div>
+                    <h2 id="lmrSavedTitle">نگاشت‌های ثبت‌شده</h2>
+                    <p>اطلاعات ذخیره‌شده در CRM</p>
+                </div>
+                <span id="lmrSavedCount" class="lmr-count">—</span>
+            </div>
+            <button id="lmrRefreshSaved" type="button" class="lmr-btn lmr-btn-soft"><i class="fas fa-sync-alt" aria-hidden="true"></i> تازه‌سازی</button>
+        </header>
+
+        <div class="lmr-filterbar">
+            <label class="lmr-field lmr-search"><span>جستجو</span>
+                <input id="lmrSavedSearch" type="search" placeholder="نام، کد مشتری، شماره فاکتور یا پیش‌فاکتور" autocomplete="off" />
+            </label>
+            <label class="lmr-field"><span>نوع نگاشت</span>
+                <select id="lmrSavedType"><option value="">همه انواع</option></select>
+            </label>
+            <label class="lmr-field lmr-size"><span>تعداد</span>
+                <select id="lmrSavedSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
+            </label>
+        </div>
+        <div id="lmrSavedFeedback" class="lmr-feedback" role="status" aria-live="polite"></div>
+        <div id="lmrSavedRecords" class="lmr-record-list" role="list"></div>
+        <footer class="lmr-footer">
+            <span id="lmrSavedPageInfo">—</span>
+            <nav id="lmrSavedPagination" class="lmr-pagination" aria-label="صفحه‌بندی نگاشت‌های ثبت‌شده"></nav>
+        </footer>
+    </section>
+
+    <section id="lmrProposalPanel" role="tabpanel" aria-labelledby="lmrProposalTab" class="lmr-section lmr-proposal-section" hidden>
+        <header class="lmr-section-head">
+            <div class="lmr-section-name">
+                <div class="lmr-section-icon"><i class="fas fa-search" aria-hidden="true"></i></div>
+                <div>
+                    <h2 id="lmrProposalTitle">بررسی و ثبت نگاشت‌های جدید</h2>
+                    <p>پیشنهادهای محاسبه‌شده، بدون ذخیره‌سازی خودکار</p>
+                </div>
+            </div>
+            <button id="lmrCompute" type="button" class="lmr-btn lmr-btn-primary">
+                <i class="fas fa-calculator" aria-hidden="true"></i>
+                <span id="lmrComputeLabel">محاسبه پیشنهادها</span>
+            </button>
+        </header>
+
+        <div id="lmrProposalStats" class="lmr-proposal-stats" hidden>
+            <span>آماده: <strong id="lmrPendingCount">۰</strong></span>
+            <span>تعارض مشتری: <strong id="lmrCustomerConflicts">۰</strong></span>
+            <span>متوقف یا مبهم: <strong id="lmrBlockedCount">۰</strong></span>
+            <span>بدون معادل: <strong id="lmrUnmatchedCount">۰</strong></span>
+        </div>
+
+        <div id="lmrProposalStatusTabs" class="lmr-tabs" role="group" aria-label="وضعیت پیشنهادهای نگاشت">
+            <button type="button" data-status="pending" class="is-active">آماده ثبت</button>
+            <button type="button" data-status="customerConflict">تعارض مشتری</button>
+            <button type="button" data-status="ambiguous">نگاشت مبهم</button>
+            <button type="button" data-status="blocked">متوقف به‌علت مشتری</button>
+            <button type="button" data-status="notMatched">بدون معادل</button>
+        </div>
+
+        <div class="lmr-filterbar">
+            <label class="lmr-field lmr-search"><span>جستجو</span>
+                <input id="lmrProposalSearch" type="search" placeholder="نام مشتری یا شماره پیش‌فاکتور / فاکتور" autocomplete="off" />
+            </label>
+            <label class="lmr-field"><span>نوع نگاشت</span>
+                <select id="lmrProposalType"><option value="">همه انواع</option></select>
+            </label>
+            <label id="lmrProposalReasonBox" class="lmr-field lmr-reason" hidden><span>علت</span>
+                <select id="lmrProposalReason"><option value="">همه علت‌ها</option></select>
+            </label>
+            <label class="lmr-field lmr-size"><span>تعداد</span>
+                <select id="lmrProposalSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
+            </label>
+        </div>
+
+        <div class="lmr-selection-bar" id="lmrSelectionActions" hidden>
+            <label><input id="lmrSelectPage" type="checkbox" /> انتخاب همه موارد نمایش‌داده‌شده</label>
+            <span id="lmrSelectedCount">۰ انتخاب</span>
+            <button id="lmrSaveSelected" type="button" class="lmr-btn lmr-btn-primary" disabled>ثبت انتخاب‌شده‌ها</button>
+        </div>
+
+        <div id="lmrProposalFeedback" class="lmr-feedback" role="status" aria-live="polite"></div>
+        <div id="lmrProposalRecords" class="lmr-record-list" role="list"></div>
+        <footer class="lmr-footer">
+            <span id="lmrProposalPageInfo">—</span>
+            <nav id="lmrProposalPagination" class="lmr-pagination" aria-label="صفحه‌بندی پیشنهادها"></nav>
+        </footer>
+    </section>
+</section>
+
+@section Scripts {
+    <script src="~/js/legacyMappingReport.js?release=7.0.10" asp-append-version="true"></script>
+}
