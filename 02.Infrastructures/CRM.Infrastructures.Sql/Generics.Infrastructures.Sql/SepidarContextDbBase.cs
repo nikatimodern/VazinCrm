@@ -67,6 +67,10 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
         modelBuilder.Entity<SalesInvoiceRecord>().ToTable("Invoice", "SLS");
         modelBuilder.Entity<InvoiceBrokerRecord>().ToTable("InvoiceBroker", "SLS");
+        // Match Sepidar's monetary function inputs/outputs rather than EF's default decimal(18,2).
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.Commission).HasPrecision(19, 4);
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.Rate).HasPrecision(26, 16);
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.CommissionInBaseCurrency).HasPrecision(19, 4);
         modelBuilder.Entity<SalesInvoiceItemRecord>().ToTable("InvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
         modelBuilder.Entity<SepidarConfiguration>().ToTable("Configuration", "FMK");
