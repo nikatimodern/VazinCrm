@@ -1210,6 +1210,21 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    public async Task<SepidarBrokerOptionDto?> GetSepidarBrokerByIdAsync(
+        int id, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == id && x.IsBroker && x.Dl.IsActive)
+            .Select(x => new SepidarBrokerOptionDto {
+                PartyId = x.PartyId,
+                FullName = (x.Name + " " + x.LastName).Trim(),
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
+                CommissionRate = x.CommissionRate
+            })
+            .SingleOrDefaultAsync(ct);
+    }
+
     // The same calculation is used for both preview and final insert.
     // Sepidar stores a percentage on Party and a currency exchange rate on InvoiceBroker.
     private async Task<SepidarInvoiceBrokerPreviewDto> CalculateInvoiceBrokerAsync(
