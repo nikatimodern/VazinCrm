@@ -91,14 +91,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ? (SepidarContextDbBase)sdb : s2Db;
             var entityName = mapType == (int)ExternalMappingTypeEnum.مشتری ? nameof(Customer)
                 : mapType == (int)ExternalMappingTypeEnum.پیش_فاکتور ? nameof(PreFactor)
-                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor) : null;
+                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor)
+                : mapType == (int)ExternalMappingTypeEnum.واسط ? nameof(AppUser) : null;
             if (entityName == null)
                 throw new ArgumentException("نمایش معادل برای این نوع نگاشت هنوز پشتیبانی نمی‌شود.");
 
-            var externalName = entityName == nameof(Customer) ? "Party"
-                : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
+            var externalName = entityName == nameof(Customer) || entityName == nameof(AppUser)
+                ? "Party" : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
             var exists = entityName == nameof(Customer)
                 ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct)
+                : entityName == nameof(AppUser)
+                    ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId
+                        && x.IsBroker && x.Dl.IsActive, ct)
                 : entityName == nameof(PreFactor)
                     ? await sepidar.Quotations.AsNoTracking().AnyAsync(x => x.QuotationId == targetId, ct)
                     : await sepidar.SalesInvoices.AsNoTracking().AnyAsync(x => x.InvoiceId == targetId, ct);
