@@ -18,16 +18,3 @@ public sealed class SepidarInvoiceBrokerPreviewDto : SepidarBrokerOptionDto
     public decimal CommissionInBaseCurrency { get; set; }
 }
 
-public sealed class PrepareExternalBrokerMappingRequest
-{
-    public Guid FactorId { get; set; }
-    public Guid ExternalSoftwareId { get; set; }
-}
-
-public sealed class SaveExternalBrokerMappingRequest
-{
-    public Guid FactorId { get; set; }
-    public Guid ExternalSoftwareId { get; set; }
-    // Null means skip a broker for this invoice; do not remove the salesperson's saved mapping.
-    public int? BrokerPartyId { get; set; }
-}
