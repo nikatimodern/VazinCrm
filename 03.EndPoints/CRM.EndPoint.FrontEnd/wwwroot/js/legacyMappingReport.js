@@ -1029,14 +1029,25 @@
         }
 
 
-        // Manual entry uses the same server-side validation as bulk suggestions.
+        // Manual mappings use two independent, server-backed TomSelect instances.
+        // Every search is constrained by the selected software, entity and map type.
         const manualModal = get("lmrManualModal");
         const manualType = get("lmrManualType");
         const manualCrmSelect = get("lmrManualCrmSelect");
         const manualExternalSelect = get("lmrManualExternalSelect");
+        const manualSelects = { crm: null, external: null };
+        const manualEntityTypes = {
+            0: { crm: ["Cash", "تنخواه‌های CRM"], external: ["PaymentHeader", "اعلامیه‌های پرداخت"] },
+            1: { crm: ["Accountancy", "اسناد مالی CRM"], external: ["Voucher", "اسناد حسابداری"] },
+            2: { crm: ["PreFactor", "پیش‌فاکتورهای CRM"], external: ["Quotation", "پیش‌فاکتورهای مالی"] },
+            3: { crm: ["Factor", "فاکتورهای CRM"], external: ["Invoice", "فاکتورهای مالی"] },
+            4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
+            5: { crm: ["Customer", "مشتریان CRM"], external: ["Party", "اشخاص مالی"] },
+            6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] }
+        };
 
         function manualTypeDetails() {
-            const type = Number(manualType.value);
+            const type = manualType.value === "" ? null : Number(manualType.value);
             get("lmrManualSourceKindBox").hidden = type !== 1;
             get("lmrManualTargetKindBox").hidden = type !== 0;
             return {
@@ -1046,72 +1057,152 @@
             };
         }
 
-        function manualFeedback(message = "", error = false) {
-            const el = get("lmrManualFeedback");
-            el.textContent = message;
-            el.classList.toggle("lmr-error", error);
+        function manualEntityInfo(side) {
+            const type = manualTypeDetails();
+            const item = manualEntityTypes[type.mapType]?.[side];
+            if (!item) return null;
+            if (side === "crm" && type.sourceEntity === "Cash")
+                return ["Cash", "تنخواه‌های CRM"];
+            if (side === "external" && type.targetEntity === "SepidarCash")
+                return ["SepidarCash", "تنخواه‌های سپیدار"];
+            return item;
         }
 
-        function manualSubmitState() {
-            get("lmrManualConfirm").disabled = !state.manualOpen || state.processing ||
-                !manualCrmSelect.value || !validId(manualExternalSelect.value);
-        }
-
-        async function loadManualSide(side) {
-            if (!state.manualOpen || !isActive()) return;
-            const isCrm = side === "crm";
-            const select = isCrm ? manualCrmSelect : manualExternalSelect;
-            const searchInput = get(isCrm ? "lmrManualCrmSearch" : "lmrManualExternalSearch");
-            const request = ++state.manualRequests[side];
-            const softwareId = state.softwareId;
-            const typeDetails = manualTypeDetails();
-            select.replaceChildren(new Option("در حال جستجو…", ""));
-            select.disabled = true;
-            manualSubmitState();
-            try {
-                const result = await sendApiRequest({
-                    url: "/ExternalMapping/GetManualMappingOptions",
-                    params: { softwareId, ...typeDetails, side, search: searchInput.value.trim() },
-                    showLoading: false,
-                    showError: false
-                });
-                if (!state.manualOpen || !isActive() || softwareId !== state.softwareId ||
-                    request !== state.manualRequests[side]) return;
-                select.replaceChildren(new Option("انتخاب کنید", ""));
-                if (!result?.options) {
-                    manualFeedback("دریافت اطلاعات " + (isCrm ? "CRM" : state.softwareTitle) +
-                        " ناموفق بود. دوباره جستجو کنید.", true);
-                    return;
-                }
-                for (const option of result.options) {
-                    const label = (option.title || option.id || "بدون نام") +
-                        (option.detail ? " — " + option.detail : "");
-                    select.add(new Option(label, option.id));
-                }
-                if (!result.options.length)
-                    select.options[0].textContent = "موردی پیدا نشد؛ عبارت دیگری جستجو کنید";
-                else
-                    manualFeedback();
-            } catch {
-                if (state.manualOpen && request === state.manualRequests[side])
-                    manualFeedback("جستجوی اطلاعات انجام نشد؛ دوباره تلاش کنید.", true);
-            } finally {
-                if (state.manualOpen && request === state.manualRequests[side]) {
-                    select.disabled = false;
-                    manualSubmitState();
-                }
+        function updateManualEntityLabels() {
+            for (const side of ["crm", "external"]) {
+                const el = get(side === "crm" ? "lmrManualCrmEntity" : "lmrManualExternalEntity");
+                const info = manualEntityInfo(side);
+                el.textContent = info ? info[1] + " (" + info[0] + ")" : "ابتدا نوع نگاشت را انتخاب کنید";
             }
         }
 
+        function manualFeedback(message = "", error = false) {
+            const element = get("lmrManualFeedback");
+            element.textContent = message;
+            element.classList.toggle("lmr-error", error);
+        }
+
+        function manualValue(side) {
+            return String(manualSelects[side]?.getValue() || "");
+        }
+
+        function manualSubmitState() {
+            const validType = manualType.value !== "" &&
+                Object.hasOwn(manualEntityTypes, Number(manualType.value));
+            get("lmrManualConfirm").disabled = !state.manualOpen || state.processing ||
+                !validType ||
+                !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(manualValue("crm")) ||
+                !validId(manualValue("external"));
+        }
+
+        function destroyManualSelects() {
+            for (const side of ["crm", "external"]) {
+                state.manualRequests[side]++;
+                manualSelects[side]?.destroy();
+                manualSelects[side] = null;
+            }
+        }
+
+        function initManualSide(side) {
+            const element = side === "crm" ? manualCrmSelect : manualExternalSelect;
+            const info = manualEntityInfo(side);
+            if (!info) {
+                element.replaceChildren(new Option("ابتدا نوع نگاشت را انتخاب کنید", ""));
+                element.disabled = true;
+                return;
+            }
+            element.disabled = false;
+            element.replaceChildren(new Option("", ""));
+            const generation = ++state.manualRequests[side];
+            const softwareId = state.softwareId;
+            const type = manualTypeDetails();
+            const entityInfo = info[1] + " (" + info[0] + ")";
+            const isCrm = side === "crm";
+            const instance = new TomSelect(element, {
+                valueField: "id",
+                labelField: "text",
+                searchField: [],
+                sortField: [],
+                maxItems: 1,
+                maxOptions: 40,
+                create: false,
+                preload: false,
+                loadThrottle: 320,
+                placeholder: "نام، شماره یا کد را جستجو کنید",
+                shouldLoad(query) {
+                    return query.trim().length >= 2;
+                },
+                render: {
+                    option(data, escapeOption) {
+                        return '<div class="lmr-remote-option">' +
+                            '<strong dir="auto">' + escapeOption(data.text || "") + '</strong>' +
+                            (data.detail ? '<small>' + escapeOption(data.detail) + '</small>' : "") +
+                            '<span class="lmr-option-entity">' + escapeOption(entityInfo) + '</span>' +
+                            '</div>';
+                    },
+                    item(data, escapeOption) {
+                        return '<div class="lmr-remote-selected" dir="auto">' +
+                            escapeOption(data.text || "") + '</div>';
+                    },
+                    loading() { return '<div class="lmr-remote-note">در حال جستجو…</div>'; },
+                    no_results() { return '<div class="lmr-remote-note">موردی پیدا نشد</div>'; },
+                    not_loading() { return '<div class="lmr-remote-note">حداقل دو حرف یا رقم بنویسید</div>'; }
+                },
+                async load(query, callback) {
+                    const request = ++state.manualRequests[side];
+                    if (!state.manualOpen || !isActive() || manualType.value === "" ||
+                        query.trim().length < 2) {
+                        callback();
+                        return;
+                    }
+                    try {
+                        const result = await sendApiRequest({
+                            url: "/ExternalMapping/GetManualMappingOptions",
+                            params: {
+                                softwareId, ...type, side,
+                                search: query.trim()
+                            },
+                            showLoading: false,
+                            showError: false,
+                            timeout: 30000
+                        });
+                        if (!isActive() || !state.manualOpen || softwareId !== state.softwareId ||
+                            generation > request || request !== state.manualRequests[side] ||
+                            manualSelects[side] !== instance) {
+                            callback();
+                            return;
+                        }
+                        if (!result?.options) {
+                            manualFeedback("جستجوی " + (isCrm ? "CRM" : state.softwareTitle) +
+                                " ناموفق بود؛ دوباره تلاش کنید.", true);
+                            callback();
+                            return;
+                        }
+                        manualFeedback();
+                        callback(result.options.map(option => ({
+                            id: String(option.id),
+                            text: option.title || String(option.id),
+                            detail: option.detail || ""
+                        })));
+                    } catch {
+                        if (state.manualOpen && request === state.manualRequests[side]) {
+                            manualFeedback("دریافت نتایج جستجو انجام نشد.", true);
+                        }
+                        callback();
+                    }
+                },
+                onChange() { manualSubmitState(); }
+            });
+            manualSelects[side] = instance;
+        }
+
         function resetManualOptions() {
-            state.manualRequests.crm++;
-            state.manualRequests.external++;
-            manualCrmSelect.replaceChildren(new Option("انتخاب کنید", ""));
-            manualExternalSelect.replaceChildren(new Option("انتخاب کنید", ""));
+            destroyManualSelects();
+            updateManualEntityLabels();
             manualFeedback();
+            initManualSide("crm");
+            initManualSide("external");
             manualSubmitState();
-            void loadManualSide("crm");
-            void loadManualSide("external");
         }
 
         function closeManualMapping() {
@@ -1119,29 +1210,24 @@
             bootstrap.Modal.getOrCreateInstance(manualModal).hide();
         }
 
-        function openManualMapping(preferredType = null) {
+        function openManualMapping() {
             if (state.processing || !state.manualIds.includes(state.softwareId)) {
                 toastifyError("ثبت دستی برای این نرم‌افزار پشتیبانی نمی‌شود.");
                 return;
             }
-            manualType.replaceChildren();
-            state.types.forEach(item => manualType.add(new Option(item.title, String(item.value))));
-            if (preferredType != null && state.types.some(x => Number(x.value) === preferredType))
-                manualType.value = String(preferredType);
-            else if (state.types.some(x => Number(x.value) === 6))
-                manualType.value = "6";
-            get("lmrManualCrmSearch").value = "";
-            get("lmrManualExternalSearch").value = "";
+            manualType.replaceChildren(new Option("نوع نگاشت را انتخاب کنید", ""));
+            state.types.forEach(item =>
+                manualType.add(new Option(item.title, String(item.value))));
+            manualType.value = "";
             get("lmrManualSourceKind").value = "Accountancy";
             get("lmrManualTargetKind").value = "PaymentHeader";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             state.manualOpen = true;
-            manualTypeDetails();
-            bootstrap.Modal.getOrCreateInstance(manualModal).show();
             resetManualOptions();
+            bootstrap.Modal.getOrCreateInstance(manualModal).show();
         }
 
-        get("lmrManualOpen").addEventListener("click", () => openManualMapping());
+        get("lmrManualOpen").addEventListener("click", openManualMapping);
         get("lmrManualClose").addEventListener("click", closeManualMapping);
         get("lmrManualCancel").addEventListener("click", closeManualMapping);
         manualModal.addEventListener("shown.bs.modal", () => {
@@ -1152,45 +1238,18 @@
         });
         manualModal.addEventListener("hidden.bs.modal", () => {
             state.manualOpen = false;
-            state.manualRequests.crm++;
-            state.manualRequests.external++;
+            destroyManualSelects();
             if (isActive()) get("lmrManualOpen").focus({ preventScroll: true });
         });
         manualType.addEventListener("change", resetManualOptions);
         get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
         get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
-        const refreshManualCrm = debounce(() => {
-            if (state.manualOpen) void loadManualSide("crm");
-        }, 300);
-        const refreshManualExternal = debounce(() => {
-            if (state.manualOpen) void loadManualSide("external");
-        }, 300);
-        get("lmrManualCrmSearch").addEventListener("input", () => {
-            manualCrmSelect.replaceChildren(new Option("در حال جستجو…", ""));
-            manualCrmSelect.disabled = true;
-            state.manualRequests.crm++;
-            manualSubmitState();
-            refreshManualCrm();
-        });
-        get("lmrManualExternalSearch").addEventListener("input", () => {
-            manualExternalSelect.replaceChildren(new Option("در حال جستجو…", ""));
-            manualExternalSelect.disabled = true;
-            state.manualRequests.external++;
-            manualSubmitState();
-            refreshManualExternal();
-        });
-        manualCrmSelect.addEventListener("change", manualSubmitState);
-        manualExternalSelect.addEventListener("change", manualSubmitState);
 
         get("lmrManualConfirm").addEventListener("click", async () => {
-            if (state.processing || !state.manualOpen) return;
-            const entityId = manualCrmSelect.value;
-            const exEntityId = manualExternalSelect.value;
-            if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(entityId) ||
-                !validId(exEntityId)) {
-                manualFeedback("رکورد CRM و معادل معتبر آن را انتخاب کنید.", true);
-                return;
-            }
+            if (state.processing || !state.manualOpen ||
+                get("lmrManualConfirm").disabled) return;
+            const entityId = manualValue("crm");
+            const exEntityId = manualValue("external");
             const values = manualTypeDetails();
             const item = {
                 entityId, mapType: values.mapType, exEntityId,
@@ -1200,7 +1259,7 @@
             const success = await save([item]);
             if (success) closeManualMapping();
             else if (state.manualOpen)
-                manualFeedback("نگاشت ثبت نشد؛ جزئیات خطای نمایش‌داده‌شده را بررسی کنید.", true);
+                manualFeedback("نگاشت ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
             manualSubmitState();
         });
 
