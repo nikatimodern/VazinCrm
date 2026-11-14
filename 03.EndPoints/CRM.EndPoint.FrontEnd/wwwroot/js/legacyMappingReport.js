@@ -1132,6 +1132,8 @@
                 shouldLoad(query) {
                     return query.trim().length >= 2;
                 },
+                // Old remote results must not be mixed with the next search term.
+                onType() { this.clearOptions(); },
                 render: {
                     option(data, escapeOption) {
                         return '<div class="lmr-remote-option">' +
