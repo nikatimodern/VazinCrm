@@ -195,8 +195,8 @@
             if (!side) return "معادل مشخص نیست";
             if (Number(row.mapType) === 5 || Number(row.mapType) === 6)
                 return show(side.customer || side.title);
-            const serial = side.number && side.number !== "-" ? " " + side.number : "";
-            return show(side.title) + serial;
+            // The document number is already displayed on the secondary line.
+            return show(side.title);
         }
 
         function simpleSide(row, side, crm) {
