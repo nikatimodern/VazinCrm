@@ -358,6 +358,15 @@ async function refreshRequestAmountBankAccountOptions() {
         ? context.targetPersonId
         : null;
 
+    // Remove the previous request's choices before fetching, so a failed
+    // refresh cannot expose accounts from another recipient.
+    if (select.tomselect) {
+        select.tomselect.clear(true);
+        select.tomselect.clearOptions();
+    } else {
+        select.replaceChildren();
+    }
+
     // Supplier/customer requests show strictly the accounts linked to their
     // target person. Without a person or linked account, TomSelect is empty.
     // Petty-cash requests keep the cashier account category.
