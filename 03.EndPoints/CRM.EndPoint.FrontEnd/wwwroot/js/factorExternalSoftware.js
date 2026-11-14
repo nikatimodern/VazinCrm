@@ -175,9 +175,6 @@ function renderExternalFactorPreview(data, state) {
         maximumFractionDigits: 4,
     });
     const money = value => `${number(value)} ریال`;
-    const mappedPerson = data.broker || data.brokerHint;
-    const personIsBroker = mappedPerson && mappedPerson.isBroker !== false;
-    const personDlInvalid = mappedPerson && mappedPerson.hasActiveDetailedAccount === false;
 
     const date = preview.invoiceDateText || preview.invoiceDate?.split("T")[0] || "-";
     document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
@@ -230,24 +227,18 @@ function renderExternalFactorPreview(data, state) {
                     <span class="external-factor-broker-switch" aria-hidden="true"></span>
                     <span class="external-factor-broker-toggle-text">
                         <span class="external-factor-broker-title">ثبت واسط برای این فاکتور</span>
-                        <span class="external-factor-broker-person ${mappedPerson ? "has-person" : "no-person"}">
-                            ${mappedPerson ? `
-                                <span>${personIsBroker ? "واسط فروش:" : "شخص نگاشت‌شده:"}</span>
-                                <strong>${escape(mappedPerson.fullName)}</strong>
-                                ${mappedPerson.dlCode ? `<small>کد تفصیلی: ${escape(mappedPerson.dlCode)}</small>` : ""}
-                                ${!personIsBroker
-                                    ? '<small class="external-factor-broker-warning">این شخص در سپیدار به‌عنوان واسط فروش تعریف نشده است.</small>'
-                                    : personDlInvalid
-                                        ? '<small class="external-factor-broker-warning">کد تفصیلی فعال ندارد.</small>'
-                                        : ""}
-                            ` : '<small>واسط مشخص نیست؛ در صورت فعال‌کردن، نگاشت کارشناس بررسی می‌شود.</small>'}
+                        <span class="external-factor-broker-seller">
+                            کارشناس فروش: <strong>${escape(data.salespersonName || "نامشخص")}</strong>
                         </span>
-                        <span class="external-factor-broker-hint">برای ثبت پورسانت این فاکتور، گزینه را فعال کنید.</span>
                     </span>
                     <i class="fas fa-user-tie external-factor-broker-icon" aria-hidden="true"></i>
                 </label>
                 ${state.request.includeBroker && data.broker ? `
                     <div class="external-factor-broker-details">
+                        <div class="external-factor-broker-detail">
+                            <span>واسط سپیدار</span>
+                            <strong>${escape(data.broker.fullName)}</strong>
+                        </div>
                         <div class="external-factor-broker-detail">
                             <span>نرخ پورسانت</span>
                             <strong>${number(data.broker.commissionRate)}٪</strong>
