@@ -244,7 +244,7 @@ function renderExternalFactorPreview(data) {
                     پیش‌فاکتور سپیدار شماره ${escape(preview.quotationNumber)}؛ اطلاعات را بررسی کنید
                 </div>
             </div>
-            <span class="external-mapping-step">مرحله ۱ از ۱</span>
+            <span class="external-mapping-step">مرحله ۲ از ۲</span>
         </div>
         <div class="external-prefactor-preview">
             <div class="ex-preview-summary">
@@ -269,6 +269,18 @@ function renderExternalFactorPreview(data) {
                 <div class="ex-preview-field">
                     <span class="ex-preview-label">نرم‌افزار مقصد:</span>
                     <strong class="ex-preview-software">${escape(data.softwareTitle)}</strong>
+                </div>
+                <div class="ex-preview-field">
+                    <span class="ex-preview-label">واسط فروش:</span>
+                    <strong>${data.broker ? `${escape(data.broker.fullName)} (${escape(data.broker.dlCode)})` : "بدون واسط"}</strong>
+                </div>
+                <div class="ex-preview-field">
+                    <span class="ex-preview-label">نرخ پورسانت:</span>
+                    <strong>${data.broker ? `${number(data.broker.commissionRate)}٪` : "—"}</strong>
+                </div>
+                <div class="ex-preview-field">
+                    <span class="ex-preview-label">مبلغ پورسانت:</span>
+                    <strong>${data.broker ? money(data.broker.commission) : "—"}</strong>
                 </div>
             </div>
             <div class="table-responsive">
@@ -416,7 +428,12 @@ document.addEventListener("click", async event => {
     
     const state = externalFactorExportState;
     if (!state || state.processing) return;
-    
+    if (state.step === "broker") {
+        await confirmExternalFactorBrokerStep(state);
+        return;
+    }
+    if (state.step !== "preview") return;
+
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
         setExternalFactorInvoiceNumberInvalid(true);
@@ -458,6 +475,8 @@ document.addEventListener("click", async event => {
 });
 
 document.addEventListener("hidden.bs.modal", event => {
-    if (event.target.id === "sendFactorToExternalSoftwareModal")
+    if (event.target.id === "sendFactorToExternalSoftwareModal") {
+        document.getElementById("externalFactorBrokerSelect")?.tomselect?.destroy();
         externalFactorExportState = null;
+    }
 });
