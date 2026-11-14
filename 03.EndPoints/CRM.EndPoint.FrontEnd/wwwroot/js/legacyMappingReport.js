@@ -1118,8 +1118,8 @@
         manualModal.addEventListener("click", event => {
             if (event.target === manualModal) closeManualMapping();
         });
-        document.addEventListener("keydown", event => {
-            if (!state.manualOpen) return;
+        manualModal.addEventListener("keydown", event => {
+            if (!state.manualOpen || !isActive()) return;
             if (event.key === "Escape") {
                 event.preventDefault();
                 closeManualMapping();
