@@ -210,17 +210,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .AnyAsync(x => x.Id == request.ExternalSoftwareId, ct))
                 throw new ArgumentException("نرم‌افزار انتخاب‌شده ثبت نشده است.");
 
-            var repeatedSources = request.Items.GroupBy(x => (x.MapType, x.EntityName ?? "", x.EntityId))
-                .Any(x => x.Count() > 1);
-            if (repeatedSources)
-                throw new ArgumentException("برای هر رکورد CRM فقط یک معادل انتخاب کنید.");
-
-            if (request.Items.Any(x => !Enum.IsDefined(typeof(ExternalMappingTypeEnum), x.MapType)
+            if (request.Items.Any(x => x == null
+                || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), x.MapType)
                 || x.EntityId == Guid.Empty
                 || !int.TryParse(x.ExEntityId, out var id) || id <= 0))
                 throw new ArgumentException("نوع نگاشت یا شناسه انتخاب‌شده معتبر نیست.");
-            foreach (var item in request.Items)
-                GetMappingEntityNames(item.MapType, item.EntityName, item.ExEntityName);
+
+            var repeatedSources = request.Items.GroupBy(x => {
+                var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
+                return (x.MapType, pair.Source, x.EntityId);
+            }).Any(x => x.Count() > 1);
+            if (repeatedSources)
+                throw new ArgumentException("برای هر رکورد CRM فقط یک معادل انتخاب کنید.");
 
             var hasCustomer = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.مشتری);
             var hasOther = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
