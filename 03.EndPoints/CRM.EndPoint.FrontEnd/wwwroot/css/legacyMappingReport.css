@@ -198,7 +198,6 @@
     padding:10px 15px;gap:10px;border-color:#e4e8ed;background:#fff;
 }
 .lmr-manual-modal .modal-header { align-items:center; }
-.lmr-manual-modal .modal-footer { justify-content:flex-start; }
 .lmr-manual-modal .modal-header .btn-close { margin:0;padding:8px;flex-shrink:0; }
 .lmr-manual-modal .modal-header h2 { font:700 15px/1.65 IRANSansBold,sans-serif;color:#004944; }
 .lmr-manual-modal .modal-header h2 i { margin-inline-end:5px; }
