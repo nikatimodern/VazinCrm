@@ -217,7 +217,8 @@
             const candidates = crmSide ? row.crmCandidates || [] : row.options || [];
             const chosen = crmSide ? state.crmTargets.get(row.key) || "" : targetValue(row);
             const canChoose = canMap(row);
-            const codeLabel = sideCodeLabel(row, crmSide);
+            const codeLabel = crmSide || [5, 6].includes(Number(row.mapType))
+                ? sideCodeLabel(row, crmSide) : "شناسه";
             const name = (crmSide ? "crm-" : "external-") + row.key;
             return '<div class="lmr-choice-list" role="group" aria-label="' +
                 escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
@@ -390,7 +391,7 @@
                         escape(statusNames[row.status] || row.status) + '</span>' +
                     (row.status === "saved" || row.status === "pending" ? "" :
                         '<span class="lmr-short-reason">' + escape(label) + '</span>') +
-                    (mapped
+                    (mapped && selected
                         ? '<label class="lmr-item-select" title="انتخاب برای ثبت گروهی">' +
                             '<input type="checkbox" data-select-map aria-label="انتخاب برای ثبت گروهی" ' +
                             (state.selected.has(row.key) ? "checked " : "") +
