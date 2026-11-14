@@ -80,9 +80,99 @@ document.addEventListener("click", async event => {
 
 let externalFactorExportState = null;
 
+function renderExternalFactorBrokerStep(state) {
+    state.step = "broker";
+    const info = state.brokerData;
+    const modal = document.getElementById("sendFactorToExternalSoftwareModal");
+    modal.querySelector(".modal-dialog").classList.remove("modal-lg");
+    document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
+        info.externalSoftwareTitle || "نرم‌افزار مالی";
+    document.getElementById("sendFactorToExternalSoftwareSubtitle").textContent = "نرم‌افزار ۱ از ۱";
+
+    const selected = String(state.selectedBrokerPartyId ?? "");
+    const escape = value => escapeHtml(String(value ?? ""));
+    document.getElementById("externalFactorPreviewContent").innerHTML = `
+        <div class="external-mapping-stage-info">
+            <div class="external-mapping-stage-icon"><i class="fas fa-users"></i></div>
+            <div class="external-mapping-stage-content">
+                <div class="external-mapping-stage-title">تطبیق واسط</div>
+                <div class="external-mapping-stage-subtitle">اتصال کارشناس فروش CRM به واسط نرم‌افزار مالی</div>
+            </div>
+            <span class="external-mapping-step">مرحله ۱ از ۲</span>
+        </div>
+        <div class="external-mapping-entity">
+            <span class="external-mapping-label">کارشناس فروش در CRM</span>
+            <span class="external-mapping-entity-name fbold">${escape(info.crmSalespersonName || "—")}</span>
+        </div>
+        <div>
+            <label for="externalFactorBrokerSelect" class="form-label mb-1">واسط معادل در نرم‌افزار مالی (اختیاری)</label>
+            <select id="externalFactorBrokerSelect" class="show-dropdown-arrow">
+                <option value="" ${selected === "" ? "selected" : ""}>بدون واسط — پورسانت این فاکتور ثبت نشود</option>
+                ${(info.brokers ?? []).map(broker => `
+                    <option value="${escape(broker.partyId)}" ${String(broker.partyId) === selected ? "selected" : ""}>
+                        ${escape(broker.dlCode)} - ${escape(broker.fullName)} (${escape(broker.commissionRate)}٪)
+                    </option>
+                `).join("")}
+            </select>
+            <small class="text-muted d-block mt-2">انتخاب «بدون واسط» فقط برای این فاکتور است و نگاشت قبلی را حذف نمی‌کند.</small>
+        </div>
+    `;
+
+    const select = document.getElementById("externalFactorBrokerSelect");
+    new TomSelect(select, {
+        allowEmptyOption: true,
+        placeholder: "جستجو و انتخاب واسط",
+        maxOptions: null,
+        onChange: value => { state.selectedBrokerPartyId = value ? Number(value) : null; }
+    });
+    const button = document.getElementById("confirmSendExternalFactorBtn");
+    button.textContent = "تأیید و ادامه";
+    toggleElementsDisabled(button, false);
+}
+
+async function confirmExternalFactorBrokerStep(state) {
+    const rawValue = document.getElementById("externalFactorBrokerSelect")?.value ?? "";
+    const brokerPartyId = rawValue ? Number(rawValue) : null;
+    if (brokerPartyId !== null && (!Number.isInteger(brokerPartyId) || brokerPartyId <= 0)) {
+        toastifyError("واسط انتخاب‌شده معتبر نیست.");
+        return;
+    }
+    const button = document.getElementById("confirmSendExternalFactorBtn");
+    state.processing = true;
+    toggleElementsDisabled(button, true);
+    try {
+        const saved = await sendApiRequest({
+            url: "/Factor/SaveExternalBrokerMapping",
+            method: "POST",
+            data: { ...state.request, brokerPartyId },
+            successMsg: null,
+        });
+        if (!saved || externalFactorExportState !== state) return;
+        state.selectedBrokerPartyId = brokerPartyId;
+        state.request.brokerPartyId = brokerPartyId;
+
+        const result = await sendApiRequest({
+            url: "/Factor/PrepareExternalFactor",
+            method: "POST",
+            data: state.request,
+            successMsg: null,
+        });
+        if (!result?.preview?.items?.length || externalFactorExportState !== state) return;
+
+        state.step = "preview";
+        document.getElementById("sendFactorToExternalSoftwareModal")
+            .querySelector(".modal-dialog").classList.add("modal-lg");
+        document.getElementById("externalFactorPreviewContent").innerHTML =
+            renderExternalFactorPreview(result);
+        button.textContent = "تأیید و ثبت در نرم‌افزار";
+    } finally {
+        state.processing = false;
+        toggleElementsDisabled(button, false);
+    }
+}
+
 async function sendFactorToExternalSoftware(factorId) {
     if (!factorId) return;
-    
     await showExternalSoftwareModal(factorId, {
         mapType: 3,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
@@ -90,29 +180,44 @@ async function sendFactorToExternalSoftware(factorId) {
                 toastifyError("برای هر انتقال فقط یک نرم‌افزار مقصد انتخاب کنید.");
                 return;
             }
-            
             const request = {
                 factorId: entityIds[0],
                 externalSoftwareId: externalSoftwareIds[0],
+                brokerPartyId: null,
             };
-            
             const result = await sendApiRequest({
-                url: "/Factor/PrepareExternalFactor",
+                url: "/Factor/PrepareExternalBrokerMapping",
                 method: "POST",
                 data: request,
                 successMsg: null,
             });
-            
-            if (!result?.preview?.items?.length) return;
-            
-            externalFactorExportState = { request, processing: false };
-            document.getElementById("externalFactorPreviewContent").innerHTML =
-                renderExternalFactorPreview(result);
+            if (!result?.brokers) return;
+
+            const state = {
+                request,
+                brokerData: result,
+                selectedBrokerPartyId: result.mappedExternalBrokerId ?? null,
+                step: "broker",
+                processing: false,
+            };
+            externalFactorExportState = state;
+            renderExternalFactorBrokerStep(state);
             ModalToggle("chooseExternalSoftwareModal", "hide");
             ModalToggle("sendFactorToExternalSoftwareModal", "show");
         },
     });
 }
+
+document.addEventListener("click", event => {
+    if (!event.target.closest("#backExternalFactorStepBtn")) return;
+    const state = externalFactorExportState;
+    if (!state || state.processing) return;
+    if (state.step === "preview") {
+        renderExternalFactorBrokerStep(state);
+    } else {
+        ModalToggle("sendFactorToExternalSoftwareModal", "hide");
+    }
+});
 
 function renderExternalFactorPreview(data) {
     const preview = data.preview;
