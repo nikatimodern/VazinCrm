@@ -462,19 +462,17 @@ function requestTargetSelect() {
 
 // The option's target kind is generated from RequestAmountTypeEnum on the server.
 function updateRequestAmountTargetField() {
-    const kind = addReqAmountModal.querySelector("#requestAmountTypeId")
-        ?.selectedOptions[0]?.dataset.targetKind || "";
+    const kind = addReqAmountModal.querySelector("#requestAmountTypeId")?.selectedOptions[0]?.dataset.targetKind || "";
     const wrapper = addReqAmountModal.querySelector("#reqAmountTargetPersonWrapper");
     const select = addReqAmountModal.querySelector("#reqAmountTargetPersonId");
     const dropdown = requestTargetSelect();
     const labels = { supplier: "تأمین‌کننده", cashier: "تنخواه‌دار", customer: "مشتری" };
     const hasTarget = Boolean(labels[kind]);
-
+    
     wrapper.classList.toggle("d-none", !hasTarget);
     toggleElementsRequired(select, hasTarget);
-    addReqAmountModal.querySelector("#reqAmountTargetPersonLabel").textContent =
-        hasTarget ? `${labels[kind]}:` : "شخص مقصد:";
-
+    addReqAmountModal.querySelector("#reqAmountTargetPersonLabel").textContent = hasTarget ? `${labels[kind]}:` : "شخص مقصد:";
+    
     if (requestTargetKind !== kind && dropdown) {
         requestTargetKind = kind;
         requestSupplierSummaryToken++;
@@ -499,11 +497,11 @@ async function renderRequestSupplierSummary(supplierId) {
     const token = ++requestSupplierSummaryToken;
     container.replaceChildren();
     if (requestTargetKind !== "supplier" || !supplierId) return;
-
+    
     const summary = await getSupplierFinancialSummary(supplierId);
     if (token !== requestSupplierSummaryToken || requestTargetKind !== "supplier"
         || requestTargetSelect()?.getValue() !== supplierId || !summary) return;
-
+    
     const debt = summary.supplierDebt ?? 0;
     const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
     const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
@@ -524,10 +522,10 @@ async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
     const [suppliersData, cashiersData] = await Promise.all([getSupplyBaseData(), getAllCashiers()]);
     if (!suppliersData || !cashiersData) return;
-
+    
     requestSupplierOptions = suppliersData.suppliers ?? [];
     requestCashierOptions = cashiersData;
-
+    
     new TomSelect("#reqAmountTargetPersonId", {
         options: [],
         placeholder: "انتخاب شخص",
@@ -685,7 +683,7 @@ addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener
     const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
     const orderHeadInput = ohWrapper.querySelector("input");
     const isAdvance = type === 1;
-
+    
     ohWrapper.classList.toggle("d-none", !isAdvance);
     toggleElementsRequired(orderHeadInput, isAdvance);
     if (!isAdvance) {
