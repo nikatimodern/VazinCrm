@@ -612,7 +612,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
                         "شخص " + softwareTitle,
                         x.PartyId.ToString(), x.PartyId.ToString(), "",
-                        null, Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
+                        null, global::CRM.EndPoint.FrontEnd.Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
                         string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}");
             }
 
