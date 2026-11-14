@@ -419,13 +419,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.EntityId).Distinct().ToArray();
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
-            if (userIds.Length > 0)
+            foreach (var batch in userIds.Chunk(350))
             {
+                var ids = batch.Select(x => x.ToString()).ToArray();
                 var users = await userManager.Users.AsNoTracking()
+                    .Where(x => ids.Contains(x.Id))
                     .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName, x.IsEmployee })
                     .ToListAsync(ct);
                 foreach (var x in users)
-                    if (Guid.TryParse(x.Id, out var userId) && userIds.Contains(userId))
+                    if (Guid.TryParse(x.Id, out var userId))
                     {
                         var name = (x.FirstName + " " + x.LastName).Trim();
                         if (string.IsNullOrEmpty(name)) name = x.UserName ?? "کاربر بدون نام";
