@@ -62,7 +62,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             var mapTypes = Enum.GetValues<ExternalMappingTypeEnum>()
                 .Select(x => new {
-                    value = (int)x, title = x.ToString().Replace("_", " "),
+                    value = (int)x, title = x == ExternalMappingTypeEnum.واسط ? "کارشناسان" : x.ToString().Replace("_", " "),
                     saved = counts.Where(c => c.MapType == x).Sum(c => c.Count)
                 }).ToArray();
 
