@@ -60,6 +60,10 @@
             InvoiceQuotationMismatch:["پیش‌فاکتور فاکتور فرق دارد","فاکتور سپیدار به پیش‌فاکتور دیگری مرتبط است."],
             InvoiceMultipleFieldMismatch:["چند اختلاف در فاکتور","مشتری، مبلغ، شماره مالی و سال مالی را بررسی کنید."],
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
+            UserBrokerExactMatch:["تطبیق نام کاربر و واسط","نام کاربر CRM با واسط نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserBrokerMultipleMatches:["چند واسط هم‌نام","چند واسط با همین نام پیدا شده‌اند؛ معادل درست را انتخاب کنید."],
+            UserBrokerNoMatch:["واسط هم‌نام یافت نشد","معادل قطعی پیدا نشده است؛ از ثبت دستی نگاشت استفاده کنید."],
+            UserBrokerAlreadyMapped:["واسط قبلاً نگاشت شده","واسط مشابه در این نرم‌افزار به کاربر دیگری متصل است."],
             ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["نگاشت ذخیره‌شده","این رابطه قبلاً در جدول ExternalMapping ثبت شده است."]
         };
@@ -72,7 +76,9 @@
             proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
             processing: false,
-            deleting: false
+            deleting: false,
+            manualOpen: false,
+            manualRequests: {crm:0, external:0}
         };
 
         function reason(row) {
@@ -83,7 +89,8 @@
         function typeTitle(row) {
             return state.types.find(t => Number(t.value) === Number(row.mapType))?.title ||
                 ({ Customer:"مشتری", PreFactor:"پیش‌فاکتور", Factor:"فاکتور",
-                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری" }[row.kind] || show(row.kind));
+                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری",
+                    AppUser:"واسط / کاربر" }[row.kind] || show(row.kind));
         }
 
         function canMap(row) {
@@ -92,7 +99,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5].includes(Number(row.mapType)) &&
+                [2,3,5,6].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -318,6 +325,7 @@
         function card(row) {
             const title = reason(row);
             const isCustomer = Number(row.mapType) === 5;
+            const isBroker = Number(row.mapType) === 6;
             const left = selectedCrm(row) || {};
             const right = targetPreview(row) || {};
             const mappable = canMap(row);
@@ -344,10 +352,10 @@
                 '</header>'+
                 '<div class="lmr-pair">'+
                     '<div class="lmr-pair-side"><span>CRM</span><strong>'+escape(show(crmName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(leftNum))+'</small></div>'+
+                        '<small>'+(isCustomer ? "کد مشتری " : isBroker ? "نام کاربری " : "شماره ")+escape(show(leftNum))+'</small></div>'+
                     '<span class="lmr-arrows"><i class="fas fa-exchange-alt" aria-hidden="true"></i></span>'+
                     '<div class="lmr-pair-side"><span>'+escape(state.softwareTitle)+'</span><strong>'+escape(show(extName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(rightNum))+'</small></div>'+
+                        '<small>'+(isCustomer ? "کد مشتری " : isBroker ? "شناسه واسط " : "شماره ")+escape(show(rightNum))+'</small></div>'+
                     (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
                         ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
                 '</div>'+
@@ -394,7 +402,7 @@
             get("lmrProposalStats").hidden = !stats;
             if (stats) {
                 get("lmrPendingCount").textContent = format.format(
-                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0));
+                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0) + (stats.pendingUsers || 0));
                 get("lmrCustomerConflicts").textContent = format.format(stats.customerConflicts || 0);
                 get("lmrBlockedCount").textContent = format.format(
                     (stats.blockedDocuments || 0) + (stats.ambiguous || 0));
@@ -412,7 +420,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5]);
+                : new Set([2, 3, 5, 6]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -712,9 +720,7 @@
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...items.filter(x => x.mapType === 5),
-                ...items.filter(x => x.mapType === 2),
-                ...items.filter(x => x.mapType === 3)
+                ...[5, 6, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
                 toastifyError("نوع بعضی از نگاشت‌های انتخاب‌شده قابل ثبت نیست.");
@@ -726,7 +732,7 @@
                 text: "ثبت " + format.format(items.length) + " نگاشت در «" +
                     state.softwareTitle + "» انجام شود؟ " +
                     (items.length > 100 ? "نگاشت‌ها به دسته‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
-                    "مشتری‌ها قبل از پیش‌فاکتورها و فاکتورها ثبت می‌شوند.",
+                    "نگاشت‌ها پس از اعتبارسنجی رابطه دو طرف در CRM ثبت می‌شوند.",
                 icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
             });
             if (!agreed) return;
@@ -742,7 +748,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 2, 3]) {
+                for (const groupType of [5, 6, 4, 0, 1, 2, 3]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -812,7 +818,7 @@
             } else if (savedCount > 0) {
                 feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
                     "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
-            }
+            }            return !failed && savedCount === items.length;
         }
 
         async function preview(row, id) {
