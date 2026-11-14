@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities;
+using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
@@ -18,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
+using CRM.Framework;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -210,48 +216,177 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
+    // FMK.Configuration stores ACC.Account.AccountId and ACC.DL.DLId,
+    // not the hierarchical Moein/DL codes shown in Sepidar's UI.
+    private async Task<int> GetRequiredSepidarSettingIdAsync(string key, CancellationToken ct)
+    {
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == key)
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count != 1)
+            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+
+        if (!int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0)
+            throw new InvalidOperationException($"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
+
+        return id;
+    }
+
+    private async Task<bool> GetRequiredSepidarBooleanSettingAsync(string key, CancellationToken ct)
+    {
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == key)
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count != 1)
+            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+
+        var value = values[0]?.Trim();
+        if (bool.TryParse(value, out var result))
+            return result;
+
+        if (value == "1")
+            return true;
+
+        if (value == "0")
+            return false;
+
+        throw new InvalidOperationException($"مقدار تنظیم «{key}» در سپیدار باید True/False یا 1/0 باشد.");
+    }
+
+    private async Task<int> GetConfiguredAccountIdAsync(string key, CancellationToken ct)
+    {
+        var accountId = await GetRequiredSepidarSettingIdAsync(key, ct);
+        if (!await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException($"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
+
+        return accountId;
+    }
+
+    private async Task<int> GetBankFeeAccountIdAsync(CancellationToken ct)
+    {
+        // BankFeeSlRef is an ACC.Account.AccountId. Older Sepidar installations
+        // can leave this setting empty or zero; keep the original Moein fallback.
+        var values = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => x.Key.Trim() == "BankFeeSlRef")
+            .Select(x => x.Value)
+            .ToListAsync(ct);
+
+        if (values.Count > 1)
+            throw new InvalidOperationException("تنظیم «BankFeeSlRef» در سپیدار بیش از یک بار تعریف شده است.");
+
+        var settingValue = values.SingleOrDefault()?.Trim();
+        if (string.IsNullOrEmpty(settingValue))
+            return await GetAccountIdByMoeinCodeAsync("7704", ct);
+
+        if (!int.TryParse(settingValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var accountId) || accountId < 0)
+            throw new InvalidOperationException("شناسه حساب کارمزد بانکی در تنظیم «BankFeeSlRef» نامعتبر است.");
+
+        if (accountId == 0)
+            return await GetAccountIdByMoeinCodeAsync("7704", ct);
+
+        if (!await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
+            throw new InvalidOperationException($"حساب کارمزد بانکی تنظیم‌شده در سپیدار (شناسه {accountId}) پیدا نشد یا غیرفعال است.");
+
+        return accountId;
+    }
+
+    private async Task<int> GetConfiguredDlIdAsync(string key, CancellationToken ct)
+    {
+        var dlId = await GetRequiredSepidarSettingIdAsync(key, ct);
+
+        if (!await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == dlId && x.IsActive, ct))
+            throw new InvalidOperationException($"تفصیلی معرفی‌شده در تنظیم «{key}» (شناسه {dlId}) در سپیدار پیدا نشد یا غیرفعال است.");
+
+        return dlId;
+    }
+
+    private async Task<int> GetSalesAccountIdAsync(SaleType saleType, CancellationToken ct)
+    {
+        // Prefer the account defined for the selected sale type.
+        // If it is absent or invalid, use the Sepidar configuration setting.
+        // Never silently fall back to a hard-coded Moein code.
+        if (saleType?.PartSalesSLRef is int accountId and > 0 &&
+            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+        {
+            return accountId;
+        }
+
+        var configuredAccountId = await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
+        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == configuredAccountId && x.HasTracking, ct))
+            throw new InvalidOperationException(
+                "حساب فروش کالا در تنظیم «SalesPartSalesSL» نیاز به شماره پیگیری دارد و برای سند فروش قابل استفاده نیست.");
+
+        return configuredAccountId;
+    }
+
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(moeinCode))
-            throw new Exception("کد معین خالی است.");
+            throw new InvalidOperationException("کد معین خالی است.");
 
-        // مثال:
-        // 7704 -> 7 / 7 / 04
+        moeinCode = moeinCode.Trim();
 
-        var parts = new List<string> {
-            moeinCode.Substring(0, 1)
+        // Sepidar stores the lengths of account group, general ledger and subsidiary
+        // segments separately. Read the selected Sepidar database's own settings.
+        string[] lengthKeys = ["CLAccountLength", "GLAccountLength", "SLAccountLength"];
+        var configuredLengths = await sepidarContext.SepidarConfigurations.AsNoTracking()
+            .Where(x => lengthKeys.Contains(x.Key.Trim()))
+            .Select(x => new { x.Key, x.Value })
+            .ToListAsync(cancellationToken);
+
+        int GetRequiredLength(string key)
+        {
+            var matches = configuredLengths
+                .Where(x => x.Key.Trim() == key)
+                .ToList();
+
+            if (matches.Count != 1 ||
+                !int.TryParse(matches[0].Value?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var length) ||
+                length <= 0)
+                throw new InvalidOperationException($"طول کد حساب در تنظیم «{key}» سپیدار پیدا نشد یا نامعتبر است.");
+
+            return length;
+        }
+
+        var groupLength = GetRequiredLength("CLAccountLength");
+        var generalLength = GetRequiredLength("GLAccountLength");
+        var subsidiaryLength = GetRequiredLength("SLAccountLength");
+        var totalLength = checked(groupLength + generalLength + subsidiaryLength);
+
+        if (totalLength > 10)
+            throw new InvalidOperationException("مجموع طول سطوح کد حساب در تنظیمات سپیدار بیشتر از ۱۰ رقم است.");
+
+        if (moeinCode.Length != totalLength || moeinCode.Any(c => c < '0' || c > '9'))
+            throw new InvalidOperationException(
+                $"کد معین «{moeinCode}» باید مطابق تنظیمات سپیدار، {totalLength} رقم باشد (گروه: {groupLength}، کل: {generalLength}، معین: {subsidiaryLength}).");
+
+        var parts = new[] {
+            moeinCode.Substring(0, groupLength),
+            moeinCode.Substring(groupLength, generalLength),
+            moeinCode.Substring(groupLength + generalLength, subsidiaryLength)
         };
 
-        if (moeinCode.Length >= 2)
-            parts.Add(moeinCode.Substring(1, 1));
-
-        if (moeinCode.Length > 2)
-            parts.Add(moeinCode.Substring(2));
-
         var parentId = -5;
-
         foreach (var code in parts)
         {
-            var accounts = await sepidarContext.Accounts
+            var accountIds = await sepidarContext.Accounts.AsNoTracking()
                 .Where(x => x.ParentAccountRef == parentId && x.Code == code)
-                .Select(x => new {
-                    x.AccountId,
-                    x.Code,
-                    x.Title
-                })
+                .Select(x => x.AccountId)
                 .ToListAsync(cancellationToken);
 
-            if (accounts.Count == 0)
-            {
-                throw new Exception($"بخش {code} از کد معین {moeinCode} در سپیدار پیدا نشد. ParentAccountRef = {parentId}");
-            }
+            if (accountIds.Count == 0)
+                throw new InvalidOperationException(
+                    $"بخش «{code}» از کد معین «{moeinCode}» در سپیدار پیدا نشد (ParentAccountRef = {parentId}).");
 
-            if (accounts.Count > 1)
-            {
-                throw new Exception($"برای کد {code} و ParentAccountRef = {parentId} چند حساب پیدا شد.");
-            }
+            if (accountIds.Count > 1)
+                throw new InvalidOperationException(
+                    $"برای بخش «{code}» از کد معین «{moeinCode}» چند حساب در سپیدار پیدا شد.");
 
-            parentId = accounts[0].AccountId;
+            parentId = accountIds[0];
         }
 
         return parentId;
@@ -261,44 +396,47 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     private async Task<int> GetNextIdAsync(string tableName, int incValue = 1, CancellationToken ct = default)
     {
         var connection = sepidarContext.Database.GetDbConnection();
+        var openedHere = connection.State != ConnectionState.Open;
 
-        await using var command = connection.CreateCommand();
+        if (openedHere)
+            await sepidarContext.Database.OpenConnectionAsync(ct);
 
-        command.CommandText = @"
-            DECLARE @Id INT;
-
-            EXEC FMK.spGetNextId
-                @TableName = @TableName,
-                @Id = @Id OUTPUT,
-                @IncValue = @IncValue;
-
-            SELECT @Id;
-        ";
-
-        var tableParameter = command.CreateParameter();
-        tableParameter.ParameterName = "@TableName";
-        tableParameter.Value = tableName;
-
-        var incParameter = command.CreateParameter();
-        incParameter.ParameterName = "@IncValue";
-        incParameter.Value = incValue;
-
-        command.Parameters.Add(tableParameter);
-        command.Parameters.Add(incParameter);
-
-        var transaction = sepidarContext.Database.CurrentTransaction;
-
-        if (transaction != null)
+        try
         {
-            command.Transaction = transaction.GetDbTransaction();
+            await using var command = connection.CreateCommand();
+            command.CommandText = @"
+                DECLARE @Id INT;
+                EXEC FMK.spGetNextId
+                    @TableName = @TableName,
+                    @Id = @Id OUTPUT,
+                    @IncValue = @IncValue;
+                SELECT @Id;
+            ";
+
+            var tableParameter = command.CreateParameter();
+            tableParameter.ParameterName = "@TableName";
+            tableParameter.Value = tableName;
+            command.Parameters.Add(tableParameter);
+
+            var incParameter = command.CreateParameter();
+            incParameter.ParameterName = "@IncValue";
+            incParameter.Value = incValue;
+            command.Parameters.Add(incParameter);
+
+            var transaction = sepidarContext.Database.CurrentTransaction;
+            if (transaction != null)
+                command.Transaction = transaction.GetDbTransaction();
+
+            var result = await command.ExecuteScalarAsync(ct);
+
+            return Convert.ToInt32(result);
         }
-
-        var result = await command.ExecuteScalarAsync(ct);
-
-
-        return Convert.ToInt32(result);
+        finally
+        {
+            if (openedHere)
+                await sepidarContext.Database.CloseConnectionAsync();
+        }
     }
-
 
     private async Task<int> GetBankAccountIdByDlRefAsync(int dlRef, CancellationToken ct = default)
     {
@@ -403,7 +541,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TotalAmountInBaseCurrency = cash.Amount,
 
                 // اگر کارمزد وجود دارد
-                BankFeeSlRef = cash.Fee > 0 ? await GetAccountIdByMoeinCodeAsync("7704", ct) : null
+                BankFeeSlRef = cash.Fee > 0 ? await GetBankFeeAccountIdAsync(ct) : null
             };
 
 
@@ -415,12 +553,15 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             sepidarContext.PaymentHeaders.Add(paymentHeader);
             await sepidarContext.SaveChangesAsync(ct);
 
-            // Add Voucher & VoucherItem
-            var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
-            paymentHeader.Voucher = voucher;
-            paymentHeader.Version = 2;
+            // The payment document is always saved; its accounting voucher is optional.
+            if (await GetRequiredSepidarBooleanSettingAsync("PaymentAutoVoucher", ct))
+            {
+                var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
+                paymentHeader.Voucher = voucher;
+                paymentHeader.Version = 2;
+                await sepidarContext.SaveChangesAsync(ct);
+            }
 
-            await sepidarContext.SaveChangesAsync(ct);
             await trans.CommitAsync(ct);
 
             return (nameof(PaymentHeader), paymentHeader.PaymentHeaderId.ToString());
@@ -606,7 +747,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
                     RowNumber = voucherItems.Count + 1,
 
-                    AccountSLRef = await GetAccountIdByMoeinCodeAsync("7704", ct),
+                    AccountSLRef = await GetBankFeeAccountIdAsync(ct),
 
                     DLRef = null,
 
@@ -636,7 +777,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Row 2 - بستانکار: حساب بانکی
             // =========================================================
 
-            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // تفاوت بین دو فانکشن مشترک
+            var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1002", ct); // PettyCashSL در تنظیمات فعلی خالی است؛ حفظ کد قبلی
             var creditItem = new VoucherItem {
                 VoucherItemId = firstVoucherItemId + (cash.Fee > 0 ? 2 : 1),
                 VoucherRef = voucher.VoucherId,
@@ -834,7 +975,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
         var bankAccount = await GetBankAccountByIdAsync(ct, paymentDraft.BankAccountRef.Value);
 
-        var bankAccountSlRef = await GetAccountIdByMoeinCodeAsync("1001", ct);
+        var bankAccountSlRef = await GetConfiguredAccountIdAsync("BankAmountAccount", ct);
 
         var bankDl = await GetDlByIdAsync(bankAccount.DlRef, ct);
 
@@ -1031,14 +1172,14 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     //--------------------------------------------------------- QUOTATION ---------------------------------------------------------
 
-    public async Task<Quotation> GetQuotationAsync(int id ,CancellationToken ct = default)
+    public async Task<Quotation> GetQuotationAsync(int id, CancellationToken ct = default)
     {
         return await sepidarContext.Quotations
             .AsNoTracking()
             .Where(x => x.QuotationId == id)
             .SingleOrDefaultAsync(ct);
     }
-    
+
     public async Task<List<SepidarPartyDto>> GetSepidarCustomersAsync(CancellationToken ct = default)
     {
         return await sepidarContext.Parties
@@ -1127,6 +1268,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 SaleTypeId = x.SaleTypeId,
                 Number = x.Number,
                 Title = TextService.NormalizePersianText(x.Title),
+                PartSalesSLRef = x.PartSalesSLRef,
+                ServiceSalesSLRef = x.ServiceSalesSLRef,
+                PartSalesReturnSLRef = x.PartSalesReturnSLRef,
+                ServiceSalesReturnSLRef = x.ServiceSalesReturnSLRef,
+                PartSalesDiscountSLRef = x.PartSalesDiscountSLRef,
+                ServiceSalesDiscountSLRef = x.ServiceSalesDiscountSLRef,
+                SalesAdditionSLRef = x.SalesAdditionSLRef,
             })
             .SingleOrDefaultAsync(ct);
     }
@@ -1338,6 +1486,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         }
     }
 
+
     private async Task<List<QuotationItem>> GenerateQuotationItemsAsync(int quotationId, List<SepidarQuotationItemRequest> items,
         CancellationToken ct = default)
     {
@@ -1445,6 +1594,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.QuotationId == id),
 
+            nameof(Invoice) => await sepidarContext.SalesInvoices
+                .AsNoTracking()
+                .AnyAsync(x => x.InvoiceId == id),
+
             _ => null
         };
     }
@@ -1472,7 +1625,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (validStockIds.Count != selectedStockIds.Count)
             throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
 
-        await AddItamAsync(request, ct);
+        await AddItemAsync(request, ct);
     }
 
     private async Task CheckItemCodeAsync(string code, CancellationToken ct = default)
@@ -1486,7 +1639,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"کد محصول {code} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task AddItamAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
+    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -1565,5 +1718,829 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
 
         return lastCode;
+    }
+
+
+    //--------------------------------------------------------- Invoice ---------------------------------------------------------
+
+    // Reuse the selected Sepidar service/context for all readable preview references.
+    // Item and stock lookups include historical (possibly inactive) records because
+    // the exported invoice must use exactly the entities stored on the quotation.
+    public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(SepidarInvoiceExportPreview preview,
+        CancellationToken ct = default)
+    {
+        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
+                        ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
+
+        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
+                       ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
+        preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
+            ? customer.FullName
+            : $"{customer.DlCode} - {customer.FullName}";
+
+        var saleType = (await GetSaleTypes(ct))
+                       .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
+                       ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
+        preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
+
+        var itemIds = preview.Items.Select(x => x.ItemRef).Distinct().ToArray();
+        var stockIds = preview.Items.Select(x => x.StockRef).Distinct().ToArray();
+
+        var items = await sepidarContext.Items.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemID))
+            .Select(x => new { x.ItemID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.ItemID, ct);
+
+        var stocks = await sepidarContext.Stocks.AsNoTracking()
+            .Where(x => stockIds.Contains(x.StockID))
+            .Select(x => new { x.StockID, x.Code, x.Title })
+            .ToDictionaryAsync(x => x.StockID, ct);
+
+        foreach (var line in preview.Items)
+        {
+            if (!items.TryGetValue(line.ItemRef, out var item))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: کالای متصل به پیش‌فاکتور سپیدار ({line.ItemRef}) پیدا نشد.");
+            if (!stocks.TryGetValue(line.StockRef, out var stock))
+                throw new InvalidOperationException(
+                    $"ردیف {line.RowId}: انبار متصل به پیش‌فاکتور سپیدار ({line.StockRef}) پیدا نشد.");
+
+            line.ItemTitle = $"{item.Code} - {TextService.NormalizePersianText(item.Title)}";
+            line.StockTitle = $"{stock.Code} - {TextService.NormalizePersianText(stock.Title)}";
+        }
+
+        return preview;
+    }
+
+
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int? requestedInvoiceNumber = null,
+        CancellationToken ct = default)
+    {
+        if (preview?.Items == null || preview.Items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+        if (!factor.DateMiladi.HasValue)
+            throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
+
+        var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
+                        ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
+
+        if (quotation.FiscalYearRef != preview.FiscalYearRef)
+            throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        var invoiceDate = factor.DateMiladi.Value;
+        var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
+        if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date || invoiceDate.Date > fiscalYear.EndDate.Date)
+            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+
+        await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        try
+        {
+            // Serialize CRM exports, including inventory numbers and stock checks, per Sepidar database.
+            await AcquireSepidarInvoiceExportLockAsync(ct); // جلوگیری از ثبت همزمان توسط مسیر خروجی CRM
+
+            // Read Sepidar behavior flags by configuration key, not ConfigurationID.
+            var issueInventoryDelivery = await GetRequiredSepidarBooleanSettingAsync("SalesAutomaticallyIssueInventoryDelivery", ct);
+            var controlSaleStock = await GetRequiredSepidarBooleanSettingAsync("SaleControlStockQuantiy", ct);
+            var issueSalesVoucher = await GetRequiredSepidarBooleanSettingAsync("SalesInvoiceAutomaticVoucher", ct);
+
+            var invoiceNumber = await ResolveInvoiceNumberAsync(preview.FiscalYearRef, requestedInvoiceNumber, ct);
+            var invoiceId = await GetNextIdAsync("SLS.Invoice", ct: ct);
+            var now = DateTime.Now;
+
+            var invoice = new SalesInvoiceRecord {
+                InvoiceId = invoiceId,
+                QuotationRef = quotation.QuotationId,
+                CustomerPartyRef = quotation.CustomerPartyRef,
+                CustomerRealName = quotation.CustomerRealName,
+                CustomerRealName_En = quotation.CustomerRealName_En,
+                SaleTypeRef = quotation.SaleTypeRef,
+                PartyAddressRef = quotation.PartyAddressRef,
+                Number = invoiceNumber,
+                Date = invoiceDate,
+                CurrencyRef = quotation.CurrencyRef,
+                SLRef = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct), // حسابهاي دريافتني تجاري
+                DeliveryLocationRef = quotation.DeliveryLocationRef,
+                State = 1, // ثبت: 1 | ابطال شده: 2
+                Price = preview.Price,
+                PriceInBaseCurrency = preview.Price,
+                Discount = preview.Discount,
+                DiscountInBaseCurrency = preview.Discount,
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = preview.Tax,
+                TaxInBaseCurrency = preview.Tax,
+                Duty = 0,
+                DutyInBaseCurrency = 0,
+                NetPriceInBaseCurrency = preview.NetPrice,
+                Rate = quotation.Rate,
+                Version = 1,
+                Creator = 1,
+                CreationDate = now,
+                LastModifier = 1,
+                LastModificationDate = now,
+                FiscalYearRef = quotation.FiscalYearRef,
+                VoucherRef = null, // Set after posting the sales accounting voucher.
+                BaseOnInventoryDelivery = false,
+                OrderRef = null,
+                ShouldControlCustomerCredit = true,
+                Guid = null,
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+                AgreementRef = null,
+                TaxPayerBillIssueDateTime = invoiceDate,
+                SettlementType = 1, // نوع تسویه: 1: نقدی | 2: نسیه | 3: نقدی/نسیه
+                Description = null,
+                SignatureRef = null
+            };
+
+            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
+            var stockCodes = await GetInventoryStockCodesAsync(invoice.InvoiceItems, ct);
+            var itemCodes = await GetInventoryItemCodesAsync(invoice.InvoiceItems, ct);
+
+            // Lock and recalculate affected inventory rows before writing either document.
+            var summaryTable = CreateInventorySummaryTable(invoice.InvoiceItems, invoice.FiscalYearRef); // آماده‌سازی فهرست کالاها و انبارها
+            await LockInventoryStockSummaryAsync(summaryTable, ct); // قفل‌گذاری و آماده‌سازی رکوردهای موجودی
+            await UpdateInventoryStockSummaryAsync(summaryTable, ct); // محاسبه مجدد موجودی قبل از ثبت
+            var balancesBefore = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct); // خواندن موجودی فعلی
+            if (controlSaleStock)
+                ValidateInventoryAvailability(invoice.InvoiceItems, balancesBefore, stockCodes, itemCodes); // کنترل موجودی در صورت فعال بودن تنظیم
+
+            // The quotation item tracks the cumulative quantity already invoiced.
+            // Both this update and the invoice/delivery inserts share one SQL transaction.
+            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور
+
+            sepidarContext.SalesInvoices.Add(invoice);
+            await sepidarContext.SaveChangesAsync(ct);
+
+            // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
+            if (issueInventoryDelivery)
+                await AddInventoryDeliveryAsync(invoice, stockCodes, ct); // ثبت خروج انبار در صورت فعال بودن تنظیم
+
+            // Always refresh the summary: even without delivery, an invoice changes undelivered sale quantities.
+            await UpdateInventoryStockSummaryAsync(summaryTable, ct);
+
+            if (issueInventoryDelivery)
+            {
+                var balancesAfter = await ReadInventoryStockBalancesAsync(invoice.InvoiceItems, invoice.FiscalYearRef, ct);
+                ValidateInventoryMovement(invoice.InvoiceItems, balancesBefore, balancesAfter, stockCodes, itemCodes, controlSaleStock);
+            }
+
+            // The sales voucher is optional; all enabled documents share the invoice SQL transaction.
+            if (issueSalesVoucher)
+            {
+                var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct); // سند حسابداری فروش
+                sepidarContext.Vouchers.Add(voucher);
+                await sepidarContext.SaveChangesAsync(ct);
+
+                // Set the invoice FK only after the voucher exists in SQL Server.
+                invoice.VoucherRef = voucher.VoucherId;
+                invoice.Version = 2;
+                await sepidarContext.SaveChangesAsync(ct);
+            }
+
+            await transaction.CommitAsync(ct);
+            return invoiceId;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    private const string SalesInvoiceIssuerEntityName =
+        "SG.Sales.InvoiceManagement.Common.DsInvoice, " +
+        "SG.Sales.InvoiceManagement.Common, " +
+        "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+
+    private async Task<Voucher> AddSalesInvoiceVoucherAsync(SalesInvoiceRecord invoice, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("سند حسابداری فروش باید داخل تراکنش فاکتور ثبت شود.");
+
+        if (invoice.VoucherRef.HasValue)
+            throw new InvalidOperationException("برای این فاکتور قبلاً سند حسابداری ثبت شده است.");
+
+        // Standard domestic invoice: one receivable debit, sales credit, optional VAT credit.
+        // Special postings (such as account 843/924 in some native Sepidar vouchers)
+        // need a confirmed business rule and must not be inferred from the invoice total.
+        if (invoice.Addition != 0 || invoice.Duty != 0)
+            throw new InvalidOperationException("ثبت سند حسابداری فاکتور با اضافات یا عوارض نیاز به تنظیم حساب‌های مربوطه دارد.");
+
+        var saleAmount = invoice.Price - invoice.Discount;
+        var taxAmount = invoice.Tax;
+        var netAmount = invoice.NetPriceInBaseCurrency;
+
+        if (saleAmount <= 0 || taxAmount < 0 || netAmount <= 0 || saleAmount + taxAmount != netAmount)
+            throw new InvalidOperationException("مبالغ فروش، مالیات و مبلغ نهایی فاکتور برای صدور سند حسابداری تراز نیستند.");
+
+        var customer = await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == invoice.CustomerPartyRef)
+            .Select(x => new { x.DLRef })
+            .SingleOrDefaultAsync(ct);
+        if (customer is null || customer.DLRef <= 0 ||
+            !await sepidarContext.DLs.AsNoTracking().AnyAsync(x => x.DLId == customer.DLRef && x.IsActive, ct))
+            throw new InvalidOperationException("حساب تفصیلی فعال مشتری برای سند فروش در سپیدار پیدا نشد.");
+
+        var saleType = await GetSaleTypeByIdAsync(invoice.SaleTypeRef, ct);
+        var receivableAccountId = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct);
+        var salesAccountId = await GetSalesAccountIdAsync(saleType, ct);
+        int? taxAccountId = taxAmount > 0
+            ? await GetConfiguredAccountIdAsync("TaxPayableSL", ct)
+            : null;
+
+        var accountIds = new[] { receivableAccountId, salesAccountId }
+            .Concat(taxAccountId.HasValue ? new[] { taxAccountId.Value } : Array.Empty<int>())
+            .ToArray();
+        var accountStates = await sepidarContext.Accounts.AsNoTracking()
+            .Where(x => accountIds.Contains(x.AccountId))
+            .Select(x => new { x.AccountId, x.IsActive, x.HasTracking })
+            .ToListAsync(ct);
+
+        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
+            throw new InvalidOperationException("یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
+
+        int? taxDlRef = taxAccountId.HasValue
+            ? await GetConfiguredDlIdAsync("ValueAddedTaxDL", ct)
+            : null;
+
+        var baseDescription =
+            $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType?.Title ?? "نامشخص"}";
+        var now = DateTime.Now;
+        var voucherNumber = await GetNextVoucherNumberAsync(invoice.FiscalYearRef, ct);
+        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucher = new Voucher {
+            VoucherId = voucherId,
+            Number = voucherNumber,
+            Date = invoice.Date,
+            ReferenceNumber = voucherNumber,
+            SecondaryNumber = null,
+            State = 1,
+            Type = 2,
+            FiscalYearRef = invoice.FiscalYearRef,
+            Description = baseDescription[..Math.Min(baseDescription.Length, 250)],
+            Description_En = baseDescription[..Math.Min(baseDescription.Length, 250)],
+            Version = 1,
+            Creator = invoice.Creator,
+            CreationDate = now,
+            LastModifier = invoice.LastModifier,
+            LastModificationDate = now,
+            DailyNumber = await GetNextVoucherDailyNumberAsync(invoice.Date, invoice.FiscalYearRef, ct),
+            IssuerSystem = 0, // Observed in native invoice accounting vouchers.
+            IsMerged = false,
+            MergedIssuerSystem = null
+        };
+
+        var customerDescription = baseDescription;
+        var salesDescription = $"{baseDescription} به {invoice.CustomerRealName}".Trim();
+        customerDescription = customerDescription[..Math.Min(customerDescription.Length, 250)];
+        salesDescription = salesDescription[..Math.Min(salesDescription.Length, 250)];
+
+        var items = new List<VoucherItem>();
+        var rowCount = taxAccountId.HasValue ? 3 : 2;
+        var lastVoucherItemId = await GetNextIdAsync("ACC.VoucherItem", rowCount, ct);
+        var firstVoucherItemId = lastVoucherItemId - rowCount + 1;
+
+        // Existing GetVoucherItemDlRefAsync respects the account's HasDL setting.
+        var customerDlRef = await GetVoucherItemDlRefAsync(receivableAccountId, customer.DLRef, ct);
+        if (!customerDlRef.HasValue)
+            throw new InvalidOperationException("حساب دریافتنی فروش باید دارای تفصیلی مشتری باشد.");
+
+        void AddRow(int accountSlRef, int? dlRef, decimal debit, decimal credit, string description)
+        {
+            items.Add(new VoucherItem {
+                VoucherItemId = firstVoucherItemId + items.Count,
+                VoucherRef = voucherId,
+                RowNumber = items.Count + 1,
+                AccountSLRef = accountSlRef,
+                DLRef = dlRef,
+                Debit = debit,
+                Credit = credit,
+                CurrencyRef = null,
+                CurrencyRate = null,
+                CurrencyDebit = null,
+                CurrencyCredit = null,
+                TrackingNumber = null,
+                TrackingDate = null,
+                IssuerEntityName = SalesInvoiceIssuerEntityName,
+                IssuerEntityRef = invoice.InvoiceId,
+                Description = description,
+                Description_En = description,
+                Version = 1
+            });
+        }
+
+        AddRow(receivableAccountId, customerDlRef, netAmount, 0m, customerDescription);
+        var salesDlRef = await GetVoucherItemDlRefAsync(salesAccountId, customer.DLRef, ct);
+        AddRow(salesAccountId, salesDlRef, 0m, saleAmount, salesDescription);
+
+        if (taxAccountId.HasValue)
+        {
+            var vatDlRef = await GetVoucherItemDlRefAsync(taxAccountId.Value, taxDlRef!.Value, ct);
+            if (!vatDlRef.HasValue)
+                throw new InvalidOperationException("حساب مالیات فروش باید تفصیلی اداره مالیاتی داشته باشد.");
+            AddRow(taxAccountId.Value, vatDlRef, 0m, taxAmount, salesDescription);
+        }
+
+        if (items.Sum(x => x.Debit ?? 0m) != items.Sum(x => x.Credit ?? 0m))
+            throw new InvalidOperationException("سند حسابداری فاکتور تراز نیست.");
+
+        voucher.VoucherItems = items;
+        return voucher;
+    }
+
+    private async Task UpdateQuotationUsedQuantitiesAsync(int quotationId, ICollection<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
+
+        if (invoiceItems.Count == 0 || invoiceItems.Any(x => !x.QuotationItemRef.HasValue || x.Quantity <= 0))
+            throw new InvalidOperationException("ردیف‌های فاکتور باید مقدار معتبر و ردیف پیش‌فاکتور مرتبط داشته باشند.");
+
+        var quantities = invoiceItems
+            .GroupBy(x => x.QuotationItemRef!.Value)
+            .ToDictionary(x => x.Key, x => x.Sum(item => item.Quantity));
+        var quotationItemIds = quantities.Keys.ToArray();
+
+        var quotationItems = await sepidarContext.QuotationItems
+            .Where(x => x.QuotationRef == quotationId && quotationItemIds.Contains(x.QuotationItemID))
+            .ToListAsync(ct);
+
+        if (quotationItems.Count != quantities.Count)
+            throw new InvalidOperationException("بعضی از ردیف‌های فاکتور به پیش‌فاکتور سپیدار انتخاب‌شده تعلق ندارند.");
+
+        var quotationItemsById = quotationItems.ToDictionary(x => x.QuotationItemID);
+        foreach (var invoiceItem in invoiceItems)
+        {
+            var quotationItem = quotationItemsById[invoiceItem.QuotationItemRef!.Value];
+            if (quotationItem.ItemRef != invoiceItem.ItemRef || quotationItem.StockRef != invoiceItem.StockRef)
+                throw new InvalidOperationException($"ردیف {invoiceItem.RowID}: کالا یا انبار با پیش‌فاکتور سپیدار مطابقت ندارد.");
+        }
+
+        foreach (var quotationItem in quotationItems)
+        {
+            var used = quotationItem.UsedQuantity ?? 0m;
+            var added = quantities[quotationItem.QuotationItemID];
+            // The CRM invoice may legitimately exceed the quotation's quantity.
+            // UsedQuantity is the cumulative invoiced quantity, not a cap.
+            if (used < 0m)
+                throw new InvalidOperationException($"ردیف {quotationItem.RowID}: مقدار مصرف‌شده پیش‌فاکتور سپیدار نامعتبر است.");
+
+            quotationItem.UsedQuantity = checked(used + added);
+        }
+
+        // The caller saves these tracked changes together with the new invoice.
+    }
+
+    // For a manual number, verify uniqueness inside the invoice/delivery transaction.
+    // The serializable transaction and CRM export application lock protect cooperating exports.
+    private async Task<int> ResolveInvoiceNumberAsync(
+        int fiscalYearId, int? requestedInvoiceNumber, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
+
+        if (!requestedInvoiceNumber.HasValue)
+            return await GetNextInvoiceNumberAsync(fiscalYearId, ct);
+
+        if (requestedInvoiceNumber.Value <= 0)
+            throw new InvalidOperationException("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+        if (!await IsInvoiceNumberAvailableForFiscalYearAsync(fiscalYearId, requestedInvoiceNumber.Value, ct))
+            throw new InvalidOperationException(
+                $"شماره فاکتور {requestedInvoiceNumber.Value} قبلاً در این سال مالی سپیدار ثبت شده است.");
+
+        return requestedInvoiceNumber.Value;
+    }
+
+    // Used only to provide early feedback in preview. Registration always rechecks.
+    public async Task<bool> IsInvoiceNumberAvailableAsync(
+        int quotationId, int requestedInvoiceNumber, CancellationToken ct = default)
+    {
+        if (requestedInvoiceNumber <= 0)
+            throw new InvalidOperationException("شماره فاکتور سپیدار باید عدد صحیح بزرگ‌تر از صفر باشد.");
+
+        var fiscalYearRef = await sepidarContext.Quotations.AsNoTracking()
+            .Where(x => x.QuotationId == quotationId)
+            .Select(x => (int?)x.FiscalYearRef)
+            .SingleOrDefaultAsync(ct);
+
+        if (!fiscalYearRef.HasValue)
+            throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
+
+        return await IsInvoiceNumberAvailableForFiscalYearAsync(
+            fiscalYearRef.Value, requestedInvoiceNumber, ct);
+    }
+
+    private async Task<bool> IsInvoiceNumberAvailableForFiscalYearAsync(
+        int fiscalYearId, int requestedInvoiceNumber, CancellationToken ct)
+        => !await sepidarContext.SalesInvoices.AsNoTracking()
+            .AnyAsync(x => x.FiscalYearRef == fiscalYearId && x.Number == requestedInvoiceNumber, ct);
+
+    private async Task<int> GetNextInvoiceNumberAsync(int fiscalYearId, CancellationToken ct = default)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("شماره‌گذاری فاکتور باید داخل تراکنش انجام شود.");
+
+        var lastNumber = await sepidarContext.SalesInvoices.AsNoTracking()
+            .Where(x => x.FiscalYearRef == fiscalYearId)
+            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
+
+        return checked(lastNumber + 1);
+    }
+
+
+    private readonly record struct InventoryStockKey(int StockRef, int ItemRef, int? TracingRef);
+
+    private readonly record struct InventoryStockBalance(decimal PhysicalQuantity, decimal UndeliveredSaleQuantity);
+
+    private static string FormatInventoryQuantity(decimal value)
+        => value.ToString("#,0.####", CultureInfo.InvariantCulture);
+
+    private async Task<Dictionary<int, int>> GetInventoryStockCodesAsync(
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    {
+        var stockRefs = invoiceItems.Select(x => x.StockRef).Distinct().ToArray();
+        var stockCodes = await sepidarContext.Stocks.AsNoTracking()
+            .Where(x => stockRefs.Contains(x.StockID))
+            .ToDictionaryAsync(x => x.StockID, x => x.Code, ct);
+
+        if (stockCodes.Count != stockRefs.Length)
+            throw new InvalidOperationException("انبار یکی از ردیف‌های فاکتور در سپیدار پیدا نشد.");
+
+        return stockCodes;
+    }
+
+    private async Task<Dictionary<int, string>> GetInventoryItemCodesAsync(
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems, CancellationToken ct)
+    {
+        var itemRefs = invoiceItems.Select(x => x.ItemRef).Distinct().ToArray();
+        var itemCodes = await sepidarContext.Items.AsNoTracking()
+            .Where(x => itemRefs.Contains(x.ItemID))
+            .ToDictionaryAsync(x => x.ItemID, x => x.Code, ct);
+
+        if (itemCodes.Count != itemRefs.Length)
+            throw new InvalidOperationException("کالای یکی از ردیف‌های فاکتور در سپیدار پیدا نشد.");
+
+        return itemCodes;
+    }
+
+    private async Task AcquireSepidarInvoiceExportLockAsync(CancellationToken ct)
+    {
+        var transaction = sepidarContext.Database.CurrentTransaction?.GetDbTransaction() as SqlTransaction
+                          ?? throw new InvalidOperationException("Sepidar invoice export requires an active SQL transaction.");
+        var connection = sepidarContext.Database.GetDbConnection() as SqlConnection
+                         ?? throw new InvalidOperationException("The Sepidar connection must be a SQL Server connection.");
+
+        await using var command = new SqlCommand(@"
+            DECLARE @LockResult int;
+            EXEC @LockResult = sys.sp_getapplock
+                @Resource = 'CRM.Sepidar.InvoiceAndDelivery',
+                @LockMode = 'Exclusive',
+                @LockOwner = 'Transaction',
+                @LockTimeout = 30000;
+            SELECT @LockResult;", connection, transaction);
+
+        var result = Convert.ToInt32(await command.ExecuteScalarAsync(ct));
+        if (result < 0)
+            throw new InvalidOperationException("امکان قفل‌گذاری برای صدور فاکتور و خروج انبار سپیدار وجود ندارد.");
+    }
+
+    private static DataTable CreateInventorySummaryTable(IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId)
+    {
+        var table = new DataTable();
+        table.Columns.Add("StockID", typeof(int));
+        table.Columns.Add("ItemID", typeof(int));
+        table.Columns.Add("TracingID", typeof(int));
+        table.Columns.Add("FiscalYearID", typeof(int));
+        table.Columns.Add("FeedFromClosingOperation", typeof(bool));
+
+        foreach (var key in invoiceItems
+                     .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
+                     .Distinct()
+                     .OrderBy(x => x.StockRef).ThenBy(x => x.ItemRef).ThenBy(x => x.TracingRef))
+        {
+            table.Rows.Add(
+                key.StockRef,
+                key.ItemRef,
+                key.TracingRef.HasValue ? (object)key.TracingRef.Value : DBNull.Value,
+                fiscalYearId,
+                false);
+        }
+
+        return table;
+    }
+
+    private SqlCommand CreateInventorySummaryCommand(string sql, CommandType commandType, DataTable summaryTable)
+    {
+        var transaction = sepidarContext.Database.CurrentTransaction?.GetDbTransaction() as SqlTransaction
+                          ?? throw new InvalidOperationException("Inventory changes require an active Sepidar SQL transaction.");
+        var connection = sepidarContext.Database.GetDbConnection() as SqlConnection
+                         ?? throw new InvalidOperationException("The Sepidar connection must be a SQL Server connection.");
+
+        var command = new SqlCommand(sql, connection, transaction) { CommandType = commandType };
+        command.Parameters.Add(new SqlParameter("@SummaryTable", SqlDbType.Structured) {
+            TypeName = "INV.SummaryRecordTable",
+            Value = summaryTable
+        });
+        return command;
+    }
+
+    private async Task LockInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
+    {
+        await using var command = CreateInventorySummaryCommand("INV.spLockItemStockSummary", CommandType.StoredProcedure, summaryTable);
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task UpdateInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
+    {
+        await using var command = CreateInventorySummaryCommand("INV.spUpdateItemStockSummary", CommandType.StoredProcedure, summaryTable);
+
+        // Recalculate reservations as well as stock and undelivered invoice quantities.
+        command.Parameters.Add("@UpdateSaleWithReserve", SqlDbType.Bit).Value = true;
+        command.Parameters.Add("@IncludeRegisteredOrders", SqlDbType.Bit).Value = false;
+        await command.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId, CancellationToken ct)
+    {
+        var keys = invoiceItems
+            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
+            .Distinct()
+            .ToArray();
+
+        var stockRefs = keys.Select(x => x.StockRef).Distinct().ToArray();
+        var itemRefs = keys.Select(x => x.ItemRef).Distinct().ToArray();
+
+        // Query the mapped INV.ItemStockSummary entity. Use the item's primary unit,
+        // as the summary can contain an additional row for the secondary unit.
+        var summaries = await sepidarContext.ItemStockSummaries.AsNoTracking()
+            .Where(x =>
+                x.FiscalYearRef == fiscalYearId &&
+                stockRefs.Contains(x.StockRef) &&
+                itemRefs.Contains(x.ItemRef) &&
+                x.UnitRef == x.Item.UnitRef
+            ).Select(x => new {
+                x.StockRef,
+                x.ItemRef,
+                x.TracingRef,
+                x.Quantity,
+                x.SaleQuantity
+            })
+            .ToListAsync(ct);
+
+        var balances = keys.ToDictionary(x => x, _ => new InventoryStockBalance(0m, 0m));
+
+        foreach (var summary in summaries)
+        {
+            var key = new InventoryStockKey(summary.StockRef, summary.ItemRef, summary.TracingRef);
+            if (!balances.TryGetValue(key, out var current))
+                continue;
+
+            balances[key] = new InventoryStockBalance(
+                current.PhysicalQuantity + summary.Quantity,
+                current.UndeliveredSaleQuantity + (summary.SaleQuantity ?? 0m));
+        }
+
+        return balances;
+    }
+
+    private static void ValidateInventoryAvailability(IEnumerable<SalesInvoiceItemRecord> invoiceItems,
+        IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> balances,
+        IReadOnlyDictionary<int, int> stockCodes,
+        IReadOnlyDictionary<int, string> itemCodes)
+    {
+        foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
+        {
+            if (!balances.TryGetValue(group.Key, out var balance))
+                throw new InvalidOperationException(
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} قابل بررسی نیست.");
+
+            // Existing undelivered invoices also represent demand against physical stock.
+            // Open quotation reservations are deliberately not subtracted here: the
+            // quotation being invoiced may already reserve the same quantity.
+            var available = balance.PhysicalQuantity - Math.Max(0m, balance.UndeliveredSaleQuantity);
+            var needed = group.Sum(x => x.Quantity);
+            if (available < needed)
+                throw new InvalidOperationException(
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} کافی نیست. " +
+                    $"موجودی قابل خروج: {FormatInventoryQuantity(available)}، مقدار درخواستی: {FormatInventoryQuantity(needed)}.");
+        }
+    }
+
+    private static void ValidateInventoryMovement(
+        IEnumerable<SalesInvoiceItemRecord> invoiceItems,
+        IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> before,
+        IReadOnlyDictionary<InventoryStockKey, InventoryStockBalance> after,
+        IReadOnlyDictionary<int, int> stockCodes,
+        IReadOnlyDictionary<int, string> itemCodes,
+        bool controlSaleStock)
+    {
+        foreach (var group in invoiceItems.GroupBy(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)))
+        {
+            if (!before.TryGetValue(group.Key, out var previous) || !after.TryGetValue(group.Key, out var current))
+                throw new InvalidOperationException("خلاصه موجودی پس از ثبت خروج انبار قابل بررسی نیست.");
+
+            var expected = previous.PhysicalQuantity - group.Sum(x => x.Quantity);
+            if ((controlSaleStock && expected < 0) || current.PhysicalQuantity != expected)
+                throw new InvalidOperationException(
+                    $"موجودی کالای {itemCodes[group.Key.ItemRef]} در انبار {stockCodes[group.Key.StockRef]} پس از ثبت خروج با مقدار مورد انتظار مطابقت ندارد.");
+        }
+    }
+
+    private async Task<int> GetNextInventoryDeliveryNumberAsync(
+        int fiscalYearId, int stockRef, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("Inventory delivery numbering requires a transaction.");
+
+        // Sepidar data shows independent sequences per fiscal year, stock, type and return status.
+        var lastNumber = await sepidarContext.InventoryDeliveries.AsNoTracking()
+            .Where(x => x.FiscalYearRef == fiscalYearId
+                        && x.StockRef == stockRef
+                        && x.Type == 1 && !x.IsReturn)
+            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
+
+        return checked(lastNumber + 1);
+    }
+
+    private async Task AddInventoryDeliveryAsync(SalesInvoiceRecord invoice,
+        IReadOnlyDictionary<int, int> stockCodes, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction == null)
+            throw new InvalidOperationException("Inventory delivery must use the invoice SQL transaction.");
+
+        var receiverDlRef = await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == invoice.CustomerPartyRef)
+            .Select(x => (int?)x.DLRef)
+            .SingleOrDefaultAsync(ct);
+        if (!receiverDlRef.HasValue || receiverDlRef.Value <= 0)
+            throw new InvalidOperationException("تفصیلی مشتری فاکتور سپیدار پیدا نشد.");
+
+        var costOfGoodsAccountId = await GetConfiguredAccountIdAsync("SalesPartFinalCostSL", ct);
+        if (!await sepidarContext.Accounts.AsNoTracking()
+                .AnyAsync(x => x.AccountId == costOfGoodsAccountId && x.IsActive, ct))
+            throw new InvalidOperationException("حساب بهای تمام‌شده تنظیم‌شده در سپیدار فعال نیست.");
+
+        var now = DateTime.Now;
+        foreach (var group in invoice.InvoiceItems.GroupBy(x => x.StockRef).OrderBy(x => x.Key))
+        {
+            if (!await sepidarContext.Stocks.AsNoTracking().AnyAsync(x => x.StockID == group.Key && x.IsActive, ct))
+                throw new InvalidOperationException($"انبار سپیدار با کد {stockCodes[group.Key]} فعال نیست.");
+
+            var deliveryId = await GetNextIdAsync("INV.InventoryDelivery", ct: ct);
+            var deliveryNumber = await GetNextInventoryDeliveryNumberAsync(invoice.FiscalYearRef, group.Key, ct);
+
+            var delivery = new InventoryDeliveryRecord {
+                InventoryDeliveryID = deliveryId,
+                IsReturn = false,
+                Type = 1, // فروش: 1
+                StockRef = group.Key,
+                ReceiverDLRef = receiverDlRef.Value,
+                Number = deliveryNumber,
+                Date = invoice.Date,
+                TotalPrice = 0m,
+                AccountingVoucherRef = null,
+                FiscalYearRef = invoice.FiscalYearRef,
+                DestinationStockRef = null,
+                CreatorForm = 1,
+                Creator = invoice.Creator,
+                CreationDate = now,
+                LastModifier = invoice.LastModifier,
+                LastModificationDate = now,
+                Version = 1,
+                Description = null
+            };
+
+            delivery.Items = await GenerateInventoryDeliveryItemsAsync(
+                deliveryId,
+                invoice.Number,
+                invoice.InvoiceItems.Where(x => x.StockRef == group.Key).OrderBy(x => x.RowID).ToList(),
+                costOfGoodsAccountId, ct);
+
+            sepidarContext.InventoryDeliveries.Add(delivery);
+        }
+
+        await sepidarContext.SaveChangesAsync(ct);
+    }
+
+    private async Task<List<InventoryDeliveryItemRecord>> GenerateInventoryDeliveryItemsAsync(int deliveryId, int invoiceNumber,
+        List<SalesInvoiceItemRecord> invoiceItems, int accountId, CancellationToken ct)
+    {
+        var itemCount = invoiceItems.Count;
+        if (itemCount == 0)
+            throw new InvalidOperationException("سند خروج باید حداقل یک ردیف داشته باشد.");
+
+        var lastItemId = await GetNextIdAsync("INV.InventoryDeliveryItem", itemCount, ct);
+        var firstItemId = lastItemId - itemCount + 1;
+        var result = new List<InventoryDeliveryItemRecord>(itemCount);
+
+        for (var index = 0; index < itemCount; index++)
+        {
+            var invoiceItem = invoiceItems[index];
+            result.Add(new InventoryDeliveryItemRecord {
+                InventoryDeliveryItemID = firstItemId + index,
+                InventoryDeliveryRef = deliveryId,
+                IsReturn = false,
+                RowNumber = index + 1,
+                BaseInvoiceItem = invoiceItem.InvoiceItemID,
+                BaseInventoryDeliveryItem = null,
+                BaseReturnedInvoiceItem = null,
+                QuotationItemRef = null,
+                ItemRef = invoiceItem.ItemRef,
+                TracingRef = invoiceItem.TracingRef,
+                Quantity = invoiceItem.Quantity,
+                SecondaryQuantity = invoiceItem.SecondaryQuantity,
+                RemainingQuantity = 0m,
+                RemainingSecondaryQuantity = null,
+                SLAccountRef = accountId,
+                Price = null,
+                Description = $"بابت قلم فاکتور شماره {invoiceNumber}، ردیف {invoiceItem.RowID}",
+                Description_En = $"بابت قلم فاکتور شماره {invoiceNumber}، ردیف {invoiceItem.RowID}",
+                Version = 1,
+                ProductOrderRef = null,
+                ParityCheck = null,
+                WeighingRef = null,
+                ItemRequestItemRef = null,
+                ItemDescription = null
+            });
+        }
+
+        return result;
+    }
+
+    private async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(int invoiceId, List<SepidarInvoiceExportItemPreview> items,
+        decimal rate,
+        CancellationToken ct = default)
+    {
+        if (items == null || items.Count == 0)
+            throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
+
+        var itemCount = items.Count;
+        var lastItemId = await GetNextIdAsync("SLS.InvoiceItem", itemCount, ct);
+        var firstItemId = lastItemId - itemCount + 1;
+        var invoiceItems = new List<SalesInvoiceItemRecord>(itemCount);
+
+        for (var index = 0; index < itemCount; index++)
+        {
+            var item = items[index];
+            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId <= 0)
+                throw new InvalidOperationException($"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
+
+            invoiceItems.Add(new SalesInvoiceItemRecord {
+                InvoiceItemID = firstItemId + index,
+                InvoiceRef = invoiceId,
+                RowID = item.RowId,
+                ItemRef = item.ItemRef,
+                TracingRef = null,
+                StockRef = item.StockRef,
+                Quantity = item.Quantity,
+                SecondaryQuantity = null,
+                Fee = item.Fee,
+                Price = item.Price,
+                PriceInBaseCurrency = item.Price,
+                Discount = item.Discount,
+                DiscountInBaseCurrency = item.Discount,
+                PriceInfoDiscountRate = 0,
+                PriceInfoPriceDiscount = 0,
+                PriceInfoPercentDiscount = 0,
+                CustomerDiscount = 0,
+                CustomerDiscountRate = 0,
+                Addition = 0,
+                AdditionInBaseCurrency = 0,
+                Tax = item.Tax,
+                TaxInBaseCurrency = item.Tax,
+                Duty = 0,
+                DutyInBaseCurrency = 0,
+                NetPriceInBaseCurrency = item.NetPrice,
+                Rate = rate,
+                QuotationItemRef = item.QuotationItemId,
+                Description = null,
+                Description_En = null,
+                DiscountInvoiceItemRef = null,
+                ProductPackRef = null,
+                ProductPackQuantity = null,
+                AggregateAmountDiscountRate = 0,
+                AggregateAmountPriceDiscount = 0,
+                AggregateAmountPercentDiscount = 0,
+                OrderItemRef = null,
+                AdditionFactor_VatEffective = 0,
+                AdditionFactorInBaseCurrency_VatEffective = 0,
+                AdditionFactor_VatIneffective = 0,
+                AdditionFactorInBaseCurrency_VatIneffective = 0,
+                DiscountItemGroupRef = null,
+                BankFeeForCurrencySale = 0,
+                BankFeeForCurrencySaleInBaseCurrency = 0,
+                IsAggregateDiscountInvoiceItem = false,
+                TaxPayerCurrencyPurchaseRate = 0
+            });
+        }
+
+        return invoiceItems;
     }
 }

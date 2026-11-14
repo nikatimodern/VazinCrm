@@ -17,7 +17,7 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -178,6 +178,59 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.HasIndex("PositionId");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.OtpMobileState", b =>
+                {
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
+
+                    b.Property<byte[]>("CodeHash")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<byte[]>("CodeSalt")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LockoutCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("OtpExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OtpType")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Mobile");
+
+                    b.ToTable("OtpMobileStates");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.PasswordLockoutState", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LockoutCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("PasswordLockoutStates");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Cartables.Entities.BaseAdmin", b =>

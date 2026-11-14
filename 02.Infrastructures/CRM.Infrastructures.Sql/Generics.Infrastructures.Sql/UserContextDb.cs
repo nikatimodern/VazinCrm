@@ -10,6 +10,8 @@ namespace Generics.Infrastructures.Sql {
         public UserContextDb(DbContextOptions<UserContextDb> op) : base(op) { }
 
         public DbSet<BaseAdmin> BaseAdmins { get; set; }
+        public DbSet<OtpMobileState> OtpMobileStates { get; set; }
+        public DbSet<PasswordLockoutState> PasswordLockoutStates { get; set; }
         public DbSet<AccessEntity> AccessEntities { get; set; }
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<AccessRolePermission> AccessRolePermissions { get; set; }

@@ -1,11 +1,13 @@
 using CRM.Core.Domain.Sepidar.Accounts.Entites;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.Cashes.Entities;
+using CRM.Core.Domain.Sepidar.Configurations.Entities;
 using CRM.Core.Domain.Sepidar.Currencies.Entites;
 using CRM.Core.Domain.Sepidar.DLs.Entites;
 using CRM.Core.Domain.Sepidar.ExtraDataes.Entities;
 using CRM.Core.Domain.Sepidar.FiscalYears.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities;
 using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
@@ -23,7 +25,12 @@ public abstract class SepidarContextDbBase : DbContext {
 
 
     public DbSet<ExtraData> ExtraData { get; set; }
+    public DbSet<SepidarConfiguration> SepidarConfigurations { get; set; }
     public DbSet<Invoice> vwInvoice { get; set; }
+    public DbSet<SalesInvoiceRecord> SalesInvoices { get; set; }
+    public DbSet<SalesInvoiceItemRecord> SalesInvoiceItems { get; set; }
+    public DbSet<InventoryDeliveryRecord> InventoryDeliveries { get; set; }
+    public DbSet<InventoryDeliveryItemRecord> InventoryDeliveryItems { get; set; }
     public DbSet<InvoiceItem> vwInvoiceItem { get; set; }
     public DbSet<PaymentHeader> PaymentHeaders { get; set; }
     public DbSet<FiscalYear> FiscalYears { get; set; }
@@ -46,6 +53,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<SaleType> SaleTypes { get; set; }
     public DbSet<Stock> Stocks { get; set; }
     public DbSet<ItemStock> ItemStocks { get; set; }
+    public DbSet<ItemStockSummary> ItemStockSummaries { get; set; }
     public DbSet<Unit> Units { get; set; }
 
 
@@ -56,7 +64,10 @@ public abstract class SepidarContextDbBase : DbContext {
 
         modelBuilder.Entity<Invoice>().ToView("vwInvoice", "SLS").Ignore(f => f.DateTXT);
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
+        modelBuilder.Entity<SalesInvoiceRecord>().ToTable("Invoice", "SLS");
+        modelBuilder.Entity<SalesInvoiceItemRecord>().ToTable("InvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
+        modelBuilder.Entity<SepidarConfiguration>().ToTable("Configuration", "FMK");
 
 
         modelBuilder.Entity<PaymentDraft>().ToTable("PaymentDraft", "RPA");
@@ -82,6 +93,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<SaleType>().ToTable("SaleType", "SLS");
         modelBuilder.Entity<Stock>().ToTable("Stock", "INV");
         modelBuilder.Entity<ItemStock>().ToTable("ItemStock", "INV");
+        modelBuilder.Entity<ItemStockSummary>().ToTable("ItemStockSummary", "INV");
         modelBuilder.Entity<Unit>().ToTable("Unit", "INV");
     }
 

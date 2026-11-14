@@ -33,6 +33,13 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 || (deal.CustomerName != null && deal.CustomerName.Contains(search))
                 || (deal.CusCompanyName != null && deal.CusCompanyName.Contains(search)));
         }
+        // Calculate order-status counts before applying quality-control status filters.
+        var financialCounts = await deals.GroupBy(_ => 1)
+            .Select(group => new QualityControlFinancialCounts(
+                group.Count(),
+                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_شده),
+                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_نشده)))
+            .FirstOrDefaultAsync(cancellationToken) ?? new(0, 0, 0);
         // Legacy rows have Status = NULL until the separate backfill is run.
         // For those rows only, derive the outcome from existing answers.
         deals = request.Status switch
@@ -59,12 +66,6 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                       !db.QualityControlAnswers.Any(answer => answer.QualityControlId == control.Id))))),
             _ => deals
         };
-        var financialCounts = await deals.GroupBy(_ => 1)
-            .Select(group => new QualityControlFinancialCounts(
-                group.Count(),
-                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_شده),
-                group.Count(deal => deal.FinancialStatus == DealFinancialStausEnum.تایید_نشده)))
-            .FirstOrDefaultAsync(cancellationToken) ?? new(0, 0, 0);
         if (request.FinancialStatus.HasValue)
             deals = deals.Where(deal => deal.FinancialStatus == (DealFinancialStausEnum)request.FinancialStatus.Value);
         var recordsFiltered = await deals.CountAsync(cancellationToken);

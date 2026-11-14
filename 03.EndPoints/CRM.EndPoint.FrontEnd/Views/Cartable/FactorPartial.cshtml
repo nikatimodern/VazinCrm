@@ -57,36 +57,10 @@
                                 <label style="font-family:'IRANSansBold';">@item.PfactorSerialNumber</label>
                             }
                         </div>
-                        @if (Model._Setting?.Sepidar == true) {
-                            <div class="justify-content-between flex-wrap" style="display:flex;align-items:center;gap:6px">
-                                <label style="color:gray">فاکتور مالی :</label>
-
-                                @if (item.SnFinancial == null) {
-                                    if (item.status == FactorStatus.ابطال_شده) {
-                                        <label class="fbold">ابطال شده</label>
-                                    } else {
-                                        if (User.IsAdmin() || User.IsFinancial()) {
-                                            <button class="fMedium buttonBlue" style="padding: 2px 6px;font-size: 11px;" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                انتخاب از سپیدار
-                                            </button>
-                                        } else {
-                                            <span>-</span>
-                                        }
-                                    }
-                                } else {
-                                    if (isAdminOrFinancial) {
-                                        <div class="buttonGroup">
-                                            <button type="button" class="buttonBlue2" onclick="showSepidarFactorsModal('@item.PfactorSerialNumber', '@item.Id', @passType)">
-                                                <i style="font-size:10px" class="fa fa-pencil"></i>
-                                            </button>
-                                            <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                        </div>
-                                    } else {
-                                        @*  <label class="fbold">@item.SnFinancial</label> *@
-                                        <button type="button" class="buttonBlue2" onclick="ShowPreviewFactorSepidar('@item.SepidarId')">@item.SnFinancial</button>
-                                    }
-                                }
-
+                        @if (item.DealSerialNumber != null) {
+                            <div class="justify-content-between" style="display:flex;align-items:center;gap:6px">
+                                <label style="color:gray">سریال سفارش:</label>
+                                <label style="font-family:'IRANSansBold'">@item.DealSerialNumber</label>
                             </div>
                         }
 
@@ -100,49 +74,47 @@
                     <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
                     <div class="col-12 col-md-5 flex-wrap flex-row flex-md-column gap-2 px-2 justify-content-around" style="text-align:center; display:flex;align-items:center">
-                        @*                         <div style="width:100%;display:flex;justify-content:space-between">
-                            <label style="width:20%;">کد مشتری:</label>
-                            <label style="width:80%;text-align:center; font-family:'IRANSansBold'"> </label>
-                        </div> *@
-                        <div style=" display:flex;align-items:center;gap:6px">
-                            <label style="color:gray">شرکت:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.Customer) ? "-" : item.Customer)</label>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
+                            <label style="color:gray">کد مشتری:</label>
+                            <label style="font-family:'IRANSansBold'">@(item.CustomerCode?.ToString() ?? "-")</label>
                         </div>
-                        <div style=" display:flex;align-items:center; gap:6px">
-                            <label style="color:gray">نماینده:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@(string.IsNullOrEmpty(item.AgentName) ? "-" : item.AgentName)</label>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
+                            <label style="color:gray">مشتری:</label>
+                            <label style="font-family:'IRANSansBold'">@item.Customer @(string.IsNullOrWhiteSpace(item.Customer) || string.IsNullOrWhiteSpace(item.AgentName) ? "" : " | ")@item.AgentName</label>
                         </div>
-                        <div style=" display:flex;align-items:center; gap:6px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%">
                             <label style="color:gray">کارشناس فروش:</label>
-                            <label style="text-align:center; font-family:'IRANSansBold'">@item.SelerFullName</label>
+                            <label style="font-family:'IRANSansBold'">@item.SelerFullName</label>
                         </div>
-                        <div class="flex-row " style=" display:flex;align-items:center; justify-content:center;gap:6px;">
-                            <label style="color:gray">ثبت شده توسط:</label>
-                            <label style="font-family:'IRANSansBold'">@item.UserCreator</label>
-                        </div>
+
                     </div>
 
                     <div class="d-md-none my-2 " style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
 
-                    <div class="col-12 col-md-3 d-flex flex-column align-items-center row-gap-2 px-3 text-center">
-                        <div class="d-flex align-items-center justify-content-center flex-md-column justify-content-md-evenly row-gap-2" style="column-gap: 24px">
-                            <div class="flex-center flex-md-column" style="gap:6px">
-                                <label style="color:gray">مبلغ:</label>
-                                <label class="fbold" style="color:@(isReturnFactor ? "darkred" : "")">
-                                    <span>@($"{item.PaymentAmount:N0}")</span>
-                                    <span style="font-size: 12px"> @(item.CurrencyTypeTxt ?? "ريال")</span>
-                                </label>
-                            </div>
-                            <div class="d-flex align-items-center gap-1 gap-md-2">
+                    <div class="col-12 col-md-3 d-flex flex-column align-items-stretch row-gap-2 px-3">
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <label style="color:gray">مبلغ:</label>
+                            <strong style="color:@(isReturnFactor ? "darkred" : "")">
+                                @($"{item.PaymentAmount:N0}") <small>@(item.CurrencyTypeTxt ?? "ريال")</small>
+                            </strong>
+                        </div>
+                        @if (Model._Setting?.FactorTowStep == true || isReturnFactor || item.Returned) {
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <label style="color:gray">عملیات:</label>
+                                <div class="d-flex align-items-center gap-1 gap-md-2 flex-wrap">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
                                         if (isAdminOrFinancial) {
                                             <button class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
-                                            <button class="buttonGray" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 2, @passType)">
+                                            <button class="buttonGray" style="font-size: 13px;"
+                                                    disabled="@(!item.HasExternalFinancialMapping)"
+                                                    title="@(item.HasExternalFinancialMapping ? "تأیید فاکتور" : "ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید")"
+                                                    onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
+
                                         } else {
                                             <div class="fbold" style="color:#CC9900">
                                                 در دست تایید
@@ -184,16 +156,13 @@
                                         برگشت خورده
                                     </div>
                                 }
-
+                                </div>
                             </div>
-                        </div>
-                        @if (canManageAllocations) {
-                            <button type="button" class="sf-sales-manage-allocations" data-allocation-script="@allocationScript"
-                                    onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')" title="مدیریت تخصیص آیتم‌های فروش">
-                                <i class="fa fa-exchange-alt" aria-hidden="true"></i><span>تخصیص‌ها</span>
-                            </button>
                         }
-
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <label style="color:gray">ثبت شده توسط:</label>
+                            <strong>@(string.IsNullOrWhiteSpace(item.UserCreator) ? "-" : item.UserCreator)</strong>
+                        </div>
                     </div>
                     <div class="d-sm-none mt-2" style="background-color: rgba(0, 0, 0, 0.15); width: 85%;height:1px;margin-inline:auto"></div>
                 </div>
@@ -211,6 +180,20 @@
                         </button>
                     }
 
+
+                    @if (canManageAllocations) {
+                        <button type="button" class="flex-center" data-title-right="تخصیص‌ها"
+                                aria-label="مدیریت تخصیص آیتم‌های فروش" style="color:var(--DarkColor);"
+                                data-allocation-script="@allocationScript"
+                                onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')">
+                            <i class="fa fa-exchange-alt" aria-hidden="true"></i>
+                        </button>
+                    }
+
+                    <button type="button" class="flex-center" data-title-right="ارتباط مالی" aria-label="ارتباط مالی"
+                            onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                        <i class="fa fa-link" aria-hidden="true"></i>
+                    </button>
 
                     <button class="flex-center" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')">
                         <i class="fa fa-eye"></i>

@@ -13,9 +13,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CRM.Core.Domain.Sepidar.Quotations.Entites;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.ExternalSoftwares.Entites;
+using System.Threading;
+using System.Data.SqlTypes;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
+using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Sepidar.Parties.Entities;
+using CRM.Core.Domain.Factors.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
@@ -90,77 +99,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
-                //var de = db.Deals.ToList();
-                //foreach(var item in de)
-                //{
-                //    item.CreateDate = DateTime.Now.AddDays(-20);
-                //    item.CreateDateTxt = dts.GetDatePersian( DateTime.Now.AddDays(-20));
-                //    item.Status = DealStatusEnum.باز;
-                    
-                //}
-                //db.SaveChanges();
-
-                /*var softs = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
-                var baseCenters = await db.BaseCenterCashes.AsNoTracking().ToListAsync();
-
-                var mappings = new List<ExternalMapping>();
-
-                foreach (var soft in softs)
-                {
-                    if (soft.Code == 1)
-                    {
-                        var dls = await S1db.DLs.AsNoTracking()
-                            .Where(f => f.Type == 3)
-                            .ToListAsync();
-
-                        foreach (var center in baseCenters)
-                        {
-                            var dl = dls.FirstOrDefault(f => f.Code == center.Code);
-
-                            if (dl != null)
-                            {
-                                mappings.Add(new ExternalMapping {
-                                    EntityName = nameof(BaseCenterCash),
-                                    EntityId = center.Id,
-                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
-                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
-                                    ExternalSoftwareId = soft.Id,
-                                    ExEntityName = nameof(DL),
-                                    ExEntityId = dl.DLId.ToString()
-                                });
-                            }
-                        }
-                    } else
-                    {
-                        var dls = await s2Db.DLs.AsNoTracking()
-                            .Where(f => f.Type == 3)
-                            .ToListAsync();
-
-                        foreach (var center in baseCenters)
-                        {
-                            var code = center.Code.StartsWith('0') ? center.Code[1..] : center.Code;
-                            var dl = dls.FirstOrDefault(f => f.Code == code);
-
-                            if (dl != null)
-                            {
-                                mappings.Add(new ExternalMapping {
-                                    EntityName = nameof(BaseCenterCash),
-                                    EntityId = center.Id,
-                                    MapType = ExternalMappingTypeEnum.مرکز_هزینه,
-                                    MapTypeTxt = nameof(ExternalMappingTypeEnum.مرکز_هزینه),
-                                    ExternalSoftwareId = soft.Id,
-                                    ExEntityName = nameof(DL),
-                                    ExEntityId = dl.DLId.ToString()
-                                });
-                            }
-                        }
-                    }
-                }
-
-                db.ExternalMappings.AddRange(mappings);
-                await db.SaveChangesAsync();
-*/
-
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
@@ -170,6 +108,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return BadRequest(e.Message);
             }
         }
+
 
 
         public IActionResult sigR()
@@ -286,6 +225,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var entityName = request.MapType switch {
                 ExternalMappingTypeEnum.تنخواه => nameof(Cash),
                 ExternalMappingTypeEnum.پیش_فاکتور => nameof(PreFactor),
+                ExternalMappingTypeEnum.فاکتور => nameof(Factor),
                 _ => null
             };
 

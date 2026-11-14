@@ -47,7 +47,12 @@ public class AccountController(ICqrsDispatcher requests) : Controller
         if (!ModelState.IsValid) return StatusCode(405, new { errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList() });
         var result = await requests.CommandAsync(new PasswordLoginCommand(details.UserName, details.Password, details.returnUrl), cancellationToken);
         if (result.Status == 200) return Ok(new { message = result.Message, url = ResolveUrl(result.Redirect) });
-        return StatusCode(result.Status, new { message = result.Message });
+        return StatusCode(result.Status, new
+        {
+            message = result.Message,
+            retryAfterSeconds = result.RetryAfterSeconds,
+            remainingAttempts = result.RemainingAttempts
+        });
     }
     public async Task<IActionResult> Home(CancellationToken cancellationToken)
     {
@@ -66,9 +71,9 @@ public class AccountController(ICqrsDispatcher requests) : Controller
     [HttpPost]
     public async Task<IActionResult> RequestOtp([FromBody] LoginOtpRequest model, [FromQuery] string type = "Login", CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid) return Ok(new { status = 405, error = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() });
+        if (!ModelState.IsValid) return Ok(new { status = 405, message = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).FirstOrDefault() });
         var result = await requests.CommandAsync(new RequestOtpCommand(model.Mobile, type), cancellationToken);
-        return Ok(new { status = result.Status, message = result.Message });
+        return Ok(new { status = result.Status, message = result.Message, retryAfterSeconds = result.RetryAfterSeconds });
     }
     [HttpGet]
     public async Task<IActionResult> SelectAccount(string userId, string type = "Login", CancellationToken cancellationToken = default)
@@ -84,13 +89,13 @@ public class AccountController(ICqrsDispatcher requests) : Controller
         if (result.Errors is not null) return Ok(new { status = result.Status, errors = result.Errors });
         if (result.Accounts is not null) return Ok(new { status = result.Status, message = result.Message, accounts = result.Accounts });
         if (result.Redirect is not null) return Ok(new { status = result.Status, message = result.Message, url = ResolveUrl(result.Redirect) });
-        return Ok(new { status = result.Status, message = result.Message });
+        return Ok(new { status = result.Status, message = result.Message, retryAfterSeconds = result.RetryAfterSeconds, remainingAttempts = result.RemainingAttempts });
     }
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> CheckTimerCode(string type, CancellationToken cancellationToken)
+    public async Task<IActionResult> CheckTimerCode(string type, string? mobile, CancellationToken cancellationToken)
     {
-        var result = await requests.CommandAsync(new CheckOtpTimerCommand(type), cancellationToken);
+        var result = await requests.CommandAsync(new CheckOtpTimerCommand(type, mobile), cancellationToken);
         return result is null ? Ok(new { status = 201, message = "خطای سرور", data = "" }) : Ok(result);
     }
     [HttpGet]
