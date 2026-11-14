@@ -49,6 +49,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var savedSources = saved.Select(x => x.EntityId).ToHashSet();
             var usedTargets = saved.Select(x => x.ExEntityId).ToHashSet(StringComparer.Ordinal);
             var result = new List<MappingReportEntry>();
+            var userNameCounts = users
+                .GroupBy(x => NormalizeBrokerName(x.FirstName + " " + x.LastName))
+                .ToDictionary(x => x.Key, x => x.Count());
 
             foreach (var user in users)
             {
@@ -60,12 +63,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 var candidates = byName.GetValueOrDefault(name) ?? Array.Empty<int>();
                 var free = candidates.Where(x => !usedTargets.Contains(x.ToString())).ToArray();
-                var status = free.Length == 1 && candidates.Length == 1 ? "pending"
+                var duplicateUserNames = userNameCounts.GetValueOrDefault(name) > 1;
+                var status = duplicateUserNames && free.Length > 0 ? "ambiguous"
+                    : free.Length == 1 && candidates.Length == 1 ? "pending"
                     : candidates.Length > 0 && free.Length == 0 ? "blocked"
                     : free.Length > 1 ? "ambiguous" : "notMatched";
                 var reason = status switch {
                     "pending" => "UserBrokerExactMatch",
                     "blocked" => "UserBrokerAlreadyMapped",
+                    "ambiguous" when duplicateUserNames => "UserBrokerMultipleCrmUsers",
                     "ambiguous" => "UserBrokerMultipleMatches",
                     _ => "UserBrokerNoMatch"
                 };
