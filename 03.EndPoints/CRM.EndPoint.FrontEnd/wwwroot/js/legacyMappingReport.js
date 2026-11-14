@@ -1032,6 +1032,7 @@
         // Manual mappings use two independent, server-backed TomSelect instances.
         // Every search is constrained by the selected software, entity and map type.
         const manualModal = get("lmrManualModal");
+        let manualReturnFocus = null;
         const manualType = get("lmrManualType");
         const manualCrmSelect = get("lmrManualCrmSelect");
         const manualExternalSelect = get("lmrManualExternalSelect");
@@ -1216,12 +1217,14 @@
             manualType.value = "";
             get("lmrManualTargetKind").value = "PaymentHeader";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
+            manualReturnFocus = document.activeElement;
             state.manualOpen = true;
             resetManualOptions();
             bootstrap.Modal.getOrCreateInstance(manualModal).show();
         }
 
         get("lmrManualOpen").addEventListener("click", openManualMapping);
+        get("lmrManualOpenSaved").addEventListener("click", openManualMapping);
         get("lmrManualClose").addEventListener("click", closeManualMapping);
         get("lmrManualCancel").addEventListener("click", closeManualMapping);
         manualModal.addEventListener("shown.bs.modal", () => {
@@ -1233,7 +1236,14 @@
         manualModal.addEventListener("hidden.bs.modal", () => {
             state.manualOpen = false;
             destroyManualSelects();
-            if (isActive()) get("lmrManualOpen").focus({ preventScroll: true });
+            if (isActive()) {
+                const fallback = state.activeTab === "saved"
+                    ? get("lmrManualOpenSaved") : get("lmrManualOpen");
+                const focusTarget = manualReturnFocus?.isConnected && manualReturnFocus.getClientRects().length
+                    ? manualReturnFocus : fallback;
+                focusTarget?.focus({ preventScroll: true });
+            }
+            manualReturnFocus = null;
         });
         manualType.addEventListener("change", resetManualOptions);
         get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
