@@ -3316,28 +3316,25 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return brokerPartyId;
         }
 
-        // Display-only lookup for the switch in invoice Preview. No broker validation
-        // happens here: unchecked invoice exports must remain possible without a mapping.
-        private async Task<SepidarInvoiceBrokerHintDto?> GetExternalFactorBrokerHintAsync(
-            Factor factor, Guid softwareId, SepidarService service, CancellationToken ct)
+        // The salesperson shown before enabling broker registration comes from
+        // the CRM invoice, independently of external mappings or IsBroker.
+        private async Task<string> GetFactorSalespersonNameAsync(Factor factor, CancellationToken ct)
         {
-            if (!Guid.TryParse(factor.SelerId, out var salespersonId) || salespersonId == Guid.Empty)
-                return null;
+            if (!string.IsNullOrWhiteSpace(factor.SelerFullName))
+                return factor.SelerFullName.Trim();
 
-            var mappings = await db.ExternalMappings.AsNoTracking()
-                .Where(x => x.EntityId == salespersonId
-                    && x.EntityName == nameof(AppUser)
-                    && x.ExternalSoftwareId == softwareId
-                    && x.MapType == ExternalMappingTypeEnum.کارشناسان)
-                .Select(x => new { x.ExEntityName, x.ExEntityId })
-                .Take(2).ToListAsync(ct);
+            if (!string.IsNullOrWhiteSpace(factor.SelerId))
+            {
+                var user = await userManager.Users.AsNoTracking()
+                    .Where(x => x.Id == factor.SelerId)
+                    .Select(x => new { x.FirstName, x.LastName })
+                    .FirstOrDefaultAsync(ct);
+                var name = (user?.FirstName + " " + user?.LastName).Trim();
+                if (!string.IsNullOrWhiteSpace(name))
+                    return name;
+            }
 
-            // Do not guess an identity if historical duplicate mappings exist.
-            if (mappings.Count != 1 || mappings[0].ExEntityName != nameof(Party) ||
-                !int.TryParse(mappings[0].ExEntityId, out var partyId) || partyId <= 0)
-                return null;
-
-            return await service.GetSepidarInvoiceBrokerHintAsync(partyId, ct);
+            return "نامشخص";
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
@@ -3364,12 +3361,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
                 var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(brokerPartyId, preview, ct);
-                // When the switch is off, reveal who the expert maps to without
-                // requiring IsBroker or blocking an invoice without a broker.
-                var brokerHint = request.IncludeBroker ? null
-                    : await GetExternalFactorBrokerHintAsync(
-                        factor, request.ExternalSoftwareId, sepidarService, ct);
-                return Ok(new { softwareTitle, preview, broker, brokerHint });
+                var salespersonName = await GetFactorSalespersonNameAsync(factor, ct);
+                return Ok(new { softwareTitle, preview, broker, salespersonName });
             }
             catch (InvalidOperationException ex)
             {
