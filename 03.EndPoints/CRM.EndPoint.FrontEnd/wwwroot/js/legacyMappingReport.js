@@ -1116,11 +1116,7 @@
 
         function closeManualMapping() {
             if (!state.manualOpen || state.processing) return;
-            state.manualOpen = false;
-            state.manualRequests.crm++;
-            state.manualRequests.external++;
-            manualModal.hidden = true;
-            get("lmrManualOpen").focus();
+            bootstrap.Modal.getOrCreateInstance(manualModal).hide();
         }
 
         function openManualMapping(preferredType = null) {
@@ -1140,39 +1136,25 @@
             get("lmrManualTargetKind").value = "PaymentHeader";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             state.manualOpen = true;
-            manualModal.hidden = false;
             manualTypeDetails();
+            bootstrap.Modal.getOrCreateInstance(manualModal).show();
             resetManualOptions();
-            manualType.focus();
         }
 
         get("lmrManualOpen").addEventListener("click", () => openManualMapping());
         get("lmrManualClose").addEventListener("click", closeManualMapping);
         get("lmrManualCancel").addEventListener("click", closeManualMapping);
-        manualModal.addEventListener("click", event => {
-            if (event.target === manualModal) closeManualMapping();
+        manualModal.addEventListener("shown.bs.modal", () => {
+            if (state.manualOpen) manualType.focus({ preventScroll: true });
         });
-        manualModal.addEventListener("keydown", event => {
-            if (!state.manualOpen || !isActive()) return;
-            if (event.key === "Escape") {
-                event.preventDefault();
-                closeManualMapping();
-            }
-            if (event.key === "Tab") {
-                const focusable = [...manualModal.querySelectorAll(
-                    'button:not([disabled]),input:not([disabled]),select:not([disabled])'
-                )].filter(el => !el.closest("[hidden]") && el.getClientRects().length);
-                if (!focusable.length) return;
-                const first = focusable[0];
-                const last = focusable[focusable.length - 1];
-                if (event.shiftKey && document.activeElement === first) {
-                    event.preventDefault();
-                    last.focus();
-                } else if (!event.shiftKey && document.activeElement === last) {
-                    event.preventDefault();
-                    first.focus();
-                }
-            }
+        manualModal.addEventListener("hide.bs.modal", event => {
+            if (state.processing) event.preventDefault();
+        });
+        manualModal.addEventListener("hidden.bs.modal", () => {
+            state.manualOpen = false;
+            state.manualRequests.crm++;
+            state.manualRequests.external++;
+            if (isActive()) get("lmrManualOpen").focus({ preventScroll: true });
         });
         manualType.addEventListener("change", resetManualOptions);
         get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
