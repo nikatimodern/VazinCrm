@@ -312,18 +312,81 @@ function cancelRequestAmountPaymentModal() {
 
 
 let isLoadedBankAccounts = false;
-const showAttachReqAmount = async (id) => {
-    if (id) {
-        reqAmountId = id;
+let requestPaymentTargetContext = null;
+
+// A single request is loaded by its ID; grouped payments already have the
+// requests returned by GetRequestsAmountByFilteredIds / GetRequestsByPayment.
+async function resolveRequestPaymentTarget() {
+    let request = isGroupPayment && Array.isArray(requestAmountListData)
+        ? requestAmountListData[0]
+        : null;
+
+    if (!request && reqAmountId) {
+        const details = await sendApiRequest({
+            url: "/RequestAmount/GetRequestAmount",
+            params: { id: reqAmountId },
+            showLoading: false,
+            showError: false,
+        });
+        request = details?.requestAmount;
     }
+    if (!request) return null;
+
+    const requestType = Number(request.requestAmountType);
+    // 6: customer refund; 3: petty cash; other types: supplier.
+    const bankAccountType = requestType === 6 ? 4 : requestType === 3 ? 3 : 2;
+    return {
+        bankAccountType,
+        targetPersonId: request.targetPersonId || null,
+        targetPersonTxt: request.targetPersonTxt || "",
+    };
+}
+
+async function refreshRequestAmountBankAccountOptions() {
+    const select = reqAmountAttachModal?.querySelector("select[name='toAccountId']");
+    if (!select) return;
+    const context = requestPaymentTargetContext;
+    const linkedPersonId = context && (context.bankAccountType === 2 || context.bankAccountType === 4)
+        ? context.targetPersonId
+        : null;
+
+    // No linked account: keep the original supplier/petty-cash options and
+    // leave the destination unselected as before.
+    await getAllBankAccounts([
+        {
+            element: select,
+            type: [2, 3],
+            isTomSelect: true,
+            preferredCustomerId: linkedPersonId,
+            autoSelectLinked: Boolean(linkedPersonId),
+        },
+    ], true);
+}
+
+const openNewRequestAmountBankAccount = () => {
+    const context = requestPaymentTargetContext;
+    return toggleAddBankAccountModal({
+        bankAccountType: context?.bankAccountType ?? 2,
+        customerId: context?.bankAccountType === 2 || context?.bankAccountType === 4
+            ? context.targetPersonId
+            : null,
+        customerText: context?.targetPersonTxt || "",
+        onSaved: refreshRequestAmountBankAccountOptions,
+    });
+};
+
+const showAttachReqAmount = async (id) => {
+    if (id) reqAmountId = id;
+
     if (!isLoadedBankAccounts) {
         await getAllBankAccounts([
             { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
-            { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
         ]);
         isLoadedBankAccounts = true;
     }
-    
+
+    requestPaymentTargetContext = await resolveRequestPaymentTarget();
+    await refreshRequestAmountBankAccountOptions();
     ModalToggle(reqAmountAttachModal, "show");
 };
 
@@ -332,6 +395,7 @@ const cancelReqAmountAttach = () => {
     ModalToggle(reqAmountAttachModal, "hide");
     reqAmountAttachment = [];
     paymentData = {};
+    requestPaymentTargetContext = null;
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
@@ -390,15 +454,6 @@ const submitReqAmountAttach = async () => {
     });
 };
 
-
-// Only the payment-page refresh stays here; the modal and save logic live in Layout.js.
-async function refreshRequestAmountBankAccountOptions() {
-    const select = document.querySelector("#reqAmountAttachModal select[name='toAccountId']");
-    if (!select) return;
-    await getAllBankAccounts([
-        { element: select, type: [2, 3], isTomSelect: true },
-    ], true);
-}
 
 /*--------------------------------------------------------------------------------*/
 
