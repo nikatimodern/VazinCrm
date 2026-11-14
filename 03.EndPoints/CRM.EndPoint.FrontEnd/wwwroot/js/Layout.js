@@ -1810,6 +1810,7 @@ const getAllBankAccountsJson = async (rerender, type) => {
  * @property {boolean} [isTomSelect]
  * @property {string|null} [preferredCustomerId] Prefer accounts attached to this person.
  * @property {boolean} [autoSelectLinked] Select the first matching account if present.
+ * @property {boolean} [onlyLinkedToCustomer] Show only supplier/customer accounts linked to preferredCustomerId (or none if missing).
  */
 /**
  * @param {BankAccountSelectOptions[]} selects
@@ -1836,10 +1837,12 @@ const getAllBankAccounts = async (selects, rerender = false) => {
                 && account.customerId
                 && String(account.customerId).toLowerCase() === preferredPersonId;
 
-            // Preserve the existing account choices, but also include accounts owned
-            // by this person (including customer accounts of type 4).
-            const filteredData = data.filter(d => x.type.includes(d.type)
-                || (belongsToPerson(d) && (d.type === 2 || d.type === 4)));
+            // Request payments must never show accounts belonging to a different person.
+            // Other selectors retain the existing preferred-person behavior.
+            const filteredData = x.onlyLinkedToCustomer
+                ? data.filter(d => belongsToPerson(d) && (d.type === 2 || d.type === 4))
+                : data.filter(d => x.type.includes(d.type)
+                    || (belongsToPerson(d) && (d.type === 2 || d.type === 4)));
             if (x.isTomSelect) {
                 const ordered = preferredPersonId
                     ? filteredData.slice().sort((a, b) => Number(Boolean(belongsToPerson(b))) - Number(Boolean(belongsToPerson(a))))
