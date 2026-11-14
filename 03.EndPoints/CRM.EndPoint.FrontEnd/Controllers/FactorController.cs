@@ -3273,137 +3273,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return salespersonId;
         }
 
-        private async Task ValidateExternalBrokerMappingAsync(
-            Factor factor, Guid softwareId, int? brokerPartyId, SepidarService service, CancellationToken ct)
+        private async Task<int?> ResolveExternalBrokerPartyIdAsync(
+            Factor factor, Guid softwareId, bool includeBroker, SepidarService service, CancellationToken ct)
         {
-            // Explicitly skipping a broker is supported per invoice, even when a saved mapping exists.
-            if (!brokerPartyId.HasValue)
-                return;
-
-            if (brokerPartyId.Value <= 0)
-                throw new InvalidOperationException("شناسه واسط انتخاب‌شده معتبر نیست.");
+            // The user's per-invoice choice never creates or changes an external mapping.
+            if (!includeBroker)
+                return null;
 
             var salespersonId = GetFactorSalespersonId(factor);
-            var mappedPartyId = await db.ExternalMappings.AsNoTracking()
+            var mapping = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.EntityId == salespersonId
                     && x.EntityName == nameof(AppUser)
                     && x.ExternalSoftwareId == softwareId
                     && x.MapType == ExternalMappingTypeEnum.واسط)
-                .Select(x => x.ExEntityId)
+                .Select(x => new { x.ExEntityName, x.ExEntityId })
                 .SingleOrDefaultAsync(ct);
 
-            if (mappedPartyId != brokerPartyId.Value.ToString())
-                throw new InvalidOperationException("نگاشت واسط برای این کارشناس فروش تغییر کرده است؛ دوباره واسط را انتخاب کنید.");
+            if (mapping == null)
+                throw new InvalidOperationException(
+                    "برای ثبت واسط این فاکتور، نگاشت کارشناس فروش در نرم‌افزار مقصد ثبت نشده است. ابتدا مدیر ارشد باید نگاشت را در صفحه مدیریت نگاشت‌ها ثبت کند.");
 
-            if (await service.GetSepidarBrokerByIdAsync(brokerPartyId.Value, ct) == null)
-                throw new InvalidOperationException("واسط انتخاب‌شده در نرم‌افزار مالی پیدا نشد یا فعال نیست.");
-        }
+            if (mapping.ExEntityName != nameof(Party)
+                || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
+                throw new InvalidOperationException(
+                    "نگاشت واسط این کارشناس فروش معتبر نیست. مدیر ارشد باید نگاشت را در صفحه مدیریت نگاشت‌ها اصلاح کند.");
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-        [HttpPost]
-        public async Task<IActionResult> PrepareExternalBrokerMapping(
-            [FromBody] PrepareExternalBrokerMappingRequest request, CancellationToken ct)
-        {
-            try
-            {
-                var mappedRequest = new SendFactorToExternalSoftwareRequest {
-                    FactorId = request.FactorId,
-                    ExternalSoftwareId = request.ExternalSoftwareId
-                };
-                var (factor, _, _, softwareTitle) = await GetMappedFactorForExportAsync(mappedRequest, ct);
-                var service = GetSepidarService(request.ExternalSoftwareId)
-                    ?? throw new InvalidOperationException("نرم‌افزار مقصد پشتیبانی نمی‌شود.");
+            var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
+            if (broker == null || broker.DlRef <= 0)
+                throw new InvalidOperationException(
+                    "واسط نگاشت‌شده یا کد تفصیلی فعال آن در نرم‌افزار مقصد پیدا نشد. مدیر ارشد باید نگاشت را بررسی کند.");
 
-                var salespersonIdValid = Guid.TryParse(factor.SelerId, out var salespersonId)
-                    && salespersonId != Guid.Empty;
-                var mappedBroker = salespersonIdValid
-                    ? await db.ExternalMappings.AsNoTracking()
-                        .Where(x => x.EntityId == salespersonId
-                            && x.EntityName == nameof(AppUser)
-                            && x.ExternalSoftwareId == request.ExternalSoftwareId
-                            && x.MapType == ExternalMappingTypeEnum.واسط)
-                        .Select(x => x.ExEntityId)
-                        .SingleOrDefaultAsync(ct)
-                    : null;
-
-                var brokers = await service.GetSepidarBrokersAsync(ct);
-                int? mappedExternalBrokerId = int.TryParse(mappedBroker, out var id)
-                    && brokers.Any(x => x.PartyId == id) ? id : null;
-
-                return Ok(new {
-                    externalSoftwareTitle = softwareTitle,
-                    crmSalespersonName = factor.SelerFullName,
-                    mappedExternalBrokerId,
-                    brokers
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-        [HttpPost]
-        public async Task<IActionResult> SaveExternalBrokerMapping(
-            [FromBody] SaveExternalBrokerMappingRequest request, CancellationToken ct)
-        {
-            try
-            {
-                var mappedRequest = new SendFactorToExternalSoftwareRequest {
-                    FactorId = request.FactorId,
-                    ExternalSoftwareId = request.ExternalSoftwareId
-                };
-                var (factor, _, _, _) = await GetMappedFactorForExportAsync(mappedRequest, ct);
-
-                // No broker for this invoice: do not delete an existing salesperson mapping.
-                if (!request.BrokerPartyId.HasValue)
-                    return Ok(new { brokerPartyId = (int?)null });
-
-                if (request.BrokerPartyId.Value <= 0)
-                    return BadRequest("واسط انتخاب‌شده معتبر نیست.");
-
-                var salespersonId = GetFactorSalespersonId(factor);
-                var service = GetSepidarService(request.ExternalSoftwareId)
-                    ?? throw new InvalidOperationException("نرم‌افزار مقصد پشتیبانی نمی‌شود.");
-                if (await service.GetSepidarBrokerByIdAsync(request.BrokerPartyId.Value, ct) == null)
-                    return BadRequest("واسط انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا فعال نیست.");
-
-                var mapping = await db.ExternalMappings.SingleOrDefaultAsync(x =>
-                    x.EntityId == salespersonId
-                    && x.EntityName == nameof(AppUser)
-                    && x.ExternalSoftwareId == request.ExternalSoftwareId
-                    && x.MapType == ExternalMappingTypeEnum.واسط, ct);
-
-                if (mapping == null)
-                {
-                    var user = await userManager.GetUserAsync(HttpContext.User);
-                    mapping = new ExternalMapping {
-                        EntityId = salespersonId,
-                        EntityName = nameof(AppUser),
-                        ExternalSoftwareId = request.ExternalSoftwareId,
-                        ExEntityName = nameof(Party),
-                        ExEntityId = request.BrokerPartyId.Value.ToString(),
-                        MapType = ExternalMappingTypeEnum.واسط,
-                        MapTypeTxt = nameof(ExternalMappingTypeEnum.واسط),
-                        UserCreatorID = user?.Id ?? string.Empty,
-                        UserCreator = user?.FullName ?? string.Empty
-                    };
-                    db.ExternalMappings.Add(mapping);
-                }
-                else
-                {
-                    mapping.ExEntityId = request.BrokerPartyId.Value.ToString();
-                    mapping.ExEntityName = nameof(Party);
-                }
-
-                await db.SaveChangesAsync(ct);
-                return Ok(new { brokerPartyId = request.BrokerPartyId });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return brokerPartyId;
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
@@ -3427,9 +3327,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
-                await ValidateExternalBrokerMappingAsync(
-                    factor, request.ExternalSoftwareId, request.BrokerPartyId, sepidarService, ct);
-                var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(request.BrokerPartyId, preview, ct);
+                var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
+                    factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
+                var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(brokerPartyId, preview, ct);
                 return Ok(new { softwareTitle, preview, broker });
             }
             catch (InvalidOperationException ex)
@@ -3486,10 +3386,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
-                await ValidateExternalBrokerMappingAsync(
-                    factor, request.ExternalSoftwareId, request.BrokerPartyId, sepidarService, ct);
+                var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
+                    factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
+                // A mapping change after Preview requires a fresh confirmation.
+                if (request.IncludeBroker && request.PreviewBrokerPartyId != brokerPartyId)
+                    throw new InvalidOperationException("نگاشت واسط پس از پیش‌نمایش تغییر کرده است؛ پیش‌نمایش فاکتور را مجدداً بررسی کنید.");
                 var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview,
-                    request.InvoiceNumber, ct, brokerPartyId: request.BrokerPartyId);
+                    request.InvoiceNumber, ct, brokerPartyId: brokerPartyId);
 
 
                 // The Sepidar insert commits before the CRM mapping is saved.
