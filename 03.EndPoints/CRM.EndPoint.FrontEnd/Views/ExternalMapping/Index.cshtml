@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.11" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.12" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -126,17 +126,18 @@
         </footer>
     </section>
 
-    <div id="lmrManualModal" class="lmr-manual-overlay" hidden>
-        <section class="lmr-manual-dialog" role="dialog" aria-modal="true"
-                 aria-labelledby="lmrManualTitle" aria-describedby="lmrManualDescription">
-            <header class="lmr-manual-header">
+    <div id="lmrManualModal" class="modal fade lmr-manual-modal" tabindex="-1"
+         aria-labelledby="lmrManualTitle" aria-describedby="lmrManualDescription">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content" dir="rtl">
+            <header class="modal-header lmr-manual-header">
                 <div>
                     <h2 id="lmrManualTitle"><i class="fas fa-link" aria-hidden="true"></i> ثبت نگاشت دستی</h2>
                     <p id="lmrManualDescription">رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.</p>
                 </div>
-                <button id="lmrManualClose" type="button" class="lmr-manual-x" aria-label="بستن">×</button>
+                <button id="lmrManualClose" type="button" class="btn-close" aria-label="بستن"></button>
             </header>
-            <div class="lmr-manual-body">
+            <div class="modal-body lmr-manual-body">
                 <div class="lmr-manual-fields">
                     <label class="lmr-manual-field">
                         <span>نوع نگاشت</span>
@@ -186,16 +187,17 @@
                 <p class="lmr-manual-help">فهرست هر طرف حداکثر ۴۰ نتیجه نشان می‌دهد. برای انتخاب دقیق‌تر، جستجو کنید. ثبت فقط رابطه نگاشت را در CRM ذخیره می‌کند.</p>
                 <div id="lmrManualFeedback" class="lmr-manual-feedback" role="status" aria-live="polite"></div>
             </div>
-            <footer class="lmr-manual-footer">
+            <footer class="modal-footer lmr-manual-footer">
                 <button id="lmrManualCancel" type="button" class="lmr-btn">انصراف</button>
                 <button id="lmrManualConfirm" type="button" class="lmr-btn lmr-btn-primary" disabled>
                     <i class="fas fa-check" aria-hidden="true"></i> ثبت نگاشت
                 </button>
             </footer>
-        </section>
+        </div>
+        </div>
     </div>
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.10" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.12" asp-append-version="true"></script>
 }
