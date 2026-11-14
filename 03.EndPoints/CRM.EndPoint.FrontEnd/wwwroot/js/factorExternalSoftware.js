@@ -82,7 +82,9 @@ let externalFactorExportState = null;
 
 async function loadExternalFactorPreview(state, includeBroker) {
     const button = document.getElementById("confirmSendExternalFactorBtn");
-    const previousInvoiceNumber = document.getElementById("externalFactorInvoiceNumber")?.value;
+    const previousInvoiceNumber = state.hasLoadedPreview
+        ? document.getElementById("externalFactorInvoiceNumber")?.value
+        : null;
     state.processing = true;
     toggleElementsDisabled(button, true);
 
@@ -101,6 +103,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
 
         state.request.includeBroker = includeBroker;
         state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
+        state.hasLoadedPreview = true;
         document.getElementById("externalFactorPreviewContent").innerHTML =
             renderExternalFactorPreview(result, state);
         document.getElementById("externalFactorFinalNotice").hidden = false;
