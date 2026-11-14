@@ -292,8 +292,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             search = (search ?? "").Trim();
             if (search.Length > 80) search = search[..80];
 
+            // Keep legacy type=1 data untouched, but do not show the removed
+            // accounting-document mapping type in ExternalMapping/Index.
             var query = db.ExternalMappings.AsNoTracking()
-                .Where(x => x.ExternalSoftwareId == softwareId);
+                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1);
             if (mapType.HasValue)
                 query = query.Where(x => x.MapType == (ExternalMappingTypeEnum)mapType.Value);
 
@@ -332,12 +334,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || (x.Code != null && x.Code.Contains(search)))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(centers);
-
-                var accountancies = await db.Accountancies.AsNoTracking()
-                    .Where(x => (x.CustomerName != null && x.CustomerName.Contains(search))
-                        || (isNumber && (x.fSerialNumber == number || x.pfSerialNumber == number)))
-                    .Select(x => x.Id).Take(500).ToListAsync(ct);
-                matchedIds.UnionWith(accountancies);
 
                 // Search expert mappings by CRM employee name.
                 var employees = await userManager.Users.AsNoTracking()
@@ -628,7 +624,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         .ToListAsync(ct);
                     foreach (var x in rows)
                         externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
-                            "سند حسابداری نرم‌افزار مالی", x.VoucherId.ToString(),
+                            "Voucher", x.VoucherId.ToString(),
                             x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
                             x.Description, $"سال مالی: {x.FiscalYearRef}");
                 }
