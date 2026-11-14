@@ -1808,6 +1808,8 @@ const getAllBankAccountsJson = async (rerender, type) => {
  * @property {number[]} type
  * @property {boolean} [isDisable]
  * @property {boolean} [isTomSelect]
+ * @property {string|null} [preferredCustomerId] Prefer accounts attached to this person.
+ * @property {boolean} [autoSelectLinked] Select the first matching account if present.
  */
 /**
  * @param {BankAccountSelectOptions[]} selects
@@ -1827,9 +1829,23 @@ const getAllBankAccounts = async (selects, rerender = false) => {
         const data = await getAllBankAccountsJson(rerender);
         
         resolvedSelects.forEach(x => {
-            const filteredData = data.filter(d => x.type.includes(d.type));
+            const preferredPersonId = x.preferredCustomerId
+                ? String(x.preferredCustomerId).toLowerCase()
+                : null;
+            const belongsToPerson = account => preferredPersonId
+                && account.customerId
+                && String(account.customerId).toLowerCase() === preferredPersonId;
+
+            // Preserve the existing account choices, but also include accounts owned
+            // by this person (including customer accounts of type 4).
+            const filteredData = data.filter(d => x.type.includes(d.type)
+                || (belongsToPerson(d) && (d.type === 2 || d.type === 4)));
             if (x.isTomSelect) {
-                createSupplierTomSelect(x.element, filteredData);
+                const ordered = preferredPersonId
+                    ? filteredData.slice().sort((a, b) => Number(Boolean(belongsToPerson(b))) - Number(Boolean(belongsToPerson(a))))
+                    : filteredData;
+                const preferred = x.autoSelectLinked ? ordered.find(belongsToPerson) : null;
+                createSupplierTomSelect(x.element, ordered, preferred?.value ?? null);
                 return;
             }
             
@@ -1909,7 +1925,7 @@ const buildBankAccountUi = (item) => {
 };
 
 
-const createSupplierTomSelect = (element, items) => {
+const createSupplierTomSelect = (element, items, selectedId = null) => {
     
     if (element.tomselect) {
         element.tomselect.destroy();
@@ -1973,6 +1989,10 @@ const createSupplierTomSelect = (element, items) => {
             `,
         },
     });
+
+    if (selectedId != null) {
+        element.tomselect.setValue(String(selectedId), true);
+    }
 };
 
 
@@ -2073,7 +2093,7 @@ function resetBankAccountModal() {
 
 /**
  * Shared create/edit bank-account modal.
- * @param {{id?: string, bankAccountType?: number, onSaved?: (account: object) => (void | Promise<void>)}} options
+ * @param {{id?: string, bankAccountType?: number, customerId?: string, customerText?: string, onSaved?: (account: object) => (void | Promise<void>)}} options
  */
 async function toggleAddBankAccountModal(options = {}) {
     const modal = initializeBankAccountModal();
@@ -2082,7 +2102,7 @@ async function toggleAddBankAccountModal(options = {}) {
         ModalToggle(modal, "hide");
         return;
     }
-    const { id = null, bankAccountType = null, onSaved = null } = options || {};
+    const { id = null, bankAccountType = null, customerId = null, customerText = null, onSaved = null } = options || {};
     const original = id ? await sendApiRequest({
         url: "/Accountancy/GetBankAccount",
         params: { id },
@@ -2120,6 +2140,21 @@ async function toggleAddBankAccountModal(options = {}) {
         typeSelect.value = String(bankAccountType);
         typeSelect.dispatchEvent(new Event("change"));
     }
+
+    // For a new supplier/customer account, preselect the person from the
+    // originating request without loading every Customer into TomSelect.
+    if (!original && customerId && selectedBankAccountPersonRole() > 0) {
+        const personSelect = modal.querySelector("#bankAccountCustomerId").tomselect;
+        if (personSelect) {
+            const personId = String(customerId);
+            personSelect.addOption({
+                value: personId,
+                text: customerText || "شخص مرتبط",
+            });
+            personSelect.setValue(personId, true);
+        }
+    }
+
     ModalToggle(modal, "show");
 }
 

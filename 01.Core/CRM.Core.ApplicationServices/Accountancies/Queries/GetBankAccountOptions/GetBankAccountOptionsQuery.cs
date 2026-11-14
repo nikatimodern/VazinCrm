@@ -23,6 +23,6 @@ public sealed class GetBankAccountOptionsQueryHandler(IAccountancyRepository rep
     public async Task<object> HandleAsync(GetBankAccountOptionsQuery request, CancellationToken ct)
     {
         var items = await repository.GetBankAccountsAsync(request.Type, ct);
-        return items.Select(f => new { value = f.Id, accountName = f.AccountName, bankName = f.BankName, accountNumber = f.AccountNumber, shebaNumber = f.ShebaNumber, cartNumber = f.CartNumber, officialType = f.OfficialType, type = f.BankAccountType }).ToList();
+        return items.Select(f => new { value = f.Id, accountName = f.AccountName, bankName = f.BankName, accountNumber = f.AccountNumber, shebaNumber = f.ShebaNumber, cartNumber = f.CartNumber, officialType = f.OfficialType, type = f.BankAccountType, customerId = f.CustomerId }).ToList();
     }
 }
