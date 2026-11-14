@@ -3269,7 +3269,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private static Guid GetFactorSalespersonId(Factor factor)
         {
             if (!Guid.TryParse(factor.SelerId, out var salespersonId) || salespersonId == Guid.Empty)
-                throw new InvalidOperationException("کارشناس فروش CRM برای نگاشت واسط معتبر نیست.");
+                throw new InvalidOperationException("کارشناس فروش این فاکتور در CRM مشخص نیست یا شناسه معتبری ندارد.");
             return salespersonId;
         }
 
@@ -3291,17 +3291,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (mapping == null)
                 throw new InvalidOperationException(
-                    "برای ثبت واسط این فاکتور، نگاشت کارشناس فروش با نرم‌افزار مالی انتخاب‌شده ثبت نشده است.");
+                    "برای ثبت واسط این فاکتور، کارشناس فروش در نرم‌افزار مالی انتخاب‌شده نگاشت نشده است.");
 
             if (mapping.ExEntityName != nameof(Party)
                 || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
                 throw new InvalidOperationException(
-                    "نگاشت واسط کارشناس فروش در نرم‌افزار مالی انتخاب‌شده معتبر نیست.");
+                    "نگاشت کارشناس فروش در نرم‌افزار مالی انتخاب‌شده معتبر نیست و باید اصلاح شود.");
+
+            // First verify that the mapped external person exists, then verify
+            // whether Sepidar allows that person to act as an invoice broker.
+            var isBroker = await service.GetSepidarPartyIsBrokerAsync(brokerPartyId, ct);
+            if (!isBroker.HasValue)
+                throw new InvalidOperationException(
+                    "شخص متناظر با کارشناس فروش در سپیدار پیدا نشد؛ نگاشت کارشناس را بررسی کنید.");
+            if (!isBroker.Value)
+                throw new InvalidOperationException(
+                    "کارشناس فروش نگاشت شده است، اما شخص متناظر او در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
 
             var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
             if (broker == null || broker.DlRef <= 0)
                 throw new InvalidOperationException(
-                    "واسط نگاشت‌شده در نرم‌افزار مالی پیدا نشد یا کد تفصیلی فعال ندارد.");
+                    "کارشناس در سپیدار به‌عنوان واسط فروش تعریف شده، اما کد تفصیلی فعال و معتبر ندارد.");
 
             return brokerPartyId;
         }
