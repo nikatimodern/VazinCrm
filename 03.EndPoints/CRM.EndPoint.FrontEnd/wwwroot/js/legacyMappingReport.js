@@ -1038,7 +1038,6 @@
         const manualSelects = { crm: null, external: null };
         const manualEntityTypes = {
             0: { crm: ["Cash", "تنخواه‌های CRM"], external: ["PaymentHeader", "اعلامیه‌های پرداخت"] },
-            1: { crm: ["Accountancy", "اسناد مالی CRM"], external: ["Voucher", "اسناد حسابداری"] },
             2: { crm: ["PreFactor", "پیش‌فاکتورهای CRM"], external: ["Quotation", "پیش‌فاکتورهای مالی"] },
             3: { crm: ["Factor", "فاکتورهای CRM"], external: ["Invoice", "فاکتورهای مالی"] },
             4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
@@ -1048,11 +1047,9 @@
 
         function manualTypeDetails() {
             const type = manualType.value === "" ? null : Number(manualType.value);
-            get("lmrManualSourceKindBox").hidden = type !== 1;
             get("lmrManualTargetKindBox").hidden = type !== 0;
             return {
                 mapType: type,
-                sourceEntity: type === 1 ? get("lmrManualSourceKind").value : "",
                 targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
             };
         }
@@ -1061,10 +1058,8 @@
             const type = manualTypeDetails();
             const item = manualEntityTypes[type.mapType]?.[side];
             if (!item) return null;
-            if (side === "crm" && type.sourceEntity === "Cash")
-                return ["Cash", "تنخواه‌های CRM"];
-            if (side === "external" && type.targetEntity === "SepidarCash")
-                return ["SepidarCash", "تنخواه‌های سپیدار"];
+            if (side === "external" && type.targetEntity === "Voucher")
+                return ["Voucher", "Voucher"];
             return item;
         }
 
@@ -1072,7 +1067,9 @@
             for (const side of ["crm", "external"]) {
                 const el = get(side === "crm" ? "lmrManualCrmEntity" : "lmrManualExternalEntity");
                 const info = manualEntityInfo(side);
-                el.textContent = info ? info[1] + " (" + info[0] + ")" : "ابتدا نوع نگاشت را انتخاب کنید";
+                el.textContent = info
+                    ? side === "external" ? info[0] : info[1] + " (" + info[0] + ")"
+                    : "ابتدا نوع نگاشت را انتخاب کنید";
             }
         }
 
@@ -1116,7 +1113,6 @@
             state.manualRequests[side]++;
             const softwareId = state.softwareId;
             const type = manualTypeDetails();
-            const entityInfo = info[1] + " (" + info[0] + ")";
             const isCrm = side === "crm";
             const instance = new TomSelect(element, {
                 valueField: "id",
@@ -1138,8 +1134,6 @@
                     option(data, escapeOption) {
                         return '<div class="lmr-remote-option">' +
                             '<strong dir="auto">' + escapeOption(data.text || "") + '</strong>' +
-                            (data.detail ? '<small>' + escapeOption(data.detail) + '</small>' : "") +
-                            '<span class="lmr-option-entity">' + escapeOption(entityInfo) + '</span>' +
                             '</div>';
                     },
                     item(data, escapeOption) {
@@ -1183,8 +1177,7 @@
                         manualFeedback();
                         callback(result.options.map(option => ({
                             id: String(option.id),
-                            text: option.title || String(option.id),
-                            detail: option.detail || ""
+                            text: option.title || String(option.id)
                         })));
                     } catch {
                         if (state.manualOpen && request === state.manualRequests[side]) {
@@ -1221,7 +1214,6 @@
             state.types.forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = "";
-            get("lmrManualSourceKind").value = "Accountancy";
             get("lmrManualTargetKind").value = "PaymentHeader";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             state.manualOpen = true;
@@ -1244,7 +1236,6 @@
             if (isActive()) get("lmrManualOpen").focus({ preventScroll: true });
         });
         manualType.addEventListener("change", resetManualOptions);
-        get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
         get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
 
         get("lmrManualConfirm").addEventListener("click", async () => {
@@ -1255,7 +1246,6 @@
             const values = manualTypeDetails();
             const item = {
                 entityId, mapType: values.mapType, exEntityId,
-                entityName: values.sourceEntity || null,
                 exEntityName: values.targetEntity || null
             };
             const success = await save([item]);
