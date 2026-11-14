@@ -1210,6 +1210,22 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    // Read-only hint: show the mapped person's name before optional broker registration.
+    // Not being a broker must not block exporting the invoice without commission.
+    public async Task<SepidarInvoiceBrokerHintDto?> GetSepidarInvoiceBrokerHintAsync(
+        int partyId, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == partyId)
+            .Select(x => new SepidarInvoiceBrokerHintDto {
+                FullName = (x.Name + " " + x.LastName).Trim(),
+                DlCode = x.Dl != null ? x.Dl.Code : "",
+                IsBroker = x.IsBroker,
+                HasActiveDetailedAccount = x.DLRef > 0 && x.Dl != null && x.Dl.IsActive
+            })
+            .SingleOrDefaultAsync(ct);
+    }
+
     // The expert mapping can point to any Party; only invoice export requires
     // IsBroker. Returning null distinguishes a missing Party from IsBroker=false.
     public async Task<bool?> GetSepidarPartyIsBrokerAsync(
