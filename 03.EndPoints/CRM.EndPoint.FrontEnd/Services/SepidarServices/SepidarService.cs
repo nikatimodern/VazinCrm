@@ -2150,8 +2150,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TrackingDate = null,
                 IssuerEntityName = SalesInvoiceIssuerEntityName,
                 IssuerEntityRef = invoice.InvoiceId,
-                Description = description,
-                Description_En = description,
+                Description = description[..Math.Min(description.Length, 250)],
+                Description_En = description[..Math.Min(description.Length, 250)],
                 Version = 1
             });
         }
