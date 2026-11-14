@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
