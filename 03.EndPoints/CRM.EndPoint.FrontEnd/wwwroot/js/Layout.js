@@ -1808,6 +1808,8 @@ const getAllBankAccountsJson = async (rerender, type) => {
  * @property {number[]} type
  * @property {boolean} [isDisable]
  * @property {boolean} [isTomSelect]
+ * @property {string|null} [preferredCustomerId] Prefer accounts attached to this person.
+ * @property {boolean} [autoSelectLinked] Select the first matching account if present.
  */
 /**
  * @param {BankAccountSelectOptions[]} selects
@@ -1827,9 +1829,23 @@ const getAllBankAccounts = async (selects, rerender = false) => {
         const data = await getAllBankAccountsJson(rerender);
         
         resolvedSelects.forEach(x => {
-            const filteredData = data.filter(d => x.type.includes(d.type));
+            const preferredPersonId = x.preferredCustomerId
+                ? String(x.preferredCustomerId).toLowerCase()
+                : null;
+            const belongsToPerson = account => preferredPersonId
+                && account.customerId
+                && String(account.customerId).toLowerCase() === preferredPersonId;
+
+            // Preserve the existing account choices, but also include accounts owned
+            // by this person (including customer accounts of type 4).
+            const filteredData = data.filter(d => x.type.includes(d.type)
+                || (belongsToPerson(d) && (d.type === 2 || d.type === 4)));
             if (x.isTomSelect) {
-                createSupplierTomSelect(x.element, filteredData);
+                const ordered = preferredPersonId
+                    ? filteredData.slice().sort((a, b) => Number(Boolean(belongsToPerson(b))) - Number(Boolean(belongsToPerson(a))))
+                    : filteredData;
+                const preferred = x.autoSelectLinked ? ordered.find(belongsToPerson) : null;
+                createSupplierTomSelect(x.element, ordered, preferred?.value ?? null);
                 return;
             }
             
@@ -1909,7 +1925,7 @@ const buildBankAccountUi = (item) => {
 };
 
 
-const createSupplierTomSelect = (element, items) => {
+const createSupplierTomSelect = (element, items, selectedId = null) => {
     
     if (element.tomselect) {
         element.tomselect.destroy();
@@ -1973,6 +1989,10 @@ const createSupplierTomSelect = (element, items) => {
             `,
         },
     });
+
+    if (selectedId != null) {
+        element.tomselect.setValue(String(selectedId), true);
+    }
 };
 
 
