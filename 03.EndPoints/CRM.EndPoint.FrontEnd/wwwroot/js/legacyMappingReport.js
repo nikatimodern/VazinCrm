@@ -1290,8 +1290,6 @@
                 feedback("saved", "نرم‌افزار خارجی ثبت نشده است.");
                 return;
             }
-            if (typeof enableMomentumScrollScope === "function")
-                enableMomentumScrollScope(page);
             switchMainTab("saved");
             await changeSoftware();
         })();
