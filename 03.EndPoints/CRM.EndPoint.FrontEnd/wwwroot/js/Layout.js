@@ -2093,7 +2093,7 @@ function resetBankAccountModal() {
 
 /**
  * Shared create/edit bank-account modal.
- * @param {{id?: string, bankAccountType?: number, onSaved?: (account: object) => (void | Promise<void>)}} options
+ * @param {{id?: string, bankAccountType?: number, customerId?: string, customerText?: string, onSaved?: (account: object) => (void | Promise<void>)}} options
  */
 async function toggleAddBankAccountModal(options = {}) {
     const modal = initializeBankAccountModal();
@@ -2102,7 +2102,7 @@ async function toggleAddBankAccountModal(options = {}) {
         ModalToggle(modal, "hide");
         return;
     }
-    const { id = null, bankAccountType = null, onSaved = null } = options || {};
+    const { id = null, bankAccountType = null, customerId = null, customerText = null, onSaved = null } = options || {};
     const original = id ? await sendApiRequest({
         url: "/Accountancy/GetBankAccount",
         params: { id },
@@ -2140,6 +2140,21 @@ async function toggleAddBankAccountModal(options = {}) {
         typeSelect.value = String(bankAccountType);
         typeSelect.dispatchEvent(new Event("change"));
     }
+
+    // For a new supplier/customer account, preselect the person from the
+    // originating request without loading every Customer into TomSelect.
+    if (!original && customerId && selectedBankAccountPersonRole() > 0) {
+        const personSelect = modal.querySelector("#bankAccountCustomerId").tomselect;
+        if (personSelect) {
+            const personId = String(customerId);
+            personSelect.addOption({
+                value: personId,
+                text: customerText || "شخص مرتبط",
+            });
+            personSelect.setValue(personId, true);
+        }
+    }
+
     ModalToggle(modal, "show");
 }
 
