@@ -85,6 +85,7 @@ function renderExternalFactorBrokerStep(state) {
     const info = state.brokerData;
     const modal = document.getElementById("sendFactorToExternalSoftwareModal");
     modal.querySelector(".modal-dialog").classList.remove("modal-lg");
+    document.getElementById("externalFactorFinalNotice").hidden = true;
     document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
         info.externalSoftwareTitle || "نرم‌افزار مالی";
     document.getElementById("sendFactorToExternalSoftwareSubtitle").textContent = "نرم‌افزار ۱ از ۱";
@@ -159,7 +160,9 @@ async function confirmExternalFactorBrokerStep(state) {
         });
         if (!result?.preview?.items?.length || externalFactorExportState !== state) return;
 
+        document.getElementById("externalFactorBrokerSelect")?.tomselect?.destroy();
         state.step = "preview";
+        document.getElementById("externalFactorFinalNotice").hidden = false;
         document.getElementById("sendFactorToExternalSoftwareModal")
             .querySelector(".modal-dialog").classList.add("modal-lg");
         document.getElementById("externalFactorPreviewContent").innerHTML =
