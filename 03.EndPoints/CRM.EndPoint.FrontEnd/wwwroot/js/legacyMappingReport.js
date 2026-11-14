@@ -1113,7 +1113,7 @@
             }
             element.disabled = false;
             element.replaceChildren(new Option("", ""));
-            const generation = ++state.manualRequests[side];
+            state.manualRequests[side]++;
             const softwareId = state.softwareId;
             const type = manualTypeDetails();
             const entityInfo = info[1] + " (" + info[0] + ")";
@@ -1127,6 +1127,7 @@
                 maxOptions: 40,
                 create: false,
                 preload: false,
+                dropdownParent: "#lmrManualModal",
                 loadThrottle: 320,
                 placeholder: "نام، شماره یا کد را جستجو کنید",
                 shouldLoad(query) {
@@ -1172,7 +1173,7 @@
                             timeout: 30000
                         });
                         if (!isActive() || !state.manualOpen || softwareId !== state.softwareId ||
-                            generation > request || request !== state.manualRequests[side] ||
+                            request !== state.manualRequests[side] ||
                             manualSelects[side] !== instance) {
                             callback();
                             return;
