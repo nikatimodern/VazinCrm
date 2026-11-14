@@ -101,8 +101,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var exists = entityName == nameof(Customer)
                 ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct)
                 : entityName == nameof(AppUser)
-                    ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId
-                        && x.IsBroker && x.Dl.IsActive, ct)
+                    ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId, ct)
                 : entityName == nameof(PreFactor)
                     ? await sepidar.Quotations.AsNoTracking().AnyAsync(x => x.QuotationId == targetId, ct)
                     : await sepidar.SalesInvoices.AsNoTracking().AnyAsync(x => x.InvoiceId == targetId, ct);
@@ -289,9 +288,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (!await userManager.Users.AsNoTracking().AnyAsync(x =>
                                 x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
                             throw new ArgumentException("کارمند انتخاب‌شده در CRM پیدا نشد.");
+                        // An expert mapping only requires a valid Party. Being a broker
+                        // is a separate, invoice-specific eligibility requirement.
                         if (!await targetDb.Parties.AsNoTracking().AnyAsync(x =>
-                                x.PartyId == targetId && x.IsBroker && x.Dl.IsActive && x.DLRef > 0, ct))
-                            throw new ArgumentException("واسط انتخاب‌شده در نرم‌افزار مالی فعال نیست یا کد تفصیلی ندارد.");
+                                x.PartyId == targetId, ct))
+                            throw new ArgumentException("شخص متناظر با کارشناس CRM در نرم‌افزار مالی پیدا نشد.");
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.مرکز_هزینه)
                     {
