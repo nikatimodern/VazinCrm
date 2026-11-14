@@ -1974,7 +1974,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // Both this update and the invoice/delivery inserts share one SQL transaction.
             await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور
 
+            // Insert the invoice first: InvoiceBroker.InvoiceRef is a foreign key to SLS.Invoice.
+            // Both SaveChanges calls remain inside the same serializable SQL transaction.
             sepidarContext.SalesInvoices.Add(invoice);
+            await sepidarContext.SaveChangesAsync(ct);
             if (broker != null)
             {
                 sepidarContext.InvoiceBrokers.Add(new InvoiceBrokerRecord {
@@ -1985,8 +1988,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                     Rate = broker.CurrencyRate,
                     CommissionInBaseCurrency = broker.CommissionInBaseCurrency
                 });
+                await sepidarContext.SaveChangesAsync(ct);
             }
-            await sepidarContext.SaveChangesAsync(ct);
 
             // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
             if (issueInventoryDelivery)
