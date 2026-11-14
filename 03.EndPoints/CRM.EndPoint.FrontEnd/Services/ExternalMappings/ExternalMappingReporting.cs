@@ -248,12 +248,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
+            entries.AddRange(await BuildUserBrokerSuggestionsAsync(softwareId, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                        || x.MapType == ExternalMappingTypeEnum.فاکتور))
+                        || x.MapType == ExternalMappingTypeEnum.فاکتور
+                        || x.MapType == ExternalMappingTypeEnum.واسط))
                 .CountAsync(ct);
 
             return new
@@ -262,6 +264,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     saved,
                     pendingCustomers = plan.PendingCustomers.Count,
                     pendingDocuments = plan.PendingDocuments.Count,
+                    pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.واسط),
                     customerConflicts = plan.CustomerConflicts.Count,
                     blockedDocuments = plan.BlockedDocumentCount,
                     unmatched = reportRows.Count(x => x.Status == "notMatched"),
@@ -329,6 +332,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || (x.Code != null && x.Code.Contains(search)))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(centers);
+
+                // Search must also find broker mappings by the CRM employee's name.
+                var employees = await userManager.Users.AsNoTracking()
+                    .Where(x => (x.FirstName != null && x.FirstName.Contains(search))
+                        || (x.LastName != null && x.LastName.Contains(search))
+                        || (x.UserName != null && x.UserName.Contains(search)))
+                    .Select(x => x.Id).Take(500).ToListAsync(ct);
+                foreach (var userId in employees)
+                    if (Guid.TryParse(userId, out var parsedUserId))
+                        matchedIds.Add(parsedUserId);
 
                 var ids = matchedIds.ToArray();
                 query = query.Where(x => x.ExEntityId.Contains(search)
@@ -402,8 +415,25 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.EntityId).Distinct().ToArray();
             var customerIds = entries.Where(x => x.Kind == nameof(Customer))
                 .Select(x => x.EntityId).Distinct().ToArray();
+            var userIds = entries.Where(x => x.Kind == nameof(AppUser))
+                .Select(x => x.EntityId).Distinct().ToArray();
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
+            if (userIds.Length > 0)
+            {
+                var users = await userManager.Users.AsNoTracking()
+                    .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName, x.IsEmployee })
+                    .ToListAsync(ct);
+                foreach (var x in users)
+                    if (Guid.TryParse(x.Id, out var userId) && userIds.Contains(userId))
+                    {
+                        var name = (x.FirstName + " " + x.LastName).Trim();
+                        if (string.IsNullOrEmpty(name)) name = x.UserName ?? "کاربر بدون نام";
+                        crmSides[(nameof(AppUser), userId)] = new MappingReportSide(
+                            "کاربر CRM", userId.ToString(), x.UserName ?? "—", "",
+                            null, name, x.IsEmployee ? "کارمند داخلی" : "کاربر CRM");
+                    }
+            }
             foreach (var batch in pfIds.Chunk(350))
             {
                 var data = await db.PreFactors.AsNoTracking()
@@ -557,13 +587,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName, x.IsCustomer })
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, x.IsCustomer,
+                        x.IsBroker, x.CommissionRate, DlCode = x.Dl.Code })
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
-                        "مشتری " + softwareTitle, x.PartyId.ToString(), x.PartyId.ToString(),
-                        "", null, $"{x.Name} {x.LastName}".Trim(),
-                        x.IsCustomer ? "مشتری فعال در فهرست اشخاص" : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
+                        (x.IsBroker ? "واسط " : "مشتری ") + softwareTitle,
+                        x.PartyId.ToString(), x.PartyId.ToString(), "",
+                        null, $"{x.Name} {x.LastName}".Trim(),
+                        x.IsBroker ? $"کد تفصیلی: {x.DlCode} | نرخ پورسانت: {x.CommissionRate}%"
+                            : x.IsCustomer ? "مشتری فعال در فهرست اشخاص"
+                            : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
             }
 
                 // Enrich the other saved Sepidar mapping types when their
@@ -651,7 +685,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(id => {
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
                         var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
-                            : entry.TargetEntity == nameof(Invoice) ? "فاکتور" : "مشتری";
+                            : entry.TargetEntity == nameof(Invoice) ? "فاکتور"
+                            : entry.MapType == (int)ExternalMappingTypeEnum.واسط ? "واسط" : "مشتری";
                         var readableTitle = candidate == null
                             ? $"{itemType} با شناسه {id}"
                             : entry.TargetEntity == nameof(Party)
