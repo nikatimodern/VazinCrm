@@ -14,7 +14,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 {
     public sealed partial class ExternalMappingService
     {
-        private static string NormalizeBrokerName(string value)
+        private static string NormalizeExpertName(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return "";
             return Regex.Replace(value.Trim().Replace('ي', 'ی').Replace('ك', 'ک'), @"\s+", " ")
@@ -23,7 +23,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
         // Only exact, unique normalized names can be proposed as ready-to-save.
         // No mapping is inserted or updated by suggestion calculation.
-        private async Task<List<MappingReportEntry>> BuildUserBrokerSuggestionsAsync(
+        private async Task<List<MappingReportEntry>> BuildUserExpertSuggestionsAsync(
             Guid softwareId, CancellationToken ct)
         {
             var sepidar = softwareId == Sepidar1SoftwareId
@@ -33,8 +33,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Where(x => x.IsEmployee)
                 .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName })
                 .ToListAsync(ct);
-            var brokers = await sepidar.Parties.AsNoTracking()
-                .Where(x => x.IsBroker && x.Dl.IsActive)
+            var externalPeople = await sepidar.Parties.AsNoTracking()
                 .Select(x => new { x.PartyId, x.Name, x.LastName })
                 .ToListAsync(ct);
             var saved = await db.ExternalMappings.AsNoTracking()
@@ -43,22 +42,22 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => new { x.EntityId, x.ExEntityId })
                 .ToListAsync(ct);
 
-            var byName = brokers
-                .GroupBy(x => NormalizeBrokerName(x.Name + " " + x.LastName))
+            var byName = externalPeople
+                .GroupBy(x => NormalizeExpertName(x.Name + " " + x.LastName))
                 .Where(x => !string.IsNullOrEmpty(x.Key))
                 .ToDictionary(x => x.Key, x => x.Select(b => b.PartyId).Distinct().ToArray());
             var savedSources = saved.Select(x => x.EntityId).ToHashSet();
             var usedTargets = saved.Select(x => x.ExEntityId).ToHashSet(StringComparer.Ordinal);
             var result = new List<MappingReportEntry>();
             var userNameCounts = users
-                .GroupBy(x => NormalizeBrokerName(x.FirstName + " " + x.LastName))
+                .GroupBy(x => NormalizeExpertName(x.FirstName + " " + x.LastName))
                 .ToDictionary(x => x.Key, x => x.Count());
 
             foreach (var user in users)
             {
                 if (!Guid.TryParse(user.Id, out var id) || id == Guid.Empty || savedSources.Contains(id))
                     continue;
-                var name = NormalizeBrokerName(user.FirstName + " " + user.LastName);
+                var name = NormalizeExpertName(user.FirstName + " " + user.LastName);
                 if (string.IsNullOrEmpty(name))
                     continue;
 
@@ -70,19 +69,19 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     : candidates.Length > 0 && free.Length == 0 ? "blocked"
                     : free.Length > 1 ? "ambiguous" : "notMatched";
                 var reason = status switch {
-                    "pending" => "UserBrokerExactMatch",
-                    "blocked" => "UserBrokerAlreadyMapped",
-                    "ambiguous" when duplicateUserNames => "UserBrokerMultipleCrmUsers",
-                    "ambiguous" => "UserBrokerMultipleMatches",
-                    _ => "UserBrokerNoMatch"
+                    "pending" => "UserExpertExactMatch",
+                    "blocked" => "UserExpertAlreadyMapped",
+                    "ambiguous" when duplicateUserNames => "UserExpertMultipleCrmUsers",
+                    "ambiguous" => "UserExpertMultipleMatches",
+                    _ => "UserExpertNoMatch"
                 };
                 var target = status == "pending" ? free[0] : (int?)null;
                 result.Add(new MappingReportEntry(
-                    $"user-broker-{id}", "AppUser", id, status, reason,
-                    status == "pending" ? "نام کاربر CRM و واسط سپیدار یکسان است."
-                        : status == "blocked" ? "واسط‌های هم‌نام قبلاً نگاشت شده‌اند."
-                        : status == "ambiguous" ? "چند واسط هم‌نام وجود دارد؛ معادل درست را انتخاب کنید."
-                        : "واسط هم‌نام قطعی پیدا نشد؛ می‌توانید نگاشت را دستی ثبت کنید.",
+                    $"user-expert-{id}", "AppUser", id, status, reason,
+                    status == "pending" ? "نام کارشناس CRM و شخص متناظر در نرم‌افزار مالی یکسان است."
+                        : status == "blocked" ? "اشخاص هم‌نام قبلاً به کاربران دیگری نگاشت شده‌اند."
+                        : status == "ambiguous" ? "چند شخص هم‌نام وجود دارد؛ معادل درست کارشناس را انتخاب کنید."
+                        : "شخص هم‌نام قطعی پیدا نشد؛ می‌توانید نگاشت کارشناس را دستی ثبت کنید.",
                     nameof(Party), target, Array.Empty<string>(),
                     (int)ExternalMappingTypeEnum.واسط, target?.ToString(),
                     free));
