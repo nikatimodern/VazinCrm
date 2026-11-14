@@ -317,11 +317,19 @@ let requestPaymentTargetContext = null;
 // A single request is loaded by its ID; grouped payments already have the
 // requests returned by GetRequestsAmountByFilteredIds / GetRequestsByPayment.
 async function resolveRequestPaymentTarget() {
-    let request = isGroupPayment && Array.isArray(requestAmountListData)
-        ? requestAmountListData[0]
+    const groupedRequests = isGroupPayment && Array.isArray(requestAmountListData)
+        ? requestAmountListData
         : null;
+    // One destination account cannot represent different recipients in a group payment.
+    if (groupedRequests && (!groupedRequests.length || groupedRequests.some(item =>
+        String(item.targetPersonId || "").toLowerCase() !== String(groupedRequests[0].targetPersonId || "").toLowerCase()
+        || Number(item.requestAmountType === 6 ? 4 : item.requestAmountType === 3 ? 3 : 2)
+            !== Number(groupedRequests[0].requestAmountType === 6 ? 4 : groupedRequests[0].requestAmountType === 3 ? 3 : 2)))) {
+        return null;
+    }
+    let request = groupedRequests?.[0] || null;
 
-    if (!request && reqAmountId) {
+    if (!request && reqAmountId && !groupedRequests) {
         const details = await sendApiRequest({
             url: "/RequestAmount/GetRequestAmount",
             params: { id: reqAmountId },
@@ -350,14 +358,17 @@ async function refreshRequestAmountBankAccountOptions() {
         ? context.targetPersonId
         : null;
 
-    // No linked account: keep the original supplier/petty-cash options and
-    // leave the destination unselected as before.
+    // Supplier/customer requests show strictly the accounts linked to their
+    // target person. Without a person or linked account, TomSelect is empty.
+    // Petty-cash requests keep the cashier account category.
+    const isPersonTarget = context?.bankAccountType === 2 || context?.bankAccountType === 4;
     await getAllBankAccounts([
         {
             element: select,
-            type: [2, 3],
+            type: context?.bankAccountType === 3 ? [3] : [],
             isTomSelect: true,
             preferredCustomerId: linkedPersonId,
+            onlyLinkedToCustomer: isPersonTarget || !context,
             autoSelectLinked: Boolean(linkedPersonId),
         },
     ], true);
