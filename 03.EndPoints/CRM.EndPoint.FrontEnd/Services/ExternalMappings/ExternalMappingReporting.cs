@@ -248,7 +248,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
-            entries.AddRange(await BuildUserBrokerSuggestionsAsync(softwareId, ct));
+            entries.AddRange(await BuildUserExpertSuggestionsAsync(softwareId, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
@@ -339,7 +339,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(accountancies);
 
-                // Search must also find broker mappings by the CRM employee's name.
+                // Search expert mappings by CRM employee name.
                 var employees = await userManager.Users.AsNoTracking()
                     .Where(x => (x.FirstName != null && x.FirstName.Contains(search))
                         || (x.LastName != null && x.LastName.Contains(search))
@@ -606,17 +606,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName, x.IsCustomer,
-                        x.IsBroker, x.CommissionRate, DlCode = x.Dl.Code })
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code })
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
-                        (x.IsBroker ? "واسط " : "مشتری ") + softwareTitle,
+                        "شخص " + softwareTitle,
                         x.PartyId.ToString(), x.PartyId.ToString(), "",
-                        null, $"{x.Name} {x.LastName}".Trim(),
-                        x.IsBroker ? $"کد تفصیلی: {x.DlCode} | نرخ پورسانت: {x.CommissionRate}%"
-                            : x.IsCustomer ? "مشتری فعال در فهرست اشخاص"
-                            : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
+                        null, Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
+                        string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}");
             }
 
                 // Enrich the other saved Sepidar mapping types when their
@@ -705,7 +702,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
                         var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
                             : entry.TargetEntity == nameof(Invoice) ? "فاکتور"
-                            : entry.MapType == (int)ExternalMappingTypeEnum.واسط ? "واسط" : "مشتری";
+                            : entry.MapType == (int)ExternalMappingTypeEnum.واسط ? "کارشناس" : "مشتری";
                         var readableTitle = candidate == null
                             ? $"{itemType} با شناسه {id}"
                             : entry.TargetEntity == nameof(Party)
