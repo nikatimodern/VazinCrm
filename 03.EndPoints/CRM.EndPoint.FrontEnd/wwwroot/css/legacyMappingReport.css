@@ -214,13 +214,13 @@
 .lmr-manual-modal .lmr-manual-side:nth-child(2) h3 { color:#5811b4; }
 .lmr-manual-modal .lmr-manual-field { display:flex;flex-direction:column;gap:4px;min-width:0;margin:0 0 7px;font-size:12px;color:#545961; }
 .lmr-manual-modal .lmr-manual-field[hidden] { display:none!important; }
-.lmr-manual-modal .lmr-manual-field :is(input,select) {
+.lmr-manual-modal .lmr-manual-field > :is(input,select) {
     width:100%;min-width:0;height:33px;min-height:33px;padding:4px 8px;
     background:#fff;color:#212529;border:1px solid #cfd8dd;border-radius:6px;font-size:12px;
     font-family:IRANSans,sans-serif;
 }
 .lmr-manual-modal .lmr-manual-field select { text-overflow:ellipsis; }
-.lmr-manual-modal .lmr-manual-field :is(input,select):focus-visible { outline:2px solid #5811b4;outline-offset:1px; }
+.lmr-manual-modal .lmr-manual-field > :is(input,select):focus-visible { outline:2px solid #5811b4;outline-offset:1px; }
 .lmr-manual-modal .lmr-manual-help { margin:8px 0 3px;color:#545961;font-size:11px;line-height:1.85; }
 .lmr-manual-modal .lmr-manual-feedback { padding:6px 9px;border-radius:6px;color:#004944;font-size:12px; }
 .lmr-manual-modal .lmr-manual-feedback:empty { display:none; }
@@ -539,4 +539,112 @@
     .legacy-mapping-report .lmr-decision-card .lmr-item-footer > [data-delete-mapping] {
         flex:0 0 auto;margin-inline-start:auto;
     }
+}
+
+/* Bootstrap modal header close action stays at the far left (RTL row end). */
+.lmr-manual-modal .lmr-manual-header {
+    position:relative;
+    min-height:63px;
+    padding-inline-end:56px;
+}
+.lmr-manual-modal .lmr-manual-header .btn-close {
+    position:absolute;
+    left:15px;
+    top:50%;
+    transform:translateY(-50%);
+    margin:0!important;
+    opacity:.75;
+}
+.lmr-manual-modal .lmr-manual-entity-heading {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:5px;
+    margin-bottom:8px;
+}
+.lmr-manual-modal .lmr-manual-entity-heading h3 {
+    margin:0;
+}
+.lmr-manual-modal .lmr-manual-entity-heading small,
+.lmr-manual-modal .lmr-option-entity {
+    color:#68767a;
+    font-size:10px;
+    direction:ltr;
+    unicode-bidi:isolate;
+}
+.lmr-manual-modal .lmr-manual-field .ts-wrapper {
+    width:100%;
+    min-width:0;
+    font-family:IRANSans,sans-serif;
+}
+.lmr-manual-modal .lmr-manual-field .ts-wrapper.single .ts-control {
+    min-height:34px;
+    height:auto;
+    padding:5px 8px;
+    border:1px solid #cfd8dd;
+    border-radius:6px;
+    background:#fff;
+    box-shadow:none;
+    font:400 12px/1.8 IRANSans,sans-serif;
+    gap:4px;
+}
+.lmr-manual-modal .lmr-manual-field .ts-wrapper.focus .ts-control {
+    border-color:#754bb0;
+    box-shadow:0 0 0 2px rgba(117,75,176,.12);
+}
+.lmr-manual-modal .lmr-manual-field .ts-control input {
+    width:auto!important;
+    min-width:4px;
+    padding:0!important;
+    margin:0!important;
+    height:auto!important;
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
+    background:transparent!important;
+    color:#212529;
+    font:400 12px/1.8 IRANSans,sans-serif;
+}
+.lmr-manual-modal .ts-dropdown {
+    z-index:1100;
+    border:1px solid #dce3e8;
+    border-radius:7px;
+    box-shadow:0 8px 20px rgba(27,40,45,.12);
+    font-family:IRANSans,sans-serif;
+}
+.lmr-manual-modal .lmr-remote-option {
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:6px 9px;
+    line-height:1.6;
+    font-size:12px;
+    text-align:right;
+}
+.lmr-manual-modal .lmr-remote-option strong {
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+    color:#233933;
+    overflow-wrap:anywhere;
+}
+.lmr-manual-modal .lmr-remote-option small {
+    font-size:11px;
+    color:#586b68;
+}
+.lmr-manual-modal .lmr-remote-option .lmr-option-entity {
+    font-size:10px;
+    text-align:right;
+}
+.lmr-manual-modal .ts-dropdown .active { background:#eff1f9; }
+.lmr-manual-modal .lmr-remote-note { padding:9px;color:#667875;font-size:12px; }
+.lmr-manual-modal .lmr-remote-selected {
+    max-width:100%;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+    font-size:12px;
+}
+@media(max-width:580px) {
+    .lmr-manual-modal .lmr-manual-header .btn-close { left:12px; }
+    .lmr-manual-modal .lmr-manual-header { min-height:60px; }
 }
