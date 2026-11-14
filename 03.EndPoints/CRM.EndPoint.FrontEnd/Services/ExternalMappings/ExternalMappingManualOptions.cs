@@ -211,7 +211,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             .Select(x => new { x.VoucherId, x.Number, x.Description })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.VoucherId.ToString(),
-                            title = FormatManualOption(x.Number.ToString(), "سند حسابداری"), detail = TextService.NormalizePersianText(x.Description ?? "") }) };
+                            title = FormatManualOption(x.Number.ToString(), "Voucher"), detail = TextService.NormalizePersianText(x.Description ?? "") }) };
                     }
                     case "PaymentHeader":
                     {
