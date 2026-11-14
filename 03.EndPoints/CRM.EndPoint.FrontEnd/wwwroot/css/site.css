@@ -8637,6 +8637,33 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
     font: 11px/1.8 IRANSans, sans-serif;
 }
 
+#sendFactorToExternalSoftwareModal .external-factor-broker-person {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 6px;
+    row-gap: 3px;
+    min-width: 0;
+    color: #526d64;
+    font: 12px/1.7 IRANSans, sans-serif;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-person.has-person strong {
+    color: #006e63;
+    font: 12px/1.7 IRANSansBold, IRANSans, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-person small {
+    color: #768881;
+    font: 11px/1.7 IRANSans, sans-serif;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-person .external-factor-broker-warning {
+    color: #ad414b;
+}
+
+
 #sendFactorToExternalSoftwareModal .external-factor-broker-icon {
     flex-shrink: 0;
     color: #04857c;
@@ -8645,7 +8672,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 #sendFactorToExternalSoftwareModal .external-factor-broker-details {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
     padding: 12px 14px;
     border-top: 1px solid #dfeae6;
