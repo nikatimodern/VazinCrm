@@ -266,9 +266,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     pendingDocuments = plan.PendingDocuments.Count,
                     pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.واسط),
                     customerConflicts = plan.CustomerConflicts.Count,
-                    blockedDocuments = plan.BlockedDocumentCount,
+                    blockedDocuments = reportRows.Count(x => x.Status == "blocked"),
                     unmatched = reportRows.Count(x => x.Status == "notMatched"),
-                    ambiguous = plan.Ambiguous,
+                    ambiguous = reportRows.Count(x => x.Status == "ambiguous"),
                     duplicateGroups = plan.DuplicateTargetGroups.Count
                 },
                 rows = reportRows
