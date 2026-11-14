@@ -176,9 +176,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     case "Party":
                     {
-                        var query = targetDb.Parties.AsNoTracking()
-                            .Where(x => mapType == (int)ExternalMappingTypeEnum.واسط
-                                ? x.IsBroker && x.Dl.IsActive : x.IsCustomer);
+                        // Expert mappings link CRM users to any person in the external
+                        // software. Broker status is checked only when exporting an invoice.
+                        var query = targetDb.Parties.AsNoTracking();
+                        if (mapType != (int)ExternalMappingTypeEnum.واسط)
+                            query = query.Where(x => x.IsCustomer);
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && x.PartyId == number)
                                 || ((x.Name ?? "") + " " + (x.LastName ?? ""))
