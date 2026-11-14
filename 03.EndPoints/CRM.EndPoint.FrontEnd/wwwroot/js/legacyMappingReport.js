@@ -871,17 +871,7 @@
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
             if (result?.target) state.preview.set(key, result.target);
             else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
-            const old = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (!old) return;
-            const expanded = !old.querySelector(".lmr-expanded").hidden;
-            old.outerHTML = card(row);
-            const next = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (next && expanded) {
-                next.querySelector(".lmr-expanded").hidden = false;
-                next.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-            }
+            refreshProposalCard(row);
             updateSelection();
         }
 
@@ -907,6 +897,10 @@
             const panel = event.target.closest("[data-key]");
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
+            if (event.target.closest("[data-open-manual]")) {
+                openManualMapping(Number(row.mapType));
+                return;
+            }
             if (event.target.closest("[data-map-one]")) {
                 const item = payload(row);
                 if (item) await save([item]);
@@ -916,31 +910,22 @@
         proposalRoot.addEventListener("change", event => {
             if (state.processing) return;
             const panel = event.target.closest("[data-key]");
-            const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
+            const row = state.proposal.visible.find(item => item.key === panel?.dataset.key);
             if (!row) return;
             if (event.target.matches("[data-crm-target]")) {
-                const id = event.target.value;
-                state.crmTargets.set(row.key, id);
+                state.crmTargets.set(row.key, event.target.value);
                 state.selected.delete(row.key);
-                const expanded = !panel.querySelector(".lmr-expanded").hidden;
-                panel.outerHTML = card(row);
-                const updated = [...proposalRoot.querySelectorAll("[data-key]")]
-                    .find(item => item.dataset.key === row.key);
-                if (expanded && updated) {
-                    updated.querySelector(".lmr-expanded").hidden = false;
-                    updated.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-                }
+                refreshProposalCard(row);
                 updateSelection();
             } else if (event.target.matches("[data-map-target]")) {
                 const id = event.target.value.trim();
                 state.targets.set(row.key, id);
                 state.selected.delete(row.key);
-                const button = panel.querySelector("[data-map-one]");
-                if (button) button.disabled = !verifiedTarget(row);
-                const checkbox = panel.querySelector("[data-select-map]");
-                if (checkbox) { checkbox.checked = false; checkbox.disabled = !verifiedTarget(row); }
+                refreshProposalCard(row);
                 updateSelection();
-                preview(row, id);
+                // Only a verified external record may be submitted. Do not bypass
+                // the existing server-side check for conflicts and ambiguous matches.
+                if (validId(id)) void preview(row, id);
             } else if (event.target.matches("[data-select-map]")) {
                 const item = payload(row);
                 if (event.target.checked && item) state.selected.set(row.key, item);
@@ -1127,14 +1112,17 @@
             get("lmrManualOpen").focus();
         }
 
-        function openManualMapping() {
+        function openManualMapping(preferredType = null) {
             if (state.processing || !state.manualIds.includes(state.softwareId)) {
                 toastifyError("ثبت دستی برای این نرم‌افزار پشتیبانی نمی‌شود.");
                 return;
             }
             manualType.replaceChildren();
             state.types.forEach(item => manualType.add(new Option(item.title, String(item.value))));
-            if (state.types.some(x => Number(x.value) === 6)) manualType.value = "6";
+            if (preferredType != null && state.types.some(x => Number(x.value) === preferredType))
+                manualType.value = String(preferredType);
+            else if (state.types.some(x => Number(x.value) === 6))
+                manualType.value = "6";
             get("lmrManualCrmSearch").value = "";
             get("lmrManualExternalSearch").value = "";
             get("lmrManualSourceKind").value = "Accountancy";
@@ -1147,7 +1135,7 @@
             manualType.focus();
         }
 
-        get("lmrManualOpen").addEventListener("click", openManualMapping);
+        get("lmrManualOpen").addEventListener("click", () => openManualMapping());
         get("lmrManualClose").addEventListener("click", closeManualMapping);
         get("lmrManualCancel").addEventListener("click", closeManualMapping);
         manualModal.addEventListener("click", event => {
