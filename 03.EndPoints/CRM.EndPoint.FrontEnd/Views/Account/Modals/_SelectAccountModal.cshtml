@@ -1,14 +1,13 @@
-<div class="modal fade" id="selectAccountModal" tabindex="-1" style="direction: rtl" data-bs-focus="false">
+<div class="modal fade" id="selectAccountModal" tabindex="-1" aria-labelledby="erpSelectAccountTitle" data-bs-focus="false" dir="rtl">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5">انتخاب حساب کاربری</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h1 class="modal-title" id="erpSelectAccountTitle">انتخاب حساب کاربری</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
-
             <div class="modal-body">
-                <p class="mb-3 text-muted fMedium" style="direction: rtl;text-align:right">
-                    چند حساب با این شماره یافت شد. لطفاً یکی را انتخاب کنید:
+                <p class="mb-3 text-muted fMedium">
+                    چند حساب به این شماره متصل است. حساب موردنظر خود را انتخاب کنید.
                 </p>
                 <div id="accountList" class="list-group"></div>
             </div>

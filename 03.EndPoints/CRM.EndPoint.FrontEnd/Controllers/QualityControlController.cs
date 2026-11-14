@@ -5,6 +5,7 @@ using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControl;
 using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControl;
 using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlNoResponse;
+using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlInvalidNumber;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlDeals;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlForm;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlQuestions;
@@ -60,6 +61,15 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
         if (!ModelState.IsValid || request == null)
             return BadRequest(new { message = "اطلاعات درخواست معتبر نیست." });
         var result = await requests.CommandAsync(new MarkQualityControlNoResponseCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status, rowVersion = result.RowVersion });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkInvalidNumber([FromBody] MarkQualityControlInvalidNumberRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات درخواست معتبر نیست." });
+        var result = await requests.CommandAsync(new MarkQualityControlInvalidNumberCommand(request), ct);
         return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status, rowVersion = result.RowVersion });
     }
 
