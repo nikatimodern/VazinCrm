@@ -1119,9 +1119,25 @@
             if (event.target === manualModal) closeManualMapping();
         });
         document.addEventListener("keydown", event => {
-            if (event.key === "Escape" && state.manualOpen) {
+            if (!state.manualOpen) return;
+            if (event.key === "Escape") {
                 event.preventDefault();
                 closeManualMapping();
+            }
+            if (event.key === "Tab") {
+                const focusable = [...manualModal.querySelectorAll(
+                    'button:not([disabled]),input:not([disabled]),select:not([disabled])'
+                )].filter(el => !el.closest("[hidden]") && el.getClientRects().length);
+                if (!focusable.length) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
             }
         });
         manualType.addEventListener("change", resetManualOptions);
@@ -1134,13 +1150,15 @@
             if (state.manualOpen) void loadManualSide("external");
         }, 300);
         get("lmrManualCrmSearch").addEventListener("input", () => {
-            manualCrmSelect.value = "";
+            manualCrmSelect.replaceChildren(new Option("در حال جستجو…", ""));
+            manualCrmSelect.disabled = true;
             state.manualRequests.crm++;
             manualSubmitState();
             refreshManualCrm();
         });
         get("lmrManualExternalSearch").addEventListener("input", () => {
-            manualExternalSelect.value = "";
+            manualExternalSelect.replaceChildren(new Option("در حال جستجو…", ""));
+            manualExternalSelect.disabled = true;
             state.manualRequests.external++;
             manualSubmitState();
             refreshManualExternal();
