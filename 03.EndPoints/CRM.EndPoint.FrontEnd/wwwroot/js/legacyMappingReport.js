@@ -1133,7 +1133,10 @@
                     return query.trim().length >= 2;
                 },
                 // Old remote results must not be mixed with the next search term.
-                onType() { this.clearOptions(); },
+                onType() {
+                    this.clearOptions();
+                    state.manualRequests[side]++;
+                },
                 render: {
                     option(data, escapeOption) {
                         return '<div class="lmr-remote-option">' +
