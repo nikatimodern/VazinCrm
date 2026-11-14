@@ -62,6 +62,7 @@
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
             UserBrokerExactMatch:["تطبیق نام کاربر و واسط","نام کاربر CRM با واسط نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
             UserBrokerMultipleMatches:["چند واسط هم‌نام","چند واسط با همین نام پیدا شده‌اند؛ معادل درست را انتخاب کنید."],
+            UserBrokerMultipleCrmUsers:["چند کاربر CRM هم‌نام","چند کاربر CRM نام یکسان دارند؛ نگاشت را با بررسی هویت صحیح، دستی ثبت کنید."],
             UserBrokerNoMatch:["واسط هم‌نام یافت نشد","معادل قطعی پیدا نشده است؛ از ثبت دستی نگاشت استفاده کنید."],
             UserBrokerAlreadyMapped:["واسط قبلاً نگاشت شده","واسط مشابه در این نرم‌افزار به کاربر دیگری متصل است."],
             ReadyForReview:["آماده ثبت",""],
@@ -1126,10 +1127,24 @@
         manualType.addEventListener("change", resetManualOptions);
         get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
         get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
-        get("lmrManualCrmSearch").addEventListener("input",
-            debounce(() => { if (state.manualOpen) void loadManualSide("crm"); }, 300));
-        get("lmrManualExternalSearch").addEventListener("input",
-            debounce(() => { if (state.manualOpen) void loadManualSide("external"); }, 300));
+        const refreshManualCrm = debounce(() => {
+            if (state.manualOpen) void loadManualSide("crm");
+        }, 300);
+        const refreshManualExternal = debounce(() => {
+            if (state.manualOpen) void loadManualSide("external");
+        }, 300);
+        get("lmrManualCrmSearch").addEventListener("input", () => {
+            manualCrmSelect.value = "";
+            state.manualRequests.crm++;
+            manualSubmitState();
+            refreshManualCrm();
+        });
+        get("lmrManualExternalSearch").addEventListener("input", () => {
+            manualExternalSelect.value = "";
+            state.manualRequests.external++;
+            manualSubmitState();
+            refreshManualExternal();
+        });
         manualCrmSelect.addEventListener("change", manualSubmitState);
         manualExternalSelect.addEventListener("change", manualSubmitState);
 
