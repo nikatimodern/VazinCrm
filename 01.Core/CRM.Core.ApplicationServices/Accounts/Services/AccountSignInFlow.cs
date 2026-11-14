@@ -4,7 +4,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.AppUsers.Repositories;
 namespace CRM.Core.ApplicationServices.Accounts.Services;
 
-public sealed class AccountSignInFlow(IAccountAuthentication authentication, IAccountRequestContext context, IAccountAudit audit, IAccountRepository repository)
+public sealed class AccountSignInFlow(IAccountAuthentication authentication, IAccountRequestContext context, IAccountAudit audit, IAccountRepository repository, IOtpMobileRepository otp)
 {
     public async Task<AccountRedirect> CompleteAsync(AppUser user, string? returnUrl, CancellationToken cancellationToken)
     {
@@ -18,15 +18,18 @@ public sealed class AccountSignInFlow(IAccountAuthentication authentication, IAc
         await repository.SaveChangesAsync(cancellationToken);
         return user.IsEmployee ? new("Index", "Dashboard", string.IsNullOrEmpty(returnUrl) ? null : returnUrl) : new("Home");
     }
-    public Task<AccountRedirect> CompleteOtpAsync(AppUser user, string type, CancellationToken cancellationToken)
+    public async Task<AccountRedirect> CompleteOtpAsync(AppUser user, string type, string mobile, CancellationToken cancellationToken)
     {
         if (type == "Forgot")
         {
             context.SetSession("VerifiedOtp", "true");
             context.SetSession("UserId", user.Id);
-            return Task.FromResult(new AccountRedirect("ResetPassword"));
+            context.SetSession("Phone", mobile);
+            return new AccountRedirect("ResetPassword");
         }
         context.ClearSession();
-        return CompleteAsync(user, null, cancellationToken);
+        var redirect = await CompleteAsync(user, null, cancellationToken);
+        await otp.ResetLockoutAsync(mobile, cancellationToken);
+        return redirect;
     }
 }
