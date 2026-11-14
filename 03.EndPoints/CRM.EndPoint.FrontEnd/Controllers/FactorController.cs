@@ -3316,6 +3316,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return brokerPartyId;
         }
 
+        // Display-only lookup for the switch in invoice Preview. No broker validation
+        // happens here: unchecked invoice exports must remain possible without a mapping.
+        private async Task<SepidarInvoiceBrokerHintDto?> GetExternalFactorBrokerHintAsync(
+            Factor factor, Guid softwareId, SepidarService service, CancellationToken ct)
+        {
+            if (!Guid.TryParse(factor.SelerId, out var salespersonId) || salespersonId == Guid.Empty)
+                return null;
+
+            var mapping = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.EntityId == salespersonId
+                    && x.EntityName == nameof(AppUser)
+                    && x.ExternalSoftwareId == softwareId
+                    && x.MapType == ExternalMappingTypeEnum.کارشناسان)
+                .Select(x => new { x.ExEntityName, x.ExEntityId })
+                .SingleOrDefaultAsync(ct);
+
+            if (mapping?.ExEntityName != nameof(Party) ||
+                !int.TryParse(mapping.ExEntityId, out var partyId) || partyId <= 0)
+                return null;
+
+            return await service.GetSepidarInvoiceBrokerHintAsync(partyId, ct);
+        }
+
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3340,7 +3363,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
                 var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(brokerPartyId, preview, ct);
-                return Ok(new { softwareTitle, preview, broker });
+                // When the switch is off, reveal who the expert maps to without
+                // requiring IsBroker or blocking an invoice without a broker.
+                var brokerHint = request.IncludeBroker ? null
+                    : await GetExternalFactorBrokerHintAsync(
+                        factor, request.ExternalSoftwareId, sepidarService, ct);
+                return Ok(new { softwareTitle, preview, broker, brokerHint });
             }
             catch (InvalidOperationException ex)
             {
