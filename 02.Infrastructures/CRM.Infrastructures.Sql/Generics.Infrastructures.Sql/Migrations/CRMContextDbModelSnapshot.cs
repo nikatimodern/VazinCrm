@@ -3581,10 +3581,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<CRM.Core.Domain.QualityControls.Models.QualityControlOutcome?>("Status")
-                        .HasConversion<byte>()
-                        .HasColumnType("tinyint");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -3599,6 +3595,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<byte?>("Status")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("UserCreator")
                         .HasColumnType("nvarchar(max)");
@@ -3617,7 +3616,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasIndex("DealId")
                         .IsUnique();
 
-                    b.ToTable("QualityControls", null, t =>
+                    b.ToTable("QualityControls", t =>
                         {
                             t.HasCheckConstraint("CK_QualityControls_Status", "[Status] IN (1, 2, 4, 5)");
                         });
@@ -4464,6 +4463,154 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.ToTable("ExtraData");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities.InventoryDeliveryItemRecord", b =>
+                {
+                    b.Property<int>("InventoryDeliveryItemID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BaseInventoryDeliveryItem")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BaseInvoiceItem")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BaseReturnedInvoiceItem")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description_En")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Fee")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("InventoryDeliveryRef")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsReturn")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ItemRequestItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ParityCheck")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int?>("ProductOrderRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int?>("QuotationItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RemainingQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("RemainingSecondaryQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("RowNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SLAccountRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("SecondaryQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int?>("TracingRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WeighingRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("InventoryDeliveryItemID");
+
+                    b.HasIndex("BaseInvoiceItem");
+
+                    b.HasIndex("InventoryDeliveryRef");
+
+                    b.ToTable("InventoryDeliveryItem", "INV");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities.InventoryDeliveryRecord", b =>
+                {
+                    b.Property<int>("InventoryDeliveryID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AccountingVoucherRef")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreatorForm")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DestinationStockRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FiscalYearRef")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsReturn")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReceiverDLRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StockRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TotalPrice")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("InventoryDeliveryID");
+
+                    b.ToTable("InventoryDelivery", "INV");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", b =>
                 {
                     b.Property<int>("InvoiceId")
@@ -4592,6 +4739,300 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasIndex("InvoiceRef");
 
                     b.ToTable("InvoiceItem");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceItemRecord", b =>
+                {
+                    b.Property<int>("InvoiceItemID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Addition")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactorInBaseCurrency_VatEffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactorInBaseCurrency_VatIneffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactor_VatEffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactor_VatIneffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AggregateAmountDiscountRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AggregateAmountPercentDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AggregateAmountPriceDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("BankFeeForCurrencySale")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("BankFeeForCurrencySaleInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CustomerDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CustomerDiscountRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description_En")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("DiscountInvoiceItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DiscountItemGroupRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Duty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DutyInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Fee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("InvoiceRef")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAggregateDiscountInvoiceItem")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("NetPrice")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NetPriceInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("OrderItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceInfoDiscountRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceInfoPercentDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceInfoPriceDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("ProductPackQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ProductPackRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("QuotationItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("RowID")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("SecondaryQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StockRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxPayerCurrencyPurchaseRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("TracingRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("InvoiceItemID");
+
+                    b.HasIndex("InvoiceRef");
+
+                    b.ToTable("InvoiceItem", "SLS");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceRecord", b =>
+                {
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Addition")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactorInBaseCurrency_VatEffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactorInBaseCurrency_VatIneffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactor_VatEffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionFactor_VatIneffective")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AdditionInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("AgreementRef")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("BaseOnInventoryDelivery")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Creator")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrencyRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CustomerPartyRef")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CustomerRealName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CustomerRealName_En")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DeliveryLocationRef")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DiscountInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Duty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DutyInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("FiscalYearRef")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("Guid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("LastModificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LastModifier")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("NetPrice")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NetPriceInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OrderRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PartyAddressRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PriceInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("QuotationRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SLRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SaleTypeRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SettlementType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ShouldControlCustomerCredit")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("SignatureRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxInBaseCurrency")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("TaxPayerBillIssueDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VoucherRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("InvoiceId");
+
+                    b.ToTable("Invoice", "SLS");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Items.Entities.Item", b =>
@@ -5343,7 +5784,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(19,4)");
 
                     b.Property<int>("QuotationRef")
                         .HasColumnType("int");
@@ -5370,13 +5811,65 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("UsedQuantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(19,4)");
 
                     b.HasKey("QuotationItemID");
 
                     b.HasIndex("QuotationRef");
 
                     b.ToTable("QuotationItem", "SLS");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Stocks.Entities.ItemStockSummary", b =>
+                {
+                    b.Property<int>("ItemStockSummaryID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("FeedFromClosingOperation")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("FiscalYearRef")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InputQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("ItemRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int")
+                        .HasColumnName("Order");
+
+                    b.Property<decimal>("OutputQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal>("Quantity")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("SaleQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal?>("SaleWithReserveQuantity")
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<int>("StockRef")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TracingRef")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UnitRef")
+                        .HasColumnType("int");
+
+                    b.HasKey("ItemStockSummaryID");
+
+                    b.HasIndex("ItemRef");
+
+                    b.HasIndex("StockRef");
+
+                    b.ToTable("ItemStockSummary", "INV");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Stocks.Entities.Stock", b =>
@@ -7097,12 +7590,39 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("SepidarBank");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities.InventoryDeliveryItemRecord", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceItemRecord", "InvoiceItem")
+                        .WithMany()
+                        .HasForeignKey("BaseInvoiceItem")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities.InventoryDeliveryRecord", "InventoryDelivery")
+                        .WithMany("Items")
+                        .HasForeignKey("InventoryDeliveryRef")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("InventoryDelivery");
+
+                    b.Navigation("InvoiceItem");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.InvoiceItem", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", null)
                         .WithMany("InvoiceItems")
                         .HasForeignKey("InvoiceRef")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceItemRecord", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceRecord", null)
+                        .WithMany("InvoiceItems")
+                        .HasForeignKey("InvoiceRef")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -7171,6 +7691,25 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasForeignKey("QuotationRef")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Stocks.Entities.ItemStockSummary", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Sepidar.Items.Entities.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemRef")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Sepidar.Stocks.Entities.Stock", "Stock")
+                        .WithMany()
+                        .HasForeignKey("StockRef")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Stock");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Vouchers.Entites.VoucherItem", b =>
@@ -7590,7 +8129,17 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("SepidarBankAccount");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities.InventoryDeliveryRecord", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.Invoice", b =>
+                {
+                    b.Navigation("InvoiceItems");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Sepidar.Invoices.Entities.SalesInvoiceRecord", b =>
                 {
                     b.Navigation("InvoiceItems");
                 });
