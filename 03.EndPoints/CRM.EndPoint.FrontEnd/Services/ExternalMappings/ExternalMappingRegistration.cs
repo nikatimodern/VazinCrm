@@ -38,6 +38,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             public Guid EntityId { get; set; }
             public ExternalMappingTypeEnum MapType { get; set; }
             public string ExEntityId { get; set; }
+            public string EntityName { get; set; }
+            public string ExEntityName { get; set; }
         }
 
         public sealed class SaveExternalMappingsRequest
@@ -89,14 +91,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ? (SepidarContextDbBase)sdb : s2Db;
             var entityName = mapType == (int)ExternalMappingTypeEnum.مشتری ? nameof(Customer)
                 : mapType == (int)ExternalMappingTypeEnum.پیش_فاکتور ? nameof(PreFactor)
-                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor) : null;
+                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor)
+                : mapType == (int)ExternalMappingTypeEnum.واسط ? nameof(AppUser) : null;
             if (entityName == null)
                 throw new ArgumentException("نمایش معادل برای این نوع نگاشت هنوز پشتیبانی نمی‌شود.");
 
-            var externalName = entityName == nameof(Customer) ? "Party"
-                : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
+            var externalName = entityName == nameof(Customer) || entityName == nameof(AppUser)
+                ? "Party" : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
             var exists = entityName == nameof(Customer)
                 ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct)
+                : entityName == nameof(AppUser)
+                    ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId
+                        && x.IsBroker && x.Dl.IsActive, ct)
                 : entityName == nameof(PreFactor)
                     ? await sepidar.Quotations.AsNoTracking().AnyAsync(x => x.QuotationId == targetId, ct)
                     : await sepidar.SalesInvoices.AsNoTracking().AnyAsync(x => x.InvoiceId == targetId, ct);
@@ -204,23 +210,22 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .AnyAsync(x => x.Id == request.ExternalSoftwareId, ct))
                 throw new ArgumentException("نرم‌افزار انتخاب‌شده ثبت نشده است.");
 
-            var repeatedSources = request.Items.GroupBy(x => (x.MapType, x.EntityId))
-                .Any(x => x.Count() > 1);
-            if (repeatedSources)
-                throw new ArgumentException("برای هر رکورد CRM فقط یک معادل انتخاب کنید.");
-
-            var allowed = new[] {
-                ExternalMappingTypeEnum.مشتری,
-                ExternalMappingTypeEnum.پیش_فاکتور,
-                ExternalMappingTypeEnum.فاکتور
-            };
-            if (request.Items.Any(x => !allowed.Contains(x.MapType)
+            if (request.Items.Any(x => x == null
+                || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), x.MapType)
                 || x.EntityId == Guid.Empty
                 || !int.TryParse(x.ExEntityId, out var id) || id <= 0))
                 throw new ArgumentException("نوع نگاشت یا شناسه انتخاب‌شده معتبر نیست.");
 
+            var repeatedSources = request.Items.GroupBy(x => {
+                var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
+                return (x.MapType, pair.Source, x.EntityId);
+            }).Any(x => x.Count() > 1);
+            if (repeatedSources)
+                throw new ArgumentException("برای هر رکورد CRM فقط یک معادل انتخاب کنید.");
+
             var hasCustomer = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.مشتری);
-            var hasOther = request.Items.Any(x => x.MapType != ExternalMappingTypeEnum.مشتری);
+            var hasOther = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                || x.MapType == ExternalMappingTypeEnum.فاکتور);
             if (hasCustomer && hasOther)
                 throw new ArgumentException("ابتدا نگاشت مشتریان را ثبت کنید؛ سپس پیش‌فاکتور یا فاکتور را انتخاب کنید.");
 
@@ -241,8 +246,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Where(x => x.ExternalSoftwareId == request.ExternalSoftwareId)
                     .ToListAsync(ct);
 
-                var duplicatesInRequest = request.Items.GroupBy(x =>
-                    (x.MapType, x.ExEntityId.Trim())).Any(x => x.Count() > 1);
+                var duplicatesInRequest = request.Items.GroupBy(x => {
+                    var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
+                    return (x.MapType, pair.Target, int.Parse(x.ExEntityId.Trim()));
+                }).Any(x => x.Count() > 1);
                 if (duplicatesInRequest)
                     throw new ArgumentException("چند رکورد CRM نمی‌توانند به یک معادل خارجی متصل شوند.");
 
@@ -256,22 +263,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 foreach (var item in request.Items)
                 {
                     var targetId = int.Parse(item.ExEntityId.Trim());
-                    var entityName = item.MapType switch {
-                        ExternalMappingTypeEnum.مشتری => nameof(Customer),
-                        ExternalMappingTypeEnum.پیش_فاکتور => nameof(PreFactor),
-                        _ => nameof(Factor)
-                    };
-                    var externalName = item.MapType switch {
-                        ExternalMappingTypeEnum.مشتری => "Party",
-                        ExternalMappingTypeEnum.پیش_فاکتور => "Quotation",
-                        _ => "Invoice"
-                    };
+                    var (entityName, externalName) = GetMappingEntityNames(
+                        item.MapType, item.EntityName, item.ExEntityName);
 
                     if (existing.Any(x => x.EntityName == entityName
                         && x.EntityId == item.EntityId && x.MapType == item.MapType))
                         throw new MappingConflictException($"این {item.MapType} در نرم‌افزار انتخاب‌شده قبلاً نگاشت شده است.");
 
-                    if (existing.Any(x => x.ExEntityName == externalName
+                    if (existing.Any(x => x.MapType == item.MapType
+                        && x.ExEntityName == externalName
                         && x.ExEntityId == targetId.ToString()
                         && x.EntityId != item.EntityId))
                         throw new MappingConflictException($"معادل خارجی شماره {targetId} قبلاً به رکورد CRM دیگری وصل شده است.");
@@ -283,6 +283,41 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (!await targetDb.Parties.AsNoTracking()
                                 .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct))
                             throw new ArgumentException($"مشتری با شناسه {targetId} در نرم‌افزار مقصد معتبر نیست.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.واسط)
+                    {
+                        if (!await userManager.Users.AsNoTracking().AnyAsync(x =>
+                                x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
+                            throw new ArgumentException("کارمند انتخاب‌شده در CRM پیدا نشد.");
+                        if (!await targetDb.Parties.AsNoTracking().AnyAsync(x =>
+                                x.PartyId == targetId && x.IsBroker && x.Dl.IsActive && x.DLRef > 0, ct))
+                            throw new ArgumentException("واسط انتخاب‌شده در نرم‌افزار مالی فعال نیست یا کد تفصیلی ندارد.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.مرکز_هزینه)
+                    {
+                        if (!await db.BaseCenterCashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
+                            throw new ArgumentException("مرکز هزینه انتخاب‌شده در CRM پیدا نشد.");
+                        if (!await targetDb.DLs.AsNoTracking().AnyAsync(x => x.DLId == targetId && x.IsActive, ct))
+                            throw new ArgumentException("حساب تفصیلی انتخاب‌شده در نرم‌افزار مالی فعال نیست.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.تنخواه)
+                    {
+                        if (!await db.Cashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
+                            throw new ArgumentException("تنخواه انتخاب‌شده در CRM پیدا نشد.");
+                        var exists = externalName == "SepidarCash"
+                            ? await targetDb.SepidarCash.AsNoTracking().AnyAsync(x => x.CashId == targetId, ct)
+                            : await targetDb.PaymentHeaders.AsNoTracking()
+                                .AnyAsync(x => x.PaymentHeaderId == targetId, ct);
+                        if (!exists) throw new ArgumentException("معادل تنخواه در نرم‌افزار مالی پیدا نشد.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.سند_حسابداری)
+                    {
+                        var sourceExists = entityName == nameof(Cash)
+                            ? await db.Cashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct)
+                            : await db.Accountancies.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct);
+                        if (!sourceExists) throw new ArgumentException("سند مبدا در CRM پیدا نشد.");
+                        if (!await targetDb.Vouchers.AsNoTracking().AnyAsync(x => x.VoucherId == targetId, ct))
+                            throw new ArgumentException("سند حسابداری در نرم‌افزار مالی پیدا نشد.");
                     }
                     else
                     {

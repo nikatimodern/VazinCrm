@@ -56,6 +56,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetManualMappingOptions(
+            Guid softwareId, int mapType, string side, string search = "",
+            string sourceEntity = null, string targetEntity = null,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                return Ok(await mappings.GetManualMappingOptionsAsync(
+                    softwareId, mapType, side, search, sourceEntity, targetEntity, ct));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetExternalMappingTargetDetails(
             Guid softwareId, int mapType, int targetId, CancellationToken ct)
         {

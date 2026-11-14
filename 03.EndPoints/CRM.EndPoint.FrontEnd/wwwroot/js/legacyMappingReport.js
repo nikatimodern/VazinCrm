@@ -60,6 +60,11 @@
             InvoiceQuotationMismatch:["پیش‌فاکتور فاکتور فرق دارد","فاکتور سپیدار به پیش‌فاکتور دیگری مرتبط است."],
             InvoiceMultipleFieldMismatch:["چند اختلاف در فاکتور","مشتری، مبلغ، شماره مالی و سال مالی را بررسی کنید."],
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
+            UserBrokerExactMatch:["تطبیق نام کاربر و واسط","نام کاربر CRM با واسط نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserBrokerMultipleMatches:["چند واسط هم‌نام","چند واسط با همین نام پیدا شده‌اند؛ معادل درست را انتخاب کنید."],
+            UserBrokerMultipleCrmUsers:["چند کاربر CRM هم‌نام","چند کاربر CRM نام یکسان دارند؛ نگاشت را با بررسی هویت صحیح، دستی ثبت کنید."],
+            UserBrokerNoMatch:["واسط هم‌نام یافت نشد","معادل قطعی پیدا نشده است؛ از ثبت دستی نگاشت استفاده کنید."],
+            UserBrokerAlreadyMapped:["واسط قبلاً نگاشت شده","واسط مشابه در این نرم‌افزار به کاربر دیگری متصل است."],
             ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["نگاشت ذخیره‌شده","این رابطه قبلاً در جدول ExternalMapping ثبت شده است."]
         };
@@ -72,7 +77,9 @@
             proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
             processing: false,
-            deleting: false
+            deleting: false,
+            manualOpen: false,
+            manualRequests: {crm:0, external:0}
         };
 
         function reason(row) {
@@ -83,7 +90,8 @@
         function typeTitle(row) {
             return state.types.find(t => Number(t.value) === Number(row.mapType))?.title ||
                 ({ Customer:"مشتری", PreFactor:"پیش‌فاکتور", Factor:"فاکتور",
-                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری" }[row.kind] || show(row.kind));
+                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری",
+                    AppUser:"واسط / کاربر" }[row.kind] || show(row.kind));
         }
 
         function canMap(row) {
@@ -92,7 +100,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5].includes(Number(row.mapType)) &&
+                [2,3,5,6].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -177,72 +185,105 @@
             return { title:"معادل انتخابی", id:value, number:value, customer:option?.title || "" };
         }
 
-        function readableExtra(row, side, isCrm) {
-            let extra = side?.extra || "";
-            if (!extra.trim()) return "";
-            if (isCrm && Number(row.mapType) === 5) return "";
-            if (isCrm && extra.includes("CustomerId:")) {
-                const financial = extra.match(/شماره مالی:\s*([^|]+)/);
-                return financial && financial[1].trim() && financial[1].trim() !== "null"
-                    ? "شماره فاکتور مالی: " + financial[1].trim() : "";
-            }
-            if (!isCrm && extra.includes("PartyId:")) {
-                const m = extra.match(/PartyId:\s*(\d+)/);
-                return m ? "کد مشتری مرتبط در نرم‌افزار: "+m[1] : "";
-            }
-            return extra.replaceAll("FiscalYearRef:","سال مالی:").replaceAll("SepidarId:","کد قبلی سپیدار:");
+        function sideCodeLabel(row, crm) {
+            if (Number(row.mapType) === 5) return "کد مشتری";
+            if (Number(row.mapType) === 6) return crm ? "نام کاربری" : "شناسه واسط";
+            return "شماره";
         }
 
-        function detailSide(row, side, isCrm) {
-            const label = isCrm ? "CRM" : state.softwareTitle;
-            const customer = row.mapType === 5;
-            const rows = [
-                [customer ? "کد مشتری" : "شماره", side?.number],
-                ["نام", side?.customer || side?.title],
-                ...(!customer ? [["مبلغ نهایی", side?.amount == null ? "" : money(side.amount)+" ریال"],
-                    ["تاریخ",side?.date]] : []),
-                ["توضیح",readableExtra(row,side,isCrm)]
-            ].filter(x => x[1] !== undefined && x[1] !== null && x[1] !== "");
-            return '<section class="lmr-detail-side"><h4>'+escape(label)+'</h4>'+
-                rows.map(x => '<div><span>'+escape(x[0])+'</span><b>'+escape(show(x[1]))+'</b></div>').join("")+
-                '<small>شناسه داخلی: '+escape(side?.id || "—")+'</small></section>';
+        function sideDisplayName(row, side) {
+            if (!side) return "معادل مشخص نیست";
+            if (Number(row.mapType) === 5 || Number(row.mapType) === 6)
+                return show(side.customer || side.title);
+            const serial = side.number && side.number !== "-" ? " " + side.number : "";
+            return show(side.title) + serial;
         }
 
-        function inputTarget(row) {
-            if (!canMap(row)) return "";
-            if (row.crmCandidates?.length) {
-                const chosen = state.crmTargets.get(row.key) || "";
-                return '<div class="lmr-map-action lmr-crm-choice">' +
-                    '<label><span>انتخاب مشتری CRM برای این مشتری ' + escape(state.softwareTitle) + '</span>' +
-                    '<select data-crm-target aria-label="انتخاب مشتری CRM">' +
-                    '<option value="">مشتری CRM را انتخاب کنید</option>' +
-                    row.crmCandidates.map(item =>
-                        '<option value="' + escape(item.id) + '" ' +
-                        (chosen === item.id ? "selected" : "") + '>' +
-                        escape(item.name) + ' — کد ' + escape(show(item.code)) + '</option>'
-                    ).join("") + '</select></label>' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
-            }
-            const value = targetValue(row);
-            const ready = row.status === "pending" && row.options?.length === 1;
-            if (ready)
-                return '<div class="lmr-map-action lmr-ready-action">' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function simpleSide(row, side, crm) {
+            const hasData = side && side.id && side.id !== "-" &&
+                !String(side.title || "").includes("مشخص نیست");
+            if (!hasData)
+                return '<div class="lmr-decision-empty">موردی برای نمایش مشخص نشده است.</div>';
+            const number = side.number && side.number !== "-" ? side.number : "";
+            const numberText = number
+                ? '<small>' + escape(sideCodeLabel(row, crm)) + ': ' + escape(number) + '</small>'
+                : "";
+            return '<div class="lmr-decision-single"><strong>' +
+                escape(sideDisplayName(row, side)) + '</strong>' + numberText + '</div>';
+        }
 
-            const options = row.options || [];
-            const control = options.length ?
-                '<select data-map-target aria-label="انتخاب معادل">' +
-                    '<option value="">معادل صحیح را انتخاب کنید</option>' +
-                    options.map(opt => '<option value="' + escape(opt.id) + '" ' +
-                        (String(opt.id) === value ? "selected" : "") + '>' + escape(opt.title) +
-                        ' (کد ' + escape(opt.id) + ')</option>').join("") + '</select>'
-                : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" ' +
-                    'placeholder="شناسه معادل در نرم‌افزار" value="' + escape(value) + '" />';
-            return '<div class="lmr-map-action"><label><span>معادل انتخابی</span>' + control + '</label>' +
-                '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function candidateChoices(row, side) {
+            const crmSide = side === "crm";
+            const candidates = crmSide ? row.crmCandidates || [] : row.options || [];
+            const chosen = crmSide ? state.crmTargets.get(row.key) || "" : targetValue(row);
+            const canChoose = canMap(row);
+            const codeLabel = crmSide || [5, 6].includes(Number(row.mapType))
+                ? sideCodeLabel(row, crmSide) : "شناسه";
+            const name = (crmSide ? "crm-" : "external-") + row.key;
+            return '<div class="lmr-choice-list" role="group" aria-label="' +
+                escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
+                candidates.map(item => {
+                    const id = String(item.id);
+                    const title = crmSide ? item.name : item.title;
+                    const code = crmSide ? item.code : item.id;
+                    const selected = chosen === id;
+                    const choice = canChoose
+                        ? '<input type="radio" ' +
+                            (crmSide ? 'data-crm-target ' : 'data-map-target ') +
+                            'name="' + escape(name) + '" value="' + escape(id) + '"' +
+                            (selected ? ' checked' : '') + '>'
+                        : '<i class="fas fa-circle lmr-readonly-dot" aria-hidden="true"></i>';
+                    return '<label class="lmr-choice' +
+                        (selected && canChoose ? ' is-picked' : '') +
+                        (!canChoose ? ' is-readonly' : '') + '">' +
+                        choice + '<span class="lmr-choice-text"><strong>' +
+                        escape(show(title)) + '</strong><small>' +
+                        escape(codeLabel) + ': ' + escape(show(code)) +
+                        '</small></span></label>';
+                }).join("") + '</div>';
+        }
+
+        function decisionSide(row, side) {
+            const crmSide = side === "crm";
+            const isMultiCrm = crmSide && row.crmCandidates?.length > 1;
+            const isMultiExternal = !crmSide && !row.crmCandidates?.length &&
+                row.status !== "saved" &&
+                !(row.status === "pending" && row.options?.length === 1) &&
+                row.options?.length > 0;
+            const heading = crmSide ? "CRM" : state.softwareTitle;
+            const sideContent = isMultiCrm
+                ? candidateChoices(row, "crm")
+                : isMultiExternal
+                    ? candidateChoices(row, "external")
+                    : simpleSide(row, crmSide ? row.crm : targetPreview(row), crmSide);
+            return '<section class="lmr-decision-side' +
+                (crmSide ? ' is-crm' : ' is-external') + '">' +
+                '<div class="lmr-decision-side-title"><span>' + escape(heading) + '</span>' +
+                ((isMultiCrm || isMultiExternal) && canMap(row)
+                    ? '<small>یک مورد انتخاب کنید</small>' : '') + '</div>' +
+                sideContent + '</section>';
+        }
+
+        function expandableContent(row) {
+            const evidence = [...new Set((row.sources || []).map(x => String(x).trim()).filter(Boolean))];
+            const mismatch = renderMismatchDetails(row);
+            const reasonText = reason(row)[1] || "";
+            const raw = String(row.details || "").trim();
+            const technical = /(?:Quotation|Invoice)Id=\d+[:]|(?:CustomerId|FiscalYearRef|SepidarPartyId)=/i.test(raw);
+            const repeated = row.reason === "MultipleSepidarParties" ||
+                row.reason === "DuplicateCrmCustomersForParty";
+            const extra = row.status !== "saved" && row.status !== "pending"
+                ? (raw && !technical && !(repeated && evidence.length) ? raw :
+                    (!evidence.length && !mismatch ? reasonText : ""))
+                : "";
+            const references = evidence.length
+                ? '<div class="lmr-related"><h4>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</h4>' +
+                    '<ul>' + evidence.map(line => '<li>' + escape(line) + '</li>').join("") +
+                    '</ul></div>' : "";
+            const supplementary = extra
+                ? '<div class="lmr-related lmr-detail-note"><h4>توضیحات تکمیلی</h4>' +
+                    '<p>' + escape(extra) + '</p></div>' : "";
+            return references + mismatch + supplementary;
         }
 
         // Break technical mismatch strings into readable, per-field comparisons.
@@ -316,67 +357,81 @@
         }
 
         function card(row) {
-            const title = reason(row);
-            const isCustomer = Number(row.mapType) === 5;
-            const left = selectedCrm(row) || {};
-            const right = targetPreview(row) || {};
-            const mappable = canMap(row);
+            const mapped = canMap(row);
+            const selected = mapped && verifiedTarget(row);
+            const extra = expandableContent(row);
+            const label = reason(row)[0];
             const stateClass = row.status === "saved" ? "saved" :
                 row.status === "pending" ? "proposal" : "problem";
-            const related = (row.sources || []).filter(Boolean);
-            const crmName = left.customer || left.title;
-            const extName = right.customer || right.title;
-            const leftNum = left.number;
-            const rightNum = right.number;
-            const leftAmount = left.amount;
-            const rightAmount = right.amount;
-            const amountDiff = !isCustomer && leftAmount != null && rightAmount != null &&
-                Number(leftAmount) !== Number(rightAmount);
-            return '<article class="lmr-item lmr-'+stateClass+'" data-key="'+escape(row.key)+'" role="listitem">'+
-                '<header class="lmr-item-head">'+
-                    (mappable ? '<label class="lmr-item-select"><input type="checkbox" data-select-map '+
-                        (state.selected.has(row.key) ? "checked " : "")+
-                        (!verifiedTarget(row) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
-                    '<b class="lmr-type">'+escape(typeTitle(row))+'</b>'+
-                    '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
-                    (row.status === "pending" || row.status === "saved" ? "" :
-                        '<span class="lmr-short-reason">'+escape(title[0])+'</span>')+
-                '</header>'+
-                '<div class="lmr-pair">'+
-                    '<div class="lmr-pair-side"><span>CRM</span><strong>'+escape(show(crmName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(leftNum))+'</small></div>'+
-                    '<span class="lmr-arrows"><i class="fas fa-exchange-alt" aria-hidden="true"></i></span>'+
-                    '<div class="lmr-pair-side"><span>'+escape(state.softwareTitle)+'</span><strong>'+escape(show(extName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(rightNum))+'</small></div>'+
-                    (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
-                        ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
-                '</div>'+
-                (row.reason === "PartyAlreadyMappedToAnotherCustomer" ||
-                    row.reason === "ExistingDuplicateCustomerParty"
-                    ? '<div class="lmr-owner-notice"><i class="fas fa-link" aria-hidden="true"></i><strong>' +
-                        escape(row.details || "نگاشت قبلی این مشتری را بررسی کنید.") +
-                        '</strong></div>'
-                    : row.status === "pending" || row.status === "saved" ? "" :
-                        '<div class="lmr-one-line">' + escape(title[1]) + '</div>')+
-                '<footer class="lmr-item-footer">'+
-                    '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
-                    inputTarget(row)+
-                    (row.status === "saved" && row.mappingId ?
-                        '<button type="button" class="lmr-btn lmr-btn-danger" data-delete-mapping aria-label="حذف این نگاشت">' +
-                            '<i class="fas fa-trash-alt" aria-hidden="true"></i> حذف نگاشت</button>' : '')+
-                '</footer>'+
-                '<div class="lmr-expanded" hidden>'+
-                    '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
-                    (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
-                        '<ul>'+related.map(line => '<li>'+escape(line)+'</li>').join("")+'</ul></div>' : '')+
-                    renderMismatchDetails(row) +
-                    (row.details && row.status !== "saved" && row.status !== "pending" &&
-                        !renderMismatchDetails(row) &&
-                        row.reason !== "PartyAlreadyMappedToAnotherCustomer" &&
-                        row.reason !== "ExistingDuplicateCustomerParty"
-                            ? '<div class="lmr-technical"><h4>توضیحات تکمیلی</h4><p>' +
-                                escape(row.details) + '</p></div>' : '')+
-                '</div></article>';
+            const needsManual = row.status !== "saved" && row.status !== "pending" &&
+                !row.crmCandidates?.length && !row.options?.length &&
+                state.manualIds.includes(state.softwareId);
+            const actions = (extra
+                    ? '<button type="button" class="lmr-expand" data-expand aria-expanded="false">' +
+                        '<i class="fas fa-chevron-down" aria-hidden="true"></i> توضیحات</button>'
+                    : "") +
+                (needsManual
+                    ? '<button type="button" class="lmr-btn lmr-btn-soft" data-open-manual>' +
+                        '<i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت دستی</button>'
+                    : "") +
+                (mapped && (row.options?.length || row.crmCandidates?.length ||
+                        row.status === "pending")
+                    ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                        (!selected ? "disabled" : "") + '>ثبت نگاشت</button>'
+                    : "") +
+                (row.status === "saved" && row.mappingId
+                    ? '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                        'data-delete-mapping>حذف نگاشت</button>'
+                    : "");
+            return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
+                '" data-key="' + escape(row.key) + '" role="listitem">' +
+                '<header class="lmr-item-head">' +
+                    '<span class="lmr-type">' + escape(typeTitle(row)) + '</span>' +
+                    '<span class="lmr-state">' +
+                        escape(statusNames[row.status] || row.status) + '</span>' +
+                    (row.status === "saved" || row.status === "pending" ? "" :
+                        '<span class="lmr-short-reason">' + escape(label) + '</span>') +
+                    (mapped && selected
+                        ? '<label class="lmr-item-select" title="انتخاب برای ثبت گروهی">' +
+                            '<input type="checkbox" data-select-map aria-label="انتخاب برای ثبت گروهی" ' +
+                            (state.selected.has(row.key) ? "checked " : "") +
+                            (!selected ? "disabled " : "") + '></label>'
+                        : "") +
+                '</header>' +
+                '<div class="lmr-decision-grid">' +
+                    decisionSide(row, "crm") +
+                    '<span class="lmr-decision-arrow" aria-hidden="true">' +
+                        '<i class="fas fa-exchange-alt"></i></span>' +
+                    decisionSide(row, "external") +
+                '</div>' +
+                (actions ? '<footer class="lmr-item-footer">' + actions + '</footer>' : "") +
+                (extra ? '<div class="lmr-expanded" hidden>' + extra + '</div>' : "") +
+                '</article>';
+        }
+
+        function refreshProposalCard(row) {
+            const old = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (!old) return;
+            const expanded = !!old.querySelector(".lmr-expanded") &&
+                !old.querySelector(".lmr-expanded").hidden;
+            const active = old.contains(document.activeElement) ? document.activeElement : null;
+            const focusField = active?.matches("[data-crm-target], [data-map-target]")
+                ? { kind: active.hasAttribute("data-crm-target") ? "data-crm-target" : "data-map-target",
+                    value: active.value } : null;
+            old.outerHTML = card(row);
+            const next = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (!next) return;
+            if (expanded && next.querySelector(".lmr-expanded")) {
+                next.querySelector(".lmr-expanded").hidden = false;
+                next.querySelector("[data-expand]")?.setAttribute("aria-expanded", "true");
+            }
+            if (focusField) {
+                const input = [...next.querySelectorAll("[" + focusField.kind + "]")]
+                    .find(element => element.value === focusField.value);
+                input?.focus({ preventScroll: true });
+            }
         }
 
         function feedback(section, message = "", error = false) {
@@ -394,7 +449,7 @@
             get("lmrProposalStats").hidden = !stats;
             if (stats) {
                 get("lmrPendingCount").textContent = format.format(
-                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0));
+                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0) + (stats.pendingUsers || 0));
                 get("lmrCustomerConflicts").textContent = format.format(stats.customerConflicts || 0);
                 get("lmrBlockedCount").textContent = format.format(
                     (stats.blockedDocuments || 0) + (stats.ambiguous || 0));
@@ -412,7 +467,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5]);
+                : new Set([2, 3, 5, 6]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -712,9 +767,7 @@
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...items.filter(x => x.mapType === 5),
-                ...items.filter(x => x.mapType === 2),
-                ...items.filter(x => x.mapType === 3)
+                ...[5, 6, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
                 toastifyError("نوع بعضی از نگاشت‌های انتخاب‌شده قابل ثبت نیست.");
@@ -726,7 +779,7 @@
                 text: "ثبت " + format.format(items.length) + " نگاشت در «" +
                     state.softwareTitle + "» انجام شود؟ " +
                     (items.length > 100 ? "نگاشت‌ها به دسته‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
-                    "مشتری‌ها قبل از پیش‌فاکتورها و فاکتورها ثبت می‌شوند.",
+                    "نگاشت‌ها پس از اعتبارسنجی رابطه دو طرف در CRM ثبت می‌شوند.",
                 icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
             });
             if (!agreed) return;
@@ -742,7 +795,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 2, 3]) {
+                for (const groupType of [5, 6, 4, 0, 1, 2, 3]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -813,6 +866,7 @@
                 feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
                     "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
             }
+            return !failed && savedCount === items.length;
         }
 
         async function preview(row, id) {
@@ -828,17 +882,7 @@
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
             if (result?.target) state.preview.set(key, result.target);
             else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
-            const old = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (!old) return;
-            const expanded = !old.querySelector(".lmr-expanded").hidden;
-            old.outerHTML = card(row);
-            const next = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (next && expanded) {
-                next.querySelector(".lmr-expanded").hidden = false;
-                next.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-            }
+            refreshProposalCard(row);
             updateSelection();
         }
 
@@ -864,6 +908,10 @@
             const panel = event.target.closest("[data-key]");
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
+            if (event.target.closest("[data-open-manual]")) {
+                openManualMapping(Number(row.mapType));
+                return;
+            }
             if (event.target.closest("[data-map-one]")) {
                 const item = payload(row);
                 if (item) await save([item]);
@@ -873,31 +921,22 @@
         proposalRoot.addEventListener("change", event => {
             if (state.processing) return;
             const panel = event.target.closest("[data-key]");
-            const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
+            const row = state.proposal.visible.find(item => item.key === panel?.dataset.key);
             if (!row) return;
             if (event.target.matches("[data-crm-target]")) {
-                const id = event.target.value;
-                state.crmTargets.set(row.key, id);
+                state.crmTargets.set(row.key, event.target.value);
                 state.selected.delete(row.key);
-                const expanded = !panel.querySelector(".lmr-expanded").hidden;
-                panel.outerHTML = card(row);
-                const updated = [...proposalRoot.querySelectorAll("[data-key]")]
-                    .find(item => item.dataset.key === row.key);
-                if (expanded && updated) {
-                    updated.querySelector(".lmr-expanded").hidden = false;
-                    updated.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-                }
+                refreshProposalCard(row);
                 updateSelection();
             } else if (event.target.matches("[data-map-target]")) {
                 const id = event.target.value.trim();
                 state.targets.set(row.key, id);
                 state.selected.delete(row.key);
-                const button = panel.querySelector("[data-map-one]");
-                if (button) button.disabled = !verifiedTarget(row);
-                const checkbox = panel.querySelector("[data-select-map]");
-                if (checkbox) { checkbox.checked = false; checkbox.disabled = !verifiedTarget(row); }
+                refreshProposalCard(row);
                 updateSelection();
-                preview(row, id);
+                // Only a verified external record may be submitted. Do not bypass
+                // the existing server-side check for conflicts and ambiguous matches.
+                if (validId(id)) void preview(row, id);
             } else if (event.target.matches("[data-select-map]")) {
                 const item = payload(row);
                 if (event.target.checked && item) state.selected.set(row.key, item);
@@ -988,6 +1027,200 @@
             }
             await loadSaved();
         }
+
+
+        // Manual entry uses the same server-side validation as bulk suggestions.
+        const manualModal = get("lmrManualModal");
+        const manualType = get("lmrManualType");
+        const manualCrmSelect = get("lmrManualCrmSelect");
+        const manualExternalSelect = get("lmrManualExternalSelect");
+
+        function manualTypeDetails() {
+            const type = Number(manualType.value);
+            get("lmrManualSourceKindBox").hidden = type !== 1;
+            get("lmrManualTargetKindBox").hidden = type !== 0;
+            return {
+                mapType: type,
+                sourceEntity: type === 1 ? get("lmrManualSourceKind").value : "",
+                targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
+            };
+        }
+
+        function manualFeedback(message = "", error = false) {
+            const el = get("lmrManualFeedback");
+            el.textContent = message;
+            el.classList.toggle("lmr-error", error);
+        }
+
+        function manualSubmitState() {
+            get("lmrManualConfirm").disabled = !state.manualOpen || state.processing ||
+                !manualCrmSelect.value || !validId(manualExternalSelect.value);
+        }
+
+        async function loadManualSide(side) {
+            if (!state.manualOpen || !isActive()) return;
+            const isCrm = side === "crm";
+            const select = isCrm ? manualCrmSelect : manualExternalSelect;
+            const searchInput = get(isCrm ? "lmrManualCrmSearch" : "lmrManualExternalSearch");
+            const request = ++state.manualRequests[side];
+            const softwareId = state.softwareId;
+            const typeDetails = manualTypeDetails();
+            select.replaceChildren(new Option("در حال جستجو…", ""));
+            select.disabled = true;
+            manualSubmitState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalMapping/GetManualMappingOptions",
+                    params: { softwareId, ...typeDetails, side, search: searchInput.value.trim() },
+                    showLoading: false,
+                    showError: false
+                });
+                if (!state.manualOpen || !isActive() || softwareId !== state.softwareId ||
+                    request !== state.manualRequests[side]) return;
+                select.replaceChildren(new Option("انتخاب کنید", ""));
+                if (!result?.options) {
+                    manualFeedback("دریافت اطلاعات " + (isCrm ? "CRM" : state.softwareTitle) +
+                        " ناموفق بود. دوباره جستجو کنید.", true);
+                    return;
+                }
+                for (const option of result.options) {
+                    const label = (option.title || option.id || "بدون نام") +
+                        (option.detail ? " — " + option.detail : "");
+                    select.add(new Option(label, option.id));
+                }
+                if (!result.options.length)
+                    select.options[0].textContent = "موردی پیدا نشد؛ عبارت دیگری جستجو کنید";
+                else
+                    manualFeedback();
+            } catch {
+                if (state.manualOpen && request === state.manualRequests[side])
+                    manualFeedback("جستجوی اطلاعات انجام نشد؛ دوباره تلاش کنید.", true);
+            } finally {
+                if (state.manualOpen && request === state.manualRequests[side]) {
+                    select.disabled = false;
+                    manualSubmitState();
+                }
+            }
+        }
+
+        function resetManualOptions() {
+            state.manualRequests.crm++;
+            state.manualRequests.external++;
+            manualCrmSelect.replaceChildren(new Option("انتخاب کنید", ""));
+            manualExternalSelect.replaceChildren(new Option("انتخاب کنید", ""));
+            manualFeedback();
+            manualSubmitState();
+            void loadManualSide("crm");
+            void loadManualSide("external");
+        }
+
+        function closeManualMapping() {
+            if (!state.manualOpen || state.processing) return;
+            state.manualOpen = false;
+            state.manualRequests.crm++;
+            state.manualRequests.external++;
+            manualModal.hidden = true;
+            get("lmrManualOpen").focus();
+        }
+
+        function openManualMapping(preferredType = null) {
+            if (state.processing || !state.manualIds.includes(state.softwareId)) {
+                toastifyError("ثبت دستی برای این نرم‌افزار پشتیبانی نمی‌شود.");
+                return;
+            }
+            manualType.replaceChildren();
+            state.types.forEach(item => manualType.add(new Option(item.title, String(item.value))));
+            if (preferredType != null && state.types.some(x => Number(x.value) === preferredType))
+                manualType.value = String(preferredType);
+            else if (state.types.some(x => Number(x.value) === 6))
+                manualType.value = "6";
+            get("lmrManualCrmSearch").value = "";
+            get("lmrManualExternalSearch").value = "";
+            get("lmrManualSourceKind").value = "Accountancy";
+            get("lmrManualTargetKind").value = "PaymentHeader";
+            get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
+            state.manualOpen = true;
+            manualModal.hidden = false;
+            manualTypeDetails();
+            resetManualOptions();
+            manualType.focus();
+        }
+
+        get("lmrManualOpen").addEventListener("click", () => openManualMapping());
+        get("lmrManualClose").addEventListener("click", closeManualMapping);
+        get("lmrManualCancel").addEventListener("click", closeManualMapping);
+        manualModal.addEventListener("click", event => {
+            if (event.target === manualModal) closeManualMapping();
+        });
+        manualModal.addEventListener("keydown", event => {
+            if (!state.manualOpen || !isActive()) return;
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeManualMapping();
+            }
+            if (event.key === "Tab") {
+                const focusable = [...manualModal.querySelectorAll(
+                    'button:not([disabled]),input:not([disabled]),select:not([disabled])'
+                )].filter(el => !el.closest("[hidden]") && el.getClientRects().length);
+                if (!focusable.length) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+        manualType.addEventListener("change", resetManualOptions);
+        get("lmrManualSourceKind").addEventListener("change", resetManualOptions);
+        get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
+        const refreshManualCrm = debounce(() => {
+            if (state.manualOpen) void loadManualSide("crm");
+        }, 300);
+        const refreshManualExternal = debounce(() => {
+            if (state.manualOpen) void loadManualSide("external");
+        }, 300);
+        get("lmrManualCrmSearch").addEventListener("input", () => {
+            manualCrmSelect.replaceChildren(new Option("در حال جستجو…", ""));
+            manualCrmSelect.disabled = true;
+            state.manualRequests.crm++;
+            manualSubmitState();
+            refreshManualCrm();
+        });
+        get("lmrManualExternalSearch").addEventListener("input", () => {
+            manualExternalSelect.replaceChildren(new Option("در حال جستجو…", ""));
+            manualExternalSelect.disabled = true;
+            state.manualRequests.external++;
+            manualSubmitState();
+            refreshManualExternal();
+        });
+        manualCrmSelect.addEventListener("change", manualSubmitState);
+        manualExternalSelect.addEventListener("change", manualSubmitState);
+
+        get("lmrManualConfirm").addEventListener("click", async () => {
+            if (state.processing || !state.manualOpen) return;
+            const entityId = manualCrmSelect.value;
+            const exEntityId = manualExternalSelect.value;
+            if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(entityId) ||
+                !validId(exEntityId)) {
+                manualFeedback("رکورد CRM و معادل معتبر آن را انتخاب کنید.", true);
+                return;
+            }
+            const values = manualTypeDetails();
+            const item = {
+                entityId, mapType: values.mapType, exEntityId,
+                entityName: values.sourceEntity || null,
+                exEntityName: values.targetEntity || null
+            };
+            const success = await save([item]);
+            if (success) closeManualMapping();
+            else if (state.manualOpen)
+                manualFeedback("نگاشت ثبت نشد؛ جزئیات خطای نمایش‌داده‌شده را بررسی کنید.", true);
+            manualSubmitState();
+        });
 
         softwareSelect.addEventListener("change", changeSoftware);
         get("lmrRefreshSaved").addEventListener("click", refreshSaved);

@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.10" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.11" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -45,7 +45,7 @@
 
         <div class="lmr-filterbar">
             <label class="lmr-field lmr-search"><span>جستجو</span>
-                <input id="lmrSavedSearch" type="search" placeholder="نام، کد مشتری، شماره فاکتور یا پیش‌فاکتور" autocomplete="off" />
+                <input id="lmrSavedSearch" type="search" placeholder="نام کاربر یا مشتری، کد و شماره سند" autocomplete="off" />
             </label>
             <label class="lmr-field"><span>نوع نگاشت</span>
                 <select id="lmrSavedType"><option value="">همه انواع</option></select>
@@ -71,10 +71,15 @@
                     <p>پیشنهادهای محاسبه‌شده، بدون ذخیره‌سازی خودکار</p>
                 </div>
             </div>
+            <div class="lmr-section-actions">
+                <button id="lmrManualOpen" type="button" class="lmr-btn lmr-btn-soft">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت نگاشت دستی
+                </button>
             <button id="lmrCompute" type="button" class="lmr-btn lmr-btn-primary">
                 <i class="fas fa-calculator" aria-hidden="true"></i>
                 <span id="lmrComputeLabel">محاسبه پیشنهادها</span>
             </button>
+            </div>
         </header>
 
         <div id="lmrProposalStats" class="lmr-proposal-stats" hidden>
@@ -94,7 +99,7 @@
 
         <div class="lmr-filterbar">
             <label class="lmr-field lmr-search"><span>جستجو</span>
-                <input id="lmrProposalSearch" type="search" placeholder="نام مشتری یا شماره پیش‌فاکتور / فاکتور" autocomplete="off" />
+                <input id="lmrProposalSearch" type="search" placeholder="نام کاربر، مشتری یا شماره سند" autocomplete="off" />
             </label>
             <label class="lmr-field"><span>نوع نگاشت</span>
                 <select id="lmrProposalType"><option value="">همه انواع</option></select>
@@ -120,6 +125,75 @@
             <nav id="lmrProposalPagination" class="lmr-pagination" aria-label="صفحه‌بندی پیشنهادها"></nav>
         </footer>
     </section>
+
+    <div id="lmrManualModal" class="lmr-manual-overlay" hidden>
+        <section class="lmr-manual-dialog" role="dialog" aria-modal="true"
+                 aria-labelledby="lmrManualTitle" aria-describedby="lmrManualDescription">
+            <header class="lmr-manual-header">
+                <div>
+                    <h2 id="lmrManualTitle"><i class="fas fa-link" aria-hidden="true"></i> ثبت نگاشت دستی</h2>
+                    <p id="lmrManualDescription">رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.</p>
+                </div>
+                <button id="lmrManualClose" type="button" class="lmr-manual-x" aria-label="بستن">×</button>
+            </header>
+            <div class="lmr-manual-body">
+                <div class="lmr-manual-fields">
+                    <label class="lmr-manual-field">
+                        <span>نوع نگاشت</span>
+                        <select id="lmrManualType" required></select>
+                    </label>
+                    <label class="lmr-manual-field" id="lmrManualSourceKindBox" hidden>
+                        <span>نوع سند CRM</span>
+                        <select id="lmrManualSourceKind">
+                            <option value="Accountancy">ثبت مالی CRM</option>
+                            <option value="Cash">تنخواه CRM</option>
+                        </select>
+                    </label>
+                    <label class="lmr-manual-field" id="lmrManualTargetKindBox" hidden>
+                        <span>نوع معادل مالی</span>
+                        <select id="lmrManualTargetKind">
+                            <option value="PaymentHeader">اعلامیه پرداخت</option>
+                            <option value="SepidarCash">تنخواه نرم‌افزار</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="lmr-manual-pair">
+                    <div class="lmr-manual-side">
+                        <h3>رکورد CRM</h3>
+                        <label class="lmr-manual-field">
+                            <span>جستجوی نام، شماره یا شناسه</span>
+                            <input id="lmrManualCrmSearch" type="search" autocomplete="off"
+                                   placeholder="نام یا شماره را وارد کنید" maxlength="100" />
+                        </label>
+                        <label class="lmr-manual-field">
+                            <span>رکورد موردنظر</span>
+                            <select id="lmrManualCrmSelect" required></select>
+                        </label>
+                    </div>
+                    <div class="lmr-manual-side">
+                        <h3 id="lmrManualExternalTitle">معادل نرم‌افزار مالی</h3>
+                        <label class="lmr-manual-field">
+                            <span>جستجوی نام، شماره یا کد تفصیلی</span>
+                            <input id="lmrManualExternalSearch" type="search" autocomplete="off"
+                                   placeholder="نام یا کد را وارد کنید" maxlength="100" />
+                        </label>
+                        <label class="lmr-manual-field">
+                            <span>معادل موردنظر</span>
+                            <select id="lmrManualExternalSelect" required></select>
+                        </label>
+                    </div>
+                </div>
+                <p class="lmr-manual-help">فهرست هر طرف حداکثر ۴۰ نتیجه نشان می‌دهد. برای انتخاب دقیق‌تر، جستجو کنید. ثبت فقط رابطه نگاشت را در CRM ذخیره می‌کند.</p>
+                <div id="lmrManualFeedback" class="lmr-manual-feedback" role="status" aria-live="polite"></div>
+            </div>
+            <footer class="lmr-manual-footer">
+                <button id="lmrManualCancel" type="button" class="lmr-btn">انصراف</button>
+                <button id="lmrManualConfirm" type="button" class="lmr-btn lmr-btn-primary" disabled>
+                    <i class="fas fa-check" aria-hidden="true"></i> ثبت نگاشت
+                </button>
+            </footer>
+        </section>
+    </div>
 </section>
 
 @section Scripts {
