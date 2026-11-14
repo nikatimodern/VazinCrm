@@ -242,10 +242,7 @@
                 updateOutcomeAvailability();
                 loadTable(true);
             } else if (event.target.matches('[name="qcStatus"]')) {
-                if (event.target.value) {
-                    page.querySelector("#qcReviewChecked").checked = true;
-                    updateOutcomeAvailability();
-                }
+                // Keep the selected review filter unchanged; an outcome already limits results to reviewed records.
                 loadTable(true);
             } else if (event.target.matches('[name="qcFinancialStatus"]')) {
                 loadTable(true);

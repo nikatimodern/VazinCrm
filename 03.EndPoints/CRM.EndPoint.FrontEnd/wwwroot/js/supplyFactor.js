@@ -273,6 +273,7 @@ async function proccessSupplyFactorWithAi(btn) {
         data: attachFile,
         successMsg: null,
         showLoading: false,
+        timeout: 0,
         onSuccess: (res) => {
             supplyFactorData = { ...supplyFactorData, ...res.data };
             
