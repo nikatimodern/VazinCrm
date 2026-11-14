@@ -23,7 +23,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ExternalMappingTypeEnum.فاکتور => ("Factor", "Invoice"),
                 ExternalMappingTypeEnum.مرکز_هزینه => ("BaseCenterCash", "DL"),
                 ExternalMappingTypeEnum.مشتری => ("Customer", "Party"),
-                ExternalMappingTypeEnum.واسط => ("AppUser", "Party"),
+                ExternalMappingTypeEnum.کارشناسان => ("AppUser", "Party"),
                 _ => throw new ArgumentException("نوع نگاشت پشتیبانی نمی‌شود.")
             };
             var source = string.IsNullOrWhiteSpace(sourceEntity) ? defaultPair.Item1 : sourceEntity.Trim();
@@ -179,7 +179,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         // Expert mappings link CRM users to any person in the external
                         // software. Broker status is checked only when exporting an invoice.
                         var query = targetDb.Parties.AsNoTracking();
-                        if (mapType != (int)ExternalMappingTypeEnum.واسط)
+                        if (mapType != (int)ExternalMappingTypeEnum.کارشناسان)
                             query = query.Where(x => x.IsCustomer);
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && x.PartyId == number)

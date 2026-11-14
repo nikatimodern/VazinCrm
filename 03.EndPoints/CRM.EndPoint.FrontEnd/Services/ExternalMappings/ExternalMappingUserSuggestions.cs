@@ -38,7 +38,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .ToListAsync(ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
-                    && x.MapType == ExternalMappingTypeEnum.واسط)
+                    && x.MapType == ExternalMappingTypeEnum.کارشناسان)
                 .Select(x => new { x.EntityId, x.ExEntityId })
                 .ToListAsync(ct);
 
@@ -83,7 +83,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         : status == "ambiguous" ? "چند شخص هم‌نام وجود دارد؛ معادل درست کارشناس را انتخاب کنید."
                         : "شخص هم‌نام قطعی پیدا نشد؛ می‌توانید نگاشت کارشناس را دستی ثبت کنید.",
                     nameof(Party), target, Array.Empty<string>(),
-                    (int)ExternalMappingTypeEnum.واسط, target?.ToString(),
+                    (int)ExternalMappingTypeEnum.کارشناسان, target?.ToString(),
                     free));
             }
             return result;

@@ -255,7 +255,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                         || x.MapType == ExternalMappingTypeEnum.فاکتور
-                        || x.MapType == ExternalMappingTypeEnum.واسط))
+                        || x.MapType == ExternalMappingTypeEnum.کارشناسان))
                 .CountAsync(ct);
 
             return new
@@ -264,7 +264,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     saved,
                     pendingCustomers = plan.PendingCustomers.Count,
                     pendingDocuments = plan.PendingDocuments.Count,
-                    pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.واسط),
+                    pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.کارشناسان),
                     customerConflicts = plan.CustomerConflicts.Count,
                     blockedDocuments = reportRows.Count(x => x.Status == "blocked"),
                     unmatched = reportRows.Count(x => x.Status == "notMatched"),
@@ -702,7 +702,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
                         var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
                             : entry.TargetEntity == nameof(Invoice) ? "فاکتور"
-                            : entry.MapType == (int)ExternalMappingTypeEnum.واسط ? "کارشناس" : "مشتری";
+                            : entry.MapType == (int)ExternalMappingTypeEnum.کارشناسان ? "کارشناس" : "مشتری";
                         var readableTitle = candidate == null
                             ? $"{itemType} با شناسه {id}"
                             : entry.TargetEntity == nameof(Party)

@@ -62,7 +62,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             var mapTypes = Enum.GetValues<ExternalMappingTypeEnum>()
                 .Select(x => new {
-                    value = (int)x, title = x == ExternalMappingTypeEnum.واسط ? "کارشناسان" : x.ToString().Replace("_", " "),
+                    value = (int)x, title = x.ToString().Replace("_", " "),
                     saved = counts.Where(c => c.MapType == x).Sum(c => c.Count)
                 }).ToArray();
 
@@ -92,7 +92,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var entityName = mapType == (int)ExternalMappingTypeEnum.مشتری ? nameof(Customer)
                 : mapType == (int)ExternalMappingTypeEnum.پیش_فاکتور ? nameof(PreFactor)
                 : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor)
-                : mapType == (int)ExternalMappingTypeEnum.واسط ? nameof(AppUser) : null;
+                : mapType == (int)ExternalMappingTypeEnum.کارشناسان ? nameof(AppUser) : null;
             if (entityName == null)
                 throw new ArgumentException("نمایش معادل برای این نوع نگاشت هنوز پشتیبانی نمی‌شود.");
 
@@ -283,7 +283,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct))
                             throw new ArgumentException($"مشتری با شناسه {targetId} در نرم‌افزار مقصد معتبر نیست.");
                     }
-                    else if (item.MapType == ExternalMappingTypeEnum.واسط)
+                    else if (item.MapType == ExternalMappingTypeEnum.کارشناسان)
                     {
                         if (!await userManager.Users.AsNoTracking().AnyAsync(x =>
                                 x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
@@ -398,8 +398,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         EntityName = entityName,
                         EntityId = item.EntityId,
                         MapType = item.MapType,
-                        MapTypeTxt = item.MapType == ExternalMappingTypeEnum.واسط
-                            ? "کارشناسان" : item.MapType.ToString(),
+                        MapTypeTxt = item.MapType.ToString(),
                         ExEntityName = externalName,
                         ExEntityId = targetId.ToString(),
                         UserCreatorID = crmUser.Id,

@@ -3285,7 +3285,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .Where(x => x.EntityId == salespersonId
                     && x.EntityName == nameof(AppUser)
                     && x.ExternalSoftwareId == softwareId
-                    && x.MapType == ExternalMappingTypeEnum.واسط)
+                    && x.MapType == ExternalMappingTypeEnum.کارشناسان)
                 .Select(x => new { x.ExEntityName, x.ExEntityId })
                 .SingleOrDefaultAsync(ct);
 

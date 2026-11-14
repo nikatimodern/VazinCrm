@@ -193,7 +193,7 @@
 /* Manual mapping uses the Bootstrap 5 modal and its focus/backdrop management. */
 .legacy-mapping-report .lmr-manual-field[hidden] { display:none!important; }
 .lmr-manual-modal { --bs-modal-width:800px; font:400 13px/1.7 IRANSans,sans-serif; color:#273931; }
-.lmr-manual-modal .modal-content { border:1px solid #dce4e6;border-radius:11px;overflow:hidden; }
+.lmr-manual-modal .modal-content { border:1px solid #dce4e6;border-radius:11px; }
 .lmr-manual-modal .modal-header,.lmr-manual-modal .modal-footer {
     padding:10px 15px;gap:10px;border-color:#e4e8ed;background:#fff;
 }

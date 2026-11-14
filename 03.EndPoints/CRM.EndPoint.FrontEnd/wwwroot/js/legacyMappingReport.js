@@ -1121,13 +1121,9 @@
             const instance = new TomSelect(element, {
                 valueField: "id",
                 labelField: "text",
-                searchField: [],
-                sortField: [],
                 maxItems: 1,
                 maxOptions: 40,
-                create: false,
                 preload: false,
-                dropdownParent: "#lmrManualModal",
                 loadThrottle: 320,
                 placeholder: "نام، شماره یا کد را جستجو کنید",
                 shouldLoad(query) {
