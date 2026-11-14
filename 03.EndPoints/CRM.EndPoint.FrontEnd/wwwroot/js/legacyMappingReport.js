@@ -185,72 +185,104 @@
             return { title:"معادل انتخابی", id:value, number:value, customer:option?.title || "" };
         }
 
-        function readableExtra(row, side, isCrm) {
-            let extra = side?.extra || "";
-            if (!extra.trim()) return "";
-            if (isCrm && Number(row.mapType) === 5) return "";
-            if (isCrm && extra.includes("CustomerId:")) {
-                const financial = extra.match(/شماره مالی:\s*([^|]+)/);
-                return financial && financial[1].trim() && financial[1].trim() !== "null"
-                    ? "شماره فاکتور مالی: " + financial[1].trim() : "";
-            }
-            if (!isCrm && extra.includes("PartyId:")) {
-                const m = extra.match(/PartyId:\s*(\d+)/);
-                return m ? "کد مشتری مرتبط در نرم‌افزار: "+m[1] : "";
-            }
-            return extra.replaceAll("FiscalYearRef:","سال مالی:").replaceAll("SepidarId:","کد قبلی سپیدار:");
+        function sideCodeLabel(row, crm) {
+            if (Number(row.mapType) === 5) return "کد مشتری";
+            if (Number(row.mapType) === 6) return crm ? "نام کاربری" : "شناسه واسط";
+            return "شماره";
         }
 
-        function detailSide(row, side, isCrm) {
-            const label = isCrm ? "CRM" : state.softwareTitle;
-            const customer = row.mapType === 5;
-            const rows = [
-                [customer ? "کد مشتری" : "شماره", side?.number],
-                ["نام", side?.customer || side?.title],
-                ...(!customer ? [["مبلغ نهایی", side?.amount == null ? "" : money(side.amount)+" ریال"],
-                    ["تاریخ",side?.date]] : []),
-                ["توضیح",readableExtra(row,side,isCrm)]
-            ].filter(x => x[1] !== undefined && x[1] !== null && x[1] !== "");
-            return '<section class="lmr-detail-side"><h4>'+escape(label)+'</h4>'+
-                rows.map(x => '<div><span>'+escape(x[0])+'</span><b>'+escape(show(x[1]))+'</b></div>').join("")+
-                '<small>شناسه داخلی: '+escape(side?.id || "—")+'</small></section>';
+        function sideDisplayName(row, side) {
+            if (!side) return "معادل مشخص نیست";
+            if (Number(row.mapType) === 5 || Number(row.mapType) === 6)
+                return show(side.customer || side.title);
+            const serial = side.number && side.number !== "-" ? " " + side.number : "";
+            return show(side.title) + serial;
         }
 
-        function inputTarget(row) {
-            if (!canMap(row)) return "";
-            if (row.crmCandidates?.length) {
-                const chosen = state.crmTargets.get(row.key) || "";
-                return '<div class="lmr-map-action lmr-crm-choice">' +
-                    '<label><span>انتخاب مشتری CRM برای این مشتری ' + escape(state.softwareTitle) + '</span>' +
-                    '<select data-crm-target aria-label="انتخاب مشتری CRM">' +
-                    '<option value="">مشتری CRM را انتخاب کنید</option>' +
-                    row.crmCandidates.map(item =>
-                        '<option value="' + escape(item.id) + '" ' +
-                        (chosen === item.id ? "selected" : "") + '>' +
-                        escape(item.name) + ' — کد ' + escape(show(item.code)) + '</option>'
-                    ).join("") + '</select></label>' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
-            }
-            const value = targetValue(row);
-            const ready = row.status === "pending" && row.options?.length === 1;
-            if (ready)
-                return '<div class="lmr-map-action lmr-ready-action">' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function simpleSide(row, side, crm) {
+            const hasData = side && side.id && side.id !== "-" &&
+                !String(side.title || "").includes("مشخص نیست");
+            if (!hasData)
+                return '<div class="lmr-decision-empty">موردی برای نمایش مشخص نشده است.</div>';
+            const number = side.number && side.number !== "-" ? side.number : "";
+            const numberText = number
+                ? '<small>' + escape(sideCodeLabel(row, crm)) + ': ' + escape(number) + '</small>'
+                : "";
+            return '<div class="lmr-decision-single"><strong>' +
+                escape(sideDisplayName(row, side)) + '</strong>' + numberText + '</div>';
+        }
 
-            const options = row.options || [];
-            const control = options.length ?
-                '<select data-map-target aria-label="انتخاب معادل">' +
-                    '<option value="">معادل صحیح را انتخاب کنید</option>' +
-                    options.map(opt => '<option value="' + escape(opt.id) + '" ' +
-                        (String(opt.id) === value ? "selected" : "") + '>' + escape(opt.title) +
-                        ' (کد ' + escape(opt.id) + ')</option>').join("") + '</select>'
-                : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" ' +
-                    'placeholder="شناسه معادل در نرم‌افزار" value="' + escape(value) + '" />';
-            return '<div class="lmr-map-action"><label><span>معادل انتخابی</span>' + control + '</label>' +
-                '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function candidateChoices(row, side) {
+            const crmSide = side === "crm";
+            const candidates = crmSide ? row.crmCandidates || [] : row.options || [];
+            const chosen = crmSide ? state.crmTargets.get(row.key) || "" : targetValue(row);
+            const canChoose = canMap(row);
+            const codeLabel = sideCodeLabel(row, crmSide);
+            const name = (crmSide ? "crm-" : "external-") + row.key;
+            return '<div class="lmr-choice-list" role="group" aria-label="' +
+                escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
+                candidates.map(item => {
+                    const id = String(item.id);
+                    const title = crmSide ? item.name : item.title;
+                    const code = crmSide ? item.code : item.id;
+                    const selected = chosen === id;
+                    const choice = canChoose
+                        ? '<input type="radio" ' +
+                            (crmSide ? 'data-crm-target ' : 'data-map-target ') +
+                            'name="' + escape(name) + '" value="' + escape(id) + '"' +
+                            (selected ? ' checked' : '') + '>'
+                        : '<i class="fas fa-circle lmr-readonly-dot" aria-hidden="true"></i>';
+                    return '<label class="lmr-choice' +
+                        (selected && canChoose ? ' is-picked' : '') +
+                        (!canChoose ? ' is-readonly' : '') + '">' +
+                        choice + '<span class="lmr-choice-text"><strong>' +
+                        escape(show(title)) + '</strong><small>' +
+                        escape(codeLabel) + ': ' + escape(show(code)) +
+                        '</small></span></label>';
+                }).join("") + '</div>';
+        }
+
+        function decisionSide(row, side) {
+            const crmSide = side === "crm";
+            const isMultiCrm = crmSide && row.crmCandidates?.length > 1;
+            const isMultiExternal = !crmSide && !row.crmCandidates?.length &&
+                row.status !== "saved" &&
+                !(row.status === "pending" && row.options?.length === 1) &&
+                row.options?.length > 0;
+            const heading = crmSide ? "CRM" : state.softwareTitle;
+            const sideContent = isMultiCrm
+                ? candidateChoices(row, "crm")
+                : isMultiExternal
+                    ? candidateChoices(row, "external")
+                    : simpleSide(row, crmSide ? row.crm : targetPreview(row), crmSide);
+            return '<section class="lmr-decision-side' +
+                (crmSide ? ' is-crm' : ' is-external') + '">' +
+                '<div class="lmr-decision-side-title"><span>' + escape(heading) + '</span>' +
+                ((isMultiCrm || isMultiExternal) && canMap(row)
+                    ? '<small>یک مورد انتخاب کنید</small>' : '') + '</div>' +
+                sideContent + '</section>';
+        }
+
+        function expandableContent(row) {
+            const evidence = [...new Set((row.sources || []).map(x => String(x).trim()).filter(Boolean))];
+            const mismatch = renderMismatchDetails(row);
+            const reasonText = reason(row)[1] || "";
+            const raw = String(row.details || "").trim();
+            const technical = /(?:Quotation|Invoice)Id=\d+[:]|(?:CustomerId|FiscalYearRef|SepidarPartyId)=/i.test(raw);
+            const repeated = row.reason === "MultipleSepidarParties" ||
+                row.reason === "DuplicateCrmCustomersForParty";
+            const extra = row.status !== "saved" && row.status !== "pending"
+                ? (raw && !technical && !(repeated && evidence.length) ? raw :
+                    (!evidence.length && !mismatch ? reasonText : ""))
+                : "";
+            const references = evidence.length
+                ? '<div class="lmr-related"><h4>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</h4>' +
+                    '<ul>' + evidence.map(line => '<li>' + escape(line) + '</li>').join("") +
+                    '</ul></div>' : "";
+            const supplementary = extra
+                ? '<div class="lmr-related lmr-detail-note"><h4>توضیحات تکمیلی</h4>' +
+                    '<p>' + escape(extra) + '</p></div>' : "";
+            return references + mismatch + supplementary;
         }
 
         // Break technical mismatch strings into readable, per-field comparisons.
@@ -324,68 +356,71 @@
         }
 
         function card(row) {
-            const title = reason(row);
-            const isCustomer = Number(row.mapType) === 5;
-            const isBroker = Number(row.mapType) === 6;
-            const left = selectedCrm(row) || {};
-            const right = targetPreview(row) || {};
-            const mappable = canMap(row);
+            const mapped = canMap(row);
+            const selected = mapped && verifiedTarget(row);
+            const extra = expandableContent(row);
+            const label = reason(row)[0];
             const stateClass = row.status === "saved" ? "saved" :
                 row.status === "pending" ? "proposal" : "problem";
-            const related = (row.sources || []).filter(Boolean);
-            const crmName = left.customer || left.title;
-            const extName = right.customer || right.title;
-            const leftNum = left.number;
-            const rightNum = right.number;
-            const leftAmount = left.amount;
-            const rightAmount = right.amount;
-            const amountDiff = !isCustomer && leftAmount != null && rightAmount != null &&
-                Number(leftAmount) !== Number(rightAmount);
-            return '<article class="lmr-item lmr-'+stateClass+'" data-key="'+escape(row.key)+'" role="listitem">'+
-                '<header class="lmr-item-head">'+
-                    (mappable ? '<label class="lmr-item-select"><input type="checkbox" data-select-map '+
-                        (state.selected.has(row.key) ? "checked " : "")+
-                        (!verifiedTarget(row) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
-                    '<b class="lmr-type">'+escape(typeTitle(row))+'</b>'+
-                    '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
-                    (row.status === "pending" || row.status === "saved" ? "" :
-                        '<span class="lmr-short-reason">'+escape(title[0])+'</span>')+
-                '</header>'+
-                '<div class="lmr-pair">'+
-                    '<div class="lmr-pair-side"><span>CRM</span><strong>'+escape(show(crmName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : isBroker ? "نام کاربری " : "شماره ")+escape(show(leftNum))+'</small></div>'+
-                    '<span class="lmr-arrows"><i class="fas fa-exchange-alt" aria-hidden="true"></i></span>'+
-                    '<div class="lmr-pair-side"><span>'+escape(state.softwareTitle)+'</span><strong>'+escape(show(extName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : isBroker ? "شناسه واسط " : "شماره ")+escape(show(rightNum))+'</small></div>'+
-                    (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
-                        ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
-                '</div>'+
-                (row.reason === "PartyAlreadyMappedToAnotherCustomer" ||
-                    row.reason === "ExistingDuplicateCustomerParty"
-                    ? '<div class="lmr-owner-notice"><i class="fas fa-link" aria-hidden="true"></i><strong>' +
-                        escape(row.details || "نگاشت قبلی این مشتری را بررسی کنید.") +
-                        '</strong></div>'
-                    : row.status === "pending" || row.status === "saved" ? "" :
-                        '<div class="lmr-one-line">' + escape(title[1]) + '</div>')+
-                '<footer class="lmr-item-footer">'+
-                    '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
-                    inputTarget(row)+
-                    (row.status === "saved" && row.mappingId ?
-                        '<button type="button" class="lmr-btn lmr-btn-danger" data-delete-mapping aria-label="حذف این نگاشت">' +
-                            '<i class="fas fa-trash-alt" aria-hidden="true"></i> حذف نگاشت</button>' : '')+
-                '</footer>'+
-                '<div class="lmr-expanded" hidden>'+
-                    '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
-                    (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
-                        '<ul>'+related.map(line => '<li>'+escape(line)+'</li>').join("")+'</ul></div>' : '')+
-                    renderMismatchDetails(row) +
-                    (row.details && row.status !== "saved" && row.status !== "pending" &&
-                        !renderMismatchDetails(row) &&
-                        row.reason !== "PartyAlreadyMappedToAnotherCustomer" &&
-                        row.reason !== "ExistingDuplicateCustomerParty"
-                            ? '<div class="lmr-technical"><h4>توضیحات تکمیلی</h4><p>' +
-                                escape(row.details) + '</p></div>' : '')+
-                '</div></article>';
+            const needsManual = row.status !== "saved" && row.status !== "pending" &&
+                !row.crmCandidates?.length && !row.options?.length &&
+                state.manualIds.includes(state.softwareId);
+            const actions = (extra
+                    ? '<button type="button" class="lmr-expand" data-expand aria-expanded="false">' +
+                        '<i class="fas fa-chevron-down" aria-hidden="true"></i> توضیحات</button>'
+                    : "") +
+                (needsManual
+                    ? '<button type="button" class="lmr-btn lmr-btn-soft" data-open-manual>' +
+                        '<i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت دستی</button>'
+                    : "") +
+                (mapped && (row.options?.length || row.crmCandidates?.length ||
+                        row.status === "pending")
+                    ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                        (!selected ? "disabled" : "") + '>ثبت نگاشت</button>'
+                    : "") +
+                (row.status === "saved" && row.mappingId
+                    ? '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                        'data-delete-mapping>حذف نگاشت</button>'
+                    : "");
+            return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
+                '" data-key="' + escape(row.key) + '" role="listitem">' +
+                '<header class="lmr-item-head">' +
+                    '<span class="lmr-type">' + escape(typeTitle(row)) + '</span>' +
+                    '<span class="lmr-state">' +
+                        escape(statusNames[row.status] || row.status) + '</span>' +
+                    (row.status === "saved" || row.status === "pending" ? "" :
+                        '<span class="lmr-short-reason">' + escape(label) + '</span>') +
+                    (mapped
+                        ? '<label class="lmr-item-select" title="انتخاب برای ثبت گروهی">' +
+                            '<input type="checkbox" data-select-map aria-label="انتخاب برای ثبت گروهی" ' +
+                            (state.selected.has(row.key) ? "checked " : "") +
+                            (!selected ? "disabled " : "") + '></label>'
+                        : "") +
+                '</header>' +
+                '<div class="lmr-decision-grid">' +
+                    decisionSide(row, "crm") +
+                    '<span class="lmr-decision-arrow" aria-hidden="true">' +
+                        '<i class="fas fa-exchange-alt"></i></span>' +
+                    decisionSide(row, "external") +
+                '</div>' +
+                (actions ? '<footer class="lmr-item-footer">' + actions + '</footer>' : "") +
+                (extra ? '<div class="lmr-expanded" hidden>' + extra + '</div>' : "") +
+                '</article>';
+        }
+
+        function refreshProposalCard(row) {
+            const old = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (!old) return;
+            const expanded = !!old.querySelector(".lmr-expanded") &&
+                !old.querySelector(".lmr-expanded").hidden;
+            old.outerHTML = card(row);
+            const next = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (next && expanded && next.querySelector(".lmr-expanded")) {
+                next.querySelector(".lmr-expanded").hidden = false;
+                next.querySelector("[data-expand]")?.setAttribute("aria-expanded", "true");
+            }
         }
 
         function feedback(section, message = "", error = false) {
