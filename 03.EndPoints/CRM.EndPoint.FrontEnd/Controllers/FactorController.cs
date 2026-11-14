@@ -3324,16 +3324,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!Guid.TryParse(factor.SelerId, out var salespersonId) || salespersonId == Guid.Empty)
                 return null;
 
-            var mapping = await db.ExternalMappings.AsNoTracking()
+            var mappings = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.EntityId == salespersonId
                     && x.EntityName == nameof(AppUser)
                     && x.ExternalSoftwareId == softwareId
                     && x.MapType == ExternalMappingTypeEnum.کارشناسان)
                 .Select(x => new { x.ExEntityName, x.ExEntityId })
-                .SingleOrDefaultAsync(ct);
+                .Take(2).ToListAsync(ct);
 
-            if (mapping?.ExEntityName != nameof(Party) ||
-                !int.TryParse(mapping.ExEntityId, out var partyId) || partyId <= 0)
+            // Do not guess an identity if historical duplicate mappings exist.
+            if (mappings.Count != 1 || mappings[0].ExEntityName != nameof(Party) ||
+                !int.TryParse(mappings[0].ExEntityId, out var partyId) || partyId <= 0)
                 return null;
 
             return await service.GetSepidarInvoiceBrokerHintAsync(partyId, ct);
