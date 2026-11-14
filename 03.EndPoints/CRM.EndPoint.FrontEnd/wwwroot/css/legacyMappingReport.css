@@ -565,8 +565,7 @@
 .lmr-manual-modal .lmr-manual-entity-heading h3 {
     margin:0;
 }
-.lmr-manual-modal .lmr-manual-entity-heading small,
-.lmr-manual-modal .lmr-option-entity {
+.lmr-manual-modal .lmr-manual-entity-heading small {
     color:#68767a;
     font-size:10px;
     direction:ltr;
@@ -625,14 +624,6 @@
     font:500 12px/1.6 IRANSansMedium,sans-serif;
     color:#233933;
     overflow-wrap:anywhere;
-}
-.lmr-manual-modal .lmr-remote-option small {
-    font-size:11px;
-    color:#586b68;
-}
-.lmr-manual-modal .lmr-remote-option .lmr-option-entity {
-    font-size:10px;
-    text-align:right;
 }
 .lmr-manual-modal .ts-dropdown .active { background:#eff1f9; }
 .lmr-manual-modal .lmr-remote-note { padding:9px;color:#667875;font-size:12px; }
