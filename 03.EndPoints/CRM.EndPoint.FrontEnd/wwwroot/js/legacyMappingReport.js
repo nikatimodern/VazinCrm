@@ -415,12 +415,22 @@
             if (!old) return;
             const expanded = !!old.querySelector(".lmr-expanded") &&
                 !old.querySelector(".lmr-expanded").hidden;
+            const active = old.contains(document.activeElement) ? document.activeElement : null;
+            const focusField = active?.matches("[data-crm-target], [data-map-target]")
+                ? { kind: active.hasAttribute("data-crm-target") ? "data-crm-target" : "data-map-target",
+                    value: active.value } : null;
             old.outerHTML = card(row);
             const next = [...proposalRoot.querySelectorAll("[data-key]")]
                 .find(element => element.dataset.key === row.key);
-            if (next && expanded && next.querySelector(".lmr-expanded")) {
+            if (!next) return;
+            if (expanded && next.querySelector(".lmr-expanded")) {
                 next.querySelector(".lmr-expanded").hidden = false;
                 next.querySelector("[data-expand]")?.setAttribute("aria-expanded", "true");
+            }
+            if (focusField) {
+                const input = [...next.querySelectorAll("[" + focusField.kind + "]")]
+                    .find(element => element.value === focusField.value);
+                input?.focus({ preventScroll: true });
             }
         }
 
