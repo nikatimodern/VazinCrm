@@ -79,9 +79,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 result.Add(new MappingReportEntry(
                     $"user-expert-{id}", "AppUser", id, status, reason,
                     status == "pending" ? "نام کارشناس CRM و شخص متناظر در نرم‌افزار مالی یکسان است."
-                        : status == "blocked" ? "اشخاص هم‌نام قبلاً به کاربران دیگری نگاشت شده‌اند."
+                        : status == "blocked" ? "اشخاص هم‌نام قبلاً به کاربران دیگری متصل شده‌اند."
                         : status == "ambiguous" ? "چند شخص هم‌نام وجود دارد؛ معادل درست کارشناس را انتخاب کنید."
-                        : "شخص هم‌نام قطعی پیدا نشد؛ می‌توانید نگاشت کارشناس را دستی ثبت کنید.",
+                        : "شخص هم‌نام قطعی پیدا نشد؛ می‌توانید ارتباط کارشناس را دستی ثبت کنید.",
                     nameof(Party), target, Array.Empty<string>(),
                     (int)ExternalMappingTypeEnum.کارشناسان, target?.ToString(),
                     free));
