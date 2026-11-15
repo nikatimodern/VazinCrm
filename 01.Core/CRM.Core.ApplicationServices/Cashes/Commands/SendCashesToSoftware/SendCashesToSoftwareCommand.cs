@@ -48,7 +48,7 @@ public sealed class SendCashesToSoftwareCommandHandler(ICashRepository repositor
                     var result = await effects.SendAsync(software, cash, code ?? "", centerId, cashCode, ct);
                     if (result.HasValue)
                     {
-                        external.AddMapping(new ExternalMapping { ExternalSoftwareId = software, EntityName = nameof(cash), EntityId = cash.Id, MapType = ExternalMappingTypeEnum.تنخواه, MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه), UserCreatorID = current.User.Id, UserCreator = current.User.FullName, ExEntityName = result.Value.EntityName, ExEntityId = result.Value.EntityId });
+                        external.AddMapping(new ExternalMapping { ExternalSoftwareId = software, EntityName = nameof(Cash), EntityId = cash.Id, MapType = ExternalMappingTypeEnum.تنخواه, MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه), UserCreatorID = current.User.Id, UserCreator = current.User.FullName, ExEntityName = result.Value.EntityName, ExEntityId = result.Value.EntityId });
                         await repository.SaveAsync(ct);
                     }
                 }
