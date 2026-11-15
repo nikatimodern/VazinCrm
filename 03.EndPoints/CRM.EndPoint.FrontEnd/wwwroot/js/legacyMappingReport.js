@@ -203,9 +203,11 @@
             }
         }
 
-        function sideDisplayName(row, side) {
+        function sideDisplayName(row, side, crm) {
             if (!side) return "معادل مشخص نیست";
-            return show(side.customer || side.title);
+            const name = show(side.customer || side.title);
+            return !crm && [2, 3].includes(Number(row.mapType)) && side.customer
+                ? "مشتری: " + name : name;
         }
 
         function partyRoleBadges(data, escapeOption) {
@@ -223,6 +225,14 @@
         }
 
         function simpleSide(row, side, crm) {
+            if (!crm && side?.isMissing) {
+                const storedId = side.id && side.id !== "-"
+                    ? '<small>شناسه ثبت‌شده: ' + escape(side.id) + '</small>' : "";
+                return '<div class="lmr-decision-missing" role="status">' +
+                    '<strong><i class="fas fa-exclamation-circle" aria-hidden="true"></i> ' +
+                    'رکورد معادل در نرم‌افزار مالی پیدا نشد.</strong>' +
+                    storedId + '</div>';
+            }
             const hasData = side && side.id && side.id !== "-" &&
                 !String(side.title || "").includes("مشخص نیست");
             if (!hasData)
@@ -241,7 +251,7 @@
             const hasPartyRoles = !crm && row.status === "saved" &&
                 ["isCustomer", "isEmployee", "isVendor", "isBroker"]
                     .some(field => typeof side[field] === "boolean");
-            const title = escape(sideDisplayName(row, side));
+            const title = escape(sideDisplayName(row, side, crm));
             const name = '<strong' + (hasPartyRoles ? ' title="' + title + '"' : '') +
                 '>' + title + '</strong>';
             const main = hasPartyRoles
