@@ -92,12 +92,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetExternalMappingTargetDetails(
-            Guid softwareId, int mapType, int targetId, CancellationToken ct)
+            Guid softwareId, int mapType, int targetId, string targetEntity = null,
+            CancellationToken ct = default)
         {
             try
             {
                 return Ok(await mappings.GetExternalMappingTargetDetails(
-                    softwareId, mapType, targetId, ct));
+                    softwareId, mapType, targetId, ct, targetEntity));
             }
             catch (ArgumentException ex)
             {
