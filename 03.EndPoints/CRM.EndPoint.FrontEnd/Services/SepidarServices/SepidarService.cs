@@ -2173,7 +2173,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 throw new InvalidOperationException("حساب هزینه پورسانت باید تفصیلی واسط داشته باشد.");
 
             AddRow(commissionCostAccountId.Value, costDlRef, broker.CommissionInBaseCurrency, 0m,
-                $"{baseDescription} بابت پورسانت {broker.FullName}");
+                customerDescription);
         }
         var salesDlRef = await GetVoucherItemDlRefAsync(salesAccountId, customer.DLRef, ct);
         AddRow(salesAccountId, salesDlRef, 0m, saleAmount, salesDescription);
@@ -2193,7 +2193,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 throw new InvalidOperationException("حساب پورسانت پرداختنی باید تفصیلی واسط داشته باشد.");
 
             AddRow(commissionPayableAccountId.Value, payableDlRef, 0m, broker.CommissionInBaseCurrency,
-                $"{baseDescription} بابت پورسانت پرداختنی {broker.FullName}");
+                salesDescription);
         }
 
         if (items.Sum(x => x.Debit ?? 0m) != items.Sum(x => x.Credit ?? 0m))
