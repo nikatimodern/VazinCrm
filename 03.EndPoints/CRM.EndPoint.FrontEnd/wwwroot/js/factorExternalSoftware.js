@@ -97,7 +97,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
         });
         if (!result?.preview?.items?.length || externalFactorExportState !== state) return false;
         if (includeBroker && (!result.broker || !Number.isInteger(Number(result.broker.partyId)))) {
-            toastifyError("اطلاعات واسط نگاشت‌شده در پیش‌نمایش معتبر نیست.");
+            toastifyError("اطلاعات واسط فروش در پیش‌نمایش معتبر نیست.");
             return false;
         }
 
