@@ -122,7 +122,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             [FromBody] DeleteExternalMappingRequest request, CancellationToken ct)
         {
             if (request == null)
-                return BadRequest("نگاشت انتخاب نشده است.");
+                return BadRequest("ارتباط انتخاب نشده است.");
 
             try
             {
