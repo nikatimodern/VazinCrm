@@ -150,14 +150,25 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .SelectMany(x => x.SepidarPartyIds)
                 .Concat(linkedDocuments.Values.Select(x => x.PartyId))
                 .Where(x => x > 0).Distinct().ToArray();
-            var partyNames = new Dictionary<int, string>();
+            var partyInfo = new Dictionary<int, (string Name, string DlCode)>();
             foreach (var batch in candidatePartyIds.Chunk(350))
             {
                 var parties = await sepidar.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName }).ToListAsync(ct);
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code })
+                    .ToListAsync(ct);
                 foreach (var party in parties)
-                    partyNames[party.PartyId] = $"{party.Name} {party.LastName}".Trim();
+                    partyInfo[party.PartyId] = ($"{party.Name} {party.LastName}".Trim(),
+                        party.DlCode);
+            }
+
+            string PartyDescription(int id)
+            {
+                var info = partyInfo.GetValueOrDefault(id);
+                var name = string.IsNullOrWhiteSpace(info.Name) ? "نام ثبت نشده" : info.Name;
+                var code = string.IsNullOrWhiteSpace(info.DlCode)
+                    ? "" : $"، کد تفصیلی: {info.DlCode}";
+                return $"«{name}» (شناسه: {id}{code})";
             }
 
             foreach (var conflict in plan.CustomerConflicts)
@@ -171,16 +182,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var crmName = crmCustomerNames.GetValueOrDefault(x.CustomerId);
                         var crmTitle = !string.IsNullOrWhiteSpace(crmName.Name)
                             ? $"{crmName.Name} (کد {crmName.Code})"
-                            : $"شناسه مشتری CRM: {x.CustomerId}";
+                            : "مشتری CRM (اطلاعات ثبت‌شده پیدا نشد)";
                         if (!linkedDocuments.TryGetValue((x.Type, x.ExternalId), out var document))
                             return $"مشتری CRM «{crmTitle}» ← { (x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور") } سپیدار با شناسه {x.ExternalId} (پیدا نشد)";
-                        var partyTitle = partyNames.GetValueOrDefault(document.PartyId, "نام ثبت نشده");
                         var typeTitle = x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور";
-                        return $"مشتری CRM «{crmTitle}» ← {typeTitle} سپیدار شماره {document.Number} ← مشتری سپیدار «{partyTitle}» (کد {document.PartyId})";
+                        return $"مشتری CRM «{crmTitle}» ← {typeTitle} سپیدار شماره {document.Number} ← مشتری سپیدار {PartyDescription(document.PartyId)}";
                     }).Distinct().ToArray();
 
                 var partyDescriptions = conflict.SepidarPartyIds.Select(id =>
-                    $"گزینه مشتری سپیدار: «{partyNames.GetValueOrDefault(id, "نام ثبت نشده")}» (کد {id})");
+                    $"گزینه مشتری سپیدار: {PartyDescription(id)}");
 
                 var owners = savedPartyOwners
                     .Where(x => conflict.SepidarPartyIds.Contains(x.PartyId)
@@ -190,9 +200,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var customerInfo = crmCustomerNames.GetValueOrDefault(x.CustomerId);
                         var owner = !string.IsNullOrWhiteSpace(customerInfo.Name)
                             ? $"«{customerInfo.Name}» (کد {customerInfo.Code})"
-                            : $"با شناسه داخلی {x.CustomerId} (مشتری در CRM پیدا نشد)";
-                        var partyName = partyNames.GetValueOrDefault(x.PartyId, "بدون نام");
-                        return $"مشتری «{partyName}» در سپیدار (کد {x.PartyId}) قبلاً به مشتری CRM {owner} نگاشت شده است.";
+                            : "که اطلاعات آن در CRM پیدا نشد";
+                        return $"مشتری {PartyDescription(x.PartyId)} در سپیدار قبلاً به مشتری CRM {owner} نگاشت شده است.";
                     }).ToArray();
 
                 var conflictDetails = owners.Length > 0
