@@ -1322,11 +1322,69 @@
                 entityId, mapType: values.mapType, exEntityId,
                 exEntityName: values.targetEntity || null
             };
-            const success = await save([item]);
-            if (success) closeManualMapping();
-            else if (state.manualOpen)
-                manualFeedback("نگاشت ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
+            if (!state.manualEditing) {
+                const success = await save([item]);
+                if (success) closeManualMapping();
+                else if (state.manualOpen)
+                    manualFeedback("نگاشت ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
+                manualSubmitState();
+                return;
+            }
+
+            const edit = state.manualEditing;
+            const softwareId = state.softwareId;
+            let updated = false;
+            state.processing = true;
+            softwareSelect.disabled = true;
+            get("lmrManualConfirmText").textContent = "در حال ذخیره…";
             manualSubmitState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalMapping/UpdateExternalMapping",
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token },
+                    data: {
+                        externalSoftwareId: softwareId,
+                        mappingId: edit.mappingId,
+                        originalEntityId: edit.entityId,
+                        originalEntityName: edit.entityName,
+                        originalExEntityId: edit.exEntityId,
+                        originalExEntityName: edit.exEntityName,
+                        item
+                    },
+                    timeout: 120000,
+                    successMsg: null
+                });
+                updated = result?.updated === true;
+            } catch {
+                // The request helper displays server-side validation errors.
+            } finally {
+                state.processing = false;
+                softwareSelect.disabled = false;
+                get("lmrManualConfirmText").textContent = "ذخیره تغییرات";
+                manualSubmitState();
+            }
+
+            if (!isActive() || softwareId !== state.softwareId) return;
+            if (!updated) {
+                if (state.manualOpen)
+                    manualFeedback("تغییرات ذخیره نشد؛ خطای نمایش‌داده‌شده را بررسی کنید.", true);
+                return;
+            }
+
+            closeManualMapping();
+            toastifySuccess("تغییرات نگاشت ذخیره شد.");
+            state.selected.clear();
+            state.targets.clear();
+            state.crmTargets.clear();
+            state.preview.clear();
+            state.proposal.loaded = false;
+            state.proposal.rows = [];
+            state.proposal.visible = [];
+            state.proposal.summary = null;
+            updateProposalTabs();
+            renderProposals();
+            await loadSaved();
         });
 
         softwareSelect.addEventListener("change", changeSoftware);
