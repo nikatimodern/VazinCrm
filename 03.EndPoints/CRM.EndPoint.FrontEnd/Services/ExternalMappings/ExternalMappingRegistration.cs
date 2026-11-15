@@ -92,37 +92,51 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             };
         }
 
+        // Use the same entity pairs for search, preview, creation, editing and reports.
         public async Task<object> GetExternalMappingTargetDetails(
-            Guid softwareId, int mapType, int targetId, CancellationToken ct)
+            Guid softwareId, int mapType, int targetId, CancellationToken ct,
+            string targetEntity = null)
         {
             if (targetId <= 0 || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType)
                 || softwareId != Sepidar1SoftwareId && softwareId != Sepidar2SoftwareId
                 || !await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
                 throw new ArgumentException("نرم‌افزار، نوع نگاشت یا شناسه معتبر نیست.");
 
+            var type = (ExternalMappingTypeEnum)mapType;
+            var (source, target) = GetMappingEntityNames(type, targetEntity: targetEntity);
             var sepidar = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb : s2Db;
-            var entityName = mapType == (int)ExternalMappingTypeEnum.مشتری ? nameof(Customer)
-                : mapType == (int)ExternalMappingTypeEnum.پیش_فاکتور ? nameof(PreFactor)
-                : mapType == (int)ExternalMappingTypeEnum.فاکتور ? nameof(Factor)
-                : mapType == (int)ExternalMappingTypeEnum.کارشناسان ? nameof(AppUser) : null;
-            if (entityName == null)
-                throw new ArgumentException("نمایش معادل برای این نوع نگاشت هنوز پشتیبانی نمی‌شود.");
 
-            var externalName = entityName == nameof(Customer) || entityName == nameof(AppUser)
-                ? "Party" : entityName == nameof(PreFactor) ? "Quotation" : "Invoice";
-            var exists = entityName == nameof(Customer)
-                ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct)
-                : entityName == nameof(AppUser)
-                    ? await sepidar.Parties.AsNoTracking().AnyAsync(x => x.PartyId == targetId, ct)
-                : entityName == nameof(PreFactor)
-                    ? await sepidar.Quotations.AsNoTracking().AnyAsync(x => x.QuotationId == targetId, ct)
-                    : await sepidar.SalesInvoices.AsNoTracking().AnyAsync(x => x.InvoiceId == targetId, ct);
-            if (!exists) throw new KeyNotFoundException("معادل انتخاب‌شده در نرم‌افزار خارجی پیدا نشد.");
+            var exists = target switch {
+                nameof(Party) when type == ExternalMappingTypeEnum.مشتری
+                    => await sepidar.Parties.AsNoTracking()
+                        .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct),
+                nameof(Party)
+                    => await sepidar.Parties.AsNoTracking()
+                        .AnyAsync(x => x.PartyId == targetId, ct),
+                nameof(Quotation)
+                    => await sepidar.Quotations.AsNoTracking()
+                        .AnyAsync(x => x.QuotationId == targetId, ct),
+                nameof(Invoice)
+                    => await sepidar.SalesInvoices.AsNoTracking()
+                        .AnyAsync(x => x.InvoiceId == targetId, ct),
+                nameof(DL)
+                    => await sepidar.DLs.AsNoTracking()
+                        .AnyAsync(x => x.DLId == targetId && x.IsActive, ct),
+                nameof(PaymentHeader)
+                    => await sepidar.PaymentHeaders.AsNoTracking()
+                        .AnyAsync(x => x.PaymentHeaderId == targetId, ct),
+                nameof(Voucher)
+                    => await sepidar.Vouchers.AsNoTracking()
+                        .AnyAsync(x => x.VoucherId == targetId, ct),
+                _ => false
+            };
+            if (!exists)
+                throw new KeyNotFoundException("معادل انتخاب‌شده در نرم‌افزار خارجی پیدا نشد.");
 
             var entry = new MappingReportEntry(
-                "manual-preview", entityName, Guid.Empty, "pending", "ReadyForReview",
-                "", externalName, targetId, Array.Empty<string>(), mapType,
+                "manual-preview", source, Guid.Empty, "pending", "ReadyForReview",
+                "", target, targetId, Array.Empty<string>(), mapType,
                 targetId.ToString(), new[] { targetId });
             var rows = await EnrichMappingEntriesAsync(new List<MappingReportEntry> { entry }, softwareId, ct);
             return new { target = rows[0].Sepidar };
@@ -157,20 +171,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ? row.Crm.Title : row.Crm.Customer;
             var targetDisplay = string.IsNullOrWhiteSpace(row.Sepidar.Customer)
                 ? row.Sepidar.Title : row.Sepidar.Customer;
-            var targetCode = row.Sepidar.Number;
-            if (mapping.ExEntityName == nameof(Party)
-                && row.Sepidar.Extra?.StartsWith("کد تفصیلی: ") == true)
-                targetCode = row.Sepidar.Extra["کد تفصیلی: ".Length..];
-
-            // The saved Party must carry the same role badges as newly searched options.
-            var partyFlags = mapping.ExEntityName == nameof(Party)
-                ? await (softwareId == Sepidar1SoftwareId
-                        ? (SepidarContextDbBase)sdb : s2Db).Parties.AsNoTracking()
-                    .Where(x => x.PartyId == externalId)
-                    .Select(x => new { x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker })
-                    .SingleOrDefaultAsync(ct)
-                : null;
-
             return new {
                 mappingId = mapping.Id, externalSoftwareId = softwareId,
                 mapType = (int)mapping.MapType,
@@ -182,11 +182,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 },
                 externalOption = new {
                     id = mapping.ExEntityId,
-                    title = FormatManualOption(targetCode, targetDisplay),
-                    isCustomer = partyFlags?.IsCustomer ?? false,
-                    isEmployee = partyFlags?.IsEmployee ?? false,
-                    isVendor = partyFlags?.IsVendor ?? false,
-                    isBroker = partyFlags?.IsBroker ?? false
+                    title = FormatManualOption(row.Sepidar.Number, targetDisplay),
+                    isCustomer = row.Sepidar.IsCustomer ?? false,
+                    isEmployee = row.Sepidar.IsEmployee ?? false,
+                    isVendor = row.Sepidar.IsVendor ?? false,
+                    isBroker = row.Sepidar.IsBroker ?? false
                 }
             };
         }
