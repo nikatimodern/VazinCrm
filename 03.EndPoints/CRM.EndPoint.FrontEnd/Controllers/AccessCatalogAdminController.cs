@@ -59,6 +59,21 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
         Json(await administration.UsersAsync(search, page, type, ct));
 
     [HttpGet]
+    public async Task<IActionResult> Positions(CancellationToken ct) =>
+        Json(await administration.PositionsAsync(ct));
+
+    [HttpGet]
+    public async Task<IActionResult> UserProfile(string userId, CancellationToken ct)
+    {
+        var profile = await administration.UserProfileAsync(userId, ct);
+        return profile is null ? NotFound(new { message = "کاربر پیدا نشد." }) : Json(profile);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(16384)]
+    public async Task<IActionResult> SaveUserProfile([FromBody] AccessUserProfileDraft draft, CancellationToken ct) =>
+        Result(await administration.SaveUserProfileAsync(draft, User.FindFirstValue(ClaimTypes.NameIdentifier), ct));
+
+    [HttpGet]
     public async Task<IActionResult> UserAccess(string userId, CancellationToken ct)
     {
         var data = await administration.UserAccessAsync(userId, ct);
@@ -94,5 +109,5 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
         Result(await administration.DeletePermissionAsync(id, ct));
 
     private IActionResult Result(AccessCatalogResult result) =>
-        StatusCode(result.Status, new { success = result.Status == 200, message = result.Message, id = result.Id, roleId = result.RoleId });
+        StatusCode(result.Status, new { success = result.Status == 200, message = result.Message, id = result.Id, roleId = result.RoleId, userId = result.UserId });
 }

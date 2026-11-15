@@ -19,6 +19,146 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
     private static AccountIdentityResult Map(IdentityResult result) => new(result.Succeeded, result.Errors.Select(e => new AccountIdentityError(e.Code, e.Description)).ToList());
     public Task<List<AdminRole>> GetRolesAsync(CancellationToken ct) => roles.Roles.AsNoTracking().Select(r => new AdminRole(r.Id, r.Name ?? "")).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<AdminPosition>> GetPositionsAsync(CancellationToken ct) =>
+        await db.BaseAdmins.AsNoTracking()
+            .Where(x => !x.IsDeleted)
+            .OrderBy(x => x.PersianTitle)
+            .Select(x => new AdminPosition(x.Id, x.PersianTitle ?? x.LatinTitle ?? "بدون عنوان"))
+            .ToListAsync(ct);
+
+    public async Task<AdminUserProfile?> GetUserProfileAsync(string userId, CancellationToken ct)
+    {
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(
+            x => x.Id == userId && !x.OrganAdmin, ct);
+        if (user is null) return null;
+        var userRoles = await db.UserRoles.AsNoTracking()
+            .Where(x => x.UserId == userId).Select(x => x.RoleId).ToArrayAsync(ct);
+        return new AdminUserProfile(
+            user.Id, user.UserName ?? "", user.FirstName, user.LastName, user.PhoneNumber, user.Email,
+            user.InternalTels, user.IsEmployee, user.IsCustomer, user.IsSupplier,
+            user.PositionId, user.PositionTxt, userRoles, user.ConcurrencyStamp);
+    }
+
+    private static AdminUserProfileWriteResult ProfileFailure(IdentityResult result)
+    {
+        var duplicate = result.Errors.Any(e => e.Code.StartsWith("Duplicate", StringComparison.Ordinal));
+        return new(duplicate ? 409 : 400,
+            duplicate ? "نام کاربری یا ایمیل قبلاً ثبت شده است." :
+            string.Join("؛ ", result.Errors.Select(e => e.Description)));
+    }
+
+    public async Task<AdminUserProfileWriteResult> SaveUserProfileAsync(
+        AdminUserProfileInput input, string? actorId, CancellationToken ct)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        try
+        {
+            return await strategy.ExecuteAsync(async () =>
+            {
+                ct.ThrowIfCancellationRequested();
+                db.ChangeTracker.Clear();
+                await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+                var isCreate = string.IsNullOrWhiteSpace(input.UserId);
+                AppUser? user = isCreate ? null : await users.FindByIdAsync(input.UserId!);
+                if (!isCreate && (user is null || user.OrganAdmin))
+                    return new AdminUserProfileWriteResult(404, "کاربر پیدا نشد.");
+
+                if (!isCreate && !string.Equals(user!.ConcurrencyStamp, input.ExpectedConcurrencyStamp, StringComparison.Ordinal))
+                    return new AdminUserProfileWriteResult(409, "اطلاعات کاربر هم‌زمان تغییر کرده است. فرم را دوباره باز کنید.");
+
+                var chosenIds = input.RoleIds.ToHashSet(StringComparer.Ordinal);
+                var chosenRoles = await db.Roles.AsNoTracking()
+                    .Where(x => chosenIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync(ct);
+                if (chosenRoles.Count != chosenIds.Count ||
+                    chosenRoles.Any(x => string.IsNullOrWhiteSpace(x.Name)))
+                    return new AdminUserProfileWriteResult(409, "فهرست نقش‌ها تغییر کرده است. دوباره تلاش کنید.");
+                var desiredRoles = chosenRoles.Select(x => x.Name!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var adminRole = await db.Roles.AsNoTracking()
+                    .Where(x => x.Name == "مدیر ارشد").Select(x => new { x.Id, x.Name }).FirstOrDefaultAsync(ct);
+
+                if (!isCreate && adminRole is not null)
+                {
+                    var currentlyAdmin = await db.UserRoles.AsNoTracking()
+                        .AnyAsync(x => x.UserId == input.UserId && x.RoleId == adminRole.Id, ct);
+                    if (currentlyAdmin && !chosenIds.Contains(adminRole.Id))
+                    {
+                        if (string.Equals(actorId, input.UserId, StringComparison.Ordinal))
+                            return new AdminUserProfileWriteResult(409, "نمی‌توانید نقش مدیر ارشد را از حساب خودتان حذف کنید.");
+                        var remaining = await db.UserRoles.AsNoTracking()
+                            .CountAsync(x => x.RoleId == adminRole.Id, ct);
+                        if (remaining <= 1)
+                            return new AdminUserProfileWriteResult(409, "امکان حذف نقش آخرین مدیر ارشد سیستم وجود ندارد.");
+                    }
+                }
+
+                var position = input.PositionId.HasValue
+                    ? await db.BaseAdmins.AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == input.PositionId.Value && !x.IsDeleted, ct)
+                    : null;
+                if (input.PositionId.HasValue && position is null)
+                    return new AdminUserProfileWriteResult(400, "سمت کاری انتخاب‌شده معتبر نیست.");
+
+                user ??= new AppUser();
+                user.UserName = input.UserName;
+                user.FirstName = input.FirstName;
+                user.LastName = input.LastName;
+                user.PhoneNumber = input.PhoneNumber;
+                user.Email = input.Email;
+                user.InternalTels = input.InternalTels;
+                user.IsEmployee = input.IsEmployee;
+                user.IsCustomer = input.IsCustomer;
+                user.IsSupplier = input.IsSupplier;
+                user.PositionId = input.PositionId;
+                user.PositionTxt = position?.PersianTitle ?? position?.LatinTitle;
+
+                if (isCreate)
+                {
+                    var created = await users.CreateAsync(user, input.Password!);
+                    if (!created.Succeeded) return ProfileFailure(created);
+                }
+                else
+                {
+                    if (input.Password is not null)
+                    {
+                        var passwordValidation = await passwordValidator.ValidateAsync(users, user, input.Password);
+                        if (!passwordValidation.Succeeded) return ProfileFailure(passwordValidation);
+                        user.PasswordHash = hasher.HashPassword(user, input.Password);
+                        user.SecurityStamp = Guid.NewGuid().ToString("N");
+                    }
+                    var updated = await users.UpdateAsync(user);
+                    if (!updated.Succeeded) return ProfileFailure(updated);
+                }
+
+                var currentRoles = isCreate ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    : (await users.GetRolesAsync(user)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var remove = currentRoles.Except(desiredRoles, StringComparer.OrdinalIgnoreCase).ToArray();
+                var add = desiredRoles.Except(currentRoles, StringComparer.OrdinalIgnoreCase).ToArray();
+                if (remove.Length > 0)
+                {
+                    var removed = await users.RemoveFromRolesAsync(user, remove);
+                    if (!removed.Succeeded) return ProfileFailure(removed);
+                }
+                if (add.Length > 0)
+                {
+                    var added = await users.AddToRolesAsync(user, add);
+                    if (!added.Succeeded) return ProfileFailure(added);
+                }
+
+                await transaction.CommitAsync(ct);
+                return new AdminUserProfileWriteResult(200, UserId: user.Id);
+            });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "کاربر هم‌زمان تغییر کرده است. فرم را دوباره باز کنید.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 547 or 2601 or 2627)
+        {
+            return new(409, "اطلاعات کاربر یا نقش‌ها هم‌زمان تغییر کرده است.");
+        }
+    }
+
     private static AdminRoleWriteResult IdentityError(IdentityResult result)
     {
         if (result.Succeeded) return new(200);

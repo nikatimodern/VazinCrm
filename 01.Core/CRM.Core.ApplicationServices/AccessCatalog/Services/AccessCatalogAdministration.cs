@@ -10,12 +10,16 @@ public sealed record AccessEntityDraft(string Key, string Title, string? Descrip
 public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive);
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive);
-public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null);
+public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null, string? UserId = null);
 public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
 public sealed record AccessRoleDraft(string? RoleId, string? Name, string? ExpectedName);
 public sealed record AccessRoleDeleteDraft(string? RoleId, string? ExpectedName);
+public sealed record AccessUserProfileDraft(
+    string? UserId, string? UserName, string? FirstName, string? LastName, string? PhoneNumber,
+    string? Email, string? InternalTels, string? Password, bool IsEmployee, bool IsCustomer, bool IsSupplier,
+    Guid? PositionId, string[]? RoleIds, string? ExpectedConcurrencyStamp);
 public sealed record ManagedRoleInfo(string Id, string Name, bool IsSystem);
 public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles, bool IsEmployee, bool IsCustomer, bool IsSupplier);
 public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
@@ -88,6 +92,70 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
             return new(409, "نقش‌های سیستمی قابل حذف نیستند.");
         var deleted = await adminUsers.RemoveRoleAsync(current.Id, draft.ExpectedName!, ct);
         return new(deleted.Status, deleted.Message);
+    }
+
+    public Task<IReadOnlyList<AdminPosition>> PositionsAsync(CancellationToken ct) =>
+        adminUsers.GetPositionsAsync(ct);
+
+    public Task<AdminUserProfile?> UserProfileAsync(string userId, CancellationToken ct) =>
+        string.IsNullOrWhiteSpace(userId) || userId.Length > 450
+            ? Task.FromResult<AdminUserProfile?>(null)
+            : adminUsers.GetUserProfileAsync(userId, ct);
+
+    public async Task<AccessCatalogResult> SaveUserProfileAsync(
+        AccessUserProfileDraft? draft, string? actorId, CancellationToken ct)
+    {
+        if (draft is null || string.IsNullOrWhiteSpace(draft.UserName) ||
+            draft.UserName.Trim().Length is < 3 or > 100 ||
+            string.IsNullOrWhiteSpace(draft.FirstName) || draft.FirstName.Trim().Length > 100 ||
+            string.IsNullOrWhiteSpace(draft.LastName) || draft.LastName.Trim().Length > 100 ||
+            string.IsNullOrWhiteSpace(draft.PhoneNumber) || draft.PhoneNumber.Trim().Length is < 8 or > 30 ||
+            (draft.Email?.Length ?? 0) > 256 || (draft.InternalTels?.Length ?? 0) > 250 ||
+            (draft.UserId?.Length ?? 0) > 450 ||
+            !(draft.IsEmployee || draft.IsCustomer || draft.IsSupplier) ||
+            draft.RoleIds is null || draft.RoleIds.Length > 100 ||
+            draft.RoleIds.Any(string.IsNullOrWhiteSpace) ||
+            draft.RoleIds.Distinct(StringComparer.Ordinal).Count() != draft.RoleIds.Length ||
+            (draft.Password?.Length ?? 0) > 128)
+            return new(400, "اطلاعات کاربر معتبر نیست. مشخصات و حداقل یک نوع حساب را وارد کنید.");
+
+        if (string.IsNullOrWhiteSpace(draft.UserId) && string.IsNullOrWhiteSpace(draft.Password))
+            return new(400, "برای کاربر جدید رمز عبور الزامی است.");
+
+        if (!string.IsNullOrWhiteSpace(draft.UserId) &&
+            string.IsNullOrWhiteSpace(draft.ExpectedConcurrencyStamp))
+            return new(400, "نسخه اطلاعات کاربر مشخص نیست. فرم را دوباره باز کنید.");
+
+        var email = string.IsNullOrWhiteSpace(draft.Email) ? null : draft.Email.Trim();
+        if (email is not null &&
+            (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email)))
+            return new(400, "آدرس ایمیل معتبر نیست.");
+
+        var roleIds = draft.RoleIds.ToHashSet(StringComparer.Ordinal);
+        var available = await adminUsers.GetRolesAsync(ct);
+        if (roleIds.Any(id => available.All(r => r.Id != id)))
+            return new(400, "یک یا چند نقش انتخاب‌شده وجود ندارد.");
+
+        // Match the existing self-lockout safeguard used when assigning permissions.
+        if (string.Equals(draft.UserId, actorId, StringComparison.Ordinal))
+        {
+            var adminRoleId = available.FirstOrDefault(r => r.Name == AppRoles.Admin)?.Id;
+            if (adminRoleId is not null && !roleIds.Contains(adminRoleId))
+            {
+                var previous = await adminUsers.GetUserProfileAsync(draft.UserId!, ct);
+                if (previous?.RoleIds.Contains(adminRoleId) == true)
+                    return new(409, "امکان حذف نقش مدیر ارشد از حساب خودتان وجود ندارد.");
+            }
+        }
+
+        var input = new AdminUserProfileInput(
+            draft.UserId, draft.UserName!.Trim(), draft.FirstName!.Trim(), draft.LastName!.Trim(),
+            draft.PhoneNumber!.Trim(), email, string.IsNullOrWhiteSpace(draft.InternalTels) ? null : draft.InternalTels.Trim(),
+            string.IsNullOrWhiteSpace(draft.Password) ? null : draft.Password,
+            draft.IsEmployee, draft.IsCustomer, draft.IsSupplier, draft.PositionId,
+            draft.RoleIds, draft.ExpectedConcurrencyStamp);
+        var saved = await adminUsers.SaveUserProfileAsync(input, actorId, ct);
+        return new(saved.Status, saved.Message, UserId: saved.UserId);
     }
 
     public async Task<AccessUsersPage> UsersAsync(string? search, int page, string? userType, CancellationToken ct)

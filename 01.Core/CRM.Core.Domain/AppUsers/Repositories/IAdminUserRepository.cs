@@ -8,12 +8,25 @@ using CRM.Core.Domain.AppUsers.Entities;
 namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
 public sealed record AdminRoleWriteResult(int Status, string? Message = null, string? RoleId = null);
+public sealed record AdminPosition(Guid Id, string Title);
+public sealed record AdminUserProfile(
+    string Id, string UserName, string? FirstName, string? LastName, string? PhoneNumber, string? Email,
+    string? InternalTels, bool IsEmployee, bool IsCustomer, bool IsSupplier, Guid? PositionId,
+    string? PositionTxt, string[] RoleIds, string? ConcurrencyStamp);
+public sealed record AdminUserProfileInput(
+    string? UserId, string UserName, string FirstName, string LastName, string PhoneNumber, string? Email,
+    string? InternalTels, string? Password, bool IsEmployee, bool IsCustomer, bool IsSupplier,
+    Guid? PositionId, IReadOnlyList<string> RoleIds, string? ExpectedConcurrencyStamp);
+public sealed record AdminUserProfileWriteResult(int Status, string? Message = null, string? UserId = null);
 public sealed record AdminUserFilter(int Page, int PageSize, string? Search, string EmployeeType, string AccountStatus, List<string> Roles, DateTimeOffset Now, string? UserType = null);
 public sealed record AdminUserPage(List<AppUser> Users, int TotalCount, int Page, int PageSize, int TotalPages);
 public sealed record AdminRoleUpdateResult(bool UserFound, AccountIdentityResult? Error, IList<string> Roles);
 public interface IAdminUserRepository
 {
     Task<List<AdminRole>> GetRolesAsync(CancellationToken ct);
+    Task<IReadOnlyList<AdminPosition>> GetPositionsAsync(CancellationToken ct);
+    Task<AdminUserProfile?> GetUserProfileAsync(string userId, CancellationToken ct);
+    Task<AdminUserProfileWriteResult> SaveUserProfileAsync(AdminUserProfileInput input, string? actorId, CancellationToken ct);
     Task<AdminRoleWriteResult> CreateRoleAsync(string name, CancellationToken ct);
     Task<AdminRoleWriteResult> RenameRoleAsync(string roleId, string expectedName, string name, CancellationToken ct);
     Task<AdminRoleWriteResult> RemoveRoleAsync(string roleId, string expectedName, CancellationToken ct);
