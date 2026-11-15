@@ -36,7 +36,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             string Title, string Id, string Number, string Date,
             decimal? Amount, string Customer, string Extra,
             bool? IsCustomer = null, bool? IsEmployee = null,
-            bool? IsVendor = null, bool? IsBroker = null);
+            bool? IsVendor = null, bool? IsBroker = null,
+            bool IsMissing = false);
 
         private sealed record MappingReportEntry(
             string Key, string Kind, Guid EntityId, string Status,
@@ -455,6 +456,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 : string.IsNullOrWhiteSpace(fallback) ? "نام مشتری ثبت نشده" : fallback.Trim();
         }
 
+        private static string CrmDocumentCustomerDisplay(string company, string agent)
+        {
+            var names = new[] { company?.Trim(), agent?.Trim() }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var customer = string.Join(" | ", names);
+            return "مشتری: " + (string.IsNullOrEmpty(customer) ? "نامشخص" : customer);
+        }
+
         private async Task<Dictionary<(string, Guid), MappingReportSide>> LoadCrmMappingSidesAsync(
             List<MappingReportEntry> entries, CancellationToken ct)
         {
@@ -497,9 +506,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(PreFactor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
                         x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
-                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
@@ -515,15 +524,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(Factor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
                         x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
-                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
 
             // Load referenced CRM customers once for both customer cards and documents.
-            var customerNames = new Dictionary<Guid, string>();
+            var customerNames = new Dictionary<Guid, (string Company, string Agent)>();
             var relatedCustomerIds = customerIds.Concat(documentCustomers.Values)
                 .Distinct().ToArray();
             foreach (var batch in relatedCustomerIds.Chunk(350))
@@ -536,16 +545,23 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var customerName = CrmCustomerDisplay(x.CompanyName, x.AgentName,
                         $"مشتری با کد {x.CustomerCode}");
-                    customerNames[x.Id] = customerName;
+                    customerNames[x.Id] = (x.CompanyName, x.AgentName);
                     crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
                         "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
                         "", null, customerName, "");
                 }
             }
             foreach (var reference in documentCustomers)
-                if (customerNames.TryGetValue(reference.Value, out var name)
+                if (customerNames.TryGetValue(reference.Value, out var customer)
+                    && (!string.IsNullOrWhiteSpace(customer.Company)
+                        || !string.IsNullOrWhiteSpace(customer.Agent))
                     && crmSides.TryGetValue(reference.Key, out var document))
-                    crmSides[reference.Key] = document with { Title = name, Customer = name };
+                {
+                    var displayName = CrmDocumentCustomerDisplay(customer.Company, customer.Agent);
+                    crmSides[reference.Key] = document with {
+                        Title = displayName, Customer = displayName
+                    };
+                }
 
             // Financial CRM sources: cash transactions and cost centers.
             var cashIds = entries.Where(x => x.Kind == nameof(Cash))
@@ -558,10 +574,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.CostCenterTxt, x.CostTitleTxt, x.CostDescription })
                     .ToListAsync(ct);
                 foreach (var x in rows)
+                {
+                    var hasCostTitle = !string.IsNullOrWhiteSpace(x.CostTitleTxt);
+                    var costText = hasCostTitle ? x.CostTitleTxt : x.CostDescription;
+                    var labeledCost = (hasCostTitle ? "عنوان هزینه: " : "شرح هزینه: ") +
+                        (string.IsNullOrWhiteSpace(costText) ? "ثبت نشده" : costText.Trim());
                     crmSides[(nameof(Cash), x.Id)] = new MappingReportSide(
                         "تنخواه CRM", x.Id.ToString(), x.Serial.ToString(), x.CostDate,
-                        x.Amount, x.CostTitleTxt ?? x.CostDescription,
+                        x.Amount, labeledCost,
                         "مرکز هزینه: " + (x.CostCenterTxt ?? "ثبت نشده"));
+                }
             }
 
             var centerIds = entries.Where(x => x.Kind == nameof(BaseCenterCash))
@@ -679,7 +701,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
                         "سند حسابداری", x.VoucherId.ToString(),
                         x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
-                        x.Description, $"سال مالی: {x.FiscalYearRef}");
+                        "شرح سند: " + (string.IsNullOrWhiteSpace(x.Description) ? "ثبت نشده" : x.Description),
+                        $"سال مالی: {x.FiscalYearRef}");
             }
 
             foreach (var batch in ExternalTargetBatches(entries, nameof(PaymentHeader)))
@@ -693,7 +716,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
                         "اعلامیه پرداخت", x.PaymentHeaderId.ToString(),
                         x.Number.ToString(), FormatLegacyPersianDate(x.Date),
-                        x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
+                        x.AmountInBaseCurrency,
+                        "شرح اعلامیه پرداخت: " + (string.IsNullOrWhiteSpace(x.Description) ? "ثبت نشده" : x.Description),
+                        $"سال مالی: {x.FiscalYearRef}");
             }
 
             foreach (var batch in ExternalTargetBatches(entries, nameof(DL)))
@@ -730,12 +755,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var sepidar = entry.TargetId.HasValue
                     ? externalSides.GetValueOrDefault((entry.TargetEntity, entry.TargetId.Value))
                     : null;
-                sepidar ??= new MappingReportSide(
-                    entry.Status == "saved" ? "نرم‌افزار مقصد" : "معادل قطعی مشخص نیست",
-                    entry.TargetRaw ?? entry.TargetId?.ToString() ?? "-",
-                    "", "", null, "", entry.Status == "saved"
-                        ? "شناسه ثبت‌شده در نرم‌افزار انتخاب‌شده"
-                        : "برای این وضعیت معادل قطعی مشخص نیست.");
+                if (sepidar == null)
+                {
+                    var isMissing = entry.Status == "saved";
+                    sepidar = new MappingReportSide(
+                        isMissing ? "معادل در نرم‌افزار مالی پیدا نشد" : "معادل قطعی مشخص نیست",
+                        entry.TargetRaw ?? entry.TargetId?.ToString() ?? "",
+                        "", "", null, "", isMissing
+                            ? "رکورد معادل در نرم‌افزار انتخاب‌شده یافت نشد."
+                            : "برای این وضعیت معادل قطعی مشخص نیست.",
+                        IsMissing: isMissing);
+                }
 
                 var options = (entry.CandidateIds ?? Array.Empty<int>())
                     .Distinct().Where(id => id > 0)
