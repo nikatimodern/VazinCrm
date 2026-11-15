@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Enums;
-using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
@@ -431,6 +430,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return BuildMappingReportRows(entries, crmSides, externalSides);
         }
 
+        private static string CrmCustomerDisplay(string company, string agent, string fallback = null)
+        {
+            var parts = new List<string>(2);
+            if (!string.IsNullOrWhiteSpace(company)) parts.Add("شرکت: " + company.Trim());
+            if (!string.IsNullOrWhiteSpace(agent)) parts.Add("نماینده: " + agent.Trim());
+            return parts.Count > 0 ? string.Join(" | ", parts)
+                : string.IsNullOrWhiteSpace(fallback) ? "نام مشتری ثبت نشده" : fallback.Trim();
+        }
+
         private async Task<Dictionary<(string, Guid), MappingReportSide>> LoadCrmMappingSidesAsync(
             List<MappingReportEntry> entries, CancellationToken ct)
         {
@@ -444,6 +452,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.EntityId).Distinct().ToArray();
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
+            var documentCustomers = new Dictionary<(string, Guid), Guid>();
             foreach (var batch in userIds.Chunk(350))
             {
                 var ids = batch.Select(x => x.ToString()).ToArray();
@@ -465,12 +474,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 var data = await db.PreFactors.AsNoTracking()
                     .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount, x.Customer, x.CustomerId })
+                    .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount,
+                        x.Customer, x.AgentName, x.CustomerId })
                     .ToListAsync(ct);
                 foreach (var x in data)
-                    crmSides[(nameof(PreFactor), x.Id)] = new MappingReportSide(
+                {
+                    var key = (nameof(PreFactor), x.Id);
+                    crmSides[key] = new MappingReportSide(
                         "پیش‌فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, x.Customer, $"CustomerId: {x.CustomerId}");
+                        x.Date, x.PaymentAmount, CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                    if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
+                }
             }
 
             foreach (var batch in factorIds.Chunk(350))
@@ -478,33 +492,42 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var data = await db.Factors.AsNoTracking()
                     .Where(x => batch.Contains(x.Id))
                     .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount,
-                        x.Customer, x.CustomerId, x.SepidarId, x.SnFinancial })
-                    .ToListAsync(ct);
-                foreach (var x in data)
-                    crmSides[(nameof(Factor), x.Id)] = new MappingReportSide(
-                        "فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, x.Customer,
-                        $"CustomerId: {x.CustomerId} | SepidarId: {x.SepidarId} | شماره مالی: {x.SnFinancial}");
-            }
-
-            foreach (var batch in customerIds.Chunk(350))
-            {
-                var data = await db.Customers.AsNoTracking()
-                    .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName, x.FinancialCustomerId })
+                        x.Customer, x.AgentName, x.CustomerId })
                     .ToListAsync(ct);
                 foreach (var x in data)
                 {
-                    var customerName = $"{x.CompanyName} {x.AgentName}".Trim();
-                    if (string.IsNullOrWhiteSpace(customerName))
-                        customerName = $"مشتری با کد {x.CustomerCode}";
-
-                    crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
-                        "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
-                        "", null, customerName,
-                        $"FinancialCustomerId: {x.FinancialCustomerId}");
+                    var key = (nameof(Factor), x.Id);
+                    crmSides[key] = new MappingReportSide(
+                        "فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
+                        x.Date, x.PaymentAmount, CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                    if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
+
+            // Load referenced CRM customers once for both customer cards and documents.
+            var customerNames = new Dictionary<Guid, string>();
+            var relatedCustomerIds = customerIds.Concat(documentCustomers.Values)
+                .Distinct().ToArray();
+            foreach (var batch in relatedCustomerIds.Chunk(350))
+            {
+                var data = await db.Customers.AsNoTracking()
+                    .Where(x => batch.Contains(x.Id))
+                    .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName })
+                    .ToListAsync(ct);
+                foreach (var x in data)
+                {
+                    var customerName = CrmCustomerDisplay(x.CompanyName, x.AgentName,
+                        $"مشتری با کد {x.CustomerCode}");
+                    customerNames[x.Id] = customerName;
+                    crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
+                        "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
+                        "", null, customerName, "");
+                }
+            }
+            foreach (var reference in documentCustomers)
+                if (customerNames.TryGetValue(reference.Value, out var name)
+                    && crmSides.TryGetValue(reference.Key, out var document))
+                    crmSides[reference.Key] = document with { Customer = name };
 
             // All map types can be viewed, including cash, accounting and cost centers.
             var cashIds = entries.Where(x => x.Kind == nameof(Cash))
@@ -534,22 +557,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     crmSides[(nameof(BaseCenterCash), x.Id)] = new MappingReportSide(
                         "مرکز هزینه CRM", x.Id.ToString(), x.Code, "",
                         null, x.Title, "");
-            }
-
-            var accountingIds = entries.Where(x => x.Kind == nameof(Accountancy))
-                .Select(x => x.EntityId).Distinct().ToArray();
-            foreach (var batch in accountingIds.Chunk(350))
-            {
-                var rows = await db.Accountancies.AsNoTracking()
-                    .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.fSerialNumber, x.pfSerialNumber,
-                        x.dateSh, x.credit, x.debit, x.CustomerName })
-                    .ToListAsync(ct);
-                foreach (var x in rows)
-                    crmSides[(nameof(Accountancy), x.Id)] = new MappingReportSide(
-                        "حسابداری CRM", x.Id.ToString(),
-                        (x.fSerialNumber ?? x.pfSerialNumber)?.ToString() ?? "-",
-                        x.dateSh, x.credit ?? x.debit, x.CustomerName, "");
             }
 
             return crmSides;
