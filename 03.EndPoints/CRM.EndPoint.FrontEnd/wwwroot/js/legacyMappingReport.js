@@ -79,6 +79,9 @@
             processing: false,
             deleting: false,
             manualOpen: false,
+            manualEditing: null,
+            manualPrefill: false,
+            editRequest: 0,
             manualRequests: {crm:0, external:0}
         };
 
@@ -380,7 +383,9 @@
                         (!selected ? "disabled" : "") + '>ثبت نگاشت</button>'
                     : "") +
                 (row.status === "saved" && row.mappingId
-                    ? '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                    ? '<button type="button" class="lmr-btn lmr-btn-soft" ' +
+                        'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
+                      '<button type="button" class="lmr-btn lmr-btn-danger" ' +
                         'data-delete-mapping>حذف نگاشت</button>'
                     : "");
             return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
@@ -898,10 +903,14 @@
 
         savedRoot.addEventListener("click", async event => {
             if (toggleDetails(savedRoot, event)) return;
-            if (!event.target.closest("[data-delete-mapping]")) return;
+            const editButton = event.target.closest("[data-edit-mapping]");
+            const deleteButton = event.target.closest("[data-delete-mapping]");
+            if (!editButton && !deleteButton) return;
             const savedCard = event.target.closest("[data-key]");
             const row = state.saved.rows.find(item => item.key === savedCard?.dataset.key);
-            if (row) await deleteSavedMapping(row);
+            if (!row) return;
+            if (editButton) await editSavedMapping(row);
+            else await deleteSavedMapping(row);
         });
         proposalRoot.addEventListener("click", async event => {
             if (toggleDetails(proposalRoot, event)) return;
