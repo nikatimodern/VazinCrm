@@ -40,7 +40,7 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
     private sealed record RestorePlan(List<StateItem> Target, int Conflicts);
 
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value);
-    private static T Parse<T>(string data) => JsonSerializer.Deserialize<T>(data)
+    private static T Parse<T>(string data) where T : class => JsonSerializer.Deserialize<T>(data)
         ?? throw new InvalidOperationException("نسخه ذخیره‌شده ناقص است.");
     private static List<StateItem> FromJson(string json) => Parse<List<StateItem>>(json);
     private static string ToJson(IEnumerable<StateItem> state) =>
