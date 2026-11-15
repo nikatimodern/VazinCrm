@@ -4,7 +4,7 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.7" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.8" asp-append-version="true" />
 }
 
 <section id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme" dir="rtl">
@@ -12,13 +12,9 @@
 
     <header class="esw-page-header">
         <div class="esw-page-title">
-            <span class="esw-eyebrow">مدیریت ارتباطات</span>
             <div class="esw-title-group">
                 <span class="esw-title-icon" aria-hidden="true"><i class="fas fa-network-wired"></i></span>
-                <div>
-                    <h1>مدیریت نرم‌افزارهای مالی</h1>
-                    <p>نرم‌افزار مالی موردنظر را انتخاب کنید تا ارتباط اطلاعات آن را با CRM مدیریت کنید.</p>
-                </div>
+                <h1>مدیریت نرم‌افزارهای مالی</h1>
             </div>
         </div>
         <button id="addExternalSoftwareBtn" type="button" class="esw-btn esw-btn-primary">
@@ -31,7 +27,6 @@
         <header class="esw-workspace-header">
             <div>
                 <h2 id="eswSoftwareHeading">نرم‌افزارهای ثبت‌شده</h2>
-                <p>برای ثبت یا ویرایش ارتباط‌ها، وارد بخش تطبیق اطلاعات همان نرم‌افزار شوید.</p>
             </div>
             <span id="externalSoftwareCount" class="esw-total" aria-live="polite">—</span>
         </header>
@@ -48,7 +43,6 @@
             <div class="modal-header">
                 <div>
                     <h2 class="modal-title h6 mb-1" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
-                    <p class="text-muted small mb-0">نام نرم‌افزاری را که می‌خواهید به فهرست اضافه شود وارد کنید.</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
@@ -93,6 +87,18 @@
                 return element;
             }
 
+            function addDetail(list, label, value) {
+                if (value == null || String(value).trim() === "") return;
+                const pair = document.createElement("div");
+                pair.className = "esw-detail";
+                const term = document.createElement("dt");
+                term.textContent = label;
+                const description = document.createElement("dd");
+                description.textContent = String(value);
+                pair.append(term, description);
+                list.append(pair);
+            }
+
             function appendSoftware(item) {
                 const card = document.createElement("li");
                 card.className = "esw-card";
@@ -107,28 +113,44 @@
                 identity.className = "esw-card-identity";
                 const name = document.createElement("h3");
                 name.textContent = item.title || "بدون عنوان";
-                const caption = document.createElement("span");
-                caption.className = "esw-card-caption";
-                caption.textContent = "نرم‌افزار مالی";
-                identity.append(name, caption);
+                identity.append(name);
                 head.append(emblem, identity);
 
                 const status = document.createElement("span");
                 status.className = "esw-card-status" + (item.canMap ? " is-ready" : " is-pending");
                 status.append(icon(item.canMap ? "fas fa-check-circle" : "fas fa-info-circle"));
-                status.append(document.createTextNode(item.canMap ? "قابل تطبیق" : "بدون پشتیبانی تطبیق"));
+                status.append(document.createTextNode(item.canMap ? "قابل تطبیق" : "تطبیق پشتیبانی نمی‌شود"));
                 head.append(status);
                 card.append(head);
 
-                const footer = document.createElement("div");
-                footer.className = "esw-card-footer";
-                const description = document.createElement("p");
-                description.textContent = item.canMap
-                    ? "مشاهده ارتباط‌های ثبت‌شده و بررسی تطبیق‌های جدید"
-                    : "تطبیق اطلاعات برای این نرم‌افزار هنوز فعال نشده است.";
-                footer.append(description);
+                const details = document.createElement("dl");
+                details.className = "esw-card-details";
+                if (item.code != null && item.code !== 0) addDetail(details, "کد نرم‌افزار", item.code);
+                addDetail(details, "نوع نرم‌افزار", item.softwareTypeTxt);
+                addDetail(details, "نرم‌افزار پایه", item.softwareBaseItemTxt);
+                addDetail(details, "تاریخ ثبت", item.createDateTxt);
+                if (details.childElementCount) card.append(details);
+
+                const connection = document.createElement("dl");
+                connection.className = "esw-card-details esw-connection-details";
+                addDetail(connection, "آدرس سرور", item.databaseIpMasked);
+                addDetail(connection, "نام دیتابیس", item.databaseNameMasked);
+                addDetail(connection, "نام کاربری", item.databaseUserNameMasked);
+                if (item.hasDatabasePassword === true)
+                    addDetail(connection, "رمز عبور", "تنظیم شده");
+                if (connection.childElementCount) {
+                    const panel = document.createElement("section");
+                    panel.className = "esw-connection-panel";
+                    const heading = document.createElement("h4");
+                    heading.append(icon("fas fa-shield-alt"));
+                    heading.append(document.createTextNode("مشخصات اتصال (پوشیده)"));
+                    panel.append(heading, connection);
+                    card.append(panel);
+                }
 
                 if (item.canMap) {
+                    const footer = document.createElement("div");
+                    footer.className = "esw-card-footer";
                     const link = document.createElement("a");
                     link.className = "esw-btn esw-btn-primary esw-card-link";
                     link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
@@ -136,8 +158,8 @@
                     link.append(icon("fas fa-arrow-left"));
                     link.setAttribute("aria-label", "مدیریت تطبیق اطلاعات " + (item.title || ""));
                     footer.append(link);
+                    card.append(footer);
                 }
-                card.append(footer);
                 list.append(card);
             }
 
