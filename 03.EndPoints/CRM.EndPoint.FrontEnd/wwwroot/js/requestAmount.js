@@ -175,8 +175,31 @@ async function showEditPaymentModal(id) {
     });
     if (!data) return;
     
-    await showAttachReqAmount();
+    // Resolve the requests attached to this payment, not a stale request from
+    // the last payment-list modal. This also restores grouped-edit state.
+    const linkedRequests = await sendApiRequest({
+        url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
+        params: { paymentId: id },
+        showLoading: false,
+    });
+    if (!Array.isArray(linkedRequests) || !linkedRequests.length) {
+        toastifyError("درخواست‌های مرتبط با این پرداخت یافت نشد.");
+        return;
+    }
+
     paymentData = data.payment;
+    reqAmountId = linkedRequests[0].id;
+    isGroupPayment = linkedRequests.length > 1;
+    requestAmountListData = isGroupPayment ? linkedRequests : null;
+    requestAmountPaymentMap = isGroupPayment
+        ? linkedRequests.map(item => ({
+            paymentId: id,
+            requestAmountId: item.id,
+            amount: item.requestAmountPayments?.find(payment => String(payment.paymentId).toLowerCase() === String(id).toLowerCase())?.amount ?? 0,
+        }))
+        : [];
+
+    await showAttachReqAmount();
     mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
     if (paymentData.paymentMode === 1) {
         const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
@@ -195,16 +218,15 @@ let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal")
 
 let isGroupPayment = false;
 async function showSetAmountPaymentItemModal(filterIds) {
-    isGroupPayment = true;
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/GetRequestsAmountByFilteredIds",
         data: { filterIds },
         successMsg: null,
         onSuccess: (res) => {
+            isGroupPayment = true;
             requestAmountListData = res.data;
-            
-            
+            requestAmountPaymentMap = [];
             createSetAmountPaymentItem(false);
             ModalToggle(reqAmountPaymentModal);
         },
@@ -212,7 +234,6 @@ async function showSetAmountPaymentItemModal(filterIds) {
 }
 
 async function showEditAmountPaymentItemModal() {
-    isGroupPayment = true;
     const data = await sendApiRequest({
         url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
         params: { paymentId: paymentData.id },
@@ -220,8 +241,8 @@ async function showEditAmountPaymentItemModal() {
     
     if (!data) return;
     
+    isGroupPayment = true;
     requestAmountListData = data;
-    
     createSetAmountPaymentItem(true);
     ModalToggle(reqAmountPaymentModal);
 }
@@ -305,7 +326,13 @@ async function goToStepAttachReqAmount() {
 }
 
 function cancelRequestAmountPaymentModal() {
-    isGroupPayment = false;
+    // While editing a grouped payment, cancelling the amount editor should
+    // return to the attachment modal without turning the payment into a single one.
+    if (!reqAmountAttachModal?.classList.contains("show")) {
+        isGroupPayment = false;
+        requestAmountPaymentMap = [];
+        requestAmountListData = null;
+    }
     mySer.emptyForm("setAmountPaymentForm");
     ModalToggle(reqAmountPaymentModal, "hide");
 }
@@ -416,6 +443,10 @@ const cancelReqAmountAttach = () => {
     reqAmountAttachment = [];
     paymentData = {};
     requestPaymentTargetContext = null;
+    isGroupPayment = false;
+    requestAmountPaymentMap = [];
+    requestAmountListData = null;
+    reqAmountPaymentModal?.querySelector("#setAmountPaymentForm")?.replaceChildren();
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
@@ -460,10 +491,10 @@ const submitReqAmountAttach = async () => {
         data: model,
         onSuccess: async (res) => {
             if (res.status === 200) {
+                const wasGroupPayment = isGroupPayment;
                 cancelReqAmountAttach();
-                if (isGroupPayment) {
-                    cancelRequestAmountPaymentModal();
-                    requestSelection.hideSelectionMode();
+                if (wasGroupPayment) {
+                    requestSelection?.hideSelectionMode();
                 }
                 if (model.id && paymentTable) {
                     paymentTable.ajax.reload();
