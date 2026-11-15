@@ -588,15 +588,25 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         private async Task<Dictionary<(string, int), MappingReportSide>> LoadSepidarMappingSidesAsync(
             List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
         {
-            var externalSides = new Dictionary<(string, int), MappingReportSide>();
+            var sides = new Dictionary<(string, int), MappingReportSide>();
+            var context = softwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb
+                : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
+            if (context == null) return sides;
+
             var softwareTitle = await db.ExternalSoftwares.AsNoTracking()
                 .Where(x => x.Id == softwareId)
                 .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
-            var sepidarContext = softwareId == Sepidar1SoftwareId
-                ? (SepidarContextDbBase)sdb
-                : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
-            if (sepidarContext != null)
-            {
+            await LoadSepidarSalesSidesAsync(entries, context, softwareTitle, sides, ct);
+            await LoadSepidarFinanceSidesAsync(entries, context, sides, ct);
+            return sides;
+        }
+
+        private static async Task LoadSepidarSalesSidesAsync(
+            List<MappingReportEntry> entries, SepidarContextDbBase sepidarContext,
+            string softwareTitle, Dictionary<(string, int), MappingReportSide> externalSides,
+            CancellationToken ct)
+        {
             foreach (var batch in ExternalTargetBatches(entries, nameof(Quotation)))
             {
                 var data = await sepidarContext.Quotations.AsNoTracking()
@@ -649,49 +659,52 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker);
             }
 
-                // Enrich the other saved Sepidar mapping types when their
-                // external entity names are known, without assuming custom schemas.
-                foreach (var batch in ExternalTargetBatches(entries, nameof(Voucher)))
-                {
-                    var rows = await sepidarContext.Vouchers.AsNoTracking()
-                        .Where(x => batch.Contains(x.VoucherId))
-                        .Select(x => new { x.VoucherId, x.Number, x.Date, x.Description, x.FiscalYearRef })
-                        .ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
-                            "سند حسابداری", x.VoucherId.ToString(),
-                            x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
-                            x.Description, $"سال مالی: {x.FiscalYearRef}");
-                }
+        }
 
-                foreach (var batch in ExternalTargetBatches(entries, nameof(PaymentHeader)))
-                {
-                    var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
-                        .Where(x => batch.Contains(x.PaymentHeaderId))
-                        .Select(x => new { x.PaymentHeaderId, x.Number, x.Date,
-                            x.AmountInBaseCurrency, x.Description, x.FiscalYearRef })
-                        .ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
-                            "اعلامیه پرداخت", x.PaymentHeaderId.ToString(),
-                            x.Number.ToString(), FormatLegacyPersianDate(x.Date),
-                            x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
-                }
-
-                foreach (var batch in ExternalTargetBatches(entries, nameof(DL)))
-                {
-                    var rows = await sepidarContext.DLs.AsNoTracking()
-                        .Where(x => batch.Contains(x.DLId))
-                        .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
-                            "حساب تفصیلی", x.DLId.ToString(),
-                            x.Code, "", null, x.Title, "");
-                }
-
+        private static async Task LoadSepidarFinanceSidesAsync(
+            List<MappingReportEntry> entries, SepidarContextDbBase sepidarContext,
+            Dictionary<(string, int), MappingReportSide> externalSides, CancellationToken ct)
+        {
+            // Enrich the other saved Sepidar mapping types when their
+            // external entity names are known, without assuming custom schemas.
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Voucher)))
+            {
+                var rows = await sepidarContext.Vouchers.AsNoTracking()
+                    .Where(x => batch.Contains(x.VoucherId))
+                    .Select(x => new { x.VoucherId, x.Number, x.Date, x.Description, x.FiscalYearRef })
+                    .ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
+                        "سند حسابداری", x.VoucherId.ToString(),
+                        x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
+                        x.Description, $"سال مالی: {x.FiscalYearRef}");
             }
 
-            return externalSides;
+            foreach (var batch in ExternalTargetBatches(entries, nameof(PaymentHeader)))
+            {
+                var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
+                    .Where(x => batch.Contains(x.PaymentHeaderId))
+                    .Select(x => new { x.PaymentHeaderId, x.Number, x.Date,
+                        x.AmountInBaseCurrency, x.Description, x.FiscalYearRef })
+                    .ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
+                        "اعلامیه پرداخت", x.PaymentHeaderId.ToString(),
+                        x.Number.ToString(), FormatLegacyPersianDate(x.Date),
+                        x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
+            }
+
+            foreach (var batch in ExternalTargetBatches(entries, nameof(DL)))
+            {
+                var rows = await sepidarContext.DLs.AsNoTracking()
+                    .Where(x => batch.Contains(x.DLId))
+                    .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
+                        "حساب تفصیلی", x.DLId.ToString(),
+                        x.Code, "", null, x.Title, "");
+            }
+
         }
 
         private static string ExternalCodeLabel(string entityName) => entityName switch {
