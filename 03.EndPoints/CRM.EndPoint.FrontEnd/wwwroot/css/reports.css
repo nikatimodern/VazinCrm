@@ -598,12 +598,13 @@
 #reportWorkspace .report-badges { position:static; flex-direction:row-reverse; justify-content:flex-start; align-items:center; gap:5px; }
 #reportWorkspace :is(.report-type-badge, .report-ai-badge) { box-sizing:border-box; height:24px; padding:2px 6px; justify-content:center; font:500 11px/1.6 IRANSansMedium; box-shadow:none; border-radius:5px; }
 #reportWorkspace .report-type-badge { background:var(--report-accent); }
-#reportWorkspace .report-ai-badge { background:var(--report-purple); color:#fff; border:1px solid var(--report-purple); }
+#reportWorkspace .report-ai-badge { background:var(--report-accent); color:#fff; border:1px solid var(--report-accent); }
 #reportWorkspace .ai-svg-icon { height:13px; width:auto; color:#fff; filter:brightness(0) invert(1); }
 #reportWorkspace .report-badges button { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; flex-shrink:0; }
-#reportWorkspace .report-badges button svg { width:20px !important; height:20px; color:var(--report-purple) !important; }
-#reportWorkspace .report-badges .report-audio-play { width:auto; gap:4px; padding:2px 6px; border:1px solid var(--report-purple); border-radius:5px; background:#fff; color:var(--report-purple); font:500 11px/1.6 IRANSansMedium; white-space:nowrap; cursor:pointer; }
-#reportWorkspace .report-audio-play:hover { background:var(--report-purple-light); }
+#reportWorkspace .report-badges button svg { width:20px !important; height:20px; color:#fff !important; }
+#reportWorkspace .report-badges .report-audio-play { width:auto; gap:4px; padding:2px 6px; border:1px solid var(--report-accent); border-radius:5px; background:var(--report-accent); color:#fff; font:500 11px/1.6 IRANSansMedium; white-space:nowrap; cursor:pointer; }
+#reportWorkspace .report-audio-play:hover { filter:brightness(.9); }
+#reportWorkspace .report-badges .report-audio-play:focus-visible { outline-color:var(--report-accent); }
 #reportWorkspace .reporter-name { color:var(--report-primary); padding-left:0; margin-bottom:5px; font:500 13px/1.7 IRANSansMedium; overflow-wrap:anywhere; }
 #reportWorkspace .report-text { color:#212529; font:400 14px/1.9 IRANSans; padding:0; margin-bottom:0; overflow-wrap:anywhere; }
 #reportWorkspace .report-info { color:var(--report-muted); gap:6px 16px; font-size:12px; }

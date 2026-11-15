@@ -304,7 +304,7 @@ public class SupplyController(ICqrsDispatcher requests) : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ProccessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
+    public async Task<IActionResult> ProcessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
     private IActionResult Map(SupplyResult result, string viewName = null)
     {
         if (result.Kind == SupplyResultKind.Unauthorized)

@@ -224,7 +224,7 @@ document.addEventListener("input", (e) => {
 });
 
 
-async function proccessSupplyFactorWithAi(btn) {
+async function processSupplyFactorWithAi(btn) {
     if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
         toastifyError("سند فاکتور باید بارگذاری شود");
         return;
@@ -245,34 +245,15 @@ async function proccessSupplyFactorWithAi(btn) {
     spinner.classList.remove("d-none");
     aiIcon.classList.add("d-none");
     
-    /*await delay(3000);
-    const sfData = {
-        "date": "1405/01/26",
-        "serialNumber": "2117",
-        "officialType": 1,
-        "items": [{
-            "product": "لفاف ملزومات پر کردن ، دربندی و بسته بندی",
-            "weightCount": 966,
-            "unit": 2,
-            "unitTxt": "کیلوگرم",
-            "unitAmount": 3950000,
-            "totalAmount": 3815700000,
-            "discount": 0,
-            "taxAmount": 381570000,
-            "productCode": null,
-            "productSmallName": null,
-            "printable": 0,
-        }],
-    };*/
-    
     const attachFile = window.supplyFactorAttachments.filter(i => !i.isDeleted)[0];
     
     await sendApiRequest({
-        url: "/Supply/ProccessSupplyFactorWithAi/",
+        url: "/Supply/ProcessSupplyFactorWithAi/",
         method: "POST",
         data: attachFile,
         successMsg: null,
         showLoading: false,
+        timeout: 0,
         onSuccess: (res) => {
             supplyFactorData = { ...supplyFactorData, ...res.data };
             
