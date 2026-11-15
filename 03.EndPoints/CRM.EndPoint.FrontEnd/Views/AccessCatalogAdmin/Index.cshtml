@@ -16,7 +16,7 @@
         <button type="button" id="acRolesTab" data-main-tab="roles"
                 role="tab" aria-controls="acRolesPanel" aria-selected="false" tabindex="-1">مدیریت نقش‌ها</button>
         <button type="button" id="acUsersTab" data-main-tab="users"
-                role="tab" aria-controls="acUsersPanel" aria-selected="false" tabindex="-1">دسترسی کاربران</button>
+                role="tab" aria-controls="acUsersPanel" aria-selected="false" tabindex="-1">مدیریت کاربران</button>
     </nav>
 
     <div id="acCatalogPanel" role="tabpanel" aria-labelledby="acCatalogTab">
@@ -128,9 +128,15 @@
             <aside class="ac-panel" aria-label="کاربران">
                 <div class="ac-panel-heading">
                     <h2>کاربران <span class="ac-count" data-users-count>۰</span></h2>
-                    <button type="button" class="ac-icon-button" data-action="reload-users" title="تازه‌سازی" aria-label="تازه‌سازی کاربران">
-                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                    </button>
+                    <div class="ac-toolbar-actions">
+                        <button type="button" class="ac-btn ac-btn-primary" data-action="new-user">
+                            <i class="fas fa-user-plus" aria-hidden="true"></i> افزودن کاربر
+                        </button>
+                        <button type="button" class="ac-icon-button" data-action="reload-users"
+                                title="تازه‌سازی" aria-label="تازه‌سازی کاربران">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <label class="ac-search">
                     <i class="fas fa-search" aria-hidden="true"></i>
@@ -163,6 +169,9 @@
                         <p data-user-subtitle></p>
                     </div>
                     <div class="ac-toolbar-actions">
+                        <button class="ac-btn ac-btn-muted" type="button" data-action="edit-user" disabled>
+                            <i class="fas fa-pen" aria-hidden="true"></i> ویرایش کاربر
+                        </button>
                         <button class="ac-btn ac-btn-muted" type="button" data-action="reset-user" disabled>بازگرداندن تغییرات</button>
                         <button class="ac-btn ac-btn-primary" type="button" data-action="save-user" disabled>
                             <i class="fas fa-save" aria-hidden="true"></i> ذخیره دسترسی‌های کاربر
@@ -208,6 +217,72 @@
                     </div>
                 </div>
             </section>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acUserProfileModal" tabindex="-1" aria-hidden="true" aria-labelledby="acUserProfileModalTitle">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <form class="modal-content ac-modal" data-user-profile-form autocomplete="off">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="acUserProfileModalTitle">افزودن کاربر</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="ac-user-profile-fields">
+                        <label>نام
+                            <input name="firstName" maxlength="100" required autocomplete="off" />
+                        </label>
+                        <label>نام خانوادگی
+                            <input name="lastName" maxlength="100" required autocomplete="off" />
+                        </label>
+                        <label>نام کاربری
+                            <input name="userName" maxlength="100" required minlength="3" autocomplete="new-username"
+                                   dir="ltr" />
+                        </label>
+                        <label>شماره همراه
+                            <input name="phoneNumber" maxlength="30" minlength="8" required type="tel"
+                                   autocomplete="off" dir="ltr" placeholder="09123456789" />
+                        </label>
+                        <label>ایمیل (اختیاری)
+                            <input name="email" maxlength="256" type="email" autocomplete="off" dir="ltr" />
+                        </label>
+                        <label>شماره داخلی (اختیاری)
+                            <input name="internalTels" maxlength="250" autocomplete="off"
+                                   dir="ltr" placeholder="101,102" />
+                        </label>
+                        <label>سمت کاری (اختیاری)
+                            <select name="positionId" data-user-profile-position>
+                                <option value="">بدون سمت کاری</option>
+                            </select>
+                        </label>
+                        <label>رمز عبور <span data-user-password-hint>برای حساب جدید الزامی است</span>
+                            <input name="password" type="password" minlength="3" maxlength="128"
+                                   autocomplete="new-password" required />
+                        </label>
+                    </div>
+                    <fieldset class="ac-user-profile-fieldset">
+                        <legend>نوع حساب</legend>
+                        <div class="ac-user-profile-checks">
+                            <label><input type="checkbox" name="isEmployee" /> کارمند</label>
+                            <label><input type="checkbox" name="isCustomer" /> مشتری</label>
+                            <label><input type="checkbox" name="isSupplier" /> تأمین‌کننده</label>
+                        </div>
+                        <p>حداقل یک نوع حساب انتخاب کنید. نوع حساب مستقل از نقش‌های دسترسی است.</p>
+                    </fieldset>
+                    <fieldset class="ac-user-profile-fieldset">
+                        <legend>نقش‌های دسترسی <span data-user-profile-role-count>۰ انتخاب</span></legend>
+                        <div class="ac-user-profile-roles" data-user-profile-roles>
+                            <p class="ac-muted">در حال دریافت نقش‌ها...</p>
+                        </div>
+                        <p>انتخاب نقش‌ها اختیاری است. مجوزهای اختصاصی را می‌توانید در صفحه اصلی تنظیم کنید.</p>
+                    </fieldset>
+                    <p class="ac-error" data-user-profile-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit">ذخیره کاربر</button>
+                </div>
+            </form>
         </div>
     </div>
 

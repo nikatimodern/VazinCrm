@@ -12,6 +12,8 @@
     const permissionForm = root.querySelector("[data-permission-form]");
     const roleForm = root.querySelector("[data-role-form]");
     const roleModal = root.querySelector("#acRoleModal");
+    const userProfileModal = root.querySelector("#acUserProfileModal");
+    const userProfileForm = root.querySelector("[data-user-profile-form]");
     const entityModal = root.querySelector("#acEntityModal");
     const permissionModal = root.querySelector("#acPermissionModal");
     const entityList = root.querySelector("[data-entities]");
@@ -36,6 +38,8 @@
     let userOverrides = new Map(), userOriginalOverrides = new Map();
     let userReady = false, userSaving = false, userLoading = false;
     let userTabGeneration = 0, userPageGeneration = 0, userSelectionGeneration = 0, userSearchTimer = null;
+    let userProfileSaving = false, userProfileGeneration = 0, userProfileId = null, userProfileStamp = null;
+    let userPositions = null;
     const cleanupScroll = typeof enableMomentumScroll === "function" ? enableMomentumScroll(entityList) : null;
     const cleanupRoleListScroll = typeof enableMomentumScroll === "function" ? enableMomentumScroll(rolesList) : null;
     const cleanupRoleGroupsScroll = typeof enableMomentumScroll === "function" ? enableMomentumScroll(roleGroups) : null;
@@ -55,6 +59,7 @@
         bootstrap.Modal.getInstance(entityModal)?.dispose();
         bootstrap.Modal.getInstance(permissionModal)?.dispose();
         bootstrap.Modal.getInstance(roleModal)?.dispose();
+        bootstrap.Modal.getInstance(userProfileModal)?.dispose();
     };
     if (page) page.cleanups.push(dispose);
     else window.addEventListener("pagehide", dispose, { once: true });
@@ -103,7 +108,8 @@
         onError: err => {
             const message = err.response?.data?.message || "عملیات انجام نشد. دوباره تلاش کنید.";
             toastifyError(message);
-            showError(action === "SaveRole" ? "role-form" :
+            showError(action === "SaveUserProfile" ? "user-profile" :
+                action === "SaveRole" ? "role-form" :
                 action === "SaveRolePermissions" || action === "DeleteRole" ? "role" :
                 action === "SaveUserAccess" ? "user" :
                 action.includes("Permission") ? "permission" : "entity", message);
@@ -522,7 +528,7 @@
     }
 
     async function switchMainTab(next) {
-        if (next === activeTab || roleSaving || roleMutating || userSaving) return;
+        if (next === activeTab || roleSaving || roleMutating || userSaving || userProfileSaving) return;
         if (activeTab === "roles" && !await confirmDiscardRoleChanges()) {
             root.querySelector("[data-main-tab='roles']").focus();
             return;
@@ -672,6 +678,127 @@
         }
     }
 
+    function renderUserProfileRoles(selectedIds = []) {
+        const target = root.querySelector("[data-user-profile-roles]");
+        target.replaceChildren();
+        const chosen = new Set(selectedIds);
+        if (!userAvailableRoles.length) {
+            showEmpty(target, "هنوز نقشی تعریف نشده است.", "fa-user-shield");
+        } else {
+            for (const role of userAvailableRoles) {
+                const label = text("label", null, "ac-user-profile-role");
+                const input = document.createElement("input");
+                input.type = "checkbox";
+                input.value = role.id;
+                input.dataset.userProfileRole = role.id;
+                input.checked = chosen.has(role.id);
+                label.append(input, text("span", role.name));
+                target.append(label);
+            }
+        }
+        root.querySelector("[data-user-profile-role-count]").textContent =
+            target.querySelectorAll("input:checked").length + " انتخاب";
+    }
+
+    async function openUserProfileEditor(userId = null) {
+        if (userSaving || userLoading || userProfileSaving || activeTab !== "users" ||
+            !await confirmDiscardUserChanges()) return;
+        const generation = ++userProfileGeneration;
+        userProfileId = userId;
+        userProfileStamp = null;
+        userProfileForm.reset();
+        showError("user-profile", "");
+        root.querySelector("#acUserProfileModalTitle").textContent = userId ? "ویرایش کاربر" : "افزودن کاربر";
+        const password = field(userProfileForm, "password");
+        password.required = !userId;
+        root.querySelector("[data-user-password-hint]").textContent =
+            userId ? "(در صورت عدم تغییر خالی بماند)" : "(برای حساب جدید الزامی است)";
+        const [positions, profile] = await Promise.all([
+            userPositions ?? sendApiRequest({
+                url: "/AccessCatalogAdmin/Positions", showLoading: false
+            }),
+            userId ? sendApiRequest({
+                url: "/AccessCatalogAdmin/UserProfile", params: { userId }, showLoading: false
+            }) : Promise.resolve(null)
+        ]);
+        if (signal.aborted || generation !== userProfileGeneration || activeTab !== "users") return;
+        if (!Array.isArray(positions) || (userId && (!profile || profile.id !== userId))) {
+            toastifyError("دریافت اطلاعات کاربر یا سمت‌های کاری ناموفق بود.");
+            return;
+        }
+        userPositions = positions;
+        const positionSelect = root.querySelector("[data-user-profile-position]");
+        positionSelect.replaceChildren(new Option("بدون سمت کاری", ""));
+        for (const pos of positions)
+            positionSelect.add(new Option(pos.title, pos.id));
+        if (profile?.positionId && !positions.some(p => p.id === profile.positionId))
+            positionSelect.add(new Option(profile.positionTxt || "سمت ثبت‌شده قبلی", profile.positionId));
+        for (const name of ["firstName", "lastName", "userName", "phoneNumber", "email", "internalTels"])
+            field(userProfileForm, name).value = profile?.[name] || "";
+        positionSelect.value = profile?.positionId || "";
+        field(userProfileForm, "isEmployee").checked = profile ? profile.isEmployee : userType === "employee" || userType === "all";
+        field(userProfileForm, "isCustomer").checked = profile ? profile.isCustomer : userType === "customer";
+        field(userProfileForm, "isSupplier").checked = profile ? profile.isSupplier : userType === "supplier";
+        userProfileStamp = profile?.concurrencyStamp || null;
+        renderUserProfileRoles(profile?.roleIds || []);
+        ModalToggle(userProfileModal, "show");
+    }
+
+    async function saveUserProfile(event) {
+        event.preventDefault();
+        if (userSaving || userProfileSaving || !userProfileForm.reportValidity()) return;
+        const isEmployee = field(userProfileForm, "isEmployee").checked;
+        const isCustomer = field(userProfileForm, "isCustomer").checked;
+        const isSupplier = field(userProfileForm, "isSupplier").checked;
+        if (!isEmployee && !isCustomer && !isSupplier) {
+            showError("user-profile", "حداقل یکی از انواع حساب را انتخاب کنید.");
+            return;
+        }
+        const userName = field(userProfileForm, "userName").value.trim();
+        const firstName = field(userProfileForm, "firstName").value.trim();
+        const lastName = field(userProfileForm, "lastName").value.trim();
+        const phoneNumber = field(userProfileForm, "phoneNumber").value.trim();
+        const roleIds = [...userProfileForm.querySelectorAll("[data-user-profile-role]:checked")].map(x => x.value);
+        userProfileSaving = true;
+        const submit = userProfileForm.querySelector("[type='submit']");
+        submit.disabled = true;
+        syncUserState();
+        showError("user-profile", "");
+        try {
+            const response = await post("SaveUserProfile", {
+                userId: userProfileId, expectedConcurrencyStamp: userProfileStamp,
+                userName, firstName, lastName, phoneNumber,
+                email: field(userProfileForm, "email").value.trim(),
+                internalTels: field(userProfileForm, "internalTels").value.trim(),
+                password: field(userProfileForm, "password").value,
+                isEmployee, isCustomer, isSupplier,
+                positionId: field(userProfileForm, "positionId").value || null,
+                roleIds
+            });
+            if (signal.aborted) return;
+            if (response?.success) {
+                ModalToggle(userProfileModal, "hide");
+                userProfileForm.reset();
+                toastifySuccess(userProfileId ? "اطلاعات کاربر و نقش‌ها ویرایش شد." : "کاربر جدید ثبت شد.");
+                // Show the saved user even when their account type or position changed.
+                if ((userType === "employee" && !isEmployee) ||
+                    (userType === "customer" && !isCustomer) ||
+                    (userType === "supplier" && !isSupplier)) {
+                    userType = "all";
+                    userTypeSelect.value = "all";
+                }
+                root.querySelector("[data-users-search]").value = userName;
+                await loadUsersPage(1, response.userId || null);
+            } else if (!root.querySelector("[data-user-profile-error]").textContent) {
+                showError("user-profile", "ثبت اطلاعات کاربر انجام نشد.");
+            }
+        } finally {
+            userProfileSaving = false;
+            submit.disabled = false;
+            if (!signal.aborted) syncUserState();
+        }
+    }
+
     // User permissions are NOT copied from roles. Effective access is computed from
     // current role memberships + the live role grants, then overridden per user.
     const selectedUser = () => userPageItems.find(x => x.id === currentUserId);
@@ -787,8 +914,10 @@
         root.querySelector("[data-action='save-user']").disabled = !userReady || userSaving || !userDirty();
         root.querySelector("[data-action='reset-user']").disabled = !userReady || userSaving || !userDirty();
         root.querySelector("[data-action='user-clear-overrides']").disabled = !userReady || userSaving || !userOverrides.size;
-        root.querySelector("[data-users-search]").disabled = userSaving;
-        userTypeSelect.disabled = userSaving || userLoading;
+        root.querySelector("[data-users-search]").disabled = userSaving || userProfileSaving;
+        root.querySelector("[data-action='new-user']").disabled = userSaving || userProfileSaving;
+        root.querySelector("[data-action='edit-user']").disabled = !person || userSaving || userProfileSaving;
+        userTypeSelect.disabled = userSaving || userLoading || userProfileSaving;
         for (const checkbox of root.querySelectorAll("[data-user-role-id]"))
             checkbox.disabled = !userReady || userSaving;
         for (const label of root.querySelectorAll(".ac-user-role-choice"))
@@ -1051,7 +1180,9 @@
         }
         if (target.disabled) return;
         const action = target.dataset.action;
-        if (action === "reload-users") void reloadUsers();
+        if (action === "new-user") void openUserProfileEditor();
+        else if (action === "edit-user") void openUserProfileEditor(currentUserId);
+        else if (action === "reload-users") void reloadUsers();
         else if (action === "user-prev") void turnUsersPage(-1);
         else if (action === "user-next") void turnUsersPage(1);
         else if (action === "save-user") void saveUserAccess();
@@ -1162,6 +1293,17 @@
     entityForm.addEventListener("submit", event => { void saveEntity(event); }, { signal });
     permissionForm.addEventListener("submit", event => { void savePermission(event); }, { signal });
     roleForm.addEventListener("submit", event => { void saveRole(event); }, { signal });
+    userProfileForm.addEventListener("submit", event => { void saveUserProfile(event); }, { signal });
+    root.querySelector("[data-user-profile-roles]").addEventListener("change", () => {
+        root.querySelector("[data-user-profile-role-count]").textContent =
+            userProfileForm.querySelectorAll("[data-user-profile-role]:checked").length + " انتخاب";
+    }, { signal });
+    userProfileModal.addEventListener("hidden.bs.modal", () => {
+        ++userProfileGeneration;
+        userProfileForm.reset();
+        userProfileId = null;
+        userProfileStamp = null;
+    }, { signal });
 
     void (async () => {
         await loadModels();

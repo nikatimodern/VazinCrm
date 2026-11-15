@@ -199,6 +199,54 @@
     #accessCatalog .ac-role-choices { grid-template-columns: minmax(0,1fr); }
 }
 
+/* User creation/editing in the same access-management page. */
+#accessCatalog .ac-user-profile-fields {
+    display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px 12px;
+}
+#accessCatalog .ac-user-profile-fields > label {
+    display: flex; flex-direction: column; gap: 4px; font-size: 12px;
+    font-weight: 600; min-width: 0;
+}
+#accessCatalog .ac-user-profile-fields input,
+#accessCatalog .ac-user-profile-fields select {
+    width: 100%; min-width: 0; min-height: 34px; border: 1px solid var(--ac-border);
+    padding: 6px 9px; border-radius: 7px; color: inherit; background: #fff;
+    font-size: 12px;
+}
+#accessCatalog .ac-user-profile-fields [data-user-password-hint] {
+    color: var(--ac-muted); font-size: 10px; font-weight: 400;
+}
+#accessCatalog .ac-user-profile-fieldset {
+    border: 1px solid var(--ac-border); border-radius: 8px;
+    padding: 8px 10px; margin: 12px 0 0; min-width: 0;
+}
+#accessCatalog .ac-user-profile-fieldset legend {
+    float: none; width: auto; padding: 0 4px; margin: 0;
+    font-size: 12px; font-weight: 700;
+}
+#accessCatalog .ac-user-profile-fieldset legend span { color: var(--ac-muted); font-weight: 400; font-size: 10px; }
+#accessCatalog .ac-user-profile-fieldset p { margin: 6px 0 0; font-size: 11px; color: var(--ac-muted); }
+#accessCatalog .ac-user-profile-checks, #accessCatalog .ac-user-profile-roles {
+    display: flex; gap: 7px; flex-wrap: wrap;
+}
+#accessCatalog .ac-user-profile-role, #accessCatalog .ac-user-profile-checks label {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--ac-border);
+    border-radius: 6px; padding: 6px 9px; font-size: 12px; cursor: pointer; margin: 0;
+}
+#accessCatalog .ac-user-profile-role:has(input:checked),
+#accessCatalog .ac-user-profile-checks label:has(input:checked) {
+    background: var(--ac-primary-light); border-color: #B8D9D0;
+}
+#accessCatalog .ac-user-profile-role input, #accessCatalog .ac-user-profile-checks input {
+    width: 15px; height: 15px; accent-color: var(--ac-primary); flex-shrink: 0; margin: 0;
+}
+#accessCatalog .ac-user-profile-roles { max-height: 170px; overflow-y: auto; }
+@media (max-width: 767px) {
+    #accessCatalog .ac-user-profile-fields { grid-template-columns: minmax(0,1fr); }
+    #accessCatalog .ac-user-profile-fields input, #accessCatalog .ac-user-profile-fields select { min-height: 39px; }
+    #accessCatalog .ac-user-profile-checks label, #accessCatalog .ac-user-profile-role { min-height: 37px; }
+}
+
 /* User access tab: account-kind filtering, live role grants, and per-user overrides. */
 #accessCatalog .ac-user-type-filter {
     display: flex; align-items: center; gap: 8px; margin: 0 12px 10px;
