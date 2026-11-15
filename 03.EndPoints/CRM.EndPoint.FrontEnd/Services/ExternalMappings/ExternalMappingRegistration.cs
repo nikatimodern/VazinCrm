@@ -162,6 +162,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 && row.Sepidar.Extra?.StartsWith("کد تفصیلی: ") == true)
                 targetCode = row.Sepidar.Extra["کد تفصیلی: ".Length..];
 
+            // The saved Party must carry the same role badges as newly searched options.
+            var partyFlags = mapping.ExEntityName == nameof(Party)
+                ? await (softwareId == Sepidar1SoftwareId
+                        ? (SepidarContextDbBase)sdb : s2Db).Parties.AsNoTracking()
+                    .Where(x => x.PartyId == externalId)
+                    .Select(x => new { x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker })
+                    .SingleOrDefaultAsync(ct)
+                : null;
+
             return new {
                 mappingId = mapping.Id, externalSoftwareId = softwareId,
                 mapType = (int)mapping.MapType,
@@ -173,7 +182,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 },
                 externalOption = new {
                     id = mapping.ExEntityId,
-                    title = FormatManualOption(targetCode, targetDisplay)
+                    title = FormatManualOption(targetCode, targetDisplay),
+                    isCustomer = partyFlags?.IsCustomer ?? false,
+                    isEmployee = partyFlags?.IsEmployee ?? false,
+                    isVendor = partyFlags?.IsVendor ?? false,
+                    isBroker = partyFlags?.IsBroker ?? false
                 }
             };
         }
