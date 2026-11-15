@@ -454,3 +454,64 @@
     #accessCatalog .ac-role-delete-perm { gap: 6px; }
     #accessCatalog .ac-role-delete-summary { align-items: flex-start; }
 }
+
+/* Access history: compact timeline, readable before/after comparisons, mobile first. */
+#accessCatalog .ac-history-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 10px; padding: 10px 12px; background: #fff;
+    border: 1px solid var(--ac-border); border-radius: 10px;
+}
+#accessCatalog .ac-history-head h2 { margin: 0 0 4px; font-size: 15px; }
+#accessCatalog .ac-history-head p { margin: 0; color: var(--ac-muted); font-size: 12px; }
+#accessCatalog .ac-history-layout { grid-template-columns: minmax(270px, .85fr) minmax(0, 1.65fr); }
+#accessCatalog .ac-history-filters { display: grid; gap: 8px; padding: 9px 11px;
+    border-bottom: 1px solid var(--ac-border); }
+#accessCatalog .ac-history-filters .ac-search { margin: 0; }
+#accessCatalog .ac-history-filters select { width: 100%; border: 1px solid var(--ac-border);
+    padding: 7px 9px; font-size: 12px; color: inherit; border-radius: 7px; background: #fff; }
+#accessCatalog .ac-history-items { padding: 7px; display: grid; align-content: start;
+    gap: 6px; max-height: 65vh; overflow-y: auto; }
+#accessCatalog .ac-history-item { width: 100%; display: grid; gap: 5px; text-align: right;
+    border: 1px solid var(--ac-border); background: #fff; padding: 10px 11px;
+    border-radius: 8px; cursor: pointer; color: inherit; }
+#accessCatalog .ac-history-item:hover { background: #f7faf9; }
+#accessCatalog .ac-history-item.is-selected { background: var(--ac-primary-light);
+    border-color: #9fc9be; border-inline-start: 3px solid var(--ac-primary); }
+#accessCatalog .ac-history-item-top { display: flex; align-items: center; flex-wrap: wrap;
+    gap: 7px; font-size: 11px; color: var(--ac-muted); }
+#accessCatalog .ac-history-item-top i { color: var(--ac-primary); }
+#accessCatalog .ac-history-item-top small { padding: 2px 6px; border: 1px solid var(--ac-border);
+    border-radius: 5px; background: #fff; font-size: 10px; margin-inline-start: auto; }
+#accessCatalog .ac-history-item strong { font-size: 12px; line-height: 1.5; }
+#accessCatalog .ac-history-item-detail, #accessCatalog .ac-history-item-actor { font-size: 11px;
+    color: var(--ac-muted); }
+#accessCatalog .ac-history-detail { min-width: 0; padding: 9px 12px 14px; }
+#accessCatalog .ac-history-detail > .ac-role-notice { margin: 0 0 11px; }
+#accessCatalog .ac-history-diffs { display: grid; gap: 8px; max-height: 59vh; overflow-y: auto; }
+#accessCatalog .ac-history-diff { border: 1px solid var(--ac-border); border-radius: 8px;
+    padding: 9px; display: grid; gap: 8px; background: #fff; }
+#accessCatalog .ac-history-diff-title { font-size: 12px; overflow-wrap: anywhere; }
+#accessCatalog .ac-history-diff-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#accessCatalog .ac-history-diff-side { min-width: 0; border-radius: 7px; padding: 8px 9px;
+    display: grid; gap: 5px; align-content: start; }
+#accessCatalog .ac-history-diff-side small { font-size: 10px; font-weight: 600; }
+#accessCatalog .ac-history-diff-side span { font-size: 11px; overflow-wrap: anywhere; line-height: 1.6; }
+#accessCatalog .ac-history-diff-side.is-before { background: #fff3f3; color: #952b37; }
+#accessCatalog .ac-history-diff-side.is-after { background: #edf8f1; color: #216844; }
+#accessCatalog .ac-history-actions { display: flex; justify-content: flex-end;
+    gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+#accessCatalog .ac-history-preview h3 { font-size: 14px; font-weight: 700; margin: 4px 0 7px; }
+#accessCatalog .ac-history-preview > p { font-size: 12px; color: var(--ac-muted); margin-bottom: 10px; }
+#accessCatalog .ac-history-warning { border: 1px solid #e9d2a7; background: #fff9e9;
+    color: #785018; border-radius: 7px; padding: 7px 10px; font-size: 11px; margin: 5px 0; }
+@media (max-width: 991px) {
+    #accessCatalog .ac-history-layout { grid-template-columns: minmax(0, 1fr); }
+    #accessCatalog .ac-history-items { max-height: 35vh; }
+}
+@media (max-width: 767px) {
+    #accessCatalog .ac-history-head { padding: 9px; }
+    #accessCatalog .ac-history-head .ac-toolbar-actions { width: 100%; }
+    #accessCatalog .ac-history-diff-pair { gap: 5px; }
+    #accessCatalog .ac-history-diff-side { padding: 7px; }
+    #accessCatalog .ac-history-actions .ac-btn { flex: 1; min-width: 130px; white-space: normal; }
+}
