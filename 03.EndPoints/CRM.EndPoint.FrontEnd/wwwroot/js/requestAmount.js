@@ -493,8 +493,8 @@ const submitReqAmountAttach = async () => {
             if (res.status === 200) {
                 const wasGroupPayment = isGroupPayment;
                 cancelReqAmountAttach();
-                if (wasGroupPayment) {
-                    requestSelection?.hideSelectionMode();
+                if (wasGroupPayment && typeof requestSelection !== "undefined") {
+                    requestSelection?.hideSelectionMode?.();
                 }
                 if (model.id && paymentTable) {
                     paymentTable.ajax.reload();
