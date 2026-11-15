@@ -549,11 +549,14 @@
             tab.setAttribute("aria-selected", String(active));
             tab.tabIndex = active ? 0 : -1;
         }
-        for (const panel of ["catalog", "roles", "users"]) {
-            root.querySelector("[id='ac" + (panel === "catalog" ? "Catalog" : panel === "roles" ? "Roles" : "Users") + "Panel']").hidden = panel !== next;
-        }
+        const panelIds = { catalog: "acCatalogPanel", roles: "acRolesPanel",
+            users: "acUsersPanel", history: "acHistoryPanel" };
+        for (const [panel, id] of Object.entries(panelIds))
+            root.querySelector("#" + id).hidden = panel !== next;
         if (next === "roles") await loadRoleTab();
         if (next === "users") await loadUserTab();
+        if (next === "catalog") await loadEntities(false);
+        if (next === "history") root.dispatchEvent(new CustomEvent("access-history-open"));
     }
 
     async function switchRole(roleId) {
