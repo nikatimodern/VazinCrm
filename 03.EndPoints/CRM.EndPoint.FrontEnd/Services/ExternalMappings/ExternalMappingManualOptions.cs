@@ -104,7 +104,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && x.SerialNumber == number) ||
-                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
+                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)) ||
+                                (x.AgentName != null && x.AgentName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
                             .Select(x => new { x.Id, x.SerialNumber, x.Customer, x.AgentName })
                             .Take(size).ToListAsync(ct);
@@ -118,7 +119,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => x.Id == guid ||
                                 (number > 0 && x.SerialNumber == number) ||
-                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
+                                (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)) ||
+                                (x.AgentName != null && x.AgentName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
                             .Select(x => new { x.Id, x.SerialNumber, x.Customer, x.AgentName })
                             .Take(size).ToListAsync(ct);
