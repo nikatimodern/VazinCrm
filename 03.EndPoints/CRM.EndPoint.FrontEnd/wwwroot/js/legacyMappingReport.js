@@ -26,22 +26,22 @@
 
         const statusNames = {
             saved:"ثبت‌شده", pending:"آماده ثبت", customerConflict:"تعارض مشتری",
-            ambiguous:"نگاشت مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
+            ambiguous:"تطبیق مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
         };
         const reasonNames = {
             MultipleSepidarParties:["چند مشتری سپیدار برای یک مشتری CRM","پیش‌فاکتورها یا فاکتورهای این مشتری به اشخاص متفاوت سپیدار اشاره دارند. در ارتباط‌های پایین مشخص است هر کدام متعلق به کدام مشتری است."],
-            DuplicateCrmCustomersForParty:["چند مشتری CRM برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در CRM به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود نگاشت متعلق به کدام مشتری CRM است."],
-            PartyAlreadyMappedToAnotherCustomer:["مشتری سپیدار قبلاً نگاشت شده","این مشتری سپیدار به مشتری دیگری در CRM متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
-            ExistingDuplicateCustomerParty:["نگاشت مشتری تکراری از قبل وجود دارد","در نگاشت‌های ذخیره‌شده چند مشتری CRM به یک مشتری سپیدار متصل‌اند."],
-            ExistingCustomerMappingMismatch:["نگاشت مشتری با ارتباط‌های فعلی مغایر است","مشتری قبلاً به شخص دیگری در سپیدار وصل شده است."],
+            DuplicateCrmCustomersForParty:["چند مشتری CRM برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در CRM به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود ارتباط مربوط به کدام مشتری CRM است."],
+            PartyAlreadyMappedToAnotherCustomer:["ارتباط مشتری سپیدار قبلاً ثبت شده","این مشتری سپیدار به مشتری دیگری در CRM متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
+            ExistingDuplicateCustomerParty:["ارتباط تکراری مشتری ثبت شده است","در ارتباط‌های ثبت‌شده چند مشتری CRM به یک مشتری سپیدار متصل‌اند."],
+            ExistingCustomerMappingMismatch:["ارتباط مشتری با اطلاعات فعلی مغایر است","مشتری قبلاً به شخص دیگری در سپیدار وصل شده است."],
             LegacyFinancialCustomerIdMismatch:["کد مالی قدیمی با سپیدار متفاوت است","کد مشتری قدیمی CRM با مشتری ثبت‌شده در سپیدار یکسان نیست."],
             PartyNotFoundOrNotCustomer:["معادل سپیدار معتبر نیست","این شخص در نرم‌افزار مقصد پیدا نشده یا مشتری محسوب نمی‌شود."],
-            CustomerHasConflict:["ابتدا تعارض مشتری را تعیین تکلیف کنید","تا زمانی که نگاشت مشتری مشخص نباشد، پیش‌فاکتور یا فاکتور قابل نگاشت نیست."],
-            CustomerMappingPendingApproval:["مشتری هنوز نگاشت نشده","پیشنهاد نگاشت مشتری آماده است اما هنوز در CRM ثبت نشده است."],
-            CustomerNotMapped:["ابتدا مشتری را نگاشت کنید","پیش‌فاکتور یا فاکتور فقط بعد از ثبت نگاشت مشتری در همین نرم‌افزار قابل نگاشت است."],
+            CustomerHasConflict:["ابتدا تعارض مشتری را تعیین تکلیف کنید","تا زمانی که ارتباط مشتری مشخص نباشد، ارتباط پیش‌فاکتور یا فاکتور قابل ثبت نیست."],
+            CustomerMappingPendingApproval:["ارتباط مشتری هنوز ثبت نشده","ارتباط پیشنهادی مشتری آماده است اما هنوز در CRM ثبت نشده است."],
+            CustomerNotMapped:["ابتدا ارتباط مشتری را ثبت کنید","ارتباط پیش‌فاکتور یا فاکتور فقط بعد از ثبت ارتباط مشتری در همین نرم‌افزار قابل ثبت است."],
             DocumentCustomerMissing:["مشتری CRM مشخص نیست","ابتدا مشتری این پیش‌فاکتور یا فاکتور را در CRM مشخص کنید."],
             DocumentCrmCustomerMismatch:["مشتری فاکتور و پیش‌فاکتور CRM فرق دارد","مشتری ثبت‌شده در فاکتور با پیش‌فاکتور مرتبط یکسان نیست."],
-            DocumentSepidarCustomerMismatch:["مشتری سپیدار با نگاشت فرق دارد","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده CRM مطابقت ندارد."],
+            DocumentSepidarCustomerMismatch:["مشتری سپیدار با ارتباط ثبت‌شده متفاوت است","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده CRM مطابقت ندارد."],
             DuplicateProposedTarget:["چند مورد CRM برای یک مورد سپیدار","چند پیش‌فاکتور یا فاکتور CRM برای یک معادل سپیدار پیشنهاد شده‌اند. فقط ارتباط صحیح را انتخاب کنید."],
             ExternalTargetAlreadyMapped:["این معادل قبلاً استفاده شده","این مورد سپیدار قبلاً به یک مورد دیگر CRM وصل شده است."],
             QuotationNumberNotFound:["شماره پیش‌فاکتور یافت نشد","شماره پیش‌فاکتور CRM در سپیدار پیدا نشد."],
@@ -50,7 +50,7 @@
             QuotationCustomerMismatch:["مشتری پیش‌فاکتور فرق دارد","پیش‌فاکتور احتمالی سپیدار برای مشتری متفاوتی ثبت شده است."],
             QuotationMultipleFieldMismatch:["چند اختلاف در پیش‌فاکتور","مشتری، مبلغ، شماره و سال مالی را بررسی کنید."],
             MultipleMatchingQuotations:["چند پیش‌فاکتور احتمالی","چند پیش‌فاکتور مشابه پیدا شده؛ معادل درست را انتخاب کنید."],
-            RelatedQuotationNotMapped:["پیش‌فاکتور مرتبط نگاشت نشده","معادل پیش‌فاکتور مرتبط با فاکتور CRM هنوز پیدا نشده است."],
+            RelatedQuotationNotMapped:["ارتباط پیش‌فاکتور مرتبط ثبت نشده","معادل پیش‌فاکتور مرتبط با فاکتور CRM هنوز پیدا نشده است."],
             InvoiceIdNotFound:["شناسه فاکتور قدیمی پیدا نشد","شناسه قبلی فاکتور در سپیدار وجود ندارد."],
             InvoiceForQuotationNotFound:["فاکتور پیش‌فاکتور مرتبط پیدا نشد","در سپیدار برای پیش‌فاکتور مرتبط فاکتوری پیدا نشده است."],
             InvoiceAmountMismatch:["مبلغ فاکتور فرق دارد","مبلغ فاکتور CRM با معادل احتمالی سپیدار فرق دارد."],
@@ -62,11 +62,11 @@
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
             UserExpertExactMatch:["تطبیق نام کارشناس و شخص","نام کارشناس CRM با شخص متناظر در نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
             UserExpertMultipleMatches:["چند شخص هم‌نام","چند شخص با همین نام در نرم‌افزار مالی پیدا شده‌اند؛ معادل درست کارشناس را انتخاب کنید."],
-            UserExpertMultipleCrmUsers:["چند کارشناس CRM هم‌نام","چند کارشناس CRM نام یکسان دارند؛ نگاشت را با بررسی هویت صحیح، دستی ثبت کنید."],
-            UserExpertNoMatch:["شخص هم‌نام یافت نشد","شخص متناظر قطعی پیدا نشده است؛ از ثبت دستی نگاشت کارشناس استفاده کنید."],
-            UserExpertAlreadyMapped:["شخص قبلاً نگاشت شده","شخص مشابه در نرم‌افزار مالی به کارشناس دیگری نگاشت شده است."],
+            UserExpertMultipleCrmUsers:["چند کارشناس CRM هم‌نام","چند کارشناس CRM نام یکسان دارند؛ ارتباط درست را پس از بررسی هویت، دستی ثبت کنید."],
+            UserExpertNoMatch:["شخص هم‌نام یافت نشد","شخص متناظر قطعی پیدا نشده است؛ ارتباط کارشناس را دستی ثبت کنید."],
+            UserExpertAlreadyMapped:["ارتباط شخص قبلاً ثبت شده","شخص مشابه در نرم‌افزار مالی به کارشناس دیگری متصل شده است."],
             ReadyForReview:["آماده ثبت",""],
-            AlreadyMapped:["نگاشت ذخیره‌شده","این رابطه قبلاً در جدول ExternalMapping ثبت شده است."]
+            AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
         };
 
         const state = {
@@ -147,7 +147,7 @@
                     crmCandidates: [...uniqueCrm.values()],
                     sources: [...new Set(matches.flatMap(row => row.sources || []))],
                     details: "برای این مشتری نرم‌افزار مالی، چند مشتری CRM پیدا شده است. " +
-                        "یک مشتری CRM را انتخاب کنید؛ مشتریان دیگر نگاشت نمی‌شوند."
+                        "یک مشتری CRM را انتخاب کنید؛ برای سایر مشتریان ارتباطی ثبت نمی‌شود."
                 });
             }
             return result;
@@ -429,14 +429,14 @@
                 (mapped && (row.options?.length || row.crmCandidates?.length ||
                         row.status === "pending")
                     ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                        (!selected ? "disabled" : "") + '>ثبت نگاشت</button>'
+                        (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
                     : "") +
                 (row.status === "saved" && row.mappingId
                     ? '<span class="lmr-saved-actions">' +
                         '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
                         '<button type="button" class="lmr-btn lmr-btn-danger" ' +
-                        'data-delete-mapping>حذف نگاشت</button></span>'
+                        'data-delete-mapping>حذف ارتباط</button></span>'
                     : "");
             return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
                 '" data-key="' + escape(row.key) + '" role="listitem">' +
@@ -623,7 +623,7 @@
 
         function renderSaved(rows, total) {
             savedRoot.innerHTML = rows.length ? rows.map(card).join("") :
-                '<div class="lmr-empty">نگاشت ثبت‌شده‌ای با این فیلتر پیدا نشد.</div>';
+                '<div class="lmr-empty">ارتباط ثبت‌شده‌ای با این فیلتر پیدا نشد.</div>';
             feedback("saved");
             drawPages("saved", total);
         }
@@ -636,7 +636,7 @@
                 get("lmrProposalPagination").replaceChildren();
                 get("lmrSelectionActions").hidden = true;
                 if (!state.autoIds.includes(state.softwareId))
-                    feedback("proposal", "برای این نرم‌افزار هنوز الگوریتم تطبیق خودکار تعریف نشده است. نگاشت‌های ثبت‌شده در بخش بالا قابل مشاهده‌اند.");
+                    feedback("proposal", "برای این نرم‌افزار هنوز الگوریتم تطبیق خودکار تعریف نشده است. ارتباط‌های ثبت‌شده در بخش بالا قابل مشاهده‌اند.");
                 else
                     feedback("proposal", "برای دریافت پیشنهادهای جدید، دکمه «محاسبه پیشنهادها» را انتخاب کنید.");
                 return;
@@ -673,7 +673,7 @@
             model.total = null;
             updateSummary();
             savedRoot.replaceChildren();
-            feedback("saved", "در حال خواندن نگاشت‌های ثبت‌شده…");
+            feedback("saved", "در حال خواندن ارتباط‌های ثبت‌شده…");
             const result = await sendApiRequest({
                 url: "/ExternalMapping/GetSavedExternalMappings",
                 params: { softwareId, mapType: model.type || undefined, search: model.search,
@@ -682,7 +682,7 @@
             });
             if (!isActive() || request !== model.request || softwareId !== state.softwareId) return;
             if (!result) {
-                feedback("saved", "دریافت نگاشت‌های ثبت‌شده ناموفق بود.", true);
+                feedback("saved", "دریافت ارتباط‌های ثبت‌شده ناموفق بود.", true);
                 return;
             }
             model.rows = result.rows || [];
@@ -701,10 +701,10 @@
             if (state.deleting || !row?.mappingId || row.status !== "saved") return;
 
             const ok = await confirmAlert({
-                title: "حذف نگاشت",
-                text: "نگاشت «" + typeTitle(row) + "» بین CRM و «" +
+                title: "حذف ارتباط",
+                text: "ارتباط «" + typeTitle(row) + "» بین CRM و «" +
                     state.softwareTitle + "» حذف شود؟ اطلاعات اصلی در CRM و نرم‌افزار مالی حذف نمی‌شوند.",
-                icon: "warning", confirmText: "حذف نگاشت", cancelText: "انصراف"
+                icon: "warning", confirmText: "حذف ارتباط", cancelText: "انصراف"
             });
             if (!ok) return;
 
@@ -731,7 +731,7 @@
                 return;
             }
 
-            toastifySuccess("نگاشت انتخاب‌شده حذف شد.");
+            toastifySuccess("ارتباط انتخاب‌شده حذف شد.");
             // Any calculated proposal may be outdated after deleting a saved mapping.
             state.proposal.loaded = false;
             state.proposal.rows = [];
@@ -829,17 +829,17 @@
                 ...[5, 6, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
-                toastifyError("نوع بعضی از نگاشت‌های انتخاب‌شده قابل ثبت نیست.");
+                toastifyError("امکان ثبت ارتباط برای بعضی از موارد انتخاب‌شده وجود ندارد.");
                 return;
             }
 
             const agreed = await confirmAlert({
-                title: "تأیید نگاشت",
-                text: "ثبت " + format.format(items.length) + " نگاشت در «" +
+                title: "تأیید ثبت ارتباط",
+                text: "ثبت " + format.format(items.length) + " ارتباط در «" +
                     state.softwareTitle + "» انجام شود؟ " +
-                    (items.length > 100 ? "نگاشت‌ها به دسته‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
-                    "نگاشت‌ها پس از اعتبارسنجی رابطه دو طرف در CRM ثبت می‌شوند.",
-                icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
+                    (items.length > 100 ? "ارتباط‌ها در گروه‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
+                    "ارتباط‌ها پس از اعتبارسنجی دو رکورد در CRM ثبت می‌شوند.",
+                icon: "question", confirmText: "ثبت ارتباط", cancelText: "انصراف"
             });
             if (!agreed) return;
 
@@ -858,7 +858,7 @@
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
-                        feedback("proposal", "در حال ثبت نگاشت‌ها: " +
+                        feedback("proposal", "در حال ثبت ارتباط‌ها: " +
                             format.format(savedCount) + " از " + format.format(items.length));
                         const result = await sendApiRequest({
                             url: "/ExternalMapping/SaveSelectedExternalMappings",
@@ -895,7 +895,7 @@
             }
 
             if (savedCount > 0) {
-                toastifySuccess(format.format(savedCount) + " نگاشت ثبت شد.");
+                toastifySuccess(format.format(savedCount) + " ارتباط ثبت شد.");
                 state.selected.clear();
                 state.targets.clear();
                 state.preview.clear();
@@ -922,7 +922,7 @@
                     format.format(remaining) + " مورد باقی مانده است. " +
                     "پیشنهادها را دوباره محاسبه کنید و موارد باقی‌مانده را بررسی کنید.", true);
             } else if (savedCount > 0) {
-                feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
+                feedback("proposal", "ارتباط‌های انتخاب‌شده ثبت شدند. " +
                     "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
             }
             return !failed && savedCount === items.length;
@@ -1125,7 +1125,7 @@
                     return;
                 openManualMapping(result);
             } catch {
-                toastifyError("اطلاعات نگاشت برای ویرایش دریافت نشد.");
+                toastifyError("اطلاعات ارتباط برای ویرایش دریافت نشد.");
             }
         }
 
@@ -1153,7 +1153,7 @@
                 const info = manualEntityInfo(side);
                 el.textContent = info
                     ? side === "external" ? info[0] : info[1] + " (" + info[0] + ")"
-                    : "ابتدا نوع نگاشت را انتخاب کنید";
+                    : "ابتدا نوع ارتباط را انتخاب کنید";
             }
         }
 
@@ -1197,7 +1197,7 @@
             const element = side === "crm" ? manualCrmSelect : manualExternalSelect;
             const info = manualEntityInfo(side);
             if (!info) {
-                element.replaceChildren(new Option("ابتدا نوع نگاشت را انتخاب کنید", ""));
+                element.replaceChildren(new Option("ابتدا نوع ارتباط را انتخاب کنید", ""));
                 element.disabled = true;
                 return;
             }
@@ -1337,7 +1337,7 @@
             const isEdit = !!editing?.mappingId;
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
-            manualType.replaceChildren(new Option("نوع نگاشت را انتخاب کنید", ""));
+            manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
             state.types.forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = isEdit ? String(editing.mapType) : "";
@@ -1346,9 +1346,9 @@
             get("lmrManualTargetKind").value =
                 isEdit && editing.exEntityName === "Voucher" ? "Voucher" : "PaymentHeader";
             get("lmrManualTitleText").textContent =
-                isEdit ? "ویرایش نگاشت" : "ثبت نگاشت دستی";
+                isEdit ? "ویرایش ارتباط" : "ثبت ارتباط";
             get("lmrManualConfirmText").textContent =
-                isEdit ? "ذخیره تغییرات" : "ثبت نگاشت";
+                isEdit ? "ذخیره تغییرات" : "ثبت ارتباط";
             get("lmrManualDescription").textContent = isEdit
                 ? "رکورد CRM و معادل نرم‌افزار مالی را بررسی و در صورت نیاز اصلاح کنید."
                 : "رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.";
@@ -1405,7 +1405,7 @@
                 const success = await save([item]);
                 if (success) closeManualMapping();
                 else if (state.manualOpen)
-                    manualFeedback("نگاشت ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
+                    manualFeedback("ارتباط ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
                 manualSubmitState();
                 return;
             }
@@ -1453,7 +1453,7 @@
             }
 
             closeManualMapping();
-            toastifySuccess("تغییرات نگاشت ذخیره شد.");
+            toastifySuccess("تغییرات ارتباط ذخیره شد.");
             state.selected.clear();
             state.targets.clear();
             state.crmTargets.clear();
