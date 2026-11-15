@@ -185,21 +185,27 @@
             if (preview) return preview;
             if (String(row.sepidar?.id) === value) return row.sepidar;
             const option = row.options?.find(x => String(x.id) === value);
-            return { title:"معادل انتخابی", id:value, number:value, customer:option?.title || "" };
+            return { title:"معادل انتخابی", id:value, number:"", customer:option?.title || "" };
         }
 
-        function sideCodeLabel(row, crm) {
-            if (Number(row.mapType) === 5) return "کد مشتری";
-            if (Number(row.mapType) === 6) return crm ? "نام کاربری" : "شناسه شخص";
-            return "شماره";
+        function sideCodeLabel(row, crm, side = null) {
+            switch (Number(row.mapType)) {
+                case 0:
+                    return crm ? "شماره تنخواه" :
+                        String(side?.title || "").includes("سند حسابداری")
+                            ? "شماره سند" : "شماره اعلامیه پرداخت";
+                case 2: return "شماره پیش‌فاکتور";
+                case 3: return "شماره فاکتور";
+                case 4: return crm ? "کد مرکز هزینه" : "کد تفصیلی";
+                case 5: return crm ? "کد مشتری" : "کد تفصیلی";
+                case 6: return crm ? "نام کاربری" : "کد تفصیلی";
+                default: return "شماره";
+            }
         }
 
         function sideDisplayName(row, side) {
             if (!side) return "معادل مشخص نیست";
-            if (Number(row.mapType) === 5 || Number(row.mapType) === 6)
-                return show(side.customer || side.title);
-            // The document number is already displayed on the secondary line.
-            return show(side.title);
+            return show(side.customer || side.title);
         }
 
         function partyRoleBadges(data, escapeOption) {
@@ -222,9 +228,14 @@
             if (!hasData)
                 return '<div class="lmr-decision-empty">موردی برای نمایش مشخص نشده است.</div>';
             const number = side.number && side.number !== "-" ? side.number : "";
-            const numberText = number
-                ? '<small>' + escape(sideCodeLabel(row, crm)) + ': ' + escape(number) + '</small>'
-                : "";
+            const details = [];
+            if (number) details.push(escape(sideCodeLabel(row, crm, side)) +
+                ': ' + escape(number));
+            // CRM GUIDs are only internal keys, never displayed in cards.
+            if (!crm && validId(side.id))
+                details.push('شناسه: ' + escape(side.id));
+            const numberText = details.length
+                ? '<small>' + details.join(' | ') + '</small>' : "";
             // Party flags are provided only for actual Party records. Restrict badges
             // to saved external mappings; other entity types keep their current UI.
             const hasPartyRoles = !crm && row.status === "saved" &&
@@ -246,8 +257,7 @@
             const candidates = crmSide ? row.crmCandidates || [] : row.options || [];
             const chosen = crmSide ? state.crmTargets.get(row.key) || "" : targetValue(row);
             const canChoose = canMap(row);
-            const codeLabel = crmSide || [5, 6].includes(Number(row.mapType))
-                ? sideCodeLabel(row, crmSide) : "شناسه";
+            const codeLabel = sideCodeLabel(row, crmSide);
             const name = (crmSide ? "crm-" : "external-") + row.key;
             return '<div class="lmr-choice-list" role="group" aria-label="' +
                 escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
@@ -262,13 +272,16 @@
                             'name="' + escape(name) + '" value="' + escape(id) + '"' +
                             (selected ? ' checked' : '') + '>'
                         : '<i class="fas fa-circle lmr-readonly-dot" aria-hidden="true"></i>';
+                    const detail = crmSide
+                        ? (code && code !== "-" ? codeLabel + ': ' + code : "")
+                        : (item.description || 'شناسه: ' + id);
                     return '<label class="lmr-choice' +
                         (selected && canChoose ? ' is-picked' : '') +
                         (!canChoose ? ' is-readonly' : '') + '">' +
                         choice + '<span class="lmr-choice-text"><strong>' +
-                        escape(show(title)) + '</strong><small>' +
-                        escape(codeLabel) + ': ' + escape(show(code)) +
-                        '</small></span></label>';
+                        escape(show(title)) + '</strong>' +
+                        (detail ? '<small>' + escape(detail) + '</small>' : '') +
+                        '</span></label>';
                 }).join("") + '</div>';
         }
 
