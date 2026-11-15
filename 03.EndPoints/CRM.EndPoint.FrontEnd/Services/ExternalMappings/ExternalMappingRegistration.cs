@@ -159,7 +159,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ? row.Sepidar.Title : row.Sepidar.Customer;
             var targetCode = row.Sepidar.Number;
             if (mapping.ExEntityName == nameof(Party)
-                && row.Sepidar.Extra.StartsWith("کد تفصیلی: "))
+                && row.Sepidar.Extra?.StartsWith("کد تفصیلی: ") == true)
                 targetCode = row.Sepidar.Extra["کد تفصیلی: ".Length..];
 
             return new {
