@@ -7,7 +7,6 @@
         page.dataset.initialized = "1";
 
         const get = id => page.querySelector("#" + id);
-        const softwareSelect = get("lmrSoftware");
         const savedRoot = get("lmrSavedRecords");
         const proposalRoot = get("lmrProposalRecords");
         const selectAll = get("lmrSelectPage");
@@ -70,7 +69,8 @@
         };
 
         const state = {
-            softwareId: "", softwareTitle: "", autoIds: [], manualIds: [],
+            softwareId: page.dataset.softwareId || "", softwareTitle: page.dataset.softwareTitle || "",
+            autoIds: [], manualIds: [],
             types: [], counts: [], selected: new Map(), targets: new Map(), crmTargets: new Map(), preview: new Map(),
             activeTab: "saved",
             saved: { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: 0 },
@@ -675,7 +675,7 @@
             savedRoot.replaceChildren();
             feedback("saved", "در حال خواندن ارتباط‌های ثبت‌شده…");
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetSavedExternalMappings",
+                url: "/ExternalSoftware/GetSavedExternalMappings",
                 params: { softwareId, mapType: model.type || undefined, search: model.search,
                     page: model.page, pageSize: model.size },
                 showLoading: false, timeout: 90000
@@ -716,7 +716,7 @@
             if (deleteButton) deleteButton.disabled = true;
 
             const result = await sendApiRequest({
-                url: "/ExternalMapping/DeleteExternalMapping",
+                url: "/ExternalSoftware/DeleteExternalMapping",
                 method: "POST",
                 headers: { "RequestVerificationToken": token },
                 data: { softwareId, mappingId: row.mappingId },
@@ -746,7 +746,7 @@
             renderProposals();
 
             const options = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions",
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions",
                 showLoading: false
             });
             if (!isActive() || softwareId !== state.softwareId) return;
@@ -768,7 +768,7 @@
             proposalRoot.replaceChildren();
             feedback("proposal", "در حال محاسبه تطبیق‌های " + state.softwareTitle + "…");
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingReview",
+                url: "/ExternalSoftware/GetExternalMappingReview",
                 params: { softwareId },
                 showLoading: false, timeout: 180000
             });
@@ -792,9 +792,7 @@
             renderProposals();
         }
 
-        async function changeSoftware() {
-            state.softwareId = softwareSelect.value;
-            state.softwareTitle = softwareSelect.selectedOptions[0]?.textContent || "نرم‌افزار خارجی";
+        async function initializeSelectedSoftware() {
             state.saved = { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: state.saved.request + 1 };
             state.proposal = { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: state.proposal.request + 1, calculating: false };
@@ -845,7 +843,6 @@
 
             const softwareId = state.softwareId;
             state.processing = true;
-            softwareSelect.disabled = true;
             mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = true);
             get("lmrCompute").disabled = true;
             selectAll.disabled = true;
@@ -861,7 +858,7 @@
                         feedback("proposal", "در حال ثبت ارتباط‌ها: " +
                             format.format(savedCount) + " از " + format.format(items.length));
                         const result = await sendApiRequest({
-                            url: "/ExternalMapping/SaveSelectedExternalMappings",
+                            url: "/ExternalSoftware/SaveSelectedExternalMappings",
                             method: "POST",
                             headers: { "RequestVerificationToken": token },
                             data: { externalSoftwareId: softwareId, items: batch },
@@ -888,8 +885,7 @@
                 // Earlier batches may already have been committed. Report their count.
             } finally {
                 state.processing = false;
-                softwareSelect.disabled = false;
-                mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = false);
+                    mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = false);
                 updateSummary();
                 updateSelection();
             }
@@ -907,7 +903,7 @@
                 updateProposalTabs();
                 renderProposals();
                 const options = await sendApiRequest({
-                    url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                    url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
                 });
                 if (options) state.counts = options.counts || [];
                 fillTypes("saved");
@@ -934,7 +930,7 @@
             if (state.preview.has(key)) return;
             const softwareId = state.softwareId;
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingTargetDetails",
+                url: "/ExternalSoftware/GetExternalMappingTargetDetails",
                 params: { softwareId, mapType: row.mapType, targetId: Number(id) },
                 showLoading: false, showError: false, timeout: 30000
             });
@@ -1080,7 +1076,7 @@
         async function refreshSaved() {
             const softwareId = state.softwareId;
             const options = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
             });
             if (!isActive() || softwareId !== state.softwareId) return;
             if (options) {
@@ -1116,7 +1112,7 @@
             const request = ++state.editRequest;
             try {
                 const result = await sendApiRequest({
-                    url: "/ExternalMapping/GetExternalMappingForEdit",
+                    url: "/ExternalSoftware/GetExternalMappingForEdit",
                     params: { softwareId, mappingId: row.mappingId },
                     showLoading: false, timeout: 30000
                 });
@@ -1249,7 +1245,7 @@
                     }
                     try {
                         const result = await sendApiRequest({
-                            url: "/ExternalMapping/GetManualMappingOptions",
+                            url: "/ExternalSoftware/GetManualMappingOptions",
                             params: {
                                 softwareId, ...type, side,
                                 search: query.trim()
@@ -1355,7 +1351,6 @@
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             manualReturnFocus = document.activeElement;
             state.manualOpen = true;
-            softwareSelect.disabled = true;
             resetManualOptions();
             bootstrap.Modal.getOrCreateInstance(manualModal).show();
         }
@@ -1376,7 +1371,6 @@
             state.manualPrefill = false;
             state.editRequest++;
             manualType.disabled = false;
-            softwareSelect.disabled = false;
             destroyManualSelects();
             if (isActive()) {
                 const fallback = state.activeTab === "saved"
@@ -1414,12 +1408,11 @@
             const softwareId = state.softwareId;
             let updated = false;
             state.processing = true;
-            softwareSelect.disabled = true;
             get("lmrManualConfirmText").textContent = "در حال ذخیره…";
             manualSubmitState();
             try {
                 const result = await sendApiRequest({
-                    url: "/ExternalMapping/UpdateExternalMapping",
+                    url: "/ExternalSoftware/UpdateExternalMapping",
                     method: "POST",
                     headers: { "RequestVerificationToken": token },
                     data: {
@@ -1440,7 +1433,6 @@
             } finally {
                 state.processing = false;
                 // Keep the destination fixed until this modal is closed.
-                softwareSelect.disabled = state.manualOpen;
                 get("lmrManualConfirmText").textContent = "ذخیره تغییرات";
                 manualSubmitState();
             }
@@ -1467,14 +1459,13 @@
             await loadSaved();
         });
 
-        softwareSelect.addEventListener("change", changeSoftware);
         get("lmrRefreshSaved").addEventListener("click", refreshSaved);
         get("lmrCompute").addEventListener("click", calculate);
 
         (async () => {
             feedback("saved", "در حال دریافت نرم‌افزارهای خارجی…");
             const response = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
             });
             if (!isActive()) return;
             if (!response) {
@@ -1485,15 +1476,19 @@
             state.counts = response.counts || [];
             state.autoIds = response.supportedAutomaticSoftwareIds || [];
             state.manualIds = response.supportedManualSoftwareIds || [];
-            softwareSelect.replaceChildren();
-            (response.software || []).forEach(x =>
-                softwareSelect.add(new Option(x.title, x.id)));
-            if (!softwareSelect.value) {
-                feedback("saved", "نرم‌افزار خارجی ثبت نشده است.");
+            const destination = (response.software || []).find(x =>
+                String(x.id).toLowerCase() === state.softwareId.toLowerCase());
+            if (!destination || !state.manualIds.includes(state.softwareId)) {
+                feedback("saved", "این نرم‌افزار برای مدیریت تطبیق اطلاعات در دسترس نیست.", true);
+                get("lmrManualOpen").disabled = true;
+                get("lmrManualOpenSaved").disabled = true;
+                get("lmrCompute").disabled = true;
                 return;
             }
+            state.softwareTitle = destination.title;
+            get("lmrSoftwareTitle").textContent = destination.title;
             switchMainTab("saved");
-            await changeSoftware();
+            await initializeSelectedSoftware();
         })();
     }
 
