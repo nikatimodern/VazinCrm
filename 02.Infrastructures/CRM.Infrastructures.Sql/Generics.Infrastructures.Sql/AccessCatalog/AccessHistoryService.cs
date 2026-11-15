@@ -105,11 +105,19 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
     public async Task<Guid> BeginAsync(string action, string? actorId, CancellationToken ct)
     {
         var (kind, title) = Operation(action);
+        var before = ToJson(await CaptureAsync(ct));
+        // The first administrative change also establishes an initial full restore point.
+        if (!await db.AccessHistoryEntries.AsNoTracking().AnyAsync(x => x.AfterJson != null, ct))
+            db.AccessHistoryEntries.Add(new AccessHistoryEntry
+            {
+                ActorId = actorId ?? "", Action = "Baseline", Kind = "manual",
+                Title = "وضعیت اولیه مدیریت سطح دسترسی",
+                BeforeJson = before, AfterJson = before
+            });
         var entry = new AccessHistoryEntry
         {
             ActorId = actorId ?? "",
-            Action = action, Kind = kind, Title = title,
-            BeforeJson = ToJson(await CaptureAsync(ct))
+            Action = action, Kind = kind, Title = title, BeforeJson = before
         };
         db.AccessHistoryEntries.Add(entry);
         await db.SaveChangesAsync(ct);
