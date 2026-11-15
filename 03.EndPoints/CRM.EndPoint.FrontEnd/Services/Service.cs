@@ -366,7 +366,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
         private static decimal CalculateTax(decimal amount, int taxPercent)
         {
-            return Math.Round(amount * taxPercent / 100m);
+            return Math.Floor(amount * taxPercent / 100m);
         }
 
         public static string GetTypeTxtPfactor(int type)
