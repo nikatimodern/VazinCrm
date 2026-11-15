@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.15" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.16" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl">
@@ -139,7 +139,7 @@
         <div class="modal-content" dir="rtl">
             <header class="modal-header lmr-manual-header">
                 <div>
-                    <h2 id="lmrManualTitle"><i class="fas fa-link" aria-hidden="true"></i> ثبت نگاشت دستی</h2>
+                    <h2 id="lmrManualTitle"><i class="fas fa-link" aria-hidden="true"></i> <span id="lmrManualTitleText">ثبت نگاشت دستی</span></h2>
                     <p id="lmrManualDescription">رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.</p>
                 </div>
                 <button id="lmrManualClose" type="button" class="btn-close" aria-label="بستن"></button>
@@ -186,7 +186,7 @@
             <footer class="modal-footer lmr-manual-footer">
                 <button id="lmrManualCancel" type="button" class="lmr-btn">انصراف</button>
                 <button id="lmrManualConfirm" type="button" class="lmr-btn lmr-btn-primary" disabled>
-                    <i class="fas fa-check" aria-hidden="true"></i> ثبت نگاشت
+                    <i class="fas fa-check" aria-hidden="true"></i> <span id="lmrManualConfirmText">ثبت نگاشت</span>
                 </button>
             </footer>
         </div>
@@ -195,5 +195,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.15" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.16" asp-append-version="true"></script>
 }
