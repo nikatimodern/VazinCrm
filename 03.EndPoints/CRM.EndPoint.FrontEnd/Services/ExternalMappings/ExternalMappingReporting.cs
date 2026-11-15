@@ -449,19 +449,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
         private static string CrmCustomerDisplay(string company, string agent, string fallback = null)
         {
-            var parts = new List<string>(2);
-            if (!string.IsNullOrWhiteSpace(company)) parts.Add("شرکت: " + company.Trim());
-            if (!string.IsNullOrWhiteSpace(agent)) parts.Add("نماینده: " + agent.Trim());
-            return parts.Count > 0 ? string.Join(" | ", parts)
-                : string.IsNullOrWhiteSpace(fallback) ? "نام مشتری ثبت نشده" : fallback.Trim();
-        }
-
-        private static string CrmDocumentCustomerDisplay(string company, string agent)
-        {
             var names = new[] { company?.Trim(), agent?.Trim() }
                 .Where(x => !string.IsNullOrWhiteSpace(x));
             var customer = string.Join(" | ", names);
-            return "مشتری: " + (string.IsNullOrEmpty(customer) ? "نامشخص" : customer);
+            return "مشتری: " + (string.IsNullOrEmpty(customer)
+                ? (string.IsNullOrWhiteSpace(fallback) ? "نامشخص" : fallback.Trim())
+                : customer);
         }
 
         private async Task<Dictionary<(string, Guid), MappingReportSide>> LoadCrmMappingSidesAsync(
@@ -506,9 +499,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(PreFactor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
                         x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
-                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
@@ -524,9 +517,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(Factor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
                         x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
-                        CrmDocumentCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
@@ -544,7 +537,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 foreach (var x in data)
                 {
                     var customerName = CrmCustomerDisplay(x.CompanyName, x.AgentName,
-                        $"مشتری با کد {x.CustomerCode}");
+                        $"کد {x.CustomerCode}");
                     customerNames[x.Id] = (x.CompanyName, x.AgentName);
                     crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
                         "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
@@ -557,7 +550,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || !string.IsNullOrWhiteSpace(customer.Agent))
                     && crmSides.TryGetValue(reference.Key, out var document))
                 {
-                    var displayName = CrmDocumentCustomerDisplay(customer.Company, customer.Agent);
+                    var displayName = CrmCustomerDisplay(customer.Company, customer.Agent);
                     crmSides[reference.Key] = document with {
                         Title = displayName, Customer = displayName
                     };
