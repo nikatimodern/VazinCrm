@@ -19,7 +19,7 @@
         </button>
     </header>
     <div id="externalSoftwareFeedback" role="status" aria-live="polite" class="small text-muted mb-2"></div>
-    <ul id="externalSoftwareList" class="list-group gap-2"></ul>
+    <ul id="managedExternalSoftwareList" class="list-group gap-2"></ul>
 </div>
 
 <div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalTitle" aria-hidden="true" dir="rtl">
@@ -49,7 +49,7 @@
             const root = document.getElementById("settingsConnectionsWorkspace");
             if (!root || root.dataset.initialized) return;
             root.dataset.initialized = "1";
-            const list = document.getElementById("externalSoftwareList");
+            const list = document.getElementById("managedExternalSoftwareList");
             const feedback = document.getElementById("externalSoftwareFeedback");
             const modal = document.getElementById("externalSoftwareModal");
             const form = document.getElementById("externalSoftwareForm");
