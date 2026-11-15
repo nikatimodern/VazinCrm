@@ -48,6 +48,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             public List<SelectedExternalMapping> Items { get; set; } = new();
         }
 
+        public sealed class UpdateExternalMappingRequest
+        {
+            public Guid ExternalSoftwareId { get; set; }
+            public Guid MappingId { get; set; }
+            public SelectedExternalMapping Item { get; set; }
+            public Guid OriginalEntityId { get; set; }
+            public string OriginalEntityName { get; set; }
+            public string OriginalExEntityId { get; set; }
+            public string OriginalExEntityName { get; set; }
+        }
+
         public async Task<object> GetExternalMappingWorkspaceOptions(CancellationToken ct)
         {
             var software = await db.ExternalSoftwares.AsNoTracking()
@@ -197,8 +208,28 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         // On success each record becomes a persisted ExternalMapping, never an external INSERT.
 
 
-        public async Task<int> SaveSelectedExternalMappings(
+        public Task<int> SaveSelectedExternalMappings(
             SaveExternalMappingsRequest request, System.Security.Claims.ClaimsPrincipal principal, CancellationToken ct)
+            => SaveExternalMappingsCoreAsync(request, principal, null, ct);
+
+        // Updates the existing CRM row in place; no DELETE/INSERT and no external write.
+        public Task<int> UpdateExternalMappingAsync(
+            UpdateExternalMappingRequest request, System.Security.Claims.ClaimsPrincipal principal,
+            CancellationToken ct)
+        {
+            if (request?.Item == null || request.MappingId == Guid.Empty
+                || request.OriginalEntityId == Guid.Empty)
+                throw new ArgumentException("نگاشت انتخاب‌شده برای ویرایش معتبر نیست.");
+
+            return SaveExternalMappingsCoreAsync(new SaveExternalMappingsRequest {
+                ExternalSoftwareId = request.ExternalSoftwareId,
+                Items = new List<SelectedExternalMapping> { request.Item }
+            }, principal, request, ct);
+        }
+
+        private async Task<int> SaveExternalMappingsCoreAsync(
+            SaveExternalMappingsRequest request, System.Security.Claims.ClaimsPrincipal principal,
+            UpdateExternalMappingRequest edit, CancellationToken ct)
         {
             if (request == null || request.Items == null || request.Items.Count == 0 || request.Items.Count > 100)
                 throw new ArgumentException("بین ۱ تا ۱۰۰ نگاشت را انتخاب کنید.");
@@ -247,6 +278,26 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Where(x => x.ExternalSoftwareId == request.ExternalSoftwareId)
                     .ToListAsync(ct);
 
+                ExternalMapping edited = null;
+                if (edit != null)
+                {
+                    edited = await db.ExternalMappings.SingleOrDefaultAsync(
+                        x => x.Id == edit.MappingId
+                            && x.ExternalSoftwareId == request.ExternalSoftwareId, ct);
+                    if (edited == null)
+                        throw new KeyNotFoundException("این نگاشت دیگر وجود ندارد؛ فهرست را تازه‌سازی کنید.");
+
+                    if (edited.MapType != request.Items[0].MapType)
+                        throw new ArgumentException("برای تغییر نوع نگاشت، یک نگاشت جدید ثبت کنید.");
+
+                    if (edited.EntityId != edit.OriginalEntityId
+                        || edited.EntityName != edit.OriginalEntityName
+                        || edited.ExEntityName != edit.OriginalExEntityName
+                        || edited.ExEntityId != edit.OriginalExEntityId)
+                        throw new MappingConflictException(
+                            "این نگاشت قبلاً تغییر کرده است؛ فهرست را تازه‌سازی کنید.");
+                }
+
                 var duplicatesInRequest = request.Items.GroupBy(x => {
                     var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
                     return (x.MapType, pair.Target, int.Parse(x.ExEntityId.Trim()));
@@ -267,15 +318,58 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     var (entityName, externalName) = GetMappingEntityNames(
                         item.MapType, item.EntityName, item.ExEntityName);
 
-                    if (existing.Any(x => x.EntityName == entityName
+                    if (existing.Any(x => x.Id != edited?.Id
+                        && x.EntityName == entityName
                         && x.EntityId == item.EntityId && x.MapType == item.MapType))
                         throw new MappingConflictException($"این {item.MapType} در نرم‌افزار انتخاب‌شده قبلاً نگاشت شده است.");
 
-                    if (existing.Any(x => x.MapType == item.MapType
+                    if (existing.Any(x => x.Id != edited?.Id
+                        && x.MapType == item.MapType
                         && x.ExEntityName == externalName
-                        && x.ExEntityId == targetId.ToString()
-                        && x.EntityId != item.EntityId))
+                        && x.ExEntityId == targetId.ToString()))
                         throw new MappingConflictException($"معادل خارجی شماره {targetId} قبلاً به رکورد CRM دیگری وصل شده است.");
+
+                    // Do not invalidate downstream documents by changing an existing
+                    // customer/quotation relation that those documents still rely on.
+                    if (edited != null && (edited.EntityId != item.EntityId
+                        || edited.EntityName != entityName
+                        || edited.ExEntityId != targetId.ToString()
+                        || edited.ExEntityName != externalName))
+                    {
+                        if (edited.MapType == ExternalMappingTypeEnum.مشتری)
+                        {
+                            var oldCustomerId = edited.EntityId;
+                            var linkedQuotation = await db.PreFactors.AsNoTracking()
+                                .AnyAsync(p => p.CustomerId == oldCustomerId
+                                    && db.ExternalMappings.Any(m =>
+                                        m.ExternalSoftwareId == request.ExternalSoftwareId
+                                        && m.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                                        && m.EntityId == p.Id), ct);
+                            var linkedInvoice = await db.Factors.AsNoTracking()
+                                .AnyAsync(f => (f.CustomerId == oldCustomerId
+                                    || db.PreFactors.Any(p =>
+                                        p.Id == f.PfactorID && p.CustomerId == oldCustomerId))
+                                    && db.ExternalMappings.Any(m =>
+                                        m.ExternalSoftwareId == request.ExternalSoftwareId
+                                        && m.MapType == ExternalMappingTypeEnum.فاکتور
+                                        && m.EntityId == f.Id), ct);
+                            if (linkedQuotation || linkedInvoice)
+                                throw new MappingConflictException(
+                                    "برای این مشتری پیش‌فاکتور یا فاکتور ثبت‌شده وجود دارد؛ ابتدا ارتباط اسناد مربوط را بررسی کنید.");
+                        }
+                        else if (edited.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                        {
+                            var linkedInvoice = await db.Factors.AsNoTracking()
+                                .AnyAsync(f => f.PfactorID == edited.EntityId
+                                    && db.ExternalMappings.Any(m =>
+                                        m.ExternalSoftwareId == request.ExternalSoftwareId
+                                        && m.MapType == ExternalMappingTypeEnum.فاکتور
+                                        && m.EntityId == f.Id), ct);
+                            if (linkedInvoice)
+                                throw new MappingConflictException(
+                                    "این پیش‌فاکتور فاکتور ثبت‌شده دارد و ارتباط آن قابل تغییر نیست.");
+                        }
+                    }
 
                     if (item.MapType == ExternalMappingTypeEnum.مشتری)
                     {
@@ -385,24 +479,35 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             throw new ArgumentException("ابتدا مشتری مربوط به فاکتور یا پیش‌فاکتور را در همین نرم‌افزار به‌درستی نگاشت کنید.");
                     }
 
-                    newMappings.Add(new ExternalMapping {
-                        Id = Guid.NewGuid(),
-                        ExternalSoftwareId = request.ExternalSoftwareId,
-                        EntityName = entityName,
-                        EntityId = item.EntityId,
-                        MapType = item.MapType,
-                        MapTypeTxt = item.MapType.ToString(),
-                        ExEntityName = externalName,
-                        ExEntityId = targetId.ToString(),
-                        UserCreatorID = crmUser.Id,
-                        UserCreator = crmUser.FullName
-                    });
+                    if (edited != null)
+                    {
+                        // Preserve the original ID, creator and creation date.
+                        edited.EntityName = entityName;
+                        edited.EntityId = item.EntityId;
+                        edited.ExEntityName = externalName;
+                        edited.ExEntityId = targetId.ToString();
+                    }
+                    else
+                    {
+                        newMappings.Add(new ExternalMapping {
+                            Id = Guid.NewGuid(),
+                            ExternalSoftwareId = request.ExternalSoftwareId,
+                            EntityName = entityName,
+                            EntityId = item.EntityId,
+                            MapType = item.MapType,
+                            MapTypeTxt = item.MapType.ToString(),
+                            ExEntityName = externalName,
+                            ExEntityId = targetId.ToString(),
+                            UserCreatorID = crmUser.Id,
+                            UserCreator = crmUser.FullName
+                        });
+                    }
                 }
 
                 db.ExternalMappings.AddRange(newMappings);
                 await db.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
-                return newMappings.Count;
+                return edited != null ? 1 : newMappings.Count;
             }
             catch (DbUpdateException ex)
             {
