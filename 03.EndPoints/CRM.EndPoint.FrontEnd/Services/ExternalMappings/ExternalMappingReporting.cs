@@ -202,7 +202,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var owner = !string.IsNullOrWhiteSpace(customerInfo.Name)
                             ? $"«{customerInfo.Name}» (کد {customerInfo.Code})"
                             : "که اطلاعات آن در CRM پیدا نشد";
-                        return $"مشتری {PartyDescription(x.PartyId)} در سپیدار قبلاً به مشتری CRM {owner} نگاشت شده است.";
+                        return $"مشتری {PartyDescription(x.PartyId)} در سپیدار قبلاً به مشتری CRM {owner} متصل شده است.";
                     }).ToArray();
 
                 var conflictDetails = owners.Length > 0
@@ -294,7 +294,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 throw new ArgumentException("نرم‌افزار انتخاب‌شده معتبر نیست.");
 
             if (mapType.HasValue && !Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType.Value))
-                throw new ArgumentException("نوع نگاشت معتبر نیست.");
+                throw new ArgumentException("نوع ارتباط معتبر نیست.");
 
             page = Math.Max(1, page);
             // pageSize=0 requests all saved mappings for the selected software/filter.
@@ -394,7 +394,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 return new MappingReportEntry(
                     $"saved-{x.EntityName}-{x.EntityId}-{(int)x.MapType}", x.EntityName,
                     x.EntityId, "saved", "AlreadyMapped",
-                    "این نگاشت در پایگاه داده CRM ثبت شده است.",
+                    "این ارتباط قبلاً در CRM ثبت شده است.",
                     x.ExEntityName, externalId > 0 ? externalId : null,
                     Array.Empty<string>(), (int)x.MapType, x.ExEntityId,
                     null, x.Id);
