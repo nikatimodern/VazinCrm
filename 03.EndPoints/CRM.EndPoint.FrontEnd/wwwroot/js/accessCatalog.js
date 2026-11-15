@@ -698,11 +698,22 @@
             const card = text("section", null, "ac-role-delete-user");
             card.dataset.deleteUser = user.id;
             const head = text("div", null, "ac-role-delete-user-head");
+            const identity = text("div", null, "ac-role-delete-user-identity");
+            const avatar = text("span", null, "ac-role-delete-avatar");
+            const personIcon = text("i", null, "fas fa-user");
+            personIcon.setAttribute("aria-hidden", "true");
+            avatar.append(personIcon);
             const titles = text("div", null, "ac-role-delete-user-title");
-            titles.append(text("strong", user.name), text("small", user.userName));
+            titles.append(
+                text("span", "کاربر", "ac-role-delete-user-label"),
+                text("strong", user.name),
+                text("small", user.userName)
+            );
+            identity.append(avatar, titles);
+            const actions = text("div", null, "ac-role-delete-user-actions");
             const count = text("span", null, "ac-role-delete-user-count");
             count.dataset.deleteUserCount = user.id;
-            head.append(titles, count);
+            actions.append(count);
             if (user.permissions.length) {
                 const buttons = text("div", null, "ac-role-delete-buttons");
                 for (const [mode, title] of [["keep", "حفظ همه"], ["remove", "حذف همه"]]) {
@@ -712,8 +723,9 @@
                     button.dataset.deleteUserId = user.id;
                     buttons.append(button);
                 }
-                head.append(buttons);
+                actions.append(buttons);
             }
+            head.append(identity, actions);
             card.append(head);
             if (!user.permissions.length) {
                 card.append(text("p", "مجوز وابسته‌ای برای از دست دادن ندارد؛ مجوزهای دیگر باقی می‌مانند.", "ac-role-delete-no-loss"));
