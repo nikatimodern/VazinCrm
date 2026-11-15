@@ -6,7 +6,7 @@
     <header class="ac-header">
         <div>
             <h1>مدیریت سطح دسترسی</h1>
-            <p>تعریف انتیتی‌های قابل کنترل و مجوزهای مربوط به هر کدام</p>
+            <p>تعریف انتیتی‌ها، مدیریت نقش‌ها و تنظیم دسترسی‌های کاربران</p>
         </div>
     </header>
 
@@ -14,7 +14,7 @@
         <button type="button" id="acCatalogTab" data-main-tab="catalog" class="is-active"
                 role="tab" aria-controls="acCatalogPanel" aria-selected="true">انتیتی‌ها و دسترسی‌ها</button>
         <button type="button" id="acRolesTab" data-main-tab="roles"
-                role="tab" aria-controls="acRolesPanel" aria-selected="false" tabindex="-1">دسترسی نقش‌ها</button>
+                role="tab" aria-controls="acRolesPanel" aria-selected="false" tabindex="-1">مدیریت نقش‌ها</button>
         <button type="button" id="acUsersTab" data-main-tab="users"
                 role="tab" aria-controls="acUsersPanel" aria-selected="false" tabindex="-1">دسترسی کاربران</button>
     </nav>
@@ -69,10 +69,15 @@
             <aside class="ac-panel" aria-label="فهرست نقش‌ها">
                 <div class="ac-panel-heading">
                     <h2>نقش‌ها <span class="ac-count" data-role-count>۰</span></h2>
-                    <button class="ac-icon-button" type="button" data-action="reload-roles"
-                            title="تازه‌سازی نقش‌ها" aria-label="تازه‌سازی نقش‌ها">
-                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                    </button>
+                    <div class="ac-toolbar-actions">
+                        <button class="ac-btn ac-btn-primary" type="button" data-action="new-role">
+                            <i class="fas fa-plus" aria-hidden="true"></i> افزودن نقش
+                        </button>
+                        <button class="ac-icon-button" type="button" data-action="reload-roles"
+                                title="تازه‌سازی نقش‌ها" aria-label="تازه‌سازی نقش‌ها">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <label class="ac-search">
                     <i class="fas fa-search" aria-hidden="true"></i>
@@ -81,6 +86,7 @@
                 <div class="ac-roles-list" data-roles-list aria-live="polite">
                     <p class="ac-muted">برای مشاهده نقش‌ها این تب را انتخاب کنید.</p>
                 </div>
+                <p class="ac-role-list-guide">نقش‌های سیستمی قابل تغییر نام و حذف نیستند؛ مجوزهای آن‌ها از همین صفحه قابل تنظیم است.</p>
             </aside>
             <section class="ac-panel" aria-label="مجوزهای نقش انتخاب‌شده">
                 <div class="ac-panel-heading ac-role-detail-heading">
@@ -202,6 +208,31 @@
                     </div>
                 </div>
             </section>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acRoleModal" tabindex="-1" aria-hidden="true" aria-labelledby="acRoleModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content ac-modal" data-role-form>
+                <div class="modal-header">
+                    <h2 class="modal-title" id="acRoleModalTitle">افزودن نقش</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="ac-fields">
+                        <label>نام نقش
+                            <input name="name" maxlength="100" required autocomplete="off"
+                                   placeholder="مانند کارشناس پشتیبانی" />
+                        </label>
+                    </div>
+                    <p class="ac-form-context">نام نقش باید یکتا باشد. پس از ایجاد می‌توانید مجوزهای آن را در همین صفحه تعیین کنید.</p>
+                    <p class="ac-error" data-role-form-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit">ذخیره نقش</button>
+                </div>
+            </form>
         </div>
     </div>
 

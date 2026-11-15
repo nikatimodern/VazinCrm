@@ -10,6 +10,8 @@
     const signal = lifetime.signal;
     const entityForm = root.querySelector("[data-entity-form]");
     const permissionForm = root.querySelector("[data-permission-form]");
+    const roleForm = root.querySelector("[data-role-form]");
+    const roleModal = root.querySelector("#acRoleModal");
     const entityModal = root.querySelector("#acEntityModal");
     const permissionModal = root.querySelector("#acPermissionModal");
     const entityList = root.querySelector("[data-entities]");
@@ -22,7 +24,8 @@
     const roleGroups = root.querySelector("[data-role-groups]");
     let roles = [], roleCatalog = [], currentRoleId = null, activeTab = "catalog";
     let roleChosen = new Set(), roleOriginal = new Set();
-    let roleReady = false, roleSaving = false, roleLoadGeneration = 0, roleSelectionGeneration = 0;
+    let roleReady = false, roleSaving = false, roleMutating = false, roleEditId = null;
+    let roleLoadGeneration = 0, roleSelectionGeneration = 0;
     const usersList = root.querySelector("[data-users-list]");
     const userTypeSelect = root.querySelector("[data-users-type]");
     const userPermissions = root.querySelector("[data-user-permissions]");
@@ -51,6 +54,7 @@
         if (userSearchTimer !== null) clearTimeout(userSearchTimer);
         bootstrap.Modal.getInstance(entityModal)?.dispose();
         bootstrap.Modal.getInstance(permissionModal)?.dispose();
+        bootstrap.Modal.getInstance(roleModal)?.dispose();
     };
     if (page) page.cleanups.push(dispose);
     else window.addEventListener("pagehide", dispose, { once: true });
@@ -99,7 +103,8 @@
         onError: err => {
             const message = err.response?.data?.message || "عملیات انجام نشد. دوباره تلاش کنید.";
             toastifyError(message);
-            showError(action === "SaveRolePermissions" ? "role" :
+            showError(action === "SaveRole" ? "role-form" :
+                action === "SaveRolePermissions" || action === "DeleteRole" ? "role" :
                 action === "SaveUserAccess" ? "user" :
                 action.includes("Permission") ? "permission" : "entity", message);
         }
@@ -344,22 +349,39 @@
             return;
         }
         for (const role of visible) {
+            const row = text("div", null, "ac-role-list-row");
             const button = text("button", null, "ac-role-item" + (role.id === currentRoleId ? " is-selected" : ""));
             button.type = "button";
             button.dataset.selectRole = role.id;
             button.setAttribute("aria-pressed", String(role.id === currentRoleId));
             button.append(text("strong", role.name));
-            rolesList.append(button);
+            row.append(button);
+            if (role.isSystem) {
+                row.append(text("span", "سیستمی", "ac-role-system-tag"));
+            } else {
+                const actions = text("div", null, "ac-role-list-actions");
+                actions.append(
+                    actionButton("ویرایش نقش " + role.name, "edit-role", role.id),
+                    actionButton("حذف نقش " + role.name, "delete-role", role.id, true)
+                );
+                for (const action of actions.querySelectorAll("button")) action.disabled = roleSaving || roleMutating;
+                row.append(actions);
+            }
+            rolesList.append(row);
         }
     }
 
     function syncRoleState() {
         const total = roleChosen.size;
         root.querySelector("[data-role-selected]").textContent = total + " دسترسی انتخاب شده";
-        root.querySelector("[data-action='save-role']").disabled = !roleReady || roleSaving || !roleDirty();
-        root.querySelector("[data-action='reset-role']").disabled = !roleReady || roleSaving || !roleDirty();
+        root.querySelector("[data-action='save-role']").disabled = !roleReady || roleSaving || roleMutating || !roleDirty();
+        root.querySelector("[data-action='reset-role']").disabled = !roleReady || roleSaving || roleMutating || !roleDirty();
+        root.querySelector("[data-action='new-role']").disabled = roleSaving || roleMutating;
+        root.querySelector("[data-action='reload-roles']").disabled = roleSaving || roleMutating;
+        for (const button of rolesList.querySelectorAll("[data-action='edit-role'], [data-action='delete-role']"))
+            button.disabled = roleSaving || roleMutating;
         for (const input of roleGroups.querySelectorAll("[data-role-permission-id], [data-role-entity-toggle]"))
-            input.disabled = !roleReady || roleSaving;
+            input.disabled = !roleReady || roleSaving || roleMutating;
         root.querySelector("[data-role-subtitle]").textContent = !currentRole() ? "برای شروع یک نقش انتخاب کنید." :
             !roleReady ? "در حال دریافت مجوزها..." :
             roleDirty() ? "تغییرات ذخیره‌نشده" : "همه تغییرات ذخیره شده‌اند.";
@@ -471,7 +493,7 @@
         }));
     }
 
-    async function loadRoleTab() {
+    async function loadRoleTab(preferredRoleId = currentRoleId) {
         const generation = ++roleLoadGeneration;
         ++roleSelectionGeneration;
         roleReady = false;
@@ -495,12 +517,12 @@
         roles = loadedRoles;
         roleCatalog = catalog;
         renderRoles();
-        if (roles.length) await selectRole(roles[0].id);
+        if (roles.length) await selectRole(roles.find(x => x.id === preferredRoleId)?.id || roles[0].id);
         else renderRolePermissions();
     }
 
     async function switchMainTab(next) {
-        if (next === activeTab || roleSaving || userSaving) return;
+        if (next === activeTab || roleSaving || roleMutating || userSaving) return;
         if (activeTab === "roles" && !await confirmDiscardRoleChanges()) {
             root.querySelector("[data-main-tab='roles']").focus();
             return;
@@ -528,12 +550,12 @@
     }
 
     async function switchRole(roleId) {
-        if (roleSaving || roleId === currentRoleId || !await confirmDiscardRoleChanges()) return;
+        if (roleSaving || roleMutating || roleId === currentRoleId || !await confirmDiscardRoleChanges()) return;
         await selectRole(roleId);
     }
 
     function editRolePermission(input) {
-        if (!roleReady || roleSaving) {
+        if (!roleReady || roleSaving || roleMutating) {
             input.checked = !input.checked;
             return;
         }
@@ -556,7 +578,7 @@
     }
 
     async function saveRolePermissions() {
-        if (roleSaving || !roleReady || !roleDirty() || !currentRoleId) return;
+        if (roleSaving || roleMutating || !roleReady || !roleDirty() || !currentRoleId) return;
         roleSaving = true;
         const roleId = currentRoleId;
         try {
@@ -578,6 +600,77 @@
         }
     }
 
+
+    async function openRoleEditor(role = null) {
+        if (roleSaving || roleMutating || role?.isSystem || !await confirmDiscardRoleChanges()) return;
+        roleEditId = role?.id || null;
+        roleForm.reset();
+        showError("role-form", "");
+        root.querySelector("#acRoleModalTitle").textContent = role ? "ویرایش نام نقش" : "افزودن نقش";
+        field(roleForm, "name").value = role?.name || "";
+        ModalToggle(roleModal, "show");
+    }
+
+    async function saveRole(event) {
+        event.preventDefault();
+        if (roleSaving || roleMutating || !roleForm.reportValidity()) return;
+        const name = field(roleForm, "name").value.trim();
+        if (!name || name.length > 100 || name.includes(",") || name.includes("،")) {
+            showError("role-form", "نام نقش باید بین ۱ تا ۱۰۰ کاراکتر و بدون ویرگول باشد.");
+            return;
+        }
+        const existing = roleEditId ? roles.find(x => x.id === roleEditId) : null;
+        if (roleEditId && (!existing || existing.isSystem)) return;
+        roleMutating = true;
+        const submit = roleForm.querySelector("[type=submit]");
+        submit.disabled = true;
+        syncRoleState();
+        try {
+            const response = await post("SaveRole", {
+                roleId: roleEditId, expectedName: existing?.name || null, name
+            });
+            if (signal.aborted) return;
+            if (response?.success) {
+                ModalToggle(roleModal, "hide");
+                toastifySuccess(existing ? "نام نقش ویرایش شد." : "نقش جدید ایجاد شد.");
+                await loadRoleTab(response.roleId || existing?.id || null);
+            } else if (!root.querySelector("[data-role-form-error]").textContent) {
+                showError("role-form", "ذخیره نقش انجام نشد.");
+            }
+        } finally {
+            roleMutating = false;
+            submit.disabled = false;
+            if (!signal.aborted) syncRoleState();
+        }
+    }
+
+    async function deleteRole(roleId) {
+        if (roleSaving || roleMutating) return;
+        const role = roles.find(x => x.id === roleId);
+        if (!role || role.isSystem || !await confirmDiscardRoleChanges()) return;
+        const approved = await confirmAlert({
+            title: "حذف نقش",
+            text: "نقش «" + role.name + "» فقط در صورتی حذف می‌شود که به کاربری اختصاص نداشته باشد. مجوزهای ثبت‌شده برای آن نیز حذف می‌شوند.",
+            confirmText: "حذف نقش", cancelText: "انصراف", icon: "warning"
+        });
+        if (!approved || signal.aborted || roleSaving || roleMutating) return;
+        roleMutating = true;
+        syncRoleState();
+        try {
+            showError("role", "");
+            const response = await post("DeleteRole", { roleId: role.id, expectedName: role.name });
+            if (signal.aborted) return;
+            if (response?.success) {
+                toastifySuccess("نقش حذف شد.");
+                await loadRoleTab(role.id === currentRoleId ? null : currentRoleId);
+            } else if (!root.querySelector("[data-role-error]").textContent) {
+                showError("role", "حذف نقش انجام نشد.");
+            }
+        } finally {
+            roleMutating = false;
+            if (!signal.aborted) syncRoleState();
+        }
+    }
 
     // User permissions are NOT copied from roles. Effective access is computed from
     // current role memberships + the live role grants, then overridden per user.
@@ -974,9 +1067,12 @@
         }
         else if (action === "reload-roles") {
             void (async () => {
-                if (!roleSaving && await confirmDiscardRoleChanges()) await loadRoleTab();
+                if (!roleSaving && !roleMutating && await confirmDiscardRoleChanges()) await loadRoleTab();
             })();
         }
+        else if (action === "new-role") void openRoleEditor();
+        else if (action === "edit-role") void openRoleEditor(roles.find(x => x.id === target.dataset.id));
+        else if (action === "delete-role") void deleteRole(target.dataset.id);
         else if (action === "save-role") void saveRolePermissions();
         else if (action === "reset-role") {
             roleChosen = new Set(roleOriginal);
@@ -1065,6 +1161,7 @@
     field(permissionForm, "key").addEventListener("input", updateKeyPreview, { signal });
     entityForm.addEventListener("submit", event => { void saveEntity(event); }, { signal });
     permissionForm.addEventListener("submit", event => { void savePermission(event); }, { signal });
+    roleForm.addEventListener("submit", event => { void saveRole(event); }, { signal });
 
     void (async () => {
         await loadModels();

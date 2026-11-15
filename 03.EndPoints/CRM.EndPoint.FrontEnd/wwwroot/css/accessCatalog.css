@@ -119,12 +119,25 @@
 #accessCatalog .ac-roles-list {
     padding: 4px 8px 10px; max-height: 63vh; overflow-y: auto;
 }
+#accessCatalog .ac-role-list-row {
+    display: flex; align-items: center; gap: 5px; min-width: 0; margin-block: 2px;
+}
+#accessCatalog .ac-role-list-row .ac-role-item { flex: 1; min-width: 0; }
+#accessCatalog .ac-role-list-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+#accessCatalog .ac-role-system-tag {
+    font-size: 10px; color: var(--ac-muted); padding: 3px 6px; border-radius: 5px;
+    background: #f0f1f7; white-space: nowrap;
+}
+#accessCatalog .ac-role-list-guide {
+    margin: 0; padding: 7px 11px; border-top: 1px solid var(--ac-border);
+    font-size: 11px; color: var(--ac-muted);
+}
 #accessCatalog .ac-role-item {
     display: block; width: 100%; text-align: right; border: 1px solid transparent;
     background: transparent; color: inherit; border-radius: 7px; cursor: pointer;
     padding: 9px 10px; margin-block: 2px;
 }
-#accessCatalog .ac-role-item strong { display: block; font-size: 13px; }
+#accessCatalog .ac-role-item strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
 #accessCatalog .ac-role-item small { display: block; color: var(--ac-muted); font-size: 10px; direction: ltr; text-align: right; }
 #accessCatalog .ac-role-item:hover { background: #F8FAFA; }
 #accessCatalog .ac-role-item.is-selected { background: var(--ac-primary-light); border-color: #B8D9D0; }
