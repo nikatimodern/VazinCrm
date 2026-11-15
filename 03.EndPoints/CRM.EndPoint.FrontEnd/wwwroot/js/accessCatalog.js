@@ -12,6 +12,8 @@
     const permissionForm = root.querySelector("[data-permission-form]");
     const roleForm = root.querySelector("[data-role-form]");
     const roleModal = root.querySelector("#acRoleModal");
+    const roleDeleteModal = root.querySelector("#acRoleDeleteModal");
+    const roleDeleteForm = root.querySelector("[data-role-delete-form]");
     const userProfileModal = root.querySelector("#acUserProfileModal");
     const userProfileForm = root.querySelector("[data-user-profile-form]");
     const entityModal = root.querySelector("#acEntityModal");
@@ -27,7 +29,8 @@
     let roles = [], roleCatalog = [], currentRoleId = null, activeTab = "catalog";
     let roleChosen = new Set(), roleOriginal = new Set();
     let roleReady = false, roleSaving = false, roleMutating = false, roleEditId = null;
-    let roleLoadGeneration = 0, roleSelectionGeneration = 0;
+    let roleLoadGeneration = 0, roleSelectionGeneration = 0, roleDeleteGeneration = 0;
+    let roleDeletePreview = null, roleDeleteChoices = new Map();
     const usersList = root.querySelector("[data-users-list]");
     const userTypeSelect = root.querySelector("[data-users-type]");
     const userPermissions = root.querySelector("[data-user-permissions]");
@@ -59,6 +62,7 @@
         bootstrap.Modal.getInstance(entityModal)?.dispose();
         bootstrap.Modal.getInstance(permissionModal)?.dispose();
         bootstrap.Modal.getInstance(roleModal)?.dispose();
+        bootstrap.Modal.getInstance(roleDeleteModal)?.dispose();
         bootstrap.Modal.getInstance(userProfileModal)?.dispose();
     };
     if (page) page.cleanups.push(dispose);
@@ -110,7 +114,8 @@
             toastifyError(message);
             showError(action === "SaveUserProfile" ? "user-profile" :
                 action === "SaveRole" ? "role-form" :
-                action === "SaveRolePermissions" || action === "DeleteRole" ? "role" :
+                action === "DeleteRole" ? "role-delete" :
+                action === "SaveRolePermissions" ? "role" :
                 action === "SaveUserAccess" ? "user" :
                 action.includes("Permission") ? "permission" : "entity", message);
         }
@@ -362,17 +367,13 @@
             button.setAttribute("aria-pressed", String(role.id === currentRoleId));
             button.append(text("strong", role.name));
             row.append(button);
-            if (role.isSystem) {
-                row.append(text("span", "سیستمی", "ac-role-system-tag"));
-            } else {
-                const actions = text("div", null, "ac-role-list-actions");
-                actions.append(
-                    actionButton("ویرایش نقش " + role.name, "edit-role", role.id),
-                    actionButton("حذف نقش " + role.name, "delete-role", role.id, true)
-                );
-                for (const action of actions.querySelectorAll("button")) action.disabled = roleSaving || roleMutating;
-                row.append(actions);
-            }
+            const actions = text("div", null, "ac-role-list-actions");
+            actions.append(
+                actionButton("ویرایش نقش " + role.name, "edit-role", role.id),
+                actionButton("حذف نقش " + role.name, "delete-role", role.id, true)
+            );
+            for (const action of actions.querySelectorAll("button")) action.disabled = roleSaving || roleMutating;
+            row.append(actions);
             rolesList.append(row);
         }
     }
@@ -608,7 +609,7 @@
 
 
     async function openRoleEditor(role = null) {
-        if (roleSaving || roleMutating || role?.isSystem || !await confirmDiscardRoleChanges()) return;
+        if (roleSaving || roleMutating || !await confirmDiscardRoleChanges()) return;
         roleEditId = role?.id || null;
         roleForm.reset();
         showError("role-form", "");
@@ -626,7 +627,7 @@
             return;
         }
         const existing = roleEditId ? roles.find(x => x.id === roleEditId) : null;
-        if (roleEditId && (!existing || existing.isSystem)) return;
+        if (roleEditId && !existing) return;
         roleMutating = true;
         const submit = roleForm.querySelector("[type=submit]");
         submit.disabled = true;
@@ -650,31 +651,181 @@
         }
     }
 
+    // Role deletion decisions are collected per (user, permission), with optional
+    // bulk shortcuts. No choice is preselected: the administrator must decide.
+    const roleDeleteKey = (userId, permissionId) => JSON.stringify([userId, permissionId]);
+    const roleDeletePermissions = () => roleDeletePreview?.users.flatMap(user =>
+        user.permissions.map(permission => ({
+            userId: user.id, permissionId: permission.id, key: roleDeleteKey(user.id, permission.id)
+        }))) || [];
+
+    function updateRoleDeleteSummary() {
+        if (!roleDeletePreview) return;
+        const entries = roleDeletePermissions();
+        const chosen = entries.filter(x => roleDeleteChoices.has(x.key));
+        const kept = chosen.filter(x => roleDeleteChoices.get(x.key) === "keep").length;
+        const lost = chosen.length - kept;
+        root.querySelector("[data-role-delete-progress]").textContent =
+            chosen.length + " از " + entries.length + " مجوز تعیین تکلیف شده — " +
+            kept + " حفظ، " + lost + " حذف";
+        root.querySelector("[data-role-delete-confirm]").disabled =
+            roleMutating || chosen.length !== entries.length;
+        for (const card of root.querySelectorAll("[data-delete-user]")) {
+            const user = roleDeletePreview.users.find(x => x.id === card.dataset.deleteUser);
+            if (!user) continue;
+            const decided = user.permissions.filter(p =>
+                roleDeleteChoices.has(roleDeleteKey(user.id, p.id))).length;
+            const count = card.querySelector("[data-delete-user-count]");
+            if (count) count.textContent = decided + " از " + user.permissions.length + " تعیین تکلیف شده";
+        }
+    }
+
+    function renderRoleDeleteUsers() {
+        const container = root.querySelector("[data-role-delete-users]");
+        container.replaceChildren();
+        if (!roleDeletePreview) return;
+        const term = root.querySelector("[data-role-delete-search]").value.trim().toLocaleLowerCase();
+        const visible = roleDeletePreview.users.filter(u =>
+            [u.name, u.userName, ...u.permissions.flatMap(p => [p.key, p.title])]
+                .some(x => (x || "").toLocaleLowerCase().includes(term)));
+        if (!visible.length) {
+            showEmpty(container, roleDeletePreview.users.length ?
+                "کاربر یا مجوزی مطابق جست‌وجو پیدا نشد." : "هیچ کاربری به این نقش متصل نیست.", "fa-user-shield");
+            updateRoleDeleteSummary();
+            return;
+        }
+        for (const user of visible) {
+            const card = text("section", null, "ac-role-delete-user");
+            card.dataset.deleteUser = user.id;
+            const head = text("div", null, "ac-role-delete-user-head");
+            const titles = text("div", null, "ac-role-delete-user-title");
+            titles.append(text("strong", user.name), text("small", user.userName));
+            const count = text("span", null, "ac-role-delete-user-count");
+            count.dataset.deleteUserCount = user.id;
+            head.append(titles, count);
+            if (user.permissions.length) {
+                const buttons = text("div", null, "ac-role-delete-buttons");
+                for (const [mode, title] of [["keep", "حفظ همه"], ["remove", "حذف همه"]]) {
+                    const button = text("button", title, "ac-btn ac-btn-muted");
+                    button.type = "button";
+                    button.dataset.deleteUserMode = mode;
+                    button.dataset.deleteUserId = user.id;
+                    buttons.append(button);
+                }
+                head.append(buttons);
+            }
+            card.append(head);
+            if (!user.permissions.length) {
+                card.append(text("p", "مجوز وابسته‌ای برای از دست دادن ندارد؛ مجوزهای دیگر باقی می‌مانند.", "ac-role-delete-no-loss"));
+            } else {
+                const grid = text("div", null, "ac-role-delete-perms");
+                for (const permission of user.permissions) {
+                    const line = text("label", null, "ac-role-delete-perm");
+                    const desc = text("span", null, "ac-role-delete-perm-text");
+                    desc.append(text("strong", permission.title), text("small", permission.key));
+                    const select = document.createElement("select");
+                    select.dataset.deleteChoice = permission.id;
+                    select.dataset.deleteChoiceUser = user.id;
+                    select.setAttribute("aria-label", "تعیین تکلیف " + permission.title + " برای " + user.name);
+                    for (const [value, label] of [["", "تعیین نشده"], ["keep", "حفظ اختصاصی"], ["remove", "حذف مجوز"]])
+                        select.add(new Option(label, value));
+                    select.value = roleDeleteChoices.get(roleDeleteKey(user.id, permission.id)) || "";
+                    line.append(desc, select);
+                    grid.append(line);
+                }
+                card.append(grid);
+            }
+            container.append(card);
+        }
+        updateRoleDeleteSummary();
+    }
+
+    function assignRoleDeleteChoices(mode, userId = null) {
+        if (!roleDeletePreview || roleMutating) return;
+        for (const item of roleDeletePermissions()) {
+            if (userId && item.userId !== userId) continue;
+            if (mode === "reset") roleDeleteChoices.delete(item.key);
+            else roleDeleteChoices.set(item.key, mode);
+        }
+        for (const select of root.querySelectorAll("[data-delete-choice]")) {
+            if (userId && select.dataset.deleteChoiceUser !== userId) continue;
+            select.value = roleDeleteChoices.get(roleDeleteKey(select.dataset.deleteChoiceUser,
+                select.dataset.deleteChoice)) || "";
+        }
+        updateRoleDeleteSummary();
+    }
+
     async function deleteRole(roleId) {
         if (roleSaving || roleMutating) return;
         const role = roles.find(x => x.id === roleId);
-        if (!role || role.isSystem || !await confirmDiscardRoleChanges()) return;
-        const approved = await confirmAlert({
-            title: "حذف نقش",
-            text: "نقش «" + role.name + "» فقط در صورتی حذف می‌شود که به کاربری اختصاص نداشته باشد. مجوزهای ثبت‌شده برای آن نیز حذف می‌شوند.",
-            confirmText: "حذف نقش", cancelText: "انصراف", icon: "warning"
-        });
-        if (!approved || signal.aborted || roleSaving || roleMutating) return;
+        if (!role || !await confirmDiscardRoleChanges()) return;
+        const generation = ++roleDeleteGeneration;
         roleMutating = true;
         syncRoleState();
         try {
-            showError("role", "");
-            const response = await post("DeleteRole", { roleId: role.id, expectedName: role.name });
+            const preview = await sendApiRequest({
+                url: "/AccessCatalogAdmin/RoleRemovalPreview",
+                params: { roleId: role.id }, showLoading: false
+            });
+            if (signal.aborted || generation !== roleDeleteGeneration) return;
+            if (!preview || preview.roleId !== role.id || !Array.isArray(preview.users)) {
+                toastifyError("پیش‌نمایش حذف نقش دریافت نشد.");
+                return;
+            }
+            roleDeletePreview = preview;
+            roleDeleteChoices = new Map();
+            roleDeleteForm.reset();
+            showError("role-delete", "");
+            root.querySelector("#acRoleDeleteTitle").textContent = "حذف نقش «" + preview.roleName + "»";
+            root.querySelector("[data-role-delete-impact]").textContent =
+                preview.assignedUserCount + " کاربر دارای این نقش؛ " +
+                preview.affectedPermissionCount + " مجوز واقعاً وابسته به آن";
+            renderRoleDeleteUsers();
+            ModalToggle(roleDeleteModal, "show");
+        } finally {
+            roleMutating = false;
+            if (!signal.aborted) {
+                syncRoleState();
+                updateRoleDeleteSummary();
+            }
+        }
+    }
+
+    async function submitRoleDeletion(event) {
+        event.preventDefault();
+        if (roleMutating || !roleDeletePreview) return;
+        const entries = roleDeletePermissions();
+        if (entries.some(x => !roleDeleteChoices.has(x.key))) {
+            showError("role-delete", "ابتدا تمام مجوزهای وابسته را تعیین تکلیف کنید.");
+            return;
+        }
+        const preview = roleDeletePreview;
+        roleMutating = true;
+        syncRoleState();
+        updateRoleDeleteSummary();
+        showError("role-delete", "");
+        try {
+            const result = await post("DeleteRole", {
+                roleId: preview.roleId, expectedName: preview.roleName, revision: preview.revision,
+                decisions: entries.map(x => ({
+                    userId: x.userId, permissionId: x.permissionId,
+                    keep: roleDeleteChoices.get(x.key) === "keep"
+                }))
+            });
             if (signal.aborted) return;
-            if (response?.success) {
-                toastifySuccess("نقش حذف شد.");
-                await loadRoleTab(role.id === currentRoleId ? null : currentRoleId);
-            } else if (!root.querySelector("[data-role-error]").textContent) {
-                showError("role", "حذف نقش انجام نشد.");
+            if (result?.success) {
+                ModalToggle(roleDeleteModal, "hide");
+                toastifySuccess("نقش حذف شد؛ مجوزهای انتخاب‌شده به کاربران منتقل شدند.");
+                await loadRoleTab(preview.roleId === currentRoleId ? null : currentRoleId);
+            } else if (!root.querySelector("[data-role-delete-error]").textContent) {
+                showError("role-delete", "حذف نقش انجام نشد. مجوزها را بررسی و مجدداً تلاش کنید.");
             }
         } finally {
             roleMutating = false;
-            if (!signal.aborted) syncRoleState();
+            if (!signal.aborted) {
+                syncRoleState();
+                updateRoleDeleteSummary();
+            }
         }
     }
 
@@ -1172,6 +1323,13 @@
         if (role) { void switchRole(role.dataset.selectRole); return; }
         const person = event.target.closest("[data-select-user]");
         if (person) { void switchUser(person.dataset.selectUser); return; }
+        const all = event.target.closest("[data-delete-all]");
+        if (all) { assignRoleDeleteChoices(all.dataset.deleteAll); return; }
+        const userBulk = event.target.closest("[data-delete-user-mode]");
+        if (userBulk) {
+            assignRoleDeleteChoices(userBulk.dataset.deleteUserMode, userBulk.dataset.deleteUserId);
+            return;
+        }
         const target = event.target.closest("[data-action]");
         if (!target) {
             const select = event.target.closest("[data-select-entity]");
@@ -1239,6 +1397,14 @@
     root.querySelector("[data-entity-search]").addEventListener("input", renderEntities, { signal });
     root.querySelector("[data-role-search]").addEventListener("input", renderRoles, { signal });
     root.querySelector("[data-role-permission-search]").addEventListener("input", renderRolePermissions, { signal });
+    root.querySelector("[data-role-delete-search]").addEventListener("input", renderRoleDeleteUsers, { signal });
+    roleDeleteForm.addEventListener("submit", event => { void submitRoleDeletion(event); }, { signal });
+    roleDeleteModal.addEventListener("hidden.bs.modal", () => {
+        ++roleDeleteGeneration;
+        roleDeletePreview = null;
+        roleDeleteChoices = new Map();
+        roleDeleteForm.reset();
+    }, { signal });
     userTypeSelect.addEventListener("change", () => {
         const nextType = userTypeSelect.value;
         if (nextType === userType) return;
@@ -1272,6 +1438,13 @@
     root.querySelector("[data-user-permission-search]").addEventListener("input", renderUserPermissions, { signal });
     root.querySelector("[data-user-only-overrides]").addEventListener("change", renderUserPermissions, { signal });
     root.addEventListener("change", event => {
+        if (event.target.matches("[data-delete-choice]") && roleDeletePreview && !roleMutating) {
+            const key = roleDeleteKey(event.target.dataset.deleteChoiceUser, event.target.dataset.deleteChoice);
+            if (event.target.value === "keep" || event.target.value === "remove")
+                roleDeleteChoices.set(key, event.target.value);
+            else roleDeleteChoices.delete(key);
+            updateRoleDeleteSummary();
+        }
         if (event.target.matches("[data-role-permission-id], [data-role-entity-toggle]"))
             editRolePermission(event.target);
         if (event.target.matches("[data-user-role-id]")) {

@@ -86,7 +86,7 @@
                 <div class="ac-roles-list" data-roles-list aria-live="polite">
                     <p class="ac-muted">برای مشاهده نقش‌ها این تب را انتخاب کنید.</p>
                 </div>
-                <p class="ac-role-list-guide">نقش‌های سیستمی قابل تغییر نام و حذف نیستند؛ مجوزهای آن‌ها از همین صفحه قابل تنظیم است.</p>
+                <p class="ac-role-list-guide">همه نقش‌ها قابل ویرایش و حذف هستند. پیش از حذف، مجوزهای وابسته به کاربران را تعیین تکلیف کنید.</p>
             </aside>
             <section class="ac-panel" aria-label="مجوزهای نقش انتخاب‌شده">
                 <div class="ac-panel-heading ac-role-detail-heading">
@@ -281,6 +281,50 @@
                 <div class="modal-footer">
                     <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
                     <button class="ac-btn ac-btn-primary" type="submit">ذخیره کاربر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acRoleDeleteModal" tabindex="-1" aria-hidden="true"
+         data-bs-backdrop="static" aria-labelledby="acRoleDeleteTitle">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <form class="modal-content ac-modal" data-role-delete-form>
+                <div class="modal-header">
+                    <h2 class="modal-title" id="acRoleDeleteTitle">حذف نقش</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="ac-role-delete-guide">
+                        در برخی قسمت‌های فعلی CRM هنوز کنترل دسترسی مستقیماً به نام نقش وابسته است؛
+                        تغییر نام یا حذف آن نقش‌ها تا زمان انتقال کنترلرها به مجوزمحوری می‌تواند دسترسی قدیمی را قطع کند.
+                    </p>
+                    <div class="ac-role-delete-summary">
+                        <strong data-role-delete-impact>در حال بررسی کاربران...</strong>
+                        <span data-role-delete-progress>۰ از ۰ مجوز تعیین تکلیف شده</span>
+                    </div>
+                    <div class="ac-role-delete-bulk">
+                        <strong>تعیین تکلیف کلی</strong>
+                        <div class="ac-role-delete-buttons">
+                            <button class="ac-btn ac-btn-muted" type="button" data-delete-all="keep">حفظ اختصاصی همه</button>
+                            <button class="ac-btn ac-btn-muted" type="button" data-delete-all="remove">حذف مجوزهای همه</button>
+                            <button class="ac-btn ac-btn-muted" type="button" data-delete-all="reset">پاک‌کردن انتخاب‌ها</button>
+                        </div>
+                        <small>انتخاب کلی روی تمام مجوزهای وابسته اعمال می‌شود. سپس می‌توانید تصمیم هر کاربر و هر مجوز را مستقل تغییر دهید.</small>
+                    </div>
+                    <label class="ac-search ac-role-delete-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-role-delete-search placeholder="جست‌وجوی کاربر یا مجوز..."
+                               maxlength="150" aria-label="جست‌وجوی کاربران وابسته" />
+                    </label>
+                    <div class="ac-role-delete-users" data-role-delete-users aria-live="polite"></div>
+                    <p class="ac-error" data-role-delete-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" type="button" data-bs-dismiss="modal">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit" data-role-delete-confirm disabled>
+                        تأیید و حذف نقش
+                    </button>
                 </div>
             </form>
         </div>
