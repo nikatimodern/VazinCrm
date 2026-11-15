@@ -200,6 +200,15 @@
 }
 
 /* User creation/editing in the same access-management page. */
+#accessCatalog #acUserProfileModal .modal-content {
+    max-height: calc(100dvh - 28px);
+    overflow: hidden;
+}
+#accessCatalog #acUserProfileModal .modal-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
 #accessCatalog .ac-user-profile-fields {
     display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px 12px;
 }
