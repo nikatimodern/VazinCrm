@@ -172,10 +172,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 || (x.Dl != null && x.Dl.Code != null && x.Dl.Code.Contains(search)));
                         var rows = await query.OrderBy(x => x.Name).ThenBy(x => x.LastName)
                             .Select(x => new { x.PartyId, x.Name, x.LastName,
-                                DlCode = x.Dl.Code }).Take(size).ToListAsync(ct);
+                                DlCode = x.Dl.Code, x.IsCustomer, x.IsEmployee,
+                                x.IsVendor, x.IsBroker }).Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.PartyId.ToString(),
                             title = FormatManualOption(x.DlCode, (x.Name + " " + x.LastName).Trim()),
-                            detail = "" }) };
+                            x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker }) };
                     }
                     case "Quotation":
                     {
