@@ -128,6 +128,56 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return new { target = rows[0].Sepidar };
         }
 
+        // Resolve the current record for editing rather than trusting a stale card.
+        public async Task<object> GetExternalMappingForEditAsync(
+            Guid softwareId, Guid mappingId, CancellationToken ct)
+        {
+            if (mappingId == Guid.Empty || softwareId == Guid.Empty)
+                throw new ArgumentException("نگاشت انتخاب‌شده معتبر نیست.");
+
+            var mapping = await db.ExternalMappings.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == mappingId
+                    && x.ExternalSoftwareId == softwareId, ct);
+            if (mapping == null)
+                throw new KeyNotFoundException("این نگاشت پیدا نشد؛ فهرست را تازه‌سازی کنید.");
+
+            var pair = GetMappingEntityNames(mapping.MapType, mapping.EntityName, mapping.ExEntityName);
+            if (pair.Source != mapping.EntityName || pair.Target != mapping.ExEntityName
+                || !int.TryParse(mapping.ExEntityId, out var externalId) || externalId <= 0)
+                throw new ArgumentException("نوع یا اطلاعات این نگاشت برای ویرایش پشتیبانی نمی‌شود.");
+
+            var entry = new MappingReportEntry("edit-" + mapping.Id, mapping.EntityName,
+                mapping.EntityId, "saved", "AlreadyMapped", "", mapping.ExEntityName,
+                externalId, Array.Empty<string>(), (int)mapping.MapType,
+                mapping.ExEntityId, null, mapping.Id);
+            var row = (await EnrichMappingEntriesAsync(
+                new List<MappingReportEntry> { entry }, softwareId, ct))[0];
+
+            var crmDisplay = string.IsNullOrWhiteSpace(row.Crm.Customer)
+                ? row.Crm.Title : row.Crm.Customer;
+            var targetDisplay = string.IsNullOrWhiteSpace(row.Sepidar.Customer)
+                ? row.Sepidar.Title : row.Sepidar.Customer;
+            var targetCode = row.Sepidar.Number;
+            if (mapping.ExEntityName == nameof(Party)
+                && row.Sepidar.Extra.StartsWith("کد تفصیلی: "))
+                targetCode = row.Sepidar.Extra["کد تفصیلی: ".Length..];
+
+            return new {
+                mappingId = mapping.Id, externalSoftwareId = softwareId,
+                mapType = (int)mapping.MapType,
+                entityName = mapping.EntityName, entityId = mapping.EntityId,
+                exEntityName = mapping.ExEntityName, exEntityId = mapping.ExEntityId,
+                crmOption = new {
+                    id = mapping.EntityId.ToString(),
+                    title = FormatManualOption(row.Crm.Number, crmDisplay)
+                },
+                externalOption = new {
+                    id = mapping.ExEntityId,
+                    title = FormatManualOption(targetCode, targetDisplay)
+                }
+            };
+        }
+
         private async Task<bool> HasSameExternalFiscalYearAsync(
             SepidarContextDbBase context, int fiscalYearRef, string crmDate,
             DateTime? crmMiladiDate, CancellationToken ct)
