@@ -69,16 +69,46 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             return Ok(new { id = model.Id, title = model.Title, canMap = mappings.SupportsMapping(model.Id) });
         }
 
+        // Only expose masked connection metadata to the admin UI; never serialize secrets.
+        private static string MaskConnectionField(string value, int visibleChars = 2)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            var text = value.Trim();
+            return text.Length <= visibleChars ? "••••" : text[..visibleChars] + "••••";
+        }
+
+        private static string MaskDatabaseAddress(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address)) return null;
+            var parts = address.Trim().Split('.');
+            if (parts.Length == 4 && parts.All(x => byte.TryParse(x, out _)))
+                return $"{parts[0]}.{parts[1]}.*.*";
+            return MaskConnectionField(address);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwares(CancellationToken ct)
         {
             var software = await db.ExternalSoftwares.AsNoTracking()
                 .OrderBy(x => x.Title)
-                .Select(x => new { x.Id, x.Title, x.Code })
+                .Select(x => new {
+                    x.Id, x.Title, x.Code,
+                    x.SoftwareTypeTxt, x.SoftwareBaseItemTxt, x.CreateDateTxt,
+                    x.DatabaseIp, x.DatabaseName, x.DatabaseUserName, x.DatabasePassword
+                })
                 .ToListAsync(ct);
-            // Never return database passwords, connection credentials or connection strings.
+
             return Ok(software.Select(x => new {
-                id = x.Id, title = x.Title, code = x.Code,
+                id = x.Id,
+                title = x.Title,
+                code = x.Code,
+                softwareTypeTxt = x.SoftwareTypeTxt,
+                softwareBaseItemTxt = x.SoftwareBaseItemTxt,
+                createDateTxt = x.CreateDateTxt,
+                databaseIpMasked = MaskDatabaseAddress(x.DatabaseIp),
+                databaseNameMasked = MaskConnectionField(x.DatabaseName),
+                databaseUserNameMasked = MaskConnectionField(x.DatabaseUserName, 1),
+                hasDatabasePassword = !string.IsNullOrWhiteSpace(x.DatabasePassword),
                 canMap = mappings.SupportsMapping(x.Id)
             }));
         }
