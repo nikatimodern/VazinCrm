@@ -421,8 +421,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Where(x => x > 0).Distinct().ToArray();
         }
 
+        // Resolve each distinct CRM/external entity in batches; no per-row database queries.
         private async Task<List<MappingReportRow>> EnrichMappingEntriesAsync(
             List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
+        {
+            if (entries.Count == 0) return new List<MappingReportRow>();
+            var crmSides = await LoadCrmMappingSidesAsync(entries, ct);
+            var externalSides = await LoadSepidarMappingSidesAsync(entries, softwareId, ct);
+            return BuildMappingReportRows(entries, crmSides, externalSides);
+        }
+
+        private async Task<Dictionary<(string, Guid), MappingReportSide>> LoadCrmMappingSidesAsync(
+            List<MappingReportEntry> entries, CancellationToken ct)
         {
             var pfIds = entries.Where(x => x.Kind == nameof(PreFactor))
                 .Select(x => x.EntityId).Distinct().ToArray();
@@ -542,6 +552,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.dateSh, x.credit ?? x.debit, x.CustomerName, "");
             }
 
+            return crmSides;
+        }
+
+        private async Task<Dictionary<(string, int), MappingReportSide>> LoadSepidarMappingSidesAsync(
+            List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
+        {
             var externalSides = new Dictionary<(string, int), MappingReportSide>();
             var softwareTitle = await db.ExternalSoftwares.AsNoTracking()
                 .Where(x => x.Id == softwareId)
@@ -681,6 +697,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 }
             }
 
+            return externalSides;
+        }
+
+        private static List<MappingReportRow> BuildMappingReportRows(
+            List<MappingReportEntry> entries,
+            Dictionary<(string, Guid), MappingReportSide> crmSides,
+            Dictionary<(string, int), MappingReportSide> externalSides)
+        {
             return entries.Select(entry => {
                 var crm = crmSides.GetValueOrDefault((entry.Kind, entry.EntityId))
                     ?? new MappingReportSide("رکورد CRM پیدا نشد", entry.EntityId.ToString(),
