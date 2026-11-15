@@ -92,9 +92,13 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
                     }
                 }
 
+                // Keep an existing archived position editable: do not force a user to
+                // lose their historical assignment just to update their name or phone.
+                // New assignments must always point to an active position.
                 var position = input.PositionId.HasValue
                     ? await db.BaseAdmins.AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == input.PositionId.Value && !x.IsDeleted, ct)
+                        .FirstOrDefaultAsync(x => x.Id == input.PositionId.Value &&
+                            (!x.IsDeleted || (!isCreate && user!.PositionId == x.Id)), ct)
                     : null;
                 if (input.PositionId.HasValue && position is null)
                     return new AdminUserProfileWriteResult(400, "سمت کاری انتخاب‌شده معتبر نیست.");
