@@ -639,6 +639,24 @@
     color:#233933;
     overflow-wrap:anywhere;
 }
+/* Saved Party names and active-role badges share one compact line. */
+.legacy-mapping-report .lmr-saved-party-main {
+    display:flex;
+    align-items:center;
+    width:100%;
+    min-width:0;
+    gap:5px;
+    overflow:hidden;
+    white-space:nowrap;
+}
+.legacy-mapping-report .lmr-saved-party-main > strong {
+    flex:1 1 auto;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    overflow-wrap:normal;
+    white-space:nowrap;
+}
 /* Party roles: one compact row, with long names truncated rather than wrapped. */
 .lmr-manual-modal .lmr-party-line {
     display:flex;
@@ -659,14 +677,14 @@
     white-space:nowrap;
     overflow-wrap:normal;
 }
-.lmr-manual-modal .lmr-party-badges {
+.legacy-mapping-report .lmr-party-badges {
     display:inline-flex;
     align-items:center;
     flex:0 0 auto;
     gap:2px;
     white-space:nowrap;
 }
-.lmr-manual-modal .lmr-party-badge {
+.legacy-mapping-report .lmr-party-badge {
     display:inline-flex;
     flex:0 0 auto;
     align-items:center;
@@ -676,11 +694,11 @@
     font:500 9px/1.45 IRANSans,sans-serif;
     white-space:nowrap;
 }
-.lmr-manual-modal .lmr-party-badge-customer { color:#147664; background:#e8f6f1; border-color:#d5ede5; }
-.lmr-manual-modal .lmr-party-badge-employee { color:#365b98; background:#ebf1fa; border-color:#dce7f6; }
-.lmr-manual-modal .lmr-party-badge-vendor { color:#855a13; background:#fcf3df; border-color:#f2e5c8; }
-.lmr-manual-modal .lmr-party-badge-broker { color:#7047a5; background:#f2ebfb; border-color:#e6daf8; }
-.lmr-manual-modal .lmr-party-badge-none { color:#66757a; background:#f1f3f4; border-color:#e3e8eb; }
+.legacy-mapping-report .lmr-party-badge-customer { color:#147664; background:#e8f6f1; border-color:#d5ede5; }
+.legacy-mapping-report .lmr-party-badge-employee { color:#365b98; background:#ebf1fa; border-color:#dce7f6; }
+.legacy-mapping-report .lmr-party-badge-vendor { color:#855a13; background:#fcf3df; border-color:#f2e5c8; }
+.legacy-mapping-report .lmr-party-badge-broker { color:#7047a5; background:#f2ebfb; border-color:#e6daf8; }
+.legacy-mapping-report .lmr-party-badge-none { color:#66757a; background:#f1f3f4; border-color:#e3e8eb; }
 .lmr-manual-modal .ts-wrapper.lmr-party-select.has-items .ts-control {
     flex-wrap:nowrap;
     overflow:hidden;
@@ -697,7 +715,7 @@
 }
 @media(max-width:580px) {
     .lmr-manual-modal .lmr-party-line { gap:3px; }
-    .lmr-manual-modal .lmr-party-badge { font-size:8px; padding:1px 3px; }
+    .legacy-mapping-report .lmr-party-badge { font-size:8px; padding:1px 3px; }
 }
 .lmr-manual-modal .ts-dropdown .active { background:#eff1f9; }
 .lmr-manual-modal .lmr-remote-note { padding:9px;color:#667875;font-size:12px; }
