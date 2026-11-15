@@ -310,17 +310,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         // If it is absent or invalid, use the Sepidar configuration setting.
         // Never silently fall back to a hard-coded Moein code.
         if (saleType?.PartSalesSLRef is int accountId and > 0 &&
-            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
         {
             return accountId;
         }
 
-        var configuredAccountId = await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
-        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == configuredAccountId && x.HasTracking, ct))
-            throw new InvalidOperationException(
-                "حساب فروش کالا در تنظیم «SalesPartSalesSL» نیاز به شماره پیگیری دارد و برای سند فروش قابل استفاده نیست.");
-
-        return configuredAccountId;
+        return await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
     }
 
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
@@ -2094,11 +2089,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToArray();
         var accountStates = await sepidarContext.Accounts.AsNoTracking()
             .Where(x => accountIds.Contains(x.AccountId))
-            .Select(x => new { x.AccountId, x.IsActive, x.HasTracking })
+            .Select(x => new { x.AccountId, x.IsActive })
             .ToListAsync(ct);
 
-        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
-            throw new InvalidOperationException("یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
+        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive))
+            throw new InvalidOperationException("یکی از حساب‌های معین مورد نیاز برای سند فروش در سپیدار پیدا نشد یا غیرفعال است.");
 
         int? taxDlRef = taxAccountId.HasValue
             ? await GetConfiguredDlIdAsync("ValueAddedTaxDL", ct)
