@@ -17,6 +17,8 @@
                 role="tab" aria-controls="acRolesPanel" aria-selected="false" tabindex="-1">مدیریت نقش‌ها</button>
         <button type="button" id="acUsersTab" data-main-tab="users"
                 role="tab" aria-controls="acUsersPanel" aria-selected="false" tabindex="-1">مدیریت کاربران</button>
+        <button type="button" id="acHistoryTab" data-main-tab="history"
+                role="tab" aria-controls="acHistoryPanel" aria-selected="false" tabindex="-1">تاریخچه و بازگردانی</button>
     </nav>
 
     <div id="acCatalogPanel" role="tabpanel" aria-labelledby="acCatalogTab">
@@ -217,6 +219,120 @@
                     </div>
                 </div>
             </section>
+        </div>
+    </div>
+
+
+    <div id="acHistoryPanel" role="tabpanel" aria-labelledby="acHistoryTab" hidden>
+        <div class="ac-history-head">
+            <div>
+                <h2>تاریخچه تغییرات سطح دسترسی</h2>
+                <p>هر تغییر ذخیره‌شده به‌صورت خودکار ثبت می‌شود. پیش از بازگردانی، تفاوت وضعیت فعلی بررسی خواهد شد.</p>
+            </div>
+            <div class="ac-toolbar-actions">
+                <button class="ac-btn ac-btn-muted" type="button" data-action="history-reload">
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i> تازه‌سازی
+                </button>
+                <button class="ac-btn ac-btn-primary" type="button" data-action="history-new-point">
+                    <i class="fas fa-camera" aria-hidden="true"></i> نقطه بازگردانی دستی
+                </button>
+            </div>
+        </div>
+        <div class="ac-layout ac-history-layout">
+            <aside class="ac-panel" aria-label="فهرست تاریخچه">
+                <div class="ac-panel-heading">
+                    <h2>تغییرات ثبت‌شده <span class="ac-count" data-history-count>۰</span></h2>
+                </div>
+                <div class="ac-history-filters">
+                    <label class="ac-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" data-history-search maxlength="100"
+                               placeholder="جست‌وجوی تغییرات..." aria-label="جست‌وجوی تاریخچه" />
+                    </label>
+                    <select data-history-kind aria-label="فیلتر نوع تغییر">
+                        <option value="">همه تغییرات</option>
+                        <option value="roles">نقش‌ها</option>
+                        <option value="users">کاربران</option>
+                        <option value="catalog">انتیتی‌ها و مجوزها</option>
+                        <option value="restore">بازگردانی‌ها</option>
+                        <option value="manual">نقاط دستی</option>
+                    </select>
+                </div>
+                <div class="ac-history-items" data-history-list aria-live="polite">
+                    <p class="ac-muted">برای نمایش تاریخچه این تب را انتخاب کنید.</p>
+                </div>
+                <div class="ac-users-pagination">
+                    <button class="ac-btn ac-btn-muted" data-action="history-prev" type="button" disabled>قبلی</button>
+                    <span data-history-page>صفحه ۱</span>
+                    <button class="ac-btn ac-btn-muted" data-action="history-next" type="button" disabled>بعدی</button>
+                </div>
+            </aside>
+            <section class="ac-panel" aria-label="جزئیات و بازگردانی">
+                <div class="ac-panel-heading">
+                    <div>
+                        <h2 data-history-detail-title>جزئیات نسخه</h2>
+                        <p data-history-detail-meta>یک تغییر را از تاریخچه انتخاب کنید.</p>
+                    </div>
+                </div>
+                <div class="ac-history-detail">
+                    <p class="ac-role-notice">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        بازگردانی تکی فقط همان تغییر را معکوس می‌کند؛ بازگردانی کامل تمام تنظیمات دسترسی را به نسخه انتخابی می‌برد.
+                        رمز عبور و اطلاعات حساب کاربران تغییر نمی‌کند.
+                    </p>
+                    <div data-history-diff-view>
+                        <div class="ac-history-diffs" data-history-diffs>
+                            <div class="ac-empty"><i class="fas fa-history" aria-hidden="true"></i>
+                                <p>برای مشاهده تفاوت نسخه‌ها یک تغییر انتخاب کنید.</p></div>
+                        </div>
+                        <div class="ac-history-actions" data-history-actions hidden>
+                            <button class="ac-btn ac-btn-primary" data-action="history-preview-single" type="button">
+                                <i class="fas fa-undo" aria-hidden="true"></i> بازگردانی فقط همین تغییر
+                            </button>
+                            <button class="ac-btn ac-btn-muted" data-action="history-preview-point" type="button">
+                                <i class="fas fa-history" aria-hidden="true"></i> بازگردانی کل تنظیمات به این نقطه
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ac-history-preview" data-history-preview-pane hidden>
+                        <h3>پیش‌نمایش تغییرات بازگردانی</h3>
+                        <p data-history-preview-description></p>
+                        <div class="ac-history-warnings" data-history-preview-warnings></div>
+                        <div class="ac-history-diffs" data-history-preview-diffs></div>
+                        <div class="ac-history-actions">
+                            <button class="ac-btn ac-btn-muted" data-action="history-preview-cancel" type="button">بازگشت</button>
+                            <button class="ac-btn ac-btn-primary" data-action="history-restore" type="button" disabled>
+                                <i class="fas fa-check-circle" aria-hidden="true"></i> تأیید بازگردانی
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ac-error" data-history-error role="alert" hidden></p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acHistoryPointModal" tabindex="-1" aria-hidden="true"
+         aria-labelledby="acHistoryPointTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content ac-modal" data-history-point-form>
+                <div class="modal-header">
+                    <h2 class="modal-title" id="acHistoryPointTitle">ایجاد نقطه بازگردانی</h2>
+                    <button class="ac-close" type="button" data-bs-dismiss="modal" aria-label="بستن">×</button>
+                </div>
+                <div class="modal-body ac-fields">
+                    <label>عنوان نقطه بازگردانی
+                        <input name="title" required minlength="3" maxlength="100"
+                               placeholder="مثلاً تنظیمات تأییدشده سطح دسترسی" />
+                    </label>
+                    <p class="ac-muted">وضعیت فعلی نقش‌ها و مجوزها ثبت می‌شود؛ اطلاعات شخصی کاربران یا رمزهای عبور ذخیره نمی‌شود.</p>
+                    <p class="ac-error" data-history-point-error role="alert" hidden></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="ac-btn ac-btn-muted" data-bs-dismiss="modal" type="button">انصراف</button>
+                    <button class="ac-btn ac-btn-primary" type="submit">ثبت نقطه بازگردانی</button>
+                </div>
+            </form>
         </div>
     </div>
 
