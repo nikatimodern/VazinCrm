@@ -3291,19 +3291,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (mapping == null)
                 throw new InvalidOperationException(
-                    "برای کارشناس فروش این فاکتور، شخص متناظری در نرم‌افزار مالی انتخاب‌شده مشخص نشده است. ابتدا شخص مربوط را در بخش مدیریت نرم‌افزارهای خارجی انتخاب کنید.");
+                    "کارشناس فروش این فاکتور در نرم‌افزار مالی مشخص نشده است.");
 
             if (mapping.ExEntityName != nameof(Party)
                 || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
                 throw new InvalidOperationException(
-                    "شخص انتخاب‌شده برای کارشناس فروش در نرم‌افزار مالی معتبر نیست. لطفاً شخص مربوط را دوباره انتخاب کنید.");
+                    "اطلاعات کارشناس فروش در نرم‌افزار مالی معتبر نیست.");
 
             // First verify that the mapped external person exists, then verify
             // whether Sepidar allows that person to act as an invoice broker.
             var isBroker = await service.GetSepidarPartyIsBrokerAsync(brokerPartyId, ct);
             if (!isBroker.HasValue)
                 throw new InvalidOperationException(
-                    "شخص انتخاب‌شده برای کارشناس فروش در سپیدار پیدا نشد. لطفاً شخص مربوط را دوباره انتخاب کنید.");
+                    "شخص مربوط به کارشناس فروش در سپیدار پیدا نشد.");
             if (!isBroker.Value)
                 throw new InvalidOperationException(
                     "این کارشناس در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
