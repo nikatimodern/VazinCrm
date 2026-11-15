@@ -7,12 +7,16 @@ using CRM.Core.Domain.AppUsers.Entities;
 
 namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
+public sealed record AdminRoleWriteResult(int Status, string? Message = null, string? RoleId = null);
 public sealed record AdminUserFilter(int Page, int PageSize, string? Search, string EmployeeType, string AccountStatus, List<string> Roles, DateTimeOffset Now, string? UserType = null);
 public sealed record AdminUserPage(List<AppUser> Users, int TotalCount, int Page, int PageSize, int TotalPages);
 public sealed record AdminRoleUpdateResult(bool UserFound, AccountIdentityResult? Error, IList<string> Roles);
 public interface IAdminUserRepository
 {
     Task<List<AdminRole>> GetRolesAsync(CancellationToken ct);
+    Task<AdminRoleWriteResult> CreateRoleAsync(string name, CancellationToken ct);
+    Task<AdminRoleWriteResult> RenameRoleAsync(string roleId, string expectedName, string name, CancellationToken ct);
+    Task<AdminRoleWriteResult> RemoveRoleAsync(string roleId, string expectedName, CancellationToken ct);
     Task<AdminUserPage> GetPageAsync(AdminUserFilter filter, CancellationToken ct);
     Task<AppUser?> FindByIdAsync(string id, bool tracking, CancellationToken ct);
     Task<AppUser?> FindByNameAsync(string name, CancellationToken ct);

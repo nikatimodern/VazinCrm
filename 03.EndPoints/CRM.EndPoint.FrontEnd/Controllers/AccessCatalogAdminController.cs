@@ -35,6 +35,14 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
     public async Task<IActionResult> Roles(CancellationToken ct) =>
         Json(await administration.RolesAsync(ct));
 
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(8192)]
+    public async Task<IActionResult> SaveRole([FromBody] AccessRoleDraft draft, CancellationToken ct) =>
+        Result(await administration.SaveRoleAsync(draft, ct));
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(8192)]
+    public async Task<IActionResult> DeleteRole([FromBody] AccessRoleDeleteDraft draft, CancellationToken ct) =>
+        Result(await administration.DeleteRoleAsync(draft, ct));
+
     [HttpGet]
     public async Task<IActionResult> RoleCatalog(CancellationToken ct) =>
         Json(await administration.RoleCatalogAsync(ct));
@@ -86,5 +94,5 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
         Result(await administration.DeletePermissionAsync(id, ct));
 
     private IActionResult Result(AccessCatalogResult result) =>
-        StatusCode(result.Status, new { success = result.Status == 200, message = result.Message, id = result.Id });
+        StatusCode(result.Status, new { success = result.Status == 200, message = result.Message, id = result.Id, roleId = result.RoleId });
 }

@@ -10,10 +10,13 @@ public sealed record AccessEntityDraft(string Key, string Title, string? Descrip
 public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive);
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive);
-public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null);
+public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null);
 public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
+public sealed record AccessRoleDraft(string? RoleId, string? Name, string? ExpectedName);
+public sealed record AccessRoleDeleteDraft(string? RoleId, string? ExpectedName);
+public sealed record ManagedRoleInfo(string Id, string Name, bool IsSystem);
 public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles, bool IsEmployee, bool IsCustomer, bool IsSupplier);
 public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
 public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides);
@@ -21,10 +24,71 @@ public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, Acces
 public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models, IAdminUserRepository adminUsers)
 {
     private static readonly Regex KeyPattern = new("^[A-Za-z][A-Za-z0-9]{0,63}$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    // These names are referenced by existing authorization attributes and policies.
+    // Renaming or deleting them would unexpectedly revoke access to live endpoints.
+    private static readonly HashSet<string> SystemRoleNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        AppRoles.Admin, AppRoles.SalesExpert, AppRoles.SalesAdmin,
+        AppRoles.TaminExpert, AppRoles.TaminAdmin,
+        AppRoles.FinancialExpert, AppRoles.FinancialAdmin,
+        AppRoles.ManagingDirector, AppRoles.ExecutiveDirector, AppRoles.TanKhah,
+        AppRoles.Customer, AppRoles.QcExpert,
+        "تامین کننده", "تأمین کننده", "تامین‌کننده", "تأمین‌کننده"
+    };
+
+    private static bool ProtectedRole(string? name) => name is not null && SystemRoleNames.Contains(name);
+    private static bool ValidRoleName(string? name) =>
+        !string.IsNullOrWhiteSpace(name) &&
+        name == name.Trim() &&
+        name.Length <= 100 &&
+        !name.Contains(',') &&
+        !name.Contains('،') &&
+        !name.Any(char.IsControl);
 
     public IReadOnlyList<AccessModelOption> Candidates() => models.GetCandidates();
 
-    public Task<List<AdminRole>> RolesAsync(CancellationToken ct) => adminUsers.GetRolesAsync(ct);
+    public async Task<IReadOnlyList<ManagedRoleInfo>> RolesAsync(CancellationToken ct) =>
+        (await adminUsers.GetRolesAsync(ct))
+            .OrderBy(x => x.Name)
+            .Select(x => new ManagedRoleInfo(x.Id, x.Name, ProtectedRole(x.Name)))
+            .ToArray();
+
+    public async Task<AccessCatalogResult> SaveRoleAsync(AccessRoleDraft? draft, CancellationToken ct)
+    {
+        if (draft is null || !ValidRoleName(draft.Name))
+            return new(400, "نام نقش معتبر نیست؛ حداکثر ۱۰۰ کاراکتر و بدون ویرگول باشد.");
+        var name = draft.Name!.Trim();
+        if (string.IsNullOrWhiteSpace(draft.RoleId))
+        {
+            if (ProtectedRole(name))
+                return new(409, "این نام برای نقش‌های سیستمی رزرو شده است.");
+            var created = await adminUsers.CreateRoleAsync(name, ct);
+            return new(created.Status, created.Message, RoleId: created.RoleId);
+        }
+        if (draft.RoleId.Length > 450 || string.IsNullOrWhiteSpace(draft.ExpectedName))
+            return new(400, "شناسه یا نام قبلی نقش معتبر نیست.");
+
+        var current = (await adminUsers.GetRolesAsync(ct)).FirstOrDefault(x => x.Id == draft.RoleId);
+        if (current is null) return new(404, "نقش پیدا نشد.");
+        if (ProtectedRole(current.Name) || ProtectedRole(name))
+            return new(409, "نام نقش‌های سیستمی قابل تغییر نیست.");
+        var updated = await adminUsers.RenameRoleAsync(current.Id, draft.ExpectedName!, name, ct);
+        return new(updated.Status, updated.Message, RoleId: updated.RoleId);
+    }
+
+    public async Task<AccessCatalogResult> DeleteRoleAsync(AccessRoleDeleteDraft? draft, CancellationToken ct)
+    {
+        if (draft is null || string.IsNullOrWhiteSpace(draft.RoleId) || draft.RoleId.Length > 450 ||
+            string.IsNullOrWhiteSpace(draft.ExpectedName))
+            return new(400, "مشخصات نقش برای حذف معتبر نیست.");
+
+        var current = (await adminUsers.GetRolesAsync(ct)).FirstOrDefault(x => x.Id == draft.RoleId);
+        if (current is null) return new(404, "نقش پیدا نشد.");
+        if (ProtectedRole(current.Name))
+            return new(409, "نقش‌های سیستمی قابل حذف نیستند.");
+        var deleted = await adminUsers.RemoveRoleAsync(current.Id, draft.ExpectedName!, ct);
+        return new(deleted.Status, deleted.Message);
+    }
 
     public async Task<AccessUsersPage> UsersAsync(string? search, int page, string? userType, CancellationToken ct)
     {

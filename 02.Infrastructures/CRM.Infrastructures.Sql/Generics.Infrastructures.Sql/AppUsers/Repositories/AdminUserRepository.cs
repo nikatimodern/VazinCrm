@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,12 +11,101 @@ using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Data.SqlClient;
 
 namespace CRM.Infrastructures.Sql.AppUsers.Repositories;
 public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> users, RoleManager<IdentityRole> roles, IUserValidator<AppUser> userValidator, IPasswordValidator<AppUser> passwordValidator, IPasswordHasher<AppUser> hasher) : IAdminUserRepository
 {
     private static AccountIdentityResult Map(IdentityResult result) => new(result.Succeeded, result.Errors.Select(e => new AccountIdentityError(e.Code, e.Description)).ToList());
     public Task<List<AdminRole>> GetRolesAsync(CancellationToken ct) => roles.Roles.AsNoTracking().Select(r => new AdminRole(r.Id, r.Name ?? "")).ToListAsync(ct);
+
+    private static AdminRoleWriteResult IdentityError(IdentityResult result)
+    {
+        if (result.Succeeded) return new(200);
+        var duplicate = result.Errors.Any(e => e.Code == "DuplicateRoleName");
+        return new(duplicate ? 409 : 400,
+            duplicate ? "نقشی با همین نام قبلاً ثبت شده است." :
+            string.Join("؛ ", result.Errors.Select(e => e.Description)));
+    }
+
+    public async Task<AdminRoleWriteResult> CreateRoleAsync(string name, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            var role = new IdentityRole(name);
+            var created = await roles.CreateAsync(role);
+            return created.Succeeded ? new(200, RoleId: role.Id) : IdentityError(created);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 2601 or 2627)
+        {
+            return new(409, "نقشی با همین نام قبلاً ثبت شده است.");
+        }
+    }
+
+    public async Task<AdminRoleWriteResult> RenameRoleAsync(string roleId, string expectedName, string name, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var role = await roles.FindByIdAsync(roleId);
+        if (role is null) return new(404, "نقش پیدا نشد.");
+        if (!string.Equals(role.Name, expectedName, StringComparison.Ordinal))
+            return new(409, "نام نقش هم‌زمان تغییر کرده است. فهرست را تازه‌سازی کنید.");
+        if (string.Equals(role.Name, name, StringComparison.Ordinal))
+            return new(200, RoleId: role.Id);
+        role.Name = name;
+        try
+        {
+            var updated = await roles.UpdateAsync(role);
+            return updated.Succeeded ? new(200, RoleId: role.Id) : IdentityError(updated);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "نقش هم‌زمان تغییر کرده است. فهرست را تازه‌سازی کنید.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 2601 or 2627)
+        {
+            return new(409, "نقشی با همین نام قبلاً ثبت شده است.");
+        }
+    }
+
+    public async Task<AdminRoleWriteResult> RemoveRoleAsync(string roleId, string expectedName, CancellationToken ct)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        try
+        {
+            return await strategy.ExecuteAsync(async () =>
+            {
+                ct.ThrowIfCancellationRequested();
+                db.ChangeTracker.Clear();
+                // SERIALIZABLE prevents a concurrent membership assignment between the
+                // reference check and role removal. Never cascade-delete user-role memberships.
+                await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+                var role = await roles.FindByIdAsync(roleId);
+                if (role is null) return new AdminRoleWriteResult(404, "نقش پیدا نشد.");
+                if (!string.Equals(role.Name, expectedName, StringComparison.Ordinal))
+                    return new AdminRoleWriteResult(409, "نام نقش هم‌زمان تغییر کرده است. فهرست را تازه‌سازی کنید.");
+                if (await db.UserRoles.AsNoTracking().AnyAsync(x => x.RoleId == roleId, ct))
+                    return new AdminRoleWriteResult(409, "این نقش به کاربران اختصاص داده شده است. ابتدا نقش را از کاربران بردارید.");
+                if (await db.RoleClaims.AsNoTracking().AnyAsync(x => x.RoleId == roleId, ct))
+                    return new AdminRoleWriteResult(409, "این نقش دارای ادعاهای سیستمی است و قابل حذف نیست.");
+                // AccessRolePermissions is bound to AspNetRoles with ON DELETE CASCADE.
+                // Only an unused custom role can reach this operation.
+                var deleted = await roles.DeleteAsync(role);
+                if (!deleted.Succeeded) return IdentityError(deleted);
+                await transaction.CommitAsync(ct);
+                return new AdminRoleWriteResult(200, RoleId: roleId);
+            });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "نقش هم‌زمان تغییر کرده یا حذف شده است. فهرست را تازه‌سازی کنید.");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 547 or 2601 or 2627)
+        {
+            return new(409, "این نقش در بخش دیگری استفاده می‌شود و قابل حذف نیست.");
+        }
+    }
+
     public async Task<AdminUserPage> GetPageAsync(AdminUserFilter filter, CancellationToken ct)
     {
         var query = users.Users.AsNoTracking().Where(u => !u.OrganAdmin);
