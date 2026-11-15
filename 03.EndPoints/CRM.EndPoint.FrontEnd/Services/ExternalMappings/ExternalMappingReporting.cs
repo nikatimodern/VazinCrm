@@ -678,6 +678,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return externalSides;
         }
 
+        private static string ExternalCodeLabel(string entityName) => entityName switch {
+            nameof(Party) or nameof(DL) => "کد تفصیلی",
+            nameof(Quotation) => "شماره پیش‌فاکتور",
+            nameof(Invoice) => "شماره فاکتور",
+            nameof(PaymentHeader) => "شماره اعلامیه پرداخت",
+            nameof(Voucher) => "شماره سند",
+            _ => "شماره"
+        };
+
         private static List<MappingReportRow> BuildMappingReportRows(
             List<MappingReportEntry> entries,
             Dictionary<(string, Guid), MappingReportSide> crmSides,
@@ -686,15 +695,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return entries.Select(entry => {
                 var crm = crmSides.GetValueOrDefault((entry.Kind, entry.EntityId))
                     ?? new MappingReportSide("رکورد CRM پیدا نشد", entry.EntityId.ToString(),
-                        "-", "", null, "", "");
+                        "", "", null, "", "");
                 var sepidar = entry.TargetId.HasValue
                     ? externalSides.GetValueOrDefault((entry.TargetEntity, entry.TargetId.Value))
                     : null;
                 sepidar ??= new MappingReportSide(
                     entry.Status == "saved" ? "نرم‌افزار مقصد" : "معادل قطعی مشخص نیست",
                     entry.TargetRaw ?? entry.TargetId?.ToString() ?? "-",
-                    entry.TargetRaw ?? entry.TargetId?.ToString() ?? "-",
-                    "", null, "", entry.Status == "saved"
+                    "", "", null, "", entry.Status == "saved"
                         ? "شناسه ثبت‌شده در نرم‌افزار انتخاب‌شده"
                         : "برای این وضعیت معادل قطعی مشخص نیست.");
 
@@ -702,19 +710,24 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Distinct().Where(id => id > 0)
                     .Select(id => {
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
-                        var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
-                            : entry.TargetEntity == nameof(Invoice) ? "فاکتور"
-                            : entry.MapType == (int)ExternalMappingTypeEnum.کارشناسان ? "کارشناس" : "مشتری";
+                        var itemType = entry.TargetEntity switch {
+                            nameof(Quotation) => "پیش‌فاکتور",
+                            nameof(Invoice) => "فاکتور",
+                            nameof(Voucher) => "سند حسابداری",
+                            nameof(PaymentHeader) => "اعلامیه پرداخت",
+                            nameof(Party) => "شخص",
+                            nameof(DL) => "حساب تفصیلی",
+                            _ => "معادل"
+                        };
                         var readableTitle = candidate == null
                             ? $"{itemType} با شناسه {id}"
-                            : entry.TargetEntity == nameof(Party)
-                                ? candidate.Customer
-                                : $"{itemType} شماره {candidate.Number} — {candidate.Customer}";
+                            : !string.IsNullOrWhiteSpace(candidate.Customer)
+                                ? candidate.Customer : candidate.Title;
+                        var number = string.IsNullOrWhiteSpace(candidate?.Number)
+                            || candidate.Number == "-" ? ""
+                            : $"{ExternalCodeLabel(entry.TargetEntity)}: {candidate.Number} | ";
                         return new MappingReportTargetOption(id,
-                            readableTitle,
-                            candidate != null
-                                ? $"شناسه {id} | شماره {candidate.Number}"
-                                : $"شناسه {id}");
+                            readableTitle, $"{number}شناسه: {id}");
                     }).ToList();
 
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
