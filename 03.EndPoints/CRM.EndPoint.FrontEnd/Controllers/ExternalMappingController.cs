@@ -56,6 +56,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetExternalMappingForEdit(
+            Guid softwareId, Guid mappingId, CancellationToken ct)
+        {
+            try
+            {
+                return Ok(await mappings.GetExternalMappingForEditAsync(softwareId, mappingId, ct));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetManualMappingOptions(
             Guid softwareId, int mapType, string side, string search = "",
             string sourceEntity = null, string targetEntity = null,
@@ -122,6 +140,35 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateExternalMapping(
+            [FromBody] ExternalMappingService.UpdateExternalMappingRequest request,
+            CancellationToken ct)
+        {
+            try
+            {
+                await mappings.UpdateExternalMappingAsync(request, User, ct);
+                return Ok(new { updated = true });
+            }
+            catch (ExternalMappingService.MappingConflictException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
             }
         }
 
