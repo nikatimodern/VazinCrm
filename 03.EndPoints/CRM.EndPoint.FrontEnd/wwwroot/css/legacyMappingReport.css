@@ -51,7 +51,7 @@
 .lmr-search { flex:1 1 250px; }
 .lmr-search input { min-width:0;flex:1; }
 .lmr-field select { max-width:240px; }
-.lmr-size select { width:63px; }
+.lmr-size select { min-width:63px; }
 .lmr-selection-bar { display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:7px 11px;border-bottom:1px solid var(--map-border);background:var(--map-purple-soft);font-size:12px; }
 .lmr-selection-bar[hidden] { display:none; }
 .lmr-selection-bar label { display:flex;align-items:center;gap:5px; }
@@ -95,7 +95,7 @@
 .lmr-map-action label { display:flex;align-items:center;gap:6px;flex:1;min-width:0;max-width:450px;color:var(--map-muted);font-size:12px; }
 .lmr-map-action label span { white-space:nowrap; }
 .lmr-map-action input { flex:1;min-width:0;width:100%;max-width:290px;height:30px;min-height:30px;border:1px solid var(--map-border);background:white;border-radius:6px;padding:3px 8px;font-size:12px; }
-.lmr-map-action select { flex:1;min-width:0;width:100%;max-width:290px;height:30px;min-height:30px;border:1px solid var(--map-border);border-radius:6px;font-size:12px; }
+.lmr-map-action select { flex:0 1 auto;min-width:0;max-width:290px;height:30px;min-height:30px;border:1px solid var(--map-border);border-radius:6px;font-size:12px; }
 .lmr-map-action .lmr-btn { padding-inline:9px; }
 .lmr-item-footer { display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:4px 9px 5px;border-top:1px solid #EDF0F3;background:#FCFCFE; }
 .lmr-item-footer .lmr-expand { order:0;flex-shrink:0;color:var(--map-purple);font-size:13px;text-align:right; }
@@ -170,13 +170,13 @@
     .lmr-item-footer { align-items:flex-start; }
     .lmr-item-footer .lmr-map-action { flex:1 1 100%; }
     .lmr-crm-choice label { flex-wrap:wrap; }
-    .lmr-crm-choice label select { min-width:0;width:100%; }
+    .lmr-crm-choice label select { min-width:0; }
 }
 @media(max-width:800px) {
     .legacy-mapping-report { padding:9px 8px 20px; }
     .lmr-page-heading h1 { font-size:17px; }
     .lmr-software { width:100%;justify-content:space-between; }
-    .lmr-software select { flex:1;max-width:300px; }
+    .lmr-software select { flex:0 1 auto;max-width:300px; }
     .lmr-section-head { align-items:flex-start; }
     .lmr-field { flex:1 1 42%;justify-content:space-between; }
     .lmr-field select { max-width:170px; }
@@ -221,7 +221,7 @@
     font-family:IRANSans,sans-serif;
 }
 .lmr-manual-modal .lmr-manual-field > select {
-    width:100%;min-width:0;height:33px;min-height:33px;
+    min-width:0;height:33px;min-height:33px;
     color:#212529;border:1px solid #cfd8dd;border-radius:6px;font-size:12px;
     font-family:IRANSans,sans-serif;
 }
@@ -777,4 +777,11 @@
     align-items:center;
     flex-wrap:wrap;
     gap:7px;
+}
+
+/* Native selects use their content width rather than Bootstrap's 100% default.
+   TomSelect controls retain their own width for searchable inputs. */
+.legacy-mapping-report select.form-select,
+.lmr-manual-modal select.form-select {
+    width:auto;
 }
