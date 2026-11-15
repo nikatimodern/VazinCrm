@@ -35,7 +35,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
     {
         private sealed record MappingReportSide(
             string Title, string Id, string Number, string Date,
-            decimal? Amount, string Customer, string Extra);
+            decimal? Amount, string Customer, string Extra,
+            bool? IsCustomer = null, bool? IsEmployee = null,
+            bool? IsVendor = null, bool? IsBroker = null);
 
         private sealed record MappingReportEntry(
             string Key, string Kind, Guid EntityId, string Status,
@@ -602,14 +604,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code })
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code,
+                        x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker })
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
                         "شخص " + softwareTitle,
                         x.PartyId.ToString(), x.PartyId.ToString(), "",
                         null, global::CRM.EndPoint.FrontEnd.Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
-                        string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}");
+                        string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}",
+                        x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker);
             }
 
                 // Enrich the other saved Sepidar mapping types when their
