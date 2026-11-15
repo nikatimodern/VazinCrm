@@ -51,12 +51,43 @@ public partial class UnifyRequestAmountTargetPerson : Migration
                 THROW 50003, 'RequestAmount contains an ID from the wrong target entity. Resolve it before migrating.', 1;
             END;
 
+            -- A supplier ID was already a Customer entity ID. Never drop an
+            -- unresolved legacy ID without first resolving it in Customers.
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.RequestAmounts AS r
+                WHERE r.RequestAmountType <> 3
+                  AND r.SupplierId IS NOT NULL
+                  AND NOT EXISTS (SELECT 1 FROM dbo.Customers AS c WHERE c.Id = r.SupplierId)
+            )
+            BEGIN
+                THROW 50006, 'A legacy supplier request references a missing Customer. Resolve it before migrating.', 1;
+            END;
+
             UPDATE r
             SET TargetPersonId = CASE WHEN r.RequestAmountType = 3 THEN c.Id ELSE r.SupplierId END,
                 TargetPersonTxt = CASE WHEN r.RequestAmountType = 3 THEN r.CashierTxt ELSE r.SupplierTxt END
             FROM dbo.RequestAmounts AS r
             LEFT JOIN dbo.Cashiers AS c
                 ON r.RequestAmountType = 3 AND (c.UserId = r.CashierId OR c.Id = r.CashierId);
+
+            -- Confirm every populated old ID survived and was translated to
+            -- the correct entity ID before removing the legacy columns.
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.RequestAmounts AS r
+                WHERE (r.RequestAmountType = 3
+                       AND r.CashierId IS NOT NULL
+                       AND (r.TargetPersonId IS NULL OR NOT EXISTS (
+                           SELECT 1 FROM dbo.Cashiers AS c WHERE c.Id = r.TargetPersonId
+                       )))
+                   OR (r.RequestAmountType <> 3
+                       AND r.SupplierId IS NOT NULL
+                       AND (r.TargetPersonId IS NULL OR r.TargetPersonId <> r.SupplierId))
+            )
+            BEGIN
+                THROW 50007, 'A legacy request target was not preserved during conversion. Migration aborted.', 1;
+            END;
             """);
 
         migrationBuilder.CreateIndex(
