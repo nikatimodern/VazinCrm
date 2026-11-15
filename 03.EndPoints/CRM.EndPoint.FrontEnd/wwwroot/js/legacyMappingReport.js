@@ -1130,6 +1130,25 @@
             }
         }
 
+        function renderPartyOption(data, escapeOption, selected = false) {
+            const roles = [
+                ["isCustomer", "مشتری", "customer"],
+                ["isEmployee", "کارمند", "employee"],
+                ["isVendor", "تأمین‌کننده", "vendor"],
+                ["isBroker", "واسط", "broker"]
+            ].filter(([field]) => data[field] === true);
+            const badges = roles.length
+                ? roles.map(([, label, kind]) =>
+                    '<span class="lmr-party-badge lmr-party-badge-' + kind + '">' +
+                    escapeOption(label) + '</span>').join("")
+                : '<span class="lmr-party-badge lmr-party-badge-none">بدون نقش</span>';
+            const name = escapeOption(data.text || "");
+            return '<div class="' + (selected ? "lmr-remote-selected " : "lmr-remote-option ") +
+                'lmr-party-line">' +
+                '<strong class="lmr-party-name" dir="auto" title="' + name + '">' + name +
+                '</strong><span class="lmr-party-badges">' + badges + '</span></div>';
+        }
+
         function initManualSide(side, selection = null) {
             const element = side === "crm" ? manualCrmSelect : manualExternalSelect;
             const info = manualEntityInfo(side);
@@ -1144,6 +1163,7 @@
             const softwareId = state.softwareId;
             const type = manualTypeDetails();
             const isCrm = side === "crm";
+            const isParty = !isCrm && info[0] === "Party";
             const instance = new TomSelect(element, {
                 valueField: "id",
                 labelField: "text",
@@ -1162,11 +1182,13 @@
                 },
                 render: {
                     option(data, escapeOption) {
+                        if (isParty) return renderPartyOption(data, escapeOption);
                         return '<div class="lmr-remote-option">' +
                             '<strong dir="auto">' + escapeOption(data.text || "") + '</strong>' +
                             '</div>';
                     },
                     item(data, escapeOption) {
+                        if (isParty) return renderPartyOption(data, escapeOption, true);
                         return '<div class="lmr-remote-selected" dir="auto">' +
                             escapeOption(data.text || "") + '</div>';
                     },
@@ -1207,7 +1229,11 @@
                         manualFeedback();
                         callback(result.options.map(option => ({
                             id: String(option.id),
-                            text: option.title || String(option.id)
+                            text: option.title || String(option.id),
+                            isCustomer: option.isCustomer === true,
+                            isEmployee: option.isEmployee === true,
+                            isVendor: option.isVendor === true,
+                            isBroker: option.isBroker === true
                         })));
                     } catch {
                         if (state.manualOpen && request === state.manualRequests[side]) {
@@ -1219,9 +1245,16 @@
                 onChange() { manualSubmitState(); }
             });
             manualSelects[side] = instance;
+            if (isParty) instance.wrapper.classList.add("lmr-party-select");
             if (selection?.id) {
                 const id = String(selection.id);
-                instance.addOption({ id, text: String(selection.title || id) });
+                instance.addOption({
+                    id, text: String(selection.title || id),
+                    isCustomer: selection.isCustomer === true,
+                    isEmployee: selection.isEmployee === true,
+                    isVendor: selection.isVendor === true,
+                    isBroker: selection.isBroker === true
+                });
                 instance.setValue(id, true);
             }
         }
