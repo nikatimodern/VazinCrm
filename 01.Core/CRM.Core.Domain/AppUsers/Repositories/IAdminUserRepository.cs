@@ -8,6 +8,12 @@ using CRM.Core.Domain.AppUsers.Entities;
 namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
 public sealed record AdminRoleWriteResult(int Status, string? Message = null, string? RoleId = null);
+public sealed record RoleRemovalPermission(Guid Id, string Key, string Title);
+public sealed record RoleRemovalUser(string Id, string Name, string UserName, IReadOnlyList<RoleRemovalPermission> Permissions);
+public sealed record RoleRemovalPreview(string RoleId, string RoleName, string Revision, int AssignedUserCount,
+    int AffectedPermissionCount, IReadOnlyList<RoleRemovalUser> Users);
+public sealed record RoleRemovalChoice(string UserId, Guid PermissionId, bool Keep);
+public sealed record RoleRemovalResult(int Status, string? Message = null);
 public sealed record AdminPosition(Guid Id, string Title);
 public sealed record AdminUserProfile(
     string Id, string UserName, string? FirstName, string? LastName, string? PhoneNumber, string? Email,
@@ -29,7 +35,9 @@ public interface IAdminUserRepository
     Task<AdminUserProfileWriteResult> SaveUserProfileAsync(AdminUserProfileInput input, string? actorId, CancellationToken ct);
     Task<AdminRoleWriteResult> CreateRoleAsync(string name, CancellationToken ct);
     Task<AdminRoleWriteResult> RenameRoleAsync(string roleId, string expectedName, string name, CancellationToken ct);
-    Task<AdminRoleWriteResult> RemoveRoleAsync(string roleId, string expectedName, CancellationToken ct);
+    Task<RoleRemovalPreview?> GetRoleRemovalPreviewAsync(string roleId, CancellationToken ct);
+    Task<RoleRemovalResult> RemoveRoleAsync(string roleId, string expectedName, string revision,
+        IReadOnlyList<RoleRemovalChoice> choices, CancellationToken ct);
     Task<AdminUserPage> GetPageAsync(AdminUserFilter filter, CancellationToken ct);
     Task<AppUser?> FindByIdAsync(string id, bool tracking, CancellationToken ct);
     Task<AppUser?> FindByNameAsync(string name, CancellationToken ct);

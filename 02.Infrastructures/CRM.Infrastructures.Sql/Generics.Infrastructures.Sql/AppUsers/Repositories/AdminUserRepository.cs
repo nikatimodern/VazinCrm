@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Security.Cryptography;
+using System.Text;
+using CRM.Core.Domain.AccessCatalog.Entities;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -212,7 +215,91 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
         }
     }
 
-    public async Task<AdminRoleWriteResult> RemoveRoleAsync(string roleId, string expectedName, CancellationToken ct)
+    // Only permissions actually lost on deletion need a user decision. Permissions supplied
+    // by another role or an explicit user override are outside the deletion decision.
+    private async Task<RoleRemovalPreview?> BuildRoleRemovalPreviewAsync(string roleId, CancellationToken ct)
+    {
+        var role = await db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roleId, ct);
+        if (role is null) return null;
+
+        var members = await (
+            from link in db.UserRoles.AsNoTracking()
+            join account in db.Users.AsNoTracking() on link.UserId equals account.Id
+            where link.RoleId == roleId
+            select new { account.Id, account.FirstName, account.LastName, account.UserName }
+        ).ToListAsync(ct);
+        var userIds = members.Select(x => x.Id).ToArray();
+        var memberships = await db.UserRoles.AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId))
+            .Select(x => new { x.UserId, x.RoleId }).ToListAsync(ct);
+        var participatingRoleIds = memberships.Select(x => x.RoleId)
+            .Append(roleId).Distinct().ToArray();
+
+        var grants = await db.AccessRolePermissions.AsNoTracking()
+            .Where(x => participatingRoleIds.Contains(x.RoleId))
+            .Select(x => new
+            {
+                x.RoleId, x.AccessPermissionId,
+                x.AccessPermission.Key, x.AccessPermission.Title,
+                EntityKey = x.AccessPermission.AccessEntity.Key,
+                IsActive = x.AccessPermission.IsActive && x.AccessPermission.AccessEntity.IsActive
+            }).ToListAsync(ct);
+        var overrides = await db.AccessUserPermissions.AsNoTracking()
+            .Where(x => userIds.Contains(x.UserId))
+            .Select(x => new { x.UserId, x.AccessPermissionId, x.IsAllowed }).ToListAsync(ct);
+
+        // Snapshot changes to memberships, grants, overrides, and active permission state.
+        // The DELETE request must submit this same revision; it is rechecked in a serializable transaction.
+        var snapshot = new List<string>
+        {
+            $"Role|{role.Id}|{role.Name}|{role.ConcurrencyStamp}"
+        };
+        snapshot.AddRange(members.OrderBy(x => x.Id, StringComparer.Ordinal).Select(x =>
+            $"U|{x.Id}|{x.UserName}|{x.FirstName}|{x.LastName}"));
+        snapshot.AddRange(memberships.OrderBy(x => x.UserId, StringComparer.Ordinal)
+            .ThenBy(x => x.RoleId, StringComparer.Ordinal)
+            .Select(x => $"M|{x.UserId}|{x.RoleId}"));
+        snapshot.AddRange(grants.OrderBy(x => x.RoleId, StringComparer.Ordinal)
+            .ThenBy(x => x.AccessPermissionId).Select(x =>
+                $"G|{x.RoleId}|{x.AccessPermissionId}|{x.Key}|{x.Title}|{x.EntityKey}|{x.IsActive}"));
+        snapshot.AddRange(overrides.OrderBy(x => x.UserId, StringComparer.Ordinal)
+            .ThenBy(x => x.AccessPermissionId)
+            .Select(x => $"O|{x.UserId}|{x.AccessPermissionId}|{x.IsAllowed}"));
+        var revision = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", snapshot))));
+
+        var targetGrants = grants.Where(x => x.RoleId == roleId && x.IsActive).ToList();
+        var allActiveByRole = grants.Where(x => x.IsActive).ToLookup(x => x.RoleId);
+        var otherSource = new HashSet<(string, Guid)>();
+        foreach (var membership in memberships.Where(x => x.RoleId != roleId))
+            foreach (var grant in allActiveByRole[membership.RoleId])
+                otherSource.Add((membership.UserId, grant.AccessPermissionId));
+
+        var customOverrides = overrides.Select(x => (x.UserId, x.AccessPermissionId)).ToHashSet();
+        var affected = members.OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
+            .ThenBy(x => x.Id, StringComparer.Ordinal)
+            .Select(user =>
+            {
+                var name = string.Join(" ", new[] { user.FirstName, user.LastName }
+                    .Where(part => !string.IsNullOrWhiteSpace(part)));
+                var lost = targetGrants.Where(grant =>
+                        !otherSource.Contains((user.Id, grant.AccessPermissionId)) &&
+                        !customOverrides.Contains((user.Id, grant.AccessPermissionId)))
+                    .OrderBy(x => x.EntityKey).ThenBy(x => x.Key)
+                    .Select(x => new RoleRemovalPermission(x.AccessPermissionId,
+                        x.EntityKey + "." + x.Key, x.Title)).ToArray();
+                return new RoleRemovalUser(user.Id, string.IsNullOrWhiteSpace(name) ? user.UserName ?? user.Id : name,
+                    user.UserName ?? "", lost);
+            }).ToArray();
+
+        return new RoleRemovalPreview(role.Id, role.Name ?? "", revision,
+            members.Count, affected.Sum(x => x.Permissions.Count), affected);
+    }
+
+    public Task<RoleRemovalPreview?> GetRoleRemovalPreviewAsync(string roleId, CancellationToken ct) =>
+        BuildRoleRemovalPreviewAsync(roleId, ct);
+
+    public async Task<RoleRemovalResult> RemoveRoleAsync(string roleId, string expectedName, string revision,
+        IReadOnlyList<RoleRemovalChoice> choices, CancellationToken ct)
     {
         var strategy = db.Database.CreateExecutionStrategy();
         try
@@ -221,32 +308,46 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
             {
                 ct.ThrowIfCancellationRequested();
                 db.ChangeTracker.Clear();
-                // SERIALIZABLE prevents a concurrent membership assignment between the
-                // reference check and role removal. Never cascade-delete user-role memberships.
                 await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+                var preview = await BuildRoleRemovalPreviewAsync(roleId, ct);
+                if (preview is null) return new RoleRemovalResult(404, "نقش پیدا نشد.");
+                if (!string.Equals(preview.RoleName, expectedName, StringComparison.Ordinal) ||
+                    !string.Equals(preview.Revision, revision, StringComparison.Ordinal))
+                    return new RoleRemovalResult(409, "نقش یا مجوزهای کاربران تغییر کرده‌اند. پیش‌نمایش حذف را دوباره باز کنید.");
+
+                var expected = preview.Users.SelectMany(u => u.Permissions
+                    .Select(p => (u.Id, p.Id))).ToHashSet();
+                var actual = choices.Select(x => (x.UserId, x.PermissionId)).ToHashSet();
+                if (choices.Count != actual.Count || !actual.SetEquals(expected))
+                    return new RoleRemovalResult(409, "برای تک‌تک مجوزهای وابسته باید تصمیم معتبر ثبت شود.");
+
+                // Existing user overrides (allow or deny) are never overwritten.
+                foreach (var choice in choices.Where(x => x.Keep))
+                    db.AccessUserPermissions.Add(new AccessUserPermission
+                    {
+                        UserId = choice.UserId, AccessPermissionId = choice.PermissionId, IsAllowed = true
+                    });
+
+                var userRoles = await db.UserRoles.Where(x => x.RoleId == roleId).ToListAsync(ct);
+                db.UserRoles.RemoveRange(userRoles);
+                await db.SaveChangesAsync(ct);
+
                 var role = await roles.FindByIdAsync(roleId);
-                if (role is null) return new AdminRoleWriteResult(404, "نقش پیدا نشد.");
-                if (!string.Equals(role.Name, expectedName, StringComparison.Ordinal))
-                    return new AdminRoleWriteResult(409, "نام نقش هم‌زمان تغییر کرده است. فهرست را تازه‌سازی کنید.");
-                if (await db.UserRoles.AsNoTracking().AnyAsync(x => x.RoleId == roleId, ct))
-                    return new AdminRoleWriteResult(409, "این نقش به کاربران اختصاص داده شده است. ابتدا نقش را از کاربران بردارید.");
-                if (await db.RoleClaims.AsNoTracking().AnyAsync(x => x.RoleId == roleId, ct))
-                    return new AdminRoleWriteResult(409, "این نقش دارای ادعاهای سیستمی است و قابل حذف نیست.");
-                // AccessRolePermissions is bound to AspNetRoles with ON DELETE CASCADE.
-                // Only an unused custom role can reach this operation.
+                if (role is null) return new RoleRemovalResult(409, "نقش هم‌زمان حذف شده است.");
                 var deleted = await roles.DeleteAsync(role);
-                if (!deleted.Succeeded) return IdentityError(deleted);
+                if (!deleted.Succeeded)
+                    return new RoleRemovalResult(409, string.Join("؛ ", deleted.Errors.Select(e => e.Description)));
                 await transaction.CommitAsync(ct);
-                return new AdminRoleWriteResult(200, RoleId: roleId);
+                return new RoleRemovalResult(200);
             });
         }
         catch (DbUpdateConcurrencyException)
         {
-            return new(409, "نقش هم‌زمان تغییر کرده یا حذف شده است. فهرست را تازه‌سازی کنید.");
+            return new(409, "نقش هم‌زمان تغییر کرده است. پیش‌نمایش حذف را دوباره دریافت کنید.");
         }
         catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 547 or 2601 or 2627)
         {
-            return new(409, "این نقش در بخش دیگری استفاده می‌شود و قابل حذف نیست.");
+            return new(409, "داده‌های نقش یا کاربران تغییر کرده است. پیش‌نمایش حذف را دوباره دریافت کنید.");
         }
     }
 

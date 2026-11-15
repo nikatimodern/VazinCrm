@@ -39,7 +39,14 @@ public sealed class AccessCatalogAdminController(AccessCatalogAdministration adm
     public async Task<IActionResult> SaveRole([FromBody] AccessRoleDraft draft, CancellationToken ct) =>
         Result(await administration.SaveRoleAsync(draft, ct));
 
-    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(8192)]
+    [HttpGet]
+    public async Task<IActionResult> RoleRemovalPreview(string roleId, CancellationToken ct)
+    {
+        var preview = await administration.RoleRemovalPreviewAsync(roleId, ct);
+        return preview is null ? NotFound(new { message = "نقش پیدا نشد." }) : Json(preview);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(1048576)]
     public async Task<IActionResult> DeleteRole([FromBody] AccessRoleDeleteDraft draft, CancellationToken ct) =>
         Result(await administration.DeleteRoleAsync(draft, ct));
 

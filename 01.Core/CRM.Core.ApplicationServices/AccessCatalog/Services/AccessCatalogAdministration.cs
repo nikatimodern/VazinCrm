@@ -15,12 +15,13 @@ public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title)
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
 public sealed record AccessRoleDraft(string? RoleId, string? Name, string? ExpectedName);
-public sealed record AccessRoleDeleteDraft(string? RoleId, string? ExpectedName);
+public sealed record AccessRoleDeleteDraft(string? RoleId, string? ExpectedName,
+    string? Revision, RoleRemovalChoice[]? Decisions);
 public sealed record AccessUserProfileDraft(
     string? UserId, string? UserName, string? FirstName, string? LastName, string? PhoneNumber,
     string? Email, string? InternalTels, string? Password, bool IsEmployee, bool IsCustomer, bool IsSupplier,
     Guid? PositionId, string[]? RoleIds, string? ExpectedConcurrencyStamp);
-public sealed record ManagedRoleInfo(string Id, string Name, bool IsSystem);
+public sealed record ManagedRoleInfo(string Id, string Name);
 public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles, bool IsEmployee, bool IsCustomer, bool IsSupplier);
 public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
 public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides);
@@ -28,19 +29,6 @@ public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, Acces
 public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models, IAdminUserRepository adminUsers)
 {
     private static readonly Regex KeyPattern = new("^[A-Za-z][A-Za-z0-9]{0,63}$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
-    // These names are referenced by existing authorization attributes and policies.
-    // Renaming or deleting them would unexpectedly revoke access to live endpoints.
-    private static readonly HashSet<string> SystemRoleNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        AppRoles.Admin, AppRoles.SalesExpert, AppRoles.SalesAdmin,
-        AppRoles.TaminExpert, AppRoles.TaminAdmin,
-        AppRoles.FinancialExpert, AppRoles.FinancialAdmin,
-        AppRoles.ManagingDirector, AppRoles.ExecutiveDirector, AppRoles.TanKhah,
-        AppRoles.Customer, AppRoles.QcExpert,
-        "تامین کننده", "تأمین کننده", "تامین‌کننده", "تأمین‌کننده"
-    };
-
-    private static bool ProtectedRole(string? name) => name is not null && SystemRoleNames.Contains(name);
     private static bool ValidRoleName(string? name) =>
         !string.IsNullOrWhiteSpace(name) &&
         name == name.Trim() &&
@@ -54,7 +42,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     public async Task<IReadOnlyList<ManagedRoleInfo>> RolesAsync(CancellationToken ct) =>
         (await adminUsers.GetRolesAsync(ct))
             .OrderBy(x => x.Name)
-            .Select(x => new ManagedRoleInfo(x.Id, x.Name, ProtectedRole(x.Name)))
+            .Select(x => new ManagedRoleInfo(x.Id, x.Name))
             .ToArray();
 
     public async Task<AccessCatalogResult> SaveRoleAsync(AccessRoleDraft? draft, CancellationToken ct)
@@ -64,8 +52,6 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var name = draft.Name!.Trim();
         if (string.IsNullOrWhiteSpace(draft.RoleId))
         {
-            if (ProtectedRole(name))
-                return new(409, "این نام برای نقش‌های سیستمی رزرو شده است.");
             var created = await adminUsers.CreateRoleAsync(name, ct);
             return new(created.Status, created.Message, RoleId: created.RoleId);
         }
@@ -74,24 +60,26 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
 
         var current = (await adminUsers.GetRolesAsync(ct)).FirstOrDefault(x => x.Id == draft.RoleId);
         if (current is null) return new(404, "نقش پیدا نشد.");
-        if (ProtectedRole(current.Name) || ProtectedRole(name))
-            return new(409, "نام نقش‌های سیستمی قابل تغییر نیست.");
         var updated = await adminUsers.RenameRoleAsync(current.Id, draft.ExpectedName!, name, ct);
         return new(updated.Status, updated.Message, RoleId: updated.RoleId);
     }
 
+    public Task<RoleRemovalPreview?> RoleRemovalPreviewAsync(string roleId, CancellationToken ct) =>
+        string.IsNullOrWhiteSpace(roleId) || roleId.Length > 450
+            ? Task.FromResult<RoleRemovalPreview?>(null)
+            : adminUsers.GetRoleRemovalPreviewAsync(roleId, ct);
+
     public async Task<AccessCatalogResult> DeleteRoleAsync(AccessRoleDeleteDraft? draft, CancellationToken ct)
     {
         if (draft is null || string.IsNullOrWhiteSpace(draft.RoleId) || draft.RoleId.Length > 450 ||
-            string.IsNullOrWhiteSpace(draft.ExpectedName))
-            return new(400, "مشخصات نقش برای حذف معتبر نیست.");
+            string.IsNullOrWhiteSpace(draft.ExpectedName) || string.IsNullOrWhiteSpace(draft.Revision) ||
+            draft.Decisions is null || draft.Decisions.Length > 20000 ||
+            draft.Decisions.Any(x => string.IsNullOrWhiteSpace(x.UserId) || x.UserId.Length > 450 || x.PermissionId == Guid.Empty))
+            return new(400, "اطلاعات تعیین تکلیف کاربران یا نقش معتبر نیست.");
 
-        var current = (await adminUsers.GetRolesAsync(ct)).FirstOrDefault(x => x.Id == draft.RoleId);
-        if (current is null) return new(404, "نقش پیدا نشد.");
-        if (ProtectedRole(current.Name))
-            return new(409, "نقش‌های سیستمی قابل حذف نیستند.");
-        var deleted = await adminUsers.RemoveRoleAsync(current.Id, draft.ExpectedName!, ct);
-        return new(deleted.Status, deleted.Message);
+        var result = await adminUsers.RemoveRoleAsync(draft.RoleId, draft.ExpectedName,
+            draft.Revision, draft.Decisions, ct);
+        return new(result.Status, result.Message);
     }
 
     public Task<IReadOnlyList<AdminPosition>> PositionsAsync(CancellationToken ct) =>
