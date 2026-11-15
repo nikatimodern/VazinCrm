@@ -73,7 +73,7 @@
             softwareId: "", softwareTitle: "", autoIds: [], manualIds: [],
             types: [], counts: [], selected: new Map(), targets: new Map(), crmTargets: new Map(), preview: new Map(),
             activeTab: "saved",
-            saved: { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: 0 },
+            saved: { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: 0 },
             proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
             processing: false,
@@ -383,10 +383,11 @@
                         (!selected ? "disabled" : "") + '>ثبت نگاشت</button>'
                     : "") +
                 (row.status === "saved" && row.mappingId
-                    ? '<button type="button" class="lmr-btn lmr-btn-soft" ' +
+                    ? '<span class="lmr-saved-actions">' +
+                        '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
-                      '<button type="button" class="lmr-btn lmr-btn-danger" ' +
-                        'data-delete-mapping>حذف نگاشت</button>'
+                        '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                        'data-delete-mapping>حذف نگاشت</button></span>'
                     : "");
             return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
                 '" data-key="' + escape(row.key) + '" role="listitem">' +
@@ -447,9 +448,10 @@
         }
 
         function updateSummary() {
-            const count = state.counts.filter(x => x.softwareId === state.softwareId)
-                .reduce((sum, x) => sum + Number(x.count), 0);
-            get("lmrSavedCount").textContent = format.format(count);
+            // The saved-list API returns the total after applying type and search filters.
+            // Workspace counts are kept only for populating the filter options.
+            get("lmrSavedCount").textContent = state.saved.total == null
+                ? "—" : format.format(state.saved.total);
             const stats = state.proposal.loaded ? state.proposal.summary : null;
             get("lmrProposalStats").hidden = !stats;
             if (stats) {
@@ -619,6 +621,8 @@
             if (!state.softwareId) return;
             const request = ++model.request;
             const softwareId = state.softwareId;
+            model.total = null;
+            updateSummary();
             savedRoot.replaceChildren();
             feedback("saved", "در حال خواندن نگاشت‌های ثبت‌شده…");
             const result = await sendApiRequest({
@@ -634,6 +638,7 @@
             }
             model.rows = result.rows || [];
             model.total = Number(result.total || 0);
+            updateSummary();
             const max = model.size === 0 ? 1 : Math.max(1, Math.ceil(model.total / model.size));
             if (model.page > max) {
                 model.page = max;
@@ -741,7 +746,7 @@
         async function changeSoftware() {
             state.softwareId = softwareSelect.value;
             state.softwareTitle = softwareSelect.selectedOptions[0]?.textContent || "نرم‌افزار خارجی";
-            state.saved = { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: state.saved.request + 1 };
+            state.saved = { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: state.saved.request + 1 };
             state.proposal = { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: state.proposal.request + 1, calculating: false };
             state.selected.clear();
