@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "مدیریت نرم‌افزارهای مالی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+}
+
+<div id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme mx-2 mx-md-3 my-3" dir="rtl">
+    @Html.AntiForgeryToken()
+    <header class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h5 mb-1">مدیریت نرم‌افزارهای مالی</h1>
+            <p class="small text-muted mb-0">برای مدیریت ارتباط‌ها، نرم‌افزار موردنظر را انتخاب کنید.</p>
+        </div>
+        <button id="addExternalSoftwareBtn" type="button" class="buttonGreen3">
+            <i class="fas fa-plus-circle" aria-hidden="true"></i> افزودن نرم‌افزار
+        </button>
+    </header>
+    <div id="externalSoftwareFeedback" role="status" aria-live="polite" class="small text-muted mb-2"></div>
+    <ul id="externalSoftwareList" class="list-group gap-2"></ul>
+</div>
+
+<div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalTitle" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h6 mb-0" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <form id="externalSoftwareForm">
+                <div class="modal-body">
+                    <label for="externalSoftwareTitle" class="form-label">عنوان نرم‌افزار</label>
+                    <input type="text" name="title" class="form-control" id="externalSoftwareTitle"
+                           maxlength="120" required autocomplete="off" />
+                </div>
+                <div class="modal-footer">
+                    <button id="submitExternalSoftwareBtn" type="submit" class="buttonGreen3">ثبت</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const root = document.getElementById("settingsConnectionsWorkspace");
+            if (!root || root.dataset.initialized) return;
+            root.dataset.initialized = "1";
+            const list = document.getElementById("externalSoftwareList");
+            const feedback = document.getElementById("externalSoftwareFeedback");
+            const modal = document.getElementById("externalSoftwareModal");
+            const form = document.getElementById("externalSoftwareForm");
+            const titleInput = document.getElementById("externalSoftwareTitle");
+            const submit = document.getElementById("submitExternalSoftwareBtn");
+            const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            let saving = false;
+
+            function appendSoftware(item) {
+                const li = document.createElement("li");
+                li.className = "list-group-item d-flex align-items-center justify-content-between flex-wrap gap-2";
+                const title = document.createElement("strong");
+                title.className = "text-break";
+                title.textContent = item.title || "بدون عنوان";
+                li.appendChild(title);
+
+                if (item.canMap) {
+                    const link = document.createElement("a");
+                    link.className = "buttonGreen3 text-decoration-none";
+                    link.textContent = "تطبیق اطلاعات";
+                    link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
+                    li.appendChild(link);
+                } else {
+                    const label = document.createElement("small");
+                    label.className = "text-muted";
+                    label.textContent = "تطبیق اطلاعات برای این نرم‌افزار هنوز پشتیبانی نمی‌شود.";
+                    li.appendChild(label);
+                }
+                list.appendChild(li);
+            }
+
+            async function loadSoftwares() {
+                feedback.textContent = "در حال دریافت نرم‌افزارهای مالی…";
+                const data = await sendApiRequest({
+                    url: "/ExternalSoftware/GetExternalSoftwares",
+                    showLoading: false
+                });
+                if (!root.isConnected) return;
+                if (!Array.isArray(data)) {
+                    feedback.textContent = "دریافت فهرست نرم‌افزارها ناموفق بود.";
+                    return;
+                }
+                list.replaceChildren();
+                data.forEach(appendSoftware);
+                feedback.textContent = data.length ? "" : "هنوز نرم‌افزار مالی ثبت نشده است.";
+            }
+
+            document.getElementById("addExternalSoftwareBtn").addEventListener("click", () => {
+                if (saving) return;
+                form.reset();
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+                titleInput.focus();
+            });
+
+            form.addEventListener("submit", async event => {
+                event.preventDefault();
+                if (saving || !form.reportValidity()) return;
+                const title = titleInput.value.trim();
+                if (!title || title.length > 120) {
+                    titleInput.setCustomValidity("عنوان نرم‌افزار معتبر نیست.");
+                    form.reportValidity();
+                    titleInput.setCustomValidity("");
+                    return;
+                }
+                saving = true;
+                submit.disabled = true;
+                try {
+                    const response = await sendApiRequest({
+                        url: "/ExternalSoftware/AddExternalSoftware",
+                        method: "POST",
+                        headers: { "RequestVerificationToken": token },
+                        data: { title },
+                        successMsg: null
+                    });
+                    if (!response?.id) return;
+                    bootstrap.Modal.getOrCreateInstance(modal).hide();
+                    await loadSoftwares();
+                } finally {
+                    saving = false;
+                    submit.disabled = false;
+                }
+            });
+
+            loadSoftwares();
+        })();
+    </script>
+}
