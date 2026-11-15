@@ -1278,6 +1278,7 @@
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             manualReturnFocus = document.activeElement;
             state.manualOpen = true;
+            softwareSelect.disabled = true;
             resetManualOptions();
             bootstrap.Modal.getOrCreateInstance(manualModal).show();
         }
@@ -1298,6 +1299,7 @@
             state.manualPrefill = false;
             state.editRequest++;
             manualType.disabled = false;
+            softwareSelect.disabled = false;
             destroyManualSelects();
             if (isActive()) {
                 const fallback = state.activeTab === "saved"
@@ -1360,7 +1362,8 @@
                 // The request helper displays server-side validation errors.
             } finally {
                 state.processing = false;
-                softwareSelect.disabled = false;
+                // Keep the destination fixed until this modal is closed.
+                softwareSelect.disabled = state.manualOpen;
                 get("lmrManualConfirmText").textContent = "ذخیره تغییرات";
                 manualSubmitState();
             }
