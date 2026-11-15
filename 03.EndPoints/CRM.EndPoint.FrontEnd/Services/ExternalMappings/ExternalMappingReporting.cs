@@ -321,14 +321,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(customers);
 
+                // Documents can display names from their linked Customer record;
+                // search those names as well as the document's own snapshot.
+                var customerIds = customers.ToArray();
                 var preFactors = await db.PreFactors.AsNoTracking()
                     .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (x.AgentName != null && x.AgentName.Contains(search))
+                        || (x.CustomerId.HasValue && customerIds.Contains(x.CustomerId.Value))
                         || (isNumber && x.SerialNumber == number))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(preFactors);
 
                 var factors = await db.Factors.AsNoTracking()
                     .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (x.AgentName != null && x.AgentName.Contains(search))
+                        || (x.CustomerId.HasValue && customerIds.Contains(x.CustomerId.Value))
                         || (isNumber && x.SerialNumber == number))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(factors);
