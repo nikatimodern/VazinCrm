@@ -11,11 +11,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[Authorize(Roles = AppRoles.Admin)]
-[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed record AccessHistoryManualDraft(string? Title);
 public sealed record AccessHistoryRestoreDraft(Guid Id, string? Mode, string? Revision);
 
+[Authorize(Roles = AppRoles.Admin)]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AccessCatalogAdminController(
     AccessCatalogAdministration administration, IAccessHistoryService history) : Controller
 {
