@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.26" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.27" asp-append-version="true" />
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl"
@@ -12,30 +12,12 @@
     @Html.AntiForgeryToken()
 
     <header class="lmr-page-heading">
-        <div class="lmr-page-intro">
-            <span class="lmr-page-kicker">مدیریت ارتباطات / تطبیق اطلاعات</span>
-            <h1>مدیریت تطبیق اطلاعات</h1>
-            <p>بررسی و مدیریت ارتباط اطلاعات CRM با نرم‌افزار مالی انتخاب‌شده</p>
-        </div>
+        <h1>مدیریت تطبیق اطلاعات <span class="lmr-title-divider">/</span> <strong id="lmrSoftwareTitle">@ViewData["SoftwareTitle"]</strong></h1>
         <a class="lmr-btn lmr-back-link text-decoration-none" asp-controller="ExternalSoftware" asp-action="Index">
             <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            بازگشت به فهرست نرم‌افزارها
+            بازگشت به نرم‌افزارها
         </a>
     </header>
-
-    <div class="lmr-current-software" aria-label="نرم‌افزار مالی انتخاب‌شده">
-        <div class="lmr-current-software-main">
-            <span class="lmr-current-software-icon" aria-hidden="true"><i class="fas fa-database"></i></span>
-            <div class="lmr-current-software-name">
-                <span>نرم‌افزار مالی انتخاب‌شده</span>
-                <strong id="lmrSoftwareTitle">@ViewData["SoftwareTitle"]</strong>
-            </div>
-        </div>
-        <p class="lmr-current-software-note">
-            <i class="fas fa-info-circle" aria-hidden="true"></i>
-            ارتباط‌های این صفحه فقط مربوط به همین نرم‌افزار هستند.
-        </p>
-    </div>
 
     <nav id="lmrMainTabs" class="lmr-main-tabs" role="tablist" aria-label="بخش‌های تطبیق اطلاعات">
         <button type="button" id="lmrSavedTab" role="tab" data-main-tab="saved" aria-controls="lmrSavedPanel" aria-selected="true" class="is-active">
@@ -211,5 +193,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/legacyMappingReport.js?release=7.0.26" asp-append-version="true"></script>
+    <script src="~/js/legacyMappingReport.js?release=7.0.27" asp-append-version="true"></script>
 }
