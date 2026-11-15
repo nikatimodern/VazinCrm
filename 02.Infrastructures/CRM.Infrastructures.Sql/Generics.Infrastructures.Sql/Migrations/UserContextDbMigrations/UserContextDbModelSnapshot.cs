@@ -22,6 +22,23 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<string>("Action").IsRequired().HasMaxLength(64).HasColumnType("nvarchar(64)");
+                    b.Property<string>("ActorId").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<string>("AfterJson").HasColumnType("nvarchar(max)");
+                    b.Property<string>("BeforeJson").IsRequired().HasColumnType("nvarchar(max)");
+                    b.Property<int>("ChangeCount").HasColumnType("int");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                    b.Property<string>("Kind").IsRequired().HasMaxLength(30).HasColumnType("nvarchar(30)");
+                    b.Property<string>("Title").IsRequired().HasMaxLength(180).HasColumnType("nvarchar(180)");
+                    b.HasKey("Id");
+                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("Kind", "CreatedAtUtc");
+                    b.ToTable("AccessHistoryEntries");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessEntity", b =>
                 {
                     b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");

@@ -16,6 +16,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<AccessRolePermission> AccessRolePermissions { get; set; }
         public DbSet<AccessUserPermission> AccessUserPermissions { get; set; }
+        public DbSet<AccessHistoryEntry> AccessHistoryEntries { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -31,6 +32,17 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.ApplyConfiguration(new AccessPermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessRolePermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessUserPermissionConfiguration());
+            modelBuilder.Entity<AccessHistoryEntry>(entity => {
+                entity.ToTable("AccessHistoryEntries");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.ActorId).IsRequired().HasMaxLength(450);
+                entity.Property(x => x.Kind).IsRequired().HasMaxLength(30);
+                entity.Property(x => x.Action).IsRequired().HasMaxLength(64);
+                entity.Property(x => x.Title).IsRequired().HasMaxLength(180);
+                entity.Property(x => x.BeforeJson).IsRequired();
+                entity.HasIndex(x => x.CreatedAtUtc);
+                entity.HasIndex(x => new { x.Kind, x.CreatedAtUtc });
+            });
 
 
         }
