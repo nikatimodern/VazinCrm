@@ -1055,6 +1055,26 @@
             6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] }
         };
 
+        async function editSavedMapping(row) {
+            if (!row?.mappingId || state.processing || state.deleting || state.manualOpen)
+                return;
+            const softwareId = state.softwareId;
+            const request = ++state.editRequest;
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalMapping/GetExternalMappingForEdit",
+                    params: { softwareId, mappingId: row.mappingId },
+                    showLoading: false, timeout: 30000
+                });
+                if (!isActive() || softwareId !== state.softwareId ||
+                    request !== state.editRequest || !result?.mappingId)
+                    return;
+                openManualMapping(result);
+            } catch {
+                toastifyError("اطلاعات نگاشت برای ویرایش دریافت نشد.");
+            }
+        }
+
         function manualTypeDetails() {
             const type = manualType.value === "" ? null : Number(manualType.value);
             get("lmrManualTargetKindBox").hidden = type !== 0;
@@ -1110,7 +1130,7 @@
             }
         }
 
-        function initManualSide(side) {
+        function initManualSide(side, selection = null) {
             const element = side === "crm" ? manualCrmSelect : manualExternalSelect;
             const info = manualEntityInfo(side);
             if (!info) {
@@ -1199,14 +1219,29 @@
                 onChange() { manualSubmitState(); }
             });
             manualSelects[side] = instance;
+            if (selection?.id) {
+                const id = String(selection.id);
+                instance.addOption({ id, text: String(selection.title || id) });
+                instance.setValue(id, true);
+            }
         }
 
-        function resetManualOptions() {
+        function resetManualOptions({ preserveCrm = false } = {}) {
+            const editing = state.manualEditing;
+            const selections = state.manualPrefill && editing
+                ? { crm: editing.crmOption, external: editing.externalOption }
+                : {};
+            if (preserveCrm) {
+                const id = manualValue("crm");
+                const selected = id && manualSelects.crm?.options[id];
+                if (selected) selections.crm = { id, title: selected.text };
+            }
+            state.manualPrefill = false;
             destroyManualSelects();
             updateManualEntityLabels();
             manualFeedback();
-            initManualSide("crm");
-            initManualSide("external");
+            initManualSide("crm", selections.crm);
+            initManualSide("external", selections.external);
             manualSubmitState();
         }
 
@@ -1215,16 +1250,31 @@
             bootstrap.Modal.getOrCreateInstance(manualModal).hide();
         }
 
-        function openManualMapping() {
-            if (state.processing || !state.manualIds.includes(state.softwareId)) {
-                toastifyError("ثبت دستی برای این نرم‌افزار پشتیبانی نمی‌شود.");
+        function openManualMapping(editing = null) {
+            if (state.processing || state.manualOpen ||
+                !state.manualIds.includes(state.softwareId)) {
+                toastifyError("ثبت یا ویرایش برای این نرم‌افزار پشتیبانی نمی‌شود.");
                 return;
             }
+            state.editRequest++;
+            const isEdit = !!editing?.mappingId;
+            state.manualEditing = isEdit ? editing : null;
+            state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع نگاشت را انتخاب کنید", ""));
             state.types.forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
-            manualType.value = "";
-            get("lmrManualTargetKind").value = "PaymentHeader";
+            manualType.value = isEdit ? String(editing.mapType) : "";
+            // Editing changes the CRM/external record, not the mapping's category.
+            manualType.disabled = isEdit;
+            get("lmrManualTargetKind").value =
+                isEdit && editing.exEntityName === "Voucher" ? "Voucher" : "PaymentHeader";
+            get("lmrManualTitleText").textContent =
+                isEdit ? "ویرایش نگاشت" : "ثبت نگاشت دستی";
+            get("lmrManualConfirmText").textContent =
+                isEdit ? "ذخیره تغییرات" : "ثبت نگاشت";
+            get("lmrManualDescription").textContent = isEdit
+                ? "رکورد CRM و معادل نرم‌افزار مالی را بررسی و در صورت نیاز اصلاح کنید."
+                : "رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             manualReturnFocus = document.activeElement;
             state.manualOpen = true;
@@ -1232,8 +1282,8 @@
             bootstrap.Modal.getOrCreateInstance(manualModal).show();
         }
 
-        get("lmrManualOpen").addEventListener("click", openManualMapping);
-        get("lmrManualOpenSaved").addEventListener("click", openManualMapping);
+        get("lmrManualOpen").addEventListener("click", () => openManualMapping());
+        get("lmrManualOpenSaved").addEventListener("click", () => openManualMapping());
         get("lmrManualClose").addEventListener("click", closeManualMapping);
         get("lmrManualCancel").addEventListener("click", closeManualMapping);
         manualModal.addEventListener("shown.bs.modal", () => {
@@ -1244,6 +1294,10 @@
         });
         manualModal.addEventListener("hidden.bs.modal", () => {
             state.manualOpen = false;
+            state.manualEditing = null;
+            state.manualPrefill = false;
+            state.editRequest++;
+            manualType.disabled = false;
             destroyManualSelects();
             if (isActive()) {
                 const fallback = state.activeTab === "saved"
@@ -1254,8 +1308,9 @@
             }
             manualReturnFocus = null;
         });
-        manualType.addEventListener("change", resetManualOptions);
-        get("lmrManualTargetKind").addEventListener("change", resetManualOptions);
+        manualType.addEventListener("change", () => resetManualOptions());
+        get("lmrManualTargetKind").addEventListener("change", () =>
+            resetManualOptions({ preserveCrm: true }));
 
         get("lmrManualConfirm").addEventListener("click", async () => {
             if (state.processing || !state.manualOpen ||
