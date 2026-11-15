@@ -524,6 +524,20 @@
 .legacy-mapping-report .lmr-decision-card .lmr-item-footer > [data-delete-mapping] {
     margin-inline-start:auto;flex:0 0 auto;
 }
+/* Saved records: keep Edit and Delete together at the end of the footer. */
+.legacy-mapping-report .lmr-decision-card .lmr-item-footer .lmr-saved-actions {
+    display:inline-flex;
+    flex:0 0 auto;
+    align-items:center;
+    gap:6px;
+    margin-inline-start:auto;
+}
+.legacy-mapping-report .lmr-decision-card .lmr-item-footer .lmr-saved-actions > .lmr-btn {
+    flex:0 0 auto;
+    margin:0;
+    min-height:28px;
+    white-space:nowrap;
+}
 .legacy-mapping-report .lmr-decision-card .lmr-expand { min-height:27px;margin-inline-end:0; }
 .legacy-mapping-report .lmr-decision-card .lmr-item-footer .lmr-btn { min-height:28px;padding:3px 9px;font-size:12px; }
 .legacy-mapping-report .lmr-decision-card .lmr-expanded { padding:7px 9px 9px; }
