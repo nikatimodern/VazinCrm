@@ -304,7 +304,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (search.Length > 80) search = search[..80];
 
             // Keep legacy type=1 data untouched, but do not show the removed
-            // accounting-document mapping type in ExternalMapping/Index.
+            // accounting-document mapping type in ExternalSoftware/Mapping.
             var query = db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1);
             if (mapType.HasValue)
