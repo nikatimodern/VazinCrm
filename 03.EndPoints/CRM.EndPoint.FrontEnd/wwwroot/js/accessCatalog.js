@@ -752,7 +752,7 @@
             head.append(identity, actions);
             card.append(head);
             if (!user.permissions.length) {
-                card.append(text("p", "با حذف این نقش، هیچ‌یک از دسترسی‌های فعلی این کاربر از بین نمی‌رود؛ چون یا این نقش مجوز فعالی به او اضافه نکرده، یا مجوزهای آن از نقش‌های دیگر یا دسترسی‌های اختصاصی نیز تأمین می‌شوند.", "ac-role-delete-no-loss"));
+                card.append(text("p", "با حذف این نقش، هیچ‌یک از دسترسی‌های فعلی این کاربر از بین نمی‌رود. تمام دسترسی‌های مشابه این نقش را از نقش دیگری یا به‌صورت اختصاصی در اختیار دارد.", "ac-role-delete-no-loss"));
             } else {
                 const grid = text("div", null, "ac-role-delete-perms");
                 for (const permission of user.permissions) {
