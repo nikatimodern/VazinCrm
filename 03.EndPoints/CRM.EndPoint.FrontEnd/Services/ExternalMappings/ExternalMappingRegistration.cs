@@ -100,7 +100,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (targetId <= 0 || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType)
                 || softwareId != Sepidar1SoftwareId && softwareId != Sepidar2SoftwareId
                 || !await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
-                throw new ArgumentException("نرم‌افزار، نوع نگاشت یا شناسه معتبر نیست.");
+                throw new ArgumentException("نرم‌افزار، نوع ارتباط یا شناسه معتبر نیست.");
 
             var type = (ExternalMappingTypeEnum)mapType;
             var (source, target) = GetMappingEntityNames(type, targetEntity: targetEntity);
@@ -147,18 +147,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             Guid softwareId, Guid mappingId, CancellationToken ct)
         {
             if (mappingId == Guid.Empty || softwareId == Guid.Empty)
-                throw new ArgumentException("نگاشت انتخاب‌شده معتبر نیست.");
+                throw new ArgumentException("ارتباط انتخاب‌شده معتبر نیست.");
 
             var mapping = await db.ExternalMappings.AsNoTracking()
                 .SingleOrDefaultAsync(x => x.Id == mappingId
                     && x.ExternalSoftwareId == softwareId, ct);
             if (mapping == null)
-                throw new KeyNotFoundException("این نگاشت پیدا نشد؛ فهرست را تازه‌سازی کنید.");
+                throw new KeyNotFoundException("این ارتباط پیدا نشد؛ فهرست را تازه‌سازی کنید.");
 
             var pair = GetMappingEntityNames(mapping.MapType, mapping.EntityName, mapping.ExEntityName);
             if (pair.Source != mapping.EntityName || pair.Target != mapping.ExEntityName
                 || !int.TryParse(mapping.ExEntityId, out var externalId) || externalId <= 0)
-                throw new ArgumentException("نوع یا اطلاعات این نگاشت برای ویرایش پشتیبانی نمی‌شود.");
+                throw new ArgumentException("نوع یا اطلاعات این ارتباط برای ویرایش پشتیبانی نمی‌شود.");
 
             var entry = new MappingReportEntry("edit-" + mapping.Id, mapping.EntityName,
                 mapping.EntityId, "saved", "AlreadyMapped", "", mapping.ExEntityName,
@@ -211,7 +211,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             Guid softwareId, Guid mappingId, CancellationToken ct)
         {
             if (softwareId == Guid.Empty || mappingId == Guid.Empty)
-                throw new ArgumentException("شناسه نرم‌افزار یا نگاشت معتبر نیست.");
+                throw new ArgumentException("شناسه نرم‌افزار یا ارتباط معتبر نیست.");
 
             await using var transaction = await db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, ct);
@@ -219,7 +219,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var mapping = await db.ExternalMappings.SingleOrDefaultAsync(
                 x => x.Id == mappingId && x.ExternalSoftwareId == softwareId, ct);
             if (mapping == null)
-                throw new KeyNotFoundException("نگاشت انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
+                throw new KeyNotFoundException("ارتباط انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
 
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))
@@ -243,8 +243,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 if (hasMappedPreFactor || hasMappedFactor)
                     throw new MappingConflictException(
-                        "این مشتری هنوز پیش‌فاکتور یا فاکتور نگاشت‌شده دارد. " +
-                        "ابتدا نگاشت پیش‌فاکتورها و فاکتورهای مربوط را حذف کنید.");
+                        "برای این مشتری ارتباط پیش‌فاکتور یا فاکتور ثبت‌شده وجود دارد. " +
+                        "ابتدا ارتباط پیش‌فاکتورها و فاکتورهای مربوط را حذف کنید.");
             }
 
             if (mapping.MapType == ExternalMappingTypeEnum.پیش_فاکتور
@@ -258,8 +258,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             && m.EntityId == f.Id), ct);
                 if (hasMappedFactor)
                     throw new MappingConflictException(
-                        "برای این پیش‌فاکتور، فاکتور نگاشت‌شده وجود دارد. " +
-                        "ابتدا نگاشت فاکتور مربوط را حذف کنید.");
+                        "برای این پیش‌فاکتور، ارتباط فاکتور ثبت‌شده وجود دارد. " +
+                        "ابتدا ارتباط فاکتور مربوط را حذف کنید.");
             }
 
             db.ExternalMappings.Remove(mapping);
@@ -282,7 +282,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         {
             if (request?.Item == null || request.MappingId == Guid.Empty
                 || request.OriginalEntityId == Guid.Empty)
-                throw new ArgumentException("نگاشت انتخاب‌شده برای ویرایش معتبر نیست.");
+                throw new ArgumentException("ارتباط انتخاب‌شده برای ویرایش معتبر نیست.");
 
             return SaveExternalMappingsCoreAsync(new SaveExternalMappingsRequest {
                 ExternalSoftwareId = request.ExternalSoftwareId,
@@ -295,7 +295,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             UpdateExternalMappingRequest edit, CancellationToken ct)
         {
             if (request == null || request.Items == null || request.Items.Count == 0 || request.Items.Count > 100)
-                throw new ArgumentException("بین ۱ تا ۱۰۰ نگاشت را انتخاب کنید.");
+                throw new ArgumentException("بین ۱ تا ۱۰۰ ارتباط را برای ثبت انتخاب کنید.");
 
             if (request.ExternalSoftwareId != Sepidar1SoftwareId
                 && request.ExternalSoftwareId != Sepidar2SoftwareId)
@@ -309,7 +309,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 || !Enum.IsDefined(typeof(ExternalMappingTypeEnum), x.MapType)
                 || x.EntityId == Guid.Empty
                 || !int.TryParse(x.ExEntityId, out var id) || id <= 0))
-                throw new ArgumentException("نوع نگاشت یا شناسه انتخاب‌شده معتبر نیست.");
+                throw new ArgumentException("نوع ارتباط یا شناسه انتخاب‌شده معتبر نیست.");
 
             var repeatedSources = request.Items.GroupBy(x => {
                 var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
@@ -322,7 +322,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var hasOther = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                 || x.MapType == ExternalMappingTypeEnum.فاکتور);
             if (hasCustomer && hasOther)
-                throw new ArgumentException("ابتدا نگاشت مشتریان را ثبت کنید؛ سپس پیش‌فاکتور یا فاکتور را انتخاب کنید.");
+                throw new ArgumentException("ابتدا ارتباط مشتریان را ثبت کنید؛ سپس پیش‌فاکتور یا فاکتور را انتخاب کنید.");
 
             // Force users to resolve customer conflicts explicitly rather than allowing
             // a bulk click to select an arbitrary Party for several CRM customers.
@@ -348,17 +348,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x => x.Id == edit.MappingId
                             && x.ExternalSoftwareId == request.ExternalSoftwareId, ct);
                     if (edited == null)
-                        throw new KeyNotFoundException("این نگاشت دیگر وجود ندارد؛ فهرست را تازه‌سازی کنید.");
+                        throw new KeyNotFoundException("این ارتباط دیگر وجود ندارد؛ فهرست را تازه‌سازی کنید.");
 
                     if (edited.MapType != request.Items[0].MapType)
-                        throw new ArgumentException("برای تغییر نوع نگاشت، یک نگاشت جدید ثبت کنید.");
+                        throw new ArgumentException("برای تغییر نوع ارتباط، ارتباط جدیدی ثبت کنید.");
 
                     if (edited.EntityId != edit.OriginalEntityId
                         || edited.EntityName != edit.OriginalEntityName
                         || edited.ExEntityName != edit.OriginalExEntityName
                         || edited.ExEntityId != edit.OriginalExEntityId)
                         throw new MappingConflictException(
-                            "این نگاشت قبلاً تغییر کرده است؛ فهرست را تازه‌سازی کنید.");
+                            "این ارتباط قبلاً تغییر کرده است؛ فهرست را تازه‌سازی کنید.");
                 }
 
                 var duplicatesInRequest = request.Items.GroupBy(x => {
@@ -384,7 +384,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     if (existing.Any(x => x.Id != edited?.Id
                         && x.EntityName == entityName
                         && x.EntityId == item.EntityId && x.MapType == item.MapType))
-                        throw new MappingConflictException($"این {item.MapType} در نرم‌افزار انتخاب‌شده قبلاً نگاشت شده است.");
+                        throw new MappingConflictException($"برای {item.MapType} در نرم‌افزار انتخاب‌شده قبلاً ارتباط ثبت شده است.");
 
                     if (existing.Any(x => x.Id != edited?.Id
                         && x.MapType == item.MapType
@@ -503,7 +503,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 .SingleOrDefaultAsync(ct);
                             if (factor == null || factor.status != FactorStatus.تایید_شده
                                 || factor.ParentReturnedId.HasValue)
-                                throw new ArgumentException("فقط فاکتور تأییدشده و غیربرگشتی قابل نگاشت است.");
+                                throw new ArgumentException("فقط می‌توان برای فاکتور تأییدشده و غیربرگشتی ارتباط ثبت کرد.");
 
                             var pfCustomerId = await db.PreFactors.AsNoTracking()
                                 .Where(x => x.Id == factor.PfactorID)
@@ -532,14 +532,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 && x.EntityId == factor.PfactorID);
                             if (crmQuotationMapping != null
                                 && crmQuotationMapping.ExEntityId != external.QuotationRef?.ToString())
-                                throw new ArgumentException("پیش‌فاکتور مرتبط با فاکتور سپیدار، با نگاشت CRM هم‌خوان نیست.");
+                                throw new ArgumentException("پیش‌فاکتور مرتبط با فاکتور سپیدار، با ارتباط ثبت‌شده در CRM هم‌خوان نیست.");
                         }
 
                         if (!confirmedCustomerMappings.TryGetValue(customerId.Value, out var customerMaps)
                             || customerMaps.Count != 1
                             || customerMaps[0].ExEntityName != "Party"
                             || customerMaps[0].ExEntityId != partyId.ToString())
-                            throw new ArgumentException("ابتدا مشتری مربوط به فاکتور یا پیش‌فاکتور را در همین نرم‌افزار به‌درستی نگاشت کنید.");
+                            throw new ArgumentException("ابتدا ارتباط مشتری مربوط به فاکتور یا پیش‌فاکتور را با همین نرم‌افزار ثبت کنید.");
                     }
 
                     if (edited != null)
@@ -575,7 +575,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "Saving selected external mappings failed.");
-                throw new MappingConflictException("اطلاعات نگاشت در این فاصله تغییر کرده است؛ فهرست را دوباره دریافت کنید.");
+                throw new MappingConflictException("اطلاعات ارتباط در این فاصله تغییر کرده است؛ فهرست را دوباره دریافت کنید.");
             }
         }
     }
