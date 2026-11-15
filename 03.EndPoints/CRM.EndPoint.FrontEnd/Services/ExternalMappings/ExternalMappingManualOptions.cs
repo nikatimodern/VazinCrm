@@ -23,7 +23,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ExternalMappingTypeEnum.مرکز_هزینه => ("BaseCenterCash", "DL"),
                 ExternalMappingTypeEnum.مشتری => ("Customer", "Party"),
                 ExternalMappingTypeEnum.کارشناسان => ("AppUser", "Party"),
-                _ => throw new ArgumentException("نوع نگاشت پشتیبانی نمی‌شود.")
+                _ => throw new ArgumentException("نوع ارتباط پشتیبانی نمی‌شود.")
             };
             var source = string.IsNullOrWhiteSpace(sourceEntity) ? defaultPair.Item1 : sourceEntity.Trim();
             var target = string.IsNullOrWhiteSpace(targetEntity) ? defaultPair.Item2 : targetEntity.Trim();
@@ -31,7 +31,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var targetValid = target == defaultPair.Item2 ||
                 type == ExternalMappingTypeEnum.تنخواه && target == "Voucher";
             if (!sourceValid || !targetValid)
-                throw new ArgumentException("نوع مبدا یا معادل انتخاب‌شده با نوع نگاشت سازگار نیست.");
+                throw new ArgumentException("نوع رکورد CRM یا معادل انتخاب‌شده با نوع ارتباط سازگار نیست.");
             return (source, target);
         }
 
@@ -50,7 +50,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 || !await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
                 throw new ArgumentException("نرم‌افزار انتخاب‌شده پشتیبانی نمی‌شود.");
             if (!Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType))
-                throw new ArgumentException("نوع نگاشت معتبر نیست.");
+                throw new ArgumentException("نوع ارتباط معتبر نیست.");
             var names = GetMappingEntityNames((ExternalMappingTypeEnum)mapType, sourceEntity, targetEntity);
             search = TextService.NormalizePersianText(TextService.ToEnglishNumber((search ?? "").Trim()));
             if (search.Length > 100) throw new ArgumentException("عبارت جستجو بیش از حد طولانی است.");
