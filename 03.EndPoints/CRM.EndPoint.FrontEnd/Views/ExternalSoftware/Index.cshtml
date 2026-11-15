@@ -4,39 +4,65 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.7" asp-append-version="true" />
 }
 
-<div id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme mx-2 mx-md-3 my-3" dir="rtl">
+<main id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme" dir="rtl">
     @Html.AntiForgeryToken()
-    <header class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <div>
-            <h1 class="h5 mb-1">مدیریت نرم‌افزارهای مالی</h1>
-            <p class="small text-muted mb-0">برای مدیریت ارتباط‌ها، نرم‌افزار موردنظر را انتخاب کنید.</p>
+
+    <header class="esw-page-header">
+        <div class="esw-page-title">
+            <span class="esw-eyebrow">مدیریت ارتباطات</span>
+            <div class="esw-title-group">
+                <span class="esw-title-icon" aria-hidden="true"><i class="fas fa-network-wired"></i></span>
+                <div>
+                    <h1>مدیریت نرم‌افزارهای مالی</h1>
+                    <p>نرم‌افزار مالی موردنظر را انتخاب کنید تا ارتباط اطلاعات آن را با CRM مدیریت کنید.</p>
+                </div>
+            </div>
         </div>
-        <button id="addExternalSoftwareBtn" type="button" class="buttonGreen3">
-            <i class="fas fa-plus-circle" aria-hidden="true"></i> افزودن نرم‌افزار
+        <button id="addExternalSoftwareBtn" type="button" class="esw-btn esw-btn-primary">
+            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+            افزودن نرم‌افزار
         </button>
     </header>
-    <div id="externalSoftwareFeedback" role="status" aria-live="polite" class="small text-muted mb-2"></div>
-    <ul id="managedExternalSoftwareList" class="list-group gap-2"></ul>
-</div>
+
+    <section class="esw-workspace" aria-labelledby="eswSoftwareHeading">
+        <header class="esw-workspace-header">
+            <div>
+                <h2 id="eswSoftwareHeading">نرم‌افزارهای ثبت‌شده</h2>
+                <p>برای ثبت یا ویرایش ارتباط‌ها، وارد بخش تطبیق اطلاعات همان نرم‌افزار شوید.</p>
+            </div>
+            <span id="externalSoftwareCount" class="esw-total" aria-live="polite">—</span>
+        </header>
+        <div id="externalSoftwareFeedback" class="esw-feedback" role="status" aria-live="polite">
+            در حال دریافت نرم‌افزارها…
+        </div>
+        <ul id="managedExternalSoftwareList" class="esw-grid" aria-label="نرم‌افزارهای مالی"></ul>
+    </section>
+</main>
 
 <div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalTitle" aria-hidden="true" dir="rtl">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content esw-add-modal">
             <div class="modal-header">
-                <h2 class="modal-title h6 mb-0" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
+                <div>
+                    <h2 class="modal-title h6 mb-1" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
+                    <p class="text-muted small mb-0">نام نرم‌افزاری را که می‌خواهید به فهرست اضافه شود وارد کنید.</p>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <form id="externalSoftwareForm">
                 <div class="modal-body">
-                    <label for="externalSoftwareTitle" class="form-label">عنوان نرم‌افزار</label>
+                    <label for="externalSoftwareTitle" class="form-label">نام نرم‌افزار</label>
                     <input type="text" name="title" class="form-control" id="externalSoftwareTitle"
                            maxlength="120" required autocomplete="off" />
                 </div>
                 <div class="modal-footer">
-                    <button id="submitExternalSoftwareBtn" type="submit" class="buttonGreen3">ثبت</button>
+                    <button type="button" class="esw-btn esw-btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button id="submitExternalSoftwareBtn" type="submit" class="esw-btn esw-btn-primary">
+                        <i class="fas fa-check" aria-hidden="true"></i> ثبت نرم‌افزار
+                    </button>
                 </div>
             </form>
         </div>
@@ -49,8 +75,10 @@
             const root = document.getElementById("settingsConnectionsWorkspace");
             if (!root || root.dataset.initialized) return;
             root.dataset.initialized = "1";
-            const list = document.getElementById("managedExternalSoftwareList");
-            const feedback = document.getElementById("externalSoftwareFeedback");
+
+            const list = root.querySelector("#managedExternalSoftwareList");
+            const feedback = root.querySelector("#externalSoftwareFeedback");
+            const count = root.querySelector("#externalSoftwareCount");
             const modal = document.getElementById("externalSoftwareModal");
             const form = document.getElementById("externalSoftwareForm");
             const titleInput = document.getElementById("externalSoftwareTitle");
@@ -58,31 +86,64 @@
             const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value;
             let saving = false;
 
+            function icon(className) {
+                const element = document.createElement("i");
+                element.className = className;
+                element.setAttribute("aria-hidden", "true");
+                return element;
+            }
+
             function appendSoftware(item) {
-                const li = document.createElement("li");
-                li.className = "list-group-item d-flex align-items-center justify-content-between flex-wrap gap-2";
-                const title = document.createElement("strong");
-                title.className = "text-break";
-                title.textContent = item.title || "بدون عنوان";
-                li.appendChild(title);
+                const card = document.createElement("li");
+                card.className = "esw-card";
+
+                const head = document.createElement("div");
+                head.className = "esw-card-head";
+                const emblem = document.createElement("span");
+                emblem.className = "esw-card-emblem";
+                emblem.append(icon("fas fa-database"));
+
+                const identity = document.createElement("div");
+                identity.className = "esw-card-identity";
+                const name = document.createElement("h3");
+                name.textContent = item.title || "بدون عنوان";
+                const caption = document.createElement("span");
+                caption.className = "esw-card-caption";
+                caption.textContent = "نرم‌افزار مالی";
+                identity.append(name, caption);
+                head.append(emblem, identity);
+
+                const status = document.createElement("span");
+                status.className = "esw-card-status" + (item.canMap ? " is-ready" : " is-pending");
+                status.append(icon(item.canMap ? "fas fa-check-circle" : "fas fa-info-circle"));
+                status.append(document.createTextNode(item.canMap ? "قابل تطبیق" : "بدون پشتیبانی تطبیق"));
+                head.append(status);
+                card.append(head);
+
+                const footer = document.createElement("div");
+                footer.className = "esw-card-footer";
+                const description = document.createElement("p");
+                description.textContent = item.canMap
+                    ? "مشاهده ارتباط‌های ثبت‌شده و بررسی تطبیق‌های جدید"
+                    : "تطبیق اطلاعات برای این نرم‌افزار هنوز فعال نشده است.";
+                footer.append(description);
 
                 if (item.canMap) {
                     const link = document.createElement("a");
-                    link.className = "buttonGreen3 text-decoration-none";
-                    link.textContent = "تطبیق اطلاعات";
+                    link.className = "esw-btn esw-btn-primary esw-card-link";
                     link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
-                    li.appendChild(link);
-                } else {
-                    const label = document.createElement("small");
-                    label.className = "text-muted";
-                    label.textContent = "تطبیق اطلاعات برای این نرم‌افزار هنوز پشتیبانی نمی‌شود.";
-                    li.appendChild(label);
+                    link.append(document.createTextNode("مدیریت تطبیق اطلاعات"));
+                    link.append(icon("fas fa-arrow-left"));
+                    link.setAttribute("aria-label", "مدیریت تطبیق اطلاعات " + (item.title || ""));
+                    footer.append(link);
                 }
-                list.appendChild(li);
+                card.append(footer);
+                list.append(card);
             }
 
             async function loadSoftwares() {
-                feedback.textContent = "در حال دریافت نرم‌افزارهای مالی…";
+                feedback.textContent = "در حال دریافت نرم‌افزارها…";
+                feedback.classList.remove("is-error");
                 const data = await sendApiRequest({
                     url: "/ExternalSoftware/GetExternalSoftwares",
                     showLoading: false
@@ -90,26 +151,28 @@
                 if (!root.isConnected) return;
                 if (!Array.isArray(data)) {
                     feedback.textContent = "دریافت فهرست نرم‌افزارها ناموفق بود.";
+                    feedback.classList.add("is-error");
                     return;
                 }
                 list.replaceChildren();
                 data.forEach(appendSoftware);
-                feedback.textContent = data.length ? "" : "هنوز نرم‌افزار مالی ثبت نشده است.";
+                count.textContent = new Intl.NumberFormat("fa-IR").format(data.length) + " نرم‌افزار";
+                feedback.textContent = data.length ? "" : "هنوز نرم‌افزار مالی ثبت نشده است. از دکمه «افزودن نرم‌افزار» استفاده کنید.";
             }
 
             document.getElementById("addExternalSoftwareBtn").addEventListener("click", () => {
                 if (saving) return;
                 form.reset();
                 bootstrap.Modal.getOrCreateInstance(modal).show();
-                titleInput.focus();
             });
+            modal.addEventListener("shown.bs.modal", () => titleInput.focus());
 
             form.addEventListener("submit", async event => {
                 event.preventDefault();
                 if (saving || !form.reportValidity()) return;
                 const title = titleInput.value.trim();
                 if (!title || title.length > 120) {
-                    titleInput.setCustomValidity("عنوان نرم‌افزار معتبر نیست.");
+                    titleInput.setCustomValidity("نام نرم‌افزار معتبر نیست.");
                     form.reportValidity();
                     titleInput.setCustomValidity("");
                     return;
