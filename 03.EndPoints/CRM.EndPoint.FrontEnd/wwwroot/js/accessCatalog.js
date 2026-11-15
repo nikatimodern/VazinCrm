@@ -680,11 +680,28 @@
         }
     }
 
-    // Keep color and wording consistent after both individual and bulk decisions.
-    function syncRoleDeleteChoiceColor(select) {
-        const state = select.value === "keep" || select.value === "remove" ? select.value : "none";
-        select.dataset.decision = state;
-        select.closest(".ac-role-delete-perm")?.setAttribute("data-decision", state);
+    // Each permission has three states: keep, remove, and not decided.
+    function syncRoleDeleteDecisionRow(row) {
+        const userId = row.dataset.deleteChoiceUser;
+        const permissionId = row.dataset.deleteChoicePermission;
+        const state = roleDeleteChoices.get(roleDeleteKey(userId, permissionId)) || "none";
+        row.dataset.decision = state;
+        for (const button of row.querySelectorAll("[data-delete-choice]"))
+            button.setAttribute("aria-pressed", String(button.dataset.deleteChoice === state));
+    }
+
+    function chooseRoleDeletePermission(button) {
+        if (!roleDeletePreview || roleMutating || button.disabled) return;
+        const userId = button.dataset.deleteChoiceUser;
+        const permissionId = button.dataset.deleteChoicePermission;
+        const person = roleDeletePreview.users.find(user => user.id === userId);
+        if (!person?.permissions.some(permission => permission.id === permissionId)) return;
+        const key = roleDeleteKey(userId, permissionId);
+        const choice = button.dataset.deleteChoice;
+        if (roleDeleteChoices.get(key) === choice) roleDeleteChoices.delete(key);
+        else roleDeleteChoices.set(key, choice);
+        syncRoleDeleteDecisionRow(button.closest(".ac-role-delete-perm"));
+        updateRoleDeleteSummary();
     }
 
     function renderRoleDeleteUsers() {
@@ -739,18 +756,30 @@
             } else {
                 const grid = text("div", null, "ac-role-delete-perms");
                 for (const permission of user.permissions) {
-                    const line = text("label", null, "ac-role-delete-perm");
+                    const line = text("div", null, "ac-role-delete-perm");
+                    line.dataset.deleteChoiceUser = user.id;
+                    line.dataset.deleteChoicePermission = permission.id;
                     const desc = text("span", null, "ac-role-delete-perm-text");
                     desc.append(text("strong", permission.title), text("small", permission.key));
-                    const select = document.createElement("select");
-                    select.dataset.deleteChoice = permission.id;
-                    select.dataset.deleteChoiceUser = user.id;
-                    select.setAttribute("aria-label", "تعیین تکلیف " + permission.title + " برای " + user.name);
-                    for (const [value, label] of [["", "تعیین نشده"], ["keep", "حفظ اختصاصی"], ["remove", "حذف مجوز"]])
-                        select.add(new Option(label, value));
-                    select.value = roleDeleteChoices.get(roleDeleteKey(user.id, permission.id)) || "";
-                    line.append(desc, select);
-                    syncRoleDeleteChoiceColor(select);
+                    const actions = text("div", null, "ac-role-delete-choice-actions");
+                    actions.setAttribute("role", "group");
+                    actions.setAttribute("aria-label", "تعیین تکلیف " + permission.title + " برای " + user.name);
+                    for (const [mode, title, iconClass] of [
+                        ["keep", "حفظ", "fa-check"], ["remove", "حذف", "fa-times"]
+                    ]) {
+                        const button = text("button", null, "ac-role-delete-choice");
+                        button.type = "button";
+                        button.dataset.deleteChoice = mode;
+                        button.dataset.deleteChoiceUser = user.id;
+                        button.dataset.deleteChoicePermission = permission.id;
+                        button.setAttribute("aria-label", title + " مجوز " + permission.title + " برای " + user.name);
+                        const icon = text("i", null, "fas " + iconClass);
+                        icon.setAttribute("aria-hidden", "true");
+                        button.append(icon, text("span", title));
+                        actions.append(button);
+                    }
+                    line.append(desc, actions);
+                    syncRoleDeleteDecisionRow(line);
                     grid.append(line);
                 }
                 card.append(grid);
@@ -767,11 +796,9 @@
             if (mode === "reset") roleDeleteChoices.delete(item.key);
             else roleDeleteChoices.set(item.key, mode);
         }
-        for (const select of root.querySelectorAll("[data-delete-choice]")) {
-            if (userId && select.dataset.deleteChoiceUser !== userId) continue;
-            select.value = roleDeleteChoices.get(roleDeleteKey(select.dataset.deleteChoiceUser,
-                select.dataset.deleteChoice)) || "";
-            syncRoleDeleteChoiceColor(select);
+        for (const row of root.querySelectorAll(".ac-role-delete-perm")) {
+            if (userId && row.dataset.deleteChoiceUser !== userId) continue;
+            syncRoleDeleteDecisionRow(row);
         }
         updateRoleDeleteSummary();
     }
@@ -1351,6 +1378,8 @@
             assignRoleDeleteChoices(userBulk.dataset.deleteUserMode, userBulk.dataset.deleteUserId);
             return;
         }
+        const permissionChoice = event.target.closest(".ac-role-delete-choice[data-delete-choice]");
+        if (permissionChoice) { chooseRoleDeletePermission(permissionChoice); return; }
         const target = event.target.closest("[data-action]");
         if (!target) {
             const select = event.target.closest("[data-select-entity]");
@@ -1459,14 +1488,6 @@
     root.querySelector("[data-user-permission-search]").addEventListener("input", renderUserPermissions, { signal });
     root.querySelector("[data-user-only-overrides]").addEventListener("change", renderUserPermissions, { signal });
     root.addEventListener("change", event => {
-        if (event.target.matches("[data-delete-choice]") && roleDeletePreview && !roleMutating) {
-            const key = roleDeleteKey(event.target.dataset.deleteChoiceUser, event.target.dataset.deleteChoice);
-            if (event.target.value === "keep" || event.target.value === "remove")
-                roleDeleteChoices.set(key, event.target.value);
-            else roleDeleteChoices.delete(key);
-            syncRoleDeleteChoiceColor(event.target);
-            updateRoleDeleteSummary();
-        }
         if (event.target.matches("[data-role-permission-id], [data-role-entity-toggle]"))
             editRolePermission(event.target);
         if (event.target.matches("[data-user-role-id]")) {

@@ -397,10 +397,8 @@
 #accessCatalog .ac-role-delete-perm-text { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 #accessCatalog .ac-role-delete-perm-text strong { font-size: 12px; display: block; font-weight: 600; }
 #accessCatalog .ac-role-delete-perm-text small { color: var(--ac-muted); font-size: 10px; direction: ltr; }
-#accessCatalog .ac-role-delete-perm select { border: 1px solid var(--ac-border); border-radius: 6px;
-    background: white; color: inherit; font-size: 11px; min-height: 32px; padding: 4px 6px; width: 140px; max-width: 46%; }
-/* Decision colors are visible on both the permission row and its select.
-   Unselected items retain the neutral base style. */
+/* The permission row and the active segmented decision share a status color.
+   Unselected items retain neutral styling. */
 #accessCatalog .ac-role-delete-perm[data-decision="keep"] {
     background: #eff9f3; border-radius: 6px; box-shadow: inset 3px 0 #278253;
     padding-inline: 9px;
@@ -411,11 +409,26 @@
 }
 #accessCatalog .ac-role-delete-perm[data-decision="keep"] .ac-role-delete-perm-text strong { color: #216844; }
 #accessCatalog .ac-role-delete-perm[data-decision="remove"] .ac-role-delete-perm-text strong { color: #a82c35; }
-#accessCatalog .ac-role-delete-perm select[data-decision="keep"] {
-    background: #ddf5e7; border-color: #64aa82; color: #185e38; font-weight: 600;
+#accessCatalog .ac-role-delete-choice-actions {
+    display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
 }
-#accessCatalog .ac-role-delete-perm select[data-decision="remove"] {
-    background: #ffe0e1; border-color: #df8588; color: #922128; font-weight: 600;
+#accessCatalog .ac-role-delete-choice {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    min-width: 65px; min-height: 32px; padding: 5px 10px; font-size: 11px;
+    font-weight: 600; border: 1px solid var(--ac-border); border-radius: 6px;
+    color: var(--ac-muted); background: #fff; cursor: pointer; white-space: nowrap;
+    transition: background-color .15s, border-color .15s, color .15s;
+}
+#accessCatalog .ac-role-delete-choice i { font-size: 10px; }
+#accessCatalog .ac-role-delete-choice:hover { background: #f3f5f7; }
+#accessCatalog .ac-role-delete-choice[data-delete-choice="keep"][aria-pressed="true"] {
+    background: #ddf5e7; border-color: #64aa82; color: #185e38;
+}
+#accessCatalog .ac-role-delete-choice[data-delete-choice="remove"][aria-pressed="true"] {
+    background: #ffe0e1; border-color: #df8588; color: #922128;
+}
+#accessCatalog .ac-role-delete-choice[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 1px currentColor;
 }
 /* Bulk buttons communicate the consequence but do not override actual saved selections. */
 #accessCatalog .ac-role-delete-buttons [data-delete-user-mode="keep"],
@@ -437,6 +450,7 @@
     #accessCatalog .ac-role-delete-user-head { padding: 9px 10px; }
     #accessCatalog .ac-role-delete-user-actions { width: 100%; justify-content: space-between; }
     #accessCatalog .ac-role-delete-perms { padding-inline: 9px; }
-    #accessCatalog .ac-role-delete-perm select { min-height: 37px; }
+    #accessCatalog .ac-role-delete-choice { min-height: 36px; min-width: 60px; padding: 5px 8px; }
+    #accessCatalog .ac-role-delete-perm { gap: 6px; }
     #accessCatalog .ac-role-delete-summary { align-items: flex-start; }
 }
