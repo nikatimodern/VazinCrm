@@ -562,6 +562,13 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             return crmSides;
         }
 
+        private static IEnumerable<int[]> ExternalTargetBatches(
+            List<MappingReportEntry> entries, string entityName)
+            => entries.Where(x => x.TargetEntity == entityName)
+                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
+                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
+                .Where(x => x > 0).Distinct().Chunk(350);
+
         private async Task<Dictionary<(string, int), MappingReportSide>> LoadSepidarMappingSidesAsync(
             List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
         {
@@ -572,22 +579,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var sepidarContext = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb
                 : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
-            var quotationIds = entries.Where(x => x.TargetEntity == nameof(Quotation))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
-            var invoiceIds = entries.Where(x => x.TargetEntity == nameof(Invoice))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
-            var partyIds = entries.Where(x => x.TargetEntity == nameof(Party))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
-
             if (sepidarContext != null)
             {
-            foreach (var batch in quotationIds.Chunk(350))
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Quotation)))
             {
                 var data = await sepidarContext.Quotations.AsNoTracking()
                     .Where(x => batch.Contains(x.QuotationId))
@@ -601,7 +595,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
             }
 
-            foreach (var batch in invoiceIds.Chunk(350))
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Invoice)))
             {
                 var data = await sepidarContext.SalesInvoices.AsNoTracking()
                     .Where(x => batch.Contains(x.InvoiceId))
@@ -623,7 +617,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         $"PartyId: {x.PartyId} | FiscalYearRef: {x.FiscalYearId}");
             }
 
-            foreach (var batch in partyIds.Chunk(350))
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Party)))
             {
                 var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
@@ -633,7 +627,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
                         "شخص " + softwareTitle,
-                        x.PartyId.ToString(), x.PartyId.ToString(), "",
+                        x.PartyId.ToString(), x.DlCode ?? "", "",
                         null, global::CRM.EndPoint.FrontEnd.Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
                         string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}",
                         x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker);
@@ -641,9 +635,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 // Enrich the other saved Sepidar mapping types when their
                 // external entity names are known, without assuming custom schemas.
-                var vouchers = entries.Where(x => x.TargetEntity == nameof(Voucher) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in vouchers.Chunk(350))
+                foreach (var batch in ExternalTargetBatches(entries, nameof(Voucher)))
                 {
                     var rows = await sepidarContext.Vouchers.AsNoTracking()
                         .Where(x => batch.Contains(x.VoucherId))
@@ -651,14 +643,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         .ToListAsync(ct);
                     foreach (var x in rows)
                         externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
-                            "Voucher", x.VoucherId.ToString(),
+                            "سند حسابداری", x.VoucherId.ToString(),
                             x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
                             x.Description, $"سال مالی: {x.FiscalYearRef}");
                 }
 
-                var payments = entries.Where(x => x.TargetEntity == nameof(PaymentHeader) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in payments.Chunk(350))
+                foreach (var batch in ExternalTargetBatches(entries, nameof(PaymentHeader)))
                 {
                     var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
                         .Where(x => batch.Contains(x.PaymentHeaderId))
@@ -667,41 +657,22 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         .ToListAsync(ct);
                     foreach (var x in rows)
                         externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
-                            "اعلامیه پرداخت نرم‌افزار مالی", x.PaymentHeaderId.ToString(),
+                            "اعلامیه پرداخت", x.PaymentHeaderId.ToString(),
                             x.Number.ToString(), FormatLegacyPersianDate(x.Date),
                             x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
                 }
 
-                var dlIds = entries.Where(x => x.TargetEntity == nameof(DL) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in dlIds.Chunk(350))
+                foreach (var batch in ExternalTargetBatches(entries, nameof(DL)))
                 {
                     var rows = await sepidarContext.DLs.AsNoTracking()
                         .Where(x => batch.Contains(x.DLId))
                         .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
                     foreach (var x in rows)
                         externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
-                            "حساب تفصیلی نرم‌افزار مالی", x.DLId.ToString(),
+                            "حساب تفصیلی", x.DLId.ToString(),
                             x.Code, "", null, x.Title, "");
                 }
 
-                var cashIdsInSepidar = entries.Where(x => (x.TargetEntity == "Cash"
-                        || x.TargetEntity == "SepidarCash") && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in cashIdsInSepidar.Chunk(350))
-                {
-                    var rows = await sepidarContext.SepidarCash.AsNoTracking()
-                        .Where(x => batch.Contains(x.CashId))
-                        .Select(x => new { x.CashId, x.Title }).ToListAsync(ct);
-                    foreach (var x in rows)
-                    {
-                        var side = new MappingReportSide(
-                            "تنخواه نرم‌افزار مالی", x.CashId.ToString(),
-                            x.CashId.ToString(), "", null, x.Title, "");
-                        externalSides[("Cash", x.CashId)] = side;
-                        externalSides[("SepidarCash", x.CashId)] = side;
-                    }
-                }
             }
 
             return externalSides;
