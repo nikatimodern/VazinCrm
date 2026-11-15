@@ -3290,28 +3290,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .SingleOrDefaultAsync(ct);
 
             if (mapping == null)
-                throw new InvalidOperationException(
-                    "کارشناس فروش این فاکتور در نرم‌افزار مالی مشخص نشده است.");
+                throw new InvalidOperationException("ارتباط کارشناس فروش این فاکتور با نرم‌افزار مالی انتخاب‌شده مشخص نشده است");
 
             if (mapping.ExEntityName != nameof(Party)
                 || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
-                throw new InvalidOperationException(
-                    "اطلاعات کارشناس فروش در نرم‌افزار مالی معتبر نیست.");
+                throw new InvalidOperationException("اطلاعات کارشناس فروش در نرم‌افزار مالی معتبر نیست.");
 
             // First verify that the mapped external person exists, then verify
             // whether Sepidar allows that person to act as an invoice broker.
             var isBroker = await service.GetSepidarPartyIsBrokerAsync(brokerPartyId, ct);
             if (!isBroker.HasValue)
-                throw new InvalidOperationException(
-                    "شخص مربوط به کارشناس فروش در سپیدار پیدا نشد.");
+                throw new InvalidOperationException("شخص مربوط به کارشناس فروش در سپیدار پیدا نشد.");
             if (!isBroker.Value)
-                throw new InvalidOperationException(
-                    "این کارشناس در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
+                throw new InvalidOperationException("این کارشناس در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
 
             var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
             if (broker == null || broker.DlRef <= 0)
-                throw new InvalidOperationException(
-                    "برای واسط فروش این فاکتور در سپیدار کد تفصیلی فعال وجود ندارد.");
+                throw new InvalidOperationException("برای واسط فروش این فاکتور در سپیدار کد تفصیلی فعال وجود ندارد.");
 
             return brokerPartyId;
         }
