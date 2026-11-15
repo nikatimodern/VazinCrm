@@ -45,6 +45,20 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
         return persons.Select(c => ((c.CompanyName ?? "") + " " + (c.AgentName ?? "")).Trim()).FirstOrDefaultAsync(ct);
     }
 
+    public Task<bool> IsDestinationBankAccountValidAsync(Guid accountId, Guid targetPersonId, RequestAmountTargetKind kind, CancellationToken ct)
+    {
+        var account = db.BankAccounts.AsNoTracking().Where(b => b.Id == accountId);
+        // Cashier bank accounts have no CustomerId relationship; preserve their existing flow.
+        if (kind == RequestAmountTargetKind.Cashier)
+            return account.AnyAsync(b => b.BankAccountType == BankAccountTypeEnum.تنخواه_دار, ct);
+
+        // For supplier/customer payments the account must belong to the exact person.
+        // Dual-role people may have either of their supplier/customer account types.
+        return account.AnyAsync(b => b.CustomerId == targetPersonId &&
+            (b.BankAccountType == BankAccountTypeEnum.تامین_کننده ||
+             b.BankAccountType == BankAccountTypeEnum.مشتری), ct);
+    }
+
     public Task<decimal> GetPaidAmountAsync(Guid id, CancellationToken ct) => db.RequestAmountPayments.Where(p => p.RequestAmountId == id).SumAsync(p => p.Amount, ct);
     public Task<Dictionary<Guid, RequestPaymentBalance>> GetPaymentBalancesAsync(List<Guid> ids, Guid excluded, CancellationToken ct) => db.RequestAmounts.AsNoTracking().Where(r => ids.Contains(r.Id)).Select(r => new RequestPaymentBalance(r.Id, r.AcceptedAmount, r.RequestAmountPayments.Where(p => p.PaymentId != excluded).Sum(p => p.Amount))).ToDictionaryAsync(r => r.Id, ct);
     public void Add(RequestAmount item) => db.RequestAmounts.Add(item);
