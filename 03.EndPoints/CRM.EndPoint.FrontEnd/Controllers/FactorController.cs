@@ -3291,27 +3291,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (mapping == null)
                 throw new InvalidOperationException(
-                    "برای ثبت واسط این فاکتور، کارشناس فروش در نرم‌افزار مالی انتخاب‌شده نگاشت نشده است.");
+                    "برای کارشناس فروش این فاکتور، شخص متناظری در نرم‌افزار مالی انتخاب‌شده مشخص نشده است. ابتدا شخص مربوط را در بخش مدیریت نرم‌افزارهای خارجی انتخاب کنید.");
 
             if (mapping.ExEntityName != nameof(Party)
                 || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
                 throw new InvalidOperationException(
-                    "نگاشت کارشناس فروش در نرم‌افزار مالی انتخاب‌شده معتبر نیست و باید اصلاح شود.");
+                    "شخص انتخاب‌شده برای کارشناس فروش در نرم‌افزار مالی معتبر نیست. لطفاً شخص مربوط را دوباره انتخاب کنید.");
 
             // First verify that the mapped external person exists, then verify
             // whether Sepidar allows that person to act as an invoice broker.
             var isBroker = await service.GetSepidarPartyIsBrokerAsync(brokerPartyId, ct);
             if (!isBroker.HasValue)
                 throw new InvalidOperationException(
-                    "شخص متناظر با کارشناس فروش در سپیدار پیدا نشد؛ نگاشت کارشناس را بررسی کنید.");
+                    "شخص انتخاب‌شده برای کارشناس فروش در سپیدار پیدا نشد. لطفاً شخص مربوط را دوباره انتخاب کنید.");
             if (!isBroker.Value)
                 throw new InvalidOperationException(
-                    "کارشناس فروش نگاشت شده است، اما شخص متناظر او در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
+                    "این کارشناس در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
 
             var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
             if (broker == null || broker.DlRef <= 0)
                 throw new InvalidOperationException(
-                    "کارشناس در سپیدار به‌عنوان واسط فروش تعریف شده، اما کد تفصیلی فعال و معتبر ندارد.");
+                    "برای واسط فروش این فاکتور در سپیدار کد تفصیلی فعال وجود ندارد.");
 
             return brokerPartyId;
         }
@@ -3422,7 +3422,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
                 // A mapping change after Preview requires a fresh confirmation.
                 if (request.IncludeBroker && request.PreviewBrokerPartyId != brokerPartyId)
-                    throw new InvalidOperationException("نگاشت واسط پس از پیش‌نمایش تغییر کرده است؛ پیش‌نمایش فاکتور را مجدداً بررسی کنید.");
+                    throw new InvalidOperationException("شخص مربوط به کارشناس فروش پس از پیش‌نمایش تغییر کرده است. دوباره پیش‌نمایش فاکتور را بررسی کنید.");
                 var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview,
                     request.InvoiceNumber, ct, brokerPartyId: brokerPartyId);
 
@@ -3751,7 +3751,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return BadRequest("نوع فروش معتبر نیست.");
 
                 if (request.ItemMappings == null || request.ItemMappings.Count == 0)
-                    return BadRequest("نگاشت کالاهای نرم‌افزار ارسال نشده است.");
+                    return BadRequest("کالای متناظر در نرم‌افزار مالی برای اقلام پیش‌فاکتور انتخاب نشده است.");
 
                 var service = GetSepidarService(request.ExternalSoftwareId);
 
