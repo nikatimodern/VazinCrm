@@ -680,6 +680,13 @@
         }
     }
 
+    // Keep color and wording consistent after both individual and bulk decisions.
+    function syncRoleDeleteChoiceColor(select) {
+        const state = select.value === "keep" || select.value === "remove" ? select.value : "none";
+        select.dataset.decision = state;
+        select.closest(".ac-role-delete-perm")?.setAttribute("data-decision", state);
+    }
+
     function renderRoleDeleteUsers() {
         const container = root.querySelector("[data-role-delete-users]");
         container.replaceChildren();
@@ -743,6 +750,7 @@
                         select.add(new Option(label, value));
                     select.value = roleDeleteChoices.get(roleDeleteKey(user.id, permission.id)) || "";
                     line.append(desc, select);
+                    syncRoleDeleteChoiceColor(select);
                     grid.append(line);
                 }
                 card.append(grid);
@@ -763,6 +771,7 @@
             if (userId && select.dataset.deleteChoiceUser !== userId) continue;
             select.value = roleDeleteChoices.get(roleDeleteKey(select.dataset.deleteChoiceUser,
                 select.dataset.deleteChoice)) || "";
+            syncRoleDeleteChoiceColor(select);
         }
         updateRoleDeleteSummary();
     }
@@ -1455,6 +1464,7 @@
             if (event.target.value === "keep" || event.target.value === "remove")
                 roleDeleteChoices.set(key, event.target.value);
             else roleDeleteChoices.delete(key);
+            syncRoleDeleteChoiceColor(event.target);
             updateRoleDeleteSummary();
         }
         if (event.target.matches("[data-role-permission-id], [data-role-entity-toggle]"))
