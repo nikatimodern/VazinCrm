@@ -34,7 +34,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         {
             if (softwareId == Guid.Empty || !mappings.SupportsMapping(softwareId)
                 || !await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
-                return RedirectToAction(nameof(Index));
+                return NotFound();
 
             var software = await db.ExternalSoftwares.AsNoTracking()
                 .Where(x => x.Id == softwareId)
@@ -44,16 +44,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             ViewData["SoftwareTitle"] = software.Title;
             return View();
         }
-
-        // Redirect old bookmarks to the canonical entry points, without duplicating actions.
-        [HttpGet("/ASetting/ExternalSoftware")]
-        public IActionResult LegacySoftwareList() => RedirectToAction(nameof(Index));
-
-        [HttpGet("/ExternalMapping/Index")]
-        public IActionResult LegacyMapping(Guid? softwareId)
-            => softwareId.HasValue && softwareId.Value != Guid.Empty
-                ? RedirectToAction(nameof(Mapping), new { softwareId = softwareId.Value })
-                : RedirectToAction(nameof(Index));
 
         public sealed class AddExternalSoftwareRequest
         {
