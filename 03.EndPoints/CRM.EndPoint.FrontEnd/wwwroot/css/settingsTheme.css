@@ -289,12 +289,22 @@
 #settingsConnectionsWorkspace .esw-title-group h1 { margin:0; }
 #settingsConnectionsWorkspace .esw-card-head { margin-bottom:10px; }
 #settingsConnectionsWorkspace .esw-card-details {
+    position:relative;
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:10px 22px;
     margin:0;
     padding:12px 0;
     border-top:1px solid #EDF0F3;
+}
+#settingsConnectionsWorkspace .esw-card-details::before {
+    content:"";
+    position:absolute;
+    inset-block:12px;
+    inset-inline-start:50%;
+    width:1px;
+    background:#E3E7ED;
+    pointer-events:none;
 }
 #settingsConnectionsWorkspace .esw-detail {
     display:flex;
@@ -307,7 +317,7 @@
     flex:0 0 auto;
     margin:0;
     color:var(--esw-muted);
-    font:500 13px/1.7 IRANSansMedium,sans-serif;
+    font:500 12px/1.7 IRANSansMedium,sans-serif;
     white-space:nowrap;
 }
 #settingsConnectionsWorkspace .esw-detail dd {
@@ -316,7 +326,7 @@
     margin:0;
     text-align:left;
     color:var(--esw-primary);
-    font:700 14px/1.7 IRANSansBold,sans-serif;
+    font:700 13px/1.7 IRANSansBold,sans-serif;
     overflow-wrap:anywhere;
     unicode-bidi:plaintext;
 }
@@ -339,14 +349,15 @@
     padding:5px 0 0;
     border-top:0;
 }
-#settingsConnectionsWorkspace .esw-card-footer { justify-content:flex-start;padding-top:10px; }
+#settingsConnectionsWorkspace .esw-card-footer { justify-content:flex-end;padding-top:10px; }
 #settingsConnectionsWorkspace .esw-card-footer:only-child { margin-top:0; }
 @media (max-width:580px) {
     #settingsConnectionsWorkspace .esw-card-details {
         grid-template-columns:minmax(0,1fr);
         gap:8px;
     }
+    #settingsConnectionsWorkspace .esw-card-details::before { display:none; }
     #settingsConnectionsWorkspace .esw-detail { gap:8px; }
-    #settingsConnectionsWorkspace .esw-detail dt { font-size:12px; }
-    #settingsConnectionsWorkspace .esw-detail dd { font-size:13px; }
+    #settingsConnectionsWorkspace .esw-detail dt { font-size:11px; }
+    #settingsConnectionsWorkspace .esw-detail dd { font-size:12px; }
 }
