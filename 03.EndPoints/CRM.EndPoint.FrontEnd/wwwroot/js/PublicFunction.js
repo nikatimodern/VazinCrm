@@ -364,7 +364,7 @@ const calculateInvoiceTotals = (
 
 
 const calculateItemTax = (amount, taxPercent) => {
-    return Math.floor(amount * taxPercent / 100);
+    return Math.floor(amount * taxPercent / 100); // تقریب رو به پایین
 };
 
 const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect, fieldRules = {} } = {}) => {
