@@ -1458,7 +1458,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         foreach (var item in preFactor?.PreFactorItems ?? [])
         {
             if (!mappingByItemId.TryGetValue(item.Id, out var mapping))
-                throw new InvalidOperationException($"نگاشت کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
+                throw new InvalidOperationException($"کالای متناظر در سپیدار برای «{item.Product}» انتخاب نشده است.");
 
             if (mapping.ExternalItemId <= 0)
                 throw new InvalidOperationException($"کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
