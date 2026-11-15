@@ -205,6 +205,7 @@
             if (signal.aborted) return;
             if (result?.success) {
                 toastifySuccess(result.message || "بازگردانی انجام شد.");
+                busy = false;
                 await load(1);
             }
         } finally { busy = false; }
@@ -224,6 +225,7 @@
             if (result?.success) {
                 ModalToggle(pointModal, "hide");
                 toastifySuccess("نقطه بازگردانی ثبت شد.");
+                busy = false;
                 await load(1);
             }
         } finally { busy = false; button.disabled = false; }
