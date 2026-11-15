@@ -328,6 +328,28 @@
     color:var(--map-muted);
     font-size:12px;
 }
+.legacy-mapping-report .lmr-decision-missing {
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:5px;
+    min-height:62px;
+    padding:8px 9px;
+    background:#fff0f2;
+    border:1px solid #efb5bf;
+    border-radius:7px;
+}
+.legacy-mapping-report .lmr-decision-missing strong {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    color:#ad1f3e;
+    font:700 12px/1.7 IRANSansBold,sans-serif;
+}
+.legacy-mapping-report .lmr-decision-missing small {
+    color:#a3344a;
+    font:400 10px/1.6 IRANSans,sans-serif;
+}
 .legacy-mapping-report .lmr-decision-arrow {
     display:flex;
     align-items:center;
@@ -699,6 +721,17 @@
 .legacy-mapping-report .lmr-party-badge-vendor { color:#855a13; background:#fcf3df; border-color:#f2e5c8; }
 .legacy-mapping-report .lmr-party-badge-broker { color:#7047a5; background:#f2ebfb; border-color:#e6daf8; }
 .legacy-mapping-report .lmr-party-badge-none { color:#66757a; background:#f1f3f4; border-color:#e3e8eb; }
+/* Enlarge the badges in saved mapping cards only; keep manual TomSelect compact. */
+.legacy-mapping-report .lmr-decision-card .lmr-party-badge {
+    font-size:11px;
+    padding:2px 6px;
+}
+@media(max-width:580px) {
+    .legacy-mapping-report .lmr-decision-card .lmr-party-badge {
+        font-size:10px;
+        padding:1px 4px;
+    }
+}
 .lmr-manual-modal .ts-wrapper.lmr-party-select.has-items .ts-control {
     flex-wrap:nowrap;
     overflow:hidden;
