@@ -497,8 +497,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(PreFactor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        "پیش‌فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
@@ -514,8 +515,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     var key = (nameof(Factor), x.Id);
                     crmSides[key] = new MappingReportSide(
-                        "فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
                     if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
@@ -543,9 +545,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             foreach (var reference in documentCustomers)
                 if (customerNames.TryGetValue(reference.Value, out var name)
                     && crmSides.TryGetValue(reference.Key, out var document))
-                    crmSides[reference.Key] = document with { Customer = name };
+                    crmSides[reference.Key] = document with { Title = name, Customer = name };
 
-            // All map types can be viewed, including cash, accounting and cost centers.
+            // Financial CRM sources: cash transactions and cost centers.
             var cashIds = entries.Where(x => x.Kind == nameof(Cash))
                 .Select(x => x.EntityId).Distinct().ToArray();
             foreach (var batch in cashIds.Chunk(350))
