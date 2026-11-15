@@ -94,7 +94,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             .Select(x => new { x.Id, x.CompanyName, x.AgentName, x.CustomerCode })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.Id.ToString(),
-                            title = FormatManualOption(x.CustomerCode.ToString(), (x.CompanyName + " " + x.AgentName).Trim()),
+                            title = FormatManualOption(x.CustomerCode.ToString(),
+                                CrmCustomerDisplay(x.CompanyName, x.AgentName)),
                             detail = "" }) };
                     }
                     case "PreFactor":
@@ -105,11 +106,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 (number > 0 && x.SerialNumber == number) ||
                                 (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
-                            .Select(x => new { x.Id, x.SerialNumber, x.Customer })
+                            .Select(x => new { x.Id, x.SerialNumber, x.Customer, x.AgentName })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.Id.ToString(),
-                            title = FormatManualOption(x.SerialNumber.ToString(), "پیش‌فاکتور"),
-                            detail = TextService.NormalizePersianText(x.Customer ?? "") }) };
+                            title = FormatManualOption(x.SerialNumber.ToString(),
+                                CrmCustomerDisplay(x.Customer, x.AgentName)), detail = "" }) };
                     }
                     case "Factor":
                     {
@@ -119,10 +120,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 (number > 0 && x.SerialNumber == number) ||
                                 (x.Customer != null && x.Customer.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)));
                         var rows = await query.OrderByDescending(x => x.SerialNumber)
-                            .Select(x => new { x.Id, x.SerialNumber, x.Customer })
+                            .Select(x => new { x.Id, x.SerialNumber, x.Customer, x.AgentName })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.Id.ToString(),
-                            title = FormatManualOption(x.SerialNumber.ToString(), "فاکتور"), detail = TextService.NormalizePersianText(x.Customer ?? "") }) };
+                            title = FormatManualOption(x.SerialNumber.ToString(),
+                                CrmCustomerDisplay(x.Customer, x.AgentName)), detail = "" }) };
                     }
                     case "Cash":
                     {
@@ -212,7 +214,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             .Select(x => new { x.VoucherId, x.Number, x.Description })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.VoucherId.ToString(),
-                            title = FormatManualOption(x.Number.ToString(), "Voucher"), detail = TextService.NormalizePersianText(x.Description ?? "") }) };
+                            title = FormatManualOption(x.Number.ToString(), "سند حسابداری"), detail = TextService.NormalizePersianText(x.Description ?? "") }) };
                     }
                     case "PaymentHeader":
                     {
