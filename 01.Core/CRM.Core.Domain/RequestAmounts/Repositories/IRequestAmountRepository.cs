@@ -43,6 +43,7 @@ public interface IRequestAmountRepository
     Task<Payment?> GetPaymentAsync(Guid id, bool tracking, CancellationToken ct);
     Task<Accountancy?> GetCashCreditAsync(Guid id, CancellationToken ct);
     Task<Guid?> GetCashierUserIdAsync(Guid cashierId, CancellationToken ct);
+    Task<bool> IsDestinationBankAccountValidAsync(Guid accountId, Guid targetPersonId, RequestAmountTargetKind kind, CancellationToken ct);
     Task<string?> GetTargetPersonTextAsync(RequestAmountTypeEnum type, Guid targetPersonId, CancellationToken ct);
     Task<decimal> GetPaidAmountAsync(Guid id, CancellationToken ct);
     Task<Dictionary<Guid, RequestPaymentBalance>> GetPaymentBalancesAsync(List<Guid> ids, Guid excludedPayment, CancellationToken ct);
