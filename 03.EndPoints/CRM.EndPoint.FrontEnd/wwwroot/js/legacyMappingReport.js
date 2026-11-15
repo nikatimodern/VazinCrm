@@ -202,6 +202,20 @@
             return show(side.title);
         }
 
+        function partyRoleBadges(data, escapeOption) {
+            const roles = [
+                ["isCustomer", "مشتری", "customer"],
+                ["isEmployee", "کارمند", "employee"],
+                ["isVendor", "تأمین‌کننده", "vendor"],
+                ["isBroker", "واسط", "broker"]
+            ].filter(([field]) => data[field] === true);
+            return roles.length
+                ? roles.map(([, label, kind]) =>
+                    '<span class="lmr-party-badge lmr-party-badge-' + kind + '">' +
+                    escapeOption(label) + '</span>').join("")
+                : '<span class="lmr-party-badge lmr-party-badge-none">بدون نقش</span>';
+        }
+
         function simpleSide(row, side, crm) {
             const hasData = side && side.id && side.id !== "-" &&
                 !String(side.title || "").includes("مشخص نیست");
@@ -211,8 +225,20 @@
             const numberText = number
                 ? '<small>' + escape(sideCodeLabel(row, crm)) + ': ' + escape(number) + '</small>'
                 : "";
-            return '<div class="lmr-decision-single"><strong>' +
-                escape(sideDisplayName(row, side)) + '</strong>' + numberText + '</div>';
+            // Party flags are provided only for actual Party records. Restrict badges
+            // to saved external mappings; other entity types keep their current UI.
+            const hasPartyRoles = !crm && row.status === "saved" &&
+                ["isCustomer", "isEmployee", "isVendor", "isBroker"]
+                    .some(field => typeof side[field] === "boolean");
+            const title = escape(sideDisplayName(row, side));
+            const name = '<strong' + (hasPartyRoles ? ' title="' + title + '"' : '') +
+                '>' + title + '</strong>';
+            const main = hasPartyRoles
+                ? '<div class="lmr-saved-party-main">' + name +
+                  '<span class="lmr-party-badges" aria-label="نقش‌های شخص در سپیدار">' +
+                  partyRoleBadges(side, escape) + '</span></div>'
+                : name;
+            return '<div class="lmr-decision-single">' + main + numberText + '</div>';
         }
 
         function candidateChoices(row, side) {
@@ -1136,17 +1162,7 @@
         }
 
         function renderPartyOption(data, escapeOption, selected = false) {
-            const roles = [
-                ["isCustomer", "مشتری", "customer"],
-                ["isEmployee", "کارمند", "employee"],
-                ["isVendor", "تأمین‌کننده", "vendor"],
-                ["isBroker", "واسط", "broker"]
-            ].filter(([field]) => data[field] === true);
-            const badges = roles.length
-                ? roles.map(([, label, kind]) =>
-                    '<span class="lmr-party-badge lmr-party-badge-' + kind + '">' +
-                    escapeOption(label) + '</span>').join("")
-                : '<span class="lmr-party-badge lmr-party-badge-none">بدون نقش</span>';
+            const badges = partyRoleBadges(data, escapeOption);
             const name = escapeOption(data.text || "");
             return '<div class="' + (selected ? "lmr-remote-selected " : "lmr-remote-option ") +
                 'lmr-party-line">' +
