@@ -368,3 +368,122 @@
     #settingsConnectionsWorkspace .esw-detail dt { font-size:11px; }
     #settingsConnectionsWorkspace .esw-detail dd { font-size:12px; }
 }
+
+
+/* Full software maintenance form, with scoped styles for creation, editing and deletion. */
+.esw-form-dialog { --bs-modal-width:700px; }
+.esw-add-modal .modal-body { padding:14px 17px; }
+.esw-add-modal .modal-header,.esw-add-modal .modal-footer { padding:12px 17px; }
+.esw-add-modal .modal-header .btn-close { margin:0; }
+.esw-add-modal .modal-footer { gap:8px; }
+.esw-add-modal .form-label {
+    display:block;
+    margin-bottom:5px;
+    font:500 12px/1.65 IRANSansMedium,sans-serif;
+    color:#33423E;
+}
+.esw-add-modal .form-select {
+    min-height:37px;
+    border:1px solid #A3B8B3;
+    border-radius:7px;
+    font:400 12px/1.6 IRANSans,sans-serif;
+}
+.esw-add-modal .form-select:focus { border-color:#5811B4;box-shadow:0 0 0 2px #F3EDFC; }
+.esw-add-modal .esw-form-fields {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:11px;
+}
+.esw-add-modal .esw-form-field { min-width:0; }
+.esw-add-modal .esw-field-full { grid-column:1/-1; }
+.esw-add-modal .esw-connection-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:11px 0 7px;
+    margin-top:13px;
+    border-top:1px solid #E1E5E9;
+}
+.esw-add-modal .esw-connection-header h3 {
+    margin:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:#004944;
+    font:700 13px/1.7 IRANSansBold,sans-serif;
+}
+.esw-add-modal .esw-connection-header span { color:#66757A;font-size:11px; }
+.esw-add-modal .esw-form-hint {
+    padding:7px 10px;
+    margin:0 0 10px;
+    border-radius:6px;
+    background:#F2F5F7;
+    color:#566264;
+    font-size:11px;
+    line-height:1.8;
+}
+.esw-add-modal .esw-form-hint[hidden],
+.esw-add-modal .esw-clear-field[hidden],
+.esw-add-modal .esw-modal-feedback[hidden] { display:none!important; }
+.esw-add-modal .esw-clear-field {
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-top:6px;
+    color:#66757A;
+    cursor:pointer;
+    font-size:11px;
+}
+.esw-add-modal .esw-clear-field input { accent-color:#C2185B;width:13px;height:13px; }
+.esw-add-modal .esw-modal-feedback {
+    padding:9px 11px;
+    margin-top:12px;
+    color:#A5193B;
+    background:#FCE8F0;
+    border-radius:6px;
+    font-size:12px;
+}
+.esw-add-modal .esw-btn-danger,
+#settingsConnectionsWorkspace .esw-btn-danger {
+    background:#FCE8F0;
+    border-color:#EDB5C7;
+    color:#A5193B;
+}
+.esw-add-modal .esw-btn-danger:hover,
+#settingsConnectionsWorkspace .esw-btn-danger:hover {
+    background:#F5CDD9;
+    border-color:#DA96AE;
+    color:#8F1230;
+}
+.esw-add-modal .esw-delete-warning {
+    display:flex;
+    gap:7px;
+    padding:10px;
+    margin-bottom:14px;
+    border-radius:7px;
+    color:#9A193A;
+    background:#FCE8F0;
+    font-size:12px;
+    line-height:1.85;
+}
+.esw-add-modal .esw-delete-warning i { margin-top:5px;flex-shrink:0; }
+.esw-add-modal .esw-delete-check {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin:12px 0 0;
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+    cursor:pointer;
+}
+.esw-add-modal .esw-delete-check input { width:16px;height:16px;accent-color:#C2185B; }
+.esw-add-modal .esw-btn-danger:disabled { opacity:.5;cursor:not-allowed; }
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn { min-height:32px; }
+@media(max-width:580px) {
+    .esw-form-dialog { margin:7px; }
+    .esw-add-modal .modal-body { padding:12px; }
+    .esw-add-modal .modal-header,.esw-add-modal .modal-footer { padding:10px 12px; }
+    .esw-add-modal .esw-form-fields { grid-template-columns:minmax(0,1fr);gap:9px; }
+    .esw-add-modal .esw-field-full { grid-column:auto; }
+    #settingsConnectionsWorkspace .esw-card-footer { gap:6px; }
+}
