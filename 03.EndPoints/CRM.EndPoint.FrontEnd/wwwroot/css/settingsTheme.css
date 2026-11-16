@@ -487,3 +487,197 @@
     .esw-add-modal .esw-field-full { grid-column:auto; }
     #settingsConnectionsWorkspace .esw-card-footer { gap:6px; }
 }
+
+
+/* ExternalSoftware/Settings: compact, full-width key/value maintenance. */
+#settingsConnectionsWorkspace .esw-card-footer .esw-settings-link {
+    background:#F0F5F4;
+    border:1px solid #CCDAD6;
+    color:#004944;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-settings-link:hover {
+    background:#E5F1EE;
+    border-color:#A3B8B3;
+    color:#004944;
+}
+#externalSoftwareSettingsWorkspace {
+    box-sizing:border-box;
+    width:100%;
+    padding:12px 14px 26px;
+    color:#004944;
+}
+#externalSoftwareSettingsWorkspace .esws-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px 16px;
+    padding:14px 18px;
+    margin-bottom:14px;
+    background:#fff;
+    border:1px solid #DDE1E8;
+    border-radius:11px;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-main {
+    display:flex;
+    align-items:center;
+    gap:11px;
+    min-width:0;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-icon {
+    display:grid;
+    flex:0 0 38px;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border-radius:9px;
+    background:#E7F3F0;
+    color:#004944;
+    font-size:16px;
+}
+#externalSoftwareSettingsWorkspace .esws-heading h1 {
+    margin:0;
+    font:700 18px/1.7 IRANSansBold,sans-serif;
+    color:#004944;
+    overflow-wrap:anywhere;
+}
+#externalSoftwareSettingsWorkspace .esws-heading h1 strong {
+    color:#5811B4;
+    font:inherit;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-divider {
+    color:#A3B8B3;
+    margin-inline:4px;
+}
+#externalSoftwareSettingsWorkspace .esw-btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    gap:6px;
+    min-height:32px;
+    padding:5px 11px;
+    border:1px solid transparent;
+    border-radius:7px;
+    text-decoration:none;
+    white-space:nowrap;
+    cursor:pointer;
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-primary {
+    color:#fff;
+    background:#00665C;
+    border-color:#00665C;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-primary:hover { background:#004944;color:#fff; }
+#externalSoftwareSettingsWorkspace .esw-btn-secondary {
+    color:#004944;
+    background:#F0F5F4;
+    border-color:#CCDAD6;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-secondary:hover {
+    color:#004944;
+    background:#E4EFEC;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-danger {
+    color:#A5193B;
+    border-color:#EDB5C7;
+    background:#FCE8F0;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-danger:hover { background:#F5CDD9; }
+#externalSoftwareSettingsWorkspace .esw-btn:disabled { opacity:.5;cursor:not-allowed; }
+#externalSoftwareSettingsWorkspace :is(.esw-btn,.esws-value):focus-visible {
+    outline:2px solid #5811B4;
+    outline-offset:2px;
+}
+#externalSoftwareSettingsWorkspace .esws-panel {
+    border:1px solid #DDE1E8;
+    border-radius:11px;
+    padding:16px 18px;
+    background:#fff;
+}
+#externalSoftwareSettingsWorkspace .esws-panel-title {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:0 0 12px;
+    border-bottom:1px solid #E1E6EC;
+}
+#externalSoftwareSettingsWorkspace .esws-panel-title h2 {
+    margin:0;
+    font:700 15px/1.7 IRANSansBold,sans-serif;
+}
+#externalSoftwareSettingsWorkspace .esws-feedback {
+    padding:12px 4px;
+    text-align:center;
+    font:400 12px/1.8 IRANSans,sans-serif;
+    color:#58646A;
+}
+#externalSoftwareSettingsWorkspace .esws-feedback:empty { display:none; }
+#externalSoftwareSettingsWorkspace .esws-feedback.is-error,
+#externalSoftwareSettingsWorkspace .esws-row-message.is-error { color:#A5193B; }
+#externalSoftwareSettingsWorkspace .esws-setting-list {
+    display:flex;
+    flex-direction:column;
+    gap:0;
+}
+#externalSoftwareSettingsWorkspace .esws-setting-row {
+    display:grid;
+    grid-template-columns:minmax(165px, .33fr) minmax(0,1fr);
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+    border-bottom:1px solid #EDF0F3;
+}
+#externalSoftwareSettingsWorkspace .esws-setting-row:last-child { border-bottom:0; }
+#externalSoftwareSettingsWorkspace .esws-key {
+    color:#004944;
+    font:700 13px/1.7 IRANSansBold,sans-serif;
+    overflow-wrap:anywhere;
+}
+#externalSoftwareSettingsWorkspace .esws-value-block {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+}
+#externalSoftwareSettingsWorkspace .esws-value {
+    min-width:0;
+    max-width:480px;
+    flex:1 1 240px;
+    height:35px;
+    font:500 13px/1.8 IRANSansMedium,sans-serif;
+    border-color:#D0DCE0;
+    direction:ltr;
+    text-align:right;
+}
+#externalSoftwareSettingsWorkspace .esws-actions {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex-wrap:wrap;
+    flex:0 1 auto;
+}
+#externalSoftwareSettingsWorkspace .esws-actions button[hidden] { display:none!important; }
+#externalSoftwareSettingsWorkspace .esws-row-message {
+    color:#00665C;
+    font-size:11px;
+}
+@media(max-width:750px) {
+    #externalSoftwareSettingsWorkspace { padding:9px; }
+    #externalSoftwareSettingsWorkspace .esws-heading {
+        padding:11px;
+        align-items:flex-start;
+    }
+    #externalSoftwareSettingsWorkspace .esws-heading h1 { font-size:16px; }
+    #externalSoftwareSettingsWorkspace .esws-back { margin-inline-start:auto; }
+    #externalSoftwareSettingsWorkspace .esws-panel { padding:12px; }
+    #externalSoftwareSettingsWorkspace .esws-setting-row {
+        grid-template-columns:minmax(0,1fr);
+        gap:8px;
+    }
+    #externalSoftwareSettingsWorkspace .esws-value-block { flex-wrap:wrap;gap:8px; }
+    #externalSoftwareSettingsWorkspace .esws-value { max-width:none;flex:1 1 100%; }
+    #externalSoftwareSettingsWorkspace .esws-actions { width:100%; }
+}
