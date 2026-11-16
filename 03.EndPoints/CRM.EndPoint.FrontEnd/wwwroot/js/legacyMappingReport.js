@@ -418,6 +418,14 @@
             const needsManual = row.status !== "saved" && row.status !== "pending" &&
                 !row.crmCandidates?.length && !row.options?.length &&
                 state.manualIds.includes(state.softwareId);
+            const savedAudit = row.status === "saved"
+                ? '<span class="lmr-saved-audit">' +
+                    '<span><i class="far fa-user" aria-hidden="true"></i> ثبت‌کننده: ' +
+                        escape(row.createdBy?.trim() || "نامشخص") + '</span>' +
+                    '<span><i class="far fa-calendar-alt" aria-hidden="true"></i> تاریخ ثبت: ' +
+                        escape(row.createdAt?.trim() || "نامشخص") + '</span>' +
+                  '</span>'
+                : "";
             const actions = (extra
                     ? '<button type="button" class="lmr-expand" data-expand aria-expanded="false">' +
                         '<i class="fas fa-chevron-down" aria-hidden="true"></i> توضیحات</button>'
@@ -444,6 +452,7 @@
                     '<span class="lmr-type">' + escape(typeTitle(row)) + '</span>' +
                     '<span class="lmr-state">' +
                         escape(statusNames[row.status] || row.status) + '</span>' +
+                    savedAudit +
                     (row.status === "saved" || row.status === "pending" ? "" :
                         '<span class="lmr-short-reason">' + escape(label) + '</span>') +
                     (mapped && selected
