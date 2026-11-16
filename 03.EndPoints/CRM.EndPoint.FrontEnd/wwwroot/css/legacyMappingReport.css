@@ -815,5 +815,27 @@
 @media(max-width:580px) {
     .legacy-mapping-report .lmr-page-heading h1 { flex-basis:100%;font-size:16px; }
     .legacy-mapping-report .lmr-page-heading h1 strong { font-size:15px; }
-    .legacy-mapping-report .lmr-back-link { padding:5px 9px;font-size:11px; }
+    /* In RTL, an auto inline-start margin places the return button at the left edge. */
+    .legacy-mapping-report .lmr-page-heading .lmr-back-link {
+        margin-inline-start:auto;
+        min-height:34px;
+        padding:5px 9px;
+        font-size:11px;
+    }
+    /* Consistent height and equal widths for actions in both mapping tabs. */
+    .legacy-mapping-report .lmr-section-actions {
+        width:100%;
+        gap:7px;
+        flex-wrap:nowrap;
+    }
+    .legacy-mapping-report .lmr-section-actions > .lmr-btn {
+        flex:1 1 0;
+        min-width:0;
+        height:34px;
+        min-height:34px;
+        padding:5px 6px;
+        font-size:11px;
+        line-height:1.45;
+        white-space:nowrap;
+    }
 }
