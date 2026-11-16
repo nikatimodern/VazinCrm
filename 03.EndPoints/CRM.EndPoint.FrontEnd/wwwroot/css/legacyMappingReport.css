@@ -839,3 +839,35 @@
         white-space:nowrap;
     }
 }
+
+
+/* Audit information is shown in the empty side of saved-record headers only. */
+.legacy-mapping-report .lmr-decision-card .lmr-saved-audit {
+    display:inline-flex;
+    align-items:center;
+    flex-wrap:wrap;
+    column-gap:15px;
+    row-gap:3px;
+    margin-inline-start:auto;
+    color:var(--map-muted);
+    font:400 11px/1.7 IRANSans,sans-serif;
+}
+.legacy-mapping-report .lmr-decision-card .lmr-saved-audit > span {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    min-width:0;
+    overflow-wrap:anywhere;
+}
+.legacy-mapping-report .lmr-decision-card .lmr-saved-audit i {
+    color:#81928E;
+    font-size:11px;
+}
+@media(max-width:580px) {
+    .legacy-mapping-report .lmr-decision-card .lmr-saved-audit {
+        flex:1 1 100%;
+        margin-inline-start:0;
+        column-gap:12px;
+        font-size:10px;
+    }
+}
