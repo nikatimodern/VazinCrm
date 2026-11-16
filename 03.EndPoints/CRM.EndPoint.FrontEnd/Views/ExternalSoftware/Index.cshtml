@@ -4,7 +4,7 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.13" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.14" asp-append-version="true" />
 }
 
 <section id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme" dir="rtl">
@@ -221,11 +221,13 @@
             function makeButton(action, label, className, iconName, item) {
                 const button = document.createElement("button");
                 button.type = "button";
-                button.className = "esw-btn " + className;
+                button.className = "esw-btn esw-icon-btn " + className;
                 button.dataset.action = action;
                 button.dataset.softwareId = item.id;
-                button.setAttribute("aria-label", label + " " + (item.title || ""));
-                button.append(icon(iconName), document.createTextNode(label));
+                const accessibleLabel = label + " " + (item.title || "");
+                button.setAttribute("aria-label", accessibleLabel);
+                button.title = accessibleLabel;
+                button.append(icon(iconName));
                 return button;
             }
             function appendSoftware(item) {
@@ -275,22 +277,29 @@
 
                 const footer = document.createElement("div");
                 footer.className = "esw-card-footer";
-                footer.append(makeButton("edit", "ویرایش", "esw-btn-secondary", "fas fa-edit", item));
-                footer.append(makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item));
+                const cardTools = document.createElement("div");
+                cardTools.className = "esw-card-tools";
+                cardTools.append(
+                    makeButton("edit", "ویرایش", "esw-btn-edit", "fas fa-edit", item),
+                    makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item)
+                );
+                const navigation = document.createElement("div");
+                navigation.className = "esw-card-navigation";
                 const settingsLink = document.createElement("a");
                 settingsLink.className = "esw-btn esw-btn-secondary esw-settings-link";
                 settingsLink.href = "/ExternalSoftware/Settings?softwareId=" + encodeURIComponent(item.id);
                 settingsLink.append(icon("fas fa-cogs"), document.createTextNode("تنظیمات نرم‌افزار"));
                 settingsLink.setAttribute("aria-label", "تنظیمات نرم‌افزار " + (item.title || ""));
-                footer.append(settingsLink);
+                navigation.append(settingsLink);
                 if (item.canMap) {
                     const link = document.createElement("a");
                     link.className = "esw-btn esw-btn-primary esw-card-link";
                     link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
                     link.append(document.createTextNode("مدیریت تطبیق اطلاعات"), icon("fas fa-arrow-left"));
                     link.setAttribute("aria-label", "مدیریت تطبیق اطلاعات " + (item.title || ""));
-                    footer.append(link);
+                    navigation.append(link);
                 }
+                footer.append(cardTools, navigation);
                 card.append(footer);
                 list.append(card);
             }
