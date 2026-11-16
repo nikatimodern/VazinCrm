@@ -43,13 +43,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             string Key, string Kind, Guid EntityId, string Status,
             string Reason, string Details, string TargetEntity, int? TargetId,
             string[] Sources, int MapType, string TargetRaw = null,
-            int[] CandidateIds = null, Guid? MappingId = null);
+            int[] CandidateIds = null, Guid? MappingId = null,
+            string CreatedAt = null, string CreatedBy = null);
 
         private sealed record MappingReportRow(
             string Key, string Kind, string Status, string Reason,
             string Details, string[] Sources,
             MappingReportSide Crm, MappingReportSide Sepidar, int MapType,
-            List<MappingReportTargetOption> Options, Guid? MappingId);
+            List<MappingReportTargetOption> Options, Guid? MappingId,
+            string CreatedAt = null, string CreatedBy = null);
 
         private sealed record MappingReportTargetOption(int Id, string Title, string Description);
 
@@ -386,7 +388,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var selected = pageSize == 0 ? ordered
                 : ordered.Skip((page - 1) * pageSize).Take(pageSize);
             var mappings = await selected.Select(x => new {
-                    x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId
+                    x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId,
+                    x.CreateDate, x.CreateDateTxt, x.UserCreator
                 }).ToListAsync(ct);
 
             var entries = mappings.Select(x => {
@@ -397,7 +400,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     "این ارتباط قبلاً در CRM ثبت شده است.",
                     x.ExEntityName, externalId > 0 ? externalId : null,
                     Array.Empty<string>(), (int)x.MapType, x.ExEntityId,
-                    null, x.Id);
+                    null, x.Id,
+                    !string.IsNullOrWhiteSpace(x.CreateDateTxt)
+                        ? x.CreateDateTxt
+                        : FormatLegacyPersianDate(x.CreateDate) + " " + x.CreateDate.ToString("HH:mm"),
+                    x.UserCreator);
             }).ToList();
 
             return new {
@@ -786,7 +793,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
                     entry.Reason, entry.Details, entry.Sources, crm, sepidar,
-                    entry.MapType, options, entry.MappingId);
+                    entry.MapType, options, entry.MappingId,
+                    entry.CreatedAt, entry.CreatedBy);
             }).ToList();
         }
     }
