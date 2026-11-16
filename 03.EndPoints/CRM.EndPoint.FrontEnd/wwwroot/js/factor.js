@@ -290,11 +290,16 @@ const showUpdateFItem = (index) => {
         ModalToggle("ItemFactorModal", "show");
     }
     fItemIndex = index;
-    mySer.convertJsonToForm(factorItems[index], "FacItem");
+    const item = factorItems[index];
+    
+    mySer.convertJsonToForm(item, "FacItem");
     
     document.getElementById("f_AddBtnId").classList.add("d-none");
     document.getElementById("f_CancelBtnId").classList.add("d-none");
     document.getElementById("f_UpBtnId").classList.remove("d-none");
+    
+    
+    toggleElementsDisabled(document.querySelector("#FacItem select[name='unit']"), item.pfItemId)
 };
 
 
@@ -305,6 +310,8 @@ const cancelUpdateFItem = () => {
     document.getElementById("f_AddBtnId").classList.remove("d-none");
     document.getElementById("f_CancelBtnId").classList.remove("d-none");
     document.getElementById("f_UpBtnId").classList.add("d-none");
+    
+    toggleElementsDisabled(document.querySelector("#FacItem select[name='unit']"), false)
     
     if (window.innerWidth < 992) {
         canselModalItemFactor();
