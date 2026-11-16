@@ -6,6 +6,7 @@ using CRM.Core.Domain.ExternalSoftwares.Enums;
 using System.Threading;
 using System.Linq;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
@@ -48,6 +49,139 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             return View();
         }
 
+
+        // Settings belong to a specific software and are keyed by the enum, not a user-supplied title.
+        [HttpGet]
+        public async Task<IActionResult> Settings(Guid softwareId, CancellationToken ct)
+        {
+            if (softwareId == Guid.Empty) return NotFound();
+            var software = await db.ExternalSoftwares.AsNoTracking()
+                .Where(x => x.Id == softwareId)
+                .Select(x => new { x.Id, x.Title })
+                .FirstOrDefaultAsync(ct);
+            if (software == null) return NotFound();
+
+            ViewData["SoftwareId"] = software.Id;
+            ViewData["SoftwareTitle"] = software.Title;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetExternalSoftwareSettings(Guid softwareId, CancellationToken ct)
+        {
+            if (softwareId == Guid.Empty) return BadRequest("شناسه نرم‌افزار معتبر نیست.");
+            if (!await db.ExternalSoftwares.AsNoTracking().AnyAsync(x => x.Id == softwareId, ct))
+                return NotFound("نرم‌افزار موردنظر پیدا نشد.");
+
+            var saved = await db.ExternalSoftwareSettings.AsNoTracking()
+                .Where(x => x.ExternalSoftwareId == softwareId)
+                .Select(x => new { x.SettingNameCode, x.SettingValue })
+                .ToListAsync(ct);
+            if (saved.GroupBy(x => x.SettingNameCode).Any(x => x.Count() > 1))
+                return Conflict("برای یک تنظیم چند مقدار ثبت شده است. اطلاعات تنظیمات نیاز به بررسی دارند.");
+
+            var settings = Enum.GetValues<ExternalSoftwareSettingTypeEnum>()
+                .Select(key => new
+                {
+                    settingNameCode = (int)key,
+                    settingName = key.ToString().Replace("_", " "),
+                    settingValue = saved.FirstOrDefault(x => x.SettingNameCode == key)?.SettingValue
+                })
+                .ToList();
+            return Ok(new { settings });
+        }
+
+        public sealed class ExternalSoftwareSettingRequest
+        {
+            public Guid SoftwareId { get; set; }
+            public int SettingNameCode { get; set; }
+            public string SettingValue { get; set; }
+            public string ExpectedValue { get; set; }
+        }
+
+        private static bool TryGetSettingType(int code, out ExternalSoftwareSettingTypeEnum setting)
+        {
+            setting = (ExternalSoftwareSettingTypeEnum)code;
+            return Enum.IsDefined(typeof(ExternalSoftwareSettingTypeEnum), setting);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveExternalSoftwareSetting(
+            [FromBody] ExternalSoftwareSettingRequest request, CancellationToken ct)
+        {
+            if (request == null || request.SoftwareId == Guid.Empty
+                || !TryGetSettingType(request.SettingNameCode, out var settingType))
+                return BadRequest("اطلاعات تنظیم معتبر نیست.");
+
+            var value = request.SettingValue?.Trim();
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 500)
+                return BadRequest("مقدار تنظیم باید بین ۱ تا ۵۰۰ کاراکتر باشد.");
+
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            if (!await db.ExternalSoftwares.AsNoTracking()
+                .AnyAsync(x => x.Id == request.SoftwareId, ct))
+                return NotFound("نرم‌افزار موردنظر پیدا نشد.");
+
+            var matches = await db.ExternalSoftwareSettings
+                .Where(x => x.ExternalSoftwareId == request.SoftwareId
+                    && x.SettingNameCode == settingType)
+                .Take(2).ToListAsync(ct);
+            if (matches.Count > 1)
+                return Conflict("چند مقدار برای این تنظیم ثبت شده است؛ ابتدا داده‌ها بررسی شوند.");
+
+            var model = matches.FirstOrDefault();
+            if (!string.Equals(model?.SettingValue, request.ExpectedValue, StringComparison.Ordinal))
+                return Conflict("مقدار این تنظیم تغییر کرده است. صفحه را به‌روزرسانی کنید.");
+
+            if (model == null)
+            {
+                model = new ExternalSoftwareSetting
+                {
+                    Id = Guid.NewGuid(),
+                    ExternalSoftwareId = request.SoftwareId,
+                    SettingNameCode = settingType
+                };
+                db.ExternalSoftwareSettings.Add(model);
+            }
+            model.SettingName = settingType.ToString().Replace("_", " ");
+            model.SettingValue = value;
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return Ok(new { saved = true, settingValue = model.SettingValue });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteExternalSoftwareSetting(
+            [FromBody] ExternalSoftwareSettingRequest request, CancellationToken ct)
+        {
+            if (request == null || request.SoftwareId == Guid.Empty
+                || !TryGetSettingType(request.SettingNameCode, out var settingType))
+                return BadRequest("اطلاعات تنظیم معتبر نیست.");
+
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            if (!await db.ExternalSoftwares.AsNoTracking()
+                .AnyAsync(x => x.Id == request.SoftwareId, ct))
+                return NotFound("نرم‌افزار موردنظر پیدا نشد.");
+
+            var matches = await db.ExternalSoftwareSettings
+                .Where(x => x.ExternalSoftwareId == request.SoftwareId
+                    && x.SettingNameCode == settingType)
+                .Take(2).ToListAsync(ct);
+            if (matches.Count > 1)
+                return Conflict("چند مقدار برای این تنظیم ثبت شده است؛ ابتدا داده‌ها بررسی شوند.");
+
+            var model = matches.FirstOrDefault();
+            if (model == null) return NotFound("مقداری برای این تنظیم ثبت نشده است.");
+            if (!string.Equals(model.SettingValue, request.ExpectedValue, StringComparison.Ordinal))
+                return Conflict("مقدار این تنظیم تغییر کرده است. صفحه را به‌روزرسانی کنید.");
+
+            db.ExternalSoftwareSettings.Remove(model);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return Ok(new { deleted = true });
+        }
 
         public sealed class SaveExternalSoftwareRequest
         {
