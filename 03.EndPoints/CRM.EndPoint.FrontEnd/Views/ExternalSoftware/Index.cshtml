@@ -38,24 +38,116 @@
 </section>
 
 <div class="modal fade" id="externalSoftwareModal" tabindex="-1" aria-labelledby="externalSoftwareModalTitle" aria-hidden="true" dir="rtl">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable esw-form-dialog">
         <div class="modal-content esw-add-modal">
             <div class="modal-header">
-                <div>
-                    <h2 class="modal-title h6 mb-1" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
-                </div>
+                <h2 class="modal-title h6 mb-0" id="externalSoftwareModalTitle">افزودن نرم‌افزار مالی</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
-            <form id="externalSoftwareForm">
+            <form id="externalSoftwareForm" autocomplete="off">
                 <div class="modal-body">
-                    <label for="externalSoftwareTitle" class="form-label">نام نرم‌افزار</label>
-                    <input type="text" name="title" class="form-control" id="externalSoftwareTitle"
-                           maxlength="120" required autocomplete="off" />
+                    <div class="esw-form-fields">
+                        <div class="esw-form-field esw-field-full">
+                            <label for="externalSoftwareTitle" class="form-label">نام نرم‌افزار</label>
+                            <input type="text" class="form-control" id="externalSoftwareTitle" maxlength="120" required />
+                        </div>
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareType" class="form-label">نوع نرم‌افزار</label>
+                            <select id="externalSoftwareType" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareBaseItemId" class="form-label">نرم‌افزار پایه</label>
+                            <select id="externalSoftwareBaseItemId" class="form-select">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="esw-connection-header">
+                        <h3><i class="fas fa-database" aria-hidden="true"></i> اطلاعات اتصال دیتابیس</h3>
+                        <span>اختیاری</span>
+                    </div>
+                    <p id="eswConnectionEditHint" class="esw-form-hint" hidden>
+                        برای حفظ مقدار قبلی، فیلد را خالی بگذارید؛ برای حذف آن، گزینه «پاک کردن» را فعال کنید.
+                    </p>
+                    <div class="esw-form-fields esw-connection-inputs">
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareDatabaseIp" class="form-label">آدرس سرور یا IP</label>
+                            <input id="externalSoftwareDatabaseIp" type="text" class="form-control" maxlength="255"
+                                   autocapitalize="off" spellcheck="false" />
+                            <label class="esw-clear-field" data-for="databaseIp" hidden>
+                                <input type="checkbox" data-clear-field="databaseIp" /> پاک کردن مقدار قبلی
+                            </label>
+                        </div>
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareDatabaseName" class="form-label">نام دیتابیس</label>
+                            <input id="externalSoftwareDatabaseName" type="text" class="form-control" maxlength="128"
+                                   autocapitalize="off" spellcheck="false" />
+                            <label class="esw-clear-field" data-for="databaseName" hidden>
+                                <input type="checkbox" data-clear-field="databaseName" /> پاک کردن مقدار قبلی
+                            </label>
+                        </div>
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareDatabaseUserName" class="form-label">نام کاربری دیتابیس</label>
+                            <input id="externalSoftwareDatabaseUserName" type="text" class="form-control" maxlength="128"
+                                   autocapitalize="off" spellcheck="false" />
+                            <label class="esw-clear-field" data-for="databaseUserName" hidden>
+                                <input type="checkbox" data-clear-field="databaseUserName" /> پاک کردن مقدار قبلی
+                            </label>
+                        </div>
+                        <div class="esw-form-field">
+                            <label for="externalSoftwareDatabasePassword" class="form-label">رمز عبور دیتابیس</label>
+                            <input id="externalSoftwareDatabasePassword" type="password" class="form-control"
+                                   maxlength="256" autocomplete="new-password" />
+                            <label class="esw-clear-field" data-for="databasePassword" hidden>
+                                <input type="checkbox" data-clear-field="databasePassword" /> پاک کردن مقدار قبلی
+                            </label>
+                        </div>
+                    </div>
+                    <div id="externalSoftwareFormFeedback" class="esw-modal-feedback" role="alert" hidden></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="esw-btn esw-btn-secondary" data-bs-dismiss="modal">انصراف</button>
                     <button id="submitExternalSoftwareBtn" type="submit" class="esw-btn esw-btn-primary">
-                        <i class="fas fa-check" aria-hidden="true"></i> ثبت نرم‌افزار
+                        <i class="fas fa-check" aria-hidden="true"></i>
+                        <span id="submitExternalSoftwareLabel">ثبت نرم‌افزار</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteExternalSoftwareModal" tabindex="-1"
+     aria-labelledby="deleteExternalSoftwareTitle" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content esw-add-modal">
+            <div class="modal-header">
+                <h2 id="deleteExternalSoftwareTitle" class="modal-title h6 mb-0">حذف نرم‌افزار مالی</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <form id="deleteExternalSoftwareForm" autocomplete="off">
+                <div class="modal-body">
+                    <p class="esw-delete-warning">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        این عملیات غیرقابل بازگشت است. اگر نرم‌افزار ارتباط ثبت‌شده یا اطلاعات وابسته داشته باشد، حذف انجام نمی‌شود.
+                    </p>
+                    <label for="deleteExternalSoftwareConfirmTitle" class="form-label">
+                        برای تأیید، نام دقیق «<strong id="deleteExternalSoftwareName"></strong>» را وارد کنید.
+                    </label>
+                    <input id="deleteExternalSoftwareConfirmTitle" class="form-control" type="text" required />
+                    <label class="esw-delete-check">
+                        <input id="deleteExternalSoftwareAcknowledgement" type="checkbox" />
+                        از حذف دائمی این نرم‌افزار اطمینان دارم.
+                    </label>
+                    <div id="deleteExternalSoftwareFeedback" class="esw-modal-feedback" role="alert" hidden></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="esw-btn esw-btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button id="deleteExternalSoftwareSubmit" type="submit" class="esw-btn esw-btn-danger" disabled>
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i> حذف دائمی
                     </button>
                 </div>
             </form>
@@ -70,15 +162,40 @@
             if (!root || root.dataset.initialized) return;
             root.dataset.initialized = "1";
 
-            const list = root.querySelector("#managedExternalSoftwareList");
-            const feedback = root.querySelector("#externalSoftwareFeedback");
-            const count = root.querySelector("#externalSoftwareCount");
-            const modal = document.getElementById("externalSoftwareModal");
-            const form = document.getElementById("externalSoftwareForm");
-            const titleInput = document.getElementById("externalSoftwareTitle");
-            const submit = document.getElementById("submitExternalSoftwareBtn");
+            const get = id => document.getElementById(id);
+            const list = get("managedExternalSoftwareList");
+            const feedback = get("externalSoftwareFeedback");
+            const count = get("externalSoftwareCount");
+            const formModal = get("externalSoftwareModal");
+            const form = get("externalSoftwareForm");
+            const titleInput = get("externalSoftwareTitle");
+            const typeSelect = get("externalSoftwareType");
+            const baseSelect = get("externalSoftwareBaseItemId");
+            const submit = get("submitExternalSoftwareBtn");
+            const formFeedback = get("externalSoftwareFormFeedback");
+            const deleteModal = get("deleteExternalSoftwareModal");
+            const deleteForm = get("deleteExternalSoftwareForm");
+            const deleteInput = get("deleteExternalSoftwareConfirmTitle");
+            const deleteCheck = get("deleteExternalSoftwareAcknowledgement");
+            const deleteSubmit = get("deleteExternalSoftwareSubmit");
+            const deleteFeedback = get("deleteExternalSoftwareFeedback");
             const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value;
-            let saving = false;
+
+            const connectionFields = {
+                databaseIp: { input: get("externalSoftwareDatabaseIp"), masked: "databaseIpMasked" },
+                databaseName: { input: get("externalSoftwareDatabaseName"), masked: "databaseNameMasked" },
+                databaseUserName: { input: get("externalSoftwareDatabaseUserName"), masked: "databaseUserNameMasked" },
+                databasePassword: { input: get("externalSoftwareDatabasePassword"), flag: "hasDatabasePassword" }
+            };
+            const clearNames = {
+                databaseIp: "clearDatabaseIp", databaseName: "clearDatabaseName",
+                databaseUserName: "clearDatabaseUserName", databasePassword: "clearDatabasePassword"
+            };
+            const itemsById = new Map();
+            let editingItem = null;
+            let deletingItem = null;
+            let busy = false;
+            let optionsPromise;
 
             function icon(className) {
                 const element = document.createElement("i");
@@ -86,8 +203,11 @@
                 element.setAttribute("aria-hidden", "true");
                 return element;
             }
-
-            function addDetail(list, label, value) {
+            function setMessage(element, message) {
+                element.textContent = message || "";
+                element.hidden = !message;
+            }
+            function addDetail(parent, label, value) {
                 if (value == null || String(value).trim() === "") return;
                 const pair = document.createElement("div");
                 pair.className = "esw-detail";
@@ -96,19 +216,26 @@
                 const description = document.createElement("dd");
                 description.textContent = String(value);
                 pair.append(term, description);
-                list.append(pair);
+                parent.append(pair);
             }
-
+            function makeButton(action, label, className, iconName, item) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "esw-btn " + className;
+                button.dataset.action = action;
+                button.dataset.softwareId = item.id;
+                button.setAttribute("aria-label", label + " " + (item.title || ""));
+                button.append(icon(iconName), document.createTextNode(label));
+                return button;
+            }
             function appendSoftware(item) {
                 const card = document.createElement("li");
                 card.className = "esw-card";
-
                 const head = document.createElement("div");
                 head.className = "esw-card-head";
                 const emblem = document.createElement("span");
                 emblem.className = "esw-card-emblem";
                 emblem.append(icon("fas fa-database"));
-
                 const identity = document.createElement("div");
                 identity.className = "esw-card-identity";
                 const name = document.createElement("h3");
@@ -136,30 +263,29 @@
                 addDetail(connection, "آدرس سرور", item.databaseIpMasked);
                 addDetail(connection, "نام دیتابیس", item.databaseNameMasked);
                 addDetail(connection, "نام کاربری", item.databaseUserNameMasked);
-                if (item.hasDatabasePassword === true)
-                    addDetail(connection, "رمز عبور", "تنظیم شده");
+                if (item.hasDatabasePassword === true) addDetail(connection, "رمز عبور", "تنظیم شده");
                 if (connection.childElementCount) {
                     const panel = document.createElement("section");
                     panel.className = "esw-connection-panel";
                     const heading = document.createElement("h4");
-                    heading.append(icon("fas fa-shield-alt"));
-                    heading.append(document.createTextNode("مشخصات اتصال (پوشیده)"));
+                    heading.append(icon("fas fa-shield-alt"), document.createTextNode("مشخصات اتصال (پوشیده)"));
                     panel.append(heading, connection);
                     card.append(panel);
                 }
 
+                const footer = document.createElement("div");
+                footer.className = "esw-card-footer";
+                footer.append(makeButton("edit", "ویرایش", "esw-btn-secondary", "fas fa-edit", item));
+                footer.append(makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item));
                 if (item.canMap) {
-                    const footer = document.createElement("div");
-                    footer.className = "esw-card-footer";
                     const link = document.createElement("a");
                     link.className = "esw-btn esw-btn-primary esw-card-link";
                     link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
-                    link.append(document.createTextNode("مدیریت تطبیق اطلاعات"));
-                    link.append(icon("fas fa-arrow-left"));
+                    link.append(document.createTextNode("مدیریت تطبیق اطلاعات"), icon("fas fa-arrow-left"));
                     link.setAttribute("aria-label", "مدیریت تطبیق اطلاعات " + (item.title || ""));
                     footer.append(link);
-                    card.append(footer);
                 }
+                card.append(footer);
                 list.append(card);
             }
 
@@ -167,8 +293,7 @@
                 feedback.textContent = "در حال دریافت نرم‌افزارها…";
                 feedback.classList.remove("is-error");
                 const data = await sendApiRequest({
-                    url: "/ExternalSoftware/GetExternalSoftwares",
-                    showLoading: false
+                    url: "/ExternalSoftware/GetExternalSoftwares", showLoading: false
                 });
                 if (!root.isConnected) return;
                 if (!Array.isArray(data)) {
@@ -176,48 +301,201 @@
                     feedback.classList.add("is-error");
                     return;
                 }
+                itemsById.clear();
                 list.replaceChildren();
-                data.forEach(appendSoftware);
+                data.forEach(item => {
+                    itemsById.set(String(item.id).toLowerCase(), item);
+                    appendSoftware(item);
+                });
                 count.textContent = new Intl.NumberFormat("fa-IR").format(data.length) + " نرم‌افزار";
-                feedback.textContent = data.length ? "" : "هنوز نرم‌افزار مالی ثبت نشده است. از دکمه «افزودن نرم‌افزار» استفاده کنید.";
+                feedback.textContent = data.length ? ""
+                    : "هنوز نرم‌افزار مالی ثبت نشده است. از دکمه «افزودن نرم‌افزار» استفاده کنید.";
             }
 
-            document.getElementById("addExternalSoftwareBtn").addEventListener("click", () => {
-                if (saving) return;
+            function fillSelect(select, options) {
+                select.replaceChildren(new Option("انتخاب کنید", ""));
+                for (const option of options) {
+                    select.add(new Option(option.text, String(option.value)));
+                }
+            }
+            async function ensureOptions() {
+                if (!optionsPromise) {
+                    optionsPromise = sendApiRequest({
+                        url: "/ExternalSoftware/GetExternalSoftwareFormOptions", showLoading: false
+                    }).then(data => {
+                        if (!Array.isArray(data?.softwareTypes) || !Array.isArray(data?.baseItems))
+                            throw new Error("دریافت گزینه‌های نرم‌افزار ناموفق بود.");
+                        fillSelect(typeSelect, data.softwareTypes);
+                        fillSelect(baseSelect, data.baseItems);
+                        return data;
+                    }).catch(() => {
+                        optionsPromise = null;
+                        return null;
+                    });
+                }
+                return await optionsPromise;
+            }
+            function updateBaseField() {
+                const accounting = typeSelect.value === "0";
+                baseSelect.disabled = !accounting;
+                baseSelect.required = accounting;
+                if (!accounting) baseSelect.value = "";
+            }
+            function setConnectionDefaults(item) {
+                get("eswConnectionEditHint").hidden = !item;
+                for (const [key, field] of Object.entries(connectionFields)) {
+                    const masked = field.flag ? (item?.[field.flag] ? "ثبت شده" : null) : item?.[field.masked];
+                    field.input.value = "";
+                    field.input.placeholder = masked
+                        ? ("مقدار فعلی: " + masked + " (برای تغییر، مقدار جدید وارد کنید)")
+                        : "اختیاری";
+                    const checkbox = form.querySelector('[data-clear-field="' + key + '"]');
+                    const wrapper = form.querySelector('.esw-clear-field[data-for="' + key + '"]');
+                    checkbox.checked = false;
+                    wrapper.hidden = !masked;
+                    field.input.disabled = false;
+                }
+            }
+            async function openEditor(item) {
+                if (busy) return;
+                const options = await ensureOptions();
+                if (!options || !root.isConnected) {
+                    feedback.textContent = "گزینه‌های فرم دریافت نشدند. دوباره تلاش کنید.";
+                    feedback.classList.add("is-error");
+                    return;
+                }
+                editingItem = item || null;
                 form.reset();
-                bootstrap.Modal.getOrCreateInstance(modal).show();
+                setMessage(formFeedback, "");
+                get("externalSoftwareModalTitle").textContent = item
+                    ? "ویرایش نرم‌افزار مالی" : "افزودن نرم‌افزار مالی";
+                get("submitExternalSoftwareLabel").textContent = item ? "ذخیره تغییرات" : "ثبت نرم‌افزار";
+                titleInput.value = item?.title || "";
+                typeSelect.value = item ? String(item.softwareType) : "";
+                updateBaseField();
+                if (item?.softwareBaseItemId && !baseSelect.disabled)
+                    baseSelect.value = String(item.softwareBaseItemId);
+                setConnectionDefaults(item);
+                bootstrap.Modal.getOrCreateInstance(formModal).show();
+            }
+
+            function validateDelete() {
+                const valid = deletingItem
+                    && deleteInput.value.trim() === deletingItem.title
+                    && deleteCheck.checked;
+                deleteSubmit.disabled = busy || !valid;
+            }
+            function openDelete(item) {
+                if (busy) return;
+                deletingItem = item;
+                deleteForm.reset();
+                setMessage(deleteFeedback, "");
+                get("deleteExternalSoftwareName").textContent = item.title;
+                validateDelete();
+                bootstrap.Modal.getOrCreateInstance(deleteModal).show();
+            }
+
+            root.querySelector("#addExternalSoftwareBtn").addEventListener("click", () => openEditor(null));
+            list.addEventListener("click", event => {
+                const button = event.target.closest("button[data-action][data-software-id]");
+                if (!button) return;
+                const item = itemsById.get(String(button.dataset.softwareId).toLowerCase());
+                if (!item) return;
+                if (button.dataset.action === "edit") openEditor(item);
+                if (button.dataset.action === "delete") openDelete(item);
             });
-            modal.addEventListener("shown.bs.modal", () => titleInput.focus());
+            typeSelect.addEventListener("change", updateBaseField);
+            form.addEventListener("change", event => {
+                const key = event.target.dataset.clearField;
+                if (!key) return;
+                const field = connectionFields[key];
+                if (!field) return;
+                field.input.disabled = event.target.checked;
+                if (event.target.checked) field.input.value = "";
+            });
+            formModal.addEventListener("shown.bs.modal", () => titleInput.focus());
+            formModal.addEventListener("hidden.bs.modal", () => {
+                form.reset();
+                for (const field of Object.values(connectionFields)) {
+                    field.input.value = "";
+                    field.input.disabled = false;
+                }
+                editingItem = null;
+            });
+            deleteInput.addEventListener("input", validateDelete);
+            deleteCheck.addEventListener("change", validateDelete);
 
             form.addEventListener("submit", async event => {
                 event.preventDefault();
-                if (saving || !form.reportValidity()) return;
-                const title = titleInput.value.trim();
-                if (!title || title.length > 120) {
-                    titleInput.setCustomValidity("نام نرم‌افزار معتبر نیست.");
-                    form.reportValidity();
-                    titleInput.setCustomValidity("");
-                    return;
-                }
-                saving = true;
+                if (busy || !form.reportValidity()) return;
+                busy = true;
                 submit.disabled = true;
+                setMessage(formFeedback, "");
+                const data = {
+                    id: editingItem?.id || null,
+                    title: titleInput.value.trim(),
+                    softwareType: typeSelect.value === "" ? null : Number(typeSelect.value),
+                    softwareBaseItemId: baseSelect.disabled || !baseSelect.value ? null : baseSelect.value
+                };
+                for (const [key, field] of Object.entries(connectionFields)) {
+                    data[key] = field.input.disabled ? null : (field.input.value || null);
+                    data[clearNames[key]] = form.querySelector(
+                        '[data-clear-field="' + key + '"]').checked;
+                }
                 try {
                     const response = await sendApiRequest({
-                        url: "/ExternalSoftware/AddExternalSoftware",
+                        url: editingItem ? "/ExternalSoftware/UpdateExternalSoftware"
+                            : "/ExternalSoftware/AddExternalSoftware",
                         method: "POST",
                         headers: { "RequestVerificationToken": token },
-                        data: { title },
+                        data,
                         successMsg: null
                     });
-                    if (!response?.id) return;
-                    bootstrap.Modal.getOrCreateInstance(modal).hide();
+                    if (!response?.id) {
+                        setMessage(formFeedback, "ذخیره انجام نشد؛ پیام خطا را بررسی کنید.");
+                        return;
+                    }
+                    bootstrap.Modal.getOrCreateInstance(formModal).hide();
                     await loadSoftwares();
+                } catch {
+                    setMessage(formFeedback, "ذخیره انجام نشد؛ دوباره تلاش کنید.");
                 } finally {
-                    saving = false;
+                    busy = false;
                     submit.disabled = false;
                 }
             });
-
+            deleteForm.addEventListener("submit", async event => {
+                event.preventDefault();
+                if (busy || deleteSubmit.disabled || !deletingItem) return;
+                busy = true;
+                deleteSubmit.disabled = true;
+                setMessage(deleteFeedback, "");
+                try {
+                    const response = await sendApiRequest({
+                        url: "/ExternalSoftware/DeleteExternalSoftware",
+                        method: "POST",
+                        headers: { "RequestVerificationToken": token },
+                        data: {
+                            id: deletingItem.id,
+                            confirmTitle: deleteInput.value.trim(),
+                            confirmation: "حذف دائمی"
+                        },
+                        successMsg: null
+                    });
+                    if (!response?.deleted) {
+                        setMessage(deleteFeedback, "حذف انجام نشد؛ ممکن است ارتباط یا اطلاعات وابسته وجود داشته باشد.");
+                        return;
+                    }
+                    bootstrap.Modal.getOrCreateInstance(deleteModal).hide();
+                    deletingItem = null;
+                    await loadSoftwares();
+                } catch {
+                    setMessage(deleteFeedback, "حذف انجام نشد؛ دوباره تلاش کنید.");
+                } finally {
+                    busy = false;
+                    validateDelete();
+                }
+            });
             loadSoftwares();
         })();
     </script>
