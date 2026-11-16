@@ -271,15 +271,22 @@
 }
 @media(max-width:580px) {
     #settingsConnectionsWorkspace { padding:8px; }
-    #settingsConnectionsWorkspace .esw-page-header { padding:13px;gap:12px; }
+    #settingsConnectionsWorkspace .esw-page-header {
+        flex-direction:column;
+        align-items:stretch;
+        padding:13px;
+        gap:12px;
+    }
+    #settingsConnectionsWorkspace .esw-page-title { flex:0 1 auto; }
+    #settingsConnectionsWorkspace #addExternalSoftwareBtn { align-self:flex-end; }
     #settingsConnectionsWorkspace .esw-title-icon { width:36px;height:36px;flex-basis:36px;font-size:15px; }
     #settingsConnectionsWorkspace .esw-title-group h1 { font-size:17px; }
     #settingsConnectionsWorkspace .esw-btn { min-height:32px;font-size:11px;padding:5px 10px; }
     #settingsConnectionsWorkspace .esw-workspace { padding:10px; }
     #settingsConnectionsWorkspace .esw-card { padding:11px; }
-    #settingsConnectionsWorkspace .esw-card-head { flex-wrap:wrap;gap:8px; }
-    #settingsConnectionsWorkspace .esw-card-identity { flex:1 1 calc(100% - 52px); }
-    #settingsConnectionsWorkspace .esw-card-status { margin-inline-start:45px; }
+    #settingsConnectionsWorkspace .esw-card-head { flex-wrap:nowrap;align-items:center;gap:8px; }
+    #settingsConnectionsWorkspace .esw-card-identity { flex:1 1 auto;min-width:0; }
+    #settingsConnectionsWorkspace .esw-card-status { margin:0;flex-shrink:0; }
 }
 @media(prefers-reduced-motion:reduce) {
     #settingsConnectionsWorkspace :is(.esw-card,.esw-btn) { transition:none; }
