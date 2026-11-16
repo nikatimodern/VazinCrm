@@ -3136,6 +3136,12 @@ async function showExternalSoftwareModal(ids, config) {
     
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
+
+    if (config.options) {
+        ModalToggle(externalSoftwareModalElm);
+        renderExternalSoftwares(config.options);
+        return;
+    }
     
     await sendApiRequest({
         url: "/Home/GetAllExternalSoftware",
@@ -3170,7 +3176,7 @@ function renderExternalSoftwares(softwares) {
             </span>
 
             <span class="external-software-info">
-                <span class="external-software-title">${software.title}</span>
+                <span class="external-software-title">${escapeHtml(software.title)}</span>
                 ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
             </span>
 

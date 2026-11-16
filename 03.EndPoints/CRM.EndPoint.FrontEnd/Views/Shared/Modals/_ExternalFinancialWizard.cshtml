@@ -1,0 +1,28 @@
+@model (string ModalId, string TitleId, string SubtitleId, string BodyId, string BackId, string ConfirmId)
+
+<div class="modal fade" id="@Model.ModalId" data-bs-backdrop="static" tabindex="-1" aria-labelledby="@Model.TitleId" data-bs-focus="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content external-mapping-modal">
+            <div class="modal-header">
+                <div class="external-mapping-heading">
+                    <span class="external-mapping-icon" aria-hidden="true"><i class="fas fa-desktop"></i></span>
+                    <div>
+                        <h5 class="modal-title external-mapping-title" id="@Model.TitleId"></h5>
+                        <div class="external-mapping-subtitle" id="@Model.SubtitleId"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div id="@Model.BodyId"></div>
+            </div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="buttonCancel-white" id="@Model.BackId">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    <span data-external-mapping-back-label>برگشت</span>
+                </button>
+                <button type="button" class="buttonGreen0" id="@Model.ConfirmId" data-external-mapping-confirm>تأیید و ادامه</button>
+            </div>
+        </div>
+    </div>
+</div>

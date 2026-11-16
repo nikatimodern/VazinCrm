@@ -221,6 +221,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (mapping == null)
                 throw new KeyNotFoundException("ارتباط انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
 
+            if (mapping.MapType is ExternalMappingTypeEnum.تامین_کننده
+                or ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار)
+                throw new MappingConflictException("این ارتباط از گردش انتقال مالی فاکتور تأمین مدیریت می‌شود.");
+
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))
             {

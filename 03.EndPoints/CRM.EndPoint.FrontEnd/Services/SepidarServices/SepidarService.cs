@@ -30,7 +30,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Services.SepidarServices;
 
-public class SepidarService(SepidarContextDbBase sepidarContext) {
+public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
     {
         return await sepidarContext.vwInvoice
@@ -2361,6 +2361,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     private static DataTable CreateInventorySummaryTable(IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId)
+        => CreateInventorySummaryTable(invoiceItems.Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)), fiscalYearId);
+
+    private static DataTable CreateInventorySummaryTable(IEnumerable<InventoryStockKey> keys, int fiscalYearId)
     {
         var table = new DataTable();
         table.Columns.Add("StockID", typeof(int));
@@ -2369,8 +2372,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         table.Columns.Add("FiscalYearID", typeof(int));
         table.Columns.Add("FeedFromClosingOperation", typeof(bool));
 
-        foreach (var key in invoiceItems
-                     .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
+        foreach (var key in keys
                      .Distinct()
                      .OrderBy(x => x.StockRef).ThenBy(x => x.ItemRef).ThenBy(x => x.TracingRef))
         {
@@ -2418,12 +2420,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
         IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId, CancellationToken ct)
-    {
-        var keys = invoiceItems
-            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
-            .Distinct()
-            .ToArray();
+        => await ReadInventoryStockBalancesAsync(invoiceItems
+            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)).Distinct().ToArray(), fiscalYearId, ct);
 
+    private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
+        InventoryStockKey[] keys, int fiscalYearId, CancellationToken ct)
+    {
         var stockRefs = keys.Select(x => x.StockRef).Distinct().ToArray();
         var itemRefs = keys.Select(x => x.ItemRef).Distinct().ToArray();
 

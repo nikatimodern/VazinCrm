@@ -127,7 +127,8 @@ namespace CRM.Infrastructures.Sql {
         {
             //GetEnumerableOfType();
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly,
+                type => type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace);
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
 

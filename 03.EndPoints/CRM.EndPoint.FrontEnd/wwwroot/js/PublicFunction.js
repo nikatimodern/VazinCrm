@@ -235,6 +235,49 @@ const distributeItemDiscount = (items, totalDiscount) => {
 };
 
 
+function renderExternalFinancialStage(modal, container, { destination, position, title, subtitle, icon, step, content, large = false }) {
+    modal.querySelector(".external-mapping-title").textContent = destination ?? "نرم‌افزار مقصد";
+    modal.querySelector(".external-mapping-subtitle").textContent = position;
+    modal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
+    container.innerHTML = `
+        <div class="external-mapping-card">
+            <div class="external-mapping-stage-info">
+                <div class="external-mapping-stage-icon">${icon}</div>
+                <div class="external-mapping-stage-content">
+                    <div class="external-mapping-stage-title">${escapeHtml(title)}</div>
+                    <div class="external-mapping-stage-subtitle">${escapeHtml(subtitle)}</div>
+                </div>
+                <span class="external-mapping-step">${escapeHtml(step)}</span>
+            </div>
+            ${typeof content === "string" ? content : ""}
+        </div>`;
+    if (content instanceof Node) container.firstElementChild.append(content);
+}
+
+function renderExternalFinancialPreview({ fields, columns, rows, totals }) {
+    return `<div class="external-prefactor-preview">
+        <div class="ex-preview-summary">${fields.map(({ label, value, wide, accent }) => `
+            <div class="ex-preview-field${wide ? " ex-preview-customer" : ""}">
+                <span class="ex-preview-label">${escapeHtml(label)}:</span>
+                <strong${accent ? ' class="ex-preview-software"' : ""}>${escapeHtml(value ?? "—")}</strong>
+            </div>`).join("")}</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
+                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
+                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+        </div>
+        <div class="external-mapping-entity mt-3">${totals.map(([label, value], index) => {
+            const last = index === totals.length - 1;
+            return `${last ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
+                ${last ? `<strong>${escapeHtml(label)}</strong>` : `<span>${escapeHtml(label)}</span>`}
+                <strong>${renderMoneyHtml(value)}</strong>
+            </div>`;
+        }).join("")}</div>
+    </div>`;
+}
+
 const calculateInvoiceTotals = (
     {
         items,

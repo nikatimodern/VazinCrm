@@ -1514,40 +1514,11 @@ function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, l
     exSoftwarePreFactorDestroySelects();
     
     const state = externalSoftwareProcess;
-    const software = state.software;
-    
-    const softwareIndex = state.softwareIndex + 1;
-    const softwareCount = state.softwareIds.length;
-    
-    document.getElementById("externalMappingTitle").textContent = software?.externalSoftwareTitle ?? "نرم‌افزار مقصد";
-    document.getElementById("externalMappingSubtitle").textContent = `نرم‌افزار ${softwareIndex} از ${softwareCount}`;
-    
-    getExternalMappingModal().querySelector(".modal-dialog").classList.toggle("modal-lg", large);
-    
-    getExternalMappingList().innerHTML = `
-        <div class="external-mapping-card">
-            <div class="external-mapping-stage-info">
-                <div class="external-mapping-stage-icon">
-                    ${icon}
-                </div>
-                <div class="external-mapping-stage-content">
-                    <div class="external-mapping-stage-title">
-                        ${title}
-                    </div>
-
-                    <div class="external-mapping-stage-subtitle">
-                        ${subtitle}
-                    </div>
-                </div>
-
-                <span class="external-mapping-step">
-                    ${step}
-                </span>
-            </div>
-
-            ${content}
-        </div>
-    `;
+    renderExternalFinancialStage(getExternalMappingModal(), getExternalMappingList(), {
+        destination: state.software?.externalSoftwareTitle,
+        position: `نرم‌افزار ${state.softwareIndex + 1} از ${state.softwareIds.length}`,
+        title, subtitle, icon, step, content, large,
+    });
 }
 
 
@@ -2100,93 +2071,25 @@ function exSoftwarePreFactorRenderPreview(data) {
         step: "مرحله 5 از 5",
         large: true,
         
-        content: `
-            <div class="external-prefactor-preview">
-
-                <div class="ex-preview-summary">
-
-                    <div class="ex-preview-field">
-                        <span class="ex-preview-label">نوع فروش:</span>
-                        <strong>${escapeHtml(saleTypeTitle)}</strong>
-                    </div>
-
-                    <div class="ex-preview-field">
-                        <span class="ex-preview-label">شماره پیش‌فاکتور:</span>
-                        <strong>${escapeHtml(preFactor?.serialNumber ?? "-")}</strong>
-                    </div>
-
-                    <div class="ex-preview-field">
-                        <span class="ex-preview-label">تاریخ:</span>
-                        <strong>${escapeHtml(preFactor?.date ?? "-")}</strong>
-                    </div>
-
-                    <div class="ex-preview-field ex-preview-customer">
-                        <span class="ex-preview-label">مشتری:</span>
-                        <strong>${escapeHtml(customerTitle)}</strong>
-                    </div>
-
-                    <div class="ex-preview-field">
-                        <span class="ex-preview-label">نرم‌افزار مقصد:</span>
-                        <strong class="ex-preview-software">${escapeHtml(software.externalSoftwareTitle ?? "-")}</strong>
-                    </div>
-
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>ردیف</th>
-                                <th>محصول CRM</th>
-                                <th>کالای مقصد</th>
-                                <th>انبار</th>
-                                <th>تعداد</th>
-                                <th>قیمت واحد</th>
-                                <th>تخفیف</th>
-                                <th>مالیات</th>
-                                <th>مبلغ نهایی</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            ${items.map((item, index) => `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>${escapeHtml(item.productTitle ?? "-")}</td>
-                                    <td>${escapeHtml(item.externalItemTitle)}</td>
-                                    <td>${escapeHtml(item.externalStockTitle)}</td>
-                                    <td>${money(item.weightCount)}</td>
-                                    <td>${money(item.unitAmount)}</td>
-                                    <td>${money(item.discount)}</td>
-                                    <td>${money(item.taxAmount)}</td>
-                                    <td class="fbold">${money(item.totalAmount)}</td>
-                                </tr>
-                            `).join("")}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="external-mapping-entity mt-3">
-                     <div class="d-flex justify-content-between mb-1">
-                        <span>جمع مبلغ کالاها</span>
-                        <strong>${renderMoneyHtml(preFactor?.sumTotalAmount)}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span>تخفیف کل</span>
-                        <strong>${renderMoneyHtml(preFactor?.discount)}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span>مالیات کل</span>
-                        <strong>${renderMoneyHtml(preFactor?.totalTax)}</strong>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <strong>مبلغ نهایی</strong>
-                        <strong>${renderMoneyHtml(preFactor?.paymentAmount)}</strong>
-                    </div>
-                </div>
-            </div>
-        `,
+        content: renderExternalFinancialPreview({
+            fields: [
+                { label: "نوع فروش", value: saleTypeTitle },
+                { label: "شماره پیش‌فاکتور", value: preFactor?.serialNumber },
+                { label: "تاریخ", value: preFactor?.date },
+                { label: "مشتری", value: customerTitle, wide: true },
+                { label: "نرم‌افزار مقصد", value: software.externalSoftwareTitle, accent: true },
+            ],
+            columns: ["ردیف", "محصول CRM", "کالای مقصد", "انبار", "تعداد", "قیمت واحد", "تخفیف", "مالیات", "مبلغ نهایی"],
+            rows: items.map((item, index) => [
+                index + 1, item.productTitle, item.externalItemTitle, item.externalStockTitle,
+                money(item.weightCount), money(item.unitAmount), money(item.discount),
+                money(item.taxAmount), money(item.totalAmount),
+            ]),
+            totals: [
+                ["جمع مبلغ کالاها", preFactor?.sumTotalAmount], ["تخفیف کل", preFactor?.discount],
+                ["مالیات کل", preFactor?.totalTax], ["مبلغ نهایی", preFactor?.paymentAmount],
+            ],
+        }),
     });
     
     exSoftwarePreFactorSetConfirmButton("تأیید و ثبت در نرم‌افزار", items.length === 0);

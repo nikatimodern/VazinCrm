@@ -8388,19 +8388,19 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn {
+.external-mapping-modal [data-external-mapping-confirm] {
 	background-color: #04857c;
 	border-color: #04857c;
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn:hover:not(:disabled) {
+.external-mapping-modal [data-external-mapping-confirm]:hover:not(:disabled) {
 	background-color: #036e67;
 	border-color: #036e67;
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn:disabled {
+.external-mapping-modal [data-external-mapping-confirm]:disabled {
 	opacity: .5;
 	cursor: not-allowed;
 }
