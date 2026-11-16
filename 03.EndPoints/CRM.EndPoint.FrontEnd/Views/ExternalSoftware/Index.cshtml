@@ -4,7 +4,7 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.12" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.13" asp-append-version="true" />
 }
 
 <section id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme" dir="rtl">
@@ -277,6 +277,12 @@
                 footer.className = "esw-card-footer";
                 footer.append(makeButton("edit", "ویرایش", "esw-btn-secondary", "fas fa-edit", item));
                 footer.append(makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item));
+                const settingsLink = document.createElement("a");
+                settingsLink.className = "esw-btn esw-btn-secondary esw-settings-link";
+                settingsLink.href = "/ExternalSoftware/Settings?softwareId=" + encodeURIComponent(item.id);
+                settingsLink.append(icon("fas fa-cogs"), document.createTextNode("تنظیمات نرم‌افزار"));
+                settingsLink.setAttribute("aria-label", "تنظیمات نرم‌افزار " + (item.title || ""));
+                footer.append(settingsLink);
                 if (item.canMap) {
                     const link = document.createElement("a");
                     link.className = "esw-btn esw-btn-primary esw-card-link";
