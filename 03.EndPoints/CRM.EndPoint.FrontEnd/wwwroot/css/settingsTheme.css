@@ -355,7 +355,7 @@
     padding:5px 0 0;
     border-top:0;
 }
-#settingsConnectionsWorkspace .esw-card-footer { justify-content:flex-end;padding-top:10px; }
+#settingsConnectionsWorkspace .esw-card-footer { justify-content:space-between;padding-top:10px; }
 #settingsConnectionsWorkspace .esw-card-footer:only-child { margin-top:0; }
 @media (max-width:580px) {
     #settingsConnectionsWorkspace .esw-card-details {
@@ -679,4 +679,65 @@
     #externalSoftwareSettingsWorkspace .esws-value-block { flex-wrap:wrap;gap:8px; }
     #externalSoftwareSettingsWorkspace .esws-value { max-width:none;flex:1 1 100%; }
     #externalSoftwareSettingsWorkspace .esws-actions { width:100%; }
+}
+
+
+/* Card footer: icon-only maintenance actions on the right, navigation on the left (RTL). */
+#settingsConnectionsWorkspace .esw-card-tools,
+#settingsConnectionsWorkspace .esw-card-navigation {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+    min-width:0;
+}
+#settingsConnectionsWorkspace .esw-card-tools { flex:0 0 auto; }
+#settingsConnectionsWorkspace .esw-card-navigation {
+    justify-content:flex-end;
+    margin-inline-start:auto;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn {
+    display:inline-flex;
+    flex:0 0 34px;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    min-height:34px;
+    padding:0;
+    border-radius:7px;
+    font-size:14px;
+    line-height:1;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn-edit {
+    color:#00665C;
+    background:#E7F3F0;
+    border:1px solid #AACFC6;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn-edit:hover {
+    background:#D2EAE4;
+    border-color:#72AC9E;
+    color:#004944;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn:focus-visible {
+    outline:2px solid #5811B4;
+    outline-offset:2px;
+}
+@media (max-width:580px) {
+    #settingsConnectionsWorkspace .esw-card-footer {
+        justify-content:space-between;
+        align-items:center;
+        row-gap:9px;
+    }
+    #settingsConnectionsWorkspace .esw-card-navigation {
+        gap:6px;
+        margin-inline-start:auto;
+    }
+    #settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn {
+        flex-basis:32px;
+        width:32px;
+        height:32px;
+        min-height:32px;
+        font-size:13px;
+    }
 }
