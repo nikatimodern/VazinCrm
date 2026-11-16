@@ -211,7 +211,7 @@
                     const result = await sendApiRequest({
                         url: "/ExternalSoftware/GetExternalSoftwareSettings",
                         method: "GET",
-                        data: { softwareId },
+                        params: { softwareId },
                         showLoading: false
                     });
                     if (!root.isConnected) return;
