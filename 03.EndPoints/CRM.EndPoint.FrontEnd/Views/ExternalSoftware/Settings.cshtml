@@ -1,0 +1,236 @@
+@{
+    ViewData["Title"] = "تنظیمات نرم‌افزار مالی";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.13" asp-append-version="true" />
+}
+
+<section id="externalSoftwareSettingsWorkspace" class="crm-settings-theme crm-operations-theme"
+         dir="rtl" data-software-id="@ViewData["SoftwareId"]">
+    @Html.AntiForgeryToken()
+
+    <header class="esws-heading">
+        <div class="esws-heading-main">
+            <span class="esws-heading-icon" aria-hidden="true"><i class="fas fa-cogs"></i></span>
+            <h1>تنظیمات نرم‌افزار <span class="esws-heading-divider">/</span>
+                <strong>@ViewData["SoftwareTitle"]</strong>
+            </h1>
+        </div>
+        <a class="esw-btn esw-btn-secondary esws-back" asp-controller="ExternalSoftware" asp-action="Index">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            بازگشت به نرم‌افزارها
+        </a>
+    </header>
+
+    <section class="esws-panel" aria-labelledby="eswsPanelTitle">
+        <div class="esws-panel-title">
+            <h2 id="eswsPanelTitle">تنظیمات ثبت‌شده</h2>
+            <button id="eswsRefresh" type="button" class="esw-btn esw-btn-secondary">
+                <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                تازه‌سازی
+            </button>
+        </div>
+        <div id="eswsFeedback" class="esws-feedback" role="status" aria-live="polite">
+            در حال دریافت تنظیمات…
+        </div>
+        <div id="eswsSettingList" class="esws-setting-list" aria-label="تنظیمات نرم‌افزار"></div>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const root = document.getElementById("externalSoftwareSettingsWorkspace");
+            if (!root || root.dataset.initialized) return;
+            root.dataset.initialized = "1";
+
+            const softwareId = root.dataset.softwareId;
+            const list = document.getElementById("eswsSettingList");
+            const feedback = document.getElementById("eswsFeedback");
+            const refresh = document.getElementById("eswsRefresh");
+            const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            let busy = false;
+
+            function icon(name) {
+                const result = document.createElement("i");
+                result.className = name;
+                result.setAttribute("aria-hidden", "true");
+                return result;
+            }
+            function button(title, className, iconClass) {
+                const element = document.createElement("button");
+                element.type = "button";
+                element.className = "esw-btn " + className;
+                element.append(icon(iconClass), document.createTextNode(title));
+                return element;
+            }
+            function showStatus(element, message, error = false) {
+                element.textContent = message || "";
+                element.classList.toggle("is-error", error);
+            }
+            async function confirmDelete(name) {
+                if (window.Swal) {
+                    const result = await Swal.fire({
+                        title: "حذف مقدار تنظیم",
+                        text: "مقدار «" + name + "» از این نرم‌افزار حذف شود؟",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "حذف مقدار",
+                        cancelButtonText: "انصراف",
+                        confirmButtonColor: "#9A193A"
+                    });
+                    return result.isConfirmed === true;
+                }
+                return window.confirm("مقدار «" + name + "» حذف شود؟");
+            }
+
+            function renderSetting(setting) {
+                const row = document.createElement("div");
+                row.className = "esws-setting-row";
+                const current = setting.settingValue == null ? null : String(setting.settingValue);
+                const heading = document.createElement("label");
+                const inputId = "eswsValue_" + setting.settingNameCode;
+                heading.htmlFor = inputId;
+                heading.className = "esws-key";
+                heading.textContent = setting.settingName;
+
+                const input = document.createElement("input");
+                input.id = inputId;
+                input.className = "form-control esws-value";
+                input.type = "text";
+                input.maxLength = 500;
+                input.autocomplete = "off";
+                input.spellcheck = false;
+                input.value = current ?? "";
+                input.placeholder = "مقدار تنظیم";
+
+                const actions = document.createElement("div");
+                actions.className = "esws-actions";
+                const save = button("ذخیره", "esw-btn-primary", "fas fa-check");
+                const remove = button("حذف مقدار", "esw-btn-danger", "fas fa-trash-alt");
+                remove.hidden = current === null;
+                const message = document.createElement("span");
+                message.className = "esws-row-message";
+                message.setAttribute("role", "status");
+                message.setAttribute("aria-live", "polite");
+                actions.append(save, remove, message);
+
+                function setBusy(value) {
+                    busy = value;
+                    refresh.disabled = value;
+                    input.disabled = value;
+                    updateButtons();
+                }
+                function updateButtons() {
+                    save.disabled = busy || !input.value.trim() || input.value.trim() === (setting.settingValue ?? "");
+                    remove.disabled = busy;
+                }
+
+                input.addEventListener("input", () => {
+                    showStatus(message, "");
+                    updateButtons();
+                });
+                save.addEventListener("click", async () => {
+                    if (busy || save.disabled) return;
+                    setBusy(true);
+                    showStatus(message, "");
+                    try {
+                        const response = await sendApiRequest({
+                            url: "/ExternalSoftware/SaveExternalSoftwareSetting",
+                            method: "POST",
+                            headers: { "RequestVerificationToken": token },
+                            data: {
+                                softwareId,
+                                settingNameCode: setting.settingNameCode,
+                                settingValue: input.value,
+                                expectedValue: setting.settingValue
+                            },
+                            successMsg: null
+                        });
+                        if (response?.saved) {
+                            setting.settingValue = response.settingValue;
+                            input.value = response.settingValue;
+                            remove.hidden = false;
+                            showStatus(message, "ذخیره شد.");
+                        } else {
+                            showStatus(message, "ذخیره انجام نشد؛ اطلاعات را تازه‌سازی کنید.", true);
+                        }
+                    } catch {
+                        showStatus(message, "ذخیره انجام نشد؛ دوباره تلاش کنید.", true);
+                    } finally {
+                        setBusy(false);
+                    }
+                });
+                remove.addEventListener("click", async () => {
+                    if (busy || setting.settingValue == null) return;
+                    if (!await confirmDelete(setting.settingName)) return;
+                    setBusy(true);
+                    showStatus(message, "");
+                    try {
+                        const response = await sendApiRequest({
+                            url: "/ExternalSoftware/DeleteExternalSoftwareSetting",
+                            method: "POST",
+                            headers: { "RequestVerificationToken": token },
+                            data: {
+                                softwareId,
+                                settingNameCode: setting.settingNameCode,
+                                expectedValue: setting.settingValue
+                            },
+                            successMsg: null
+                        });
+                        if (response?.deleted) {
+                            setting.settingValue = null;
+                            input.value = "";
+                            remove.hidden = true;
+                            showStatus(message, "مقدار حذف شد.");
+                        } else {
+                            showStatus(message, "حذف انجام نشد؛ اطلاعات را تازه‌سازی کنید.", true);
+                        }
+                    } catch {
+                        showStatus(message, "حذف انجام نشد؛ دوباره تلاش کنید.", true);
+                    } finally {
+                        setBusy(false);
+                    }
+                });
+
+                const valueBlock = document.createElement("div");
+                valueBlock.className = "esws-value-block";
+                valueBlock.append(input, actions);
+                row.append(heading, valueBlock);
+                updateButtons();
+                list.append(row);
+            }
+
+            async function loadSettings() {
+                if (busy) return;
+                refresh.disabled = true;
+                showStatus(feedback, "در حال دریافت تنظیمات…");
+                try {
+                    const result = await sendApiRequest({
+                        url: "/ExternalSoftware/GetExternalSoftwareSettings",
+                        method: "GET",
+                        data: { softwareId },
+                        showLoading: false
+                    });
+                    if (!root.isConnected) return;
+                    if (!Array.isArray(result?.settings)) {
+                        showStatus(feedback, "دریافت تنظیمات ناموفق بود.", true);
+                        return;
+                    }
+                    list.replaceChildren();
+                    result.settings.forEach(renderSetting);
+                    showStatus(feedback, result.settings.length ? "" : "برای این نرم‌افزار تنظیمی تعریف نشده است.");
+                } catch {
+                    showStatus(feedback, "دریافت تنظیمات ناموفق بود.", true);
+                } finally {
+                    refresh.disabled = false;
+                }
+            }
+
+            refresh.addEventListener("click", loadSettings);
+            loadSettings();
+        })();
+    </script>
+}
