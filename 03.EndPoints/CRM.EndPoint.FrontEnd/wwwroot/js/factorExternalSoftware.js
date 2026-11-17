@@ -505,9 +505,9 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                     <input type="radio" name="factorExportSource" value="quotation"
                            ${state.hasQuotation ? "checked" : "disabled"}>
                     <span>
-                        <strong>صدور از روی پیش‌فاکتور</strong>
+                        <strong>صدور از پیش‌فاکتور نرم‌افزار مالی</strong>
                         <small>${state.hasQuotation
-                            ? "استفاده از پیش‌فاکتور منتقل‌شده و همان اطلاعات کالا و انبار"
+                            ? "استفاده از اطلاعات پیش‌فاکتور ثبت‌شده در نرم‌افزار مالی"
                             : "پیش‌فاکتور این فاکتور در نرم‌افزار مالی ثبت نشده است"}</small>
                     </span>
                 </label>
@@ -515,7 +515,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                     <input type="radio" name="factorExportSource" value="direct"
                            ${state.hasQuotation ? "" : "checked"}>
                     <span>
-                        <strong>صدور مستقل از پیش‌فاکتور</strong>
+                        <strong>صدور مستقیم فاکتور</strong>
                         <small>انتخاب نوع فروش، مشتری، کالا و انبار پیش از بررسی نهایی</small>
                     </span>
                 </label>
