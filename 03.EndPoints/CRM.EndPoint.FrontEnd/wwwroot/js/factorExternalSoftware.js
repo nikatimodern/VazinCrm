@@ -516,7 +516,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                            ${state.hasQuotation ? "" : "checked"}>
                     <span>
                         <strong>صدور مستقیم فاکتور</strong>
-                        <small>انتخاب نوع فروش، مشتری، کالا و انبار پیش از بررسی نهایی</small>
+                        <small>ثبت فاکتور در نرم‌افزار مالی بدون وابستگی به پیش‌فاکتور آن</small>
                     </span>
                 </label>
             </div>`);
