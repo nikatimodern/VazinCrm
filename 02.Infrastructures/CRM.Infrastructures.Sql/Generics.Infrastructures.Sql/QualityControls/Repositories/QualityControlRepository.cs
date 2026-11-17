@@ -209,19 +209,25 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (!await eligibleItems.AnyAsync(cancellationToken))
             return new(404, "مشتری یا فاکتور قابل بررسی یافت نشد.", QualityControlCustomerContactStatus.None);
 
+        // Partial QC is allowed: only completely reviewed customers cannot be put on hold.
+        var hasPendingItems = await eligibleItems.AnyAsync(itemId =>
+            !db.QualityControlItemReviews.Any(review => review.FactorItemId == itemId
+                && review.Status != QualityControlOutcome.NotReviewed), cancellationToken);
+        if (!hasPendingItems)
+            return new(409, "همه اقلام این مشتری بررسی شده‌اند و نیازی به پیگیری تماس نیست.",
+                QualityControlCustomerContactStatus.None);
+
         var contact = await db.QualityControlCustomerContacts.IgnoreQueryFilters()
             .FirstOrDefaultAsync(item => item.CustomerId == request.CustomerId, cancellationToken);
-        var nextStatus = contact != null && !contact.IsDeleted && contact.Status == request.Status
-            ? QualityControlCustomerContactStatus.None : request.Status;
-        // Once an item has a real QC result, the customer cannot be marked unreachable.
-        // Clearing an old contact flag remains allowed.
-        if (nextStatus != QualityControlCustomerContactStatus.None
-            && await db.QualityControlItemReviews.AsNoTracking().AnyAsync(review =>
-                eligibleItems.Contains(review.FactorItemId)
-                && review.Status != QualityControlOutcome.NotReviewed, cancellationToken))
-            return new(409, "برای این مشتری کنترل کیفیت ثبت شده است؛ امکان ثبت عدم پاسخ یا شماره نامعتبر وجود ندارد.",
-                QualityControlCustomerContactStatus.None);
+        var mobile = await db.Customers.AsNoTracking().Where(customer => customer.Id == request.CustomerId)
+            .Select(customer => customer.Mobile).FirstOrDefaultAsync(cancellationToken);
         var now = DateTime.Now;
+        var currentStatus = contact?.IsDeleted == false
+            ? CurrentContactStatus(contact, mobile, now.Date, 1)
+            : QualityControlCustomerContactStatus.None;
+        // A second click on the same day cancels; a new click tomorrow records
+        // another attempt (yesterday's no-response has already expired).
+        var nextStatus = currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
         if (contact == null)
         {
             contact = new QualityControlCustomerContact
@@ -240,6 +246,16 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             Stamp(contact, access, now, persianNow, false);
         }
 
+        if (nextStatus == QualityControlCustomerContactStatus.NoResponse)
+        {
+            contact.NoResponseAttempts++;
+            contact.LastNoResponseAt = now;
+        }
+        if (nextStatus == QualityControlCustomerContactStatus.InvalidNumber)
+            contact.InvalidMobileAtMark = (mobile ?? "").Trim();
+        else
+            contact.InvalidMobileAtMark = null;
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -255,7 +271,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
 
         return new(200, nextStatus switch
         {
-            QualityControlCustomerContactStatus.NoResponse => "عدم پاسخ مشتری ثبت شد.",
+            QualityControlCustomerContactStatus.NoResponse => "عدم پاسخ ثبت شد؛ مشتری فردا دوباره در صف بررسی قرار می‌گیرد.",
             QualityControlCustomerContactStatus.InvalidNumber => "شماره نامعتبر مشتری ثبت شد.",
             _ => "وضعیت تماس مشتری پاک شد."
         }, nextStatus);
