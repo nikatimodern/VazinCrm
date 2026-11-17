@@ -331,6 +331,14 @@
     min-width: 0;
     overflow-wrap: anywhere;
 }
+#qualityControlCustomerPage .qc-client-item-meta .qc-client-party {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-item-meta .qc-client-party-unset {
+    color: var(--qc-muted);
+}
 #qualityControlCustomerPage .qc-client-item-controls {
     display: flex;
     align-items: center;
