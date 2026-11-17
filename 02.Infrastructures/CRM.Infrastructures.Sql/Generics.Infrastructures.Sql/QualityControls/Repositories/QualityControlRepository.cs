@@ -169,7 +169,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 status, review?.Description, review?.RowVersion, savedQuestions);
                         }).ToList())).ToList())).ToList();
         return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
-            ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile, orders, questions);
+            ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
+            customer.AgentName, orders, questions);
     }
 
     public async Task<SaveQualityControlItemsResult> SaveItemsAsync(
