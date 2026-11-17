@@ -347,3 +347,13 @@
         margin-block: 0;
     }
 }
+
+#qualityControlCustomerPage .qc-client-legacy-note {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--qc-border);
+    background: #F3EDFC;
+    color: #5811B4;
+    font-size: 11px;
+}
