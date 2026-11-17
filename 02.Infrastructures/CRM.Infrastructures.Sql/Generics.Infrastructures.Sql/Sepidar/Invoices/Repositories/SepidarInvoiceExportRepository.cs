@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
+using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
@@ -151,6 +152,8 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
     {
         if (factor == null || factor.ParentReturnedId.HasValue || factor.Returned)
             throw new InvalidOperationException("فاکتور برگشتی قابل انتقال نیست.");
+        if (factor.CurrencyType != CurrencyTypeEnum.ریال)
+            throw new InvalidOperationException("صدور مستقیم فاکتور ارزی فعلاً پشتیبانی نمی‌شود.");
         if (!factor.DateMiladi.HasValue || factor.SerialNumber <= 0)
             throw new InvalidOperationException("شماره یا تاریخ فاکتور CRM معتبر نیست.");
         if (saleTypeId <= 0 || customerPartyId <= 0)
