@@ -10,12 +10,20 @@
         const summaryValues = [
             ["invalidNumberCustomers", "#qcSummaryInvalidCustomers"],
             ["noResponseCustomers", "#qcSummaryNoAnswerCustomers"],
+            ["noResponseCustomers", "#qcSummaryTomorrow"],
+            ["dueFollowUpsToday", "#qcSummaryDueToday"],
+            ["totalNoResponseAttempts", "#qcSummaryNoAnswerAttempts"],
             ["pendingCustomers", "#qcSummaryPendingCustomers"],
             ["pendingItems", "#qcSummaryPendingItems"],
             ["reviewedItems", "#qcSummaryReviewedItems"],
             ["discrepancyItems", "#qcSummaryDiscrepancyItems"],
             ["noDiscrepancyItems", "#qcSummaryNoDiscrepancyItems"],
+            ["completedCustomers", "#qcSummaryCompletedCustomers"],
+            ["totalItems", "#qcSummaryTotalItems"],
         ].map(([property, selector]) => [property, page.querySelector(selector)]);
+        const progressPercent = page.querySelector("#qcSummaryProgressPercent");
+        const progressFill = page.querySelector("#qcSummaryProgressFill");
+        const progressTrack = page.querySelector("#qcSummaryProgressTrack");
         const pages = page.querySelector("#qcCustomerPages");
         const modal = page.querySelector("#qcCustomerReviewModal");
         const form = page.querySelector("#qcCustomerReviewForm");
@@ -182,6 +190,18 @@
                     summaryValues.forEach(([property, element]) => {
                         if (element) element.textContent = faNumber.format(Number(result.summary[property] ?? 0));
                     });
+                    // Rate includes ALL eligible invoice items, including those
+                    // awaiting another call or correction of an invalid number.
+                    const allItems = Math.max(0, Number(result.summary.totalItems) || 0);
+                    const checkedItems = Math.max(0, Number(result.summary.reviewedItems) || 0);
+                    const percent = allItems > 0
+                        ? Math.min(100, Math.round(100 * checkedItems / allItems))
+                        : 0;
+                    progressPercent.textContent = faNumber.format(percent) + "٪";
+                    progressFill.style.width = percent + "%";
+                    progressTrack.setAttribute("aria-valuenow", String(percent));
+                    progressTrack.setAttribute("aria-valuetext",
+                        faNumber.format(checkedItems) + " از " + faNumber.format(allItems) + " قلم");
                 }
                 total = Number(result.filtered ?? 0);
                 if (start >= total && start > 0) {
