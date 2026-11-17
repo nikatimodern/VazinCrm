@@ -30,7 +30,10 @@ public sealed record QualityControlCustomerInvoice(Guid Id, int SerialNumber, st
     IReadOnlyList<QualityControlInvoiceItem> Items);
 
 public sealed record QualityControlCustomerOrder(Guid Id, int SerialNumber, string? Title,
-    IReadOnlyList<QualityControlCustomerInvoice> Invoices);
+    IReadOnlyList<QualityControlCustomerInvoice> Invoices)
+{
+    public bool HasLegacyReview { get; init; }
+}
 
 public sealed record QualityControlCustomerForm(Guid CustomerId, string? CustomerName, int CustomerCode,
     string? Mobile, IReadOnlyList<QualityControlCustomerOrder> Orders,
