@@ -567,7 +567,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         CancellationToken cancellationToken)
     {
         var inputs = request.Items;
-        if (request.CustomerId == Guid.Empty || inputs == null || inputs.Count is < 1 or > 500
+        if (request.CustomerId == Guid.Empty || inputs == null || inputs.Count is < 1 or > 2000
             || inputs.Any(item => item == null || item.FactorItemId == Guid.Empty)
             || inputs.Select(item => item.FactorItemId).Distinct().Count() != inputs.Count)
             return new(400, "فهرست اقلام معتبر نیست.");
