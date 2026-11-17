@@ -3286,11 +3286,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return (factor, title);
         }
 
+        private static string GetDirectInvoicePreviewToken(SepidarInvoiceExportPreview preview)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(
+                System.Text.Json.JsonSerializer.Serialize(preview));
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+        }
+
         private async Task<SepidarInvoiceExportPreview> PrepareDirectInvoicePreviewAsync(
             Factor factor, SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
             if (request.SaleTypeId <= 0 || request.ExternalCustomerId <= 0)
                 throw new InvalidOperationException("نوع فروش و مشتری مقصد را انتخاب کنید.");
+            if (!factor.CustomerId.HasValue)
+                throw new InvalidOperationException("مشتری CRM این فاکتور مشخص نشده است.");
+            var mappedCustomer = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.EntityId == factor.CustomerId.Value
+                    && x.EntityName == nameof(Customer)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.مشتری
+                    && x.ExEntityName == nameof(Party))
+                .Select(x => x.ExEntityId).SingleOrDefaultAsync(ct);
+            if (!int.TryParse(mappedCustomer, out var mappedId) || mappedId != request.ExternalCustomerId)
+                throw new InvalidOperationException("ارتباط مشتری این فاکتور با نرم‌افزار مالی مشخص نیست یا تغییر کرده است.");
             var mappings = (request.ItemMappings ?? []).Select(x =>
                 (x.FactorItemId, x.ExternalItemId, x.ExternalStockId)).ToList();
             return await GetSepidarInvoiceExportRepository(request.ExternalSoftwareId)
@@ -3516,6 +3534,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var preview = request.UsePreFactor
                     ? await repository.PreviewAsync(factor, preFactor, quotationId, ct)
                     : await PrepareDirectInvoicePreviewAsync(factor, request, ct);
+                var previewToken = request.UsePreFactor ? null : GetDirectInvoicePreviewToken(preview);
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
@@ -3523,7 +3542,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
                 var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(brokerPartyId, preview, ct);
                 var salespersonName = await GetFactorSalespersonNameAsync(factor, ct);
-                return Ok(new { softwareTitle, preview, broker, salespersonName });
+                return Ok(new { softwareTitle, preview, broker, salespersonName, previewToken });
             }
             catch (InvalidOperationException ex)
             {
@@ -3596,6 +3615,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var preview = request.UsePreFactor
                     ? await repository.PreviewAsync(factor, preFactor, quotationId, ct)
                     : await PrepareDirectInvoicePreviewAsync(factor, request, ct);
+                if (!request.UsePreFactor && (string.IsNullOrEmpty(request.PreviewToken)
+                    || request.PreviewToken != GetDirectInvoicePreviewToken(preview)))
+                    throw new InvalidOperationException("اطلاعات فاکتور پس از پیش‌نمایش تغییر کرده است؛ دوباره بررسی کنید.");
                 var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
                 // A mapping change after Preview requires a fresh confirmation.
