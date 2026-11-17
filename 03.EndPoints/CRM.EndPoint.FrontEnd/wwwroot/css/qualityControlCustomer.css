@@ -7,7 +7,7 @@
     --qc-border: #DDE1E8;
     --qc-muted: #545961;
     color: #212529;
-    padding: 14px;
+    padding: 0 14px 12px;
     direction: rtl;
 }
 /* Keep the page heading, KPI cards, filters and pager outside the scrolling list. */
@@ -45,7 +45,7 @@
 #qualityControlCustomerPage .qc-client-order-header {
     justify-content: space-between;
 }
-#qualityControlCustomerPage .qc-client-header { margin-bottom: 14px; }
+#qualityControlCustomerPage .qc-client-header { margin-bottom: 9px; }
 #qualityControlCustomerPage h1 {
     font-size: 22px;
     line-height: 1.5;
@@ -64,19 +64,29 @@
 #qualityControlCustomerPage .qc-client-overview {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 9px;
+    margin-bottom: 9px;
 }
 #qualityControlCustomerPage .qc-client-overview-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
-    min-height: 102px;
-    padding: 12px 14px;
+    padding: 9px 12px;
     background: #fff;
     border: 1px solid var(--qc-border);
     border-radius: 11px;
+}
+#qualityControlCustomerPage .qc-client-overview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-overview-head .qc-client-overview-title {
+    min-width: 0;
+    line-height: 1.5;
 }
 #qualityControlCustomerPage .qc-client-overview-title {
     color: var(--qc-muted);
@@ -108,8 +118,7 @@
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
 #qualityControlCustomerPage .qc-client-overview-action {
-    align-self: flex-start;
-    margin-top: auto;
+    flex: 0 0 auto;
     border: 1px solid var(--qc-action);
     border-radius: 7px;
     background: #fff;
@@ -139,7 +148,7 @@
 }
 @media (max-width: 420px) {
     #qualityControlCustomerPage .qc-client-overview { grid-template-columns: minmax(0, 1fr); }
-    #qualityControlCustomerPage .qc-client-overview-card { min-height: auto; padding: 9px 11px; }
+    #qualityControlCustomerPage .qc-client-overview-card { padding: 8px 10px; }
 }
 #qualityControlCustomerPage .qc-client-toolbar {
     background: #fff;
@@ -614,7 +623,7 @@
 #qualityControlCustomerPage .qc-client-feedback:not(:empty) { margin: 8px 0; }
 
 @media (max-width: 767px) {
-    #qualityControlCustomerPage { padding: 8px; }
+    #qualityControlCustomerPage { padding: 0 8px 8px; }
     /* On narrow/short viewports, retain page access to every control and
        still scroll the customer list independently. */
     #qualityControlCustomerPage .qc-client-queue { max-height: 48dvh; min-height: 180px; }
