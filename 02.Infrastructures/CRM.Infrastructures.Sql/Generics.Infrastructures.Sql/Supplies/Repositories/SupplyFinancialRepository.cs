@@ -48,6 +48,12 @@ public sealed class SupplyFinancialRepository(CRMContextDb db) : ISupplyFinancia
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteMappingAsync(ExternalMapping mapping, CancellationToken ct)
+    {
+        db.ExternalMappings.Remove(mapping);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<IAsyncDisposable> LockAsync(Guid sourceId, CancellationToken ct)
     {
         var resource = $"SupplyFinancial:{sourceId:D}";

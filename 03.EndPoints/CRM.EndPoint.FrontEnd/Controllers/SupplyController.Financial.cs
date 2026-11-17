@@ -7,6 +7,7 @@ using CRM.Core.ApplicationServices.Supplies.Queries.PrepareSupplyFinancial;
 using CRM.Core.ApplicationServices.Supplies.Queries.SearchSupplyFinancialOptions;
 using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyFinancial;
 using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyVendorMapping;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteMissingSupplyFinancialMapping;
 using CRM.Core.ApplicationServices.Supplies.Commands.SubmitSupplyFinancial;
 using CRM.Core.Domain.Supplies.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -17,11 +18,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 public partial class SupplyController
 {
-    private const string FinancialExportRoles = "مدیر ارشد,مدیر مالی,کارشناس مالی";
+    internal const string FinancialExportRoles = "مدیر ارشد,مدیر مالی,کارشناس مالی";
 
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
-    public Task<IActionResult> FinancialHistory(Guid sourceId, bool receipt, CancellationToken ct) =>
-        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyFinancialHistoryQuery(sourceId, receipt), ct));
+    public Task<IActionResult> FinancialHistory(Guid sourceId, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyFinancialHistoryQuery(sourceId), ct));
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> DeleteMissingFinancialMapping([FromBody] DeleteMissingSupplyFinancialMappingCommand input, CancellationToken ct) =>
+        input == null ? Task.FromResult<IActionResult>(BadRequest("سابقه ارسال معتبر نیست."))
+            : FinancialResponseAsync(() => requests.CommandAsync(input, ct));
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> PrepareFinancial([FromBody] SupplyFinancialRequest input, CancellationToken ct) =>

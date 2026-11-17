@@ -7983,7 +7983,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-.external-software-card:hover {
+.external-software-card:not(.is-disabled):hover {
 	border-color: #04857c;
 	background: #f6fbfa;
 }
@@ -8053,6 +8053,16 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	opacity: .5;
 	cursor: not-allowed;
 	background: #f3f4f6;
+}
+
+.external-software-card.is-disabled:not(.is-selected) {
+	opacity: 1;
+	color: var(--color-text-muted, #545961);
+}
+
+.external-software-card.is-disabled:not(.is-selected) .external-software-icon {
+	background: var(--color-background, #F0F1F7);
+	color: var(--color-text-muted, #545961);
 }
 
 
@@ -8473,7 +8483,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	overflow-wrap: anywhere;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number {
 	box-sizing: border-box;
 	width: 86px;
 	min-width: 0;
@@ -8490,12 +8500,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	box-shadow: none;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number::placeholder {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number::placeholder {
 	color: #788781;
 	opacity: 1;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number:focus {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number:focus {
 	border-color: #04857c;
 	box-shadow: 0 0 0 1px rgba(4, 133, 124, .12);
 }

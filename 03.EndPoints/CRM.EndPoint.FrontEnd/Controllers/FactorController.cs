@@ -3883,6 +3883,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendItemToExternalSoftware([FromBody] ExternalSoftwareAddItemRequest request, CancellationToken ct)
         {
             if (request == null)

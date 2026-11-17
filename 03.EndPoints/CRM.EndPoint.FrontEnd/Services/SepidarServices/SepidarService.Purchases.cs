@@ -20,10 +20,11 @@ public partial class SepidarService
     public sealed record PurchaseDraft(
         InventoryPurchaseInvoice Invoice, IReadOnlyList<InventoryPurchaseInvoiceItem> Items);
     public sealed record PurchaseVoucherLine(int AccountId, int? DlId, decimal Debit, decimal Credit);
-    public sealed record PurchaseDocument(int Id, int Number, DateTime Date, int? VoucherId);
+    public sealed record PurchaseDocument(int Id, int Number, DateTime Date, int? VoucherId,
+        string? PartyTitle = null, int? BasePurchaseId = null);
     public sealed record PurchaseReceiptDraft(
         InventoryReceipt Receipt, IReadOnlyList<InventoryReceiptItem> Items,
-        IReadOnlyList<PurchaseVoucherLine> VoucherLines);
+        IReadOnlyList<PurchaseVoucherLine> VoucherLines, int? SupplierInvoiceNumber, string? DelivererTitle);
 
     public async Task<PurchaseDraft> PreparePurchaseDraftAsync(
         SupplyFactor source, int vendorId, IReadOnlyList<PurchaseItemSelection> selections,
@@ -154,32 +155,24 @@ public partial class SepidarService
         };
     }
 
-    public async Task<IReadOnlyList<PurchaseOption>> SearchPurchaseVendorsAsync(
-        string search, int? selectedId, CancellationToken ct)
+    public async Task<IReadOnlyList<PurchaseOption>> GetPurchaseVendorsAsync(int? selectedId, CancellationToken ct)
     {
-        var term = TextService.NormalizePersianText(TextService.ToEnglishNumber(search ?? "")).Trim();
         var query = sepidarContext.Parties.AsNoTracking().Where(x => x.IsVendor && x.Dl != null);
         if (selectedId is int id)
             query = query.Where(x => x.PartyId == id);
-        else if (term.Length > 0)
-            query = query.Where(x => x.Dl.Code.Contains(term)
-                || (x.Name + " " + x.LastName).Replace("ي", "ی").Replace("ك", "ک").Contains(term));
 
-        var options = await query.OrderBy(x => x.Dl.Code).ThenBy(x => x.PartyId).Take(40)
+        var options = await query.OrderBy(x => x.Dl.Code).ThenBy(x => x.PartyId)
             .Select(x => new PurchaseOption(x.PartyId, x.Dl.Code, x.Name + " " + x.LastName))
             .ToListAsync(ct);
         return options.ConvertAll(x => x with { Title = TextService.NormalizePersianText(x.Title).Trim() });
     }
 
-    public async Task<IReadOnlyList<PurchaseOption>> SearchPurchaseItemsAsync(string search, CancellationToken ct)
+    public async Task<IReadOnlyList<PurchaseOption>> GetPurchaseItemsAsync(CancellationToken ct)
     {
-        var term = TextService.NormalizePersianText(TextService.ToEnglishNumber(search ?? "")).Trim();
         return await sepidarContext.Items.AsNoTracking()
             .Where(x => x.IsActive && x.Type == 1 && !x.SecondaryUnitRef.HasValue
                 && !x.SerialTracking && !x.IsPricingBasedOnTracing)
-            .Where(x => term == "" || x.Code.Contains(term)
-                || x.Title.Replace("ي", "ی").Replace("ك", "ک").Contains(term))
-            .OrderBy(x => x.Code).ThenBy(x => x.ItemID).Take(40)
+            .OrderBy(x => x.Code).ThenBy(x => x.ItemID)
             .Select(x => new PurchaseOption(x.ItemID, x.Code, x.Title))
             .ToListAsync(ct);
     }
@@ -248,6 +241,7 @@ public partial class SepidarService
 
         var fiscalYearId = await GetFiscalYearIdAsync(date, ct);
         var payableAccountId = await GetConfiguredAccountIdAsync("InventoryPayableSL", ct);
+        var transportBrokerAccountId = await GetConfiguredAccountIdAsync("InventoryTransportBrokerSL", ct);
         var issueVoucher = await GetRequiredSepidarBooleanSettingAsync("AutomaticVoucherForInventoryReceipt", ct);
 
         var rows = new List<InventoryReceiptItem>(source.Items.Count);
@@ -292,6 +286,8 @@ public partial class SepidarService
             StockRef = stockId,
             DelivererDLRef = source.Invoice.VendorDLRef,
             SLAccountRef = payableAccountId,
+            TransportBrokerSLAccountRef = transportBrokerAccountId,
+            TransporterDLRef = source.Invoice.VendorDLRef,
             Date = date,
             TotalPrice = totalPrice,
             TotalTax = totalTax,
@@ -306,7 +302,11 @@ public partial class SepidarService
             Description = description
         };
         var voucherLines = issueVoucher ? await PreparePurchaseReceiptVoucherLinesAsync(receipt, ct) : [];
-        return new PurchaseReceiptDraft(receipt, rows, voucherLines);
+        var delivererTitle = issueVoucher
+            ? await sepidarContext.DLs.AsNoTracking().Where(x => x.DLId == source.Invoice.VendorDLRef)
+                .Select(x => x.Title).SingleAsync(ct)
+            : null;
+        return new PurchaseReceiptDraft(receipt, rows, voucherLines, source.Invoice.InvoiceNumber, delivererTitle);
     }
 
     private async Task<IReadOnlyList<PurchaseVoucherLine>> PreparePurchaseReceiptVoucherLinesAsync(
@@ -346,23 +346,43 @@ public partial class SepidarService
         if (receipt)
             return await sepidarContext.InventoryReceipts.AsNoTracking()
                 .Where(x => x.InventoryReceiptID == id && !x.IsReturn && x.BasePurchaseInvoiceRef != null)
-                .Select(x => new PurchaseDocument(x.InventoryReceiptID, x.Number, x.Date, x.AccountingVoucherRef))
+                .Select(x => new PurchaseDocument(x.InventoryReceiptID, x.Number, x.Date, x.AccountingVoucherRef,
+                    sepidarContext.DLs.Where(dl => dl.DLId == x.DelivererDLRef).Select(dl => dl.Title).FirstOrDefault(),
+                    x.BasePurchaseInvoiceRef))
                 .SingleOrDefaultAsync(ct);
         return await sepidarContext.InventoryPurchaseInvoices.AsNoTracking()
             .Where(x => x.InventoryPurchaseInvoiceID == id && x.Type == 1)
-            .Select(x => new PurchaseDocument(x.InventoryPurchaseInvoiceID, x.Number, x.Date, x.AccountingVoucherRef))
+            .Select(x => new PurchaseDocument(x.InventoryPurchaseInvoiceID, x.Number, x.Date, x.AccountingVoucherRef,
+                sepidarContext.DLs.Where(dl => dl.DLId == x.VendorDLRef).Select(dl => dl.Title).FirstOrDefault()))
             .SingleOrDefaultAsync(ct);
     }
+
+    public Task<bool> PurchaseDocumentExistsAsync(bool receipt, int id, CancellationToken ct) =>
+        receipt
+            ? sepidarContext.InventoryReceipts.AnyAsync(x => x.InventoryReceiptID == id, ct)
+            : sepidarContext.InventoryPurchaseInvoices.AnyAsync(x => x.InventoryPurchaseInvoiceID == id, ct);
 
     public Task<Dictionary<int, string>> GetPurchaseItemLabelsAsync(int[] ids, CancellationToken ct) =>
         sepidarContext.Items.AsNoTracking().Where(x => ids.Contains(x.ItemID))
             .ToDictionaryAsync(x => x.ItemID, x => x.Code + " - " + x.Title, ct);
 
+    public sealed record ReceiptItemDisplay(string Label, string UnitTitle);
+
+    public Task<Dictionary<int, ReceiptItemDisplay>> GetReceiptItemDisplaysAsync(int[] itemIds, CancellationToken ct) =>
+        (from item in sepidarContext.Items.AsNoTracking()
+         where itemIds.Contains(item.ItemID)
+         join unit in sepidarContext.Units.AsNoTracking() on item.UnitRef equals unit.UnitID into units
+         from unit in units.DefaultIfEmpty()
+         select new { item.ItemID, Label = item.Code + " - " + item.Title, UnitTitle = unit.Title })
+        .ToDictionaryAsync(x => x.ItemID, x => new ReceiptItemDisplay(x.Label, x.UnitTitle), ct);
+
     public Task<PurchaseDocument> FindReceiptForPurchaseAsync(int purchaseId, CancellationToken ct) =>
         sepidarContext.InventoryReceipts.AsNoTracking()
             .Where(x => x.BasePurchaseInvoiceRef == purchaseId && !x.IsReturn)
             .OrderBy(x => x.InventoryReceiptID)
-            .Select(x => new PurchaseDocument(x.InventoryReceiptID, x.Number, x.Date, x.AccountingVoucherRef))
+            .Select(x => new PurchaseDocument(x.InventoryReceiptID, x.Number, x.Date, x.AccountingVoucherRef,
+                sepidarContext.DLs.Where(dl => dl.DLId == x.DelivererDLRef).Select(dl => dl.Title).FirstOrDefault(),
+                x.BasePurchaseInvoiceRef))
             .FirstOrDefaultAsync(ct);
 
     public async Task<int> ReservePurchaseDocumentIdAsync(bool receipt, CancellationToken ct)
@@ -445,7 +465,7 @@ public partial class SepidarService
         }
 
         if (draft.VoucherLines.Count > 0)
-            receipt.AccountingVoucherRef = await AddPurchaseReceiptVoucherAsync(receipt, draft.VoucherLines, ct);
+            receipt.AccountingVoucherRef = await AddPurchaseReceiptVoucherAsync(draft, ct);
 
         sepidarContext.InventoryReceipts.Add(receipt);
         sepidarContext.InventoryReceiptItems.AddRange(draft.Items);
@@ -457,12 +477,21 @@ public partial class SepidarService
         if (updated != draft.Items.Count)
             throw new InvalidOperationException("مانده اقلام فاکتور خرید هم‌زمان تغییر کرده است.");
 
+        // The first refresh removes empty summary rows. Recreate them before refreshing the receipt quantities.
+        await LockInventoryStockSummaryAsync(summary, ct);
         await UpdateInventoryStockSummaryAsync(summary, ct);
         var after = await ReadInventoryStockBalancesAsync(keys, receipt.FiscalYearRef, ct);
         foreach (var group in draft.Items.GroupBy(x => new InventoryStockKey(stockId, x.ItemRef, x.TracingRef)))
         {
-            if (after[group.Key].PhysicalQuantity != before[group.Key].PhysicalQuantity + group.Sum(x => x.Quantity))
-                throw new InvalidOperationException("افزایش موجودی انبار با مقدار رسید مطابقت ندارد.");
+            var receivedQuantity = group.Sum(x => x.Quantity);
+            var stockIncrease = after[group.Key].PhysicalQuantity - before[group.Key].PhysicalQuantity;
+            if (stockIncrease != receivedQuantity)
+            {
+                var labels = await GetPurchaseItemLabelsAsync([group.Key.ItemRef], ct);
+                var item = labels.GetValueOrDefault(group.Key.ItemRef) ?? group.Key.ItemRef.ToString(CultureInfo.InvariantCulture);
+                throw new InvalidOperationException(
+                    $"افزایش موجودی انبار برای «{item}» با مقدار رسید مطابقت ندارد. مقدار رسید {receivedQuantity:0.####} و تغییر موجودی {stockIncrease:0.####} است.");
+            }
         }
 
         await transaction.CommitAsync(ct);
@@ -514,12 +543,27 @@ public partial class SepidarService
             throw new InvalidOperationException("اطلاعات سند تغییر کرده است. پیش‌نمایش جدید را بررسی کنید.");
     }
 
-    private async Task<int> AddPurchaseReceiptVoucherAsync(InventoryReceipt receipt,
-        IReadOnlyList<PurchaseVoucherLine> lines, CancellationToken ct)
+    private async Task<int> AddPurchaseReceiptVoucherAsync(PurchaseReceiptDraft draft, CancellationToken ct)
     {
+        var receipt = draft.Receipt;
+        var lines = draft.VoucherLines;
         var id = await GetLockedNextPurchaseIdAsync("ACC.Voucher", 1, ct);
         var number = await GetNextVoucherNumberAsync(receipt.FiscalYearRef, ct);
-        var description = $"بابت رسید انبار شماره {receipt.Number} تاریخ {BaseServices.GetDatePersian(receipt.Date)}";
+        var description = $"بابت رسيد انبار شماره {receipt.Number} تاريخ {BaseServices.GetDatePersian(receipt.Date)}";
+        var linePrefix = $"{description} نوع خريد (داخلي)";
+        var invoiceSuffix = draft.SupplierInvoiceNumber.HasValue
+            ? $" به شماره فاكتور خريد {draft.SupplierInvoiceNumber.Value}"
+            : string.Empty;
+        var creditDescription = linePrefix + invoiceSuffix;
+        var debitDescription = creditDescription;
+        if (!string.IsNullOrWhiteSpace(draft.DelivererTitle))
+        {
+            const string fromDeliverer = " از ";
+            const int maxDescriptionLength = 250;
+            var titleLength = maxDescriptionLength - creditDescription.Length - fromDeliverer.Length;
+            var title = draft.DelivererTitle.Trim();
+            debitDescription = linePrefix + fromDeliverer + title[..Math.Min(title.Length, titleLength)] + invoiceSuffix;
+        }
         sepidarContext.Add(new Voucher {
             VoucherId = id,
             Number = number,
@@ -542,6 +586,7 @@ public partial class SepidarService
         for (var index = 0; index < lines.Count; index++)
         {
             var line = lines[index];
+            var lineDescription = line.Debit > 0m ? debitDescription : creditDescription;
             sepidarContext.Add(new VoucherItem {
                 VoucherItemId = lastItemId - lines.Count + index + 1,
                 VoucherRef = id,
@@ -552,8 +597,8 @@ public partial class SepidarService
                 Credit = line.Credit,
                 IssuerEntityName = "SG.Inventory.InventoryOperations.Common.DsInventoryReceipt, SG.Inventory.InventoryOperations.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
                 IssuerEntityRef = receipt.InventoryReceiptID,
-                Description = description,
-                Description_En = description,
+                Description = lineDescription,
+                Description_En = lineDescription,
                 Version = 1
             });
         }

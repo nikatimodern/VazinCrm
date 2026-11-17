@@ -249,7 +249,7 @@
 #productionOrderWorkspace .filter-switch label { padding:5px 9px; font:500 12px/1.7 IRANSansMedium; color:#545961; border-radius:5px; }
 #productionOrderWorkspace .filter-switch input:checked + label { background:var(--order-light); color:var(--order-primary); box-shadow:none; }
 #productionOrderWorkspace .search-group { border:1px solid var(--order-border); border-radius:7px; overflow:hidden; background:#fff; }
-#productionOrderWorkspace #orderSearchId { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 13px/1.7 IRANSans; text-align:start; }
+#productionOrderWorkspace #orderSearchId { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 13px/1.7 IRANSans; text-align:start; padding: .375rem .75rem; }
 #productionOrderWorkspace .search-icon { background:var(--order-purple-light); color:var(--order-purple); border:none; }
 #productionOrderWorkspace .btnFilter { padding:5px; background:var(--order-light); border-radius:6px; }
 #productionOrderWorkspace .btnFilter svg { color:var(--order-primary) !important; }

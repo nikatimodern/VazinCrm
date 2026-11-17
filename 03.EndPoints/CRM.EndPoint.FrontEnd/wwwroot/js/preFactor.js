@@ -1766,7 +1766,7 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
         sepidarItems: result.sepidarItems,
     };
     
-    state.mappings.items = {};
+    if (!reload) state.mappings.items = {};
     state.step = "items";
     
     exSoftwarePreFactorRenderItems();
@@ -1779,43 +1779,40 @@ function exSoftwarePreFactorRenderItems() {
     const preFactor = state.preFactor;
     
     
+    const { content, add, list } = createExternalItemMatching();
+    add.addEventListener("click", () => openSepidarItemCreation({
+        softwareId: software.externalSoftwareId,
+        softwareTitle: software.externalSoftwareTitle,
+        afterCreate: () => exSoftwarePreFactorLoadItems(true),
+        canOpen: () => externalSoftwareProcess === state && state.software === software
+            && isModalOpen(getExternalMappingModal()),
+    }));
+
+    for (const item of preFactor.items ?? []) {
+        const target = appendExternalItemMatchRow(list, item.productTitle, item.weightCount, item.unitTxt);
+        const select = document.createElement("select");
+        select.id = "externalMappingItem_" + item.preFactorItemId;
+        select.dataset.crmItemId = item.preFactorItemId;
+        select.className = "external-mapping-item-select show-dropdown-arrow";
+
+        const label = document.createElement("label");
+        label.htmlFor = select.id;
+        label.className = "form-label mb-0";
+        label.textContent = "کالای معادل در نرم‌افزار مالی";
+
+        const selectedId = String(state.mappings.items[String(item.preFactorItemId)]?.externalItemId ?? "");
+        select.append(new Option("", ""));
+        for (const product of software.sepidarItems ?? []) {
+            select.append(new Option(product.code + " - " + product.title, product.id, false, String(product.id) === selectedId));
+        }
+        target.append(label, select);
+    }
+
     exSoftwarePreFactorRenderStep({
         title: "تطبیق کالاها",
         subtitle: "انتخاب کالای معادل برای ردیف‌های پیش‌فاکتور",
-        icon: `<i class="fas fa-boxes"></i>`,
-        step: "مرحله 3 از 5",
-        
-        content: `
-            <div class="external-item-mapping-list">
-                <div class="text-end" style="line-height: 1;font-size: 12px">
-                    <button class="link-green text-decoration-none" type="button" onclick="showAddItemInSepidarModal()">افزودن محصول جدید</button>
-                </div>
-                ${(preFactor.items ?? []).map(item => {
-            const mapping = state.mappings.items[String(item.preFactorItemId)];
-            return `
-                <div class="external-mapping-entity external-item-mapping-row">
-                    <div class="d-flex flex-column gap-1">
-                        <span class="external-mapping-label">محصول پیش‌فاکتور CRM</span>
-                        <span class="external-mapping-entity-name fbold">${escapeHtml(item.productTitle)}</span>
-                    </div>
-                    <div>
-                        <label class="form-label mt-2 mb-0" for="externalMappingItem_${item.preFactorItemId}">کالای معادل در نرم‌افزار مالی</label>
-    
-                        <select class="external-mapping-item-select show-dropdown-arrow" id="externalMappingItem_${item.preFactorItemId}" data-crm-item-id="${escapeHtml(item.preFactorItemId)}">
-                            <option value="">جستجو و انتخاب کالا</option>
-    
-                            ${(software.sepidarItems ?? []).map(product => `
-                                <option value="${escapeHtml(product.id)}" ${String(product.id) === String(mapping?.externalItemId ?? "") ? "selected" : ""}>
-                                    ${escapeHtml(product.code)} - ${escapeHtml(product.title)}
-                                </option>
-                            `).join("")}
-                        </select>
-                    </div>
-                </div>
-            `;
-        }).join("")}
-            </div>
-        `,
+        icon: '<i class="fas fa-boxes" aria-hidden="true"></i>',
+        step: "مرحله ۳ از ۵", large: true, content,
     });
     
     getExternalMappingList().querySelectorAll(".external-mapping-item-select").forEach(select => {
@@ -2269,128 +2266,3 @@ document.addEventListener("click", event => {
 
 
 /* --------------------------------------------------- Add Item In Sepidar --------------------------------------------------- */
-
-const getAddItemInSepidarModal = () => document.getElementById("addItemInSepidarModal");
-async function showAddItemInSepidarModal() {
-    await Promise.all([initSepidarUnitsOp(), initSepidarLastItemCode()]);
-    
-    ModalToggle(getAddItemInSepidarModal());
-}
-
-let allSepidarUnitsPromise = null;
-const initSepidarUnitsOp = async () => {
-    const state = externalSoftwareProcess;
-    
-    const select = getAddItemInSepidarModal().querySelector("#sepidarItemUnitId");
-    if (!select) return;
-    
-    if (!allSepidarUnitsPromise) {
-        allSepidarUnitsPromise = sendApiRequest({
-            url: "/Factor/PrepareExternalUnits",
-            method: "POST",
-            successMsg: null,
-            data: {
-                externalSoftwareIds: [state.software.externalSoftwareId],
-            },
-        });
-    }
-    
-    if (select.tomselect) {
-        return select.tomselect;
-    }
-    
-    const units = await allSepidarUnitsPromise;
-    
-    return new TomSelect(select, {
-        options: units,
-        placeholder: "جستجو و انتخاب واحد",
-        maxItems: 1,
-        selectOnTab: true,
-    });
-};
-
-const initSepidarLastItemCode = async () => {
-    const state = externalSoftwareProcess;
-    
-    await sendApiRequest({
-        url: "/Factor/GetLastSepidarItemCode",
-        method: "POST",
-        successMsg: null,
-        data: {
-            externalSoftwareIds: [state.software.externalSoftwareId],
-        },
-        onSuccess: async (res) => {
-            console.log(res);
-            getAddItemInSepidarModal().querySelector("#lastSepidarItemCode").innerHTML = `کد آخرین محصول: <b style="font-size: 12px">${res.data}</b>`;
-        },
-    });
-};
-
-
-let sepidarStocksSelectedIds = [];
-async function showAddStocksModal() {
-    const state = externalSoftwareProcess;
-    
-    await modalSelector.open({
-        title: "انتخاب انبار",
-        selectedIds: sepidarStocksSelectedIds,
-        size: "sm",
-        showSearch: false,
-        
-        load: async () => {
-            return await sendApiRequest({
-                url: "/Factor/GetAllSepidarStocksPartial",
-                method: "POST",
-                successMsg: null,
-                data: {
-                    ExternalSoftwareIds: [state.software.externalSoftwareId],
-                },
-            });
-        },
-        
-        onSubmit: ({ ids, numbers }) => {
-            sepidarStocksSelectedIds = ids;
-            const input = getAddItemInSepidarModal().querySelector("#sepidarStockId");
-            input.value = numbers.join(", ");
-            
-            input.classList.remove("AlertReq");
-            
-            console.log(ids);
-        },
-    });
-}
-
-
-document.addEventListener("hidden.bs.modal", event => {
-    if (event.target.id !== "addItemInSepidarModal") return;
-    mySer.emptyForm("addItemInSepidarForm");
-    modalSelector.reset();
-    sepidarStocksSelectedIds = [];
-});
-
-async function submitItemInSepidar() {
-    const state = externalSoftwareProcess;
-    
-    if (!await mySer.CheckValidForm("addItemInSepidarForm")) return;
-    if (!sepidarStocksSelectedIds.length) return toastifyError("حداقل یک انبار باید انتخاب شود.");
-    
-    
-    const model = {
-        ...mySer.convertFormToJSON("addItemInSepidarForm"),
-        stockIds: sepidarStocksSelectedIds.map(Number),
-        externalSoftwareId: state.software.externalSoftwareId,
-    };
-    
-    console.log(model);
-    
-    await sendApiRequest({
-        url: "/Factor/SendItemToExternalSoftware",
-        method: "POST",
-        data: model,
-        successMsg: "ثبت محصول با موفقیت انجام شد",
-        onSuccess: async () => {
-            ModalToggle(getAddItemInSepidarModal(), "hide");
-            await exSoftwarePreFactorLoadItems(true);
-        },
-    });
-}

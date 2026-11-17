@@ -39,6 +39,7 @@ using CRM.Core.ApplicationServices.Supplies.Queries.SearchSupplyFinancialOptions
 using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyFinancial;
 using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyVendorMapping;
 using CRM.Core.ApplicationServices.Supplies.Commands.SubmitSupplyFinancial;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteMissingSupplyFinancialMapping;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
@@ -157,6 +158,7 @@ public static class ApplicationServicesRegistration
         services.AddScoped<IQueryHandler<PreviewSupplyFinancialQuery, SupplyResult>, PreviewSupplyFinancialQueryHandler>();
         services.AddScoped<ICommandHandler<SaveSupplyVendorMappingCommand, SupplyResult>, SaveSupplyVendorMappingCommandHandler>();
         services.AddScoped<ICommandHandler<SubmitSupplyFinancialCommand, SupplyResult>, SubmitSupplyFinancialCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteMissingSupplyFinancialMappingCommand, SupplyResult>, DeleteMissingSupplyFinancialMappingCommandHandler>();
         services.AddScoped<ICqrsDispatcher, CqrsDispatcher>();
         services.AddScoped<IQueryHandler<GetSupplyFactorAllocationsQuery, SupplyResult>, GetSupplyFactorAllocationsQueryHandler>();
         services.AddScoped<IQueryHandler<SearchAllocationFactorItemsQuery, SupplyResult>, SearchAllocationFactorItemsQueryHandler>();

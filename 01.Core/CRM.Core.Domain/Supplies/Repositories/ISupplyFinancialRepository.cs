@@ -16,5 +16,6 @@ public interface ISupplyFinancialRepository
     Task<ExternalMapping> GetMappingAsync(Guid sourceId, Guid destinationId, ExternalMappingTypeEnum type, CancellationToken ct);
     Task<string> GetCreatorIdAsync(Guid destinationId, CancellationToken ct);
     Task SaveMappingAsync(ExternalMapping mapping, CancellationToken ct);
+    Task DeleteMappingAsync(ExternalMapping mapping, CancellationToken ct);
     Task<IAsyncDisposable> LockAsync(Guid sourceId, CancellationToken ct);
 }

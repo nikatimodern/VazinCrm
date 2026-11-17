@@ -1702,6 +1702,12 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.InvoiceId == id),
 
+            nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryPurchaseInvoice) =>
+                await sepidarContext.InventoryPurchaseInvoices.AnyAsync(x => x.InventoryPurchaseInvoiceID == id && x.Type == 1),
+
+            nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryReceipt) =>
+                await sepidarContext.InventoryReceipts.AnyAsync(x => x.InventoryReceiptID == id && !x.IsReturn),
+
             _ => null
         };
     }
@@ -1728,6 +1734,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
         if (validStockIds.Count != selectedStockIds.Count)
             throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
+
+        if (request.DefaultStockRef is int defaultStockRef && !validStockIds.Contains(defaultStockRef))
+            throw new InvalidOperationException("انبار پیش‌فرض باید یکی از انبارهای انتخاب‌شده برای کالا باشد.");
 
         await AddItemAsync(request, ct);
     }
@@ -1760,7 +1769,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 Title = request.ItemTitle,
                 Title_En = request.ItemTitle,
                 UnitRef = request.ItemUnit,
-                DefaultStockRef = null, // فعلا
+                DefaultStockRef = request.DefaultStockRef,
                 Creator = 1,
                 CreationDate = now,
                 LastModifier = 1,

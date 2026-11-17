@@ -15,10 +15,9 @@ async function openSupplyFinancial(sourceId) {
     const chooser = document.getElementById("chooseExternalSoftwareModal");
     const lifecycle = new AbortController();
     const { signal } = lifecycle;
-    const numeral = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 4 });
     const selects = [];
     let version = 0, fieldId = 0, busy = false, choosing = false, closing = false;
-    let destinations = [], position = 0, historyReceipt = false;
+    let destinations = [], position = 0;
     let onBack, onConfirm, canConfirm;
 
     const make = (tag, text, classes) => {
@@ -27,12 +26,11 @@ async function openSupplyFinancial(sourceId) {
         if (classes) node.className = classes;
         return node;
     };
-    const format = value => numeral.format(value ?? 0);
     const label = option => [option.code, option.title].filter(Boolean).join(" - ");
-    const request = async (action, data, method = "POST", quiet = false) => {
+    const request = async (action, data, method = "POST", showLoading = true) => {
         const response = await sendApiRequest({
             url: "/Supply/" + action, method, successMsg: null, returnFullResponse: true,
-            showLoading: !quiet, showError: !quiet, signal,
+            signal, showLoading,
             ...(method === "GET" ? { params: data } : { data, headers: { RequestVerificationToken: token } }),
         });
         return response?.data ?? null;
@@ -51,9 +49,10 @@ async function openSupplyFinancial(sourceId) {
     const stage = ({ software, title, subtitle, icon, step, content, large, backAction, confirmAction,
         confirmText = "تأیید و ادامه", backText = "برگشت", enabled = () => true }) => {
         clearSelects();
+        disposeDateTimePickers(stageContainer);
         renderExternalFinancialStage(wizard, stageContainer, {
             destination: software.title, position: "نرم‌افزار " + (position + 1) + " از " + destinations.length,
-            title, subtitle, icon: '<i class="fas ' + icon + '" aria-hidden="true"></i>', step, content, large,
+            title, subtitle, icon: `<i class="fas ${icon}" aria-hidden="true"></i>`, step, content, large,
         });
         onBack = backAction;
         onConfirm = confirmAction;
@@ -90,33 +89,82 @@ async function openSupplyFinancial(sourceId) {
     const setupSelect = (control, placeholder, options = {}) => {
         selects.push(new TomSelect(control, { placeholder, onChange: updateButtons, ...options }));
     };
-    const remote = (control, softwareId, items, preselected) => {
-        const option = row => ({ value: String(row.id), text: label(row) });
-        setupSelect(control, items ? "جستجو و انتخاب کالا" : "جستجو و انتخاب تأمین‌کننده", {
-            searchField: [], preload: "focus",
-            options: preselected ? [option(preselected)] : [],
-            items: preselected ? [String(preselected.id)] : [],
-            load: async (search, done) => {
-                const rows = await request("FinancialOptions", { externalSoftwareId: softwareId, search, items }, "GET", true);
-                if (control.tomselect) done((rows ?? []).map(option));
+    const normalizeOptionSearch = value => normalizePersianText(value)
+        .replace(/[۰-۹٠-٩]/g, digit => String(digit.charCodeAt(0) & 15))
+        .replace(/\u200c/g, " ")
+        .trim().toLowerCase();
+    const searchableOption = row => {
+        const text = label(row);
+        return { value: String(row.id), text, searchText: normalizeOptionSearch(text) };
+    };
+    const setupSearchableSelect = (control, placeholder, options, selectedId) => {
+        setupSelect(control, placeholder, {
+            options: options.map(item => ({ ...item })),
+            items: selectedId ? [String(selectedId)] : [],
+            searchField: ["searchText"],
+            score(query) {
+                return this.getScoreFunction(normalizeOptionSearch(query));
             },
         });
     };
-
-    const loadHistory = async receipt => {
-        historyReceipt = receipt;
-        const current = ++version;
-        const name = receipt ? "رسید انبار" : "فاکتور خرید";
-        historyHeading.textContent = "سوابق " + name;
-        sendLabel.textContent = "ارسال " + name + " به نرم‌افزار مالی";
-        for (const tab of historyModal.querySelectorAll("[data-supply-financial-tab]")) {
-            const active = (tab.dataset.supplyFinancialTab === "receipt") === receipt;
-            tab.classList.toggle("active", active);
-            tab.setAttribute("aria-pressed", String(active));
+    const loadItemStage = async (data, source, software, refresh = false) => {
+        if (refresh || !source.itemOptions) {
+            const rows = await request("FinancialOptions", { externalSoftwareId: software.id, items: true }, "GET");
+            if (!rows || signal.aborted || !isModalOpen(wizard)) return;
+            source.itemOptions = rows.map(searchableOption);
         }
+        documentStage(data, source, software);
+    };
+
+    const historyFields = entries => {
+        const info = make("div", null, "external-pf-info");
+        for (const [caption, value, accent] of entries) {
+            const item = make("div", null, "external-pf-field");
+            const text = make("span", value ?? "—", "external-pf-value" + (accent ? " external-pf-software" : ""));
+            if (value) text.title = value;
+            item.append(make("span", caption + ":", "external-pf-label"), text);
+            info.append(item);
+        }
+        return info;
+    };
+    const historyActions = button => {
+        const actions = make("div", null, "external-pf-actions");
+        actions.append(button);
+        return actions;
+    };
+    const missingHistory = (software, entry, receipt) => {
+        const remove = make("button", "حذف سابقه", "external-pf-action supply-financial-remove");
+        remove.type = "button";
+        remove.addEventListener("click", async () => {
+            remove.disabled = true;
+            try {
+                const result = await Swal.fire({
+                    target: historyModal,
+                    title: "حذف سابقه ارسال",
+                    text: "ارتباط این سند با " + software.title + " از CRM حذف شود؟",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "حذف سابقه",
+                    cancelButtonText: "انصراف",
+                    focusCancel: true,
+                });
+                if (!result.isConfirmed || signal.aborted) return;
+                const deleted = await request("DeleteMissingFinancialMapping", {
+                    sourceId, softwareId: software.id, mappingId: entry.mappingId, receipt,
+                });
+                if (!deleted?.deleted) return;
+                toastifySuccess("سابقه ارسال حذف شد.");
+                if (!signal.aborted) await loadHistory();
+            } finally {
+                remove.disabled = false;
+            }
+        }, { signal });
+        return historyActions(remove);
+    };
+    const loadHistory = async () => {
+        const current = ++version;
         send.disabled = true;
-        historyList.replaceChildren(make("div", "در حال دریافت سوابق…", "external-pf-empty"));
-        const result = await request("FinancialHistory", { sourceId, receipt }, "GET");
+        const result = await request("FinancialHistory", { sourceId }, "GET", false);
         if (signal.aborted || current !== version) return;
         historyList.replaceChildren();
         if (!result) {
@@ -124,97 +172,142 @@ async function openSupplyFinancial(sourceId) {
             return;
         }
         historyModal.querySelector(".modal-title").textContent = "مدیریت ارسال فاکتور تأمین " + (result.serialNumber ?? "");
-        const records = result.softwares.filter(row => row.document || row.hasMapping);
+        const records = result.softwares.filter(row => row.purchase || row.receipt);
         for (const row of records) {
-            const card = make("div", null, "external-pf-card");
-            const info = make("div", null, "external-pf-info");
-            const entries = [
-                ["نرم‌افزار", row.title], ["تاریخ ثبت", row.dateText],
-                ["شماره " + name, row.document ? format(row.document.number) : null],
-                ["وضعیت", row.missing ? "سند مقصد پیدا نشد" : row.pending ? "ارتباط در CRM تکمیل نشده"
-                    : row.document?.voucherId ? "دارای سند حسابداری" : "ثبت شده"],
-            ];
-            entries.forEach(([caption, value], index) => {
-                const item = make("div", null, "external-pf-field");
-                item.append(make("span", caption + ":", "external-pf-label"),
-                    make("span", value ?? "—", "external-pf-value" + (index === 0 ? " external-pf-software" : "")));
-                info.append(item);
-            });
+            const { purchase, receipt } = row;
+            const invoice = purchase?.document;
+            const group = make("div", null, "supply-financial-document-group");
+            const card = make("div", null, "external-pf-card" + (!invoice ? " supply-financial-missing" : ""));
+            const info = historyFields([
+                ["نرم‌افزار", row.title, true], ["تاریخ ثبت", purchase?.dateText],
+                ["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle],
+            ]);
+            if (!invoice)
+                info.append(make("p", purchase ? "فاکتور خرید در نرم‌افزار مقصد پیدا نشد." :
+                    "سابقه فاکتور خرید برای این مقصد موجود نیست.", "supply-financial-missing-message"));
             card.append(info);
-            historyList.append(card);
+            if (purchase && !invoice && purchase.mappingId)
+                card.append(missingHistory(row, purchase, false));
+            if (invoice && !receipt) {
+                const register = make("button", "ثبت رسید انبار", "external-pf-action external-pf-view");
+                register.type = "button";
+                register.addEventListener("click", async () => {
+                    if (choosing || send.disabled || isModalOpen(wizard)) return;
+                    choosing = true;
+                    register.disabled = true;
+                    try {
+                        destinations = [row];
+                        position = 0;
+                        await prepare(row, true, true, invoice.id);
+                    } finally {
+                        register.disabled = false;
+                        choosing = false;
+                    }
+                }, { signal });
+                card.append(historyActions(register));
+            }
+            group.append(card);
+            if (receipt) {
+                const document = receipt.document;
+                const unrelated = !!invoice && !!document && document.basePurchaseId !== invoice.id;
+                const panel = make("div", null, "supply-financial-receipt" +
+                    (!document || unrelated ? " supply-financial-missing" : ""));
+                panel.append(make("div", !document || unrelated ? "رسید انبار" : "رسید انبار ثبت شده",
+                    "supply-financial-receipt-title"));
+                if (document && !unrelated) {
+                    panel.append(historyFields([
+                        ["شماره رسید", document.number], ["تاریخ ثبت", receipt.dateText],
+                        ["تحویل‌دهنده", document.partyTitle],
+                    ]));
+                } else {
+                    panel.append(make("p", unrelated ? "رسید ثبت‌شده به این فاکتور خرید مربوط نیست." :
+                        "رسید انبار در نرم‌افزار مقصد پیدا نشد.", "supply-financial-missing-message"));
+                    if (!document && receipt.mappingId) panel.append(missingHistory(row, receipt, true));
+                }
+                group.append(panel);
+            }
+            historyList.append(group);
         }
         if (!records.length) {
-            const hasDestination = result.softwares.some(row => !row.isDisabled);
-            const message = receipt && !hasDestination ? "برای ارسال رسید انبار، ابتدا فاکتور خرید را در همان نرم‌افزار مالی ثبت کنید."
-                : "این " + name + " هنوز در نرم‌افزار مالی ثبت نشده است.";
-            historyList.append(make("div", message, "external-pf-empty"));
+            historyList.append(make("div", "این فاکتور خرید هنوز در نرم‌افزار مالی ثبت نشده است.", "external-pf-empty"));
         }
-        send.disabled = !result.softwares.some(row => !row.isDisabled);
-        send.onclick = () => choose(result.softwares.filter(row => !row.isDisabled), receipt);
+        send.disabled = result.softwares.length === 0;
+        send.onclick = () => choose(result.softwares);
     };
 
-    const choose = (options, receipt) => {
-        if (choosing) return;
+    const choose = async softwares => {
+        if (choosing || isModalOpen(wizard)) return;
         choosing = true;
+        const chooserEvents = new AbortController();
+        const chooserSignal = AbortSignal.any([signal, chooserEvents.signal]);
         let selected = [];
         let chooserShown = false;
         chooser.addEventListener("shown.bs.modal", () => {
             chooserShown = true;
             if (selected.length) ModalToggle(chooser, "hide");
-        }, { once: true, signal });
+        }, { once: true, signal: chooserSignal });
         chooser.addEventListener("hidden.bs.modal", async () => {
-            choosing = false;
-            if (!selected.length) {
-                send.focus();
-                return;
+            try {
+                if (!selected.length) {
+                    send.focus();
+                    return;
+                }
+                destinations = selected.map(id => softwares.find(software => software.id === id)).filter(Boolean);
+                if (!destinations.length) return;
+                position = 0;
+                await prepare(destinations[0], false, true);
+            } finally {
+                choosing = false;
             }
-            destinations = selected.map(id => options.find(option => option.id === id)).filter(Boolean);
-            position = 0;
-            await prepare(destinations[0], receipt, true);
-        }, { once: true, signal });
-        showExternalSoftwareModal(sourceId, {
-            options,
+        }, { once: true, signal: chooserSignal });
+        const result = await showExternalSoftwareModal(sourceId, {
+            mapType: 8,
             onConfirm: ({ externalSoftwareIds }) => {
                 selected = externalSoftwareIds;
                 if (chooserShown) ModalToggle(chooser, "hide");
             },
         });
+        if (!result) {
+            chooserEvents.abort();
+            choosing = false;
+        }
     };
     const next = () => {
         position++;
-        if (position < destinations.length) return prepare(destinations[position], historyReceipt);
+        if (position < destinations.length) return prepare(destinations[position], false);
         closing = true;
         ModalToggle(wizard, "hide");
     };
 
-    const prepare = async (software, receipt, open = false) => {
-        const data = { supplyFactorId: sourceId, externalSoftwareId: software.id, receipt };
+    const prepare = async (software, receipt, open = false, purchaseId) => {
+        const data = { supplyFactorId: sourceId, externalSoftwareId: software.id, receipt, purchaseId };
         const title = receipt ? "رسید انبار" : "فاکتور خرید";
-        stage({ software, title, subtitle: "در حال دریافت اطلاعات", icon: "fa-desktop", step: "" });
-        let shown;
-        if (open) {
-            shown = new Promise(resolve => wizard.addEventListener("shown.bs.modal", resolve, { once: true, signal }));
-            ModalToggle(wizard, "show");
-        }
+        onBack = onConfirm = null;
+        updateButtons();
         const pendingVersion = ++version;
-        const [source] = await Promise.all([request("PrepareFinancial", data), shown]);
+        const source = await request("PrepareFinancial", data, "POST", false);
         if (signal.aborted || pendingVersion !== version) return;
         if (!source || source.recover || source.document) {
-            const message = source?.document ? "سند شماره " + format(source.document.number) + " در سپیدار ثبت شده است."
+            const message = source?.document ? "سند شماره " + source.document.number + " در سپیدار ثبت شده است."
                 : "آماده‌سازی سند انجام نشد.";
             stage({ software, title, subtitle: message, icon: "fa-clipboard-check", step: "وضعیت ثبت",
                 confirmText: source?.recover ? "تکمیل ارتباط" : "ادامه",
                 confirmAction: async () => {
-                    if (!source?.recover || await request("SubmitFinancial", data)) await next();
+                    if (!source?.recover) return next();
+                    const document = await request("SubmitFinancial", data);
+                    if (!document) return;
+                    if (receipt)
+                        toastifySuccess("سند شماره " + document.number + " در نرم‌افزار مالی ثبت شد.");
+                    await next();
                 },
             });
-            return;
-        }
-        if (receipt) {
-            documentStage(data, source, software);
+        } else if (receipt) {
+            data.dateText = source.dateText;
+            receiptStockStage(data, source, software);
         } else {
             vendorStage(data, source, software);
         }
+        if (open) ModalToggle(wizard, "show");
     };
 
     const vendorStage = (data, source, software) => {
@@ -227,77 +320,85 @@ async function openSupplyFinancial(sourceId) {
             confirmAction: async () => {
                 data.vendorId = Number(select.value);
                 source.vendor = await request("SaveFinancialVendor", data);
-                if (source.vendor) documentStage(data, source, software);
+                if (source.vendor) await loadItemStage(data, source, software);
             },
         });
-        remote(select, software.id, false, source.vendor);
+        setupSearchableSelect(select, "جستجو و انتخاب تأمین‌کننده",
+            source.vendorOptions.map(searchableOption), source.vendor?.id);
+        updateButtons();
+    };
+
+    const receiptStockStage = (data, source, software) => {
+        const content = make("div", null, "d-grid gap-2");
+        content.append(fields("شماره فاکتور خرید", source.number));
+        const stock = field(content, "انبار", make("select", null, "show-dropdown-arrow"));
+        stock.append(new Option("", ""));
+        source.stocks.forEach(row => stock.append(new Option(label(row), row.id)));
+        stock.value = String(data.stockId ?? (source.stocks.length === 1 ? source.stocks[0].id : ""));
+        stage({ software, title: "انتخاب انبار", subtitle: "انبار مقصد برای دریافت همه اقلام را مشخص کنید",
+            icon: "fa-warehouse", step: "مرحله ۱ از ۳", content,
+            backAction: () => ModalToggle(wizard, "hide"),
+            confirmText: "تأیید انبار و ادامه", enabled: () => !!stock.value,
+            confirmAction: () => {
+                data.stockId = Number(stock.value);
+                documentStage(data, source, software);
+            },
+        });
+        setupSelect(stock, "جستجو و انتخاب انبار");
         updateButtons();
     };
 
     const documentStage = (data, source, software) => {
         const { receipt } = data;
-        const content = make("div", null, "supply-financial-matching");
-        let stock, date;
-        if (receipt) {
-            content.append(fields("شماره فاکتور خرید", format(source.number)));
-            stock = field(content, "انبار", make("select", null, "show-dropdown-arrow"));
-            stock.append(new Option("", ""));
-            source.stocks.forEach(row => stock.append(new Option(label(row), row.id)));
-            stock.value = String(data.stockId ?? (source.stocks.length === 1 ? source.stocks[0].id : ""));
-            date = make("input", null, "form-control form-control-sm mb-2");
-            date.type = "date";
-            date.value = data.date ?? source.date;
-            date.addEventListener("input", updateButtons);
-            field(content, "تاریخ رسید", date);
-        }
-        const list = make("div", null, "supply-financial-match-list");
-        content.append(list);
+        const { content, toolbar, add, list } = createExternalItemMatching();
+        if (receipt) toolbar.remove();
         const rows = source.items.map(row => {
-            const entity = make("div", null, "supply-financial-match-row");
-            const identity = make("div", null, "supply-financial-match-source");
-            identity.append(make("strong", row.product), make("small", [format(row.weightCount), row.unitTxt].filter(Boolean).join(" ")));
-            entity.append(identity);
             const previous = data.items?.find(x => x.supplyFactorItemId === row.id);
-            const target = make("div", null, "supply-financial-match-target");
+            const target = appendExternalItemMatchRow(list, row.product, row.weightCount, row.unitTxt, receipt ? "مقدار:" : null);
             const select = receipt ? null : field(target, "کالای معادل در نرم‌افزار مالی",
                 make("select", null, "show-dropdown-arrow"));
             const text = optionalDescription(target, "توضیحات قلم",
                 receipt ? (data.rowDescriptions?.[row.id] ?? row.description) : previous?.description, receipt ? 4000 : 500);
-            entity.append(target);
-            list.append(entity);
             return { row, select, text, previous };
         });
         const description = optionalDescription(content, "توضیحات سند", data.description ?? source.description, receipt ? 4000 : 400);
         const captureDraft = () => {
             data.description = description.value;
             if (receipt) {
-                data.stockId = Number(stock.value);
-                data.date = date.value;
                 data.rowDescriptions = Object.fromEntries(rows.map(x => [x.row.id, x.text.value]));
             } else {
                 data.items = rows.map(x => ({
                     supplyFactorItemId: x.row.id, itemId: Number(x.select.value), description: x.text.value,
-                    option: x.select.value ? { id: x.select.value, title: x.select.selectedOptions[0]?.textContent } : null,
                 }));
             }
         };
-        stage({ software, title: receipt ? "انتخاب انبار کالاها" : "تطبیق کالاها",
-            subtitle: receipt ? "انبار مقصد برای دریافت همه اقلام را مشخص کنید" : "انتخاب کالای معادل برای ردیف‌های فاکتور تأمین",
-            icon: receipt ? "fa-warehouse" : "fa-boxes", step: receipt ? "مرحله ۱ از ۲" : "مرحله ۲ از ۳", content, large: !receipt,
-            backAction: receipt ? () => ModalToggle(wizard, "hide") : () => {
+        if (!receipt) add.addEventListener("click", () => openSepidarItemCreation({
+            softwareId: software.id,
+            softwareTitle: software.title,
+            canOpen: () => !signal.aborted && content.isConnected && isModalOpen(wizard),
+            afterCreate: () => {
                 captureDraft();
-                vendorStage(data, source, software);
+                return loadItemStage(data, source, software, true);
             },
-            confirmText: receipt ? "تأیید انبار و ادامه" : "تأیید کالاها و ادامه",
-            enabled: () => rows.length > 0 && (receipt ? !!stock.value && !!date.value : rows.every(row => row.select.value)),
+        }));
+        stage({ software, title: receipt ? "اقلام و توضیحات رسید" : "تطبیق کالاها",
+            subtitle: receipt ? "اقلام خرید را بررسی کنید و در صورت نیاز توضیحات را ویرایش کنید" : "انتخاب کالای معادل برای ردیف‌های فاکتور تأمین",
+            icon: "fa-boxes", step: "مرحله ۲ از ۳", content, large: true,
+            backAction: () => {
+                captureDraft();
+                if (receipt) receiptStockStage(data, source, software);
+                else vendorStage(data, source, software);
+            },
+            confirmText: receipt ? "پیش‌نمایش رسید" : "تأیید کالاها و ادامه",
+            enabled: () => rows.length > 0 && (receipt || rows.every(row => row.select.value)),
             confirmAction: async () => {
                 captureDraft();
                 const preview = await request("PreviewFinancial", data);
                 if (preview) previewStage(preview, data, source, software);
             },
         });
-        if (receipt) setupSelect(stock, "جستجو و انتخاب انبار");
-        else rows.forEach(row => remote(row.select, software.id, true, row.previous?.option));
+        if (!receipt) rows.forEach(row => setupSearchableSelect(row.select, "جستجو و انتخاب کالا",
+            source.itemOptions, row.previous?.itemId));
         updateButtons();
     };
 
@@ -306,8 +407,8 @@ async function openSupplyFinancial(sourceId) {
         const title = receipt ? "رسید انبار" : "فاکتور خرید";
         const info = [
             { label: receipt ? "شماره فاکتور خرید" : "شماره فاکتور تأمین‌کننده",
-                value: receipt ? format(source.number) : preview.serialNumber },
-            { label: "تاریخ", value: preview.dateText },
+                value: receipt ? source.number : preview.serialNumber },
+            ...(!receipt ? [{ label: "تاریخ", value: preview.dateText }] : []),
             { label: "نرم‌افزار مقصد", value: software.title, accent: true },
             { label: "تأمین‌کننده", value: preview.supplierTxt, wide: true },
         ];
@@ -318,33 +419,75 @@ async function openSupplyFinancial(sourceId) {
         const content = renderExternalFinancialPreview({
             fields: info, columns,
             rows: preview.items.map((row, index) => [
-                index + 1, ...(receipt ? [] : [source.items[index]?.product]), row.product, format(row.quantity), format(row.price),
-                ...(receipt ? [] : [format(row.discount)]), format(row.tax), row.description || "—",
-                format(Number(row.price ?? 0) - Number(row.discount ?? 0) + Number(row.tax ?? 0)),
+                index + 1, ...(receipt ? [] : [source.items[index]?.product]), row.product, row.quantity,
+                (row.price ?? 0).toLocaleString(), ...(receipt ? [] : [(row.discount ?? 0).toLocaleString()]),
+                (row.tax ?? 0).toLocaleString(), row.description || "—",
+                (Number(row.price ?? 0) - Number(row.discount ?? 0) + Number(row.tax ?? 0)).toLocaleString(),
             ]),
             totals: [["جمع مبلغ کالاها", preview.totalPrice], ["تخفیف کل", preview.discount],
                 ["مالیات کل", preview.totalTax], ["مبلغ نهایی", preview.total]],
         });
+        let previewContent = content;
+        let date;
+        const getDateText = () => toEnglishDigits(date.value.trim());
+        if (receipt) {
+            previewContent = make("div", null, "d-grid gap-2");
+            date = make("input", null, "sdate ex-preview-invoice-number");
+            date.id = "supplyFinancialReceiptDate";
+            date.type = "text";
+            date.dir = "ltr";
+            date.autocomplete = "off";
+            date.value = preview.dateText;
+            date.maxLength = 10;
+            date.setAttribute("data-datepicker-change", "");
+            const updateDateButton = () => {
+                confirm.textContent = getDateText() === data.dateText
+                    ? "تأیید و ثبت در نرم‌افزار" : "به‌روزرسانی پیش‌نمایش";
+                updateButtons();
+            };
+            date.addEventListener("input", updateDateButton);
+            date.addEventListener("change", updateDateButton);
+            previewContent.insertAdjacentHTML("beforeend", content + '<p class="text-muted small mb-0">' + (preview.voucher
+                ? "سند حسابداری خودکار صادر می‌شود." : "صدور خودکار سند حسابداری در مقصد غیرفعال است.") + "</p>");
+            const dateField = make("div", null, "ex-preview-field");
+            const dateLabel = make("label", "تاریخ رسید:", "ex-preview-label");
+            dateLabel.htmlFor = date.id;
+            dateField.append(dateLabel, date);
+            previewContent.querySelector(".ex-preview-summary").firstElementChild.after(dateField);
+        }
         data.previewToken = preview.previewToken;
         stage({ software, title: "بررسی نهایی " + title, subtitle: "قبل از ثبت در نرم‌افزار مالی، اطلاعات را بررسی کنید",
-            icon: "fa-clipboard-check", step: receipt ? "مرحله ۲ از ۲" : "مرحله ۳ از ۳", large: true,
-            content: content + (receipt ? '<p class="text-muted small mb-0">' + (preview.voucher
-                ? "سند حسابداری خودکار صادر می‌شود." : "صدور خودکار سند حسابداری در مقصد غیرفعال است.") + "</p>" : ""),
+            icon: "fa-clipboard-check", step: "مرحله ۳ از ۳", large: true, content: previewContent,
             backAction: () => documentStage(data, source, software),
             confirmText: "تأیید و ثبت در نرم‌افزار",
+            enabled: () => !receipt || /^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(getDateText()),
             confirmAction: async () => {
+                if (receipt && getDateText() !== data.dateText) {
+                    const dateText = getDateText();
+                    const updatedPreview = await request("PreviewFinancial", { ...data, dateText });
+                    if (updatedPreview) {
+                        data.dateText = dateText;
+                        previewStage(updatedPreview, data, source, software);
+                    }
+                    return;
+                }
                 const document = await request("SubmitFinancial", data);
                 if (!document) return;
+                const message = "سند شماره " + document.number + " در نرم‌افزار مالی ثبت شد.";
+                toastifySuccess(message);
+                if (receipt) return next();
+
                 stage({ software, title: "ثبت " + title, icon: "fa-check", step: "ثبت موفق",
-                    subtitle: "سند شماره " + format(document.number) + " در نرم‌افزار مالی ثبت شد.",
-                    content: receipt ? "" : make("p", "برای این فاکتور رسید انبار ثبت شود؟", "mb-0"),
-                    backAction: receipt ? null : next,
-                    backText: receipt ? "برگشت" : "بعداً",
-                    confirmText: receipt ? "ادامه" : "ثبت رسید انبار",
-                    confirmAction: receipt ? next : () => prepare(software, true),
+                    subtitle: message,
+                    content: make("p", "برای این فاکتور رسید انبار ثبت شود؟", "mb-0"),
+                    backAction: next,
+                    backText: "بعداً",
+                    confirmText: "ثبت رسید انبار",
+                    confirmAction: () => prepare(software, true, false, document.id),
                 });
             },
         });
+        if (receipt) dateTimePicker(stageContainer);
     };
 
     confirm.addEventListener("click", async () => {
@@ -361,13 +504,11 @@ async function openSupplyFinancial(sourceId) {
     wizard.addEventListener("hidden.bs.modal", async () => {
         closing = false;
         clearSelects();
+        disposeDateTimePickers(stageContainer);
         stageContainer.replaceChildren();
-        await loadHistory(historyReceipt);
-        if (!signal.aborted)
-            (send.disabled ? historyModal.querySelector("[data-supply-financial-tab].active") : send)?.focus();
+        await loadHistory();
+        if (!signal.aborted) (send.disabled ? historyModal.querySelector(".btn-close") : send)?.focus();
     }, { signal });
-    historyModal.querySelectorAll("[data-supply-financial-tab]").forEach(tab =>
-        tab.addEventListener("click", () => loadHistory(tab.dataset.supplyFinancialTab === "receipt"), { signal }));
     historyModal.addEventListener("hidden.bs.modal", () => {
         lifecycle.abort();
         clearSelects();
@@ -376,6 +517,9 @@ async function openSupplyFinancial(sourceId) {
     }, { once: true });
     enableMomentumScrollScope(historyModal, { signal });
     enableMomentumScrollScope(wizard, { signal });
+    historyHeading.textContent = "سوابق فاکتور خرید";
+    sendLabel.textContent = "ارسال فاکتور خرید به نرم‌افزار مالی";
+    historyList.replaceChildren();
     ModalToggle(historyModal, "show");
-    await loadHistory(false);
+    await loadHistory();
 }

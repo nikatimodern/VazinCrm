@@ -310,7 +310,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             // Keep legacy type=1 data untouched, but do not show the removed
             // accounting-document mapping type in ExternalSoftware/Mapping.
             var query = db.ExternalMappings.AsNoTracking()
-                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1);
+                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1
+                    && !x.ExEntityId.StartsWith(ExternalMapping.PendingIdPrefix));
             if (mapType.HasValue)
                 query = query.Where(x => x.MapType == (ExternalMappingTypeEnum)mapType.Value);
 

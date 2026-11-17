@@ -7,40 +7,30 @@
     --supply-financial-selected: var(--color-primary-light, #E7F3F0);
 }
 
-.supply-financial-segments {
+.supply-financial-document-group {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .25rem;
-    inline-size: min(100%, 23rem);
-    padding: .25rem;
-    margin-block-end: 1rem;
+    gap: .35rem;
+}
+
+.supply-financial-receipt {
+    display: grid;
+    gap: .4rem;
+    margin-inline-start: clamp(.5rem, 3vw, 1.5rem);
+    padding: .6rem .75rem;
     border: 1px solid var(--supply-financial-border);
-    border-radius: .75rem;
-    background: var(--color-background, #F0F1F7);
+    border-inline-start: 3px solid var(--supply-financial-action);
+    border-radius: .5rem;
+    background: var(--supply-financial-selected);
 }
 
-.supply-financial-segments button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .45rem;
-    padding: .35rem .65rem;
-    border: 1px solid transparent;
-    border-radius: .55rem;
-    background: transparent;
-    color: var(--supply-financial-muted);
-    font-size: .9rem;
-}
-
-.supply-financial-segments button:hover {
-    color: var(--supply-financial-action);
-}
-
-.supply-financial-segments button.active {
-    border-color: var(--supply-financial-border);
-    background: var(--supply-financial-surface);
+.supply-financial-receipt-title {
     color: var(--supply-financial-action);
     font-family: IRANSansBold;
+    font-size: 12px;
+}
+
+.supply-financial-receipt .external-pf-actions {
+    justify-self: end;
 }
 
 #supplyFinancialModal .external-pf-toolbar {
@@ -53,39 +43,28 @@
     cursor: not-allowed;
 }
 
-.supply-financial-matching,
-.supply-financial-match-list {
-    display: grid;
-    gap: .6rem;
+#supplyFinancialModal .supply-financial-missing {
+    --supply-financial-danger: var(--color-danger, #C2185B);
+    border-color: var(--supply-financial-danger);
+    background: var(--color-danger-light, #FCE8F0);
 }
 
-.supply-financial-match-row {
-    display: grid;
-    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
-    align-items: start;
-    gap: .55rem 1rem;
-    padding: .65rem .8rem;
-    border: 1px solid var(--supply-financial-border);
-    border-radius: .65rem;
+#supplyFinancialModal .supply-financial-missing .external-pf-value,
+#supplyFinancialModal .supply-financial-missing .supply-financial-receipt-title,
+#supplyFinancialModal .supply-financial-missing-message,
+#supplyFinancialModal .supply-financial-remove {
+    color: var(--supply-financial-danger);
 }
 
-.supply-financial-match-source,
-.supply-financial-match-target {
-    display: grid;
-    gap: .25rem;
-    min-inline-size: 0;
+#supplyFinancialModal .supply-financial-missing-message {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 12px;
 }
 
-.supply-financial-match-source {
-    align-self: center;
-    font-size: .91rem;
-    overflow-wrap: anywhere;
-}
-
-.supply-financial-match-source small,
-.supply-financial-match-target .form-label {
-    color: var(--supply-financial-muted);
-    font-size: .82rem;
+#supplyFinancialModal .supply-financial-remove {
+    border: 1px solid currentColor;
+    background: var(--supply-financial-surface);
 }
 
 .supply-financial-note summary {
@@ -99,20 +78,13 @@
     margin-block-start: .35rem;
 }
 
-.supply-financial-matching > .supply-financial-note {
+.external-item-matching > .supply-financial-note {
     padding: .6rem .8rem;
     border-radius: .65rem;
     background: var(--supply-financial-selected);
 }
 
-.supply-financial-segments button:focus-visible,
 .supply-financial-note summary:focus-visible {
     outline: 2px solid var(--supply-financial-action);
     outline-offset: 2px;
-}
-
-@media (max-width: 575px) {
-    .supply-financial-match-row {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }

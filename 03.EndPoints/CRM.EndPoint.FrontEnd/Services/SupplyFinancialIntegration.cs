@@ -18,14 +18,14 @@ using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Framework;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Services;
 
 public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository repository,
     Sepidar1Service first, Sepidar2Service second, UserManager<AppUser> users,
-    IHttpContextAccessor http) : ISupplyFinancialIntegration
+    IHttpContextAccessor http, DateTimeServices dates) : ISupplyFinancialIntegration
 {
-    private const string PendingPrefix = "pending:";
     private static readonly Guid FirstId = new("2f3d8024-6c2c-491f-c921-08df26b00138");
     private static readonly Guid SecondId = new("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
     private sealed record FinancialPreview(string PreviewToken, string DateText, string SupplierTxt,
@@ -47,45 +47,55 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         await repository.GetSourceAsync(id, ct)
         ?? throw new InvalidOperationException("فاکتور تأمین یا تأمین‌کننده آن پیدا نشد.");
 
-    public async Task<SupplyResult> GetHistoryAsync(Guid sourceId, bool receipt, CancellationToken ct)
+    public async Task<SupplyResult> GetHistoryAsync(Guid sourceId, CancellationToken ct)
     {
         var source = await GetSourceAsync(sourceId, ct);
         var maps = await repository.GetMappingsAsync(sourceId, ct);
-        var results = new List<object>();
+        var results = new List<SupplyFinancialDestination>();
         foreach (var software in (await repository.GetDestinationsAsync(ct)).Where(x => x.Id == FirstId || x.Id == SecondId))
         {
-            var purchase = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
-                && x.MapType == ExternalMappingTypeEnum.فاکتور_خرید);
-            var mapping = receipt ? maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
-                && x.MapType == ExternalMappingTypeEnum.رسید_انبار) : purchase;
             var service = Resolve(software.Id);
-            var document = mapping != null
-                ? await service.FindPurchaseDocumentAsync(receipt, ReadId(mapping), ct) : null;
-            var purchaseDocument = receipt && purchase != null
-                ? await service.FindPurchaseDocumentAsync(false, ReadId(purchase), ct) : null;
-            var existingReceipt = receipt && document == null && purchaseDocument != null
-                ? await service.FindReceiptForPurchaseAsync(purchaseDocument.Id, ct) : null;
-            var recorded = document ?? existingReceipt;
-            var missing = mapping != null && document == null && !IsPending(mapping);
-            var needsRecovery = document != null && IsPending(mapping);
-            results.Add(new {
-                software.Id, software.Title,
-                Document = recorded,
-                DateText = recorded == null ? null : BaseServices.GetDatePersian(recorded.Date),
-                HasMapping = mapping != null,
-                Pending = IsPending(mapping) && existingReceipt == null,
-                Missing = missing,
-                IsDisabled = (!needsRecovery && recorded != null) || missing
-                    || (receipt && (purchaseDocument == null || IsPending(purchase)))
-            });
+            var purchaseMapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
+                && x.MapType == MapType(false) && !IsPending(x));
+            var receiptMapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
+                && x.MapType == MapType(true) && !IsPending(x));
+            var purchase = purchaseMapping == null ? null
+                : await service.FindPurchaseDocumentAsync(false, ReadId(purchaseMapping), ct);
+            var receipt = receiptMapping != null ? await service.FindPurchaseDocumentAsync(true, ReadId(receiptMapping), ct)
+                : purchase != null ? await service.FindReceiptForPurchaseAsync(purchase.Id, ct) : null;
+            results.Add(new SupplyFinancialDestination(software.Id, software.Title,
+                ToHistory(purchase, purchaseMapping), ToHistory(receipt, receiptMapping)));
         }
-        return SupplyResult.Success(new { source.SerialNumber, Softwares = results });
+        return SupplyResult.Success(new SupplyFinancialHistory(source.SerialNumber, results));
+
+        static SupplyFinancialDocumentHistory? ToHistory(SepidarService.PurchaseDocument? document, ExternalMapping? mapping) =>
+            document == null && mapping == null ? null : new SupplyFinancialDocumentHistory(document,
+                document == null ? null : BaseServices.GetDatePersian(document.Date), mapping?.Id);
+    }
+
+    public async Task<SupplyResult> DeleteMissingMappingAsync(Guid sourceId, Guid softwareId, Guid mappingId,
+        bool receipt, CancellationToken ct)
+    {
+        if (sourceId == Guid.Empty || softwareId == Guid.Empty || mappingId == Guid.Empty)
+            return SupplyResult.Invalid("سابقه ارسال معتبر نیست.");
+
+        var service = await GetDestinationAsync(softwareId, ct);
+        await using var guard = await repository.LockAsync(sourceId, ct);
+        var mapping = await repository.GetMappingAsync(sourceId, softwareId, MapType(receipt), ct);
+        if (mapping == null || mapping.Id != mappingId)
+            return SupplyResult.Missing("سابقه ارسال پیدا نشد.");
+        if (IsPending(mapping) || await service.PurchaseDocumentExistsAsync(receipt, ReadId(mapping), ct))
+            return SupplyResult.Invalid("این سابقه قابل حذف نیست. فهرست سوابق را دوباره بررسی کنید.");
+
+        await repository.DeleteMappingAsync(mapping, ct);
+        return SupplyResult.Success(new { Deleted = true });
     }
 
     public async Task<SupplyResult> PrepareAsync(SupplyFinancialRequest request, CancellationToken ct)
     {
         var service = await GetDestinationAsync(request.ExternalSoftwareId, ct);
         var source = await GetSourceAsync(request.SupplyFactorId, ct);
+        var purchaseId = request.Receipt ? await GetPurchaseIdAsync(request, ct) : 0;
         var mapping = await repository.GetMappingAsync(source.Id, request.ExternalSoftwareId, MapType(request.Receipt), ct);
         if (mapping != null)
         {
@@ -98,24 +108,29 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         {
             var vendor = await repository.GetMappingAsync(source.SupplierId, request.ExternalSoftwareId,
                 ExternalMappingTypeEnum.تامین_کننده, ct);
+            var vendorOptions = await service.GetPurchaseVendorsAsync(null, ct);
             var selected = vendor != null && int.TryParse(vendor.ExEntityId, out var vendorId)
-                ? (await service.SearchPurchaseVendorsAsync(null, vendorId, ct)).SingleOrDefault() : null;
+                ? vendorOptions.SingleOrDefault(x => x.Id == vendorId) : null;
             return SupplyResult.Success(new {
-                source.SerialNumber, source.SupplierTxt, source.Description, Vendor = selected,
+                source.SerialNumber, source.SupplierTxt, source.Description, Vendor = selected, VendorOptions = vendorOptions,
                 Items = source.Items.Select(x => new { x.Id, x.Product, x.UnitTxt, x.WeightCount, x.UnitAmount, x.TotalAmount })
             });
         }
 
-        var purchaseId = await GetPurchaseIdAsync(source.Id, request.ExternalSoftwareId, ct);
         var receiptSource = await service.GetFullPurchaseReceiptSourceAsync(purchaseId, ct);
         var stocks = await service.GetPurchaseReceiptStocksAsync(purchaseId, ct);
-        var labels = await service.GetPurchaseItemLabelsAsync(receiptSource.Items.Select(x => x.ItemRef).ToArray(), ct);
+        var itemDisplays = await service.GetReceiptItemDisplaysAsync(
+            receiptSource.Items.Select(x => x.ItemRef).Distinct().ToArray(), ct);
         return SupplyResult.Success(new {
             Number = receiptSource.Invoice.Number, Date = receiptSource.Invoice.Date.ToString("yyyy-MM-dd"),
+            DateText = BaseServices.GetDatePersian(receiptSource.Invoice.Date),
             Stocks = stocks, source.SupplierTxt, source.SerialNumber,
-            Items = receiptSource.Items.Select(x => new {
-                Id = x.InventoryPurchaseInvoiceItemID, Product = labels.GetValueOrDefault(x.ItemRef),
-                WeightCount = x.Quantity, TotalAmount = x.NetPrice, x.Description
+            Items = receiptSource.Items.Select(x => {
+                var display = itemDisplays.GetValueOrDefault(x.ItemRef);
+                return new {
+                    Id = x.InventoryPurchaseInvoiceItemID, Product = display?.Label, UnitTxt = display?.UnitTitle?.Trim(),
+                    WeightCount = x.Quantity, TotalAmount = x.NetPrice, x.Description
+                };
             })
         });
     }
@@ -123,19 +138,17 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
     public async Task<SupplyResult> SearchAsync(SupplyFinancialRequest request, bool items, CancellationToken ct)
     {
         var service = await GetDestinationAsync(request.ExternalSoftwareId, ct);
-        var search = (request.Search ?? "").Trim();
-        if (search.Length > 100)
-            return SupplyResult.Invalid("عبارت جست‌وجو بیش از حد طولانی است.");
-        return SupplyResult.Success(items
-            ? await service.SearchPurchaseItemsAsync(search, ct)
-            : await service.SearchPurchaseVendorsAsync(search, null, ct));
+        if (items)
+            return SupplyResult.Success(await service.GetPurchaseItemsAsync(ct));
+
+        return SupplyResult.Success(await service.GetPurchaseVendorsAsync(null, ct));
     }
 
     public async Task<SupplyResult> SaveVendorAsync(SupplyFinancialRequest request, CancellationToken ct)
     {
         var service = await GetDestinationAsync(request.ExternalSoftwareId, ct);
         var source = await GetSourceAsync(request.SupplyFactorId, ct);
-        var vendor = (await service.SearchPurchaseVendorsAsync(null, request.VendorId, ct)).SingleOrDefault();
+        var vendor = (await service.GetPurchaseVendorsAsync(request.VendorId, ct)).SingleOrDefault();
         if (vendor == null)
             return SupplyResult.Invalid("تأمین‌کننده معتبر در نرم‌افزار مقصد پیدا نشد.");
 
@@ -156,9 +169,9 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         var source = await GetSourceAsync(request.SupplyFactorId, ct);
         if (request.Receipt)
         {
-            var purchaseId = await GetPurchaseIdAsync(source.Id, request.ExternalSoftwareId, ct);
+            var purchaseId = await GetPurchaseIdAsync(request, ct);
             var draft = await service.PreparePurchaseReceiptDraftAsync(purchaseId, request.StockId,
-                request.Date, request.Description, request.RowDescriptions, ct);
+                GetReceiptDate(request), request.Description, request.RowDescriptions, ct);
             var labels = await service.GetPurchaseItemLabelsAsync(draft.Items.Select(x => x.ItemRef).ToArray(), ct);
             var stock = (await service.GetPurchaseReceiptStocksAsync(purchaseId, ct)).Single(x => x.Id == request.StockId);
             return SupplyResult.Success(new FinancialPreview(
@@ -174,7 +187,7 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         var purchase = await service.PreparePurchaseDraftAsync(source, request.VendorId,
             Selections(request), request.Description, ct);
         var purchaseLabels = await service.GetPurchaseItemLabelsAsync(purchase.Items.Select(x => x.ItemRef).ToArray(), ct);
-        var vendor = (await service.SearchPurchaseVendorsAsync(null, request.VendorId, ct)).Single();
+        var vendor = (await service.GetPurchaseVendorsAsync(request.VendorId, ct)).Single();
         return SupplyResult.Success(new FinancialPreview(
             SepidarService.GetPurchasePreviewToken(purchase), BaseServices.GetDatePersian(purchase.Invoice.Date),
             vendor.Title, null, source.SerialNumber, purchase.Invoice.Description,
@@ -190,6 +203,7 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         var user = await GetUserAsync();
         await using var guard = await repository.LockAsync(request.SupplyFactorId, ct);
         var source = await GetSourceAsync(request.SupplyFactorId, ct);
+        var purchaseId = request.Receipt ? await GetPurchaseIdAsync(request, ct) : 0;
         await using var vendorGuard = request.Receipt || source.SupplierId == source.Id
             ? null : await repository.LockAsync(source.SupplierId, ct);
         var type = MapType(request.Receipt);
@@ -222,19 +236,54 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
             var reservedId = await service.ReservePurchaseDocumentIdAsync(request.Receipt, ct);
             mapping = NewMapping(source.Id, request.ExternalSoftwareId, type, nameof(SupplyFactor),
                 request.Receipt ? nameof(InventoryReceipt) : nameof(InventoryPurchaseInvoice), user);
-            mapping.ExEntityId = PendingPrefix + reservedId.ToString(CultureInfo.InvariantCulture);
+            mapping.ExEntityId = ExternalMapping.PendingIdPrefix + reservedId.ToString(CultureInfo.InvariantCulture);
             await repository.SaveMappingAsync(mapping, ct);
         }
 
         var id = ReadId(mapping);
-        var document = request.Receipt
-            ? await service.AddSupplyReceiptAsync(id, creator,
-                await GetPurchaseIdAsync(source.Id, request.ExternalSoftwareId, ct), request.StockId,
-                request.Date, request.Description, request.RowDescriptions, request.PreviewToken, ct)
-            : await service.AddSupplyPurchaseAsync(id, creator, source, request.VendorId, Selections(request),
-                request.Description, request.PreviewToken, ct);
+        SepidarService.PurchaseDocument document;
+        try
+        {
+            document = request.Receipt
+                ? await service.AddSupplyReceiptAsync(id, creator,
+                    purchaseId, request.StockId,
+                    GetReceiptDate(request), request.Description, request.RowDescriptions, request.PreviewToken, ct)
+                : await service.AddSupplyPurchaseAsync(id, creator, source, request.VendorId, Selections(request),
+                    request.Description, request.PreviewToken, ct);
+        }
+        catch (Exception failure) when (!ct.IsCancellationRequested && failure is InvalidOperationException or DbUpdateException)
+        {
+            await DiscardUncommittedReservationAsync(service, mapping, request.Receipt, id);
+            throw;
+        }
         await CompleteAsync(mapping, document.Id);
         return SupplyResult.Success(document);
+    }
+
+    private async Task DiscardUncommittedReservationAsync(SepidarService service, ExternalMapping mapping, bool receipt, int id)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            if (!await service.PurchaseDocumentExistsAsync(receipt, id, timeout.Token))
+                await repository.DeleteMappingAsync(mapping, timeout.Token);
+        }
+        catch (Exception failure) when (failure is System.Data.Common.DbException or DbUpdateException
+            or OperationCanceledException or InvalidOperationException)
+        {
+            // Keep the reservation for recovery when cleanup cannot establish the outcome.
+        }
+    }
+
+    private DateTime GetReceiptDate(SupplyFinancialRequest request)
+    {
+        if (request.DateText == null && request.Date != default)
+            return request.Date;
+        var text = TextService.ToEnglishNumber(request.DateText?.Trim() ?? "");
+        if (System.Text.RegularExpressions.Regex.IsMatch(text, @"\A[0-9]{4}/[0-9]{2}/[0-9]{2}\z")
+            && dates.GetDateMiladi(text) is DateTime date)
+            return date;
+        throw new InvalidOperationException("تاریخ رسید انبار معتبر نیست.");
     }
 
     private async Task CompleteAsync(ExternalMapping mapping, int id)
@@ -252,12 +301,16 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
             throw new InvalidOperationException("ارتباط تأمین‌کننده تغییر کرده است. مرحله تطبیق را دوباره انجام دهید.");
     }
 
-    private async Task<int> GetPurchaseIdAsync(Guid sourceId, Guid externalSoftwareId, CancellationToken ct)
+    private async Task<int> GetPurchaseIdAsync(SupplyFinancialRequest request, CancellationToken ct)
     {
-        var mapping = await repository.GetMappingAsync(sourceId, externalSoftwareId, ExternalMappingTypeEnum.فاکتور_خرید, ct);
+        var mapping = await repository.GetMappingAsync(request.SupplyFactorId, request.ExternalSoftwareId,
+            ExternalMappingTypeEnum.فاکتور_خرید, ct);
         if (mapping == null || IsPending(mapping))
             throw new InvalidOperationException("ابتدا ارتباط فاکتور خرید را در همین مقصد تکمیل کنید.");
-        return ReadId(mapping);
+        var purchaseId = ReadId(mapping);
+        if (request.PurchaseId.HasValue && request.PurchaseId.Value != purchaseId)
+            throw new InvalidOperationException("ارتباط فاکتور خرید تغییر کرده است. سوابق را دوباره بررسی کنید.");
+        return purchaseId;
     }
 
     private async Task<AppUser> GetUserAsync() =>
@@ -272,11 +325,11 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         receipt ? ExternalMappingTypeEnum.رسید_انبار : ExternalMappingTypeEnum.فاکتور_خرید;
 
     private static bool IsPending(ExternalMapping mapping) =>
-        mapping?.ExEntityId?.StartsWith(PendingPrefix, StringComparison.Ordinal) == true;
+        mapping?.HasPendingExternalId() == true;
 
     private static int ReadId(ExternalMapping mapping)
     {
-        var value = IsPending(mapping) ? mapping.ExEntityId[PendingPrefix.Length..] : mapping.ExEntityId;
+        var value = IsPending(mapping) ? mapping.ExEntityId[ExternalMapping.PendingIdPrefix.Length..] : mapping.ExEntityId;
         return int.TryParse(value, out var id) && id > 0 ? id
             : throw new InvalidOperationException("شناسه سند مالی ذخیره‌شده معتبر نیست.");
     }

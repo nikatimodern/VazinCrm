@@ -2916,7 +2916,8 @@ const momentumScrollInstances = new WeakMap();
 
 /** Opt-in wheel inertia for a local scroll region. Returns an idempotent cleanup. */
 function enableMomentumScroll(element, { signal = window.PageRuntime?.current?.signal } = {}) {
-    if (!(element instanceof HTMLElement) || signal?.aborted) return () => {};
+    if (!(element instanceof HTMLElement) || signal?.aborted || element.closest(".ts-wrapper, .ts-dropdown"))
+        return () => {};
     if (momentumScrollInstances.has(element)) return momentumScrollInstances.get(element);
     const controller = new AbortController();
     const options = { signal: controller.signal };
@@ -2961,7 +2962,7 @@ function enableMomentumScroll(element, { signal = window.PageRuntime?.current?.s
     element.addEventListener("wheel", event => {
         if (event.defaultPrevented || !event.cancelable || reducedMotion.matches ||
             event.ctrlKey || event.metaKey || event.shiftKey ||
-            event.target.closest?.("input, textarea, select, [contenteditable='true']") ||
+            event.target.closest?.("input, textarea, select, [contenteditable='true'], .ts-wrapper, .ts-dropdown") ||
             Math.abs(event.deltaX) > Math.abs(event.deltaY) ||
             (event.deltaMode === 0 && Math.abs(event.deltaY) < 40)) {
             stop();
@@ -3022,7 +3023,7 @@ function enableMomentumScrollScope(root, { signal = window.PageRuntime?.current?
         momentumScrollScopes.delete(root);
     };
     root.addEventListener("wheel", event => {
-        if (event.defaultPrevented) return;
+        if (event.defaultPrevented || event.target.closest?.(".ts-wrapper, .ts-dropdown")) return;
         // Discard regions replaced by an AJAX refresh before binding another one.
         attached.forEach((cleanup, element) => {
             if (!root.contains(element)) {
