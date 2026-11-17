@@ -317,6 +317,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             // Retain prior discrepancy details on uncheck, so an accidental second click is reversible.
             if (input.Status == QualityControlStatus.HasDiscrepancy)
                 review.Description = string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim();
+            else if (input.Status == QualityControlStatus.NoDiscrepancy)
+                review.Description = null;
 
             var requestedAnswers = input.Status == QualityControlStatus.HasDiscrepancy
                 ? input.Answers! : new List<QualityControlAnswerInput>();
