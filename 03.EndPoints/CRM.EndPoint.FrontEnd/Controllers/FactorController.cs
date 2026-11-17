@@ -37,6 +37,7 @@ using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
+using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
