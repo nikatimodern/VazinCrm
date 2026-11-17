@@ -290,12 +290,12 @@
                 + (order.invoices.flatMap(invoice => invoice.items)
                     .every(item => stateOf(item).status !== 0) ? " disabled" : "") + '>'
                 + 'ثبت بقیه اقلام این سفارش بدون مغایرت</button></div></section>').join("");
-            updateSaveActions();
+            refreshReviewState();
             filterInvoiceItems();
             scroll.scrollTop = scrollPosition;
         }
 
-        function updateSaveActions() {
+        function refreshReviewState() {
             if (!review) { saveAllButton.disabled = true; return; }
             const items = flatten();
             const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
@@ -368,7 +368,7 @@
             const generation = formGeneration;
             const customerId = review.customerId;
             savingItems.add(itemId);
-            updateSaveActions();
+            refreshReviewState();
             let succeeded = false;
             try {
                 while (review && generation === formGeneration && isActive() && isValid(item)) {
@@ -408,7 +408,7 @@
                 if (generation === formGeneration && isActive()) {
                     if (succeeded && !flatten().some(item => stateOf(item).failed))
                         formFeedback.textContent = "";
-                    updateSaveActions();
+                    refreshReviewState();
                     if (succeeded) loadCustomers();
                 }
             }
@@ -423,7 +423,7 @@
                 ...makePayload(item), status: 1, description: null, answers: [],
             }));
             saving = true;
-            updateSaveActions();
+            refreshReviewState();
             formFeedback.textContent = "در حال ثبت اقلام باقی‌مانده…";
             try {
                 const result = await sendApiRequest({
@@ -455,7 +455,7 @@
                     formFeedback.textContent = "خطا در ارتباط با سرور هنگام ثبت گروهی.";
             } finally {
                 saving = false;
-                if (generation === formGeneration && isActive()) updateSaveActions();
+                if (generation === formGeneration && isActive()) refreshReviewState();
             }
         }
 
@@ -531,7 +531,7 @@
             draft.failed = false;
             draft.revision++;
             clearNoteTimer(radio.dataset.qcAnswer);
-            updateSaveActions();
+            refreshReviewState();
             if (draft.status === 2) persistItem(radio.dataset.qcAnswer);
         });
         content.addEventListener("input", event => {
@@ -550,7 +550,7 @@
                     persistItem(note.dataset.qcNote);
                 }, 650));
             }
-            updateSaveActions();
+            refreshReviewState();
         });
         saveAllButton.addEventListener("click", () => {
             if (!saveAllButton.disabled) saveRemaining(flatten());
