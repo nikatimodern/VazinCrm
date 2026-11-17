@@ -178,30 +178,38 @@
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
                     const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
-                    const contactStatus = Number(row.contactStatus) || 0;
+                    const hasReviewed = row.reviewedItems > 0;
+                    const contactStatus = hasReviewed ? 0 : Number(row.contactStatus) || 0;
+                    const complete = pending === 0;
                     const color = contactStatus === 2 ? "invalid-phone"
                         : contactStatus === 1 ? "no-answer"
-                            : pending > 0 ? "pending" : row.discrepancyItems > 0 ? "discrepancy" : "complete";
+                            : complete ? "complete" : "pending";
                     const label = contactStatus === 2 ? "شماره نامعتبر"
                         : contactStatus === 1 ? "عدم پاسخ"
-                            : pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
+                            : complete ? "تکمیل‌شده" : "نیازمند بررسی";
                     return '<article role="listitem" class="qc-client-card">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
                         + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span>' + faNumber.format(row.invoices) + ' فاکتور</span>'
-                        + '<span class="qc-client-count-reviewed"><strong>بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
-                        + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
-                        + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
-                        + '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span></div>'
-                        + '<span class="qc-client-badge qc-client-' + color + '">' + label + '</span>'
+                        + (hasReviewed
+                            ? '<span class="qc-client-count-reviewed"><strong>بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
+                                + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
+                                + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
+                            : '')
+                        + (pending > 0 ? '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span>' : '')
+                        + '</div>'
+                        + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
+                        + (complete ? '<i class="fa fa-check-circle" aria-hidden="true"></i> ' : '') + label + '</span>'
                         + '<div class="qc-client-contact-actions">'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
-                        + '" data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
+                        + '"' + (hasReviewed ? ' disabled title="برای این مشتری کنترل کیفیت ثبت شده است"' : '')
+                        + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
                         + (contactStatus === 1 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 1)
-                        + '" data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
+                        + '"' + (hasReviewed ? ' disabled title="برای این مشتری کنترل کیفیت ثبت شده است"' : '')
+                        + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
                         + '</div></article>';
