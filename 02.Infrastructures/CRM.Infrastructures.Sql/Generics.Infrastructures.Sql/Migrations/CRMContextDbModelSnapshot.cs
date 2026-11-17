@@ -3702,6 +3702,66 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         });
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("QualityControlCustomerContacts", t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControlCustomerContacts_Status", "[Status] IN (0, 1, 2)");
+                        });
+                });
+
+
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7604,6 +7664,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("Question");
                 });
 
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
                 {
