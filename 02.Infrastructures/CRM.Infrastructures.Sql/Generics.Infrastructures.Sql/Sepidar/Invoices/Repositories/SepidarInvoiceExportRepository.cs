@@ -145,6 +145,64 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         };
     }
 
+    public async Task<SepidarInvoiceExportPreview> PreviewWithQuotationMappingsAsync(
+        Factor factor, PreFactor preFactor, int quotationId,
+        IReadOnlyList<(Guid FactorItemId, int ItemId, int StockId)> mappings,
+        CancellationToken ct = default)
+    {
+        // PreviewAsync remains the single source of CRM invoice quantities, amounts,
+        // quotation item associations, and fiscal-year validation.
+        var preview = await PreviewAsync(factor, preFactor, quotationId, ct);
+        var factorItems = (factor.FactorItems ?? Array.Empty<FactorItem>())
+            .Where(x => !x.IsDeleted).OrderBy(x => x.Row).ToList();
+
+        if (mappings == null || mappings.Count != factorItems.Count
+            || mappings.GroupBy(x => x.FactorItemId).Any(x => x.Count() != 1))
+            throw new InvalidOperationException("برای همه ردیف‌های فاکتور کالا و انبار را مشخص کنید.");
+
+        var byId = mappings.ToDictionary(x => x.FactorItemId);
+        var changed = new List<(int ItemId, int StockId)>();
+        for (var index = 0; index < factorItems.Count; index++)
+        {
+            var line = preview.Items[index];
+            if (!byId.TryGetValue(factorItems[index].Id, out var mapping)
+                || mapping.ItemId <= 0 || mapping.StockId <= 0)
+                throw new InvalidOperationException($"کالا یا انبار ردیف {line.RowId} معتبر نیست.");
+
+            if (mapping.ItemId == line.ItemRef && mapping.StockId == line.StockRef)
+                continue;
+
+            changed.Add((mapping.ItemId, mapping.StockId));
+            // A changed item or stock must not consume the original quotation row.
+            // Leave the invoice header's QuotationRef intact; only altered lines are
+            // unlinked from the original quotation items.
+            line.QuotationItemId = 0;
+            line.ItemRef = mapping.ItemId;
+            line.StockRef = mapping.StockId;
+            line.ItemTitle = string.Empty;
+            line.StockTitle = string.Empty;
+        }
+
+        if (changed.Count == 0) return preview;
+
+        var itemIds = changed.Select(x => x.ItemId).Distinct().ToArray();
+        var stockIds = changed.Select(x => x.StockId).Distinct().ToArray();
+        var activeItems = await context.Items.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemID) && x.IsActive && x.Sellable)
+            .Select(x => x.ItemID).ToArrayAsync(ct);
+        if (activeItems.Length != itemIds.Length)
+            throw new InvalidOperationException("کالای جایگزین باید در سپیدار فعال و قابل فروش باشد.");
+
+        var validStockPairs = await context.ItemStocks.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemRef) && stockIds.Contains(x.StockRef) && x.Stock.IsActive)
+            .Select(x => new { x.ItemRef, x.StockRef }).ToListAsync(ct);
+        var pairs = validStockPairs.Select(x => (x.ItemRef, x.StockRef)).ToHashSet();
+        if (changed.Any(x => !pairs.Contains(x)))
+            throw new InvalidOperationException("انبار انتخاب‌شده برای یکی از کالاهای جایگزین معتبر نیست.");
+
+        return preview;
+    }
+
     public async Task<SepidarInvoiceExportPreview> PreviewDirectAsync(
         Factor factor, int saleTypeId, int customerPartyId,
         IReadOnlyList<(Guid FactorItemId, int ItemId, int StockId)> mappings,
