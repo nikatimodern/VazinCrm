@@ -3424,6 +3424,44 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
+        public async Task<IActionResult> PrepareExternalFactorQuotationItems(
+            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var (factor, preFactor, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
+                if (await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                        x.EntityId == factor.Id && x.EntityName == nameof(Factor)
+                        && x.ExternalSoftwareId == request.ExternalSoftwareId
+                        && x.MapType == ExternalMappingTypeEnum.فاکتور, ct))
+                    return Conflict("این فاکتور قبلاً در نرم‌افزار مالی ثبت شده است.");
+
+                var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
+                var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
+                var service = GetSepidarService(request.ExternalSoftwareId)
+                    ?? throw new InvalidOperationException("سرویس نرم‌افزار مالی پیدا نشد.");
+                await service.CompleteInvoiceExportPreviewAsync(preview, ct);
+
+                var items = factor.FactorItems.Where(x => !x.IsDeleted).OrderBy(x => x.Row)
+                    .Select((item, index) => new
+                    {
+                        factorItemId = item.Id,
+                        productTitle = preview.Items[index].CrmProductTitle,
+                        item.WeightCount,
+                        item.UnitTxt,
+                        externalItemId = preview.Items[index].ItemRef,
+                        externalStockId = preview.Items[index].StockRef,
+                        defaultItemTitle = preview.Items[index].ItemTitle,
+                        defaultStockTitle = preview.Items[index].StockTitle
+                    }).ToList();
+                var sepidarItems = await service.GetSepidarItemsAsync(ct);
+                return Ok(new { items, sepidarItems });
+            }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -3538,9 +3576,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var repository = GetSepidarInvoiceExportRepository(request.ExternalSoftwareId);
                 var preview = request.UsePreFactor
-                    ? await repository.PreviewAsync(factor, preFactor, quotationId, ct)
+                    ? request.ItemMappings?.Count > 0
+                        ? await repository.PreviewWithQuotationMappingsAsync(factor, preFactor, quotationId,
+                            request.ItemMappings.Select(x =>
+                                (x.FactorItemId, x.ExternalItemId, x.ExternalStockId)).ToList(), ct)
+                        : await repository.PreviewAsync(factor, preFactor, quotationId, ct)
                     : await PrepareDirectInvoicePreviewAsync(factor, request, ct);
-                var previewToken = request.UsePreFactor ? null : GetDirectInvoicePreviewToken(preview);
+                var previewToken = GetDirectInvoicePreviewToken(preview);
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
@@ -3619,10 +3661,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 var preview = request.UsePreFactor
-                    ? await repository.PreviewAsync(factor, preFactor, quotationId, ct)
+                    ? request.ItemMappings?.Count > 0
+                        ? await repository.PreviewWithQuotationMappingsAsync(factor, preFactor, quotationId,
+                            request.ItemMappings.Select(x =>
+                                (x.FactorItemId, x.ExternalItemId, x.ExternalStockId)).ToList(), ct)
+                        : await repository.PreviewAsync(factor, preFactor, quotationId, ct)
                     : await PrepareDirectInvoicePreviewAsync(factor, request, ct);
-                if (!request.UsePreFactor && (string.IsNullOrEmpty(request.PreviewToken)
-                    || request.PreviewToken != GetDirectInvoicePreviewToken(preview)))
+                if ((!request.UsePreFactor || request.ItemMappings?.Count > 0)
+                    && (string.IsNullOrEmpty(request.PreviewToken)
+                        || request.PreviewToken != GetDirectInvoicePreviewToken(preview)))
                     throw new InvalidOperationException("اطلاعات فاکتور پس از پیش‌نمایش تغییر کرده است؛ دوباره بررسی کنید.");
                 var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
                     factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
