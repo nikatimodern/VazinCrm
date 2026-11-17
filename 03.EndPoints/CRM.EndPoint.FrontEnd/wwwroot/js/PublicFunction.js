@@ -298,7 +298,10 @@ async function openSepidarItemCreation({ softwareId, softwareTitle, afterCreate,
         form.reset();
         delete modal.dataset.active;
     };
-    const read = action => sendApiRequest({ url: "/Factor/" + action, method: "POST", data, successMsg: null });
+    const read = action => sendApiRequest({
+        url: "/Factor/" + action, method: "POST", data,
+        successMsg: null, showLoading: false,
+    });
     let units, lastCode;
     try {
         [units, lastCode] = await Promise.all([read("PrepareExternalUnits"), read("GetLastSepidarItemCode")]);
