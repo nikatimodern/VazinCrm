@@ -431,10 +431,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             from item in db.FactorItems.AsNoTracking()
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
-            where deal.CustomerId.HasValue
+            where (factor.CustomerId ?? deal.CustomerId).HasValue
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
-            select new { CustomerId = deal.CustomerId!.Value, ItemId = item.Id, DealId = deal.Id, FactorId = factor.Id };
+            select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id, DealId = deal.Id, FactorId = factor.Id };
 
         var grouped = eligible.GroupBy(item => item.CustomerId).Select(group => new
         {
@@ -496,7 +496,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             from item in db.FactorItems.AsNoTracking()
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
-            where deal.CustomerId == customerId
+            where (factor.CustomerId ?? deal.CustomerId) == customerId
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
             orderby deal.SerialNumber descending, factor.SerialNumber descending, item.Row
@@ -578,7 +578,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             from item in db.FactorItems.AsNoTracking()
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
-            where deal.CustomerId == request.CustomerId
+            where (factor.CustomerId ?? deal.CustomerId) == request.CustomerId
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
             select item.Id
