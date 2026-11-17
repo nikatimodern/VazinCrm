@@ -85,9 +85,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             row.CustomerId, row.Mobile, row.TotalItems, row.ReviewedItems, row.DiscrepancyItems
         }).ToListAsync(cancellationToken);
         var total = summaryRows.Count;
+        var customerIds = summaryRows.Select(row => row.CustomerId).ToArray();
         var contacts = await db.QualityControlCustomerContacts.AsNoTracking()
-            .Where(contact => contact.Status != QualityControlCustomerContactStatus.None
-                || contact.NoResponseAttempts > 0)
+            .Where(contact => customerIds.Contains(contact.CustomerId)
+                && (contact.Status != QualityControlCustomerContactStatus.None
+                    || contact.NoResponseAttempts > 0))
             .ToDictionaryAsync(contact => contact.CustomerId, cancellationToken);
         // No background job is needed: overdue "no answer" expires at calendar midnight,
         // and changed mobile numbers invalidate an existing "invalid number" flag.
