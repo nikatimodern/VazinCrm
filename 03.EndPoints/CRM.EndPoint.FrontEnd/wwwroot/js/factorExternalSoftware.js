@@ -89,6 +89,63 @@ function getFactorFinancialWizard() {
     });
 }
 
+/** Start a single destination without losing the user's remaining selected software IDs. */
+async function prepareFactorDestination(state) {
+    const result = await sendApiRequest({
+        url: "/Factor/PrepareExternalFactorModes",
+        method: "POST",
+        data: state.request,
+        successMsg: null,
+    });
+    if (!result?.softwareTitle || externalFactorExportState !== state) return false;
+    state.softwareTitle = result.softwareTitle;
+    state.hasQuotation = result.hasQuotation === true;
+    factorDirectWizard.showMode(state);
+    return true;
+}
+
+function resetFactorDestination(state, softwareId) {
+    state.request = {
+        factorId: state.request.factorId,
+        externalSoftwareId: softwareId,
+        usePreFactor: true,
+        includeBroker: false,
+        previewBrokerPartyId: null,
+    };
+    state.direct = { saleTypeId: "", customerId: "", items: {} };
+    state.saleTypes = null;
+    state.customerData = null;
+    state.items = null;
+    state.sepidarItems = null;
+    state.stocksByItem = null;
+    state.hasLoadedPreview = false;
+    state.step = "mode";
+}
+
+async function continueFactorDestinations(state) {
+    const wizard = getFactorFinancialWizard();
+    if (!wizard.hasNextDestination) return false;
+    resetFactorDestination(state, wizard.nextDestination());
+
+    const loaded = await prepareFactorDestination(state);
+    if (!loaded && externalFactorExportState === state) {
+        state.step = "retryDestination";
+        wizard.render({
+            destination: "نرم‌افزار مالی",
+            title: "دریافت اطلاعات مقصد",
+            subtitle: "اطلاعات نرم‌افزار بعدی دریافت نشد",
+            icon: '<i class="fas fa-exclamation-circle" aria-hidden="true"></i>',
+            step: "ادامه انتقال",
+            content: '<p class="mb-0">برای ادامه ارسال فاکتور به نرم‌افزار بعدی، دوباره تلاش کنید.</p>',
+        });
+        wizard.setActions({
+            confirmText: "تلاش دوباره", confirmDisabled: false,
+            backHidden: true, backDisabled: true,
+        });
+    }
+    return true;
+}
+
 async function loadExternalFactorPreview(state, includeBroker) {
     const button = document.getElementById("confirmSendExternalFactorBtn");
     const previousInvoiceNumber = state.hasLoadedPreview
@@ -151,14 +208,13 @@ async function sendFactorToExternalSoftware(factorId) {
     await showExternalSoftwareModal(factorId, {
         mapType: 3,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
-            if (externalSoftwareIds.length !== 1) {
-                toastifyError("برای هر انتقال فقط یک نرم‌افزار مقصد انتخاب کنید.");
-                return;
-            }
+            const wizard = getFactorFinancialWizard();
+            wizard.setDestinations(externalSoftwareIds);
+            if (!wizard.currentDestination) return;
             const state = {
                 request: {
                     factorId: entityIds[0],
-                    externalSoftwareId: externalSoftwareIds[0],
+                    externalSoftwareId: wizard.currentDestination,
                     usePreFactor: true,
                     includeBroker: false,
                     previewBrokerPartyId: null,
@@ -166,18 +222,16 @@ async function sendFactorToExternalSoftware(factorId) {
                 direct: { saleTypeId: "", customerId: "", items: {} },
                 processing: false,
                 hasLoadedPreview: false,
+                completedCount: 0,
+                finished: false,
                 step: "mode",
             };
-            const prepared = await sendApiRequest({
-                url: "/Factor/PrepareExternalFactorModes", method: "POST",
-                data: state.request, successMsg: null,
-            });
-            if (!prepared || !prepared.softwareTitle) return;
-            state.softwareTitle = prepared.softwareTitle;
-            state.hasQuotation = prepared.hasQuotation === true;
             externalFactorExportState = state;
+            if (!await prepareFactorDestination(state)) {
+                if (externalFactorExportState === state) externalFactorExportState = null;
+                return;
+            }
             ModalToggle("chooseExternalSoftwareModal", "hide");
-            factorDirectWizard.showMode(state);
             ModalToggle("sendFactorToExternalSoftwareModal", "show");
         },
     });
@@ -442,7 +496,12 @@ document.addEventListener("click", async event => {
         });
         if (!result?.invoiceId) return;
         
-        // Return to the financial history after the confirmation modal finishes closing.
+        state.completedCount++;
+        // A successful financial write must not be repeated when another destination is pending.
+        if (await continueFactorDestinations(state)) return;
+
+        state.finished = true;
+        // Return to the financial history after all selected destinations have been processed.
         const shouldReturnToHistory = externalFactorHistory.factorId === state.request.factorId;
         if (shouldReturnToHistory) {
             document.getElementById("sendFactorToExternalSoftwareModal")
@@ -460,8 +519,13 @@ document.addEventListener("click", async event => {
 
 document.addEventListener("hidden.bs.modal", event => {
     if (event.target.id === "sendFactorToExternalSoftwareModal") {
+        const state = externalFactorExportState;
         externalFactorExportState = null;
         factorFinancialWizard?.destroy();
+        if (state?.completedCount && !state.finished &&
+            typeof refreshFactorPartial === "function") {
+            void refreshFactorPartial();
+        }
     }
 });
 
@@ -705,6 +769,9 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         toggleElementsDisabled(button(), true);
         try {
             switch (state.step) {
+                case "retryDestination":
+                    await prepareFactorDestination(state);
+                    break;
                 case "mode":
                     state.request.usePreFactor = state.sourceChoice === "quotation";
                     if (state.request.usePreFactor) await loadExternalFactorPreview(state, false);
