@@ -156,13 +156,33 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (deal == null)
             return null;
 
+        var preFactorManagers = await db.PreFactors.AsNoTracking()
+            .Where(preFactor => preFactor.DealId == dealId && preFactor.UserTaminTxt != null)
+            .Select(preFactor => preFactor.UserTaminTxt)
+            .ToListAsync(cancellationToken);
+        var orderManagers = await db.OrderHeads.AsNoTracking()
+            .Where(order => order.DealId == dealId && order.UserTaminTxt != null)
+            .Select(order => order.UserTaminTxt)
+            .ToListAsync(cancellationToken);
+        deal = deal with
+        {
+            SupplyManagers = string.Join("، ", preFactorManagers.Concat(orderManagers)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
+                .Distinct())
+        };
+
+        // Only approved cash deposits and collected cheques contribute to these totals.
+        var realizedDeposits = db.Accountancies.AsNoTracking()
+            .Where(payment => payment.AccType == AcEnum.واریزی
+                && payment.Status == AccStatusEnum.تایید_شده
+                && (payment.PayType == PayTypeEnum.نقدی
+                    || (payment.PayType == PayTypeEnum.چکی && payment.Vosoled)));
+
         if (deal.CustomerId.HasValue)
         {
-            var payments = await db.Accountancies.AsNoTracking().ForCustomer(deal.CustomerId)
-                .Where(payment => payment.AccType == AcEnum.واریزی
-                    && payment.Status == AccStatusEnum.تایید_شده
-                    && (payment.PayType == PayTypeEnum.نقدی || payment.PayType == PayTypeEnum.تهاتری
-                        || (payment.PayType == PayTypeEnum.چکی && payment.Vosoled)))
+            var payments = await realizedDeposits
+                .Where(payment => payment.CustomerId == deal.CustomerId.Value)
                 .GroupBy(payment => payment.CurrencyType)
                 .Select(group => new { Currency = group.Key, Count = group.Count(), Amount = group.Sum(payment => payment.credit) ?? 0 })
                 .ToListAsync(cancellationToken);
@@ -172,6 +192,25 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     payment.Currency.ToString(), payment.Amount.ToString("#,0.############################", CultureInfo.InvariantCulture))).ToList()
             };
         }
+
+        // Associate order deposits through their pre-factors, not a possibly missing DealId on the payment.
+        var dealPayments = await realizedDeposits.ForPreFactor()
+            .Where(payment => db.PreFactors.Any(preFactor =>
+                preFactor.DealId == dealId && preFactor.Id == payment.pfid))
+            .GroupBy(payment => payment.CurrencyType)
+            .Select(group => new
+            {
+                Currency = group.Key,
+                Count = group.Count(),
+                Amount = group.Sum(payment => payment.credit) ?? 0
+            })
+            .ToListAsync(cancellationToken);
+        deal = deal with
+        {
+            DealPaymentCount = dealPayments.Sum(payment => payment.Count),
+            DealPaymentTotals = dealPayments.Select(payment => new QualityControlPaymentTotal(
+                payment.Currency.ToString(), payment.Amount.ToString("#,0.############################", CultureInfo.InvariantCulture))).ToList()
+        };
 
         var factorTotals = await db.Factors.AsNoTracking()
             .Where(factor => factor.DealId == dealId && factor.status == FactorStatus.تایید_شده)
