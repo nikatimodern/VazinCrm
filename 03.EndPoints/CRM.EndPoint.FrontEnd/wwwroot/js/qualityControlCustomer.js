@@ -205,7 +205,6 @@
                 const status = Number(item.status) || 0;
                 drafts.set(item.factorItemId, {
                     status,
-                    persistedStatus: status,
                     revision: 0,
                     failed: false,
                     description: item.description || "",
@@ -278,17 +277,6 @@
         function renderReview() {
             if (!review) return;
             const scrollPosition = scroll.scrollTop;
-            const items = flatten();
-            const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
-            const pending = items.filter(item => stateOf(item).status === 0).length;
-            const issues = items.filter(item => stateOf(item).status === 2).length;
-            summary.innerHTML = '<div><strong>' + faNumber.format(reviewed) + ' از '
-                + faNumber.format(items.length) + ' قلم ثبت‌شده</strong>'
-                + '<small>' + faNumber.format(review.orders.length) + ' سفارش · '
-                + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
-                + ' فاکتور</small></div><div class="qc-client-summary-tags">'
-                + '<span>' + faNumber.format(pending) + ' بررسی‌نشده</span>'
-                + '<span>' + faNumber.format(issues) + ' دارای مغایرت</span></div>';
             content.innerHTML = review.orders.map(order => '<section class="qc-client-order">'
                 + '<div class="qc-client-order-header"><h3>سفارش شماره ' + escape(order.serialNumber)
                 + '</h3><small>' + escape(order.title || "") + '</small></div>'
@@ -400,7 +388,6 @@
                         break;
                     }
                     draft.rowVersion = version.rowVersion;
-                    draft.persistedStatus = payload.status;
                     draft.failed = false;
                     succeeded = true;
                     if (draft.revision === revision) {
@@ -453,7 +440,6 @@
                     const draft = stateOf(item);
                     draft.rowVersion = versions.get(item.factorItemId);
                     draft.status = 1;
-                    draft.persistedStatus = 1;
                     draft.answers = {};
                     draft.saved = true;
                     draft.failed = false;
