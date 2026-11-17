@@ -106,10 +106,29 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var pendingItems = 0;
         var reviewedItems = 0;
         var discrepancyItems = 0;
+        var totalItems = 0;
+        var completedCustomers = 0;
+        var dueFollowUpsToday = 0;
+        var totalNoResponseAttempts = 0;
         foreach (var row in summaryRows)
         {
+            totalItems += row.TotalItems;
             reviewedItems += row.ReviewedItems;
             discrepancyItems += row.DiscrepancyItems;
+            if (row.ReviewedItems == row.TotalItems)
+                completedCustomers++;
+
+            // Previously unanswered customers become due the next calendar day;
+            // overdue callbacks remain due until handled or their QC is completed.
+            if (contacts.TryGetValue(row.CustomerId, out var contact))
+            {
+                totalNoResponseAttempts += contact.NoResponseAttempts;
+                if (row.ReviewedItems < row.TotalItems
+                    && contact.Status == QualityControlCustomerContactStatus.NoResponse
+                    && contact.LastNoResponseAt.HasValue
+                    && contact.LastNoResponseAt.Value.Date < today)
+                    dueFollowUpsToday++;
+            }
 
             var contactStatus = contactStatuses.GetValueOrDefault(row.CustomerId);
             if (contactStatus == QualityControlCustomerContactStatus.InvalidNumber)
@@ -124,7 +143,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         }
         var summary = new QualityControlCustomerSummary(
             invalidCustomers, noResponseCustomers, pendingCustomers, pendingItems,
-            reviewedItems, discrepancyItems, reviewedItems - discrepancyItems);
+            reviewedItems, discrepancyItems, reviewedItems - discrepancyItems,
+            totalItems, completedCustomers, dueFollowUpsToday, totalNoResponseAttempts);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
