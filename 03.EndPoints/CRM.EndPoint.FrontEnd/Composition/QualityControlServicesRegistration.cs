@@ -1,5 +1,6 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
+using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerForm;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomers;
 using CRM.Core.Domain.QualityControls.Models;
@@ -17,6 +18,7 @@ public static class QualityControlServicesRegistration
         services.AddScoped<IQueryHandler<GetQualityControlCustomersQuery, QualityControlCustomerListResult>, GetQualityControlCustomersQueryHandler>();
         services.AddScoped<IQueryHandler<GetQualityControlCustomerFormQuery, QualityControlCustomerForm?>, GetQualityControlCustomerFormQueryHandler>();
         services.AddScoped<ICommandHandler<SaveQualityControlItemsCommand, SaveQualityControlItemsResult>, SaveQualityControlItemsCommandHandler>();
+        services.AddScoped<ICommandHandler<SetQualityControlCustomerContactCommand, SetQualityControlCustomerContactResult>, SetQualityControlCustomerContactCommandHandler>();
         return services;
     }
 }
