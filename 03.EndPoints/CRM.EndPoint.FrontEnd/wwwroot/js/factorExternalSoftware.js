@@ -229,6 +229,9 @@ async function sendFactorToExternalSoftware(factorId) {
             externalFactorExportState = state;
             if (!await prepareFactorDestination(state)) {
                 if (externalFactorExportState === state) externalFactorExportState = null;
+                const chooserButton = document.getElementById("sendToSoftwareBtn");
+                if (isModalOpen("chooseExternalSoftwareModal"))
+                    toggleElementsDisabled(chooserButton, false);
                 return;
             }
             ModalToggle("chooseExternalSoftwareModal", "hide");
@@ -545,7 +548,12 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         if (state.step === "stock") return state.items?.length > 0 && state.items.every(x => !!state.direct.items[x.factorItemId]?.externalStockId);
         return true;
     };
-    const update = state => setButton("تأیید و ادامه", !isReady(state));
+    const update = state => {
+        const confirmText = state.step === "items" ? "تأیید کالاها و ادامه"
+            : state.step === "stock" ? "تأیید انبارها و ادامه"
+                : state.step === "retryDestination" ? "تلاش دوباره" : "تأیید و ادامه";
+        setButton(confirmText, state.step !== "retryDestination" && !isReady(state));
+    };
     const stage = (state, stageId, title, subtitle, icon, count, content, large = false) => {
         if (!get(state)) return;
         state.step = stageId;
