@@ -171,6 +171,7 @@ async function exSoftwarePreFactorLoadSaleTypes() {
         url: "/Factor/PrepareExternalSaleType",
         method: "POST",
         successMsg: null,
+        showLoading: false,
         data: {
             externalSoftwareIds: [state.software.externalSoftwareId],
         },
@@ -251,6 +252,7 @@ async function exSoftwarePreFactorLoadCustomer() {
         url: "/Factor/PrepareExternalCustomerMapping",
         method: "POST",
         successMsg: null,
+        showLoading: false,
         data: {
             ids: [state.preFactorId],
             externalSoftwareIds: [state.software.externalSoftwareId],
@@ -350,6 +352,7 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
         url: "/Factor/PrepareExternalItemMapping",
         method: "POST",
         successMsg: null,
+        showLoading: false,
         data: {
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
