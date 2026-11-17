@@ -45,7 +45,29 @@
 #qualityControlCustomerPage .qc-client-order-header {
     justify-content: space-between;
 }
+#qualityControlCustomerPage .qc-client-dashboard-top { min-width: 0; }
 #qualityControlCustomerPage .qc-client-header { margin-bottom: 9px; }
+/* On wider CRM workspaces, put the KPI cards in the unused area beside the page title.
+   Use the actual main content container width, not the browser width with its sidebar. */
+@container mainWrapper (min-width: 1100px) {
+    #qualityControlCustomerPage .qc-client-dashboard-top {
+        display: grid;
+        grid-template-columns: minmax(245px, 285px) minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 9px;
+    }
+    #qualityControlCustomerPage .qc-client-dashboard-top .qc-client-header,
+    #qualityControlCustomerPage .qc-client-dashboard-top .qc-client-overview {
+        margin-bottom: 0;
+    }
+    #qualityControlCustomerPage .qc-client-overview-card { padding: 8px 10px; }
+    #qualityControlCustomerPage .qc-client-overview-head { gap: 4px; }
+    #qualityControlCustomerPage .qc-client-overview-action {
+        padding: 3px 8px;
+        font-size: 11px;
+    }
+}
 #qualityControlCustomerPage h1 {
     font-size: 22px;
     line-height: 1.5;
