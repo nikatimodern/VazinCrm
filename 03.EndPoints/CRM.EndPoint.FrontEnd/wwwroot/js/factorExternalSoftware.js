@@ -107,6 +107,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
         state.hasLoadedPreview = true;
         state.step = "preview";
         document.getElementById("backExternalFactorStepBtn").hidden = false;
+        document.querySelector("#sendFactorToExternalSoftwareModal .modal-dialog")?.classList.add("modal-lg");
         document.getElementById("externalFactorPreviewContent").innerHTML =
             renderExternalFactorPreview(result, state);
         document.getElementById("externalFactorFinalNotice").hidden = false;
