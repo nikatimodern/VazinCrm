@@ -637,7 +637,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
 
     private static string PersianDateTime(DateTime? value)
     {
-        if (!value.HasValue) return "—";
+        if (!value.HasValue || value.Value < new DateTime(622, 3, 22)) return "تاریخ نامشخص";
         var dt = value.Value;
         var calendar = new System.Globalization.PersianCalendar();
         return $"{calendar.GetYear(dt):0000}/{calendar.GetMonth(dt):00}/{calendar.GetDayOfMonth(dt):00} {dt:HH:mm}";
