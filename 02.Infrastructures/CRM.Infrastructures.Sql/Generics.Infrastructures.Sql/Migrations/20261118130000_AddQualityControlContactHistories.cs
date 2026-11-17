@@ -73,9 +73,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                        CASE WHEN c.NoResponseAttempts > 0 THEN c.NoResponseAttempts ELSE 1 END,
                        1, NULL,
                        N'سابقه تجمیعی قدیمی؛ زمان و جزئیات تماس‌های جداگانه در نسخه قبلی ثبت نشده است.',
-                       CASE WHEN c.Status = 2
-                           THEN DATEADD(second, -1, COALESCE(c.ModifyDate, c.CreateDate))
-                           ELSE COALESCE(c.LastNoResponseAt, c.ModifyDate, c.CreateDate) END,
+                       COALESCE(c.LastNoResponseAt, c.CreateDate),
                        NULL, NULL, NULL, 0,
                        c.UserCreatorID, c.UserCreator, c.UserModifyID, c.UserModify, NULL
                 FROM dbo.QualityControlCustomerContacts AS c
@@ -99,7 +97,7 @@ namespace CRM.Infrastructures.Sql.Migrations
                  IsDeleted, UserCreatorID, UserCreator, UserModifyID, UserModify, CommentText)
                 SELECT NEWID(), c.CustomerId, 0, 0, 1, NULL,
                        N'وضعیت تماس پیش از ایجاد تاریخچه پاک شده بود.',
-                       DATEADD(second, 1, COALESCE(c.ModifyDate, c.CreateDate)),
+                       COALESCE(c.ModifyDate, c.CreateDate),
                        c.ModifyDateTxt,
                        NULL, NULL, 0, c.UserCreatorID, c.UserCreator,
                        c.UserModifyID, c.UserModify, NULL
