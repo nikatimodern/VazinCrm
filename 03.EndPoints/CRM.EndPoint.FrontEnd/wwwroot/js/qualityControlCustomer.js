@@ -26,6 +26,7 @@
         const pageSize = page.querySelector("#qcCustomerPageSize");
         const token = form.querySelector('[name="__RequestVerificationToken"]');
         const faNumber = new Intl.NumberFormat("fa-IR");
+        const faCodeNumber = new Intl.NumberFormat("fa-IR", { useGrouping: false });
         const escape = value => String(value ?? "").replace(/[&<>"']/g, char =>
             ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
         const pageSignal = typeof PageRuntime !== "undefined" ? PageRuntime.current?.signal : null;
@@ -128,10 +129,11 @@
                     const label = pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
                     return '<article role="listitem" class="qc-client-card">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
-                        + '<small>کد مشتری: ' + escape(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
+                        + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
                         + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span>' + faNumber.format(row.invoices) + ' فاکتور</span>'
-                        + '<span>' + faNumber.format(row.reviewedItems) + ' از ' + faNumber.format(row.totalItems) + ' قلم بررسی‌شده</span></div>'
+                        + '<span class="qc-client-count-reviewed">بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</span>'
+                        + '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span></div>'
                         + '<span class="qc-client-badge qc-client-' + color + '">' + label + '</span>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button></article>';
@@ -177,7 +179,7 @@
             }
             review = result;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت: " + (review.customerName || "مشتری");
-            const customerDetails = ["کد مشتری: " + faNumber.format(review.customerCode)];
+            const customerDetails = ["کد مشتری: " + faCodeNumber.format(review.customerCode)];
             if (review.agentName?.trim() && review.agentName.trim() !== review.customerName?.trim())
                 customerDetails.push("نماینده: " + review.agentName.trim());
             if (review.mobile?.trim()) customerDetails.push("موبایل: " + review.mobile.trim());
