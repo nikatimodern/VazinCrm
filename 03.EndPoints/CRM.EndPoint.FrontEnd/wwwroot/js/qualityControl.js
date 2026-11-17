@@ -407,8 +407,16 @@
         }
 
         let resultDeal = null;
-        function paymentSummaryHtml(deal) {
-            return `<span><strong>واریزی‌های مشتری</strong><small>تعداد: ${number.format(deal.customerPaymentCount ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(deal.customerPaymentTotals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span>`;
+        function paymentSummaryHtml(label, count, totals) {
+            return `<span><strong>${label}</strong><small>تعداد: ${number.format(count ?? 0)}</small></span><span class="qc-payment-total">جمع کل: ${(totals ?? []).map(total => `${escapeHtml(total.amount)} ${escapeHtml(total.currency)}`).join(" · ") || "۰"}</span>`;
+        }
+
+        function customerPaymentSummaryHtml(deal) {
+            return paymentSummaryHtml("واریزی‌های کل", deal.customerPaymentCount, deal.customerPaymentTotals);
+        }
+
+        function dealPaymentSummaryHtml(deal) {
+            return paymentSummaryHtml("واریزی‌های مربوط به این سفارش", deal.dealPaymentCount, deal.dealPaymentTotals);
         }
 
         function factorSummaryHtml(deal) {
@@ -437,7 +445,9 @@
                 const currentButton = detailsJson.querySelector('[data-qc-document="factor"]');
                 if (currentButton) currentButton.innerHTML = factorSummaryHtml(resultDeal);
                 const paymentButton = detailsJson.querySelector('[data-qc-document="customerPayments"]');
-                if (paymentButton) paymentButton.innerHTML = paymentSummaryHtml(resultDeal);
+                if (paymentButton) paymentButton.innerHTML = customerPaymentSummaryHtml(resultDeal);
+                const dealPaymentButton = detailsJson.querySelector('[data-qc-document="accountancy"]');
+                if (dealPaymentButton) dealPaymentButton.innerHTML = dealPaymentSummaryHtml(resultDeal);
             } finally {
                 if (factorSummaryRequest === controller) {
                     button?.removeAttribute("aria-busy");
@@ -460,13 +470,13 @@
             const fields = [
                 ["شماره سفارش", deal.serialNumber], ["مشتری", deal.customerName], ["کد مشتری", deal.customerCode],
                 ["تلفن", deal.customerTel], ["موبایل", deal.customerMobile],
-                ["کارشناس مسئول", deal.userCreator], ["تاریخ ثبت", deal.createDate],
+                ["کارشناس مسئول", deal.userCreator], ["مسئول تأمین", deal.supplyManagers], ["تاریخ ثبت", deal.createDate],
                 ["وضعیت سفارش", deal.financialApproved ? "تحویل شده" : "تحویل نشده"],
             ];
             const documents = [["پیش‌فاکتور", "preFactor"], ["فاکتور", "factor"], ["واریزی‌ها", "payments"], ["دستور تولید", "orderHead"], ["گزارش", "report"]];
-            const documentButton = (label, key) => `<button type="button" data-qc-document="${key}" ${key === "customerPayments" && !deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}><strong>${label}</strong>${key === "customerPayments" ? "" : `<b>${number.format(deal.counts?.[key] ?? 0)}</b>`}</button>`;
+            const documentButton = (label, key) => `<button type="button" data-qc-document="${key}"><strong>${label}</strong><b>${number.format(deal.counts?.[key] ?? 0)}</b></button>`;
             detailsJson.innerHTML = `<dl>${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value == null || value === "" ? "—" : value)}</dd></div>`).join("")}</dl><div class="qc-json-documents">${documents.map(([label, key]) => key === "payments"
-                ? `<button type="button" class="qc-customer-payments" data-qc-document="customerPayments" ${!deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}>${paymentSummaryHtml(deal)}</button>`
+                ? `<div class="qc-payments-group"><span class="qc-payments-title">واریزی‌ها</span><div class="qc-payments-options"><button type="button" class="qc-customer-payments" data-qc-document="customerPayments" ${!deal.customerId ? 'disabled title="سفارش به مشتری متصل نیست"' : ""}>${customerPaymentSummaryHtml(deal)}</button><button type="button" class="qc-customer-payments" data-qc-document="accountancy">${dealPaymentSummaryHtml(deal)}</button></div></div>`
                 : key === "factor" ? `<button type="button" class="qc-customer-payments" data-qc-document="factor">${factorSummaryHtml(deal)}</button>`
                 : documentButton(label, key)).join("")}</div>`;
         }
@@ -493,11 +503,11 @@
                     ModalToggle("dealReportsModal", "show");
                 }],
                 accountancy: ["InvoiceListModalId", async () => {
-                    await ShowModalListInvoice(deal.id, 3, null, 4, true);
+                    await ShowModalListInvoice(deal.id, 3, null, 4, true, true);
                     document.getElementById("TitleListInvoiceId").textContent = `واریزی‌های سفارش ${deal.serialNumber}`;
                 }],
                 customerPayments: ["InvoiceListModalId", async () => {
-                    await ShowModalListInvoice(deal.customerId, 5, null, 4, true);
+                    await ShowModalListInvoice(deal.customerId, 5, null, 4, true, true);
                     document.getElementById("TitleListInvoiceId").textContent = "واریزی‌های کل مشتری";
                 }],
             };
