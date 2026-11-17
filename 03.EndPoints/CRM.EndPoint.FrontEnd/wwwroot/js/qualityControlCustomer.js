@@ -298,6 +298,7 @@
         function refreshReviewState() {
             if (!review) { saveAllButton.disabled = true; return; }
             const items = flatten();
+            const itemsById = new Map(items.map(item => [item.factorItemId, item]));
             const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
             const pending = items.filter(item => stateOf(item).status === 0).length;
             const issues = items.filter(item => stateOf(item).status === 2).length;
@@ -327,7 +328,7 @@
                     badge.textContent = text + (savingItems.has(row.dataset.qcItem) ? " · در حال ثبت"
                         : draft.failed ? " · خطای ثبت"
                             : draft.saved ? " · ثبت‌شده"
-                                : draft.status === 2 && !isValid(flatten().find(item => item.factorItemId === row.dataset.qcItem))
+                                : draft.status === 2 && !isValid(itemsById.get(row.dataset.qcItem))
                                     ? " · تکمیل سؤال‌ها" : "");
                 }
                 const retry = row.querySelector("[data-qc-retry]");
