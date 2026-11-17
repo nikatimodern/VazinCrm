@@ -79,6 +79,15 @@ document.addEventListener("click", async event => {
 });
 
 let externalFactorExportState = null;
+let factorFinancialWizard = null;
+function getFactorFinancialWizard() {
+    return factorFinancialWizard ??= new ExternalFinancialWizard({
+        modal: "sendFactorToExternalSoftwareModal",
+        container: "externalFactorPreviewContent",
+        back: "backExternalFactorStepBtn",
+        confirm: "confirmSendExternalFactorBtn",
+    });
+}
 
 async function loadExternalFactorPreview(state, includeBroker) {
     const button = document.getElementById("confirmSendExternalFactorBtn");
@@ -106,12 +115,23 @@ async function loadExternalFactorPreview(state, includeBroker) {
         state.request.previewToken = state.request.usePreFactor ? null : result.previewToken;
         state.hasLoadedPreview = true;
         state.step = "preview";
-        document.getElementById("backExternalFactorStepBtn").hidden = false;
-        document.querySelector("#sendFactorToExternalSoftwareModal .modal-dialog")?.classList.add("modal-lg");
-        document.getElementById("externalFactorPreviewContent").innerHTML =
-            renderExternalFactorPreview(result, state);
-        document.getElementById("externalFactorFinalNotice").hidden = false;
-        button.textContent = "تأیید و ثبت در نرم‌افزار";
+        getFactorFinancialWizard().render({
+            destination: result.softwareTitle,
+            title: "بررسی نهایی فاکتور",
+            subtitle: state.request.usePreFactor
+                ? "پیش‌فاکتور سپیدار شماره " + result.preview.quotationNumber + "؛ اطلاعات را بررسی کنید"
+                : "صدور مستقیم بدون پیش‌فاکتور سپیدار؛ اطلاعات را بررسی کنید",
+            icon: '<i class="fas fa-clipboard-check" aria-hidden="true"></i>',
+            step: state.request.usePreFactor ? "پیش‌نمایش" : "مرحله ۵ از ۵",
+            content: renderExternalFactorPreview(result, state),
+            large: true,
+        });
+        getFactorFinancialWizard().setActions({
+            confirmText: "تأیید و ثبت در نرم‌افزار",
+            confirmDisabled: false,
+            backHidden: false,
+            backDisabled: false,
+        });
         if (previousInvoiceNumber != null) {
             document.getElementById("externalFactorInvoiceNumber").value = previousInvoiceNumber;
         }
@@ -189,26 +209,7 @@ function renderExternalFactorPreview(data, state) {
     const money = value => `${number(value)} ریال`;
 
     const date = preview.invoiceDateText || preview.invoiceDate?.split("T")[0] || "-";
-    document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
-        data.softwareTitle || "نرم‌افزار مالی";
-    document.getElementById("sendFactorToExternalSoftwareSubtitle").textContent =
-        "نرم‌افزار ۱ از ۱";
-    
     return `
-        <div class="external-mapping-stage-info">
-            <div class="external-mapping-stage-icon">
-                <i class="fas fa-clipboard-check" aria-hidden="true"></i>
-            </div>
-            <div class="external-mapping-stage-content">
-                <div class="external-mapping-stage-title">بررسی نهایی فاکتور</div>
-                <div class="external-mapping-stage-subtitle">
-                    ${state.request.usePreFactor
-                        ? "پیش‌فاکتور سپیدار شماره " + escape(preview.quotationNumber)
-                        : "صدور مستقیم بدون پیش‌فاکتور سپیدار"}؛ اطلاعات را بررسی کنید
-                </div>
-            </div>
-            <span class="external-mapping-step">پیش‌نمایش</span>
-        </div>
         <div class="external-prefactor-preview">
             <div class="ex-preview-summary">
                 <div class="ex-preview-field">
@@ -312,7 +313,10 @@ function renderExternalFactorPreview(data, state) {
                     <strong>مبلغ نهایی</strong><strong>${money(preview.netPrice)}</strong>
                 </div>
             </div>
-        </div>`;
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+            با ثبت فاکتور، خروج انبار و سند حسابداری مطابق تنظیمات نرم‌افزار مالی صادر می‌شوند.
+        </p>`;
 }
 
 
@@ -457,6 +461,7 @@ document.addEventListener("click", async event => {
 document.addEventListener("hidden.bs.modal", event => {
     if (event.target.id === "sendFactorToExternalSoftwareModal") {
         externalFactorExportState = null;
+        factorFinancialWizard?.destroy();
     }
 });
 
@@ -467,11 +472,8 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     const backButton = () => document.getElementById("backExternalFactorStepBtn");
     const html = value => escapeHtml(String(value ?? ""));
     const get = (state) => state === externalFactorExportState;
-    const destroy = () => body()?.querySelectorAll("select").forEach(x => x.tomselect?.destroy());
-    const setButton = (text, disabled = false) => {
-        button().textContent = text;
-        toggleElementsDisabled(button(), disabled);
-    };
+    const setButton = (text, disabled = false) =>
+        getFactorFinancialWizard().setActions({ confirmText: text, confirmDisabled: disabled });
     const isReady = state => {
         if (state.step === "saleType") return !!state.direct.saleTypeId;
         if (state.step === "customer") return !!state.direct.customerId;
@@ -482,13 +484,14 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     const update = state => setButton("تأیید و ادامه", !isReady(state));
     const stage = (state, stageId, title, subtitle, icon, count, content, large = false) => {
         if (!get(state)) return;
-        destroy();
         state.step = stageId;
-        document.getElementById("externalFactorFinalNotice").hidden = true;
-        backButton().hidden = stageId === "mode";
-        renderExternalFinancialStage(modal(), body(), {
-            destination: state.softwareTitle, position: "نرم‌افزار ۱ از ۱",
+        getFactorFinancialWizard().render({
+            destination: state.softwareTitle,
             title, subtitle, icon, step: count, content, large,
+        });
+        getFactorFinancialWizard().setActions({
+            backHidden: stageId === "mode",
+            backDisabled: stageId === "mode",
         });
         update(state);
     };
@@ -693,8 +696,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             externalItemId: Number(state.direct.items[x.factorItemId].externalItemId),
             externalStockId: Number(state.direct.items[x.factorItemId].externalStockId),
         }));
-        const success = await loadExternalFactorPreview(state, false);
-        if (success) backButton().hidden = false;
+        await loadExternalFactorPreview(state, false);
     }
 
     async function confirm(state) {
