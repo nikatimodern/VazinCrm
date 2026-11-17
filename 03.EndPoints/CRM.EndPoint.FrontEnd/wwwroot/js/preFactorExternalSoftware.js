@@ -321,6 +321,7 @@ async function exSoftwarePreFactorConfirmCustomer() {
         url: "/Factor/SaveExternalCustomerMapping",
         method: "POST",
         successMsg: null,
+        showLoading: false,
         data: {
             preFactorId: state.preFactorId,
             externalSoftwareId: state.software.externalSoftwareId,
@@ -388,13 +389,20 @@ function exSoftwarePreFactorRenderItems() {
     software.stockCache ??= new Map();
     software.stocksByItem ??= [];
 
-    add.addEventListener("click", () => openSepidarItemCreation({
-        softwareId: software.externalSoftwareId,
-        softwareTitle: software.externalSoftwareTitle,
-        afterCreate: () => exSoftwarePreFactorLoadItems(true),
-        canOpen: () => externalSoftwareProcess === state && state.software === software
-            && isModalOpen(getExternalMappingModal()),
-    }));
+    add.addEventListener("click", async () => {
+        add.disabled = true;
+        try {
+            await openSepidarItemCreation({
+                softwareId: software.externalSoftwareId,
+                softwareTitle: software.externalSoftwareTitle,
+                afterCreate: () => exSoftwarePreFactorLoadItems(true),
+                canOpen: () => externalSoftwareProcess === state && state.software === software
+                    && isModalOpen(getExternalMappingModal()),
+            });
+        } finally {
+            add.disabled = false;
+        }
+    });
 
     for (const item of state.preFactor.items ?? []) {
         const itemId = String(item.preFactorItemId);
