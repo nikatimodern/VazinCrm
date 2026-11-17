@@ -150,6 +150,14 @@
     border-radius: 6px;
     background: #F0F1F7;
 }
+#qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed {
+    background: var(--qc-primary-light);
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-stats .qc-client-count-pending {
+    background: #F3EDFC;
+    color: #5811B4;
+}
 #qualityControlCustomerPage .qc-client-badge {
     border-radius: 7px;
     padding: 5px 8px;
