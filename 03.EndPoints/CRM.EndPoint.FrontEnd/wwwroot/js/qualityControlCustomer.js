@@ -198,7 +198,7 @@
                         : contactStatus === 1 ? "no-answer"
                             : complete ? "complete" : "pending";
                     const label = contactStatus === 2 ? "شماره نامعتبر"
-                        : contactStatus === 1 ? "عدم پاسخ"
+                        : contactStatus === 1 ? "عدم پاسخ · پیگیری فردا"
                             : complete ? "تکمیل‌شده" : "نیازمند بررسی";
                     return '<article role="listitem" class="qc-client-card" data-qc-complete="' + complete + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
