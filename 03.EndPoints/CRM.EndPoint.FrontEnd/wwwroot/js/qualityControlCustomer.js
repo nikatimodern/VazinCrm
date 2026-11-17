@@ -307,7 +307,9 @@
                         + (row.deletedAt ? ' در <strong>' + escape(row.deletedAt) + '</strong>' : '')
                         + ' · دلیل: <strong>' + escape(row.deleteReason || "ثبت نشده") + '</strong></div>'
                     : (row.restoredAt ? '<div>بازیابی توسط <strong>' + escape(row.restoredBy || "نامشخص")
-                        + '</strong> در <strong>' + escape(row.restoredAt) + '</strong></div>' : '');
+                        + '</strong> در <strong>' + escape(row.restoredAt) + '</strong>'
+                        + (row.deleteReason ? ' · دلیل حذف قبلی: <strong>' + escape(row.deleteReason) + '</strong>' : '')
+                        + '</div>' : '');
                 const action = !historyCanManage ? "" : row.isDeleted
                     ? '<button type="button" class="qc-client-button qc-client-history-restore"'
                         + ' data-qc-history-action="restore" data-qc-history-id="' + escape(row.id)
