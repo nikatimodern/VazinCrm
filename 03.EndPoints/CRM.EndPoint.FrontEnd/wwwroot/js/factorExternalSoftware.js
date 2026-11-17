@@ -103,6 +103,7 @@ function resetFactorDestination(state, softwareId) {
         previewBrokerPartyId: null,
     };
     state.direct = { saleTypeId: "", customerId: "", items: {} };
+    state.quotation = null;
     state.saleTypes = null;
     state.customerData = null;
     state.items = null;
@@ -163,7 +164,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
 
         state.request.includeBroker = includeBroker;
         state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
-        state.request.previewToken = state.request.usePreFactor ? null : result.previewToken;
+        state.request.previewToken = result.previewToken;
         state.hasLoadedPreview = true;
         state.step = "preview";
         getFactorFinancialWizard().render({
@@ -173,7 +174,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
                 ? "پیش‌فاکتور سپیدار شماره " + result.preview.quotationNumber + "؛ اطلاعات را بررسی کنید"
                 : "صدور مستقیم بدون پیش‌فاکتور سپیدار؛ اطلاعات را بررسی کنید",
             icon: '<i class="fas fa-clipboard-check" aria-hidden="true"></i>',
-            step: state.request.usePreFactor ? "پیش‌نمایش" : "مرحله ۴ از ۴",
+            step: state.request.usePreFactor ? "مرحله ۲ از ۲" : "مرحله ۴ از ۴",
             content: renderExternalFactorPreview(result, state),
             large: true,
         });
@@ -532,9 +533,13 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     const isReady = state => {
         if (state.step === "saleType") return !!state.direct.saleTypeId;
         if (state.step === "customer") return !!state.direct.customerId;
-        if (state.step === "items") return !state.stockPending?.size && state.items?.length > 0 &&
-            state.items.every(x => state.direct.items[x.factorItemId]?.externalItemId &&
-                state.direct.items[x.factorItemId]?.externalStockId);
+        if (state.step === "items") {
+            const source = state.request.usePreFactor ? state.quotation : state.direct;
+            const items = state.request.usePreFactor ? source?.sourceItems : state.items;
+            return !source?.stockPending?.size && items?.length > 0 &&
+                items.every(item => source.items[item.factorItemId]?.externalItemId &&
+                    source.items[item.factorItemId]?.externalStockId);
+        }
         return true;
     };
     const update = state => {
@@ -665,12 +670,41 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         }
         renderItems(state);
     }
+    async function loadQuotationItems(state, refresh = false) {
+        if (refresh || !state.quotation?.sourceItems) {
+            const data = await query("PrepareExternalFactorQuotationItems", state.request);
+            if (!data?.items?.length || !get(state)) return;
+            const previous = state.quotation;
+            const selections = previous?.items ?? {};
+            for (const item of data.items) {
+                selections[item.factorItemId] ??= {
+                    externalItemId: String(item.externalItemId),
+                    externalStockId: String(item.externalStockId),
+                };
+            }
+            state.quotation = {
+                sourceItems: data.items,
+                sepidarItems: data.sepidarItems || [],
+                items: selections,
+                stockCache: previous?.stockCache ?? new Map(),
+                stocksByItem: previous?.stocksByItem ?? [],
+            };
+        }
+        renderItems(state);
+    }
+
     function renderItems(state) {
+        const quotationBased = state.request.usePreFactor;
+        const source = quotationBased ? state.quotation : state.direct;
+        const items = quotationBased ? source?.sourceItems : state.items;
+        const externalItems = quotationBased ? source?.sepidarItems : state.sepidarItems;
+        if (!source || !items?.length || !externalItems) return;
+
         const { content, add, list } = createExternalItemMatching();
         const rows = [];
-        state.stockPending = new Set();
-        state.stockCache ??= new Map();
-        state.stocksByItem ??= [];
+        source.stockPending = new Set();
+        source.stockCache ??= new Map();
+        source.stocksByItem ??= [];
 
         add.addEventListener("click", async () => {
             add.disabled = true;
@@ -678,19 +712,22 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                 await openSepidarItemCreation({
                     softwareId: state.request.externalSoftwareId,
                     softwareTitle: state.softwareTitle,
-                    afterCreate: () => loadItems(state, true),
-                    canOpen: () => get(state) && state.step === "items" && isModalOpen(modal()),
+                    afterCreate: () => quotationBased
+                        ? loadQuotationItems(state, true) : loadItems(state, true),
+                    canOpen: () => get(state) && state.step === "items" &&
+                        state.request.usePreFactor === quotationBased && isModalOpen(modal()),
                 });
             } finally {
                 add.disabled = false;
             }
         });
 
-        for (const item of state.items) {
+        for (const item of items) {
             const itemId = String(item.factorItemId);
-            const target = appendExternalItemMatchRow(list, item.productTitle, item.weightCount, item.unitTxt);
+            const target = appendExternalItemMatchRow(
+                list, item.productTitle, item.weightCount, item.unitTxt);
             const label = document.createElement("label");
-            label.htmlFor = "factorDirectItem_" + itemId;
+            label.htmlFor = "factorMappedItem_" + itemId;
             label.className = "form-label mb-0";
             label.textContent = "کالای معادل در نرم‌افزار مالی";
 
@@ -699,79 +736,96 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             select.dataset.itemId = itemId;
             select.className = "factor-direct-item-select show-dropdown-arrow";
             select.append(new Option("", ""));
-            const selected = state.direct.items[itemId]?.externalItemId;
-            for (const entry of state.sepidarItems) {
+            const selected = source.items[itemId]?.externalItemId;
+            for (const entry of externalItems) {
                 select.append(new Option(
-                    entry.code + " - " + entry.title, entry.id, false,
-                    String(entry.id) === String(selected ?? ""),
+                    [entry.code, entry.title].filter(Boolean).join(" - "),
+                    entry.id, false, String(entry.id) === String(selected ?? ""),
                 ));
             }
+            // Preserve the original quotation item even if Sepidar later deactivated it.
+            if (quotationBased && selected && !externalItems.some(x => String(x.id) === String(selected))) {
+                select.append(new Option(
+                    item.defaultItemTitle || String(selected), selected, true, true));
+            }
             target.append(label, select);
-            rows.push({ itemId, target, select });
+            rows.push({ itemId, target, select, item });
         }
 
         stage(state, "items", "تطبیق کالاها و انبارها",
-            "برای هر ردیف فاکتور، کالای معادل و انبار مرتبط را انتخاب کنید",
-            '<i class="fas fa-boxes"></i>', "مرحله ۳ از ۴", content, true);
+            quotationBased
+                ? "کالاها و انبارهای پیش‌فاکتور سپیدار انتخاب شده‌اند؛ در صورت نیاز تغییر دهید"
+                : "برای هر ردیف فاکتور، کالای معادل و انبار مرتبط را انتخاب کنید",
+            '<i class="fas fa-boxes"></i>',
+            quotationBased ? "مرحله ۱ از ۲" : "مرحله ۳ از ۴", content, true);
 
-        for (const { itemId, target, select } of rows) {
+        for (const { itemId, target, select, item } of rows) {
             const stock = ExternalFinancialWizard.linkedStockField(target, {
-                id: "factorDirectStock_" + itemId,
+                id: "factorMappedStock_" + itemId,
                 softwareId: state.request.externalSoftwareId,
-                cache: state.stockCache,
-                isCurrent: () => get(state) && state.step === "items",
+                cache: source.stockCache,
+                retainedStock: quotationBased ? {
+                    itemId: item.externalItemId,
+                    stockId: item.externalStockId,
+                    title: item.defaultStockTitle,
+                } : null,
+                isCurrent: () => get(state) && state.step === "items" &&
+                    state.request.usePreFactor === quotationBased,
                 onChange: value => {
-                    const mapping = state.direct.items[itemId];
+                    const mapping = source.items[itemId];
                     if (!mapping) return;
                     mapping.externalStockId = value;
                     update(state);
                 },
                 onLoading: loading => {
-                    if (loading) state.stockPending.add(itemId);
-                    else state.stockPending.delete(itemId);
+                    if (loading) source.stockPending.add(itemId);
+                    else source.stockPending.delete(itemId);
                     update(state);
                 },
                 onLoaded: (externalItemId, stocks) => {
-                    const index = state.stocksByItem.findIndex(
-                        item => String(item.itemRef) === externalItemId);
+                    const index = source.stocksByItem.findIndex(
+                        entry => String(entry.itemRef) === externalItemId);
                     const entry = { itemRef: Number(externalItemId), stocks };
-                    if (index < 0) state.stocksByItem.push(entry);
-                    else state.stocksByItem[index] = entry;
+                    if (index < 0) source.stocksByItem.push(entry);
+                    else source.stocksByItem[index] = entry;
                 },
             });
 
             new TomSelect(select, {
                 placeholder: "جستجو و انتخاب کالا",
                 onChange: value => {
-                    const previous = state.direct.items[itemId] || {};
+                    const previous = source.items[itemId] || {};
                     if (!value) {
-                        delete state.direct.items[itemId];
+                        delete source.items[itemId];
                     } else {
-                        state.direct.items[itemId] = {
+                        source.items[itemId] = {
                             externalItemId: value,
                             externalStockId: String(previous.externalItemId) === String(value)
                                 ? previous.externalStockId ?? "" : "",
                         };
                     }
-                    void stock.update(value, state.direct.items[itemId]?.externalStockId ?? "");
+                    void stock.update(value, source.items[itemId]?.externalStockId ?? "");
                     update(state);
                 },
             });
 
-            const mapping = state.direct.items[itemId];
+            const mapping = source.items[itemId];
             void stock.update(mapping?.externalItemId ?? "", mapping?.externalStockId ?? "");
         }
         update(state);
     }
 
     async function preview(state) {
-        state.request.usePreFactor = false;
-        state.request.saleTypeId = Number(state.direct.saleTypeId);
-        state.request.externalCustomerId = Number(state.direct.customerId);
-        state.request.itemMappings = state.items.map(x => ({
-            factorItemId: x.factorItemId,
-            externalItemId: Number(state.direct.items[x.factorItemId].externalItemId),
-            externalStockId: Number(state.direct.items[x.factorItemId].externalStockId),
+        const source = state.request.usePreFactor ? state.quotation : state.direct;
+        const items = state.request.usePreFactor ? source.sourceItems : state.items;
+        if (!state.request.usePreFactor) {
+            state.request.saleTypeId = Number(state.direct.saleTypeId);
+            state.request.externalCustomerId = Number(state.direct.customerId);
+        }
+        state.request.itemMappings = items.map(item => ({
+            factorItemId: item.factorItemId,
+            externalItemId: Number(source.items[item.factorItemId].externalItemId),
+            externalStockId: Number(source.items[item.factorItemId].externalStockId),
         }));
         await loadExternalFactorPreview(state, false);
     }
@@ -787,7 +841,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                     break;
                 case "mode":
                     state.request.usePreFactor = state.sourceChoice === "quotation";
-                    if (state.request.usePreFactor) await loadExternalFactorPreview(state, false);
+                    if (state.request.usePreFactor) await loadQuotationItems(state);
                     else await loadSaleType(state);
                     break;
                 case "saleType":
@@ -819,13 +873,15 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         switch (state.step) {
             case "saleType": showMode(state); break;
             case "customer": renderSaleType(state); break;
-            case "items": renderCustomer(state); break;
+            case "items":
+                if (state.request.usePreFactor) showMode(state);
+                else renderCustomer(state);
+                break;
             case "preview":
                 state.request.includeBroker = false;
                 state.request.previewBrokerPartyId = null;
                 state.hasLoadedPreview = false;
-                if (state.request.usePreFactor) showMode(state);
-                else renderItems(state);
+                renderItems(state);
                 break;
         }
     }
