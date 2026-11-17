@@ -15,6 +15,38 @@
         </div>
     </header>
 
+    <section class="qc-client-overview" aria-label="خلاصه وضعیت کنترل کیفیت مشتریان">
+        <div class="qc-client-overview-card qc-client-overview-invalid">
+            <div class="qc-client-overview-title">مشتریان با شماره نامعتبر</div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryInvalidCustomers">—</strong><span>مشتری</span>
+            </div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-no-answer">
+            <div class="qc-client-overview-title">مشتریان بدون پاسخ</div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
+            </div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-pending">
+            <div class="qc-client-overview-title">نیازمند بررسی</div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryPendingCustomers">—</strong><span>مشتری</span>
+            </div>
+            <div class="qc-client-overview-breakdown">اقلام بررسی‌نشده: <strong id="qcSummaryPendingItems">—</strong></div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-reviewed">
+            <div class="qc-client-overview-title">اقلام بررسی‌شده</div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryReviewedItems">—</strong><span>قلم فاکتور</span>
+            </div>
+            <div class="qc-client-overview-breakdown">
+                <span>دارای مغایرت: <strong id="qcSummaryDiscrepancyItems">—</strong></span>
+                <span>بدون مغایرت: <strong id="qcSummaryNoDiscrepancyItems">—</strong></span>
+            </div>
+        </div>
+    </section>
+
     <div class="qc-client-toolbar">
         <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
             <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
@@ -29,6 +61,8 @@
                 <option value="">همه مشتریان</option>
                 <option value="1">تکمیل‌شده</option>
                 <option value="2">دارای مغایرت</option>
+                <option value="3">عدم پاسخ</option>
+                <option value="4">شماره نامعتبر</option>
             </select>
         </div>
         <div class="qc-client-filter qc-client-size">
