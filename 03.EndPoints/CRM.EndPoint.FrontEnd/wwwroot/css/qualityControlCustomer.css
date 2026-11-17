@@ -219,25 +219,57 @@
     margin: 0 0 9px;
 }
 #qualityControlCustomerPage .qc-client-item {
-    margin-bottom: 9px;
-    padding: 12px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
 }
-#qualityControlCustomerPage .qc-client-item-top { align-items: start; }
-#qualityControlCustomerPage .qc-client-item-top > div {
-    display: grid;
-    gap: 5px;
-    flex: 1;
+#qualityControlCustomerPage .qc-client-item-top {
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
 }
-#qualityControlCustomerPage .qc-client-item-top strong { font-size: 13px; }
-#qualityControlCustomerPage .qc-client-source {
+#qualityControlCustomerPage .qc-client-item-meta {
     display: flex;
+    align-items: baseline;
+    flex: 1 1 330px;
+    min-width: 0;
     flex-wrap: wrap;
-    gap: 8px 14px;
-    margin-top: 10px;
+    gap: 3px 11px;
     font-size: 11px;
     color: var(--qc-muted);
+    line-height: 1.6;
 }
-#qualityControlCustomerPage .qc-client-item-actions { margin-top: 11px; }
+#qualityControlCustomerPage .qc-client-item-meta strong {
+    font-size: 12px;
+    color: #212529;
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-item-meta .qc-client-item-spec {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+#qualityControlCustomerPage .qc-client-item-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+#qualityControlCustomerPage .qc-client-item-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0;
+}
+#qualityControlCustomerPage .qc-client-item-controls .qc-client-badge {
+    padding: 4px 6px;
+}
+#qualityControlCustomerPage .qc-client-item-controls .qc-client-button {
+    min-height: 28px;
+    padding: 3px 7px;
+    font-size: 11px;
+}
 #qualityControlCustomerPage .qc-client-questions {
     background: #F8F9FB;
     border: 1px solid var(--qc-border);
@@ -303,7 +335,6 @@
     font-weight: 400;
     color: var(--qc-muted);
 }
-#qualityControlCustomerPage .qc-client-item-bottom,
 #qualityControlCustomerPage .qc-client-order-footer {
     display: flex;
     justify-content: flex-end;
@@ -327,8 +358,16 @@
     #qualityControlCustomerPage .qc-client-card { align-items: flex-start; padding: 10px; }
     #qualityControlCustomerPage .qc-client-profile { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-stats { flex: 1; }
-    #qualityControlCustomerPage .qc-client-order,
-    #qualityControlCustomerPage .qc-client-item { padding: 9px; }
+    #qualityControlCustomerPage .qc-client-order { padding: 9px; }
+    #qualityControlCustomerPage .qc-client-item { padding: 7px 8px; }
+    #qualityControlCustomerPage .qc-client-item-meta { flex-basis: 100%; gap: 2px 9px; }
+    #qualityControlCustomerPage .qc-client-item-controls { justify-content: flex-start; }
+    #qualityControlCustomerPage .qc-client-item-controls .qc-client-button {
+        min-height: 23px;
+        font-size: 11px;
+        padding: 1px 5px;
+        margin-block: 0;
+    }
     #qualityControlCustomerPage .qc-client-questions { padding: 9px; }
     #qualityControlCustomerPage .qc-client-button {
         min-height: 23px;
