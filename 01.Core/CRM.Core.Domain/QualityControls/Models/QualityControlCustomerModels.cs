@@ -9,7 +9,8 @@ public sealed class QualityControlCustomerListRequest
     public int Start { get; set; }
     public int Length { get; set; } = 10;
     public string? Search { get; set; }
-    // null: all; 0: has unchecked items; 1: fully checked; 2: has discrepancy.
+    // null: all; 0: pending excluding contact-blocked customers; 1: fully reviewed;
+    // 2: has discrepancy; 3: no answer; 4: invalid phone.
     public int? Status { get; set; } = 0;
 }
 
@@ -34,8 +35,14 @@ public sealed class SetQualityControlCustomerContactRequest
 public sealed record SetQualityControlCustomerContactResult(
     int StatusCode, string Message, QualityControlCustomerContactStatus Status);
 
+public sealed record QualityControlCustomerSummary(
+    int InvalidNumberCustomers, int NoResponseCustomers,
+    int PendingCustomers, int PendingItems,
+    int ReviewedItems, int DiscrepancyItems, int NoDiscrepancyItems);
+
 public sealed record QualityControlCustomerListResult(
-    int Total, int Filtered, IReadOnlyList<QualityControlCustomerRow> Data);
+    int Total, int Filtered, IReadOnlyList<QualityControlCustomerRow> Data,
+    QualityControlCustomerSummary Summary);
 
 public sealed record QualityControlInvoiceItem(
     Guid FactorItemId, string? ProductSmallName, string? Product, string? WeightCount,
