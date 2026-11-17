@@ -200,6 +200,45 @@
     border-radius: 7px;
     font-size: 12px;
 }
+#qualityControlCustomerPage .qc-client-item-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    border: 1px solid var(--qc-border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+#qualityControlCustomerPage .qc-client-item-search label {
+    color: var(--qc-primary);
+    font-size: 12px;
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-item-search input {
+    flex: 1 1 220px;
+    min-width: 140px;
+}
+#qualityControlCustomerPage .qc-client-search-count {
+    font-size: 11px;
+    color: var(--qc-muted);
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-search-empty {
+    padding: 15px;
+    margin-bottom: 12px;
+    text-align: center;
+    color: var(--qc-muted);
+    background: #fff;
+    border: 1px dashed var(--qc-border);
+    border-radius: 10px;
+}
+#qualityControlCustomerPage .qc-client-item-search[hidden],
+#qualityControlCustomerPage .qc-client-search-empty[hidden],
+#qualityControlCustomerPage .qc-client-order[hidden],
+#qualityControlCustomerPage .qc-client-invoice[hidden],
+#qualityControlCustomerPage .qc-client-item[hidden] { display: none; }
 #qualityControlCustomerPage .qc-client-review-content { display: grid; gap: 14px; }
 #qualityControlCustomerPage .qc-client-order { padding: 12px; }
 #qualityControlCustomerPage .qc-client-order-header { padding: 3px 2px 10px; }
@@ -370,6 +409,9 @@
     #qualityControlCustomerPage .qc-client-card { align-items: flex-start; padding: 10px; }
     #qualityControlCustomerPage .qc-client-profile { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-stats { flex: 1; }
+    #qualityControlCustomerPage .qc-client-item-search { padding: 8px; gap: 6px; }
+    #qualityControlCustomerPage .qc-client-item-search label { flex-basis: 100%; }
+    #qualityControlCustomerPage .qc-client-item-search input { flex: 1 1 160px; }
     #qualityControlCustomerPage .qc-client-order { padding: 9px; }
     #qualityControlCustomerPage .qc-client-item { padding: 7px 8px; }
     #qualityControlCustomerPage .qc-client-item-meta { flex-basis: 100%; gap: 2px 9px; }
