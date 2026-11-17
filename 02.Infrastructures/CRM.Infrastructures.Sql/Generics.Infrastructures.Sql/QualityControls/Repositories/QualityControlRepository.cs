@@ -171,7 +171,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
         // Use the same eligibility/role scope as the customer QC queue.
-        var eligible = await (
+        var eligibleItems =
             from item in db.FactorItems.AsNoTracking()
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
@@ -181,15 +181,22 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 && !customer.IsDeleted && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
-            select item.Id
-        ).AnyAsync(cancellationToken);
-        if (!eligible)
+            select item.Id;
+        if (!await eligibleItems.AnyAsync(cancellationToken))
             return new(404, "مشتری یا فاکتور قابل بررسی یافت نشد.", QualityControlCustomerContactStatus.None);
 
         var contact = await db.QualityControlCustomerContacts.IgnoreQueryFilters()
             .FirstOrDefaultAsync(item => item.CustomerId == request.CustomerId, cancellationToken);
         var nextStatus = contact != null && !contact.IsDeleted && contact.Status == request.Status
             ? QualityControlCustomerContactStatus.None : request.Status;
+        // Once an item has a real QC result, the customer cannot be marked unreachable.
+        // Clearing an old contact flag remains allowed.
+        if (nextStatus != QualityControlCustomerContactStatus.None
+            && await db.QualityControlItemReviews.AsNoTracking().AnyAsync(review =>
+                eligibleItems.Contains(review.FactorItemId)
+                && review.Status != QualityControlOutcome.NotReviewed, cancellationToken))
+            return new(409, "برای این مشتری کنترل کیفیت ثبت شده است؛ امکان ثبت عدم پاسخ یا شماره نامعتبر وجود ندارد.",
+                QualityControlCustomerContactStatus.None);
         var now = DateTime.Now;
         if (contact == null)
         {
@@ -434,6 +441,19 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (inputs.Any(input => input.Status == QualityControlStatus.NotReviewed
             && !existing.ContainsKey(input.FactorItemId)))
             return new(409, "وضعیت یکی از اقلام تغییر کرده است؛ فرم را مجدداً باز کنید.");
+
+        // A successful QC result supersedes a previous unreachable/invalid-number mark.
+        // Save both changes in the same EF transaction so the queue never retains both.
+        if (inputs.Any(input => input.Status != QualityControlStatus.NotReviewed))
+        {
+            var contact = await db.QualityControlCustomerContacts
+                .FirstOrDefaultAsync(item => item.CustomerId == request.CustomerId, cancellationToken);
+            if (contact is { Status: not QualityControlCustomerContactStatus.None })
+            {
+                contact.Status = QualityControlCustomerContactStatus.None;
+                Stamp(contact, access, DateTime.Now, persianNow, false);
+            }
+        }
 
         var now = DateTime.Now;
         var updated = new List<QualityControlItemReview>(inputs.Count);
