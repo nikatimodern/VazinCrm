@@ -20,9 +20,12 @@ class ExternalFinancialHistory {
         const info = this.element("div", "external-pf-info");
         for (const [label, rawValue, accent, ltr] of entries) {
             const field = this.element("div", "external-pf-field");
+            const display = rawValue === null || rawValue === undefined || rawValue === ""
+                ? "—" : rawValue;
             const value = this.element("span", "external-pf-value" +
-                (accent ? " external-pf-software" : ""), rawValue || "—");
-            if (rawValue) value.title = String(rawValue);
+                (accent ? " external-pf-software" : ""), display);
+            if (rawValue !== null && rawValue !== undefined && rawValue !== "")
+                value.title = String(rawValue);
             if (ltr) value.dir = "ltr";
             field.append(this.element("span", "external-pf-label", label + ":"), value);
             info.append(field);
@@ -76,7 +79,9 @@ class ExternalFinancialHistory {
      */
     static async chooseDestinations({ ids, mapType, signal } = {}) {
         const chooser = document.getElementById("chooseExternalSoftwareModal");
-        if (!chooser || signal?.aborted) return null;
+        if (!chooser || signal?.aborted || this.chooserPending || isModalOpen(chooser))
+            return null;
+        this.chooserPending = true;
 
         let selection = null;
         let settle;
@@ -109,9 +114,14 @@ class ExternalFinancialHistory {
             });
         } catch (error) {
             finish(null);
+            this.chooserPending = false;
             throw error;
         }
         if (!result) finish(null);
-        return completed;
+        try {
+            return await completed;
+        } finally {
+            this.chooserPending = false;
+        }
     }
 }
