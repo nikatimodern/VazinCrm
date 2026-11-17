@@ -179,7 +179,7 @@
                     const pending = row.totalItems - row.reviewedItems;
                     const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
                     const hasReviewed = row.reviewedItems > 0;
-                    const contactStatus = hasReviewed ? 0 : Number(row.contactStatus) || 0;
+                    const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
                     const color = contactStatus === 2 ? "invalid-phone"
                         : contactStatus === 1 ? "no-answer"
@@ -187,9 +187,13 @@
                     const label = contactStatus === 2 ? "شماره نامعتبر"
                         : contactStatus === 1 ? "عدم پاسخ"
                             : complete ? "تکمیل‌شده" : "نیازمند بررسی";
-                    return '<article role="listitem" class="qc-client-card" data-qc-has-reviewed="' + hasReviewed + '">'
+                    return '<article role="listitem" class="qc-client-card" data-qc-complete="' + complete + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
-                        + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
+                        + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
+                        + (Number(row.noResponseAttempts) > 0
+                            ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
+                                + faNumber.format(row.noResponseAttempts) + '</strong></small>' : '')
+                        + '</div>'
                         + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span>' + faNumber.format(row.invoices) + ' فاکتور</span>'
                         + (hasReviewed
@@ -204,11 +208,11 @@
                         + '<div class="qc-client-contact-actions">'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
-                        + '"' + (hasReviewed ? ' disabled title="برای این مشتری کنترل کیفیت ثبت شده است"' : '')
+                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
                         + (contactStatus === 1 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 1)
-                        + '"' + (hasReviewed ? ' disabled title="برای این مشتری کنترل کیفیت ثبت شده است"' : '')
+                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
@@ -585,8 +589,8 @@
                     contactBusy = false;
                     if (isActive()) queue.querySelectorAll("[data-qc-contact]")
                         .forEach(button => {
-                            button.disabled = button.closest("[data-qc-has-reviewed]")
-                                ?.dataset.qcHasReviewed === "true";
+                            button.disabled = button.closest("[data-qc-complete]")
+                                ?.dataset.qcComplete === "true";
                         });
                 }
                 return;
