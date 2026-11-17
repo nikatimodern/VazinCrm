@@ -13,6 +13,11 @@
         const formFeedback = page.querySelector("#qcCustomerFormFeedback");
         const summary = page.querySelector("#qcCustomerReviewSummary");
         const content = page.querySelector("#qcCustomerReviewContent");
+        const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
+        const itemSearch = page.querySelector("#qcInvoiceItemSearch");
+        const itemSearchClear = page.querySelector("#qcInvoiceItemSearchClear");
+        const itemSearchCount = page.querySelector("#qcInvoiceItemSearchCount");
+        const itemSearchEmpty = page.querySelector("#qcInvoiceItemSearchEmpty");
         const scroll = page.querySelector("#qcCustomerReviewScroll");
         const saveAllButton = page.querySelector("#qcCustomerSaveAll");
         const saveHint = page.querySelector("#qcCustomerSaveHint");
@@ -33,6 +38,40 @@
         const flatten = () => review?.orders.flatMap(order =>
             order.invoices.flatMap(invoice => invoice.items)) ?? [];
         const stateOf = item => drafts.get(item.factorItemId);
+
+        const normalizeSearch = text => String(text ?? "").normalize("NFKC")
+            .replace(/[يى]/g, "ی").replace(/ك/g, "ک")
+            .replace(/[\u064B-\u065F\u0670\u200C\u200D]/g, " ")
+            .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06F0))
+            .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
+            .toLocaleLowerCase("fa-IR").replace(/\s+/g, " ").trim();
+
+        function filterInvoiceItems() {
+            if (!review) return;
+            const query = normalizeSearch(itemSearch.value);
+            const orders = content.querySelectorAll(".qc-client-order");
+            let matches = 0;
+            orders.forEach(order => {
+                let orderMatches = 0;
+                order.querySelectorAll(".qc-client-invoice").forEach(invoice => {
+                    let invoiceMatches = 0;
+                    invoice.querySelectorAll(".qc-client-item").forEach(item => {
+                        const itemText = normalizeSearch(item.querySelector(".qc-client-item-meta")?.textContent);
+                        const visible = !query || itemText.includes(query);
+                        item.hidden = !visible;
+                        if (visible) invoiceMatches++;
+                    });
+                    invoice.hidden = invoiceMatches === 0;
+                    orderMatches += invoiceMatches;
+                });
+                order.hidden = orderMatches === 0;
+                matches += orderMatches;
+            });
+            itemSearchCount.textContent = faNumber.format(matches) + " از "
+                + faNumber.format(flatten().length) + " قلم";
+            itemSearchEmpty.hidden = !query || matches !== 0;
+            itemSearchClear.disabled = !itemSearch.value;
+        }
 
         function isValid(item) {
             const draft = stateOf(item);
@@ -118,6 +157,11 @@
             saveAllButton.disabled = true;
             summary.replaceChildren();
             content.replaceChildren();
+            itemSearch.value = "";
+            itemSearchBar.hidden = true;
+            itemSearchEmpty.hidden = true;
+            itemSearchCount.textContent = "";
+            itemSearchClear.disabled = true;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت مشتری";
             page.querySelector("#qcCustomerModalSubtitle").textContent = "";
             formFeedback.textContent = "در حال دریافت فاکتورها و اقلام سفارش‌های تحویل‌شده…";
@@ -149,6 +193,7 @@
                 });
             });
             formFeedback.textContent = "";
+            itemSearchBar.hidden = false;
             renderReview();
         }
 
@@ -234,6 +279,7 @@
                     .every(item => stateOf(item).status !== 0) ? " disabled" : "") + '>'
                 + 'ثبت بقیه اقلام این سفارش بدون مغایرت</button></div></section>').join("");
             updateSaveActions();
+            filterInvoiceItems();
             scroll.scrollTop = scrollPosition;
         }
 
@@ -306,6 +352,14 @@
                 if (isActive()) updateSaveActions();
             }
         }
+
+        form.addEventListener("submit", event => event.preventDefault());
+        itemSearch.addEventListener("input", filterInvoiceItems);
+        itemSearchClear.addEventListener("click", () => {
+            itemSearch.value = "";
+            filterInvoiceItems();
+            itemSearch.focus();
+        });
 
         page.querySelector("#qcCustomerSearchForm").addEventListener("submit", event => {
             event.preventDefault();
@@ -388,6 +442,9 @@
             drafts.clear();
             content.replaceChildren();
             summary.replaceChildren();
+            itemSearch.value = "";
+            itemSearchBar.hidden = true;
+            itemSearchEmpty.hidden = true;
         });
         pageSignal?.addEventListener("abort", () => {
             listController?.abort();
