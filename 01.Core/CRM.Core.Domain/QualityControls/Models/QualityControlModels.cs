@@ -15,6 +15,7 @@ public enum QualityControlStatus
 // Retain persisted enum values for historical DB compatibility.
 public enum QualityControlOutcome : byte
 {
+    NotReviewed = 0,
     NoDiscrepancy = 1,
     HasDiscrepancy = 2,
     NoResponse = 4,
