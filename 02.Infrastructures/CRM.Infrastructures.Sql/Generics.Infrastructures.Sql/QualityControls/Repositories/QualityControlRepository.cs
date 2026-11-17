@@ -456,7 +456,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             {
                 groupedItem.CustomerId, groupedItem.Orders, groupedItem.Invoices,
                 groupedItem.TotalItems, groupedItem.ReviewedItems, groupedItem.DiscrepancyItems,
-                CustomerName = customer.CompanyName, customer.CustomerCode, customer.Mobile
+                CustomerName = customer.CompanyName != null && customer.CompanyName != ""
+                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile
             };
         var total = await customers.CountAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -489,7 +490,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         Guid customerId, QualityControlAccess access, CancellationToken cancellationToken)
     {
         var customer = await db.Customers.AsNoTracking().Where(item => item.Id == customerId && !item.IsDeleted)
-            .Select(item => new { item.Id, item.CompanyName, item.CustomerCode, item.Mobile })
+            .Select(item => new { item.Id, item.CompanyName, item.AgentName, item.CustomerCode, item.Mobile })
             .FirstOrDefaultAsync(cancellationToken);
         if (customer == null)
             return null;
@@ -566,7 +567,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 item.Product, item.WeightCount, item.UnitTxt, supplierNames, item.SupplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
                         }).ToList())).ToList()) { HasLegacyReview = legacyReviewed.Contains(order.Key.DealId) }).ToList();
-        return new(customer.Id, customer.CompanyName, customer.CustomerCode, customer.Mobile, orders, questions);
+        return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
+            ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile, orders, questions);
     }
 
     public async Task<SaveQualityControlItemsResult> SaveItemsAsync(
