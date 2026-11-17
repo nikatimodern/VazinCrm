@@ -366,6 +366,13 @@
     padding: 3px 7px;
     font-size: 11px;
 }
+#qualityControlCustomerPage .qc-client-retry {
+    color: #851b1d;
+    border-color: #d9a2a4;
+}
+#qualityControlCustomerPage .qc-client-retry[hidden] {
+    display: none;
+}
 #qualityControlCustomerPage .qc-client-questions {
     background: #F8F9FB;
     border: 1px solid var(--qc-border);
