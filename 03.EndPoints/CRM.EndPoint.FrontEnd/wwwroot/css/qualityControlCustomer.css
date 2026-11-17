@@ -222,6 +222,17 @@
     margin-bottom: 6px;
     padding: 8px 10px;
 }
+/* Alternating item colors restart for each sales invoice. */
+#qualityControlCustomerPage .qc-client-invoice > .qc-client-item:nth-of-type(odd) {
+    background: #E7F3F0;
+    border-color: #BCDCD2;
+    border-inline-start: 3px solid var(--qc-action);
+}
+#qualityControlCustomerPage .qc-client-invoice > .qc-client-item:nth-of-type(even) {
+    background: #F3EDFC;
+    border-color: #DCCCF3;
+    border-inline-start: 3px solid #5811B4;
+}
 #qualityControlCustomerPage .qc-client-item-top {
     align-items: center;
     justify-content: flex-start;
