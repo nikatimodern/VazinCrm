@@ -3761,7 +3761,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.ToTable("QualityControlItemReviews", t =>
                         {
-                            t.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (1, 2)");
+                            t.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (0, 1, 2)");
                         });
                 });
 
