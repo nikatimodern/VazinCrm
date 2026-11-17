@@ -593,7 +593,6 @@
     #qualityControlCustomerPage .qc-client-queue { max-height: 48dvh; min-height: 180px; }
     #qualityControlCustomerPage .qc-client-header h1 { font-size: 18px; }
     #qualityControlCustomerPage .qc-client-header { align-items: flex-start; }
-    #qualityControlCustomerPage .qc-client-header h1 { font-size: 16px; }
     #qualityControlCustomerPage .qc-client-toolbar { padding: 8px; gap: 8px; }
     #qualityControlCustomerPage .qc-client-search { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-filter { flex: 1; justify-content: space-between; }
