@@ -82,6 +82,26 @@ Paths below are relative to `03.EndPoints/CRM.EndPoint.FrontEnd/`. Inspected dur
 | Tables | Clear headers, subtle hover, sufficient cell spacing, readable state badges. Avoid saturating whole rows. Choose responsive scrolling, existing responsive controls, or mobile cards according to content and existing structure; preserve access to every necessary field/action. |
 | Menus and filters | Limited teal/purple emphasis for selection; explicit active state and keyboard focus. Preserve responsive navigation and role-based visibility. |
 
+| Label–value details | In compact detail rows, cards and modals, keep the descriptive label in its existing style and emphasize **only the value** with bold weight. Do not make the entire pair bold. Preserve RTL ordering, inline layout and wrapping. |
+
+### Label and value emphasis (project-wide)
+
+When showing descriptive pairs such as `مقدار: ۲۰۰ کیلوگرم`, `تأمین‌کننده: مهرپور`, `کارشناس تأمین: علی نیرومند`, or `ابعاد: ۲۰×۳۰`:
+
+- **Label/title:** retain the component's existing color, size and normal font weight. Do not bold the label or change its visual treatment just to emphasize the value.
+- **Value:** wrap only the actual value in `<strong>` or use a scoped `font-weight: 700` class with the existing IRANSans typography. This also applies to meaningful unlabelled values such as specifications displayed next to product names.
+- Keep label and value together in RTL flow where possible. On narrow screens allow wrapping without clipping or reversing their order.
+- Reuse existing semantic markup and styles. For JavaScript-rendered rows, escape dynamic values before inserting HTML. Avoid global overrides of `span`, `strong`, `small`, badges or form labels.
+- Apply this consistently to newly created or edited label–value displays across the CRM, not only Quality Control. Preserve the current spacing, colors and data.
+
+Example (illustrative; no new shared CSS class required):
+
+```html
+<span class="item-detail">کارشناس تأمین: <strong>علی نیرومند</strong></span>
+<span class="item-detail">مقدار: <strong>۲۰۰ کیلوگرم</strong></span>
+```
+
+
 Status pairs (foreground on background):
 
 | Meaning | Foreground | Background | Additional cue |
