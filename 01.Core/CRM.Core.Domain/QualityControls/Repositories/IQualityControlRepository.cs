@@ -16,4 +16,7 @@ public interface IQualityControlRepository
     Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken);
     Task<QualityControlForm?> GetFormAsync(Guid dealId, QualityControlAccess access, CancellationToken cancellationToken);
     Task<QualityControlSaveResult> SaveAsync(SaveQualityControlRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
+    Task<QualityControlCustomerListResult> GetCustomersAsync(QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<QualityControlCustomerForm?> GetCustomerFormAsync(Guid customerId, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<SaveQualityControlItemsResult> SaveItemsAsync(SaveQualityControlItemsRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
 }
