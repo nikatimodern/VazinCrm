@@ -310,22 +310,50 @@
         function updateSaveActions() {
             if (!review) { saveAllButton.disabled = true; return; }
             const items = flatten();
-            const ready = items.length > 0 && items.every(isValid);
-            const dirty = items.some(item => !stateOf(item).saved);
-            saveAllButton.disabled = saving || !ready || !dirty;
-            saveHint.textContent = ready ? dirty ? "آماده ثبت کلی تمام فاکتورها" : "تمام اقلام ثبت شده‌اند."
-                : "برای ثبت کلی، وضعیت همه اقلام و پاسخ سؤال‌های مغایرت را تکمیل کنید.";
-            content.querySelectorAll("[data-qc-save-item]").forEach(button => {
-                const item = items.find(item => item.factorItemId === button.dataset.qcSaveItem);
-                if (!item) return;
-                const draft = stateOf(item);
-                button.disabled = saving || !isValid(item) || draft.saved;
-                button.textContent = draft.saved ? "ثبت‌شده" : "ثبت این قلم";
-                const badge = button.closest("[data-qc-item]")?.querySelector(".qc-client-item-top .qc-client-badge");
-                if (badge) badge.textContent = (draft.status === 2 ? "دارای مغایرت"
-                    : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده") + (draft.saved ? " · ثبت‌شده" : "");
+            const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
+            const pending = items.filter(item => stateOf(item).status === 0).length;
+            const issues = items.filter(item => stateOf(item).status === 2).length;
+            summary.innerHTML = '<div><strong>' + faNumber.format(reviewed) + ' از '
+                + faNumber.format(items.length) + ' قلم ثبت‌شده</strong>'
+                + '<small>' + faNumber.format(review.orders.length) + ' سفارش · '
+                + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
+                + ' فاکتور</small></div><div class="qc-client-summary-tags">'
+                + '<span>' + faNumber.format(pending) + ' بررسی‌نشده</span>'
+                + '<span>' + faNumber.format(issues) + ' دارای مغایرت</span></div>';
+
+            const busy = hasUnsavedWork();
+            saveAllButton.disabled = busy || pending === 0;
+            saveHint.textContent = busy ? "در حال ثبت خودکار اطلاعات…"
+                : pending ? "ثبت کلی فقط اقلام بررسی‌نشده را بدون مغایرت ثبت می‌کند."
+                    : "تمام اقلام وضعیت مشخصی دارند.";
+            content.querySelectorAll("[data-qc-item]").forEach(row => {
+                const draft = drafts.get(row.dataset.qcItem);
+                if (!draft) return;
+                const badge = row.querySelector(".qc-client-item-top .qc-client-badge");
+                const text = draft.status === 2 ? "دارای مغایرت"
+                    : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده";
+                const color = draft.status === 2 ? "discrepancy"
+                    : draft.status === 1 ? "complete" : "pending";
+                if (badge) {
+                    badge.className = "qc-client-badge qc-client-" + color;
+                    badge.textContent = text + (savingItems.has(row.dataset.qcItem) ? " · در حال ثبت"
+                        : draft.failed ? " · خطای ثبت"
+                            : draft.saved ? " · ثبت‌شده"
+                                : draft.status === 2 && !isValid(flatten().find(item => item.factorItemId === row.dataset.qcItem))
+                                    ? " · تکمیل سؤال‌ها" : "");
+                }
+                const retry = row.querySelector("[data-qc-retry]");
+                if (retry) {
+                    retry.hidden = !draft.failed;
+                    retry.disabled = busy;
+                }
             });
-            modal.querySelectorAll("[data-bs-dismiss]").forEach(button => button.disabled = saving);
+            content.querySelectorAll("[data-qc-mark-rest]").forEach(button => {
+                const order = review.orders.find(row => row.id === button.dataset.qcMarkRest);
+                button.disabled = busy || !order || order.invoices.flatMap(invoice => invoice.items)
+                    .every(item => stateOf(item).status !== 0);
+            });
+            modal.querySelectorAll("[data-bs-dismiss]").forEach(button => button.disabled = busy);
         }
 
         function makePayload(item) {
@@ -340,40 +368,106 @@
             };
         }
 
-        async function saveItems(items, saveAll = false) {
-            if (!isActive() || saving || !review || !items.length || items.some(item => !isValid(item))) return;
+        async function persistItem(itemId) {
+            if (!review || !isActive() || saving || savingItems.has(itemId)) return;
+            const item = flatten().find(item => item.factorItemId === itemId);
+            if (!item) return;
+            const draft = stateOf(item);
+            if (!draft || !isValid(item)) return;
+            // Unchecked items that have never been saved need no database record.
+            if (draft.status === 0 && !draft.rowVersion) return;
+
+            const generation = formGeneration;
+            const customerId = review.customerId;
+            savingItems.add(itemId);
+            updateSaveActions();
+            let succeeded = false;
+            try {
+                while (review && generation === formGeneration && isActive() && isValid(item)) {
+                    const revision = draft.revision;
+                    const payload = makePayload(item);
+                    const result = await sendApiRequest({
+                        url: "/QualityControl/SaveItems", method: "POST",
+                        headers: { RequestVerificationToken: token.value },
+                        data: { customerId, saveAll: false, items: [payload] },
+                        showLoading: false,
+                    });
+                    if (!isActive() || generation !== formGeneration || review?.customerId !== customerId) return;
+                    const version = result?.versions?.find(item => item.factorItemId === itemId);
+                    if (!version?.rowVersion) {
+                        draft.failed = true;
+                        formFeedback.textContent = "ثبت خودکار یک قلم انجام نشد؛ وضعیت قلم را بررسی کنید یا «تلاش مجدد» را بزنید.";
+                        break;
+                    }
+                    draft.rowVersion = version.rowVersion;
+                    draft.persistedStatus = payload.status;
+                    draft.failed = false;
+                    succeeded = true;
+                    if (draft.revision === revision) {
+                        draft.saved = payload.status !== 0;
+                        break;
+                    }
+                    // If edited during a request, submit the latest draft with the new rowversion.
+                    draft.saved = false;
+                    if (draft.status === 0 && !draft.rowVersion) break;
+                }
+            } catch (error) {
+                if (generation === formGeneration && isActive()) {
+                    draft.failed = true;
+                    formFeedback.textContent = "ارتباط با سرور هنگام ثبت خودکار قطع شد؛ برای ثبت مجدد تلاش کنید.";
+                }
+            } finally {
+                savingItems.delete(itemId);
+                if (generation === formGeneration && isActive()) {
+                    updateSaveActions();
+                    if (succeeded) loadCustomers();
+                }
+            }
+        }
+
+        async function saveRemaining(items) {
+            if (!review || !isActive() || hasUnsavedWork()) return;
+            const pending = items.filter(item => stateOf(item).status === 0);
+            if (!pending.length) return;
+            const generation = formGeneration, customerId = review.customerId;
+            const payloads = pending.map(item => ({
+                ...makePayload(item), status: 1, description: null, answers: [],
+            }));
             saving = true;
             updateSaveActions();
-            formFeedback.textContent = "در حال ثبت اطلاعات…";
+            formFeedback.textContent = "در حال ثبت اقلام باقی‌مانده…";
             try {
                 const result = await sendApiRequest({
                     url: "/QualityControl/SaveItems", method: "POST",
                     headers: { RequestVerificationToken: token.value },
-                    data: { customerId: review.customerId, saveAll, items: items.map(makePayload) },
+                    data: { customerId, saveAll: true, items: payloads },
                     showLoading: false,
-                    successMsg: saveAll ? "کنترل کیفیت تمام اقلام ثبت شد." : "کنترل کیفیت قلم ثبت شد.",
                 });
-                if (!result || !isActive()) {
-                    formFeedback.textContent = "ثبت انجام نشد؛ اطلاعات را بررسی و دوباره تلاش کنید.";
+                if (!isActive() || generation !== formGeneration || review?.customerId !== customerId) return;
+                if (!Array.isArray(result?.versions) || result.versions.length !== pending.length) {
+                    formFeedback.textContent = "ثبت گروهی انجام نشد؛ دوباره تلاش کنید.";
                     return;
                 }
-                (result.versions || []).forEach(saved => {
-                    const draft = drafts.get(saved.factorItemId);
-                    if (draft) {
-                        draft.saved = true;
-                        draft.rowVersion = saved.rowVersion;
-                    }
+                const versions = new Map(result.versions.map(value => [value.factorItemId, value.rowVersion]));
+                pending.forEach(item => {
+                    const draft = stateOf(item);
+                    draft.rowVersion = versions.get(item.factorItemId);
+                    draft.status = 1;
+                    draft.persistedStatus = 1;
+                    draft.answers = {};
+                    draft.saved = true;
+                    draft.failed = false;
+                    draft.revision++;
                 });
                 formFeedback.textContent = "";
-                if (saveAll) {
-                    ModalToggle(modal, "hide");
-                } else {
-                    renderReview();
-                }
+                renderReview();
                 await loadCustomers();
+            } catch (error) {
+                if (generation === formGeneration && isActive())
+                    formFeedback.textContent = "خطا در ارتباط با سرور هنگام ثبت گروهی.";
             } finally {
                 saving = false;
-                if (isActive()) updateSaveActions();
+                if (generation === formGeneration && isActive()) updateSaveActions();
             }
         }
 
