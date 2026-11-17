@@ -120,10 +120,6 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (raw.Count == 0)
             return null;
 
-        var dealIds = raw.Select(item => item.DealId).Distinct().ToArray();
-        var legacyReviewed = (await db.QualityControls.AsNoTracking()
-            .Where(control => dealIds.Contains(control.DealId))
-            .Select(control => control.DealId).ToListAsync(cancellationToken)).ToHashSet();
         var ids = raw.Select(item => item.FactorItemId).ToArray();
         var reviews = await db.QualityControlItemReviews.AsNoTracking()
             .Include(review => review.Answers)
@@ -171,7 +167,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                             return new QualityControlInvoiceItem(item.FactorItemId, item.ProductSmallName,
                                 item.Product, item.WeightCount, item.UnitTxt, supplierNames, item.SupplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
-                        }).ToList())).ToList()) { HasLegacyReview = legacyReviewed.Contains(order.Key.DealId) }).ToList();
+                        }).ToList())).ToList())).ToList();
         return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
             ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile, orders, questions);
     }
