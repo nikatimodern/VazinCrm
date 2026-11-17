@@ -177,25 +177,29 @@
             const product = item.productSmallName || item.product || "قلم بدون عنوان";
             const description = item.product && item.product !== product ? item.product : "";
             return '<article class="qc-client-item" data-qc-item="' + escape(item.factorItemId) + '">'
-                + '<div class="qc-client-item-top"><div><strong>' + escape(product) + '</strong>'
-                + (description ? '<small>' + escape(description) + '</small>' : "")
-                + '<small>مقدار: ' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</small></div>'
-                + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
-                + (draft.saved ? ' · ثبت‌شده' : "") + '</span></div>'
-                + '<div class="qc-client-source">'
+                + '<div class="qc-client-item-top">'
+                + '<div class="qc-client-item-meta">'
+                + '<strong>' + escape(product) + '</strong>'
+                + (description ? '<span class="qc-client-item-spec">' + escape(description) + '</span>' : "")
+                + '<span>مقدار: ' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</span>'
                 + (item.supplierNames ? '<span>تأمین‌کننده: ' + escape(item.supplierNames) + '</span>' : "")
                 + (item.supplyExpert ? '<span>کارشناس تأمین: ' + escape(item.supplyExpert) + '</span>' : "")
                 + '</div>'
+                + '<div class="qc-client-item-controls">'
+                + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
+                + (draft.saved ? ' · ثبت‌شده' : "") + '</span>'
                 + '<div class="qc-client-item-actions">'
                 + '<button type="button" class="qc-client-button ' + (draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
                 + '" data-qc-set-status="1" data-qc-item-id="' + escape(item.factorItemId) + '">بدون مغایرت</button>'
                 + '<button type="button" class="qc-client-button ' + (isProblem ? "qc-client-issue-selected" : "qc-client-secondary")
-                + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId) + '">دارای مغایرت</button></div>'
-                + (isProblem ? questionMarkup(item, draft) : "")
-                + '<div class="qc-client-item-bottom">'
+                + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId) + '">دارای مغایرت</button>'
+                + '</div>'
                 + '<button type="button" class="qc-client-button qc-client-outline" data-qc-save-item="' + escape(item.factorItemId) + '"'
                 + (draft.saved || !isValid(item) ? " disabled" : "") + '>'
-                + (draft.saved ? "ثبت‌شده" : "ثبت این قلم") + '</button></div></article>';
+                + (draft.saved ? "ثبت‌شده" : "ثبت این قلم") + '</button>'
+                + '</div></div>'
+                + (isProblem ? questionMarkup(item, draft) : "")
+                + '</article>';
         }
 
         function renderReview() {
