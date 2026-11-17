@@ -27,8 +27,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .ToListAsync(cancellationToken);
     }
 
-    // The new customer queue is built from eligible sales-invoice lines. Existing deal-level
-    // QualityControls remain untouched and accessible through the legacy review screen.
+    // Customer queue counts only completed invoice-item reviews; historical deal-level records stay untouched.
     public async Task<QualityControlCustomerListResult> GetCustomersAsync(
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken)
     {
@@ -49,7 +48,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             Invoices = group.Select(item => item.FactorId).Distinct().Count(),
             TotalItems = group.Count(),
             ReviewedItems = group.Count(item => db.QualityControlItemReviews
-                .Any(review => review.FactorItemId == item.ItemId)),
+                .Any(review => review.FactorItemId == item.ItemId && review.Status != QualityControlOutcome.NotReviewed)),
             DiscrepancyItems = group.Count(item => db.QualityControlItemReviews
                 .Any(review => review.FactorItemId == item.ItemId && review.Status == QualityControlOutcome.HasDiscrepancy))
         });
@@ -214,8 +213,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 .OrderBy(question => question.SortOrder).ToList()
                                 ?? new List<QualityControlQuestionDto>();
                             var status = review == null ? QualityControlStatus.NotReviewed
-                                : review.Status == QualityControlOutcome.HasDiscrepancy
-                                    ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy;
+                                : (QualityControlStatus)review.Status;
                             return new QualityControlInvoiceItem(item.FactorItemId, item.ProductSmallName,
                                 item.Product, item.WeightCount, item.UnitTxt, supplierNames, supplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
@@ -251,20 +249,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var selected = inputs.Select(item => item.FactorItemId).ToHashSet();
         if (allowed.Count == 0)
             return new(404, "مشتری یا فاکتورهای قابل بررسی یافت نشد.");
-        if (!selected.IsSubsetOf(allowed) || (request.SaveAll && !selected.SetEquals(allowed)))
+        if (!selected.IsSubsetOf(allowed))
             return new(400, "اقلام ارسال‌شده با فاکتورهای تحویل‌شده این مشتری مطابقت ندارد. فرم را مجدداً باز کنید.");
 
         var definitions = await db.QualityControlQuestions.AsNoTracking()
             .Where(question => question.IsActive).ToDictionaryAsync(question => question.Id, cancellationToken);
         foreach (var input in inputs)
         {
-            if (input.Status is not (QualityControlStatus.NoDiscrepancy or QualityControlStatus.HasDiscrepancy)
+            if (input.Status is not (QualityControlStatus.NotReviewed or QualityControlStatus.NoDiscrepancy or QualityControlStatus.HasDiscrepancy)
                 || input.Description?.Length > 4000)
                 return new(400, "وضعیت یا طول شرح مغایرت معتبر نیست.");
-            if (input.Status == QualityControlStatus.NoDiscrepancy)
+            if (input.Status != QualityControlStatus.HasDiscrepancy)
             {
                 if (input.Answers?.Count > 0)
-                    return new(400, "قلم بدون مغایرت نباید پاسخ مغایرت داشته باشد.");
+                    return new(400, "برای وضعیت بدون مغایرت یا بررسی‌نشده، پاسخ جدید ارسال نکنید.");
                 continue;
             }
 
@@ -292,6 +290,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 return new(409, "وضعیت قلم تغییر کرده است؛ فرم را دوباره باز کنید.");
         }
 
+        // No record needs to be created if the client returns an untouched item to unchecked.
+        if (inputs.Any(input => input.Status == QualityControlStatus.NotReviewed
+            && !existing.ContainsKey(input.FactorItemId)))
+            return new(409, "وضعیت یکی از اقلام تغییر کرده است؛ فرم را مجدداً باز کنید.");
+
         var now = DateTime.Now;
         var updated = new List<QualityControlItemReview>(inputs.Count);
         foreach (var input in inputs)
@@ -311,14 +314,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 Stamp(review, access, now, persianNow, false);
             }
             review.Status = (QualityControlOutcome)input.Status;
-            review.Description = string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim();
+            // Retain prior discrepancy details on uncheck, so an accidental second click is reversible.
+            if (input.Status == QualityControlStatus.HasDiscrepancy)
+                review.Description = string.IsNullOrWhiteSpace(input.Description) ? null : input.Description.Trim();
 
             var requestedAnswers = input.Status == QualityControlStatus.HasDiscrepancy
                 ? input.Answers! : new List<QualityControlAnswerInput>();
             var keyed = review.Answers.ToDictionary(answer => answer.QuestionId);
             var answerIds = requestedAnswers.Select(answer => answer.QuestionId).ToHashSet();
-            foreach (var stale in review.Answers.Where(answer => !answerIds.Contains(answer.QuestionId)).ToList())
-                db.QualityControlItemAnswers.Remove(stale);
+            if (input.Status == QualityControlStatus.NoDiscrepancy)
+                foreach (var stale in review.Answers.ToList())
+                    db.QualityControlItemAnswers.Remove(stale);
+            else if (input.Status == QualityControlStatus.HasDiscrepancy)
+                foreach (var stale in review.Answers.Where(answer => !answerIds.Contains(answer.QuestionId)).ToList())
+                    db.QualityControlItemAnswers.Remove(stale);
             foreach (var requested in requestedAnswers)
             {
                 if (keyed.TryGetValue(requested.QuestionId, out var answer))
@@ -357,7 +366,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         {
             return new(409, "این قلم قبلاً ثبت شده است؛ لطفاً فرم را مجدداً باز کنید.");
         }
-        return new(200, request.SaveAll ? "کنترل کیفیت تمام اقلام ثبت شد." : "کنترل کیفیت قلم ثبت شد.",
+        return new(200, request.SaveAll ? "نتیجه کنترل کیفیت اقلام انتخاب‌شده ثبت شد." : "وضعیت کنترل کیفیت قلم ثبت شد.",
             updated.Select(review => new QualityControlItemVersion(review.FactorItemId, review.RowVersion)).ToList());
     }
 
