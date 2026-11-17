@@ -3299,6 +3299,34 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
+        public async Task<IActionResult> PrepareExternalFactorModes(
+            [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var (factor, softwareTitle) = await GetDirectFactorForExportAsync(request, ct);
+                var mapped = await db.ExternalMappings.AsNoTracking()
+                    .Where(x => x.EntityId == factor.PfactorID
+                        && x.EntityName == nameof(PreFactor)
+                        && x.ExternalSoftwareId == request.ExternalSoftwareId
+                        && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                    .Select(x => new { x.ExEntityName, x.ExEntityId }).SingleOrDefaultAsync(ct);
+                var quotationId = mapped?.ExEntityName == nameof(Quotation)
+                    && int.TryParse(mapped.ExEntityId, out var id) && id > 0 ? id : 0;
+                var hasQuotation = quotationId > 0
+                    && await GetSepidarService(request.ExternalSoftwareId).GetQuotationAsync(quotationId, ct) != null;
+                var alreadySent = await db.ExternalMappings.AsNoTracking().AnyAsync(x =>
+                    x.EntityId == factor.Id && x.EntityName == nameof(Factor)
+                    && x.ExternalSoftwareId == request.ExternalSoftwareId
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور, ct);
+                if (alreadySent) return Conflict("این فاکتور قبلاً در نرم‌افزار مالی ثبت شده است.");
+                return Ok(new { softwareTitle, hasQuotation });
+            }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+        }
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
