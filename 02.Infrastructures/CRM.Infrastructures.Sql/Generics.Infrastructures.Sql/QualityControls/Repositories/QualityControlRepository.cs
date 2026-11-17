@@ -692,7 +692,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var page = await entries.OrderByDescending(item => item.CreateDate).ThenByDescending(item => item.Id)
             .Skip(start).Take(length).ToListAsync(ct);
         var rows = page.Select(item => new QualityControlContactHistoryRow(
-            item.Id, item.Status, PersianDateTime(item.CreateDate),
+            item.Id, item.Status,
+            item.IsLegacy ? "قدیمی؛ زمان دقیق تک‌تک تماس‌ها ثبت نشده" : PersianDateTime(item.CreateDate),
             item.UserCreator, item.AttemptCount, item.IsLegacy, item.MobileAtAttempt,
             item.Description, item.IsDeleted, item.DeleteReason,
             item.DeletedByName, item.DeletedAt.HasValue ? PersianDateTime(item.DeletedAt) : null,
