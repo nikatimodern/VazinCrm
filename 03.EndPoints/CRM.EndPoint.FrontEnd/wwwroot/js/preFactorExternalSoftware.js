@@ -196,7 +196,7 @@ function exSoftwarePreFactorRenderSaleType() {
         title: "انتخاب نوع فروش",
         subtitle: "نوع فروش پیش‌فاکتور را مشخص کنید",
         icon: `<i class="fas fa-file-invoice"></i>`,
-        step: "مرحله ۱ از ۵",
+        step: "مرحله ۱ از ۴",
         
         content: ExternalFinancialWizard.selectField({
             id: "externalMappingSaleTypeSelect",
@@ -280,7 +280,7 @@ function exSoftwarePreFactorRenderCustomer() {
         title: "تطبیق مشتری",
         subtitle: "اتصال مشتری CRM به نرم‌افزار مالی",
         icon: `<i class="fas fa-users"></i>`,
-        step: "مرحله ۲ از ۵",
+        step: "مرحله ۲ از ۴",
         
         content: ExternalFinancialWizard.crmCustomer(software.crmCustomerTitle ?? "-") +
             ExternalFinancialWizard.selectField({
@@ -569,7 +569,7 @@ function exSoftwarePreFactorRenderPreview(data) {
         title: "بررسی نهایی پیش‌فاکتور",
         subtitle: "قبل از ثبت در نرم‌افزار مالی، اطلاعات را بررسی کنید",
         icon: `<i class="fas fa-clipboard-check"></i>`,
-        step: "مرحله 5 از 5",
+        step: "مرحله ۴ از ۴",
         large: true,
         
         content: renderExternalFinancialPreview({
@@ -628,7 +628,6 @@ function exSoftwarePreFactorUpdateBackButton() {
     const canGoBack = [
         "customer",
         "items",
-        "stock",
         "preview",
     ].includes(state.step);
     
@@ -658,10 +657,6 @@ function exSoftwarePreFactorUpdateConfirmButton() {
         }
         
         case "items":
-            toggleElementsDisabled(getConfirmExternalMappingBtn(), !exSoftwarePreFactorAreAllItemsMapped());
-            break;
-        
-        case "stock":
             toggleElementsDisabled(getConfirmExternalMappingBtn(), !exSoftwarePreFactorAreAllItemsMappedWithStock());
             break;
         
@@ -689,14 +684,9 @@ function exSoftwarePreFactorGoBack() {
             exSoftwarePreFactorRenderCustomer();
             break;
         
-        case "stock":
+        case "preview":
             state.step = "items";
             exSoftwarePreFactorRenderItems();
-            break;
-        
-        case "preview":
-            state.step = "stock";
-            exSoftwarePreFactorRenderStock();
             break;
         
         default:
@@ -714,7 +704,6 @@ const externalSoftwareStepHandlers = {
     saleType: exSoftwarePreFactorConfirmSaleType,
     customer: exSoftwarePreFactorConfirmCustomer,
     items: exSoftwarePreFactorConfirmItems,
-    stock: exSoftwarePreFactorPreview,
     preview: exSoftwarePreFactorSubmit,
 };
 
