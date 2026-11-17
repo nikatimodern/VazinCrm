@@ -186,14 +186,14 @@
                 + (item.supplyExpert ? '<span>کارشناس تأمین: ' + escape(item.supplyExpert) + '</span>' : "")
                 + '</div>'
                 + '<div class="qc-client-item-controls">'
-                + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
-                + (draft.saved ? ' · ثبت‌شده' : "") + '</span>'
                 + '<div class="qc-client-item-actions">'
                 + '<button type="button" class="qc-client-button ' + (draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
                 + '" data-qc-set-status="1" data-qc-item-id="' + escape(item.factorItemId) + '">بدون مغایرت</button>'
                 + '<button type="button" class="qc-client-button ' + (isProblem ? "qc-client-issue-selected" : "qc-client-secondary")
                 + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId) + '">دارای مغایرت</button>'
                 + '</div>'
+                + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
+                + (draft.saved ? ' · ثبت‌شده' : "") + '</span>'
                 + '<button type="button" class="qc-client-button qc-client-outline" data-qc-save-item="' + escape(item.factorItemId) + '"'
                 + (draft.saved || !isValid(item) ? " disabled" : "") + '>'
                 + (draft.saved ? "ثبت‌شده" : "ثبت این قلم") + '</button>'
