@@ -326,7 +326,7 @@
             if (setButton) {
                 const draft = drafts.get(setButton.dataset.qcItemId);
                 const nextStatus = Number(setButton.dataset.qcSetStatus);
-                if (draft && (draft.status !== nextStatus || draft.saved)) {
+                if (draft && draft.status !== nextStatus) {
                     draft.status = nextStatus;
                     draft.saved = false;
                     if (nextStatus === 1) draft.answers = {};
