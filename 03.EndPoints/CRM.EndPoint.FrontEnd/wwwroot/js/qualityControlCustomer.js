@@ -36,6 +36,8 @@
         let listController = null, formController = null, formGeneration = 0;
         let review = null;
         const drafts = new Map();
+        const savingItems = new Set();
+        const noteTimers = new Map();
         const flatten = () => review?.orders.flatMap(order =>
             order.invoices.flatMap(invoice => invoice.items)) ?? [];
         const stateOf = item => drafts.get(item.factorItemId);
@@ -77,11 +79,21 @@
         function isValid(item) {
             const draft = stateOf(item);
             if (!draft) return false;
-            if (draft.status === 1) return true;
+            if (draft.status === 0 || draft.status === 1) return true;
             if (draft.status !== 2 || !review.questions?.length) return false;
             return review.questions.every(question => draft.answers[question.id] === 0
                 || draft.answers[question.id] === 1)
                 && review.questions.some(question => draft.answers[question.id] === 1);
+        }
+
+        function clearNoteTimer(itemId) {
+            const timer = noteTimers.get(itemId);
+            if (timer) clearTimeout(timer);
+            noteTimers.delete(itemId);
+        }
+
+        function hasUnsavedWork() {
+            return saving || savingItems.size > 0 || noteTimers.size > 0;
         }
 
         function renderPager() {
@@ -153,10 +165,12 @@
         }
 
         async function openCustomer(customerId) {
-            if (saving || !isActive()) return;
+            if (hasUnsavedWork() || !isActive()) return;
             formController?.abort();
             const controller = formController = new AbortController();
             const generation = ++formGeneration;
+            noteTimers.forEach(timer => clearTimeout(timer));
+            noteTimers.clear();
             drafts.clear();
             review = null;
             saveAllButton.disabled = true;
@@ -188,11 +202,15 @@
             if (review.mobile?.trim()) customerDetails.push("موبایل: " + review.mobile.trim());
             page.querySelector("#qcCustomerModalSubtitle").textContent = customerDetails.join(" | ");
             flatten().forEach(item => {
+                const status = Number(item.status) || 0;
                 drafts.set(item.factorItemId, {
-                    status: Number(item.status) || 0,
+                    status,
+                    persistedStatus: status,
+                    revision: 0,
+                    failed: false,
                     description: item.description || "",
                     rowVersion: item.rowVersion || null,
-                    saved: Boolean(item.rowVersion),
+                    saved: Boolean(item.rowVersion) && status !== 0,
                     answers: Object.fromEntries((item.answers || []).map(answer =>
                         [answer.id, answer.answer])),
                 });
