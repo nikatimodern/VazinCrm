@@ -88,3 +88,21 @@
     color:var(--map-muted, #66757a);
 }
 #sendFactorToExternalSoftwareModal #backExternalFactorStepBtn[hidden] { display:none!important; }
+
+/* Item-specific warehouse selection lives directly below each mapped item. */
+.external-item-match-target .external-item-match-stock-label {
+    margin-block-start: .35rem;
+    margin-block-end: 0;
+}
+.external-item-match-target .external-item-match-stock-hint {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #545961);
+}
+.external-item-match-target .external-item-match-stock-hint:empty {
+    display: none;
+}
+.external-item-match-target .ts-wrapper.disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}
