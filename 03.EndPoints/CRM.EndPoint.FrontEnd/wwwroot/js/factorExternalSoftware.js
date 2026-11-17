@@ -657,90 +657,94 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         renderItems(state);
     }
     function renderItems(state) {
-        const {content, add, list} = createExternalItemMatching();
+        const { content, add, list } = createExternalItemMatching();
+        const rows = [];
+        state.stockPending = new Set();
+        state.stockCache ??= new Map();
+        state.stocksByItem ??= [];
+
         add.addEventListener("click", () => openSepidarItemCreation({
             softwareId: state.request.externalSoftwareId,
             softwareTitle: state.softwareTitle,
             afterCreate: () => loadItems(state, true),
             canOpen: () => get(state) && state.step === "items" && isModalOpen(modal()),
         }));
+
         for (const item of state.items) {
+            const itemId = String(item.factorItemId);
             const target = appendExternalItemMatchRow(list, item.productTitle, item.weightCount, item.unitTxt);
-            const select = document.createElement("select");
-            select.id = "factorDirectItem_" + item.factorItemId;
-            select.dataset.itemId = item.factorItemId;
-            select.className = "factor-direct-item-select show-dropdown-arrow";
-            select.append(new Option("انتخاب کنید", ""));
-            const selected = state.direct.items[item.factorItemId]?.externalItemId;
-            for (const entry of state.sepidarItems)
-                select.add(new Option(entry.code + " - " + entry.title, entry.id,
-                    false, String(entry.id) === String(selected ?? "")));
             const label = document.createElement("label");
-            label.htmlFor = select.id;
-            label.className = "form-label";
+            label.htmlFor = "factorDirectItem_" + itemId;
+            label.className = "form-label mb-0";
             label.textContent = "کالای معادل در نرم‌افزار مالی";
+
+            const select = document.createElement("select");
+            select.id = label.htmlFor;
+            select.dataset.itemId = itemId;
+            select.className = "factor-direct-item-select show-dropdown-arrow";
+            select.append(new Option("", ""));
+            const selected = state.direct.items[itemId]?.externalItemId;
+            for (const entry of state.sepidarItems) {
+                select.append(new Option(
+                    entry.code + " - " + entry.title, entry.id, false,
+                    String(entry.id) === String(selected ?? ""),
+                ));
+            }
             target.append(label, select);
+            rows.push({ itemId, target, select });
         }
-        stage(state, "items", "تطبیق کالاها", "کالای معادل هر ردیف فاکتور را انتخاب کنید",
-            '<i class="fas fa-boxes"></i>', "مرحله ۳ از ۵", content, true);
-        body().querySelectorAll(".factor-direct-item-select").forEach(select => {
+
+        stage(state, "items", "تطبیق کالاها و انبارها",
+            "برای هر ردیف فاکتور، کالای معادل و انبار مرتبط را انتخاب کنید",
+            '<i class="fas fa-boxes"></i>', "مرحله ۳ از ۴", content, true);
+
+        for (const { itemId, target, select } of rows) {
+            const stock = ExternalFinancialWizard.linkedStockField(target, {
+                id: "factorDirectStock_" + itemId,
+                softwareId: state.request.externalSoftwareId,
+                cache: state.stockCache,
+                isCurrent: () => get(state) && state.step === "items",
+                onChange: value => {
+                    const mapping = state.direct.items[itemId];
+                    if (!mapping) return;
+                    mapping.externalStockId = value;
+                    update(state);
+                },
+                onLoading: loading => {
+                    if (loading) state.stockPending.add(itemId);
+                    else state.stockPending.delete(itemId);
+                    update(state);
+                },
+                onLoaded: (externalItemId, stocks) => {
+                    const index = state.stocksByItem.findIndex(
+                        item => String(item.itemRef) === externalItemId);
+                    const entry = { itemRef: Number(externalItemId), stocks };
+                    if (index < 0) state.stocksByItem.push(entry);
+                    else state.stocksByItem[index] = entry;
+                },
+            });
+
             new TomSelect(select, {
                 placeholder: "جستجو و انتخاب کالا",
                 onChange: value => {
-                    const id = select.dataset.itemId;
-                    const old = state.direct.items[id] || {};
-                    state.direct.items[id] = {externalItemId: value, externalStockId:
-                        String(old.externalItemId) === String(value) ? old.externalStockId : ""};
+                    const previous = state.direct.items[itemId] || {};
+                    if (!value) {
+                        delete state.direct.items[itemId];
+                    } else {
+                        state.direct.items[itemId] = {
+                            externalItemId: value,
+                            externalStockId: String(previous.externalItemId) === String(value)
+                                ? previous.externalStockId ?? "" : "",
+                        };
+                    }
+                    void stock.update(value, state.direct.items[itemId]?.externalStockId ?? "");
                     update(state);
                 },
             });
-        });
-        update(state);
-    }
 
-    async function loadStock(state) {
-        const itemIds = state.items.map(x => Number(state.direct.items[x.factorItemId]?.externalItemId));
-        const data = await query("PrepareExternalStockMapping", {
-            externalSoftwareId: state.request.externalSoftwareId,
-            itemIds,
-        });
-        if (!data || !get(state)) return;
-        state.stocksByItem = data.stocksByItem || [];
-        renderStock(state);
-    }
-    function renderStock(state) {
-        const rows = state.items.map(item => {
-            const mapped = state.direct.items[item.factorItemId] || {};
-            const product = state.sepidarItems.find(x => String(x.id) === String(mapped.externalItemId));
-            const stocks = state.stocksByItem.find(x => String(x.itemRef) === String(mapped.externalItemId))?.stocks || [];
-            return `<div class="external-mapping-entity external-item-mapping-row">
-                <div><span class="external-mapping-label">محصول CRM: </span>
-                    <strong>${html(item.productTitle)}</strong></div>
-                <div><span class="external-mapping-label">کالای سپیدار: </span>
-                    <strong>${html(product ? product.code + " - " + product.title : "—")}</strong></div>
-                <label for="factorDirectStock_${html(item.factorItemId)}" class="form-label mt-2">انبار</label>
-                <select id="factorDirectStock_${html(item.factorItemId)}"
-                        data-item-id="${html(item.factorItemId)}" class="factor-direct-stock-select show-dropdown-arrow">
-                    <option value="">انتخاب انبار</option>
-                    ${stocks.map(x => `<option value="${html(x.id)}"
-                        ${String(x.id) === String(mapped.externalStockId ?? "") ? "selected" : ""}>
-                        ${html(x.code + " - " + x.title)}</option>`).join("")}
-                </select>
-            </div>`;
-        }).join("");
-        stage(state, "stock", "انتخاب انبار کالاها", "برای هر ردیف فاکتور انبار را مشخص کنید",
-            '<i class="fas fa-warehouse"></i>', "مرحله ۴ از ۵",
-            `<div class="external-item-mapping-list">${rows}</div>`, true);
-        body().querySelectorAll(".factor-direct-stock-select").forEach(select => {
-            new TomSelect(select, {
-                placeholder: "جستجو و انتخاب انبار",
-                onChange: value => {
-                    const item = state.direct.items[select.dataset.itemId];
-                    if (item) item.externalStockId = value;
-                    update(state);
-                },
-            });
-        });
+            const mapping = state.direct.items[itemId];
+            void stock.update(mapping?.externalItemId ?? "", mapping?.externalStockId ?? "");
+        }
         update(state);
     }
 
