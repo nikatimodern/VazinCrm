@@ -32,7 +32,7 @@
         const pageSignal = typeof PageRuntime !== "undefined" ? PageRuntime.current?.signal : null;
         const isActive = () => page.isConnected && !pageSignal?.aborted;
 
-        let start = 0, total = 0, search = "", loading = false, saving = false;
+        let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let listController = null, formController = null, formGeneration = 0;
         let review = null;
         const drafts = new Map();
@@ -138,6 +138,7 @@
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
                     const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
+                    const contactStatus = Number(row.contactStatus) || 0;
                     const color = pending > 0 ? "pending" : row.discrepancyItems > 0 ? "discrepancy" : "complete";
                     const label = pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
                     return '<article role="listitem" class="qc-client-card">'
@@ -150,8 +151,16 @@
                         + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
                         + '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span></div>'
                         + '<span class="qc-client-badge qc-client-' + color + '">' + label + '</span>'
+                        + '<div class="qc-client-contact-actions">'
+                        + '<button type="button" class="qc-client-button qc-client-contact-invalid'
+                        + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
+                        + '" data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
+                        + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
+                        + (contactStatus === 1 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 1)
+                        + '" data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
-                        + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button></article>';
+                        + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
+                        + '</div></article>';
                 }).join("");
                 queueFeedback.textContent = total ? "" : "مشتری واجد شرایطی با این فیلتر یافت نشد.";
                 queueCount.textContent = faNumber.format(total) + " مشتری";
@@ -484,9 +493,41 @@
             start += button.dataset.qcPage === "next" ? Number(pageSize.value) : -Number(pageSize.value);
             loadCustomers();
         });
-        queue.addEventListener("click", event => {
+        queue.addEventListener("click", async event => {
+            const contactButton = event.target.closest("[data-qc-contact]");
+            if (contactButton) {
+                if (loading || contactBusy || !isActive()) return;
+                contactBusy = true;
+                queue.querySelectorAll("[data-qc-contact]").forEach(button => button.disabled = true);
+                queueFeedback.textContent = "در حال ثبت وضعیت تماس…";
+                try {
+                    const result = await sendApiRequest({
+                        url: "/QualityControl/SetCustomerContactStatus",
+                        method: "POST",
+                        headers: { RequestVerificationToken: token.value },
+                        data: {
+                            customerId: contactButton.dataset.qcContactCustomer,
+                            status: Number(contactButton.dataset.qcContact),
+                        },
+                        showLoading: false,
+                    });
+                    if (!isActive()) return;
+                    if (!result || ![0, 1, 2].includes(Number(result.status))) {
+                        queueFeedback.textContent = "ثبت وضعیت تماس ناموفق بود. دوباره تلاش کنید.";
+                        return;
+                    }
+                    await loadCustomers();
+                } catch (error) {
+                    if (isActive()) queueFeedback.textContent = "خطا در ثبت وضعیت تماس؛ دوباره تلاش کنید.";
+                } finally {
+                    contactBusy = false;
+                    if (isActive()) queue.querySelectorAll("[data-qc-contact]")
+                        .forEach(button => button.disabled = false);
+                }
+                return;
+            }
             const button = event.target.closest("[data-qc-customer]");
-            if (button && !loading) openCustomer(button.dataset.qcCustomer);
+            if (button && !loading && !contactBusy) openCustomer(button.dataset.qcCustomer);
         });
         content.addEventListener("click", event => {
             if (saving || !review) return;
