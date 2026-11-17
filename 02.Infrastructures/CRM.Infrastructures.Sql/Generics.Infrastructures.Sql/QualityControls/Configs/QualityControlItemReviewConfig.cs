@@ -13,7 +13,7 @@ public sealed class QualityControlItemReviewConfig : IEntityTypeConfiguration<Qu
         builder.Property(item => item.Description).HasMaxLength(4000);
         builder.Property(item => item.Status).HasConversion<byte>().HasColumnType("tinyint");
         builder.ToTable("QualityControlItemReviews",
-            table => table.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (1, 2)"));
+            table => table.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (0, 1, 2)"));
         builder.Property(item => item.RowVersion).IsRowVersion();
         builder.HasOne(item => item.FactorItem).WithMany().HasForeignKey(item => item.FactorItemId)
             .OnDelete(DeleteBehavior.Restrict);
