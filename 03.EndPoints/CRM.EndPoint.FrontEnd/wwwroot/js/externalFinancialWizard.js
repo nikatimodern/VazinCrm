@@ -14,6 +14,28 @@ class ExternalFinancialWizard {
         this.destinationIndex = 0;
     }
 
+    /** Shared compact field markup for sale type, customer and other lookups. */
+    static selectField({ id, label, options = [], selected = "", placeholder = null }) {
+        const safe = value => escapeHtml(String(value ?? ""));
+        return `<div class="external-financial-field">
+            <label for="${safe(id)}" class="form-label mb-1">${safe(label)}</label>
+            <select id="${safe(id)}" class="show-dropdown-arrow">
+                ${placeholder !== null ? `<option value="">${safe(placeholder)}</option>` : ""}
+                ${options.map(option => `<option value="${safe(option.value)}"
+                    ${String(option.value) === String(selected ?? "") ? "selected" : ""}>
+                    ${safe(option.label)}</option>`).join("")}
+            </select>
+        </div>`;
+    }
+
+    /** The CRM-side customer identity is intentionally identical across sales documents. */
+    static crmCustomer(name) {
+        return `<div class="external-mapping-entity">
+            <span class="external-mapping-label">مشتری در CRM</span>
+            <span class="external-mapping-entity-name fbold">${escapeHtml(String(name ?? "—"))}</span>
+        </div>`;
+    }
+
     setDestinations(ids) {
         this.destinations = [...new Set(ids ?? [])];
         this.destinationIndex = 0;
