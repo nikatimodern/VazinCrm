@@ -548,8 +548,13 @@ function sfAllocationTargetLabel(a) {
     const serial = sfAllocationText(a.serialNumber);
     const quantity = sfAllocationText(a.factorItemWeightCount ?? a.weightCount);
     const unit = sfAllocationText(a.factorItemUnitTxt ?? a.unitTxt);
+    const productName = sfAllocationText(a.productSmallName);
+    const description = sfAllocationText(a.product);
+    const productLabel = sfAllocationIsSales() && productName && description
+        && sfAllocationNormalize(productName) !== sfAllocationNormalize(description)
+        ? `${productName} (${description})` : productName || description;
     return [sfAllocationIsSales() && a.sourceWarehouseProductId ? sfAllocationText(a.warehouseTitle) : "", sfAllocationText(a.customer), serial ? `فاکتور ${sfAllocationIsSales() ? "تامین " : ""}${serial}` : "",
-        sfAllocationText(a.productSmallName) || sfAllocationText(a.product),
+        productLabel,
         quantity ? [quantity, unit].filter(Boolean).join(" ") : ""].filter(Boolean).join(" | ");
 }
 function sfAllocationSalesCapacity(a) {
