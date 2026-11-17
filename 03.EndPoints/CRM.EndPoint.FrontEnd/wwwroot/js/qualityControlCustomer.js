@@ -7,6 +7,15 @@
         const queue = page.querySelector("#qcCustomerQueue");
         const queueFeedback = page.querySelector("#qcCustomerQueueFeedback");
         const queueCount = page.querySelector("#qcCustomerQueueCount");
+        const summaryValues = [
+            ["invalidNumberCustomers", "#qcSummaryInvalidCustomers"],
+            ["noResponseCustomers", "#qcSummaryNoAnswerCustomers"],
+            ["pendingCustomers", "#qcSummaryPendingCustomers"],
+            ["pendingItems", "#qcSummaryPendingItems"],
+            ["reviewedItems", "#qcSummaryReviewedItems"],
+            ["discrepancyItems", "#qcSummaryDiscrepancyItems"],
+            ["noDiscrepancyItems", "#qcSummaryNoDiscrepancyItems"],
+        ].map(([property, selector]) => [property, page.querySelector(selector)]);
         const pages = page.querySelector("#qcCustomerPages");
         const modal = page.querySelector("#qcCustomerReviewModal");
         const form = page.querySelector("#qcCustomerReviewForm");
@@ -130,6 +139,11 @@
                     queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
                     return;
                 }
+                if (result.summary) {
+                    summaryValues.forEach(([property, element]) => {
+                        if (element) element.textContent = faNumber.format(Number(result.summary[property] ?? 0));
+                    });
+                }
                 total = Number(result.filtered ?? 0);
                 if (start >= total && start > 0) {
                     start = Math.max(0, (Math.ceil(total / Number(pageSize.value)) - 1) * Number(pageSize.value));
@@ -139,8 +153,12 @@
                     const pending = row.totalItems - row.reviewedItems;
                     const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
                     const contactStatus = Number(row.contactStatus) || 0;
-                    const color = pending > 0 ? "pending" : row.discrepancyItems > 0 ? "discrepancy" : "complete";
-                    const label = pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
+                    const color = contactStatus === 2 ? "invalid-phone"
+                        : contactStatus === 1 ? "no-answer"
+                            : pending > 0 ? "pending" : row.discrepancyItems > 0 ? "discrepancy" : "complete";
+                    const label = contactStatus === 2 ? "شماره نامعتبر"
+                        : contactStatus === 1 ? "عدم پاسخ"
+                            : pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
                     return '<article role="listitem" class="qc-client-card">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
