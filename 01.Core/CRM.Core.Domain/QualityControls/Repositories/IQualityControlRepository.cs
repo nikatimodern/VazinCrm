@@ -14,4 +14,6 @@ public interface IQualityControlRepository
         Guid customerId, QualityControlAccess access, CancellationToken cancellationToken);
     Task<SaveQualityControlItemsResult> SaveItemsAsync(
         SaveQualityControlItemsRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
+    Task<SetQualityControlCustomerContactResult> SetCustomerContactStatusAsync(
+        SetQualityControlCustomerContactRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
 }
