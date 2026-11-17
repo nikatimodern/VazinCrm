@@ -44,6 +44,7 @@ class ExternalFinancialWizard {
     static linkedStockField(target, {
         id, softwareId, cache = new Map(), isCurrent = () => true,
         onChange = () => {}, onLoaded = () => {}, onLoading = () => {},
+        retainedStock = null,
     }) {
         const label = document.createElement("label");
         label.className = "form-label external-item-match-stock-label";
@@ -101,14 +102,26 @@ class ExternalFinancialWizard {
             onLoaded(key, stocks);
             if (!stocks.length) return;
 
-            control.addOptions(stocks.map(stock => ({
+            const options = stocks.map(stock => ({
                 value: String(stock.id),
                 text: [stock.code, stock.title].filter(Boolean).join(" - "),
-            })));
+            }));
+            // A historical quotation may reference a stock that is no longer active.
+            // Keep only that original item/stock choice visible when it was already
+            // selected on the source quotation; do not expand replacement choices.
+            if (retainedStock && String(retainedStock.itemId) === key &&
+                String(retainedStock.stockId) === String(preferredStockId) &&
+                !options.some(option => option.value === String(preferredStockId))) {
+                options.push({
+                    value: String(retainedStock.stockId),
+                    text: String(retainedStock.title || retainedStock.stockId),
+                });
+            }
+            control.addOptions(options);
             control.refreshOptions(false);
             control.enable();
 
-            const selected = stocks.some(stock => String(stock.id) === String(preferredStockId))
+            const selected = options.some(option => option.value === String(preferredStockId))
                 ? String(preferredStockId) : "";
             control.setValue(selected, true);
             if (!selected && preferredStockId) onChange("");
