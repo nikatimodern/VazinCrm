@@ -453,7 +453,7 @@ const ShowModalInvoice = async (acType = 1) => {
     
     const invoiceModalElm = document.getElementById("InvoiceModalId");
     if (AccType === 1) {
-        invoiceModalElm.querySelector(".modalHeader-invoice").innerText = InvoiceType === 1 ? "واریز پیش پرداخت" : "ثبت واریز";
+        invoiceModalElm.querySelector(".modalHeader-invoice").innerText = InvoiceType === 1 ? "ثبت واریزی" : "ثبت واریز";
         invoiceModalElm.classList.add("deposit-mode");
         invoiceModalElm.classList.remove("backward-mode");
     } else if (AccType === 2) {
