@@ -125,6 +125,7 @@
                 }
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
+                    const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
                     const color = pending > 0 ? "pending" : row.discrepancyItems > 0 ? "discrepancy" : "complete";
                     const label = pending > 0 ? "نیازمند بررسی" : row.discrepancyItems > 0 ? "دارای مغایرت" : "تکمیل‌شده";
                     return '<article role="listitem" class="qc-client-card">'
@@ -132,7 +133,9 @@
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
                         + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span>' + faNumber.format(row.invoices) + ' فاکتور</span>'
-                        + '<span class="qc-client-count-reviewed">بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</span>'
+                        + '<span class="qc-client-count-reviewed"><strong>بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
+                        + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
+                        + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
                         + '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span></div>'
                         + '<span class="qc-client-badge qc-client-' + color + '">' + label + '</span>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
