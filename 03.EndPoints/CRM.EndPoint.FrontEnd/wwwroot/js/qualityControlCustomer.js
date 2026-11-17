@@ -26,6 +26,13 @@
         const progressTrack = page.querySelector("#qcSummaryProgressTrack");
         const pages = page.querySelector("#qcCustomerPages");
         const modal = page.querySelector("#qcCustomerReviewModal");
+        const historyModal = page.querySelector("#qcContactHistoryModal");
+        const historyCustomer = page.querySelector("#qcContactHistoryCustomer");
+        const historyEntries = page.querySelector("#qcContactHistoryEntries");
+        const historyFeedback = page.querySelector("#qcContactHistoryFeedback");
+        const historyPages = page.querySelector("#qcContactHistoryPages");
+        const historyDeletedFilter = page.querySelector("#qcContactHistoryDeletedFilter");
+        const historyShowDeleted = page.querySelector("#qcContactHistoryShowDeleted");
         const form = page.querySelector("#qcCustomerReviewForm");
         const formFeedback = page.querySelector("#qcCustomerFormFeedback");
         const summary = page.querySelector("#qcCustomerReviewSummary");
@@ -67,6 +74,8 @@
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let listController = null, formController = null, formGeneration = 0;
+        let historyCustomerId = null, historyStart = 0, historyTotal = 0;
+        let historyController = null, historyBusy = false, historyCanManage = false;
         let midnightRefreshTimer = null;
 
         function scheduleNextDayRefresh() {
@@ -239,6 +248,8 @@
                         + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
                         + (complete ? '<i class="fa fa-check-circle" aria-hidden="true"></i> ' : '') + label + '</span>'
                         + '<div class="qc-client-contact-actions">'
+                        + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
+                        + ' title="مشاهده سابقه تماس‌های این مشتری"><i class="fa fa-history" aria-hidden="true"></i> تاریخچه تماس</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
                         + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
@@ -259,6 +270,175 @@
                     loading = false;
                     queue.removeAttribute("aria-busy");
                 }
+            }
+        }
+
+        function renderHistoryPager() {
+            const size = 20;
+            const current = Math.floor(historyStart / size);
+            const totalPages = Math.ceil(historyTotal / size);
+            historyPages.innerHTML = totalPages > 1
+                ? '<button type="button" data-qc-history-page="prev"' + (current === 0 ? " disabled" : "") + '>قبلی</button>'
+                    + '<span>صفحه ' + faNumber.format(current + 1) + ' از ' + faNumber.format(totalPages) + '</span>'
+                    + '<button type="button" data-qc-history-page="next"' + (current + 1 >= totalPages ? " disabled" : "") + '>بعدی</button>'
+                : "";
+        }
+
+        function renderContactHistory(rows) {
+            if (!rows.length) {
+                historyEntries.innerHTML = '<div class="qc-client-feedback">سابقه تماسی برای این مشتری یافت نشد.</div>';
+                return;
+            }
+            historyEntries.innerHTML = rows.map(row => {
+                const status = Number(row.status);
+                const label = status === 1 ? "عدم پاسخ" : status === 2 ? "شماره نامعتبر" : "لغو وضعیت تماس";
+                const labelClass = status === 2 ? " is-invalid" : status === 0 ? " is-cancelled" : "";
+                const meta = [
+                    '<span>تاریخ: <strong>' + escape(row.createdAt) + '</strong></span>',
+                    '<span>کارشناس: <strong>' + escape(row.createdBy || "ثبت نشده") + '</strong></span>',
+                ];
+                if (Number(row.attemptCount) > 0)
+                    meta.push('<span>تلاش بی‌پاسخ: <strong>' + faNumber.format(row.attemptCount) + '</strong></span>');
+                if (row.mobileAtAttempt)
+                    meta.push('<span>شماره تماس: <strong>' + escape(row.mobileAtAttempt) + '</strong></span>');
+                if (row.isLegacy) meta.push('<span class="qc-client-history-label">سابقه تجمیعی قدیمی</span>');
+                const audit = row.isDeleted
+                    ? '<div>حذف‌شده توسط <strong>' + escape(row.deletedBy || "نامشخص") + '</strong>'
+                        + (row.deletedAt ? ' در <strong>' + escape(row.deletedAt) + '</strong>' : '')
+                        + ' · دلیل: <strong>' + escape(row.deleteReason || "ثبت نشده") + '</strong></div>'
+                    : (row.restoredAt ? '<div>بازیابی توسط <strong>' + escape(row.restoredBy || "نامشخص")
+                        + '</strong> در <strong>' + escape(row.restoredAt) + '</strong></div>' : '');
+                const action = !historyCanManage ? "" : row.isDeleted
+                    ? '<button type="button" class="qc-client-button qc-client-history-restore"'
+                        + ' data-qc-history-action="restore" data-qc-history-id="' + escape(row.id)
+                        + '" data-qc-history-version="' + escape(row.rowVersion) + '">'
+                        + '<i class="fa fa-undo" aria-hidden="true"></i> بازیابی</button>'
+                    : '<button type="button" class="qc-client-button qc-client-history-delete"'
+                        + ' data-qc-history-action="delete" data-qc-history-id="' + escape(row.id)
+                        + '" data-qc-history-version="' + escape(row.rowVersion) + '">'
+                        + '<i class="fa fa-trash" aria-hidden="true"></i> حذف</button>';
+                return '<article role="listitem" class="qc-client-history-entry' + (row.isDeleted ? ' is-deleted' : '') + '">'
+                    + '<div class="qc-client-history-info">'
+                    + '<div class="qc-client-history-heading"><span class="qc-client-history-label' + labelClass + '">'
+                    + label + '</span>' + (row.isDeleted ? '<span class="qc-client-history-label is-invalid">حذف‌شده</span>' : '') + '</div>'
+                    + '<div class="qc-client-history-meta">' + meta.join("") + '</div>'
+                    + (row.description ? '<div>' + escape(row.description) + '</div>' : '')
+                    + audit + '</div>'
+                    + (action ? '<div class="qc-client-history-actions">' + action + '</div>' : '')
+                    + '</article>';
+            }).join("");
+        }
+
+        async function loadContactHistory() {
+            if (!historyCustomerId || !isActive()) return;
+            historyController?.abort();
+            const controller = historyController = new AbortController();
+            historyFeedback.textContent = "در حال دریافت تاریخچه…";
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/GetContactHistory",
+                    params: {
+                        customerId: historyCustomerId,
+                        includeDeleted: historyShowDeleted.checked,
+                        start: historyStart, length: 20,
+                    },
+                    signal: controller.signal,
+                    showLoading: false,
+                });
+                if (!isActive() || controller.signal.aborted || !result || !Array.isArray(result.data)) return;
+                historyTotal = Number(result.total) || 0;
+                historyCanManage = Boolean(result.canManage);
+                historyDeletedFilter.hidden = !historyCanManage;
+                historyCustomer.textContent = result.customerName || "مشتری";
+                if (historyStart >= historyTotal && historyStart > 0) {
+                    historyStart = Math.max(0, (Math.ceil(historyTotal / 20) - 1) * 20);
+                    return loadContactHistory();
+                }
+                renderContactHistory(result.data);
+                renderHistoryPager();
+                historyFeedback.textContent = faNumber.format(historyTotal) + " سابقه تماس";
+            } catch (error) {
+                if (isActive() && !controller.signal.aborted)
+                    historyFeedback.textContent = "دریافت تاریخچه تماس ناموفق بود.";
+            }
+        }
+
+        function openContactHistory(customerId) {
+            if (!customerId || !isActive()) return;
+            historyCustomerId = customerId;
+            historyStart = 0;
+            historyCanManage = false;
+            historyShowDeleted.checked = false;
+            historyDeletedFilter.hidden = true;
+            historyEntries.replaceChildren();
+            historyCustomer.textContent = "";
+            ModalToggle(historyModal, "show");
+            loadContactHistory();
+        }
+
+        async function changeContactHistory(button) {
+            if (historyBusy || !historyCanManage || !historyCustomerId || !isActive()) return;
+            const restore = button.dataset.qcHistoryAction === "restore";
+            if (typeof Swal === "undefined") {
+                historyFeedback.textContent = "پنجره تأیید عملیات در دسترس نیست.";
+                return;
+            }
+            const option = restore ? {
+                title: "بازیابی سابقه تماس",
+                text: "این سابقه دوباره در شمارنده‌ها و محاسبه وضعیت پیگیری منظور می‌شود.",
+                icon: "question",
+                confirmButtonText: "بازیابی",
+            } : {
+                title: "حذف سابقه تماس",
+                text: "سابقه به صورت نرم حذف می‌شود و مدیر ارشد امکان بازیابی آن را دارد.",
+                icon: "warning",
+                input: "textarea",
+                inputPlaceholder: "دلیل حذف را بنویسید...",
+                inputAttributes: { maxlength: 500 },
+                preConfirm: value => {
+                    if (!value?.trim()) {
+                        Swal.showValidationMessage("ثبت دلیل حذف الزامی است.");
+                        return false;
+                    }
+                    return value.trim();
+                },
+                confirmButtonText: "حذف سابقه",
+            };
+            const response = await Swal.fire({
+                ...option,
+                showCancelButton: true,
+                cancelButtonText: "انصراف",
+                confirmButtonColor: restore ? "#00665C" : "#851B1D",
+                cancelButtonColor: "#656B75",
+                reverseButtons: true,
+            });
+            if (!response.isConfirmed || !isActive()) return;
+            historyBusy = true;
+            historyFeedback.textContent = restore ? "در حال بازیابی سابقه…" : "در حال حذف سابقه…";
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/ChangeContactHistory",
+                    method: "POST",
+                    headers: { RequestVerificationToken: token.value },
+                    data: {
+                        customerId: historyCustomerId,
+                        historyId: button.dataset.qcHistoryId,
+                        rowVersion: button.dataset.qcHistoryVersion,
+                        restore,
+                        deleteReason: restore ? null : response.value,
+                    },
+                    showLoading: false,
+                });
+                if (!result || !result.message) {
+                    historyFeedback.textContent = "تغییر سابقه تماس ناموفق بود؛ دوباره تلاش کنید.";
+                    return;
+                }
+                await loadContactHistory();
+                await loadCustomers();
+            } catch (error) {
+                if (isActive()) historyFeedback.textContent = "خطا هنگام تغییر سابقه؛ تاریخچه را تازه کنید.";
+            } finally {
+                historyBusy = false;
             }
         }
 
@@ -593,6 +773,11 @@
             loadCustomers();
         });
         queue.addEventListener("click", async event => {
+            const historyButton = event.target.closest("[data-qc-history]");
+            if (historyButton) {
+                if (!loading && !contactBusy) openContactHistory(historyButton.dataset.qcHistory);
+                return;
+            }
             const contactButton = event.target.closest("[data-qc-contact]");
             if (contactButton) {
                 if (loading || contactBusy || !isActive()) return;
@@ -630,6 +815,27 @@
             }
             const button = event.target.closest("[data-qc-customer]");
             if (button && !loading && !contactBusy) openCustomer(button.dataset.qcCustomer);
+        });
+        historyShowDeleted.addEventListener("change", () => {
+            historyStart = 0;
+            loadContactHistory();
+        });
+        historyPages.addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-history-page]");
+            if (!button || button.disabled || historyBusy) return;
+            historyStart = Math.max(0, historyStart
+                + (button.dataset.qcHistoryPage === "next" ? 20 : -20));
+            loadContactHistory();
+        });
+        historyEntries.addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-history-action]");
+            if (button && !button.disabled) changeContactHistory(button);
+        });
+        historyModal.addEventListener("hidden.bs.modal", () => {
+            historyController?.abort();
+            historyCustomerId = null;
+            historyEntries.replaceChildren();
+            historyFeedback.textContent = "";
         });
         content.addEventListener("click", event => {
             if (saving || !review) return;
@@ -718,6 +924,7 @@
             clearTimeout(midnightRefreshTimer);
             listController?.abort();
             formController?.abort();
+            historyController?.abort();
         }, { once: true });
         window.addEventListener("pagehide", () => clearTimeout(midnightRefreshTimer), { once: true });
         scheduleNextDayRefresh();
