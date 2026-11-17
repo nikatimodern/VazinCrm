@@ -133,7 +133,11 @@
             }
             review = result;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت: " + (review.customerName || "مشتری");
-            page.querySelector("#qcCustomerModalSubtitle").textContent = "کد مشتری: " + faNumber.format(review.customerCode);
+            const customerDetails = ["کد مشتری: " + faNumber.format(review.customerCode)];
+            if (review.agentName?.trim() && review.agentName.trim() !== review.customerName?.trim())
+                customerDetails.push("نماینده: " + review.agentName.trim());
+            if (review.mobile?.trim()) customerDetails.push("موبایل: " + review.mobile.trim());
+            page.querySelector("#qcCustomerModalSubtitle").textContent = customerDetails.join(" | ");
             flatten().forEach(item => {
                 drafts.set(item.factorItemId, {
                     status: Number(item.status) || 0,
