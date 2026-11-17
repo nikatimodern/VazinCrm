@@ -278,6 +278,19 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         else
             contact.InvalidMobileAtMark = null;
 
+        var history = new QualityControlContactHistory
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = request.CustomerId,
+            Status = nextStatus,
+            AttemptCount = nextStatus == QualityControlCustomerContactStatus.NoResponse ? 1 : 0,
+            MobileAtAttempt = (mobile ?? "").Trim(),
+            Description = nextStatus == QualityControlCustomerContactStatus.None
+                ? "لغو وضعیت تماس ثبت‌شده" : null
+        };
+        Stamp(history, access, now, persianNow, true);
+        db.QualityControlContactHistories.Add(history);
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -513,7 +526,18 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             if (contact is { Status: not QualityControlCustomerContactStatus.None })
             {
                 contact.Status = QualityControlCustomerContactStatus.None;
-                Stamp(contact, access, DateTime.Now, persianNow, false);
+                contact.InvalidMobileAtMark = null;
+                var clearDate = DateTime.Now;
+                Stamp(contact, access, clearDate, persianNow, false);
+                var eventRow = new QualityControlContactHistory
+                {
+                    Id = Guid.NewGuid(), CustomerId = request.CustomerId,
+                    Status = QualityControlCustomerContactStatus.None,
+                    AttemptCount = 0,
+                    Description = "پایان وضعیت تماس پس از ثبت کنترل کیفیت"
+                };
+                Stamp(eventRow, access, clearDate, persianNow, true);
+                db.QualityControlContactHistories.Add(eventRow);
             }
         }
 
@@ -592,6 +616,149 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         }
         return new(200, request.SaveAll ? "نتیجه کنترل کیفیت اقلام انتخاب‌شده ثبت شد." : "وضعیت کنترل کیفیت قلم ثبت شد.",
             updated.Select(review => new QualityControlItemVersion(review.FactorItemId, review.RowVersion)).ToList());
+    }
+
+    private async Task<bool> IsHistoryCustomerVisibleAsync(Guid customerId, QualityControlAccess access,
+        CancellationToken ct)
+    {
+        return await (
+            from item in db.FactorItems.AsNoTracking()
+            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
+            join customer in db.Customers.AsNoTracking()
+                on (factor.CustomerId ?? deal.CustomerId) equals (Guid?)customer.Id
+            where customer.Id == customerId
+                && !customer.IsDeleted && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
+                && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
+                && factor.status == FactorStatus.تایید_شده && !factor.Returned
+            select item.Id
+        ).AnyAsync(ct);
+    }
+
+    private static string PersianDateTime(DateTime? value)
+    {
+        if (!value.HasValue) return "—";
+        var dt = value.Value;
+        var calendar = new System.Globalization.PersianCalendar();
+        return $"{calendar.GetYear(dt):0000}/{calendar.GetMonth(dt):00}/{calendar.GetDayOfMonth(dt):00} {dt:HH:mm}";
+    }
+
+    // Rebuild the contact snapshot from surviving events, not the other way round.
+    // This keeps list filters, retry counters and due-date summaries consistent after
+    // administrative soft deletion or restoration of an older contact attempt.
+    private async Task RebuildContactSnapshotAsync(Guid customerId, QualityControlAccess access,
+        string persianNow, CancellationToken ct)
+    {
+        var entries = await db.QualityControlContactHistories.AsNoTracking()
+            .Where(item => item.CustomerId == customerId)
+            .OrderByDescending(item => item.CreateDate).ThenByDescending(item => item.Id)
+            .ToListAsync(ct);
+        var contact = await db.QualityControlCustomerContacts.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(item => item.CustomerId == customerId, ct);
+        if (contact == null)
+        {
+            contact = new QualityControlCustomerContact { Id = Guid.NewGuid(), CustomerId = customerId };
+            Stamp(contact, access, DateTime.Now, persianNow, true);
+            db.QualityControlCustomerContacts.Add(contact);
+        }
+        else
+        {
+            contact.IsDeleted = false;
+            Stamp(contact, access, DateTime.Now, persianNow, false);
+        }
+        var latest = entries.FirstOrDefault();
+        contact.NoResponseAttempts = entries.Sum(item => item.AttemptCount);
+        contact.LastNoResponseAt = entries.FirstOrDefault(item =>
+            item.Status == QualityControlCustomerContactStatus.NoResponse && item.AttemptCount > 0)?.CreateDate;
+        contact.Status = latest?.Status ?? QualityControlCustomerContactStatus.None;
+        contact.InvalidMobileAtMark = latest?.Status == QualityControlCustomerContactStatus.InvalidNumber
+            ? latest.MobileAtAttempt : null;
+    }
+
+    public async Task<QualityControlContactHistoryPage?> GetContactHistoryAsync(
+        Guid customerId, bool includeDeleted, int start, int length,
+        QualityControlAccess access, bool canManage, CancellationToken ct)
+    {
+        if (customerId == Guid.Empty || start < 0 || length is < 1 or > 100
+            || !await IsHistoryCustomerVisibleAsync(customerId, access, ct))
+            return null;
+        var customerName = await db.Customers.AsNoTracking().Where(item => item.Id == customerId)
+            .Select(item => item.CompanyName != null && item.CompanyName != ""
+                ? item.CompanyName : item.AgentName).FirstOrDefaultAsync(ct);
+
+        var entries = db.QualityControlContactHistories.IgnoreQueryFilters().AsNoTracking()
+            .Where(item => item.CustomerId == customerId && (canManage && includeDeleted || !item.IsDeleted));
+        var count = await entries.CountAsync(ct);
+        var page = await entries.OrderByDescending(item => item.CreateDate).ThenByDescending(item => item.Id)
+            .Skip(start).Take(length).ToListAsync(ct);
+        var rows = page.Select(item => new QualityControlContactHistoryRow(
+            item.Id, item.Status, PersianDateTime(item.CreateDate),
+            item.UserCreator, item.AttemptCount, item.IsLegacy, item.MobileAtAttempt,
+            item.Description, item.IsDeleted, item.DeleteReason,
+            item.DeletedByName, item.DeletedAt.HasValue ? PersianDateTime(item.DeletedAt) : null,
+            item.RestoredByName, item.RestoredAt.HasValue ? PersianDateTime(item.RestoredAt) : null,
+            item.RowVersion)).ToArray();
+        return new QualityControlContactHistoryPage(customerId, customerName, canManage, count, rows);
+    }
+
+    public async Task<ChangeQualityControlContactHistoryResult> ChangeContactHistoryDeletionAsync(
+        ChangeQualityControlContactHistoryRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken)
+    {
+        if (request.CustomerId == Guid.Empty || request.HistoryId == Guid.Empty || request.RowVersion == null
+            || request.RowVersion.Length != 8
+            || (!request.Restore && (string.IsNullOrWhiteSpace(request.DeleteReason)
+                || request.DeleteReason.Trim().Length > 500)))
+            return new(400, "شناسه، نسخه یا دلیل حذف سابقه معتبر نیست.");
+        if (!await IsHistoryCustomerVisibleAsync(request.CustomerId, access, cancellationToken))
+            return new(404, "مشتری واجد شرایط یافت نشد.");
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var entry = await db.QualityControlContactHistories.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(item => item.Id == request.HistoryId
+                && item.CustomerId == request.CustomerId, cancellationToken);
+        if (entry == null)
+            return new(404, "سابقه تماس یافت نشد.");
+        if (entry.IsDeleted != request.Restore)
+            return new(409, "وضعیت حذف این سابقه قبلاً تغییر کرده است؛ تاریخچه را تازه کنید.");
+        if (!entry.RowVersion.SequenceEqual(request.RowVersion))
+            return new(409, "این سابقه توسط کاربر دیگری تغییر کرده است؛ تاریخچه را تازه کنید.");
+
+        var now = DateTime.Now;
+        if (request.Restore)
+        {
+            entry.IsDeleted = false;
+            entry.RestoredAt = now;
+            entry.RestoredById = access.UserId;
+            entry.RestoredByName = access.UserName;
+        }
+        else
+        {
+            entry.IsDeleted = true;
+            entry.DeletedAt = now;
+            entry.DeletedById = access.UserId;
+            entry.DeletedByName = access.UserName;
+            entry.DeleteReason = request.DeleteReason!.Trim();
+        }
+        Stamp(entry, access, now, persianNow, false);
+        try
+        {
+            db.Entry(entry).Property(item => item.RowVersion).OriginalValue = request.RowVersion;
+            await db.SaveChangesAsync(cancellationToken);
+            await RebuildContactSnapshotAsync(request.CustomerId, access, persianNow, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "اطلاعات تماس توسط کاربر دیگری تغییر کرده است. دوباره بارگذاری کنید.");
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            return new(409, "اطلاعات تماس هم‌زمان تغییر کرده است؛ تاریخچه را دوباره دریافت کنید.");
+        }
+
+        return new(200, request.Restore ? "سابقه تماس بازگردانی شد." : "سابقه تماس با حفظ اطلاعات حذف ثبت شد.");
     }
 
     private IQueryable<Deal> VisibleDeals(QualityControlAccess access) => db.Deals.AsNoTracking()
