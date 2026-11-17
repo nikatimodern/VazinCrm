@@ -189,12 +189,15 @@
 .quality-control-page .qc-customer-payments > span:first-child { display: flex; justify-content: space-between; gap: .5rem; }
 .quality-control-page .qc-customer-payments small, .quality-control-page .qc-payment-total { font-size: .8rem; }
 .quality-control-page #qcDetailsPanel, .quality-control-page .qc-details-json { width: 100%; min-width: 0; }
-.quality-control-page .qc-json-documents { grid-template-columns: 1fr 1fr 1.8fr 1fr 1fr; align-items: stretch; }
+.quality-control-page .qc-json-documents { grid-template-columns: 1fr 1fr 3.2fr 1fr 1fr; align-items: stretch; }
 .quality-control-page .qc-payments-group { border: 1px solid var(--color-primary); border-radius: 7px; background: var(--color-primary-light); color: var(--color-primary); overflow: hidden; }
 .quality-control-page .qc-payments-title { display: block; text-align: center; font-size: .85rem; padding: .3rem .5rem; }
 .quality-control-page .qc-payments-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--color-primary); }
 .quality-control-page .qc-payments-options button { border: 0; border-radius: 0; }
 .quality-control-page .qc-payments-options button + button { border-inline-start: 1px solid var(--color-primary); }
+@media (max-width: 767.98px) {
+    .quality-control-page .qc-payments-options button { min-height: 23px; font-size: 11px; padding: 1px 5px; margin-block: 0; }
+}
 @media (min-width: 992px) {
     .quality-control-page #qualityControlModal .modal-dialog { max-width: 1080px; width: calc(100% - 3rem); margin: 1rem auto; }
     .quality-control-page #qualityControlModal .modal-dialog-scrollable { height: calc(100% - 2rem); }
