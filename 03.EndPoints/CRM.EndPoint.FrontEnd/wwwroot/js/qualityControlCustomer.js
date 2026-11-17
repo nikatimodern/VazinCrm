@@ -236,8 +236,10 @@
                 + '<strong>' + escape(product) + '</strong>'
                 + (description ? '<span class="qc-client-item-spec">' + escape(description) + '</span>' : "")
                 + '<span>مقدار: ' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</span>'
-                + (item.supplierNames ? '<span>تأمین‌کننده: ' + escape(item.supplierNames) + '</span>' : "")
-                + (item.supplyExpert ? '<span>کارشناس تأمین: ' + escape(item.supplyExpert) + '</span>' : "")
+                + '<span class="qc-client-party' + (item.supplierNames?.trim() ? '' : ' qc-client-party-unset')
+                + '">تأمین‌کننده: ' + escape(item.supplierNames?.trim() || "ثبت نشده") + '</span>'
+                + '<span class="qc-client-party' + (item.supplyExpert?.trim() ? '' : ' qc-client-party-unset')
+                + '">کارشناس تأمین: ' + escape(item.supplyExpert?.trim() || "ثبت نشده") + '</span>'
                 + '</div>'
                 + '<div class="qc-client-item-controls">'
                 + '<div class="qc-client-item-actions">'
