@@ -151,8 +151,21 @@
     background: #F0F1F7;
 }
 #qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
     background: var(--qc-primary-light);
     color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-count-reviewed strong {
+    font-size: 12px;
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-count-reviewed small {
+    font-size: 10px;
+    color: var(--qc-primary);
+    white-space: nowrap;
 }
 #qualityControlCustomerPage .qc-client-stats .qc-client-count-pending {
     background: #F3EDFC;
@@ -186,6 +199,19 @@
 #qualityControlCustomerPage .qc-client-modal .modal-content {
     border: 1px solid var(--qc-border);
     border-radius: 12px;
+}
+@media (min-width: 576px) {
+    #qualityControlCustomerPage .qc-client-modal .modal-dialog {
+        height: min(84dvh, 820px);
+    }
+}
+#qualityControlCustomerPage .qc-client-modal .modal-content {
+    height: 100%;
+    max-height: 100%;
+}
+#qualityControlCustomerPage .qc-client-modal .modal-body {
+    min-height: 0;
+    overflow-y: auto;
 }
 #qualityControlCustomerPage .qc-client-modal .modal-header { background: #fff; }
 #qualityControlCustomerPage .qc-client-modal .modal-title { color: var(--qc-primary); }
