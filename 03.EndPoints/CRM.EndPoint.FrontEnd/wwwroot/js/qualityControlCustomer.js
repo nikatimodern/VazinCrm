@@ -503,30 +503,34 @@
             if (saving || !review) return;
             const setButton = event.target.closest("[data-qc-set-status]");
             if (setButton) {
-                const draft = drafts.get(setButton.dataset.qcItemId);
-                const nextStatus = Number(setButton.dataset.qcSetStatus);
-                if (draft && draft.status !== nextStatus) {
-                    draft.status = nextStatus;
-                    draft.saved = false;
-                    if (nextStatus === 1) draft.answers = {};
-                    renderReview();
+                const id = setButton.dataset.qcItemId;
+                const draft = drafts.get(id);
+                if (!draft) return;
+                const selected = Number(setButton.dataset.qcSetStatus);
+                // Clicking the selected answer again returns the item to unchecked.
+                draft.status = draft.status === selected ? 0 : selected;
+                draft.saved = false;
+                draft.failed = false;
+                draft.revision++;
+                clearNoteTimer(id);
+                if (draft.status === 1) draft.answers = {};
+                renderReview();
+                persistItem(id);
+                return;
+            }
+            const retry = event.target.closest("[data-qc-retry]");
+            if (retry && !retry.disabled) {
+                const draft = drafts.get(retry.dataset.qcRetry);
+                if (draft) {
+                    draft.failed = false;
+                    persistItem(retry.dataset.qcRetry);
                 }
                 return;
             }
             const markRest = event.target.closest("[data-qc-mark-rest]");
-            if (markRest) {
+            if (markRest && !markRest.disabled) {
                 const order = review.orders.find(order => order.id === markRest.dataset.qcMarkRest);
-                order?.invoices.flatMap(invoice => invoice.items).forEach(item => {
-                    const draft = stateOf(item);
-                    if (draft.status === 0) { draft.status = 1; draft.saved = false; }
-                });
-                renderReview();
-                return;
-            }
-            const saveButton = event.target.closest("[data-qc-save-item]");
-            if (saveButton && !saveButton.disabled) {
-                const item = flatten().find(item => item.factorItemId === saveButton.dataset.qcSaveItem);
-                if (item) saveItems([item]);
+                if (order) saveRemaining(order.invoices.flatMap(invoice => invoice.items));
             }
         });
         content.addEventListener("change", event => {
@@ -536,7 +540,11 @@
             if (!draft) return;
             draft.answers[radio.dataset.qcQuestion] = Number(radio.value);
             draft.saved = false;
+            draft.failed = false;
+            draft.revision++;
+            clearNoteTimer(radio.dataset.qcAnswer);
             updateSaveActions();
+            if (draft.status === 2) persistItem(radio.dataset.qcAnswer);
         });
         content.addEventListener("input", event => {
             const note = event.target.closest("[data-qc-note]");
@@ -545,13 +553,22 @@
             if (!draft) return;
             draft.description = note.value;
             draft.saved = false;
+            draft.failed = false;
+            draft.revision++;
+            clearNoteTimer(note.dataset.qcNote);
+            if (draft.status === 2 && isValid(flatten().find(item => item.factorItemId === note.dataset.qcNote))) {
+                noteTimers.set(note.dataset.qcNote, setTimeout(() => {
+                    noteTimers.delete(note.dataset.qcNote);
+                    persistItem(note.dataset.qcNote);
+                }, 650));
+            }
             updateSaveActions();
         });
         saveAllButton.addEventListener("click", () => {
-            if (!saveAllButton.disabled) saveItems(flatten(), true);
+            if (!saveAllButton.disabled) saveRemaining(flatten());
         });
         modal.addEventListener("hide.bs.modal", event => {
-            if (saving) { event.preventDefault(); return; }
+            if (hasUnsavedWork()) { event.preventDefault(); return; }
             formController?.abort();
             formGeneration++;
         });
@@ -563,6 +580,7 @@
             itemSearch.value = "";
             itemSearchBar.hidden = true;
             itemSearchEmpty.hidden = true;
+            formFeedback.textContent = "";
         });
         pageSignal?.addEventListener("abort", () => {
             listController?.abort();
