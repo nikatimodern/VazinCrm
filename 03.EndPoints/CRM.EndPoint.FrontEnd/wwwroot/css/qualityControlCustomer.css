@@ -47,6 +47,63 @@
     font-size: 12px;
     color: var(--qc-muted);
 }
+#qualityControlCustomerPage .qc-client-overview {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+#qualityControlCustomerPage .qc-client-overview-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    min-height: 102px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid var(--qc-border);
+    border-radius: 11px;
+}
+#qualityControlCustomerPage .qc-client-overview-title {
+    color: var(--qc-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+#qualityControlCustomerPage .qc-client-overview-value {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    color: #212529;
+}
+#qualityControlCustomerPage .qc-client-overview-value strong {
+    font-size: 23px;
+    line-height: 1.3;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+#qualityControlCustomerPage .qc-client-overview-value span {
+    font-size: 11px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-overview-breakdown {
+    display: flex;
+    gap: 3px 13px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
+#qualityControlCustomerPage .qc-client-overview-invalid .qc-client-overview-value strong { color: #851B1D; }
+#qualityControlCustomerPage .qc-client-overview-no-answer .qc-client-overview-value strong { color: #5811B4; }
+#qualityControlCustomerPage .qc-client-overview-pending .qc-client-overview-value strong { color: #5811B4; }
+#qualityControlCustomerPage .qc-client-overview-reviewed .qc-client-overview-value strong { color: var(--qc-primary); }
+@media (max-width: 1100px) {
+    #qualityControlCustomerPage .qc-client-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+    #qualityControlCustomerPage .qc-client-overview { grid-template-columns: minmax(0, 1fr); }
+    #qualityControlCustomerPage .qc-client-overview-card { min-height: auto; padding: 9px 11px; }
+}
 #qualityControlCustomerPage .qc-client-toolbar {
     background: #fff;
     border: 1px solid var(--qc-border);
@@ -210,6 +267,8 @@
 #qualityControlCustomerPage .qc-client-pending { background: #F3EDFC; color: #5811B4; }
 #qualityControlCustomerPage .qc-client-complete { background: var(--qc-primary-light); color: var(--qc-primary); }
 #qualityControlCustomerPage .qc-client-discrepancy { background: var(--qc-danger-light); color: var(--qc-danger); }
+#qualityControlCustomerPage .qc-client-no-answer { background: #F3EDFC; color: #5811B4; }
+#qualityControlCustomerPage .qc-client-invalid-phone { background: #F8E7E8; color: #851B1D; }
 #qualityControlCustomerPage .qc-client-paging {
     margin-top: 12px;
     font-size: 12px;
