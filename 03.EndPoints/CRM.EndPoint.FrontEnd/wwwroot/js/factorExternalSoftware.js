@@ -107,6 +107,8 @@ function resetFactorDestination(state, softwareId) {
     state.items = null;
     state.sepidarItems = null;
     state.stocksByItem = null;
+    state.stockCache = null;
+    state.stockPending = null;
     state.hasLoadedPreview = false;
     state.step = "mode";
 }
@@ -168,7 +170,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
                 ? "پیش‌فاکتور سپیدار شماره " + result.preview.quotationNumber + "؛ اطلاعات را بررسی کنید"
                 : "صدور مستقیم بدون پیش‌فاکتور سپیدار؛ اطلاعات را بررسی کنید",
             icon: '<i class="fas fa-clipboard-check" aria-hidden="true"></i>',
-            step: state.request.usePreFactor ? "پیش‌نمایش" : "مرحله ۵ از ۵",
+            step: state.request.usePreFactor ? "پیش‌نمایش" : "مرحله ۴ از ۴",
             content: renderExternalFactorPreview(result, state),
             large: true,
         });
@@ -527,14 +529,14 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     const isReady = state => {
         if (state.step === "saleType") return !!state.direct.saleTypeId;
         if (state.step === "customer") return !!state.direct.customerId;
-        if (state.step === "items") return state.items?.length > 0 && state.items.every(x => !!state.direct.items[x.factorItemId]?.externalItemId);
-        if (state.step === "stock") return state.items?.length > 0 && state.items.every(x => !!state.direct.items[x.factorItemId]?.externalStockId);
+        if (state.step === "items") return !state.stockPending?.size && state.items?.length > 0 &&
+            state.items.every(x => state.direct.items[x.factorItemId]?.externalItemId &&
+                state.direct.items[x.factorItemId]?.externalStockId);
         return true;
     };
     const update = state => {
-        const confirmText = state.step === "items" ? "تأیید کالاها و ادامه"
-            : state.step === "stock" ? "تأیید انبارها و ادامه"
-                : state.step === "retryDestination" ? "تلاش دوباره" : "تأیید و ادامه";
+        const confirmText = state.step === "items" ? "تأیید کالاها و انبارها و ادامه"
+            : state.step === "retryDestination" ? "تلاش دوباره" : "تأیید و ادامه";
         setButton(confirmText, state.step !== "retryDestination" && !isReady(state));
     };
     const stage = (state, stageId, title, subtitle, icon, count, content, large = false) => {
@@ -595,7 +597,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     }
     function renderSaleType(state) {
         stage(state, "saleType", "انتخاب نوع فروش", "نوع فروش فاکتور را مشخص کنید",
-            '<i class="fas fa-file-invoice"></i>', "مرحله ۱ از ۵",
+            '<i class="fas fa-file-invoice"></i>', "مرحله ۱ از ۴",
             ExternalFinancialWizard.selectField({
                 id: "factorDirectSaleType",
                 label: "نوع فروش",
@@ -628,7 +630,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     function renderCustomer(state) {
         const data = state.customerData;
         stage(state, "customer", "تطبیق مشتری", "مشتری CRM را به شخص متناظر در نرم‌افزار مالی متصل کنید",
-            '<i class="fas fa-users"></i>', "مرحله ۲ از ۵",
+            '<i class="fas fa-users"></i>', "مرحله ۲ از ۴",
             ExternalFinancialWizard.crmCustomer(data.crmCustomerTitle || "—") +
             ExternalFinancialWizard.selectField({
                 id: "factorDirectCustomer",
@@ -786,11 +788,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                     if (saved?.saved) await loadItems(state);
                     break;
                 case "items":
-                    if (!isReady(state)) return toastifyError("برای تمام ردیف‌های فاکتور کالا انتخاب کنید.");
-                    await loadStock(state);
-                    break;
-                case "stock":
-                    if (!isReady(state)) return toastifyError("برای تمام ردیف‌های فاکتور انبار انتخاب کنید.");
+                    if (!isReady(state)) return toastifyError("برای تمام ردیف‌های فاکتور کالا و انبار را انتخاب کنید.");
                     await preview(state);
                     break;
             }
@@ -808,13 +806,12 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             case "saleType": showMode(state); break;
             case "customer": renderSaleType(state); break;
             case "items": renderCustomer(state); break;
-            case "stock": renderItems(state); break;
             case "preview":
                 state.request.includeBroker = false;
                 state.request.previewBrokerPartyId = null;
                 state.hasLoadedPreview = false;
                 if (state.request.usePreFactor) showMode(state);
-                else renderStock(state);
+                else renderItems(state);
                 break;
         }
     }
