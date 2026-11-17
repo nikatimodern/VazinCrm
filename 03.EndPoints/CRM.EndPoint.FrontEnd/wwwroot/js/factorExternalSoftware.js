@@ -81,12 +81,17 @@ document.addEventListener("click", async event => {
 let externalFactorExportState = null;
 let factorFinancialWizard = null;
 function getFactorFinancialWizard() {
-    return factorFinancialWizard ??= new ExternalFinancialWizard({
-        modal: "sendFactorToExternalSoftwareModal",
-        container: "externalFactorPreviewContent",
-        back: "backExternalFactorStepBtn",
-        confirm: "confirmSendExternalFactorBtn",
-    });
+    if (!factorFinancialWizard?.modal.isConnected) {
+        factorFinancialWizard = new ExternalFinancialWizard({
+            modal: "sendFactorToExternalSoftwareModal",
+            container: "externalFactorPreviewContent",
+            back: "backExternalFactorStepBtn",
+            confirm: "confirmSendExternalFactorBtn",
+        });
+        // Keep long invoice previews scrollable, as they were in the original invoice modal.
+        factorFinancialWizard.modal.querySelector(".modal-dialog")?.classList.add("modal-dialog-scrollable");
+    }
+    return factorFinancialWizard;
 }
 
 /** Start a single destination without losing the user's remaining selected software IDs. */
