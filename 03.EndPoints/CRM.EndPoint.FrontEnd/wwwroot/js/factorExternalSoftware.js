@@ -112,6 +112,7 @@ function resetFactorDestination(state, softwareId) {
     state.stockPending = null;
     state.hasLoadedPreview = false;
     state.step = "mode";
+    state.sourceChoice = null;
 }
 
 async function continueFactorDestinations(state) {
@@ -560,13 +561,16 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     });
 
     function showMode(state) {
-        state.sourceChoice = state.hasQuotation ? "quotation" : "direct";
+        if (!["quotation", "direct"].includes(state.sourceChoice) ||
+            (state.sourceChoice === "quotation" && !state.hasQuotation)) {
+            state.sourceChoice = state.hasQuotation ? "quotation" : "direct";
+        }
         stage(state, "mode", "روش صدور فاکتور", "روش ثبت فاکتور در نرم‌افزار مالی را انتخاب کنید",
             '<i class="fas fa-file-invoice"></i>', "انتخاب روش", `
             <div class="factor-export-source-options">
                 <label class="factor-export-source">
                     <input type="radio" name="factorExportSource" value="quotation"
-                           ${state.hasQuotation ? "checked" : "disabled"}>
+                           ${!state.hasQuotation ? "disabled" : state.sourceChoice === "quotation" ? "checked" : ""}>
                     <span>
                         <strong>صدور از پیش‌فاکتور نرم‌افزار مالی</strong>
                         <small>${state.hasQuotation
@@ -576,7 +580,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
                 </label>
                 <label class="factor-export-source">
                     <input type="radio" name="factorExportSource" value="direct"
-                           ${state.hasQuotation ? "" : "checked"}>
+                           ${state.sourceChoice === "direct" ? "checked" : ""}>
                     <span>
                         <strong>صدور مستقیم فاکتور</strong>
                         <small>ثبت فاکتور در نرم‌افزار مالی بدون وابستگی به پیش‌فاکتور آن</small>
