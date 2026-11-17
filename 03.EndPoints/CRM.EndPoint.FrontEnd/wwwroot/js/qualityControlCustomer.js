@@ -268,9 +268,8 @@
                 + '</div>'
                 + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
                 + (draft.saved ? ' · ثبت‌شده' : "") + '</span>'
-                + '<button type="button" class="qc-client-button qc-client-outline" data-qc-save-item="' + escape(item.factorItemId) + '"'
-                + (draft.saved || !isValid(item) ? " disabled" : "") + '>'
-                + (draft.saved ? "ثبت‌شده" : "ثبت این قلم") + '</button>'
+                + '<button type="button" class="qc-client-button qc-client-retry" data-qc-retry="' + escape(item.factorItemId)
+                + '"' + (draft.failed ? "" : " hidden") + '>تلاش مجدد</button>'
                 + '</div></div>'
                 + (isProblem ? questionMarkup(item, draft) : "")
                 + '</article>';
@@ -280,7 +279,7 @@
             if (!review) return;
             const scrollPosition = scroll.scrollTop;
             const items = flatten();
-            const reviewed = items.filter(item => stateOf(item).saved).length;
+            const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
             const pending = items.filter(item => stateOf(item).status === 0).length;
             const issues = items.filter(item => stateOf(item).status === 2).length;
             summary.innerHTML = '<div><strong>' + faNumber.format(reviewed) + ' از '
