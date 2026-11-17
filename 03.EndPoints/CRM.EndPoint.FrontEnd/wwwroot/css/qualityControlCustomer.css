@@ -139,6 +139,45 @@
     color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
+#qualityControlCustomerPage .qc-client-followup-stats {
+    gap: 2px 10px;
+    align-content: start;
+}
+#qualityControlCustomerPage .qc-client-overview-progress {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-progress-caption {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    column-gap: 9px;
+    row-gap: 2px;
+    color: var(--qc-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+#qualityControlCustomerPage .qc-client-progress-caption strong { font-weight: 700; }
+#qualityControlCustomerPage .qc-client-progress-track {
+    width: 100%;
+    height: 5px;
+    background: var(--qc-border);
+    border-radius: 999px;
+    overflow: hidden;
+    direction: ltr;
+}
+#qualityControlCustomerPage .qc-client-progress-fill {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: var(--qc-action);
+    border-radius: inherit;
+    transition: width .18s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+    #qualityControlCustomerPage .qc-client-progress-fill { transition: none; }
+}
 #qualityControlCustomerPage .qc-client-overview-action {
     flex: 0 0 auto;
     border: 1px solid var(--qc-action);
