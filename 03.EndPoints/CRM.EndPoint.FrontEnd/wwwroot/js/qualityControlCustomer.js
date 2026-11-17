@@ -59,6 +59,19 @@
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let listController = null, formController = null, formGeneration = 0;
+        let midnightRefreshTimer = null;
+
+        function scheduleNextDayRefresh() {
+            clearTimeout(midnightRefreshTimer);
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0);
+            midnightRefreshTimer = setTimeout(() => {
+                if (!isActive()) return;
+                loadCustomers(true);
+                scheduleNextDayRefresh();
+            }, Math.max(1000, midnight.getTime() - now.getTime() + 1500));
+        }
         let review = null;
         const drafts = new Map();
         const savingItems = new Set();
@@ -682,9 +695,12 @@
             formFeedback.textContent = "";
         });
         pageSignal?.addEventListener("abort", () => {
+            clearTimeout(midnightRefreshTimer);
             listController?.abort();
             formController?.abort();
         }, { once: true });
+        window.addEventListener("pagehide", () => clearTimeout(midnightRefreshTimer), { once: true });
+        scheduleNextDayRefresh();
         loadCustomers();
     });
 })();
