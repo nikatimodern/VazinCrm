@@ -123,11 +123,28 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             4 => customers.Where(row => db.QualityControlCustomerContacts.Any(contact =>
                 contact.CustomerId == row.CustomerId
                 && contact.Status == QualityControlCustomerContactStatus.InvalidNumber)),
+            5 => customers.Where(row => row.ReviewedItems > 0),
             _ => customers
         };
         var filtered = await customers.CountAsync(cancellationToken);
-        var page = await customers.OrderByDescending(row => row.TotalItems - row.ReviewedItems)
-            .ThenBy(row => row.CustomerName).ThenBy(row => row.CustomerId)
+        // Ordering is performed in SQL before paging; all modes use CustomerId as
+        // a deterministic tie-breaker to avoid duplicates or skipped rows.
+        var sorted = request.Sort switch
+        {
+            "discrepancy" => customers.OrderByDescending(row => row.DiscrepancyItems)
+                .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
+            "reviewed" => customers.OrderByDescending(row => row.ReviewedItems)
+                .ThenByDescending(row => row.DiscrepancyItems),
+            "invoices" => customers.OrderByDescending(row => row.Invoices)
+                .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
+            "orders" => customers.OrderByDescending(row => row.Orders)
+                .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
+            "name" => customers.OrderBy(row => row.CustomerName),
+            "code" => customers.OrderBy(row => row.CustomerCode),
+            _ => customers.OrderByDescending(row => row.TotalItems - row.ReviewedItems)
+                .ThenByDescending(row => row.DiscrepancyItems)
+        };
+        var page = await sorted.ThenBy(row => row.CustomerId)
             .Skip(request.Start).Take(request.Length)
             .ToListAsync(cancellationToken);
 
