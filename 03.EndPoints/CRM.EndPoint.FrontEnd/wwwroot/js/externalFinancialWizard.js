@@ -76,7 +76,10 @@ class ExternalFinancialWizard {
             hint.textContent = itemId
                 ? "در حال دریافت انبارهای مرتبط…"
                 : "ابتدا کالای معادل را انتخاب کنید.";
-            if (!itemId) return;
+            if (!itemId) {
+                onLoading(false);
+                return;
+            }
 
             onLoading(true);
             const key = String(itemId);
@@ -86,6 +89,7 @@ class ExternalFinancialWizard {
                     url: "/Factor/PrepareExternalStockMapping",
                     method: "POST",
                     successMsg: null,
+                    showLoading: false,
                     data: { externalSoftwareId: softwareId, itemIds: [Number(itemId)] },
                 }).then(result => {
                     if (!Array.isArray(result?.stocksByItem)) return null;
