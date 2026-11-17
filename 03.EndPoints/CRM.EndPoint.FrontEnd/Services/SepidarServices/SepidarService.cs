@@ -1843,8 +1843,8 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         CancellationToken ct = default)
     {
         var quotation = preview.QuotationId > 0
-            ? await GetQuotationAsync(preview.QuotationId, ct)
-                ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.")
+            ? (await GetQuotationAsync(preview.QuotationId, ct)
+                ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد."))
             : null;
 
         var customerId = quotation?.CustomerPartyRef ?? preview.CustomerPartyRef;
@@ -1899,9 +1899,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
 
         var quotation = preview.QuotationId > 0
-            ? await sepidarContext.Quotations.AsNoTracking()
+            ? (await sepidarContext.Quotations.AsNoTracking()
                 .SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
-                    ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.")
+                    ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد."))
             : null;
         if (quotation != null && quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
