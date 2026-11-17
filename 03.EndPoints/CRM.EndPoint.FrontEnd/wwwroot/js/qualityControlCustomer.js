@@ -187,7 +187,7 @@
                     const label = contactStatus === 2 ? "شماره نامعتبر"
                         : contactStatus === 1 ? "عدم پاسخ"
                             : complete ? "تکمیل‌شده" : "نیازمند بررسی";
-                    return '<article role="listitem" class="qc-client-card">'
+                    return '<article role="listitem" class="qc-client-card" data-qc-has-reviewed="' + hasReviewed + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small></div>'
                         + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
@@ -584,7 +584,10 @@
                 } finally {
                     contactBusy = false;
                     if (isActive()) queue.querySelectorAll("[data-qc-contact]")
-                        .forEach(button => button.disabled = false);
+                        .forEach(button => {
+                            button.disabled = button.closest("[data-qc-has-reviewed]")
+                                ?.dataset.qcHasReviewed === "true";
+                        });
                 }
                 return;
             }
