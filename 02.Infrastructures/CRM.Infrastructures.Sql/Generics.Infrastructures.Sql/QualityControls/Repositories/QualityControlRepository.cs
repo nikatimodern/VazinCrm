@@ -432,6 +432,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId).HasValue
+                && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
             select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id, DealId = deal.Id, FactorId = factor.Id };
@@ -450,6 +451,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var customers =
             from groupedItem in grouped
             join customer in db.Customers.AsNoTracking() on groupedItem.CustomerId equals customer.Id
+            where !customer.IsDeleted
             select new
             {
                 groupedItem.CustomerId, groupedItem.Orders, groupedItem.Invoices,
@@ -486,7 +488,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     public async Task<QualityControlCustomerForm?> GetCustomerFormAsync(
         Guid customerId, QualityControlAccess access, CancellationToken cancellationToken)
     {
-        var customer = await db.Customers.AsNoTracking().Where(item => item.Id == customerId)
+        var customer = await db.Customers.AsNoTracking().Where(item => item.Id == customerId && !item.IsDeleted)
             .Select(item => new { item.Id, item.CompanyName, item.CustomerCode, item.Mobile })
             .FirstOrDefaultAsync(cancellationToken);
         if (customer == null)
@@ -497,6 +499,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == customerId
+                && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
             orderby deal.SerialNumber descending, factor.SerialNumber descending, item.Row
@@ -583,6 +586,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == request.CustomerId
+                && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
             select item.Id
