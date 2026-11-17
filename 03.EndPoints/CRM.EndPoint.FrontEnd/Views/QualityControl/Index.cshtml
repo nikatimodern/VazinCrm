@@ -64,6 +64,18 @@
                         @Html.AntiForgeryToken()
                         <div id="qcCustomerFormFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
                         <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
+                        <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
+                            <label for="qcInvoiceItemSearch">جستجو در اقلام فاکتورها</label>
+                            <input id="qcInvoiceItemSearch" type="search" class="form-control"
+                                   placeholder="نام یا مشخصات کالا، مقدار یا تأمین‌کننده..." autocomplete="off" />
+                            <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
+                                پاک کردن
+                            </button>
+                            <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                        </div>
+                        <div id="qcInvoiceItemSearchEmpty" class="qc-client-search-empty" role="status" hidden>
+                            قلمی مطابق جستجو پیدا نشد.
+                        </div>
                         <div id="qcCustomerReviewContent" class="qc-client-review-content"></div>
                     </form>
                 </div>
