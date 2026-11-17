@@ -615,15 +615,18 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         renderSaleType(state);
     }
     function renderSaleType(state) {
-        const options = state.saleTypes.map(x =>
-            `<option value="${html(x.saleTypeId)}" ${String(x.saleTypeId) === String(state.direct.saleTypeId) ? "selected" : ""}>
-                ${html(x.number ? x.number + " - " + x.title : x.title)}</option>`).join("");
         stage(state, "saleType", "انتخاب نوع فروش", "نوع فروش فاکتور را مشخص کنید",
             '<i class="fas fa-file-invoice"></i>', "مرحله ۱ از ۵",
-            `<label for="factorDirectSaleType" class="form-label">نوع فروش</label>
-            <select id="factorDirectSaleType" class="show-dropdown-arrow">
-                <option value="">انتخاب کنید</option>${options}
-            </select>`);
+            ExternalFinancialWizard.selectField({
+                id: "factorDirectSaleType",
+                label: "نوع فروش",
+                placeholder: "انتخاب کنید",
+                selected: state.direct.saleTypeId,
+                options: state.saleTypes.map(x => ({
+                    value: x.saleTypeId,
+                    label: x.number ? x.number + " - " + x.title : x.title,
+                })),
+            }));
         const control = body().querySelector("#factorDirectSaleType");
         new TomSelect(control, {
             placeholder: "جستجو و انتخاب نوع فروش",
@@ -645,20 +648,19 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     }
     function renderCustomer(state) {
         const data = state.customerData;
-        const options = (data.customers || []).map(x => `
-            <option value="${html(x.id)}" ${String(x.id) === String(state.direct.customerId) ? "selected" : ""}>
-                ${html(x.dlCode ? x.dlCode + " - " + x.fullName : x.fullName)}
-            </option>`).join("");
         stage(state, "customer", "تطبیق مشتری", "مشتری CRM را به شخص متناظر در نرم‌افزار مالی متصل کنید",
             '<i class="fas fa-users"></i>', "مرحله ۲ از ۵",
-            `<div class="external-mapping-entity mb-2">
-                <span class="external-mapping-label">مشتری در CRM</span>
-                <strong class="external-mapping-entity-name">${html(data.crmCustomerTitle || "—")}</strong>
-            </div>
-            <label for="factorDirectCustomer" class="form-label">مشتری معادل در نرم‌افزار مالی</label>
-            <select id="factorDirectCustomer" class="show-dropdown-arrow">
-                <option value="">جستجو و انتخاب مشتری</option>${options}
-            </select>`);
+            ExternalFinancialWizard.crmCustomer(data.crmCustomerTitle || "—") +
+            ExternalFinancialWizard.selectField({
+                id: "factorDirectCustomer",
+                label: "مشتری معادل در نرم‌افزار مالی",
+                placeholder: "جستجو و انتخاب مشتری",
+                selected: state.direct.customerId,
+                options: (data.customers || []).map(x => ({
+                    value: x.id,
+                    label: [x.dlCode, x.fullName].filter(Boolean).join(" - "),
+                })),
+            }));
         new TomSelect(body().querySelector("#factorDirectCustomer"), {
             placeholder: "جستجو و انتخاب مشتری",
             onChange: value => { state.direct.customerId = value; update(state); },
