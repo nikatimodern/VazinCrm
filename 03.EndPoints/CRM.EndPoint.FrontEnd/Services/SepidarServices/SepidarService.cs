@@ -1918,7 +1918,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
         var invoiceDate = factor.DateMiladi.Value;
         var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
+            .SingleOrDefaultAsync(x => x.FiscalYearId == preview.FiscalYearRef, ct);
         if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date || invoiceDate.Date > fiscalYear.EndDate.Date)
             throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی مقصد است.");
 
