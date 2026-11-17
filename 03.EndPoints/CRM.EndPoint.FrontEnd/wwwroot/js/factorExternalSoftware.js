@@ -485,14 +485,14 @@ document.addEventListener("click", async event => {
         if (!result?.invoiceId) return;
         
         state.completedCount++;
+        // Keep the underlying history current even if the remaining destinations are cancelled.
+        if (externalFactorHistory.factorId === state.request.factorId) {
+            await loadFactorExternalSoftwares(state.request.factorId);
+        }
         // A successful financial write must not be repeated when another destination is pending.
         if (await continueFactorDestinations(state)) return;
 
         state.finished = true;
-        // The underlying history remains open, so refresh it without reopening the modal.
-        if (externalFactorHistory.factorId === state.request.factorId) {
-            await loadFactorExternalSoftwares(state.request.factorId);
-        }
         ModalToggle("sendFactorToExternalSoftwareModal", "hide");
         if (typeof refreshFactorPartial === "function") await refreshFactorPartial();
     } finally {
