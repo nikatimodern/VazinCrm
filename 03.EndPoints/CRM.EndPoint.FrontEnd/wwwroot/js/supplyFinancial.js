@@ -15,7 +15,9 @@ async function openSupplyFinancial(sourceId) {
     const chooser = document.getElementById("chooseExternalSoftwareModal");
     const lifecycle = new AbortController();
     const { signal } = lifecycle;
-    const selects = [];
+    const wizardUi = new ExternalFinancialWizard({
+        modal: wizard, container: stageContainer, back, confirm,
+    });
     let version = 0, fieldId = 0, busy = false, choosing = false, closing = false;
     let destinations = [], position = 0;
     let onBack, onConfirm, canConfirm;
@@ -41,24 +43,22 @@ async function openSupplyFinancial(sourceId) {
             make("span", value ?? "—", "external-mapping-entity-name fbold"));
         return entity;
     };
-    const clearSelects = () => selects.splice(0).forEach(select => select.destroy());
-    const updateButtons = () => {
-        back.disabled = busy || !onBack;
-        confirm.disabled = busy || !onConfirm || !canConfirm();
-    };
+    const clearSelects = () => wizardUi.clearSelects();
+    const updateButtons = () => wizardUi.setActions({
+        backDisabled: busy || !onBack,
+        confirmDisabled: busy || !onConfirm || !canConfirm(),
+    });
     const stage = ({ software, title, subtitle, icon, step, content, large, backAction, confirmAction,
         confirmText = "تأیید و ادامه", backText = "برگشت", enabled = () => true }) => {
-        clearSelects();
         disposeDateTimePickers(stageContainer);
-        renderExternalFinancialStage(wizard, stageContainer, {
+        wizardUi.render({
             destination: software.title, position: "نرم‌افزار " + (position + 1) + " از " + destinations.length,
             title, subtitle, icon: `<i class="fas ${icon}" aria-hidden="true"></i>`, step, content, large,
         });
         onBack = backAction;
         onConfirm = confirmAction;
         canConfirm = enabled;
-        confirm.textContent = confirmText;
-        back.querySelector("[data-external-mapping-back-label]").textContent = backText;
+        wizardUi.setActions({ confirmText, backText, backHidden: false });
         updateButtons();
     };
     const field = (parent, text, control) => {
@@ -87,7 +87,7 @@ async function openSupplyFinancial(sourceId) {
         return control;
     };
     const setupSelect = (control, placeholder, options = {}) => {
-        selects.push(new TomSelect(control, { placeholder, onChange: updateButtons, ...options }));
+        new TomSelect(control, { placeholder, onChange: updateButtons, ...options });
     };
     const normalizeOptionSearch = value => normalizePersianText(value)
         .replace(/[۰-۹٠-٩]/g, digit => String(digit.charCodeAt(0) & 15))
@@ -511,7 +511,7 @@ async function openSupplyFinancial(sourceId) {
     }, { signal });
     historyModal.addEventListener("hidden.bs.modal", () => {
         lifecycle.abort();
-        clearSelects();
+        wizardUi.destroy();
         send.onclick = null;
         historyModal.dataset.active = "";
     }, { once: true });
