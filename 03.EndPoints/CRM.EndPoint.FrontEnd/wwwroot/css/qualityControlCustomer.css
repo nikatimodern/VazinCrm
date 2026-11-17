@@ -262,6 +262,14 @@
     gap: 5px;
 }
 #qualityControlCustomerPage .qc-client-profile strong { font-size: 14px; }
+#qualityControlCustomerPage .qc-client-profile .qc-client-retry-count {
+    color: #5811B4;
+    font-size: 11px;
+}
+#qualityControlCustomerPage .qc-client-profile .qc-client-retry-count strong {
+    font-size: inherit;
+    font-weight: 700;
+}
 #qualityControlCustomerPage .qc-client-profile small,
 #qualityControlCustomerPage .qc-client-item small,
 #qualityControlCustomerPage .qc-client-order small,
