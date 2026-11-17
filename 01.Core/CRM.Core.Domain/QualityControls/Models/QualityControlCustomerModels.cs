@@ -13,9 +13,26 @@ public sealed class QualityControlCustomerListRequest
     public int? Status { get; set; } = 0;
 }
 
+public enum QualityControlCustomerContactStatus : byte
+{
+    None = 0,
+    NoResponse = 1,
+    InvalidNumber = 2
+}
+
 public sealed record QualityControlCustomerRow(
     Guid CustomerId, string? CustomerName, int CustomerCode, string? Mobile,
-    int Orders, int Invoices, int TotalItems, int ReviewedItems, int DiscrepancyItems);
+    int Orders, int Invoices, int TotalItems, int ReviewedItems, int DiscrepancyItems,
+    QualityControlCustomerContactStatus ContactStatus);
+
+public sealed class SetQualityControlCustomerContactRequest
+{
+    public Guid CustomerId { get; set; }
+    public QualityControlCustomerContactStatus Status { get; set; }
+}
+
+public sealed record SetQualityControlCustomerContactResult(
+    int StatusCode, string Message, QualityControlCustomerContactStatus Status);
 
 public sealed record QualityControlCustomerListResult(
     int Total, int Filtered, IReadOnlyList<QualityControlCustomerRow> Data);
