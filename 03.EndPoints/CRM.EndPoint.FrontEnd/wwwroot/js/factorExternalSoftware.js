@@ -457,3 +457,303 @@ document.addEventListener("hidden.bs.modal", event => {
         externalFactorExportState = null;
     }
 });
+
+const factorDirectWizard = (function buildFactorDirectWizard() {
+    const modal = () => document.getElementById("sendFactorToExternalSoftwareModal");
+    const body = () => document.getElementById("externalFactorPreviewContent");
+    const button = () => document.getElementById("confirmSendExternalFactorBtn");
+    const backButton = () => document.getElementById("backExternalFactorStepBtn");
+    const html = value => escapeHtml(String(value ?? ""));
+    const get = (state) => state === externalFactorExportState;
+    const destroy = () => body()?.querySelectorAll("select").forEach(x => x.tomselect?.destroy());
+    const setButton = (text, disabled = false) => {
+        button().textContent = text;
+        toggleElementsDisabled(button(), disabled);
+    };
+    const isReady = state => {
+        if (state.step === "saleType") return !!state.direct.saleTypeId;
+        if (state.step === "customer") return !!state.direct.customerId;
+        if (state.step === "items") return state.items?.length > 0 && state.items.every(x => !!state.direct.items[x.factorItemId]?.externalItemId);
+        if (state.step === "stock") return state.items?.length > 0 && state.items.every(x => !!state.direct.items[x.factorItemId]?.externalStockId);
+        return true;
+    };
+    const update = state => setButton("تأیید و ادامه", !isReady(state));
+    const stage = (state, stageId, title, subtitle, icon, count, content, large = false) => {
+        if (!get(state)) return;
+        destroy();
+        state.step = stageId;
+        document.getElementById("externalFactorFinalNotice").hidden = true;
+        backButton().hidden = stageId === "mode";
+        renderExternalFinancialStage(modal(), body(), {
+            destination: state.softwareTitle, position: "نرم‌افزار ۱ از ۱",
+            title, subtitle, icon, step: count, content, large,
+        });
+        update(state);
+    };
+    const query = async (action, data) => sendApiRequest({
+        url: "/Factor/" + action, method: "POST", data, successMsg: null,
+    });
+
+    function showMode(state) {
+        state.sourceChoice = state.hasQuotation ? "quotation" : "direct";
+        stage(state, "mode", "روش صدور فاکتور", "روش ثبت فاکتور در نرم‌افزار مالی را انتخاب کنید",
+            '<i class="fas fa-file-invoice"></i>', "انتخاب روش", `
+            <div class="factor-export-source-options">
+                <label class="factor-export-source">
+                    <input type="radio" name="factorExportSource" value="quotation"
+                           ${state.hasQuotation ? "checked" : "disabled"}>
+                    <span>
+                        <strong>صدور از روی پیش‌فاکتور</strong>
+                        <small>${state.hasQuotation
+                            ? "استفاده از پیش‌فاکتور منتقل‌شده و همان اطلاعات کالا و انبار"
+                            : "پیش‌فاکتور این فاکتور در نرم‌افزار مالی ثبت نشده است"}</small>
+                    </span>
+                </label>
+                <label class="factor-export-source">
+                    <input type="radio" name="factorExportSource" value="direct"
+                           ${state.hasQuotation ? "" : "checked"}>
+                    <span>
+                        <strong>صدور مستقل از پیش‌فاکتور</strong>
+                        <small>انتخاب نوع فروش، مشتری، کالا و انبار پیش از بررسی نهایی</small>
+                    </span>
+                </label>
+            </div>`);
+        body().querySelectorAll('input[name="factorExportSource"]').forEach(input => {
+            input.addEventListener("change", () => { if (input.checked) state.sourceChoice = input.value; });
+        });
+    }
+
+    async function loadSaleType(state) {
+        if (!state.saleTypes) {
+            const data = await query("PrepareExternalSaleType", {
+                externalSoftwareIds: [state.request.externalSoftwareId],
+            });
+            if (!data || !get(state)) return;
+            state.saleTypes = data.saleTypes || [];
+        }
+        renderSaleType(state);
+    }
+    function renderSaleType(state) {
+        const options = state.saleTypes.map(x =>
+            `<option value="${html(x.saleTypeId)}" ${String(x.saleTypeId) === String(state.direct.saleTypeId) ? "selected" : ""}>
+                ${html(x.number ? x.number + " - " + x.title : x.title)}</option>`).join("");
+        stage(state, "saleType", "انتخاب نوع فروش", "نوع فروش فاکتور را مشخص کنید",
+            '<i class="fas fa-file-invoice"></i>', "مرحله ۱ از ۵",
+            `<label for="factorDirectSaleType" class="form-label">نوع فروش</label>
+            <select id="factorDirectSaleType" class="show-dropdown-arrow">
+                <option value="">انتخاب کنید</option>${options}
+            </select>`);
+        const control = body().querySelector("#factorDirectSaleType");
+        new TomSelect(control, {
+            placeholder: "جستجو و انتخاب نوع فروش",
+            onChange: value => { state.direct.saleTypeId = value; update(state); },
+        });
+        update(state);
+    }
+
+    async function loadCustomer(state) {
+        if (!state.customerData) {
+            const data = await query("PrepareExternalFactorCustomer", state.request);
+            if (!data || !get(state)) return;
+            state.customerData = data;
+            const mapped = data.mappedExternalCustomerId;
+            if (!state.direct.customerId && mapped && data.customers?.some(x => String(x.id) === String(mapped)))
+                state.direct.customerId = String(mapped);
+        }
+        renderCustomer(state);
+    }
+    function renderCustomer(state) {
+        const data = state.customerData;
+        const options = (data.customers || []).map(x => `
+            <option value="${html(x.id)}" ${String(x.id) === String(state.direct.customerId) ? "selected" : ""}>
+                ${html(x.dlCode ? x.dlCode + " - " + x.fullName : x.fullName)}
+            </option>`).join("");
+        stage(state, "customer", "تطبیق مشتری", "مشتری CRM را به شخص متناظر در نرم‌افزار مالی متصل کنید",
+            '<i class="fas fa-users"></i>', "مرحله ۲ از ۵",
+            `<div class="external-mapping-entity mb-2">
+                <span class="external-mapping-label">مشتری در CRM</span>
+                <strong class="external-mapping-entity-name">${html(data.crmCustomerTitle || "—")}</strong>
+            </div>
+            <label for="factorDirectCustomer" class="form-label">مشتری معادل در نرم‌افزار مالی</label>
+            <select id="factorDirectCustomer" class="show-dropdown-arrow">
+                <option value="">جستجو و انتخاب مشتری</option>${options}
+            </select>`);
+        new TomSelect(body().querySelector("#factorDirectCustomer"), {
+            placeholder: "جستجو و انتخاب مشتری",
+            onChange: value => { state.direct.customerId = value; update(state); },
+        });
+        update(state);
+    }
+
+    async function loadItems(state, refresh = false) {
+        if (refresh || !state.items || !state.sepidarItems) {
+            const data = await query("PrepareExternalFactorItems", state.request);
+            if (!data?.items?.length || !get(state)) return;
+            state.items = data.items;
+            state.sepidarItems = data.sepidarItems || [];
+        }
+        renderItems(state);
+    }
+    function renderItems(state) {
+        const {content, add, list} = createExternalItemMatching();
+        add.addEventListener("click", () => openSepidarItemCreation({
+            softwareId: state.request.externalSoftwareId,
+            softwareTitle: state.softwareTitle,
+            afterCreate: () => loadItems(state, true),
+            canOpen: () => get(state) && state.step === "items" && isModalOpen(modal()),
+        }));
+        for (const item of state.items) {
+            const target = appendExternalItemMatchRow(list, item.productTitle, item.weightCount, item.unitTxt);
+            const select = document.createElement("select");
+            select.id = "factorDirectItem_" + item.factorItemId;
+            select.dataset.itemId = item.factorItemId;
+            select.className = "factor-direct-item-select show-dropdown-arrow";
+            select.append(new Option("انتخاب کنید", ""));
+            const selected = state.direct.items[item.factorItemId]?.externalItemId;
+            for (const entry of state.sepidarItems)
+                select.add(new Option(entry.code + " - " + entry.title, entry.id,
+                    false, String(entry.id) === String(selected ?? "")));
+            const label = document.createElement("label");
+            label.htmlFor = select.id;
+            label.className = "form-label";
+            label.textContent = "کالای معادل در نرم‌افزار مالی";
+            target.append(label, select);
+        }
+        stage(state, "items", "تطبیق کالاها", "کالای معادل هر ردیف فاکتور را انتخاب کنید",
+            '<i class="fas fa-boxes"></i>', "مرحله ۳ از ۵", content, true);
+        body().querySelectorAll(".factor-direct-item-select").forEach(select => {
+            new TomSelect(select, {
+                placeholder: "جستجو و انتخاب کالا",
+                onChange: value => {
+                    const id = select.dataset.itemId;
+                    const old = state.direct.items[id] || {};
+                    state.direct.items[id] = {externalItemId: value, externalStockId:
+                        String(old.externalItemId) === String(value) ? old.externalStockId : ""};
+                    update(state);
+                },
+            });
+        });
+        update(state);
+    }
+
+    async function loadStock(state) {
+        const itemIds = state.items.map(x => Number(state.direct.items[x.factorItemId]?.externalItemId));
+        const data = await query("PrepareExternalStockMapping", {
+            externalSoftwareId: state.request.externalSoftwareId,
+            itemIds,
+        });
+        if (!data || !get(state)) return;
+        state.stocksByItem = data.stocksByItem || [];
+        renderStock(state);
+    }
+    function renderStock(state) {
+        const rows = state.items.map(item => {
+            const mapped = state.direct.items[item.factorItemId] || {};
+            const product = state.sepidarItems.find(x => String(x.id) === String(mapped.externalItemId));
+            const stocks = state.stocksByItem.find(x => String(x.itemRef) === String(mapped.externalItemId))?.stocks || [];
+            return `<div class="external-mapping-entity external-item-mapping-row">
+                <div><span class="external-mapping-label">محصول CRM: </span>
+                    <strong>${html(item.productTitle)}</strong></div>
+                <div><span class="external-mapping-label">کالای سپیدار: </span>
+                    <strong>${html(product ? product.code + " - " + product.title : "—")}</strong></div>
+                <label for="factorDirectStock_${html(item.factorItemId)}" class="form-label mt-2">انبار</label>
+                <select id="factorDirectStock_${html(item.factorItemId)}"
+                        data-item-id="${html(item.factorItemId)}" class="factor-direct-stock-select show-dropdown-arrow">
+                    <option value="">انتخاب انبار</option>
+                    ${stocks.map(x => `<option value="${html(x.id)}"
+                        ${String(x.id) === String(mapped.externalStockId ?? "") ? "selected" : ""}>
+                        ${html(x.code + " - " + x.title)}</option>`).join("")}
+                </select>
+            </div>`;
+        }).join("");
+        stage(state, "stock", "انتخاب انبار کالاها", "برای هر ردیف فاکتور انبار را مشخص کنید",
+            '<i class="fas fa-warehouse"></i>', "مرحله ۴ از ۵",
+            `<div class="external-item-mapping-list">${rows}</div>`, true);
+        body().querySelectorAll(".factor-direct-stock-select").forEach(select => {
+            new TomSelect(select, {
+                placeholder: "جستجو و انتخاب انبار",
+                onChange: value => {
+                    const item = state.direct.items[select.dataset.itemId];
+                    if (item) item.externalStockId = value;
+                    update(state);
+                },
+            });
+        });
+        update(state);
+    }
+
+    async function preview(state) {
+        state.request.usePreFactor = false;
+        state.request.saleTypeId = Number(state.direct.saleTypeId);
+        state.request.externalCustomerId = Number(state.direct.customerId);
+        state.request.itemMappings = state.items.map(x => ({
+            factorItemId: x.factorItemId,
+            externalItemId: Number(state.direct.items[x.factorItemId].externalItemId),
+            externalStockId: Number(state.direct.items[x.factorItemId].externalStockId),
+        }));
+        const success = await loadExternalFactorPreview(state, false);
+        if (success) backButton().hidden = false;
+    }
+
+    async function confirm(state) {
+        if (!get(state) || state.processing || state.busy) return;
+        state.busy = true;
+        toggleElementsDisabled(button(), true);
+        try {
+            switch (state.step) {
+                case "mode":
+                    state.request.usePreFactor = state.sourceChoice === "quotation";
+                    if (state.request.usePreFactor) await loadExternalFactorPreview(state, false);
+                    else await loadSaleType(state);
+                    break;
+                case "saleType":
+                    if (!state.direct.saleTypeId) return toastifyError("نوع فروش را انتخاب کنید.");
+                    await loadCustomer(state);
+                    break;
+                case "customer":
+                    if (!state.direct.customerId) return toastifyError("مشتری مقصد را انتخاب کنید.");
+                    const saved = await query("SaveExternalFactorCustomer", {
+                        ...state.request, externalCustomerId: Number(state.direct.customerId),
+                    });
+                    if (saved?.saved) await loadItems(state);
+                    break;
+                case "items":
+                    if (!isReady(state)) return toastifyError("برای تمام ردیف‌های فاکتور کالا انتخاب کنید.");
+                    await loadStock(state);
+                    break;
+                case "stock":
+                    if (!isReady(state)) return toastifyError("برای تمام ردیف‌های فاکتور انبار انتخاب کنید.");
+                    await preview(state);
+                    break;
+            }
+        } finally {
+            if (get(state)) {
+                state.busy = false;
+                if (state.step !== "preview") update(state);
+            }
+        }
+    }
+
+    function back(state) {
+        if (!get(state) || state.processing || state.busy) return;
+        switch (state.step) {
+            case "saleType": showMode(state); break;
+            case "customer": renderSaleType(state); break;
+            case "items": renderCustomer(state); break;
+            case "stock": renderItems(state); break;
+            case "preview":
+                state.request.includeBroker = false;
+                state.request.previewBrokerPartyId = null;
+                state.hasLoadedPreview = false;
+                if (state.request.usePreFactor) showMode(state);
+                else renderStock(state);
+                break;
+        }
+    }
+    document.addEventListener("click", event => {
+        if (event.target.closest("#backExternalFactorStepBtn"))
+            back(externalFactorExportState);
+    });
+
+    return {showMode, confirm, back};
+})();
