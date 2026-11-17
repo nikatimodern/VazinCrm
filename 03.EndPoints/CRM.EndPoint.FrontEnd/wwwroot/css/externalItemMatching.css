@@ -98,17 +98,13 @@
     line-height: 1.35;
 }
 .external-item-match-target .ts-wrapper .ts-control {
-    min-height: 34px;
+    min-height: 26px;
     padding-block: 4px;
     padding-inline: 8px;
 }
 @media (max-width: 575px) {
     .external-item-match-row {
         padding: .55rem .65rem;
-    }
-    .external-item-match-target .ts-wrapper .ts-control {
-        min-height: 40px;
-        padding-block: 7px;
     }
 }
 .external-item-match-target .ts-wrapper.disabled {
