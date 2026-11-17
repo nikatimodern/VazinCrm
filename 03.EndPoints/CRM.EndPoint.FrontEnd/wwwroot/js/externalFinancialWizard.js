@@ -56,10 +56,7 @@ class ExternalFinancialWizard {
         select.disabled = true;
         select.append(new Option("", ""));
 
-        const hint = document.createElement("small");
-        hint.className = "external-item-match-stock-hint";
-        hint.textContent = "ابتدا کالای معادل را انتخاب کنید.";
-        target.append(label, select, hint);
+        target.append(label, select);
 
         const control = new TomSelect(select, {
             placeholder: "جستجو و انتخاب انبار",
@@ -73,9 +70,6 @@ class ExternalFinancialWizard {
             control.clear(true);
             control.clearOptions();
             control.disable();
-            hint.textContent = itemId
-                ? "در حال دریافت انبارهای مرتبط…"
-                : "ابتدا کالای معادل را انتخاب کنید.";
             if (!itemId) {
                 onLoading(false);
                 return;
@@ -102,16 +96,10 @@ class ExternalFinancialWizard {
             if (stocks === null) cache.delete(key);
             if (version !== generation || !select.isConnected || !isCurrent()) return;
             onLoading(false);
-            if (stocks === null) {
-                hint.textContent = "دریافت انبارها انجام نشد. کالا را دوباره انتخاب کنید.";
-                return;
-            }
+            if (stocks === null) return;
 
             onLoaded(key, stocks);
-            if (!stocks.length) {
-                hint.textContent = "انبار مرتبطی برای این کالا پیدا نشد.";
-                return;
-            }
+            if (!stocks.length) return;
 
             control.addOptions(stocks.map(stock => ({
                 value: String(stock.id),
@@ -124,7 +112,6 @@ class ExternalFinancialWizard {
                 ? String(preferredStockId) : "";
             control.setValue(selected, true);
             if (!selected && preferredStockId) onChange("");
-            hint.textContent = "";
         };
 
         return { update, select };
