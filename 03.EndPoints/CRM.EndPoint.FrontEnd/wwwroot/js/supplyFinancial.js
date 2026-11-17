@@ -12,9 +12,11 @@ async function openSupplyFinancial(sourceId) {
     const stageContainer = document.getElementById("supplyFinancialStage");
     const back = document.getElementById("backSupplyFinancialBtn");
     const confirm = document.getElementById("confirmSupplyFinancialBtn");
-    const chooser = document.getElementById("chooseExternalSoftwareModal");
     const lifecycle = new AbortController();
     const { signal } = lifecycle;
+    const historyUi = new ExternalFinancialHistory({
+        modal: historyModal, list: historyList,
+    });
     const wizardUi = new ExternalFinancialWizard({
         modal: wizard, container: stageContainer, back, confirm,
     });
@@ -116,22 +118,6 @@ async function openSupplyFinancial(sourceId) {
         documentStage(data, source, software);
     };
 
-    const historyFields = entries => {
-        const info = make("div", null, "external-pf-info");
-        for (const [caption, value, accent] of entries) {
-            const item = make("div", null, "external-pf-field");
-            const text = make("span", value ?? "—", "external-pf-value" + (accent ? " external-pf-software" : ""));
-            if (value) text.title = value;
-            item.append(make("span", caption + ":", "external-pf-label"), text);
-            info.append(item);
-        }
-        return info;
-    };
-    const historyActions = button => {
-        const actions = make("div", null, "external-pf-actions");
-        actions.append(button);
-        return actions;
-    };
     const missingHistory = (software, entry, receipt) => {
         const remove = make("button", "حذف سابقه", "external-pf-action supply-financial-remove");
         remove.type = "button";
@@ -159,7 +145,7 @@ async function openSupplyFinancial(sourceId) {
                 remove.disabled = false;
             }
         }, { signal });
-        return historyActions(remove);
+        return ExternalFinancialHistory.actions([remove]);
     };
     const loadHistory = async () => {
         const current = ++version;
@@ -178,7 +164,7 @@ async function openSupplyFinancial(sourceId) {
             const invoice = purchase?.document;
             const group = make("div", null, "supply-financial-document-group");
             const card = make("div", null, "external-pf-card" + (!invoice ? " supply-financial-missing" : ""));
-            const info = historyFields([
+            const info = ExternalFinancialHistory.fields([
                 ["نرم‌افزار", row.title, true], ["تاریخ ثبت", purchase?.dateText],
                 ["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle],
             ]);
@@ -204,7 +190,7 @@ async function openSupplyFinancial(sourceId) {
                         choosing = false;
                     }
                 }, { signal });
-                card.append(historyActions(register));
+                card.append(ExternalFinancialHistory.actions([register]));
             }
             group.append(card);
             if (receipt) {
@@ -215,7 +201,7 @@ async function openSupplyFinancial(sourceId) {
                 panel.append(make("div", !document || unrelated ? "رسید انبار" : "رسید انبار ثبت شده",
                     "supply-financial-receipt-title"));
                 if (document && !unrelated) {
-                    panel.append(historyFields([
+                    panel.append(ExternalFinancialHistory.fields([
                         ["شماره رسید", document.number], ["تاریخ ثبت", receipt.dateText],
                         ["تحویل‌دهنده", document.partyTitle],
                     ]));
@@ -238,40 +224,21 @@ async function openSupplyFinancial(sourceId) {
     const choose = async softwares => {
         if (choosing || isModalOpen(wizard)) return;
         choosing = true;
-        const chooserEvents = new AbortController();
-        const chooserSignal = AbortSignal.any([signal, chooserEvents.signal]);
-        let selected = [];
-        let chooserShown = false;
-        chooser.addEventListener("shown.bs.modal", () => {
-            chooserShown = true;
-            if (selected.length) ModalToggle(chooser, "hide");
-        }, { once: true, signal: chooserSignal });
-        chooser.addEventListener("hidden.bs.modal", async () => {
-            try {
-                if (!selected.length) {
-                    send.focus();
-                    return;
-                }
-                destinations = selected.map(id => softwares.find(software => software.id === id)).filter(Boolean);
-                if (!destinations.length) return;
-                position = 0;
-                await prepare(destinations[0], false, true);
-            } finally {
-                choosing = false;
-            }
-        }, { once: true, signal: chooserSignal });
-        const result = await showExternalSoftwareModal(sourceId, {
-            mapType: 8,
-            onConfirm: ({ externalSoftwareIds }) => {
-                selected = externalSoftwareIds;
-                if (chooserShown) ModalToggle(chooser, "hide");
-            },
-        });
-        if (!result) {
-            chooserEvents.abort();
+        try {
+            const selected = await ExternalFinancialHistory.chooseDestinations({
+                ids: sourceId, mapType: 8, signal,
+            });
+            if (!selected?.length || signal.aborted) return;
+            destinations = selected.map(id => softwares.find(software => software.id === id))
+                .filter(Boolean);
+            if (!destinations.length) return;
+            position = 0;
+            await prepare(destinations[0], false, true);
+        } finally {
             choosing = false;
         }
     };
+
     const next = () => {
         position++;
         if (position < destinations.length) return prepare(destinations[position], false);
@@ -519,7 +486,9 @@ async function openSupplyFinancial(sourceId) {
     enableMomentumScrollScope(wizard, { signal });
     historyHeading.textContent = "سوابق فاکتور خرید";
     sendLabel.textContent = "ارسال فاکتور خرید به نرم‌افزار مالی";
-    historyList.replaceChildren();
-    ModalToggle(historyModal, "show");
+    historyUi.show({
+        title: "مدیریت ارسال فاکتور تأمین",
+        loadingText: "در حال دریافت سوابق ثبت...",
+    });
     await loadHistory();
 }
