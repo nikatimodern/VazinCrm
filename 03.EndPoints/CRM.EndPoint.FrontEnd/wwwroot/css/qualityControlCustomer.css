@@ -141,14 +141,20 @@
 #qualityControlCustomerPage .qc-client-invoice h4 small { color: var(--qc-muted); font-size: 11px; }
 #qualityControlCustomerPage .qc-client-stats {
     display: flex;
+    align-items: stretch;
     flex-wrap: wrap;
     gap: 7px;
     font-size: 12px;
 }
-#qualityControlCustomerPage .qc-client-stats span {
+#qualityControlCustomerPage .qc-client-stats > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
     padding: 5px 8px;
     border-radius: 6px;
     background: #F0F1F7;
+    white-space: nowrap;
 }
 #qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed {
     display: flex;
