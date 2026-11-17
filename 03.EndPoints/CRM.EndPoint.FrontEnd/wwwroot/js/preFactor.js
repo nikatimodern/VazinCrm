@@ -1401,6 +1401,16 @@ const getExternalMappingList = () => document.querySelector("#sendPreFactorToExt
 const getConfirmExternalMappingBtn = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #confirmExternalMappingBtn");
 const getBackExternalMappingBtn = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #backExternalMappingBtn");
 
+let preFactorFinancialWizard = null;
+function getPreFactorFinancialWizard() {
+    return preFactorFinancialWizard ??= new ExternalFinancialWizard({
+        modal: getExternalMappingModal(),
+        container: getExternalMappingList(),
+        back: getBackExternalMappingBtn(),
+        confirm: getConfirmExternalMappingBtn(),
+    });
+}
+
 
 /* -------------------------------------------------------
    State
@@ -1433,17 +1443,13 @@ let externalSoftwareProcess = createExternalSoftwareState();
 ------------------------------------------------------- */
 
 function exSoftwarePreFactorReset() {
-    exSoftwarePreFactorDestroySelects();
-    
+    if (preFactorFinancialWizard) preFactorFinancialWizard.destroy();
     externalSoftwareProcess = createExternalSoftwareState();
-    getExternalMappingModal()?.querySelector(".modal-dialog")?.classList.remove("modal-lg");
 }
 
 
 function exSoftwarePreFactorDestroySelects() {
-    getExternalMappingList()?.querySelectorAll("select").forEach(select => {
-        select.tomselect?.destroy();
-    });
+    if (preFactorFinancialWizard) preFactorFinancialWizard.clearSelects();
 }
 
 
@@ -1511,10 +1517,8 @@ async function exSoftwarePreFactorFinish() {
 ------------------------------------------------------- */
 
 function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, large = false }) {
-    exSoftwarePreFactorDestroySelects();
-    
     const state = externalSoftwareProcess;
-    renderExternalFinancialStage(getExternalMappingModal(), getExternalMappingList(), {
+    getPreFactorFinancialWizard().render({
         destination: state.software?.externalSoftwareTitle,
         position: `نرم‌افزار ${state.softwareIndex + 1} از ${state.softwareIds.length}`,
         title, subtitle, icon, step, content, large,
@@ -1523,8 +1527,7 @@ function exSoftwarePreFactorRenderStep({ title, subtitle, icon, step, content, l
 
 
 function exSoftwarePreFactorSetConfirmButton(text, disabled = false) {
-    getConfirmExternalMappingBtn().textContent = text;
-    toggleElementsDisabled(getConfirmExternalMappingBtn(), disabled);
+    getPreFactorFinancialWizard().setActions({ confirmText: text, confirmDisabled: disabled });
 }
 
 
@@ -2128,7 +2131,7 @@ function exSoftwarePreFactorUpdateBackButton() {
         "preview",
     ].includes(state.step);
     
-    toggleElementsDisabled(getBackExternalMappingBtn(), !canGoBack || state.processing);
+    getPreFactorFinancialWizard().setActions({ backDisabled: !canGoBack || state.processing });
 }
 
 
