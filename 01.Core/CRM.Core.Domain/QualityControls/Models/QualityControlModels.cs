@@ -62,6 +62,7 @@ public sealed record QualityControlDeal(Guid Id, int SerialNumber, string? Title
     public string? CustomerTel { get; init; }
     public string? CustomerMobile { get; init; }
     public string? SupplyManagers { get; init; }
+    public string? Suppliers { get; init; }
     public int CustomerPaymentCount { get; init; }
     public int DealPaymentCount { get; init; }
     public IReadOnlyList<QualityControlPaymentTotal> DealPaymentTotals { get; init; } = Array.Empty<QualityControlPaymentTotal>();
