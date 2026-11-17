@@ -33,7 +33,7 @@ public sealed record QualityControlCustomerOrder(Guid Id, int SerialNumber, stri
     IReadOnlyList<QualityControlCustomerInvoice> Invoices);
 
 public sealed record QualityControlCustomerForm(Guid CustomerId, string? CustomerName, int CustomerCode,
-    string? Mobile, IReadOnlyList<QualityControlCustomerOrder> Orders,
+    string? Mobile, string? AgentName, IReadOnlyList<QualityControlCustomerOrder> Orders,
     IReadOnlyList<QualityControlQuestionDto> Questions);
 
 public sealed class SaveQualityControlItemsRequest
