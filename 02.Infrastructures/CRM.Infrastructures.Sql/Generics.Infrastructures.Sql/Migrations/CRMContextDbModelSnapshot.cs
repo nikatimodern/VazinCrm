@@ -3702,6 +3702,71 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         });
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttemptCount").ValueGeneratedOnAdd().HasColumnType("int").HasDefaultValue(0);
+
+                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DeletedById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DeletedByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("DeletedAt").HasColumnType("datetime2");
+
+                    b.Property<string>("DeleteReason").HasMaxLength(500).HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted").HasColumnType("bit");
+
+                    b.Property<bool>("IsLegacy").HasColumnType("bit");
+
+                    b.Property<string>("MobileAtAttempt").HasMaxLength(50).HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RestoredAt").HasColumnType("datetime2");
+
+                    b.Property<string>("RestoredById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RestoredByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+
+                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
+                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+
+                    b.Property<byte>("Status").HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId", "CreateDate");
+
+                    b.ToTable("QualityControlContactHistories", t =>
+                        {
+                            t.HasCheckConstraint("CK_QcContactHistories_Status", "[Status] IN (0, 1, 2)");
+                            t.HasCheckConstraint("CK_QcContactHistories_Attempts", "[AttemptCount] >= 0");
+                        });
+                });
+
+
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7676,6 +7741,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("Question");
                 });
 
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
                 {
