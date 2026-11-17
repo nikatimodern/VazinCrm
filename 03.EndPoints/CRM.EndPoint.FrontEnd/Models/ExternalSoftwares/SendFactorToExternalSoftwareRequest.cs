@@ -13,6 +13,7 @@ public class SendFactorToExternalSoftwareRequest
     public bool IncludeBroker { get; set; }
     // The broker ID shown in Preview, used only to detect a mapping change before final submission.
     public int? PreviewBrokerPartyId { get; set; }
+    public string PreviewToken { get; set; }
     // True preserves the existing quotation-based export. False uses explicit sale/customer/item/stock choices.
     public bool UsePreFactor { get; set; } = true;
     public int SaleTypeId { get; set; }
