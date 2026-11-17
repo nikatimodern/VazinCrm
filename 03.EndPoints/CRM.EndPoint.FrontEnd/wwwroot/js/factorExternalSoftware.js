@@ -510,6 +510,9 @@ document.addEventListener("hidden.bs.modal", event => {
             typeof refreshFactorPartial === "function") {
             void refreshFactorPartial();
         }
+        const historyModal = document.getElementById("externalSoftwareFactorsModal");
+        if (historyModal && isModalOpen(historyModal))
+            historyModal.querySelector("#sendExternalFactorBtn")?.focus({ preventScroll: true });
     }
 });
 
