@@ -5,16 +5,13 @@
 /* ----------------------------------------------------------------------------------------------------------- */
 
 async function sendPreFactorToExternalSoftware(id) {
-    await showExternalSoftwareModal(id, {
-        mapType: 2,
-        onConfirm: async ({ entityIds, externalSoftwareIds }) => {
-            ModalToggle("chooseExternalSoftwareModal", "hide");
-            
-            await exSoftwarePreFactorStart({
-                preFactorId: entityIds?.[0],
-                softwareIds: externalSoftwareIds,
-            });
-        },
+    const selected = await ExternalFinancialHistory.chooseDestinations({
+        ids: id, mapType: 2,
+    });
+    if (!selected?.length) return;
+    await exSoftwarePreFactorStart({
+        preFactorId: Array.isArray(id) ? id[0] : id,
+        softwareIds: selected,
     });
 }
 
