@@ -1,6 +1,9 @@
+@using CRM.Core.Domain.RequestAmounts.Enums
+@using CRM.EndPoint.FrontEnd.Services.Extensions
+
 <!-- Modal addRequestAmount -->
 <div class="modal fade" id="addRequestAmountModal" tabindex="-1" role="dialog" aria-labelledby="reqAmountModalTitleId" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+    <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content col-12">
             <div class="request-amount-modal-header">
                 <h2 id="reqAmountModalTitleId">درخواست وجه</h2>
@@ -12,11 +15,10 @@
                         <label for="requestAmountTypeId">نوع درخواست:</label>
                         <select id="requestAmountTypeId" class="form-select form-select-sm valueNumber" name="requestAmountType" required>
                             <option value="">انتخاب</option>
-                            <option value="1">پیش پرداخت</option>
-                            <option value="2">پرداخت فاکتور</option>
-                            <option value="3">تنخواه</option>
-                            <option value="4">بابت بدهی</option>
-                            <option value="5">بابت تضمین</option>
+                            @foreach (var requestType in Enum.GetValues<RequestAmountTypeEnum>())
+                            {
+                                <option value="@((int)requestType)" data-target-kind="@(requestType.GetTargetKind().ToString().ToLowerInvariant())">@(requestType.GetDescription())</option>
+                            }
                         </select>
                     </div>
 
@@ -44,17 +46,10 @@
                         </div>
                     </div>*@
 
-                    <div id="reqAmountSupplierWrapper">
-                        <label for="reqAmountSupplierId">تامین‌ کننده:</label>
-                        <select class="show-dropdown-arrow" name="supplierId" id="reqAmountSupplierId" required>
-                        </select>
+                    <div id="reqAmountTargetPersonWrapper" class="d-none">
+                        <label for="reqAmountTargetPersonId" id="reqAmountTargetPersonLabel">شخص مقصد:</label>
+                        <select class="show-dropdown-arrow" name="targetPersonId" id="reqAmountTargetPersonId"></select>
                         <p id="reqAmountTotalAmountSupFactor" class="mt-2 text-end" style="color: #666"></p>
-                    </div>
-
-                    <div id="reqAmountCashierWrapper" class="d-none">
-                        <label for="reqAmountCashierId">تنخواه دار:</label>
-                        <select class="show-dropdown-arrow" name="cashierId" id="reqAmountCashierId">
-                        </select>
                     </div>
 
                     <div id="reqAmountOrderHeadWrapper" class="d-none">

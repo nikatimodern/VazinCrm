@@ -96,7 +96,10 @@ public sealed class RequestAmountWorkflow(IRequestAmountRepository repository, I
                 {
                     acc = new Accountancy
                     {
-                        CashierId = requestAmount.CashierId,
+                        // Accountancy still stores the cashier's UserId; requests store the Cashier entity Id.
+                        CashierId = requestAmount.TargetPersonId.HasValue
+                            ? await repository.GetCashierUserIdAsync(requestAmount.TargetPersonId.Value, ct)
+                            : null,
                         RequestAmountId = requestAmount.Id,
                         InvoiceType = InvoiceTypeEnum.تنخواه,
                         InvoiceTypeTxt = nameof(InvoiceTypeEnum.تنخواه),
@@ -183,17 +186,39 @@ public sealed class RequestAmountWorkflow(IRequestAmountRepository repository, I
 
     public async Task<(bool IsValid, string Message)> ValidateRequestAmountsPayment(Payment model, CancellationToken ct)
     {
-        var requestAmountIds = model.RequestAmountPayments.Select(x => x.RequestAmountId).Distinct().ToList();
-        var requestAmounts = await repository.GetPaymentBalancesAsync(requestAmountIds, model.Id, ct);
-        foreach (var reqAmountPayment in model.RequestAmountPayments ?? [])
+        if (model.RequestAmountPayments == null || model.RequestAmountPayments.Count == 0)
+            return (false, "هیچ درخواست وجهی برای این پرداخت انتخاب نشده است.");
+        if (model.ToAccountId == Guid.Empty)
+            return (false, "حساب مقصد معتبر نیست.");
+
+        var items = model.RequestAmountPayments;
+        var requestAmountIds = items.Select(x => x.RequestAmountId).Distinct().ToList();
+        if (requestAmountIds.Count != items.Count ||
+            items.Any(x => x.RequestAmountId == Guid.Empty || x.Amount <= 0))
+            return (false, "اقلام پرداخت تکراری یا دارای مبلغ نامعتبر هستند.");
+
+        // Do not trust the request owner or bank options supplied by the browser.
+        var linkedRequests = await repository.GetByIdsAsync(requestAmountIds, false, ct);
+        if (linkedRequests.Count != requestAmountIds.Count)
+            return (false, "یکی از درخواست‌های وجه یافت نشد.");
+
+        var target = linkedRequests[0].TargetPersonId;
+        var kind = linkedRequests[0].RequestAmountType.GetTargetKind();
+        if (!target.HasValue || target.Value == Guid.Empty ||
+            linkedRequests.Any(r => r.TargetPersonId != target || r.RequestAmountType.GetTargetKind() != kind))
+            return (false, "تمام درخواست‌های یک پرداخت باید متعلق به یک شخص و از یک نوع مقصد باشند.");
+
+        if (!await repository.IsDestinationBankAccountValidAsync(model.ToAccountId, target.Value, kind, ct))
+            return (false, "حساب مقصد به شخص مربوط به درخواست وجه تعلق ندارد.");
+
+        var balances = await repository.GetPaymentBalancesAsync(requestAmountIds, model.Id, ct);
+        foreach (var item in items)
         {
-            if (!requestAmounts.TryGetValue(reqAmountPayment.RequestAmountId, out var requestAmount))
-                continue;
-            var finalAmount = requestAmount.PaidAmount + reqAmountPayment.Amount;
-            if (finalAmount > requestAmount.AcceptedAmount)
-            {
+            if (!balances.TryGetValue(item.RequestAmountId, out var requestAmount))
+                return (false, "درخواست وجه برای پرداخت معتبر نیست.");
+
+            if (requestAmount.PaidAmount + item.Amount > requestAmount.AcceptedAmount)
                 return (false, "مبلغ پرداخت بیشتر از مبلغ تایید شده است.");
-            }
         }
 
         return (true, "");
