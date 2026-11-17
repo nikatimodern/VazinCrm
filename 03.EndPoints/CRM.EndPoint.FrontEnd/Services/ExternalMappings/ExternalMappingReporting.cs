@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Enums;
-using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
@@ -35,19 +34,24 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
     {
         private sealed record MappingReportSide(
             string Title, string Id, string Number, string Date,
-            decimal? Amount, string Customer, string Extra);
+            decimal? Amount, string Customer, string Extra,
+            bool? IsCustomer = null, bool? IsEmployee = null,
+            bool? IsVendor = null, bool? IsBroker = null,
+            bool IsMissing = false);
 
         private sealed record MappingReportEntry(
             string Key, string Kind, Guid EntityId, string Status,
             string Reason, string Details, string TargetEntity, int? TargetId,
             string[] Sources, int MapType, string TargetRaw = null,
-            int[] CandidateIds = null, Guid? MappingId = null);
+            int[] CandidateIds = null, Guid? MappingId = null,
+            string CreatedAt = null, string CreatedBy = null);
 
         private sealed record MappingReportRow(
             string Key, string Kind, string Status, string Reason,
             string Details, string[] Sources,
             MappingReportSide Crm, MappingReportSide Sepidar, int MapType,
-            List<MappingReportTargetOption> Options, Guid? MappingId);
+            List<MappingReportTargetOption> Options, Guid? MappingId,
+            string CreatedAt = null, string CreatedBy = null);
 
         private sealed record MappingReportTargetOption(int Id, string Title, string Description);
 
@@ -149,14 +153,25 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .SelectMany(x => x.SepidarPartyIds)
                 .Concat(linkedDocuments.Values.Select(x => x.PartyId))
                 .Where(x => x > 0).Distinct().ToArray();
-            var partyNames = new Dictionary<int, string>();
+            var partyInfo = new Dictionary<int, (string Name, string DlCode)>();
             foreach (var batch in candidatePartyIds.Chunk(350))
             {
                 var parties = await sepidar.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName }).ToListAsync(ct);
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code })
+                    .ToListAsync(ct);
                 foreach (var party in parties)
-                    partyNames[party.PartyId] = $"{party.Name} {party.LastName}".Trim();
+                    partyInfo[party.PartyId] = ($"{party.Name} {party.LastName}".Trim(),
+                        party.DlCode);
+            }
+
+            string PartyDescription(int id)
+            {
+                var info = partyInfo.GetValueOrDefault(id);
+                var name = string.IsNullOrWhiteSpace(info.Name) ? "نام ثبت نشده" : info.Name;
+                var code = string.IsNullOrWhiteSpace(info.DlCode)
+                    ? "" : $"، کد تفصیلی: {info.DlCode}";
+                return $"«{name}» (شناسه: {id}{code})";
             }
 
             foreach (var conflict in plan.CustomerConflicts)
@@ -170,16 +185,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var crmName = crmCustomerNames.GetValueOrDefault(x.CustomerId);
                         var crmTitle = !string.IsNullOrWhiteSpace(crmName.Name)
                             ? $"{crmName.Name} (کد {crmName.Code})"
-                            : $"شناسه مشتری CRM: {x.CustomerId}";
+                            : "مشتری CRM (اطلاعات ثبت‌شده پیدا نشد)";
                         if (!linkedDocuments.TryGetValue((x.Type, x.ExternalId), out var document))
                             return $"مشتری CRM «{crmTitle}» ← { (x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور") } سپیدار با شناسه {x.ExternalId} (پیدا نشد)";
-                        var partyTitle = partyNames.GetValueOrDefault(document.PartyId, "نام ثبت نشده");
                         var typeTitle = x.Type == "Quotation" ? "پیش‌فاکتور" : "فاکتور";
-                        return $"مشتری CRM «{crmTitle}» ← {typeTitle} سپیدار شماره {document.Number} ← مشتری سپیدار «{partyTitle}» (کد {document.PartyId})";
+                        return $"مشتری CRM «{crmTitle}» ← {typeTitle} سپیدار شماره {document.Number} ← مشتری سپیدار {PartyDescription(document.PartyId)}";
                     }).Distinct().ToArray();
 
                 var partyDescriptions = conflict.SepidarPartyIds.Select(id =>
-                    $"گزینه مشتری سپیدار: «{partyNames.GetValueOrDefault(id, "نام ثبت نشده")}» (کد {id})");
+                    $"گزینه مشتری سپیدار: {PartyDescription(id)}");
 
                 var owners = savedPartyOwners
                     .Where(x => conflict.SepidarPartyIds.Contains(x.PartyId)
@@ -189,9 +203,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         var customerInfo = crmCustomerNames.GetValueOrDefault(x.CustomerId);
                         var owner = !string.IsNullOrWhiteSpace(customerInfo.Name)
                             ? $"«{customerInfo.Name}» (کد {customerInfo.Code})"
-                            : $"با شناسه داخلی {x.CustomerId} (مشتری در CRM پیدا نشد)";
-                        var partyName = partyNames.GetValueOrDefault(x.PartyId, "بدون نام");
-                        return $"مشتری «{partyName}» در سپیدار (کد {x.PartyId}) قبلاً به مشتری CRM {owner} نگاشت شده است.";
+                            : "که اطلاعات آن در CRM پیدا نشد";
+                        return $"مشتری {PartyDescription(x.PartyId)} در سپیدار قبلاً به مشتری CRM {owner} متصل شده است.";
                     }).ToArray();
 
                 var conflictDetails = owners.Length > 0
@@ -248,12 +261,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     targetId > 0 ? new[] { targetId } : Array.Empty<int>()));
             }
 
+            entries.AddRange(await BuildUserExpertSuggestionsAsync(softwareId, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
-                        || x.MapType == ExternalMappingTypeEnum.فاکتور))
+                        || x.MapType == ExternalMappingTypeEnum.فاکتور
+                        || x.MapType == ExternalMappingTypeEnum.کارشناسان))
                 .CountAsync(ct);
 
             return new
@@ -262,10 +277,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     saved,
                     pendingCustomers = plan.PendingCustomers.Count,
                     pendingDocuments = plan.PendingDocuments.Count,
+                    pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.کارشناسان),
                     customerConflicts = plan.CustomerConflicts.Count,
-                    blockedDocuments = plan.BlockedDocumentCount,
+                    blockedDocuments = reportRows.Count(x => x.Status == "blocked"),
                     unmatched = reportRows.Count(x => x.Status == "notMatched"),
-                    ambiguous = plan.Ambiguous,
+                    ambiguous = reportRows.Count(x => x.Status == "ambiguous"),
                     duplicateGroups = plan.DuplicateTargetGroups.Count
                 },
                 rows = reportRows
@@ -280,7 +296,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 throw new ArgumentException("نرم‌افزار انتخاب‌شده معتبر نیست.");
 
             if (mapType.HasValue && !Enum.IsDefined(typeof(ExternalMappingTypeEnum), mapType.Value))
-                throw new ArgumentException("نوع نگاشت معتبر نیست.");
+                throw new ArgumentException("نوع ارتباط معتبر نیست.");
 
             page = Math.Max(1, page);
             // pageSize=0 requests all saved mappings for the selected software/filter.
@@ -289,8 +305,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             search = (search ?? "").Trim();
             if (search.Length > 80) search = search[..80];
 
+            // Keep legacy type=1 data untouched, but do not show the removed
+            // accounting-document mapping type in ExternalSoftware/Mapping.
             var query = db.ExternalMappings.AsNoTracking()
-                .Where(x => x.ExternalSoftwareId == softwareId);
+                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1);
             if (mapType.HasValue)
                 query = query.Where(x => x.MapType == (ExternalMappingTypeEnum)mapType.Value);
 
@@ -306,14 +324,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(customers);
 
+                // Documents can display names from their linked Customer record;
+                // search those names as well as the document's own snapshot.
+                var customerIds = customers.ToArray();
                 var preFactors = await db.PreFactors.AsNoTracking()
                     .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (x.AgentName != null && x.AgentName.Contains(search))
+                        || (x.CustomerId.HasValue && customerIds.Contains(x.CustomerId.Value))
                         || (isNumber && x.SerialNumber == number))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(preFactors);
 
                 var factors = await db.Factors.AsNoTracking()
                     .Where(x => (x.Customer != null && x.Customer.Contains(search))
+                        || (x.AgentName != null && x.AgentName.Contains(search))
+                        || (x.CustomerId.HasValue && customerIds.Contains(x.CustomerId.Value))
                         || (isNumber && x.SerialNumber == number))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(factors);
@@ -330,10 +355,31 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(centers);
 
+                // Search expert mappings by CRM employee name.
+                var employees = await userManager.Users.AsNoTracking()
+                    .Where(x => (x.FirstName != null && x.FirstName.Contains(search))
+                        || (x.LastName != null && x.LastName.Contains(search))
+                        || (x.UserName != null && x.UserName.Contains(search)))
+                    .Select(x => x.Id).Take(500).ToListAsync(ct);
+                foreach (var userId in employees)
+                    if (Guid.TryParse(userId, out var parsedUserId))
+                        matchedIds.Add(parsedUserId);
+
+                // Match the saved external person's name as well as the CRM-side name.
+                var targetDb = softwareId == Sepidar1SoftwareId
+                    ? (SepidarContextDbBase)sdb : softwareId == Sepidar2SoftwareId
+                        ? (SepidarContextDbBase)s2Db : null;
+                var partyIds = targetDb == null ? Array.Empty<string>()
+                    : (await targetDb.Parties.AsNoTracking()
+                        .Where(x => x.Name.Contains(search) || x.LastName.Contains(search)
+                            || x.Dl.Code.Contains(search))
+                        .Select(x => x.PartyId).Take(500).ToListAsync(ct))
+                        .Select(x => x.ToString()).ToArray();
                 var ids = matchedIds.ToArray();
                 query = query.Where(x => x.ExEntityId.Contains(search)
                     || x.EntityId.ToString().Contains(search)
-                    || ids.Contains(x.EntityId));
+                    || ids.Contains(x.EntityId)
+                    || (x.ExEntityName == nameof(Party) && partyIds.Contains(x.ExEntityId)));
             }
 
             var total = await query.CountAsync(ct);
@@ -342,7 +388,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var selected = pageSize == 0 ? ordered
                 : ordered.Skip((page - 1) * pageSize).Take(pageSize);
             var mappings = await selected.Select(x => new {
-                    x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId
+                    x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId,
+                    x.CreateDate, x.CreateDateTxt, x.UserCreator
                 }).ToListAsync(ct);
 
             var entries = mappings.Select(x => {
@@ -350,10 +397,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 return new MappingReportEntry(
                     $"saved-{x.EntityName}-{x.EntityId}-{(int)x.MapType}", x.EntityName,
                     x.EntityId, "saved", "AlreadyMapped",
-                    "این نگاشت در پایگاه داده CRM ثبت شده است.",
+                    "این ارتباط قبلاً در CRM ثبت شده است.",
                     x.ExEntityName, externalId > 0 ? externalId : null,
                     Array.Empty<string>(), (int)x.MapType, x.ExEntityId,
-                    null, x.Id);
+                    null, x.Id,
+                    !string.IsNullOrWhiteSpace(x.CreateDateTxt)
+                        ? x.CreateDateTxt
+                        : FormatLegacyPersianDate(x.CreateDate) + " " + x.CreateDate.ToString("HH:mm"),
+                    x.UserCreator);
             }).ToList();
 
             return new {
@@ -393,8 +444,28 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Where(x => x > 0).Distinct().ToArray();
         }
 
+        // Resolve each distinct CRM/external entity in batches; no per-row database queries.
         private async Task<List<MappingReportRow>> EnrichMappingEntriesAsync(
             List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
+        {
+            if (entries.Count == 0) return new List<MappingReportRow>();
+            var crmSides = await LoadCrmMappingSidesAsync(entries, ct);
+            var externalSides = await LoadSepidarMappingSidesAsync(entries, softwareId, ct);
+            return BuildMappingReportRows(entries, crmSides, externalSides);
+        }
+
+        private static string CrmCustomerDisplay(string company, string agent, string fallback = null)
+        {
+            var names = new[] { company?.Trim(), agent?.Trim() }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var customer = string.Join(" | ", names);
+            return "مشتری: " + (string.IsNullOrEmpty(customer)
+                ? (string.IsNullOrWhiteSpace(fallback) ? "نامشخص" : fallback.Trim())
+                : customer);
+        }
+
+        private async Task<Dictionary<(string, Guid), MappingReportSide>> LoadCrmMappingSidesAsync(
+            List<MappingReportEntry> entries, CancellationToken ct)
         {
             var pfIds = entries.Where(x => x.Kind == nameof(PreFactor))
                 .Select(x => x.EntityId).Distinct().ToArray();
@@ -402,18 +473,44 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.EntityId).Distinct().ToArray();
             var customerIds = entries.Where(x => x.Kind == nameof(Customer))
                 .Select(x => x.EntityId).Distinct().ToArray();
+            var userIds = entries.Where(x => x.Kind == nameof(AppUser))
+                .Select(x => x.EntityId).Distinct().ToArray();
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
+            var documentCustomers = new Dictionary<(string, Guid), Guid>();
+            foreach (var batch in userIds.Chunk(350))
+            {
+                var ids = batch.Select(x => x.ToString()).ToArray();
+                var users = await userManager.Users.AsNoTracking()
+                    .Where(x => ids.Contains(x.Id))
+                    .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName, x.IsEmployee })
+                    .ToListAsync(ct);
+                foreach (var x in users)
+                    if (Guid.TryParse(x.Id, out var userId))
+                    {
+                        var name = (x.FirstName + " " + x.LastName).Trim();
+                        if (string.IsNullOrEmpty(name)) name = x.UserName ?? "کاربر بدون نام";
+                        crmSides[(nameof(AppUser), userId)] = new MappingReportSide(
+                            "کاربر CRM", userId.ToString(), x.UserName ?? "—", "",
+                            null, name, x.IsEmployee ? "کارمند داخلی" : "کاربر CRM");
+                    }
+            }
             foreach (var batch in pfIds.Chunk(350))
             {
                 var data = await db.PreFactors.AsNoTracking()
                     .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount, x.Customer, x.CustomerId })
+                    .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount,
+                        x.Customer, x.AgentName, x.CustomerId })
                     .ToListAsync(ct);
                 foreach (var x in data)
-                    crmSides[(nameof(PreFactor), x.Id)] = new MappingReportSide(
-                        "پیش‌فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, x.Customer, $"CustomerId: {x.CustomerId}");
+                {
+                    var key = (nameof(PreFactor), x.Id);
+                    crmSides[key] = new MappingReportSide(
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                    if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
+                }
             }
 
             foreach (var batch in factorIds.Chunk(350))
@@ -421,35 +518,52 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var data = await db.Factors.AsNoTracking()
                     .Where(x => batch.Contains(x.Id))
                     .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount,
-                        x.Customer, x.CustomerId, x.SepidarId, x.SnFinancial })
-                    .ToListAsync(ct);
-                foreach (var x in data)
-                    crmSides[(nameof(Factor), x.Id)] = new MappingReportSide(
-                        "فاکتور CRM", x.Id.ToString(), x.SerialNumber.ToString(),
-                        x.Date, x.PaymentAmount, x.Customer,
-                        $"CustomerId: {x.CustomerId} | SepidarId: {x.SepidarId} | شماره مالی: {x.SnFinancial}");
-            }
-
-            foreach (var batch in customerIds.Chunk(350))
-            {
-                var data = await db.Customers.AsNoTracking()
-                    .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName, x.FinancialCustomerId })
+                        x.Customer, x.AgentName, x.CustomerId })
                     .ToListAsync(ct);
                 foreach (var x in data)
                 {
-                    var customerName = $"{x.CompanyName} {x.AgentName}".Trim();
-                    if (string.IsNullOrWhiteSpace(customerName))
-                        customerName = $"مشتری با کد {x.CustomerCode}";
-
-                    crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
-                        "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
-                        "", null, customerName,
-                        $"FinancialCustomerId: {x.FinancialCustomerId}");
+                    var key = (nameof(Factor), x.Id);
+                    crmSides[key] = new MappingReportSide(
+                        CrmCustomerDisplay(x.Customer, x.AgentName), x.Id.ToString(),
+                        x.SerialNumber.ToString(), x.Date, x.PaymentAmount,
+                        CrmCustomerDisplay(x.Customer, x.AgentName), "");
+                    if (x.CustomerId.HasValue) documentCustomers[key] = x.CustomerId.Value;
                 }
             }
 
-            // All map types can be viewed, including cash, accounting and cost centers.
+            // Load referenced CRM customers once for both customer cards and documents.
+            var customerNames = new Dictionary<Guid, (string Company, string Agent)>();
+            var relatedCustomerIds = customerIds.Concat(documentCustomers.Values)
+                .Distinct().ToArray();
+            foreach (var batch in relatedCustomerIds.Chunk(350))
+            {
+                var data = await db.Customers.AsNoTracking()
+                    .Where(x => batch.Contains(x.Id))
+                    .Select(x => new { x.Id, x.CustomerCode, x.CompanyName, x.AgentName })
+                    .ToListAsync(ct);
+                foreach (var x in data)
+                {
+                    var customerName = CrmCustomerDisplay(x.CompanyName, x.AgentName,
+                        $"کد {x.CustomerCode}");
+                    customerNames[x.Id] = (x.CompanyName, x.AgentName);
+                    crmSides[(nameof(Customer), x.Id)] = new MappingReportSide(
+                        "مشتری CRM", x.Id.ToString(), x.CustomerCode.ToString(),
+                        "", null, customerName, "");
+                }
+            }
+            foreach (var reference in documentCustomers)
+                if (customerNames.TryGetValue(reference.Value, out var customer)
+                    && (!string.IsNullOrWhiteSpace(customer.Company)
+                        || !string.IsNullOrWhiteSpace(customer.Agent))
+                    && crmSides.TryGetValue(reference.Key, out var document))
+                {
+                    var displayName = CrmCustomerDisplay(customer.Company, customer.Agent);
+                    crmSides[reference.Key] = document with {
+                        Title = displayName, Customer = displayName
+                    };
+                }
+
+            // Financial CRM sources: cash transactions and cost centers.
             var cashIds = entries.Where(x => x.Kind == nameof(Cash))
                 .Select(x => x.EntityId).Distinct().ToArray();
             foreach (var batch in cashIds.Chunk(350))
@@ -460,10 +574,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.CostCenterTxt, x.CostTitleTxt, x.CostDescription })
                     .ToListAsync(ct);
                 foreach (var x in rows)
+                {
+                    var hasCostTitle = !string.IsNullOrWhiteSpace(x.CostTitleTxt);
+                    var costText = hasCostTitle ? x.CostTitleTxt : x.CostDescription;
+                    var labeledCost = (hasCostTitle ? "عنوان هزینه: " : "شرح هزینه: ") +
+                        (string.IsNullOrWhiteSpace(costText) ? "ثبت نشده" : costText.Trim());
                     crmSides[(nameof(Cash), x.Id)] = new MappingReportSide(
                         "تنخواه CRM", x.Id.ToString(), x.Serial.ToString(), x.CostDate,
-                        x.Amount, x.CostTitleTxt ?? x.CostDescription,
+                        x.Amount, labeledCost,
                         "مرکز هزینه: " + (x.CostCenterTxt ?? "ثبت نشده"));
+                }
             }
 
             var centerIds = entries.Where(x => x.Kind == nameof(BaseCenterCash))
@@ -479,45 +599,39 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         null, x.Title, "");
             }
 
-            var accountingIds = entries.Where(x => x.Kind == nameof(Accountancy))
-                .Select(x => x.EntityId).Distinct().ToArray();
-            foreach (var batch in accountingIds.Chunk(350))
-            {
-                var rows = await db.Accountancies.AsNoTracking()
-                    .Where(x => batch.Contains(x.Id))
-                    .Select(x => new { x.Id, x.fSerialNumber, x.pfSerialNumber,
-                        x.dateSh, x.credit, x.debit, x.CustomerName })
-                    .ToListAsync(ct);
-                foreach (var x in rows)
-                    crmSides[(nameof(Accountancy), x.Id)] = new MappingReportSide(
-                        "حسابداری CRM", x.Id.ToString(),
-                        (x.fSerialNumber ?? x.pfSerialNumber)?.ToString() ?? "-",
-                        x.dateSh, x.credit ?? x.debit, x.CustomerName, "");
-            }
+            return crmSides;
+        }
 
-            var externalSides = new Dictionary<(string, int), MappingReportSide>();
+        private static IEnumerable<int[]> ExternalTargetBatches(
+            List<MappingReportEntry> entries, string entityName)
+            => entries.Where(x => x.TargetEntity == entityName)
+                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
+                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
+                .Where(x => x > 0).Distinct().Chunk(350);
+
+        private async Task<Dictionary<(string, int), MappingReportSide>> LoadSepidarMappingSidesAsync(
+            List<MappingReportEntry> entries, Guid softwareId, CancellationToken ct)
+        {
+            var sides = new Dictionary<(string, int), MappingReportSide>();
+            var context = softwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb
+                : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
+            if (context == null) return sides;
+
             var softwareTitle = await db.ExternalSoftwares.AsNoTracking()
                 .Where(x => x.Id == softwareId)
                 .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
-            var sepidarContext = softwareId == Sepidar1SoftwareId
-                ? (SepidarContextDbBase)sdb
-                : softwareId == Sepidar2SoftwareId ? (SepidarContextDbBase)s2Db : null;
-            var quotationIds = entries.Where(x => x.TargetEntity == nameof(Quotation))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
-            var invoiceIds = entries.Where(x => x.TargetEntity == nameof(Invoice))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
-            var partyIds = entries.Where(x => x.TargetEntity == nameof(Party))
-                .SelectMany(x => x.CandidateIds ?? (x.TargetId.HasValue
-                    ? new[] { x.TargetId.Value } : Array.Empty<int>()))
-                .Where(x => x > 0).Distinct().ToArray();
+            await LoadSepidarSalesSidesAsync(entries, context, softwareTitle, sides, ct);
+            await LoadSepidarFinanceSidesAsync(entries, context, sides, ct);
+            return sides;
+        }
 
-            if (sepidarContext != null)
-            {
-            foreach (var batch in quotationIds.Chunk(350))
+        private static async Task LoadSepidarSalesSidesAsync(
+            List<MappingReportEntry> entries, SepidarContextDbBase sepidarContext,
+            string softwareTitle, Dictionary<(string, int), MappingReportSide> externalSides,
+            CancellationToken ct)
+        {
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Quotation)))
             {
                 var data = await sepidarContext.Quotations.AsNoTracking()
                     .Where(x => batch.Contains(x.QuotationId))
@@ -531,7 +645,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         x.CustomerRealName, $"PartyId: {x.CustomerPartyRef} | FiscalYearRef: {x.FiscalYearRef}");
             }
 
-            foreach (var batch in invoiceIds.Chunk(350))
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Invoice)))
             {
                 var data = await sepidarContext.SalesInvoices.AsNoTracking()
                     .Where(x => batch.Contains(x.InvoiceId))
@@ -553,120 +667,134 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         $"PartyId: {x.PartyId} | FiscalYearRef: {x.FiscalYearId}");
             }
 
-            foreach (var batch in partyIds.Chunk(350))
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Party)))
             {
                 var data = await sepidarContext.Parties.AsNoTracking()
                     .Where(x => batch.Contains(x.PartyId))
-                    .Select(x => new { x.PartyId, x.Name, x.LastName, x.IsCustomer })
+                    .Select(x => new { x.PartyId, x.Name, x.LastName, DlCode = x.Dl.Code,
+                        x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker })
                     .ToListAsync(ct);
                 foreach (var x in data)
                     externalSides[(nameof(Party), x.PartyId)] = new MappingReportSide(
-                        "مشتری " + softwareTitle, x.PartyId.ToString(), x.PartyId.ToString(),
-                        "", null, $"{x.Name} {x.LastName}".Trim(),
-                        x.IsCustomer ? "مشتری فعال در فهرست اشخاص" : "این شخص در سپیدار به‌عنوان مشتری علامت‌گذاری نشده");
+                        "شخص " + softwareTitle,
+                        x.PartyId.ToString(), x.DlCode ?? "", "",
+                        null, global::CRM.EndPoint.FrontEnd.Services.TextService.NormalizePersianText($"{x.Name} {x.LastName}".Trim()),
+                        string.IsNullOrWhiteSpace(x.DlCode) ? "" : $"کد تفصیلی: {x.DlCode}",
+                        x.IsCustomer, x.IsEmployee, x.IsVendor, x.IsBroker);
             }
 
-                // Enrich the other saved Sepidar mapping types when their
-                // external entity names are known, without assuming custom schemas.
-                var vouchers = entries.Where(x => x.TargetEntity == nameof(Voucher) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in vouchers.Chunk(350))
-                {
-                    var rows = await sepidarContext.Vouchers.AsNoTracking()
-                        .Where(x => batch.Contains(x.VoucherId))
-                        .Select(x => new { x.VoucherId, x.Number, x.Date, x.Description, x.FiscalYearRef })
-                        .ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
-                            "سند حسابداری نرم‌افزار مالی", x.VoucherId.ToString(),
-                            x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
-                            x.Description, $"سال مالی: {x.FiscalYearRef}");
-                }
+        }
 
-                var payments = entries.Where(x => x.TargetEntity == nameof(PaymentHeader) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in payments.Chunk(350))
-                {
-                    var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
-                        .Where(x => batch.Contains(x.PaymentHeaderId))
-                        .Select(x => new { x.PaymentHeaderId, x.Number, x.Date,
-                            x.AmountInBaseCurrency, x.Description, x.FiscalYearRef })
-                        .ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
-                            "اعلامیه پرداخت نرم‌افزار مالی", x.PaymentHeaderId.ToString(),
-                            x.Number.ToString(), FormatLegacyPersianDate(x.Date),
-                            x.AmountInBaseCurrency, x.Description, $"سال مالی: {x.FiscalYearRef}");
-                }
-
-                var dlIds = entries.Where(x => x.TargetEntity == nameof(DL) && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in dlIds.Chunk(350))
-                {
-                    var rows = await sepidarContext.DLs.AsNoTracking()
-                        .Where(x => batch.Contains(x.DLId))
-                        .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
-                    foreach (var x in rows)
-                        externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
-                            "حساب تفصیلی نرم‌افزار مالی", x.DLId.ToString(),
-                            x.Code, "", null, x.Title, "");
-                }
-
-                var cashIdsInSepidar = entries.Where(x => (x.TargetEntity == "Cash"
-                        || x.TargetEntity == "SepidarCash") && x.TargetId > 0)
-                    .Select(x => x.TargetId.Value).Distinct().ToArray();
-                foreach (var batch in cashIdsInSepidar.Chunk(350))
-                {
-                    var rows = await sepidarContext.SepidarCash.AsNoTracking()
-                        .Where(x => batch.Contains(x.CashId))
-                        .Select(x => new { x.CashId, x.Title }).ToListAsync(ct);
-                    foreach (var x in rows)
-                    {
-                        var side = new MappingReportSide(
-                            "تنخواه نرم‌افزار مالی", x.CashId.ToString(),
-                            x.CashId.ToString(), "", null, x.Title, "");
-                        externalSides[("Cash", x.CashId)] = side;
-                        externalSides[("SepidarCash", x.CashId)] = side;
-                    }
-                }
+        private static async Task LoadSepidarFinanceSidesAsync(
+            List<MappingReportEntry> entries, SepidarContextDbBase sepidarContext,
+            Dictionary<(string, int), MappingReportSide> externalSides, CancellationToken ct)
+        {
+            // Enrich the other saved Sepidar mapping types when their
+            // external entity names are known, without assuming custom schemas.
+            foreach (var batch in ExternalTargetBatches(entries, nameof(Voucher)))
+            {
+                var rows = await sepidarContext.Vouchers.AsNoTracking()
+                    .Where(x => batch.Contains(x.VoucherId))
+                    .Select(x => new { x.VoucherId, x.Number, x.Date, x.Description, x.FiscalYearRef })
+                    .ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(Voucher), x.VoucherId)] = new MappingReportSide(
+                        "سند حسابداری", x.VoucherId.ToString(),
+                        x.Number.ToString(), FormatLegacyPersianDate(x.Date), null,
+                        "شرح سند: " + (string.IsNullOrWhiteSpace(x.Description) ? "ثبت نشده" : x.Description),
+                        $"سال مالی: {x.FiscalYearRef}");
             }
 
+            foreach (var batch in ExternalTargetBatches(entries, nameof(PaymentHeader)))
+            {
+                var rows = await sepidarContext.PaymentHeaders.AsNoTracking()
+                    .Where(x => batch.Contains(x.PaymentHeaderId))
+                    .Select(x => new { x.PaymentHeaderId, x.Number, x.Date,
+                        x.AmountInBaseCurrency, x.Description, x.FiscalYearRef })
+                    .ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(PaymentHeader), x.PaymentHeaderId)] = new MappingReportSide(
+                        "اعلامیه پرداخت", x.PaymentHeaderId.ToString(),
+                        x.Number.ToString(), FormatLegacyPersianDate(x.Date),
+                        x.AmountInBaseCurrency,
+                        "شرح اعلامیه پرداخت: " + (string.IsNullOrWhiteSpace(x.Description) ? "ثبت نشده" : x.Description),
+                        $"سال مالی: {x.FiscalYearRef}");
+            }
+
+            foreach (var batch in ExternalTargetBatches(entries, nameof(DL)))
+            {
+                var rows = await sepidarContext.DLs.AsNoTracking()
+                    .Where(x => batch.Contains(x.DLId))
+                    .Select(x => new { x.DLId, x.Code, x.Title }).ToListAsync(ct);
+                foreach (var x in rows)
+                    externalSides[(nameof(DL), x.DLId)] = new MappingReportSide(
+                        "حساب تفصیلی", x.DLId.ToString(),
+                        x.Code, "", null, x.Title, "");
+            }
+
+        }
+
+        private static string ExternalCodeLabel(string entityName) => entityName switch {
+            nameof(Party) or nameof(DL) => "کد تفصیلی",
+            nameof(Quotation) => "شماره پیش‌فاکتور",
+            nameof(Invoice) => "شماره فاکتور",
+            nameof(PaymentHeader) => "شماره اعلامیه پرداخت",
+            nameof(Voucher) => "شماره سند",
+            _ => "شماره"
+        };
+
+        private static List<MappingReportRow> BuildMappingReportRows(
+            List<MappingReportEntry> entries,
+            Dictionary<(string, Guid), MappingReportSide> crmSides,
+            Dictionary<(string, int), MappingReportSide> externalSides)
+        {
             return entries.Select(entry => {
                 var crm = crmSides.GetValueOrDefault((entry.Kind, entry.EntityId))
                     ?? new MappingReportSide("رکورد CRM پیدا نشد", entry.EntityId.ToString(),
-                        "-", "", null, "", "");
+                        "", "", null, "", "");
                 var sepidar = entry.TargetId.HasValue
                     ? externalSides.GetValueOrDefault((entry.TargetEntity, entry.TargetId.Value))
                     : null;
-                sepidar ??= new MappingReportSide(
-                    entry.Status == "saved" ? "نرم‌افزار مقصد" : "معادل قطعی مشخص نیست",
-                    entry.TargetRaw ?? entry.TargetId?.ToString() ?? "-",
-                    entry.TargetRaw ?? entry.TargetId?.ToString() ?? "-",
-                    "", null, "", entry.Status == "saved"
-                        ? "شناسه ثبت‌شده در نرم‌افزار انتخاب‌شده"
-                        : "برای این وضعیت معادل قطعی مشخص نیست.");
+                if (sepidar == null)
+                {
+                    var isMissing = entry.Status == "saved";
+                    sepidar = new MappingReportSide(
+                        isMissing ? "معادل در نرم‌افزار مالی پیدا نشد" : "معادل قطعی مشخص نیست",
+                        entry.TargetRaw ?? entry.TargetId?.ToString() ?? "",
+                        "", "", null, "", isMissing
+                            ? "رکورد معادل در نرم‌افزار انتخاب‌شده یافت نشد."
+                            : "برای این وضعیت معادل قطعی مشخص نیست.",
+                        IsMissing: isMissing);
+                }
 
                 var options = (entry.CandidateIds ?? Array.Empty<int>())
                     .Distinct().Where(id => id > 0)
                     .Select(id => {
                         var candidate = externalSides.GetValueOrDefault((entry.TargetEntity, id));
-                        var itemType = entry.TargetEntity == nameof(Quotation) ? "پیش‌فاکتور"
-                            : entry.TargetEntity == nameof(Invoice) ? "فاکتور" : "مشتری";
+                        var itemType = entry.TargetEntity switch {
+                            nameof(Quotation) => "پیش‌فاکتور",
+                            nameof(Invoice) => "فاکتور",
+                            nameof(Voucher) => "سند حسابداری",
+                            nameof(PaymentHeader) => "اعلامیه پرداخت",
+                            nameof(Party) => "شخص",
+                            nameof(DL) => "حساب تفصیلی",
+                            _ => "معادل"
+                        };
                         var readableTitle = candidate == null
                             ? $"{itemType} با شناسه {id}"
-                            : entry.TargetEntity == nameof(Party)
-                                ? candidate.Customer
-                                : $"{itemType} شماره {candidate.Number} — {candidate.Customer}";
+                            : !string.IsNullOrWhiteSpace(candidate.Customer)
+                                ? candidate.Customer : candidate.Title;
+                        var number = string.IsNullOrWhiteSpace(candidate?.Number)
+                            || candidate.Number == "-" ? ""
+                            : $"{ExternalCodeLabel(entry.TargetEntity)}: {candidate.Number} | ";
                         return new MappingReportTargetOption(id,
-                            readableTitle,
-                            candidate != null
-                                ? $"شناسه {id} | شماره {candidate.Number}"
-                                : $"شناسه {id}");
+                            readableTitle, $"{number}شناسه: {id}");
                     }).ToList();
 
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
                     entry.Reason, entry.Details, entry.Sources, crm, sepidar,
-                    entry.MapType, options, entry.MappingId);
+                    entry.MapType, options, entry.MappingId,
+                    entry.CreatedAt, entry.CreatedBy);
             }).ToList();
         }
     }

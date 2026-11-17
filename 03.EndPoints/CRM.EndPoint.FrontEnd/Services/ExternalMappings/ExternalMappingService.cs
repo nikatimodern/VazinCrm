@@ -43,6 +43,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         private static readonly Guid Sepidar2SoftwareId =
             Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
 
+        public bool SupportsMapping(Guid softwareId) =>
+            softwareId == Sepidar1SoftwareId || softwareId == Sepidar2SoftwareId;
+
         private readonly CRMContextDb db;
         private readonly Sepidar1ContextDb sdb;
         private readonly Sepidar2ContextDb s2Db;

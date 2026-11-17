@@ -7,7 +7,6 @@
         page.dataset.initialized = "1";
 
         const get = id => page.querySelector("#" + id);
-        const softwareSelect = get("lmrSoftware");
         const savedRoot = get("lmrSavedRecords");
         const proposalRoot = get("lmrProposalRecords");
         const selectAll = get("lmrSelectPage");
@@ -26,22 +25,22 @@
 
         const statusNames = {
             saved:"ثبت‌شده", pending:"آماده ثبت", customerConflict:"تعارض مشتری",
-            ambiguous:"نگاشت مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
+            ambiguous:"تطبیق مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
         };
         const reasonNames = {
             MultipleSepidarParties:["چند مشتری سپیدار برای یک مشتری CRM","پیش‌فاکتورها یا فاکتورهای این مشتری به اشخاص متفاوت سپیدار اشاره دارند. در ارتباط‌های پایین مشخص است هر کدام متعلق به کدام مشتری است."],
-            DuplicateCrmCustomersForParty:["چند مشتری CRM برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در CRM به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود نگاشت متعلق به کدام مشتری CRM است."],
-            PartyAlreadyMappedToAnotherCustomer:["مشتری سپیدار قبلاً نگاشت شده","این مشتری سپیدار به مشتری دیگری در CRM متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
-            ExistingDuplicateCustomerParty:["نگاشت مشتری تکراری از قبل وجود دارد","در نگاشت‌های ذخیره‌شده چند مشتری CRM به یک مشتری سپیدار متصل‌اند."],
-            ExistingCustomerMappingMismatch:["نگاشت مشتری با ارتباط‌های فعلی مغایر است","مشتری قبلاً به شخص دیگری در سپیدار وصل شده است."],
+            DuplicateCrmCustomersForParty:["چند مشتری CRM برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در CRM به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود ارتباط مربوط به کدام مشتری CRM است."],
+            PartyAlreadyMappedToAnotherCustomer:["ارتباط مشتری سپیدار قبلاً ثبت شده","این مشتری سپیدار به مشتری دیگری در CRM متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
+            ExistingDuplicateCustomerParty:["ارتباط تکراری مشتری ثبت شده است","در ارتباط‌های ثبت‌شده چند مشتری CRM به یک مشتری سپیدار متصل‌اند."],
+            ExistingCustomerMappingMismatch:["ارتباط مشتری با اطلاعات فعلی مغایر است","مشتری قبلاً به شخص دیگری در سپیدار وصل شده است."],
             LegacyFinancialCustomerIdMismatch:["کد مالی قدیمی با سپیدار متفاوت است","کد مشتری قدیمی CRM با مشتری ثبت‌شده در سپیدار یکسان نیست."],
             PartyNotFoundOrNotCustomer:["معادل سپیدار معتبر نیست","این شخص در نرم‌افزار مقصد پیدا نشده یا مشتری محسوب نمی‌شود."],
-            CustomerHasConflict:["ابتدا تعارض مشتری را تعیین تکلیف کنید","تا زمانی که نگاشت مشتری مشخص نباشد، پیش‌فاکتور یا فاکتور قابل نگاشت نیست."],
-            CustomerMappingPendingApproval:["مشتری هنوز نگاشت نشده","پیشنهاد نگاشت مشتری آماده است اما هنوز در CRM ثبت نشده است."],
-            CustomerNotMapped:["ابتدا مشتری را نگاشت کنید","پیش‌فاکتور یا فاکتور فقط بعد از ثبت نگاشت مشتری در همین نرم‌افزار قابل نگاشت است."],
+            CustomerHasConflict:["ابتدا تعارض مشتری را تعیین تکلیف کنید","تا زمانی که ارتباط مشتری مشخص نباشد، ارتباط پیش‌فاکتور یا فاکتور قابل ثبت نیست."],
+            CustomerMappingPendingApproval:["ارتباط مشتری هنوز ثبت نشده","ارتباط پیشنهادی مشتری آماده است اما هنوز در CRM ثبت نشده است."],
+            CustomerNotMapped:["ابتدا ارتباط مشتری را ثبت کنید","ارتباط پیش‌فاکتور یا فاکتور فقط بعد از ثبت ارتباط مشتری در همین نرم‌افزار قابل ثبت است."],
             DocumentCustomerMissing:["مشتری CRM مشخص نیست","ابتدا مشتری این پیش‌فاکتور یا فاکتور را در CRM مشخص کنید."],
             DocumentCrmCustomerMismatch:["مشتری فاکتور و پیش‌فاکتور CRM فرق دارد","مشتری ثبت‌شده در فاکتور با پیش‌فاکتور مرتبط یکسان نیست."],
-            DocumentSepidarCustomerMismatch:["مشتری سپیدار با نگاشت فرق دارد","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده CRM مطابقت ندارد."],
+            DocumentSepidarCustomerMismatch:["مشتری سپیدار با ارتباط ثبت‌شده متفاوت است","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده CRM مطابقت ندارد."],
             DuplicateProposedTarget:["چند مورد CRM برای یک مورد سپیدار","چند پیش‌فاکتور یا فاکتور CRM برای یک معادل سپیدار پیشنهاد شده‌اند. فقط ارتباط صحیح را انتخاب کنید."],
             ExternalTargetAlreadyMapped:["این معادل قبلاً استفاده شده","این مورد سپیدار قبلاً به یک مورد دیگر CRM وصل شده است."],
             QuotationNumberNotFound:["شماره پیش‌فاکتور یافت نشد","شماره پیش‌فاکتور CRM در سپیدار پیدا نشد."],
@@ -50,7 +49,7 @@
             QuotationCustomerMismatch:["مشتری پیش‌فاکتور فرق دارد","پیش‌فاکتور احتمالی سپیدار برای مشتری متفاوتی ثبت شده است."],
             QuotationMultipleFieldMismatch:["چند اختلاف در پیش‌فاکتور","مشتری، مبلغ، شماره و سال مالی را بررسی کنید."],
             MultipleMatchingQuotations:["چند پیش‌فاکتور احتمالی","چند پیش‌فاکتور مشابه پیدا شده؛ معادل درست را انتخاب کنید."],
-            RelatedQuotationNotMapped:["پیش‌فاکتور مرتبط نگاشت نشده","معادل پیش‌فاکتور مرتبط با فاکتور CRM هنوز پیدا نشده است."],
+            RelatedQuotationNotMapped:["ارتباط پیش‌فاکتور مرتبط ثبت نشده","معادل پیش‌فاکتور مرتبط با فاکتور CRM هنوز پیدا نشده است."],
             InvoiceIdNotFound:["شناسه فاکتور قدیمی پیدا نشد","شناسه قبلی فاکتور در سپیدار وجود ندارد."],
             InvoiceForQuotationNotFound:["فاکتور پیش‌فاکتور مرتبط پیدا نشد","در سپیدار برای پیش‌فاکتور مرتبط فاکتوری پیدا نشده است."],
             InvoiceAmountMismatch:["مبلغ فاکتور فرق دارد","مبلغ فاکتور CRM با معادل احتمالی سپیدار فرق دارد."],
@@ -60,19 +59,30 @@
             InvoiceQuotationMismatch:["پیش‌فاکتور فاکتور فرق دارد","فاکتور سپیدار به پیش‌فاکتور دیگری مرتبط است."],
             InvoiceMultipleFieldMismatch:["چند اختلاف در فاکتور","مشتری، مبلغ، شماره مالی و سال مالی را بررسی کنید."],
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
+            UserExpertExactMatch:["تطبیق نام کارشناس و شخص","نام کارشناس CRM با شخص متناظر در نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserExpertMultipleMatches:["چند شخص هم‌نام","چند شخص با همین نام در نرم‌افزار مالی پیدا شده‌اند؛ معادل درست کارشناس را انتخاب کنید."],
+            UserExpertMultipleCrmUsers:["چند کارشناس CRM هم‌نام","چند کارشناس CRM نام یکسان دارند؛ ارتباط درست را پس از بررسی هویت، دستی ثبت کنید."],
+            UserExpertNoMatch:["شخص هم‌نام یافت نشد","شخص متناظر قطعی پیدا نشده است؛ ارتباط کارشناس را دستی ثبت کنید."],
+            UserExpertAlreadyMapped:["ارتباط شخص قبلاً ثبت شده","شخص مشابه در نرم‌افزار مالی به کارشناس دیگری متصل شده است."],
             ReadyForReview:["آماده ثبت",""],
-            AlreadyMapped:["نگاشت ذخیره‌شده","این رابطه قبلاً در جدول ExternalMapping ثبت شده است."]
+            AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
         };
 
         const state = {
-            softwareId: "", softwareTitle: "", autoIds: [], manualIds: [],
+            softwareId: page.dataset.softwareId || "", softwareTitle: page.dataset.softwareTitle || "",
+            autoIds: [], manualIds: [],
             types: [], counts: [], selected: new Map(), targets: new Map(), crmTargets: new Map(), preview: new Map(),
             activeTab: "saved",
-            saved: { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: 0 },
+            saved: { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: 0 },
             proposal: { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: 0, calculating: false },
             processing: false,
-            deleting: false
+            deleting: false,
+            manualOpen: false,
+            manualEditing: null,
+            manualPrefill: false,
+            editRequest: 0,
+            manualRequests: {crm:0, external:0}
         };
 
         function reason(row) {
@@ -83,7 +93,8 @@
         function typeTitle(row) {
             return state.types.find(t => Number(t.value) === Number(row.mapType))?.title ||
                 ({ Customer:"مشتری", PreFactor:"پیش‌فاکتور", Factor:"فاکتور",
-                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه", Accountancy:"حسابداری" }[row.kind] || show(row.kind));
+                    Cash:"تنخواه", BaseCenterCash:"مرکز هزینه",
+                    AppUser:"کارشناسان" }[row.kind] || show(row.kind));
         }
 
         function canMap(row) {
@@ -92,7 +103,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5].includes(Number(row.mapType)) &&
+                [2,3,5,6].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -136,7 +147,7 @@
                     crmCandidates: [...uniqueCrm.values()],
                     sources: [...new Set(matches.flatMap(row => row.sources || []))],
                     details: "برای این مشتری نرم‌افزار مالی، چند مشتری CRM پیدا شده است. " +
-                        "یک مشتری CRM را انتخاب کنید؛ مشتریان دیگر نگاشت نمی‌شوند."
+                        "یک مشتری CRM را انتخاب کنید؛ برای سایر مشتریان ارتباطی ثبت نمی‌شود."
                 });
             }
             return result;
@@ -174,75 +185,157 @@
             if (preview) return preview;
             if (String(row.sepidar?.id) === value) return row.sepidar;
             const option = row.options?.find(x => String(x.id) === value);
-            return { title:"معادل انتخابی", id:value, number:value, customer:option?.title || "" };
+            return { title:"معادل انتخابی", id:value, number:"", customer:option?.title || "" };
         }
 
-        function readableExtra(row, side, isCrm) {
-            let extra = side?.extra || "";
-            if (!extra.trim()) return "";
-            if (isCrm && Number(row.mapType) === 5) return "";
-            if (isCrm && extra.includes("CustomerId:")) {
-                const financial = extra.match(/شماره مالی:\s*([^|]+)/);
-                return financial && financial[1].trim() && financial[1].trim() !== "null"
-                    ? "شماره فاکتور مالی: " + financial[1].trim() : "";
+        function sideCodeLabel(row, crm, side = null) {
+            switch (Number(row.mapType)) {
+                case 0:
+                    return crm ? "شماره تنخواه" :
+                        String(side?.title || "").includes("سند حسابداری")
+                            ? "شماره سند" : "شماره اعلامیه پرداخت";
+                case 2: return "شماره پیش‌فاکتور";
+                case 3: return "شماره فاکتور";
+                case 4: return crm ? "کد مرکز هزینه" : "کد تفصیلی";
+                case 5: return crm ? "کد مشتری" : "کد تفصیلی";
+                case 6: return crm ? "نام کاربری" : "کد تفصیلی";
+                default: return "شماره";
             }
-            if (!isCrm && extra.includes("PartyId:")) {
-                const m = extra.match(/PartyId:\s*(\d+)/);
-                return m ? "کد مشتری مرتبط در نرم‌افزار: "+m[1] : "";
-            }
-            return extra.replaceAll("FiscalYearRef:","سال مالی:").replaceAll("SepidarId:","کد قبلی سپیدار:");
         }
 
-        function detailSide(row, side, isCrm) {
-            const label = isCrm ? "CRM" : state.softwareTitle;
-            const customer = row.mapType === 5;
-            const rows = [
-                [customer ? "کد مشتری" : "شماره", side?.number],
-                ["نام", side?.customer || side?.title],
-                ...(!customer ? [["مبلغ نهایی", side?.amount == null ? "" : money(side.amount)+" ریال"],
-                    ["تاریخ",side?.date]] : []),
-                ["توضیح",readableExtra(row,side,isCrm)]
-            ].filter(x => x[1] !== undefined && x[1] !== null && x[1] !== "");
-            return '<section class="lmr-detail-side"><h4>'+escape(label)+'</h4>'+
-                rows.map(x => '<div><span>'+escape(x[0])+'</span><b>'+escape(show(x[1]))+'</b></div>').join("")+
-                '<small>شناسه داخلی: '+escape(side?.id || "—")+'</small></section>';
+        function sideDisplayName(row, side, crm) {
+            if (!side) return "معادل مشخص نیست";
+            const name = show(side.customer || side.title);
+            return !crm && [2, 3].includes(Number(row.mapType)) && side.customer
+                ? "مشتری: " + name : name;
         }
 
-        function inputTarget(row) {
-            if (!canMap(row)) return "";
-            if (row.crmCandidates?.length) {
-                const chosen = state.crmTargets.get(row.key) || "";
-                return '<div class="lmr-map-action lmr-crm-choice">' +
-                    '<label><span>انتخاب مشتری CRM برای این مشتری ' + escape(state.softwareTitle) + '</span>' +
-                    '<select data-crm-target aria-label="انتخاب مشتری CRM">' +
-                    '<option value="">مشتری CRM را انتخاب کنید</option>' +
-                    row.crmCandidates.map(item =>
-                        '<option value="' + escape(item.id) + '" ' +
-                        (chosen === item.id ? "selected" : "") + '>' +
-                        escape(item.name) + ' — کد ' + escape(show(item.code)) + '</option>'
-                    ).join("") + '</select></label>' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
-            }
-            const value = targetValue(row);
-            const ready = row.status === "pending" && row.options?.length === 1;
-            if (ready)
-                return '<div class="lmr-map-action lmr-ready-action">' +
-                    '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function partyRoleBadges(data, escapeOption) {
+            const roles = [
+                ["isCustomer", "مشتری", "customer"],
+                ["isEmployee", "کارمند", "employee"],
+                ["isVendor", "تأمین‌کننده", "vendor"],
+                ["isBroker", "واسط", "broker"]
+            ].filter(([field]) => data[field] === true);
+            return roles.length
+                ? roles.map(([, label, kind]) =>
+                    '<span class="lmr-party-badge lmr-party-badge-' + kind + '">' +
+                    escapeOption(label) + '</span>').join("")
+                : '<span class="lmr-party-badge lmr-party-badge-none">بدون نقش</span>';
+        }
 
-            const options = row.options || [];
-            const control = options.length ?
-                '<select data-map-target aria-label="انتخاب معادل">' +
-                    '<option value="">معادل صحیح را انتخاب کنید</option>' +
-                    options.map(opt => '<option value="' + escape(opt.id) + '" ' +
-                        (String(opt.id) === value ? "selected" : "") + '>' + escape(opt.title) +
-                        ' (کد ' + escape(opt.id) + ')</option>').join("") + '</select>'
-                : '<input type="number" min="1" data-map-target aria-label="شناسه معادل" ' +
-                    'placeholder="شناسه معادل در نرم‌افزار" value="' + escape(value) + '" />';
-            return '<div class="lmr-map-action"><label><span>معادل انتخابی</span>' + control + '</label>' +
-                '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
-                    (!verifiedTarget(row) ? "disabled" : "") + '>ثبت نگاشت</button></div>';
+        function simpleSide(row, side, crm) {
+            if (!crm && side?.isMissing) {
+                const storedId = side.id && side.id !== "-"
+                    ? '<small>شناسه ثبت‌شده: ' + escape(side.id) + '</small>' : "";
+                return '<div class="lmr-decision-missing" role="status">' +
+                    '<strong><i class="fas fa-exclamation-circle" aria-hidden="true"></i> ' +
+                    'رکورد معادل در نرم‌افزار مالی پیدا نشد.</strong>' +
+                    storedId + '</div>';
+            }
+            const hasData = side && side.id && side.id !== "-" &&
+                !String(side.title || "").includes("مشخص نیست");
+            if (!hasData)
+                return '<div class="lmr-decision-empty">موردی برای نمایش مشخص نشده است.</div>';
+            const number = side.number && side.number !== "-" ? side.number : "";
+            const details = [];
+            if (number) details.push(escape(sideCodeLabel(row, crm, side)) +
+                ': ' + escape(number));
+            // CRM GUIDs are only internal keys, never displayed in cards.
+            if (!crm && validId(side.id))
+                details.push('شناسه: ' + escape(side.id));
+            const numberText = details.length
+                ? '<small>' + details.join(' | ') + '</small>' : "";
+            // Party flags are provided only for actual Party records. Restrict badges
+            // to saved external mappings; other entity types keep their current UI.
+            const hasPartyRoles = !crm && row.status === "saved" &&
+                ["isCustomer", "isEmployee", "isVendor", "isBroker"]
+                    .some(field => typeof side[field] === "boolean");
+            const title = escape(sideDisplayName(row, side, crm));
+            const name = '<strong' + (hasPartyRoles ? ' title="' + title + '"' : '') +
+                '>' + title + '</strong>';
+            const main = hasPartyRoles
+                ? '<div class="lmr-saved-party-main">' + name +
+                  '<span class="lmr-party-badges" aria-label="نقش‌های شخص در سپیدار">' +
+                  partyRoleBadges(side, escape) + '</span></div>'
+                : name;
+            return '<div class="lmr-decision-single">' + main + numberText + '</div>';
+        }
+
+        function candidateChoices(row, side) {
+            const crmSide = side === "crm";
+            const candidates = crmSide ? row.crmCandidates || [] : row.options || [];
+            const chosen = crmSide ? state.crmTargets.get(row.key) || "" : targetValue(row);
+            const canChoose = canMap(row);
+            const codeLabel = sideCodeLabel(row, crmSide);
+            const name = (crmSide ? "crm-" : "external-") + row.key;
+            return '<div class="lmr-choice-list" role="group" aria-label="' +
+                escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
+                candidates.map(item => {
+                    const id = String(item.id);
+                    const title = crmSide ? item.name : item.title;
+                    const code = crmSide ? item.code : item.id;
+                    const selected = chosen === id;
+                    const choice = canChoose
+                        ? '<input type="radio" ' +
+                            (crmSide ? 'data-crm-target ' : 'data-map-target ') +
+                            'name="' + escape(name) + '" value="' + escape(id) + '"' +
+                            (selected ? ' checked' : '') + '>'
+                        : '<i class="fas fa-circle lmr-readonly-dot" aria-hidden="true"></i>';
+                    const detail = crmSide
+                        ? (code && code !== "-" ? codeLabel + ': ' + code : "")
+                        : (item.description || 'شناسه: ' + id);
+                    return '<label class="lmr-choice' +
+                        (selected && canChoose ? ' is-picked' : '') +
+                        (!canChoose ? ' is-readonly' : '') + '">' +
+                        choice + '<span class="lmr-choice-text"><strong>' +
+                        escape(show(title)) + '</strong>' +
+                        (detail ? '<small>' + escape(detail) + '</small>' : '') +
+                        '</span></label>';
+                }).join("") + '</div>';
+        }
+
+        function decisionSide(row, side) {
+            const crmSide = side === "crm";
+            const isMultiCrm = crmSide && row.crmCandidates?.length > 1;
+            const isMultiExternal = !crmSide && !row.crmCandidates?.length &&
+                row.status !== "saved" &&
+                !(row.status === "pending" && row.options?.length === 1) &&
+                row.options?.length > 0;
+            const heading = crmSide ? "CRM" : state.softwareTitle;
+            const sideContent = isMultiCrm
+                ? candidateChoices(row, "crm")
+                : isMultiExternal
+                    ? candidateChoices(row, "external")
+                    : simpleSide(row, crmSide ? row.crm : targetPreview(row), crmSide);
+            return '<section class="lmr-decision-side' +
+                (crmSide ? ' is-crm' : ' is-external') + '">' +
+                '<div class="lmr-decision-side-title"><span>' + escape(heading) + '</span>' +
+                ((isMultiCrm || isMultiExternal) && canMap(row)
+                    ? '<small>یک مورد انتخاب کنید</small>' : '') + '</div>' +
+                sideContent + '</section>';
+        }
+
+        function expandableContent(row) {
+            const evidence = [...new Set((row.sources || []).map(x => String(x).trim()).filter(Boolean))];
+            const mismatch = renderMismatchDetails(row);
+            const reasonText = reason(row)[1] || "";
+            const raw = String(row.details || "").trim();
+            const technical = /(?:Quotation|Invoice)Id=\d+[:]|(?:CustomerId|FiscalYearRef|SepidarPartyId)=/i.test(raw);
+            const repeated = row.reason === "MultipleSepidarParties" ||
+                row.reason === "DuplicateCrmCustomersForParty";
+            const extra = row.status !== "saved" && row.status !== "pending"
+                ? (raw && !technical && !(repeated && evidence.length) ? raw :
+                    (!evidence.length && !mismatch ? reasonText : ""))
+                : "";
+            const references = evidence.length
+                ? '<div class="lmr-related"><h4>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</h4>' +
+                    '<ul>' + evidence.map(line => '<li>' + escape(line) + '</li>').join("") +
+                    '</ul></div>' : "";
+            const supplementary = extra
+                ? '<div class="lmr-related lmr-detail-note"><h4>توضیحات تکمیلی</h4>' +
+                    '<p>' + escape(extra) + '</p></div>' : "";
+            return references + mismatch + supplementary;
         }
 
         // Break technical mismatch strings into readable, per-field comparisons.
@@ -316,67 +409,93 @@
         }
 
         function card(row) {
-            const title = reason(row);
-            const isCustomer = Number(row.mapType) === 5;
-            const left = selectedCrm(row) || {};
-            const right = targetPreview(row) || {};
-            const mappable = canMap(row);
+            const mapped = canMap(row);
+            const selected = mapped && verifiedTarget(row);
+            const extra = expandableContent(row);
+            const label = reason(row)[0];
             const stateClass = row.status === "saved" ? "saved" :
                 row.status === "pending" ? "proposal" : "problem";
-            const related = (row.sources || []).filter(Boolean);
-            const crmName = left.customer || left.title;
-            const extName = right.customer || right.title;
-            const leftNum = left.number;
-            const rightNum = right.number;
-            const leftAmount = left.amount;
-            const rightAmount = right.amount;
-            const amountDiff = !isCustomer && leftAmount != null && rightAmount != null &&
-                Number(leftAmount) !== Number(rightAmount);
-            return '<article class="lmr-item lmr-'+stateClass+'" data-key="'+escape(row.key)+'" role="listitem">'+
-                '<header class="lmr-item-head">'+
-                    (mappable ? '<label class="lmr-item-select"><input type="checkbox" data-select-map '+
-                        (state.selected.has(row.key) ? "checked " : "")+
-                        (!verifiedTarget(row) ? "disabled " : "")+'aria-label="انتخاب نگاشت" /></label>' : "")+
-                    '<b class="lmr-type">'+escape(typeTitle(row))+'</b>'+
-                    '<span class="lmr-state">'+escape(statusNames[row.status] || row.status)+'</span>'+
-                    (row.status === "pending" || row.status === "saved" ? "" :
-                        '<span class="lmr-short-reason">'+escape(title[0])+'</span>')+
-                '</header>'+
-                '<div class="lmr-pair">'+
-                    '<div class="lmr-pair-side"><span>CRM</span><strong>'+escape(show(crmName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(leftNum))+'</small></div>'+
-                    '<span class="lmr-arrows"><i class="fas fa-exchange-alt" aria-hidden="true"></i></span>'+
-                    '<div class="lmr-pair-side"><span>'+escape(state.softwareTitle)+'</span><strong>'+escape(show(extName))+'</strong>'+
-                        '<small>'+(isCustomer ? "کد مشتری " : "شماره ")+escape(show(rightNum))+'</small></div>'+
-                    (amountDiff ? '<span class="lmr-amount-warning">اختلاف مبلغ: '+escape(money(leftAmount))+
-                        ' در CRM / '+escape(money(rightAmount))+' در نرم‌افزار</span>' : '')+
-                '</div>'+
-                (row.reason === "PartyAlreadyMappedToAnotherCustomer" ||
-                    row.reason === "ExistingDuplicateCustomerParty"
-                    ? '<div class="lmr-owner-notice"><i class="fas fa-link" aria-hidden="true"></i><strong>' +
-                        escape(row.details || "نگاشت قبلی این مشتری را بررسی کنید.") +
-                        '</strong></div>'
-                    : row.status === "pending" || row.status === "saved" ? "" :
-                        '<div class="lmr-one-line">' + escape(title[1]) + '</div>')+
-                '<footer class="lmr-item-footer">'+
-                    '<button type="button" class="lmr-expand" data-expand aria-expanded="false">توضیحات <i class="fas fa-chevron-down" aria-hidden="true"></i></button>'+
-                    inputTarget(row)+
-                    (row.status === "saved" && row.mappingId ?
-                        '<button type="button" class="lmr-btn lmr-btn-danger" data-delete-mapping aria-label="حذف این نگاشت">' +
-                            '<i class="fas fa-trash-alt" aria-hidden="true"></i> حذف نگاشت</button>' : '')+
-                '</footer>'+
-                '<div class="lmr-expanded" hidden>'+
-                    '<div class="lmr-detail-grid">'+detailSide(row,left,true)+detailSide(row,right,false)+'</div>'+
-                    (related.length ? '<div class="lmr-related"><b>ارتباط پیش‌فاکتورها، فاکتورها و مشتریان</b>'+
-                        '<ul>'+related.map(line => '<li>'+escape(line)+'</li>').join("")+'</ul></div>' : '')+
-                    renderMismatchDetails(row) +
-                    (row.details && row.status !== "saved" && row.status !== "pending" &&
-                        !renderMismatchDetails(row) &&
-                        row.reason !== "PartyAlreadyMappedToAnotherCustomer" &&
-                        row.reason !== "ExistingDuplicateCustomerParty"
-                            ? '<div class="lmr-technical"><h4>توضیحات تکمیلی</h4><p>' +
-                                escape(row.details) + '</p></div>' : '')+
-                '</div></article>';
+            const needsManual = row.status !== "saved" && row.status !== "pending" &&
+                !row.crmCandidates?.length && !row.options?.length &&
+                state.manualIds.includes(state.softwareId);
+            const savedAudit = row.status === "saved"
+                ? '<span class="lmr-saved-audit">' +
+                    '<span><i class="far fa-user" aria-hidden="true"></i> ثبت‌کننده: ' +
+                        escape(row.createdBy?.trim() || "نامشخص") + '</span>' +
+                    '<span><i class="far fa-calendar-alt" aria-hidden="true"></i> تاریخ ثبت: ' +
+                        escape(row.createdAt?.trim() || "نامشخص") + '</span>' +
+                  '</span>'
+                : "";
+            const actions = (extra
+                    ? '<button type="button" class="lmr-expand" data-expand aria-expanded="false">' +
+                        '<i class="fas fa-chevron-down" aria-hidden="true"></i> توضیحات</button>'
+                    : "") +
+                (needsManual
+                    ? '<button type="button" class="lmr-btn lmr-btn-soft" data-open-manual>' +
+                        '<i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت دستی</button>'
+                    : "") +
+                (mapped && (row.options?.length || row.crmCandidates?.length ||
+                        row.status === "pending")
+                    ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
+                        (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
+                    : "") +
+                (row.status === "saved" && row.mappingId
+                    ? '<span class="lmr-saved-actions">' +
+                        '<button type="button" class="lmr-btn lmr-btn-soft" ' +
+                        'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
+                        '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                        'data-delete-mapping>حذف ارتباط</button></span>'
+                    : "");
+            return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
+                '" data-key="' + escape(row.key) + '" role="listitem">' +
+                '<header class="lmr-item-head">' +
+                    '<span class="lmr-type">' + escape(typeTitle(row)) + '</span>' +
+                    '<span class="lmr-state">' +
+                        escape(statusNames[row.status] || row.status) + '</span>' +
+                    savedAudit +
+                    (row.status === "saved" || row.status === "pending" ? "" :
+                        '<span class="lmr-short-reason">' + escape(label) + '</span>') +
+                    (mapped && selected
+                        ? '<label class="lmr-item-select" title="انتخاب برای ثبت گروهی">' +
+                            '<input type="checkbox" data-select-map aria-label="انتخاب برای ثبت گروهی" ' +
+                            (state.selected.has(row.key) ? "checked " : "") +
+                            (!selected ? "disabled " : "") + '></label>'
+                        : "") +
+                '</header>' +
+                '<div class="lmr-decision-grid">' +
+                    decisionSide(row, "crm") +
+                    '<span class="lmr-decision-arrow" aria-hidden="true">' +
+                        '<i class="fas fa-exchange-alt"></i></span>' +
+                    decisionSide(row, "external") +
+                '</div>' +
+                (actions ? '<footer class="lmr-item-footer">' + actions + '</footer>' : "") +
+                (extra ? '<div class="lmr-expanded" hidden>' + extra + '</div>' : "") +
+                '</article>';
+        }
+
+        function refreshProposalCard(row) {
+            const old = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (!old) return;
+            const expanded = !!old.querySelector(".lmr-expanded") &&
+                !old.querySelector(".lmr-expanded").hidden;
+            const active = old.contains(document.activeElement) ? document.activeElement : null;
+            const focusField = active?.matches("[data-crm-target], [data-map-target]")
+                ? { kind: active.hasAttribute("data-crm-target") ? "data-crm-target" : "data-map-target",
+                    value: active.value } : null;
+            old.outerHTML = card(row);
+            const next = [...proposalRoot.querySelectorAll("[data-key]")]
+                .find(element => element.dataset.key === row.key);
+            if (!next) return;
+            if (expanded && next.querySelector(".lmr-expanded")) {
+                next.querySelector(".lmr-expanded").hidden = false;
+                next.querySelector("[data-expand]")?.setAttribute("aria-expanded", "true");
+            }
+            if (focusField) {
+                const input = [...next.querySelectorAll("[" + focusField.kind + "]")]
+                    .find(element => element.value === focusField.value);
+                input?.focus({ preventScroll: true });
+            }
         }
 
         function feedback(section, message = "", error = false) {
@@ -387,14 +506,15 @@
         }
 
         function updateSummary() {
-            const count = state.counts.filter(x => x.softwareId === state.softwareId)
-                .reduce((sum, x) => sum + Number(x.count), 0);
-            get("lmrSavedCount").textContent = format.format(count);
+            // The saved-list API returns the total after applying type and search filters.
+            // Workspace counts are kept only for populating the filter options.
+            get("lmrSavedCount").textContent = state.saved.total == null
+                ? "—" : format.format(state.saved.total);
             const stats = state.proposal.loaded ? state.proposal.summary : null;
             get("lmrProposalStats").hidden = !stats;
             if (stats) {
                 get("lmrPendingCount").textContent = format.format(
-                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0));
+                    (stats.pendingCustomers || 0) + (stats.pendingDocuments || 0) + (stats.pendingUsers || 0));
                 get("lmrCustomerConflicts").textContent = format.format(stats.customerConflicts || 0);
                 get("lmrBlockedCount").textContent = format.format(
                     (stats.blockedDocuments || 0) + (stats.ambiguous || 0));
@@ -412,7 +532,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5]);
+                : new Set([2, 3, 5, 6]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -512,7 +632,7 @@
 
         function renderSaved(rows, total) {
             savedRoot.innerHTML = rows.length ? rows.map(card).join("") :
-                '<div class="lmr-empty">نگاشت ثبت‌شده‌ای با این فیلتر پیدا نشد.</div>';
+                '<div class="lmr-empty">ارتباط ثبت‌شده‌ای با این فیلتر پیدا نشد.</div>';
             feedback("saved");
             drawPages("saved", total);
         }
@@ -525,7 +645,7 @@
                 get("lmrProposalPagination").replaceChildren();
                 get("lmrSelectionActions").hidden = true;
                 if (!state.autoIds.includes(state.softwareId))
-                    feedback("proposal", "برای این نرم‌افزار هنوز الگوریتم تطبیق خودکار تعریف نشده است. نگاشت‌های ثبت‌شده در بخش بالا قابل مشاهده‌اند.");
+                    feedback("proposal", "برای این نرم‌افزار هنوز الگوریتم تطبیق خودکار تعریف نشده است. ارتباط‌های ثبت‌شده در بخش بالا قابل مشاهده‌اند.");
                 else
                     feedback("proposal", "برای دریافت پیشنهادهای جدید، دکمه «محاسبه پیشنهادها» را انتخاب کنید.");
                 return;
@@ -559,21 +679,24 @@
             if (!state.softwareId) return;
             const request = ++model.request;
             const softwareId = state.softwareId;
+            model.total = null;
+            updateSummary();
             savedRoot.replaceChildren();
-            feedback("saved", "در حال خواندن نگاشت‌های ثبت‌شده…");
+            feedback("saved", "در حال خواندن ارتباط‌های ثبت‌شده…");
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetSavedExternalMappings",
+                url: "/ExternalSoftware/GetSavedExternalMappings",
                 params: { softwareId, mapType: model.type || undefined, search: model.search,
                     page: model.page, pageSize: model.size },
                 showLoading: false, timeout: 90000
             });
             if (!isActive() || request !== model.request || softwareId !== state.softwareId) return;
             if (!result) {
-                feedback("saved", "دریافت نگاشت‌های ثبت‌شده ناموفق بود.", true);
+                feedback("saved", "دریافت ارتباط‌های ثبت‌شده ناموفق بود.", true);
                 return;
             }
             model.rows = result.rows || [];
             model.total = Number(result.total || 0);
+            updateSummary();
             const max = model.size === 0 ? 1 : Math.max(1, Math.ceil(model.total / model.size));
             if (model.page > max) {
                 model.page = max;
@@ -587,10 +710,10 @@
             if (state.deleting || !row?.mappingId || row.status !== "saved") return;
 
             const ok = await confirmAlert({
-                title: "حذف نگاشت",
-                text: "نگاشت «" + typeTitle(row) + "» بین CRM و «" +
+                title: "حذف ارتباط",
+                text: "ارتباط «" + typeTitle(row) + "» بین CRM و «" +
                     state.softwareTitle + "» حذف شود؟ اطلاعات اصلی در CRM و نرم‌افزار مالی حذف نمی‌شوند.",
-                icon: "warning", confirmText: "حذف نگاشت", cancelText: "انصراف"
+                icon: "warning", confirmText: "حذف ارتباط", cancelText: "انصراف"
             });
             if (!ok) return;
 
@@ -602,7 +725,7 @@
             if (deleteButton) deleteButton.disabled = true;
 
             const result = await sendApiRequest({
-                url: "/ExternalMapping/DeleteExternalMapping",
+                url: "/ExternalSoftware/DeleteExternalMapping",
                 method: "POST",
                 headers: { "RequestVerificationToken": token },
                 data: { softwareId, mappingId: row.mappingId },
@@ -617,7 +740,7 @@
                 return;
             }
 
-            toastifySuccess("نگاشت انتخاب‌شده حذف شد.");
+            toastifySuccess("ارتباط انتخاب‌شده حذف شد.");
             // Any calculated proposal may be outdated after deleting a saved mapping.
             state.proposal.loaded = false;
             state.proposal.rows = [];
@@ -632,7 +755,7 @@
             renderProposals();
 
             const options = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions",
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions",
                 showLoading: false
             });
             if (!isActive() || softwareId !== state.softwareId) return;
@@ -654,7 +777,7 @@
             proposalRoot.replaceChildren();
             feedback("proposal", "در حال محاسبه تطبیق‌های " + state.softwareTitle + "…");
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingReview",
+                url: "/ExternalSoftware/GetExternalMappingReview",
                 params: { softwareId },
                 showLoading: false, timeout: 180000
             });
@@ -678,10 +801,8 @@
             renderProposals();
         }
 
-        async function changeSoftware() {
-            state.softwareId = softwareSelect.value;
-            state.softwareTitle = softwareSelect.selectedOptions[0]?.textContent || "نرم‌افزار خارجی";
-            state.saved = { search: "", type: "", page: 1, size: 10, total: 0, rows: [], request: state.saved.request + 1 };
+        async function initializeSelectedSoftware() {
+            state.saved = { search: "", type: "", page: 1, size: 10, total: null, rows: [], request: state.saved.request + 1 };
             state.proposal = { search: "", type: "", reason: "", status: "pending", page: 1, size: 10,
                 loaded: false, rows: [], visible: [], summary: null, request: state.proposal.request + 1, calculating: false };
             state.selected.clear();
@@ -712,28 +833,25 @@
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...items.filter(x => x.mapType === 5),
-                ...items.filter(x => x.mapType === 2),
-                ...items.filter(x => x.mapType === 3)
+                ...[5, 6, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
-                toastifyError("نوع بعضی از نگاشت‌های انتخاب‌شده قابل ثبت نیست.");
+                toastifyError("امکان ثبت ارتباط برای بعضی از موارد انتخاب‌شده وجود ندارد.");
                 return;
             }
 
             const agreed = await confirmAlert({
-                title: "تأیید نگاشت",
-                text: "ثبت " + format.format(items.length) + " نگاشت در «" +
+                title: "تأیید ثبت ارتباط",
+                text: "ثبت " + format.format(items.length) + " ارتباط در «" +
                     state.softwareTitle + "» انجام شود؟ " +
-                    (items.length > 100 ? "نگاشت‌ها به دسته‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
-                    "مشتری‌ها قبل از پیش‌فاکتورها و فاکتورها ثبت می‌شوند.",
-                icon: "question", confirmText: "ثبت نگاشت", cancelText: "انصراف"
+                    (items.length > 100 ? "ارتباط‌ها در گروه‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
+                    "ارتباط‌ها پس از اعتبارسنجی دو رکورد در CRM ثبت می‌شوند.",
+                icon: "question", confirmText: "ثبت ارتباط", cancelText: "انصراف"
             });
             if (!agreed) return;
 
             const softwareId = state.softwareId;
             state.processing = true;
-            softwareSelect.disabled = true;
             mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = true);
             get("lmrCompute").disabled = true;
             selectAll.disabled = true;
@@ -742,14 +860,14 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 2, 3]) {
+                for (const groupType of [5, 6, 4, 0, 1, 2, 3]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
-                        feedback("proposal", "در حال ثبت نگاشت‌ها: " +
+                        feedback("proposal", "در حال ثبت ارتباط‌ها: " +
                             format.format(savedCount) + " از " + format.format(items.length));
                         const result = await sendApiRequest({
-                            url: "/ExternalMapping/SaveSelectedExternalMappings",
+                            url: "/ExternalSoftware/SaveSelectedExternalMappings",
                             method: "POST",
                             headers: { "RequestVerificationToken": token },
                             data: { externalSoftwareId: softwareId, items: batch },
@@ -776,14 +894,13 @@
                 // Earlier batches may already have been committed. Report their count.
             } finally {
                 state.processing = false;
-                softwareSelect.disabled = false;
-                mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = false);
+                    mainTabs.querySelectorAll("[data-main-tab]").forEach(button => button.disabled = false);
                 updateSummary();
                 updateSelection();
             }
 
             if (savedCount > 0) {
-                toastifySuccess(format.format(savedCount) + " نگاشت ثبت شد.");
+                toastifySuccess(format.format(savedCount) + " ارتباط ثبت شد.");
                 state.selected.clear();
                 state.targets.clear();
                 state.preview.clear();
@@ -795,7 +912,7 @@
                 updateProposalTabs();
                 renderProposals();
                 const options = await sendApiRequest({
-                    url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                    url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
                 });
                 if (options) state.counts = options.counts || [];
                 fillTypes("saved");
@@ -810,9 +927,10 @@
                     format.format(remaining) + " مورد باقی مانده است. " +
                     "پیشنهادها را دوباره محاسبه کنید و موارد باقی‌مانده را بررسی کنید.", true);
             } else if (savedCount > 0) {
-                feedback("proposal", "نگاشت‌های انتخاب‌شده ثبت شدند. " +
+                feedback("proposal", "ارتباط‌های انتخاب‌شده ثبت شدند. " +
                     "برای دریافت پیشنهادهای به‌روز، محاسبه پیشنهادها را مجدداً اجرا کنید.");
             }
+            return !failed && savedCount === items.length;
         }
 
         async function preview(row, id) {
@@ -821,24 +939,14 @@
             if (state.preview.has(key)) return;
             const softwareId = state.softwareId;
             const result = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingTargetDetails",
+                url: "/ExternalSoftware/GetExternalMappingTargetDetails",
                 params: { softwareId, mapType: row.mapType, targetId: Number(id) },
                 showLoading: false, showError: false, timeout: 30000
             });
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
             if (result?.target) state.preview.set(key, result.target);
             else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
-            const old = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (!old) return;
-            const expanded = !old.querySelector(".lmr-expanded").hidden;
-            old.outerHTML = card(row);
-            const next = [...proposalRoot.querySelectorAll("[data-key]")]
-                .find(x => x.dataset.key === row.key);
-            if (next && expanded) {
-                next.querySelector(".lmr-expanded").hidden = false;
-                next.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-            }
+            refreshProposalCard(row);
             updateSelection();
         }
 
@@ -854,16 +962,24 @@
 
         savedRoot.addEventListener("click", async event => {
             if (toggleDetails(savedRoot, event)) return;
-            if (!event.target.closest("[data-delete-mapping]")) return;
+            const editButton = event.target.closest("[data-edit-mapping]");
+            const deleteButton = event.target.closest("[data-delete-mapping]");
+            if (!editButton && !deleteButton) return;
             const savedCard = event.target.closest("[data-key]");
             const row = state.saved.rows.find(item => item.key === savedCard?.dataset.key);
-            if (row) await deleteSavedMapping(row);
+            if (!row) return;
+            if (editButton) await editSavedMapping(row);
+            else await deleteSavedMapping(row);
         });
         proposalRoot.addEventListener("click", async event => {
             if (toggleDetails(proposalRoot, event)) return;
             const panel = event.target.closest("[data-key]");
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
+            if (event.target.closest("[data-open-manual]")) {
+                openManualMapping(Number(row.mapType));
+                return;
+            }
             if (event.target.closest("[data-map-one]")) {
                 const item = payload(row);
                 if (item) await save([item]);
@@ -873,31 +989,22 @@
         proposalRoot.addEventListener("change", event => {
             if (state.processing) return;
             const panel = event.target.closest("[data-key]");
-            const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
+            const row = state.proposal.visible.find(item => item.key === panel?.dataset.key);
             if (!row) return;
             if (event.target.matches("[data-crm-target]")) {
-                const id = event.target.value;
-                state.crmTargets.set(row.key, id);
+                state.crmTargets.set(row.key, event.target.value);
                 state.selected.delete(row.key);
-                const expanded = !panel.querySelector(".lmr-expanded").hidden;
-                panel.outerHTML = card(row);
-                const updated = [...proposalRoot.querySelectorAll("[data-key]")]
-                    .find(item => item.dataset.key === row.key);
-                if (expanded && updated) {
-                    updated.querySelector(".lmr-expanded").hidden = false;
-                    updated.querySelector("[data-expand]").setAttribute("aria-expanded", "true");
-                }
+                refreshProposalCard(row);
                 updateSelection();
             } else if (event.target.matches("[data-map-target]")) {
                 const id = event.target.value.trim();
                 state.targets.set(row.key, id);
                 state.selected.delete(row.key);
-                const button = panel.querySelector("[data-map-one]");
-                if (button) button.disabled = !verifiedTarget(row);
-                const checkbox = panel.querySelector("[data-select-map]");
-                if (checkbox) { checkbox.checked = false; checkbox.disabled = !verifiedTarget(row); }
+                refreshProposalCard(row);
                 updateSelection();
-                preview(row, id);
+                // Only a verified external record may be submitted. Do not bypass
+                // the existing server-side check for conflicts and ambiguous matches.
+                if (validId(id)) void preview(row, id);
             } else if (event.target.matches("[data-select-map]")) {
                 const item = payload(row);
                 if (event.target.checked && item) state.selected.set(row.key, item);
@@ -978,7 +1085,7 @@
         async function refreshSaved() {
             const softwareId = state.softwareId;
             const options = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
             });
             if (!isActive() || softwareId !== state.softwareId) return;
             if (options) {
@@ -989,14 +1096,385 @@
             await loadSaved();
         }
 
-        softwareSelect.addEventListener("change", changeSoftware);
+
+        // Manual mappings use two independent, server-backed TomSelect instances.
+        // Every search is constrained by the selected software, entity and map type.
+        const manualModal = get("lmrManualModal");
+        let manualReturnFocus = null;
+        const manualType = get("lmrManualType");
+        const manualCrmSelect = get("lmrManualCrmSelect");
+        const manualExternalSelect = get("lmrManualExternalSelect");
+        const manualSelects = { crm: null, external: null };
+        const manualEntityTypes = {
+            0: { crm: ["Cash", "تنخواه‌های CRM"], external: ["PaymentHeader", "اعلامیه‌های پرداخت"] },
+            2: { crm: ["PreFactor", "پیش‌فاکتورهای CRM"], external: ["Quotation", "پیش‌فاکتورهای مالی"] },
+            3: { crm: ["Factor", "فاکتورهای CRM"], external: ["Invoice", "فاکتورهای مالی"] },
+            4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
+            5: { crm: ["Customer", "مشتریان CRM"], external: ["Party", "اشخاص مالی"] },
+            6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] }
+        };
+
+        async function editSavedMapping(row) {
+            if (!row?.mappingId || state.processing || state.deleting || state.manualOpen)
+                return;
+            const softwareId = state.softwareId;
+            const request = ++state.editRequest;
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalSoftware/GetExternalMappingForEdit",
+                    params: { softwareId, mappingId: row.mappingId },
+                    showLoading: false, timeout: 30000
+                });
+                if (!isActive() || softwareId !== state.softwareId ||
+                    request !== state.editRequest || !result?.mappingId)
+                    return;
+                openManualMapping(result);
+            } catch {
+                toastifyError("اطلاعات ارتباط برای ویرایش دریافت نشد.");
+            }
+        }
+
+        function manualTypeDetails() {
+            const type = manualType.value === "" ? null : Number(manualType.value);
+            get("lmrManualTargetKindBox").hidden = type !== 0;
+            return {
+                mapType: type,
+                targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
+            };
+        }
+
+        function manualEntityInfo(side) {
+            const type = manualTypeDetails();
+            const item = manualEntityTypes[type.mapType]?.[side];
+            if (!item) return null;
+            if (side === "external" && type.targetEntity === "Voucher")
+                return ["Voucher", "Voucher"];
+            return item;
+        }
+
+        function updateManualEntityLabels() {
+            for (const side of ["crm", "external"]) {
+                const el = get(side === "crm" ? "lmrManualCrmEntity" : "lmrManualExternalEntity");
+                const info = manualEntityInfo(side);
+                el.textContent = info
+                    ? side === "external" ? info[0] : info[1] + " (" + info[0] + ")"
+                    : "ابتدا نوع ارتباط را انتخاب کنید";
+            }
+        }
+
+        function manualFeedback(message = "", error = false) {
+            const element = get("lmrManualFeedback");
+            element.textContent = message;
+            element.classList.toggle("lmr-error", error);
+        }
+
+        function manualValue(side) {
+            return String(manualSelects[side]?.getValue() || "");
+        }
+
+        function manualSubmitState() {
+            const validType = manualType.value !== "" &&
+                Object.hasOwn(manualEntityTypes, Number(manualType.value));
+            get("lmrManualConfirm").disabled = !state.manualOpen || state.processing ||
+                !validType ||
+                !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(manualValue("crm")) ||
+                !validId(manualValue("external"));
+        }
+
+        function destroyManualSelects() {
+            for (const side of ["crm", "external"]) {
+                state.manualRequests[side]++;
+                manualSelects[side]?.destroy();
+                manualSelects[side] = null;
+            }
+        }
+
+        function renderPartyOption(data, escapeOption, selected = false) {
+            const badges = partyRoleBadges(data, escapeOption);
+            const name = escapeOption(data.text || "");
+            return '<div class="' + (selected ? "lmr-remote-selected " : "lmr-remote-option ") +
+                'lmr-party-line">' +
+                '<strong class="lmr-party-name" dir="auto" title="' + name + '">' + name +
+                '</strong><span class="lmr-party-badges">' + badges + '</span></div>';
+        }
+
+        function initManualSide(side, selection = null) {
+            const element = side === "crm" ? manualCrmSelect : manualExternalSelect;
+            const info = manualEntityInfo(side);
+            if (!info) {
+                element.replaceChildren(new Option("ابتدا نوع ارتباط را انتخاب کنید", ""));
+                element.disabled = true;
+                return;
+            }
+            element.disabled = false;
+            element.replaceChildren(new Option("", ""));
+            state.manualRequests[side]++;
+            const softwareId = state.softwareId;
+            const type = manualTypeDetails();
+            const isCrm = side === "crm";
+            const isParty = !isCrm && info[0] === "Party";
+            const instance = new TomSelect(element, {
+                valueField: "id",
+                labelField: "text",
+                maxItems: 1,
+                maxOptions: 40,
+                preload: false,
+                loadThrottle: 320,
+                placeholder: "نام، شماره یا کد را جستجو کنید",
+                shouldLoad(query) {
+                    return query.trim().length >= 2;
+                },
+                // Old remote results must not be mixed with the next search term.
+                onType() {
+                    this.clearOptions();
+                    state.manualRequests[side]++;
+                },
+                render: {
+                    option(data, escapeOption) {
+                        if (isParty) return renderPartyOption(data, escapeOption);
+                        return '<div class="lmr-remote-option">' +
+                            '<strong dir="auto">' + escapeOption(data.text || "") + '</strong>' +
+                            '</div>';
+                    },
+                    item(data, escapeOption) {
+                        if (isParty) return renderPartyOption(data, escapeOption, true);
+                        return '<div class="lmr-remote-selected" dir="auto">' +
+                            escapeOption(data.text || "") + '</div>';
+                    },
+                    loading() { return '<div class="lmr-remote-note">در حال جستجو…</div>'; },
+                    no_results() { return '<div class="lmr-remote-note">موردی پیدا نشد</div>'; },
+                    not_loading() { return '<div class="lmr-remote-note">حداقل دو حرف یا رقم بنویسید</div>'; }
+                },
+                async load(query, callback) {
+                    const request = ++state.manualRequests[side];
+                    if (!state.manualOpen || !isActive() || manualType.value === "" ||
+                        query.trim().length < 2) {
+                        callback();
+                        return;
+                    }
+                    try {
+                        const result = await sendApiRequest({
+                            url: "/ExternalSoftware/GetManualMappingOptions",
+                            params: {
+                                softwareId, ...type, side,
+                                search: query.trim()
+                            },
+                            showLoading: false,
+                            showError: false,
+                            timeout: 30000
+                        });
+                        if (!isActive() || !state.manualOpen || softwareId !== state.softwareId ||
+                            request !== state.manualRequests[side] ||
+                            manualSelects[side] !== instance) {
+                            callback();
+                            return;
+                        }
+                        if (!result?.options) {
+                            manualFeedback("جستجوی " + (isCrm ? "CRM" : state.softwareTitle) +
+                                " ناموفق بود؛ دوباره تلاش کنید.", true);
+                            callback();
+                            return;
+                        }
+                        manualFeedback();
+                        callback(result.options.map(option => ({
+                            id: String(option.id),
+                            text: option.title || String(option.id),
+                            isCustomer: option.isCustomer === true,
+                            isEmployee: option.isEmployee === true,
+                            isVendor: option.isVendor === true,
+                            isBroker: option.isBroker === true
+                        })));
+                    } catch {
+                        if (state.manualOpen && request === state.manualRequests[side]) {
+                            manualFeedback("دریافت نتایج جستجو انجام نشد.", true);
+                        }
+                        callback();
+                    }
+                },
+                onChange() { manualSubmitState(); }
+            });
+            manualSelects[side] = instance;
+            if (isParty) instance.wrapper.classList.add("lmr-party-select");
+            if (selection?.id) {
+                const id = String(selection.id);
+                instance.addOption({
+                    id, text: String(selection.title || id),
+                    isCustomer: selection.isCustomer === true,
+                    isEmployee: selection.isEmployee === true,
+                    isVendor: selection.isVendor === true,
+                    isBroker: selection.isBroker === true
+                });
+                instance.setValue(id, true);
+            }
+        }
+
+        function resetManualOptions({ preserveCrm = false } = {}) {
+            const editing = state.manualEditing;
+            const selections = state.manualPrefill && editing
+                ? { crm: editing.crmOption, external: editing.externalOption }
+                : {};
+            if (preserveCrm) {
+                const id = manualValue("crm");
+                const selected = id && manualSelects.crm?.options[id];
+                if (selected) selections.crm = { id, title: selected.text };
+            }
+            state.manualPrefill = false;
+            destroyManualSelects();
+            updateManualEntityLabels();
+            manualFeedback();
+            initManualSide("crm", selections.crm);
+            initManualSide("external", selections.external);
+            manualSubmitState();
+        }
+
+        function closeManualMapping() {
+            if (!state.manualOpen || state.processing) return;
+            bootstrap.Modal.getOrCreateInstance(manualModal).hide();
+        }
+
+        function openManualMapping(editing = null) {
+            if (state.processing || state.manualOpen ||
+                !state.manualIds.includes(state.softwareId)) {
+                toastifyError("ثبت یا ویرایش برای این نرم‌افزار پشتیبانی نمی‌شود.");
+                return;
+            }
+            state.editRequest++;
+            const isEdit = !!editing?.mappingId;
+            state.manualEditing = isEdit ? editing : null;
+            state.manualPrefill = isEdit;
+            manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
+            state.types.forEach(item =>
+                manualType.add(new Option(item.title, String(item.value))));
+            manualType.value = isEdit ? String(editing.mapType) : "";
+            // Editing changes the CRM/external record, not the mapping's category.
+            manualType.disabled = isEdit;
+            get("lmrManualTargetKind").value =
+                isEdit && editing.exEntityName === "Voucher" ? "Voucher" : "PaymentHeader";
+            get("lmrManualTitleText").textContent =
+                isEdit ? "ویرایش ارتباط" : "ثبت ارتباط";
+            get("lmrManualConfirmText").textContent =
+                isEdit ? "ذخیره تغییرات" : "ثبت ارتباط";
+            get("lmrManualDescription").textContent = isEdit
+                ? "رکورد CRM و معادل نرم‌افزار مالی را بررسی و در صورت نیاز اصلاح کنید."
+                : "رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.";
+            get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
+            manualReturnFocus = document.activeElement;
+            state.manualOpen = true;
+            resetManualOptions();
+            bootstrap.Modal.getOrCreateInstance(manualModal).show();
+        }
+
+        get("lmrManualOpen").addEventListener("click", () => openManualMapping());
+        get("lmrManualOpenSaved").addEventListener("click", () => openManualMapping());
+        get("lmrManualClose").addEventListener("click", closeManualMapping);
+        get("lmrManualCancel").addEventListener("click", closeManualMapping);
+        manualModal.addEventListener("shown.bs.modal", () => {
+            if (state.manualOpen) manualType.focus({ preventScroll: true });
+        });
+        manualModal.addEventListener("hide.bs.modal", event => {
+            if (state.processing) event.preventDefault();
+        });
+        manualModal.addEventListener("hidden.bs.modal", () => {
+            state.manualOpen = false;
+            state.manualEditing = null;
+            state.manualPrefill = false;
+            state.editRequest++;
+            manualType.disabled = false;
+            destroyManualSelects();
+            if (isActive()) {
+                const fallback = state.activeTab === "saved"
+                    ? get("lmrManualOpenSaved") : get("lmrManualOpen");
+                const focusTarget = manualReturnFocus?.isConnected && manualReturnFocus.getClientRects().length
+                    ? manualReturnFocus : fallback;
+                focusTarget?.focus({ preventScroll: true });
+            }
+            manualReturnFocus = null;
+        });
+        manualType.addEventListener("change", () => resetManualOptions());
+        get("lmrManualTargetKind").addEventListener("change", () =>
+            resetManualOptions({ preserveCrm: true }));
+
+        get("lmrManualConfirm").addEventListener("click", async () => {
+            if (state.processing || !state.manualOpen ||
+                get("lmrManualConfirm").disabled) return;
+            const entityId = manualValue("crm");
+            const exEntityId = manualValue("external");
+            const values = manualTypeDetails();
+            const item = {
+                entityId, mapType: values.mapType, exEntityId,
+                exEntityName: values.targetEntity || null
+            };
+            if (!state.manualEditing) {
+                const success = await save([item]);
+                if (success) closeManualMapping();
+                else if (state.manualOpen)
+                    manualFeedback("ارتباط ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
+                manualSubmitState();
+                return;
+            }
+
+            const edit = state.manualEditing;
+            const softwareId = state.softwareId;
+            let updated = false;
+            state.processing = true;
+            get("lmrManualConfirmText").textContent = "در حال ذخیره…";
+            manualSubmitState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/ExternalSoftware/UpdateExternalMapping",
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token },
+                    data: {
+                        externalSoftwareId: softwareId,
+                        mappingId: edit.mappingId,
+                        originalEntityId: edit.entityId,
+                        originalEntityName: edit.entityName,
+                        originalExEntityId: edit.exEntityId,
+                        originalExEntityName: edit.exEntityName,
+                        item
+                    },
+                    timeout: 120000,
+                    successMsg: null
+                });
+                updated = result?.updated === true;
+            } catch {
+                // The request helper displays server-side validation errors.
+            } finally {
+                state.processing = false;
+                // Keep the destination fixed until this modal is closed.
+                get("lmrManualConfirmText").textContent = "ذخیره تغییرات";
+                manualSubmitState();
+            }
+
+            if (!isActive() || softwareId !== state.softwareId) return;
+            if (!updated) {
+                if (state.manualOpen)
+                    manualFeedback("تغییرات ذخیره نشد؛ خطای نمایش‌داده‌شده را بررسی کنید.", true);
+                return;
+            }
+
+            closeManualMapping();
+            toastifySuccess("تغییرات ارتباط ذخیره شد.");
+            state.selected.clear();
+            state.targets.clear();
+            state.crmTargets.clear();
+            state.preview.clear();
+            state.proposal.loaded = false;
+            state.proposal.rows = [];
+            state.proposal.visible = [];
+            state.proposal.summary = null;
+            updateProposalTabs();
+            renderProposals();
+            await loadSaved();
+        });
+
         get("lmrRefreshSaved").addEventListener("click", refreshSaved);
         get("lmrCompute").addEventListener("click", calculate);
 
         (async () => {
             feedback("saved", "در حال دریافت نرم‌افزارهای خارجی…");
             const response = await sendApiRequest({
-                url: "/ExternalMapping/GetExternalMappingWorkspaceOptions", showLoading: false
+                url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
             });
             if (!isActive()) return;
             if (!response) {
@@ -1007,17 +1485,19 @@
             state.counts = response.counts || [];
             state.autoIds = response.supportedAutomaticSoftwareIds || [];
             state.manualIds = response.supportedManualSoftwareIds || [];
-            softwareSelect.replaceChildren();
-            (response.software || []).forEach(x =>
-                softwareSelect.add(new Option(x.title, x.id)));
-            if (!softwareSelect.value) {
-                feedback("saved", "نرم‌افزار خارجی ثبت نشده است.");
+            const destination = (response.software || []).find(x =>
+                String(x.id).toLowerCase() === state.softwareId.toLowerCase());
+            if (!destination || !state.manualIds.includes(state.softwareId)) {
+                feedback("saved", "این نرم‌افزار برای مدیریت تطبیق اطلاعات در دسترس نیست.", true);
+                get("lmrManualOpen").disabled = true;
+                get("lmrManualOpenSaved").disabled = true;
+                get("lmrCompute").disabled = true;
                 return;
             }
-            if (typeof enableMomentumScrollScope === "function")
-                enableMomentumScrollScope(page);
+            state.softwareTitle = destination.title;
+            get("lmrSoftwareTitle").textContent = destination.title;
             switchMainTab("saved");
-            await changeSoftware();
+            await initializeSelectedSoftware();
         })();
     }
 

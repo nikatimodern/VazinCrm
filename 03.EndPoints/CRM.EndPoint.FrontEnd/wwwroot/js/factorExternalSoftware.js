@@ -80,9 +80,50 @@ document.addEventListener("click", async event => {
 
 let externalFactorExportState = null;
 
+async function loadExternalFactorPreview(state, includeBroker) {
+    const button = document.getElementById("confirmSendExternalFactorBtn");
+    const previousInvoiceNumber = state.hasLoadedPreview
+        ? document.getElementById("externalFactorInvoiceNumber")?.value
+        : null;
+    state.processing = true;
+    toggleElementsDisabled(button, true);
+
+    try {
+        const result = await sendApiRequest({
+            url: "/Factor/PrepareExternalFactor",
+            method: "POST",
+            data: { ...state.request, includeBroker, previewBrokerPartyId: null },
+            successMsg: null,
+        });
+        if (!result?.preview?.items?.length || externalFactorExportState !== state) return false;
+        if (includeBroker && (!result.broker || !Number.isInteger(Number(result.broker.partyId)))) {
+            toastifyError("اطلاعات واسط فروش در پیش‌نمایش معتبر نیست.");
+            return false;
+        }
+
+        state.request.includeBroker = includeBroker;
+        state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
+        state.hasLoadedPreview = true;
+        document.getElementById("externalFactorPreviewContent").innerHTML =
+            renderExternalFactorPreview(result, state);
+        document.getElementById("externalFactorFinalNotice").hidden = false;
+        button.textContent = "تأیید و ثبت در نرم‌افزار";
+        if (previousInvoiceNumber != null) {
+            document.getElementById("externalFactorInvoiceNumber").value = previousInvoiceNumber;
+        }
+        return true;
+    } finally {
+        if (externalFactorExportState === state) {
+            state.processing = false;
+            toggleElementsDisabled(button, false);
+            const checkbox = document.getElementById("externalFactorIncludeBroker");
+            if (checkbox) checkbox.disabled = false;
+        }
+    }
+}
+
 async function sendFactorToExternalSoftware(factorId) {
     if (!factorId) return;
-    
     await showExternalSoftwareModal(factorId, {
         mapType: 3,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
@@ -90,38 +131,51 @@ async function sendFactorToExternalSoftware(factorId) {
                 toastifyError("برای هر انتقال فقط یک نرم‌افزار مقصد انتخاب کنید.");
                 return;
             }
-            
-            const request = {
-                factorId: entityIds[0],
-                externalSoftwareId: externalSoftwareIds[0],
+            const state = {
+                request: {
+                    factorId: entityIds[0],
+                    externalSoftwareId: externalSoftwareIds[0],
+                    includeBroker: false,
+                    previewBrokerPartyId: null,
+                },
+                processing: false,
             };
-            
-            const result = await sendApiRequest({
-                url: "/Factor/PrepareExternalFactor",
-                method: "POST",
-                data: request,
-                successMsg: null,
-            });
-            
-            if (!result?.preview?.items?.length) return;
-            
-            externalFactorExportState = { request, processing: false };
-            document.getElementById("externalFactorPreviewContent").innerHTML =
-                renderExternalFactorPreview(result);
+            externalFactorExportState = state;
+            if (!await loadExternalFactorPreview(state, false)) {
+                if (externalFactorExportState === state) externalFactorExportState = null;
+                return;
+            }
             ModalToggle("chooseExternalSoftwareModal", "hide");
             ModalToggle("sendFactorToExternalSoftwareModal", "show");
         },
     });
 }
 
-function renderExternalFactorPreview(data) {
+document.addEventListener("change", async event => {
+    if (event.target.id !== "externalFactorIncludeBroker") return;
+    const state = externalFactorExportState;
+    if (!state || state.processing) return;
+
+    const checkbox = event.target;
+    checkbox.disabled = true;
+    try {
+        const loaded = await loadExternalFactorPreview(state, checkbox.checked);
+        if (!loaded && externalFactorExportState === state)
+            checkbox.checked = state.request.includeBroker;
+    } catch {
+        if (externalFactorExportState === state) checkbox.checked = state.request.includeBroker;
+        toastifyError("دریافت اطلاعات واسط امکان‌پذیر نیست.");
+    }
+});
+
+function renderExternalFactorPreview(data, state) {
     const preview = data.preview;
     const escape = value => escapeHtml(String(value ?? "-"));
     const number = value => Number(value ?? 0).toLocaleString("fa-IR", {
         maximumFractionDigits: 4,
     });
     const money = value => `${number(value)} ریال`;
-    
+
     const date = preview.invoiceDateText || preview.invoiceDate?.split("T")[0] || "-";
     document.getElementById("sendFactorToExternalSoftwareTitle").textContent =
         data.softwareTitle || "نرم‌افزار مالی";
@@ -139,7 +193,7 @@ function renderExternalFactorPreview(data) {
                     پیش‌فاکتور سپیدار شماره ${escape(preview.quotationNumber)}؛ اطلاعات را بررسی کنید
                 </div>
             </div>
-            <span class="external-mapping-step">مرحله ۱ از ۱</span>
+            <span class="external-mapping-step">پیش‌نمایش</span>
         </div>
         <div class="external-prefactor-preview">
             <div class="ex-preview-summary">
@@ -166,7 +220,37 @@ function renderExternalFactorPreview(data) {
                     <strong class="ex-preview-software">${escape(data.softwareTitle)}</strong>
                 </div>
             </div>
-            <div class="table-responsive">
+            <section class="external-factor-broker" aria-label="تنظیمات واسط فروش">
+                <label for="externalFactorIncludeBroker" class="external-factor-broker-toggle ${state.request.includeBroker ? "is-active" : ""}">
+                    <input id="externalFactorIncludeBroker" type="checkbox" role="switch"
+                           class="external-factor-broker-input" ${state.request.includeBroker ? "checked" : ""}>
+                    <span class="external-factor-broker-switch" aria-hidden="true"></span>
+                    <span class="external-factor-broker-toggle-text">
+                        <span class="external-factor-broker-title">ثبت واسط برای این فاکتور</span>
+                        <span class="external-factor-broker-seller">
+                            کارشناس فروش: <strong>${escape(data.salespersonName || "نامشخص")}</strong>
+                        </span>
+                    </span>
+                    <i class="fas fa-user-tie external-factor-broker-icon" aria-hidden="true"></i>
+                </label>
+                ${state.request.includeBroker && data.broker ? `
+                    <div class="external-factor-broker-details">
+                        <div class="external-factor-broker-detail">
+                            <span>واسط سپیدار</span>
+                            <strong>${escape(data.broker.fullName)}</strong>
+                        </div>
+                        <div class="external-factor-broker-detail">
+                            <span>نرخ پورسانت</span>
+                            <strong>${number(data.broker.commissionRate)}٪</strong>
+                        </div>
+                        <div class="external-factor-broker-detail">
+                            <span>مبلغ پورسانت</span>
+                            <strong>${money(data.broker.commission)}</strong>
+                        </div>
+                    </div>
+                ` : ""}
+            </section>
+                        <div class="table-responsive">
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
@@ -311,7 +395,7 @@ document.addEventListener("click", async event => {
     
     const state = externalFactorExportState;
     if (!state || state.processing) return;
-    
+
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
         setExternalFactorInvoiceNumberInvalid(true);
@@ -353,6 +437,7 @@ document.addEventListener("click", async event => {
 });
 
 document.addEventListener("hidden.bs.modal", event => {
-    if (event.target.id === "sendFactorToExternalSoftwareModal")
+    if (event.target.id === "sendFactorToExternalSoftwareModal") {
         externalFactorExportState = null;
+    }
 });

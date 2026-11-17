@@ -17,8 +17,6 @@
 #settingsBaseWorkspace #SettingFormId > div { width:100%; padding-block:8px; border-bottom:1px solid #DDE1E8; }
 #settingsBaseWorkspace #SettingFormId > div:last-child { border-bottom:0; }
 #settingsBaseWorkspace #SettingFormId input[type="checkbox"] { flex-shrink:0; width:16px; height:16px; }
-#settingsConnectionsWorkspace #externalSoftwareList { gap:7px; }
-#settingsConnectionsWorkspace #externalSoftwareList .list-group-item { padding:10px 12px; border:1px solid #DDE1E8; border-radius:7px; color:#004944; background:#fff; font:500 14px/1.8 IRANSansMedium; }
 #settingsUsersWorkspace .user-page-header h2 { font:700 18px/1.8 IRANSansBold; color:#004944; }
 #settingsUsersWorkspace .user-card h3 { font:500 16px/1.8 IRANSansMedium; color:#004944; overflow-wrap:anywhere; }
 #settingsUsersWorkspace :is(.user-page-header p,.user-card-username,.user-section-label) { color:#545961; font-size:12px; }
@@ -55,68 +53,688 @@
     #settingsSmsWorkspace .sms-tab { padding:7px; font-size:13px; }
 }
 
-/* Shared controls for the three base-item settings tables. Keep DataTables' current left/right placement. */
-#settingsCompanyWorkspace .base-item-list-panel .dt-search input {
-    width:190px;
-    max-width:100%;
-    min-height:32px;
-    height:32px;
+/* External software directory: centered page, scannable cards, clear destination action. */
+#settingsConnectionsWorkspace {
+    --esw-primary:#004944;
+    --esw-action:#00665C;
+    --esw-surface:#E7F3F0;
+    --esw-border:#DDE1E8;
+    --esw-muted:#545961;
+    box-sizing:border-box;
+    width:100%;
+    max-width:none;
     margin:0;
-    padding:4px 9px;
-    border:1px solid #A3B8B3;
-    border-radius:6px;
+    padding:12px 14px 26px;
+}
+#settingsConnectionsWorkspace .esw-page-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+    padding:19px 22px;
     background:#fff;
-    color:#212529;
-    font:400 12px/1.7 IRANSans;
-    text-align:start;
+    border:1px solid var(--esw-border);
+    border-radius:12px;
+    box-shadow:0 2px 10px rgb(33 37 41 / 3%);
+    margin-bottom:14px;
 }
-#settingsCompanyWorkspace .base-item-list-panel .dt-length select {
-    width:56px;
-    min-width:56px;
-    min-height:32px;
-    height:32px;
-    padding:3px 7px 3px 20px;
-    border:1px solid #A3B8B3;
-    border-radius:6px;
-    background-color:#fff;
-    color:#212529;
-    font:400 12px/1.7 IRANSans;
+#settingsConnectionsWorkspace .esw-page-title { flex:1 1 360px;min-width:0; }
+#settingsConnectionsWorkspace .esw-eyebrow {
+    display:block;
+    margin-bottom:9px;
+    color:var(--esw-muted);
+    font:500 11px/1.6 IRANSansMedium,sans-serif;
 }
-#settingsCompanyWorkspace .base-item-list-panel :is(.dt-search label,.dt-length label) {
+#settingsConnectionsWorkspace .esw-title-group { display:flex;align-items:center;gap:12px;min-width:0; }
+#settingsConnectionsWorkspace .esw-title-icon {
+    display:grid;
+    flex:0 0 44px;
+    place-items:center;
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    color:var(--esw-primary);
+    background:var(--esw-surface);
+    font-size:19px;
+}
+#settingsConnectionsWorkspace .esw-title-group h1 {
     margin:0;
-    color:#545961;
-    font:400 12px/1.7 IRANSans;
+    color:var(--esw-primary);
+    font:700 20px/1.6 IRANSansBold,sans-serif;
 }
-#settingsCompanyWorkspace .base-item-list-panel :is(.dt-search input,.dt-length select):focus {
-    outline:none;
-    border-color:#5811B4;
-    box-shadow:0 0 0 2px #F3EDFC;
+#settingsConnectionsWorkspace .esw-title-group p {
+    margin:3px 0 0;
+    color:var(--esw-muted);
+    font:400 12px/1.8 IRANSans,sans-serif;
 }
-@media (max-width:767px) {
-    #settingsCompanyWorkspace .base-item-list-panel .dt-search input {
-        width:150px;
-        max-width:100%;
+#settingsConnectionsWorkspace .esw-btn,
+.esw-add-modal .esw-btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    gap:7px;
+    min-height:35px;
+    padding:6px 12px;
+    border:1px solid transparent;
+    border-radius:7px;
+    box-shadow:none;
+    cursor:pointer;
+    white-space:nowrap;
+    text-decoration:none;
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+    transition:background-color .16s ease,border-color .16s ease;
+}
+#settingsConnectionsWorkspace .esw-btn-primary,
+.esw-add-modal .esw-btn-primary { background:var(--esw-action,#00665C);border-color:var(--esw-action,#00665C);color:#fff; }
+#settingsConnectionsWorkspace .esw-btn-primary:hover,
+.esw-add-modal .esw-btn-primary:hover { background:#004944;color:#fff;border-color:#004944; }
+.esw-add-modal .esw-btn-secondary { background:#fff;color:#004944;border-color:#DDE1E8; }
+#settingsConnectionsWorkspace .esw-btn:focus-visible,
+.esw-add-modal .esw-btn:focus-visible { outline:2px solid #5811B4;outline-offset:2px; }
+.esw-add-modal .esw-btn:disabled { opacity:.55;cursor:wait; }
+#settingsConnectionsWorkspace .esw-workspace {
+    padding:17px;
+    border:1px solid var(--esw-border);
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 2px 10px rgb(33 37 41 / 3%);
+}
+#settingsConnectionsWorkspace .esw-workspace-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:0 2px 13px;
+    border-bottom:1px solid var(--esw-border);
+}
+#settingsConnectionsWorkspace .esw-workspace-header h2 {
+    margin:0;
+    color:var(--esw-primary);
+    font:700 15px/1.7 IRANSansBold,sans-serif;
+}
+#settingsConnectionsWorkspace .esw-workspace-header p {
+    margin:2px 0 0;
+    color:var(--esw-muted);
+    font:400 12px/1.7 IRANSans,sans-serif;
+}
+#settingsConnectionsWorkspace .esw-total {
+    display:inline-flex;
+    align-items:center;
+    padding:4px 10px;
+    background:var(--esw-surface);
+    border-radius:20px;
+    color:var(--esw-primary);
+    white-space:nowrap;
+    font:700 12px/1.5 IRANSansBold,sans-serif;
+}
+#settingsConnectionsWorkspace .esw-feedback {
+    padding:12px 4px 2px;
+    color:var(--esw-muted);
+    text-align:center;
+    font-size:12px;
+}
+#settingsConnectionsWorkspace .esw-feedback:empty { display:none; }
+#settingsConnectionsWorkspace .esw-feedback.is-error { color:#C2185B; }
+#settingsConnectionsWorkspace .esw-grid {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    padding:13px 0 0;
+    margin:0;
+    list-style:none;
+}
+#settingsConnectionsWorkspace .esw-grid:empty { display:none; }
+#settingsConnectionsWorkspace .esw-card {
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    padding:15px;
+    border:1px solid var(--esw-border);
+    border-inline-start:3px solid var(--esw-action);
+    border-radius:10px;
+    background:#fff;
+    transition:border-color .16s ease,box-shadow .16s ease;
+}
+#settingsConnectionsWorkspace .esw-card:hover {
+    border-color:#A3B8B3;
+    box-shadow:0 3px 12px rgb(33 37 41 / 6%);
+}
+#settingsConnectionsWorkspace .esw-card-head {
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    min-width:0;
+    margin-bottom:15px;
+}
+#settingsConnectionsWorkspace .esw-card-emblem {
+    display:grid;
+    place-items:center;
+    flex:0 0 37px;
+    width:37px;
+    height:37px;
+    color:var(--esw-primary);
+    border-radius:8px;
+    background:var(--esw-surface);
+    font-size:16px;
+}
+#settingsConnectionsWorkspace .esw-card-identity { flex:1 1 auto;min-width:0; }
+#settingsConnectionsWorkspace .esw-card-identity h3 {
+    margin:1px 0 2px;
+    font:700 14px/1.7 IRANSansBold,sans-serif;
+    color:var(--esw-primary);
+    overflow-wrap:anywhere;
+}
+#settingsConnectionsWorkspace .esw-card-caption { color:var(--esw-muted);font-size:11px; }
+#settingsConnectionsWorkspace .esw-card-status {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    flex:0 0 auto;
+    margin-top:4px;
+    padding:3px 7px;
+    border-radius:6px;
+    white-space:nowrap;
+    font:500 10px/1.6 IRANSansMedium,sans-serif;
+}
+#settingsConnectionsWorkspace .esw-card-status.is-ready { color:#00665C;background:#E7F3F0; }
+#settingsConnectionsWorkspace .esw-card-status.is-pending { color:#667075;background:#F0F1F7; }
+#settingsConnectionsWorkspace .esw-card-footer {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:auto;
+    padding-top:12px;
+    border-top:1px solid #EDF0F3;
+}
+#settingsConnectionsWorkspace .esw-card-footer p {
+    flex:1 1 160px;
+    min-width:0;
+    margin:0;
+    font:400 11px/1.8 IRANSans,sans-serif;
+    color:var(--esw-muted);
+}
+#settingsConnectionsWorkspace .esw-card-link { min-height:32px; }
+.esw-add-modal { border-radius:10px;overflow:hidden; }
+.esw-add-modal .modal-title { color:#004944;font:700 16px/1.7 IRANSansBold,sans-serif; }
+.esw-add-modal .form-control { min-height:37px;border:1px solid #A3B8B3;font:400 13px/1.8 IRANSans,sans-serif; }
+.esw-add-modal .form-control:focus { border-color:#5811B4;box-shadow:0 0 0 2px #F3EDFC; }
+@media(max-width:820px) {
+    #settingsConnectionsWorkspace { padding:12px; }
+    #settingsConnectionsWorkspace .esw-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:580px) {
+    #settingsConnectionsWorkspace { padding:8px; }
+    #settingsConnectionsWorkspace .esw-page-header {
+        flex-direction:column;
+        align-items:stretch;
+        padding:13px;
+        gap:12px;
     }
+    #settingsConnectionsWorkspace .esw-page-title { flex:0 1 auto; }
+    #settingsConnectionsWorkspace #addExternalSoftwareBtn { align-self:flex-end; }
+    #settingsConnectionsWorkspace .esw-title-icon { width:36px;height:36px;flex-basis:36px;font-size:15px; }
+    #settingsConnectionsWorkspace .esw-title-group h1 { font-size:17px; }
+    #settingsConnectionsWorkspace .esw-btn { min-height:32px;font-size:11px;padding:5px 10px; }
+    #settingsConnectionsWorkspace .esw-workspace { padding:10px; }
+    #settingsConnectionsWorkspace .esw-card { padding:11px; }
+    #settingsConnectionsWorkspace .esw-card-head { flex-wrap:nowrap;align-items:center;gap:8px; }
+    #settingsConnectionsWorkspace .esw-card-identity { flex:1 1 auto;min-width:0; }
+    #settingsConnectionsWorkspace .esw-card-status { margin:0;flex-shrink:0; }
+}
+@media(prefers-reduced-motion:reduce) {
+    #settingsConnectionsWorkspace :is(.esw-card,.esw-btn) { transition:none; }
 }
 
-/* Bank account management follows the same external-title / inner-panel structure as other settings sections. */
-#settingsCompanyWorkspace .bank-accounts-section-title { margin:0 0 3px; color:#004944; font:700 16px/1.8 IRANSansBold; }
-#settingsCompanyWorkspace .bank-accounts-panel { min-width:0; }
-#settingsCompanyWorkspace .bank-accounts-toolbar { display:flex; align-items:center; flex-wrap:nowrap; gap:10px; min-width:0; padding-inline:6px; padding-block:2px; margin-block-end:9px; }
-#settingsCompanyWorkspace .bank-accounts-toolbar__filters { display:flex; align-items:center; flex:1 1 auto; flex-wrap:nowrap; gap:8px; min-width:0; }
-#settingsCompanyWorkspace .bank-accounts-toolbar__filter-label { flex:0 0 auto; margin:0; color:#545961; font:400 12px/1.7 IRANSans; white-space:nowrap; }
-#settingsCompanyWorkspace #bankAccountSearchId { flex:0 1 190px; width:190px; min-width:100px; min-height:32px; height:32px; padding:4px 9px; border:1px solid #A3B8B3; border-radius:6px; background:#fff; color:#212529; text-align:start; font:400 12px/1.7 IRANSans; }
-#settingsCompanyWorkspace #bankAccountTypeId { width:auto; min-height:32px; height:32px; padding:3px 8px 3px 24px; border:1px solid #A3B8B3; border-radius:6px; background-color:#fff; color:#212529; font:400 12px/1.7 IRANSans; }
-#settingsCompanyWorkspace #bankAccountPageSize { flex:0 0 56px; width:56px; min-height:32px; height:32px; padding:3px 7px 3px 20px; border:1px solid #A3B8B3; border-radius:6px; background-color:#fff; color:#212529; font:400 12px/1.7 IRANSans; }
-#settingsCompanyWorkspace .bank-accounts-toolbar__add { display:inline-flex; align-items:center; justify-content:center; gap:6px; flex-shrink:0; margin-inline-start:auto; min-height:32px; padding:4px 10px; border:1px solid #00665C; border-radius:6px; background:#00665C; color:#fff; box-shadow:none; font:500 12px/1.7 IRANSansMedium; white-space:nowrap; }
-#settingsCompanyWorkspace .bank-accounts-toolbar__add:hover { background:#004944; border-color:#004944; color:#fff; }
-#settingsCompanyWorkspace .bank-accounts-panel .dt-container { padding:0; border:0; border-radius:0; box-shadow:none; }
-#settingsCompanyWorkspace .bank-accounts-panel .dt-scroll-body { border-bottom-color:#DDE1E8; }
-#settingsCompanyWorkspace .bank-accounts-panel .dt-layout-row:last-child { margin-block:8px 0; padding-inline:6px; }
-@media (max-width:767px) {
-    #settingsCompanyWorkspace .bank-accounts-toolbar { flex-wrap:wrap; gap:7px; }
-    #settingsCompanyWorkspace .bank-accounts-toolbar__filters { flex-wrap:wrap; flex-basis:100%; }
-    #settingsCompanyWorkspace #bankAccountSearchId { flex:1 1 145px; width:auto; }
-    #settingsCompanyWorkspace #bankAccountTypeId { flex:0 1 142px; width:142px; max-width:142px; }
-    #settingsCompanyWorkspace .bank-accounts-toolbar__add { min-height:23px; padding:1px 5px; margin-block:0; font-size:11px; }
+/* Full-width software directory metadata; only populated fields are rendered. */
+#settingsConnectionsWorkspace .esw-title-group h1 { margin:0; }
+#settingsConnectionsWorkspace .esw-card-head { margin-bottom:10px; }
+#settingsConnectionsWorkspace .esw-card-details {
+    position:relative;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px 22px;
+    margin:0;
+    padding:12px 0;
+    border-top:1px solid #EDF0F3;
+}
+#settingsConnectionsWorkspace .esw-card-details::before {
+    content:"";
+    position:absolute;
+    inset-block:12px;
+    inset-inline-start:50%;
+    width:1px;
+    background:#E3E7ED;
+    pointer-events:none;
+}
+#settingsConnectionsWorkspace .esw-detail {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-width:0;
+}
+#settingsConnectionsWorkspace .esw-detail dt {
+    flex:0 0 auto;
+    margin:0;
+    color:var(--esw-muted);
+    font:500 12px/1.7 IRANSansMedium,sans-serif;
+    white-space:nowrap;
+}
+#settingsConnectionsWorkspace .esw-detail dd {
+    flex:1 1 auto;
+    min-width:0;
+    margin:0;
+    text-align:left;
+    color:var(--esw-primary);
+    font:700 13px/1.7 IRANSansBold,sans-serif;
+    overflow-wrap:anywhere;
+    unicode-bidi:plaintext;
+}
+#settingsConnectionsWorkspace .esw-connection-panel {
+    margin:3px 0 0;
+    padding:10px 12px;
+    border:1px solid #E3E7ED;
+    border-radius:8px;
+    background:#FAFAFC;
+}
+#settingsConnectionsWorkspace .esw-connection-panel h4 {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin:0 0 7px;
+    color:#545961;
+    font:500 11px/1.6 IRANSansMedium,sans-serif;
+}
+#settingsConnectionsWorkspace .esw-connection-panel .esw-card-details {
+    padding:5px 0 0;
+    border-top:0;
+}
+#settingsConnectionsWorkspace .esw-card-footer { justify-content:space-between;padding-top:10px; }
+#settingsConnectionsWorkspace .esw-card-footer:only-child { margin-top:0; }
+@media (max-width:580px) {
+    #settingsConnectionsWorkspace .esw-card-details {
+        grid-template-columns:minmax(0,1fr);
+        gap:8px;
+    }
+    #settingsConnectionsWorkspace .esw-card-details::before { display:none; }
+    #settingsConnectionsWorkspace .esw-detail { gap:8px; }
+    #settingsConnectionsWorkspace .esw-detail dt { font-size:11px; }
+    #settingsConnectionsWorkspace .esw-detail dd { font-size:12px; }
+}
+
+
+/* Full software maintenance form, with scoped styles for creation, editing and deletion. */
+.esw-form-dialog { --bs-modal-width:700px; }
+.esw-add-modal .modal-body { padding:14px 17px; }
+.esw-add-modal .modal-header,.esw-add-modal .modal-footer { padding:12px 17px; }
+.esw-add-modal .form-label {
+    display:block;
+    margin-bottom:5px;
+    font:500 12px/1.65 IRANSansMedium,sans-serif;
+    color:#33423E;
+}
+.esw-add-modal .form-select {
+    min-height:37px;
+    border:1px solid #A3B8B3;
+    border-radius:7px;
+    font:400 12px/1.6 IRANSans,sans-serif;
+}
+.esw-add-modal .form-select:focus { border-color:#5811B4;box-shadow:0 0 0 2px #F3EDFC; }
+.esw-add-modal .esw-form-fields {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:11px;
+}
+.esw-add-modal .esw-form-field { min-width:0; }
+.esw-add-modal .esw-field-full { grid-column:1/-1; }
+.esw-add-modal .esw-connection-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:11px 0 7px;
+    margin-top:13px;
+    border-top:1px solid #E1E5E9;
+}
+.esw-add-modal .esw-connection-header h3 {
+    margin:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:#004944;
+    font:700 13px/1.7 IRANSansBold,sans-serif;
+}
+.esw-add-modal .esw-connection-header span { color:#66757A;font-size:11px; }
+.esw-add-modal .esw-form-hint {
+    padding:7px 10px;
+    margin:0 0 10px;
+    border-radius:6px;
+    background:#F2F5F7;
+    color:#566264;
+    font-size:11px;
+    line-height:1.8;
+}
+.esw-add-modal .esw-form-hint[hidden],
+.esw-add-modal .esw-clear-field[hidden],
+.esw-add-modal .esw-modal-feedback[hidden] { display:none!important; }
+.esw-add-modal .esw-clear-field {
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-top:6px;
+    color:#66757A;
+    cursor:pointer;
+    font-size:11px;
+}
+.esw-add-modal .esw-clear-field input { accent-color:#C2185B;width:13px;height:13px; }
+.esw-add-modal .esw-modal-feedback {
+    padding:9px 11px;
+    margin-top:12px;
+    color:#A5193B;
+    background:#FCE8F0;
+    border-radius:6px;
+    font-size:12px;
+}
+.esw-add-modal .esw-btn-danger,
+#settingsConnectionsWorkspace .esw-btn-danger {
+    background:#FCE8F0;
+    border-color:#EDB5C7;
+    color:#A5193B;
+}
+.esw-add-modal .esw-btn-danger:hover,
+#settingsConnectionsWorkspace .esw-btn-danger:hover {
+    background:#F5CDD9;
+    border-color:#DA96AE;
+    color:#8F1230;
+}
+.esw-add-modal .esw-delete-warning {
+    display:flex;
+    gap:7px;
+    padding:10px;
+    margin-bottom:14px;
+    border-radius:7px;
+    color:#9A193A;
+    background:#FCE8F0;
+    font-size:12px;
+    line-height:1.85;
+}
+.esw-add-modal .esw-delete-warning i { margin-top:5px;flex-shrink:0; }
+.esw-add-modal .esw-delete-check {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin:12px 0 0;
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+    cursor:pointer;
+}
+.esw-add-modal .esw-delete-check input { width:16px;height:16px;accent-color:#C2185B; }
+.esw-add-modal .esw-btn-danger:disabled { opacity:.5;cursor:not-allowed; }
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn { min-height:32px; }
+@media(max-width:580px) {
+    .esw-form-dialog { margin:7px; }
+    .esw-add-modal .modal-body { padding:12px; }
+    .esw-add-modal .modal-header,.esw-add-modal .modal-footer { padding:10px 12px; }
+    .esw-add-modal .esw-form-fields { grid-template-columns:minmax(0,1fr);gap:9px; }
+    .esw-add-modal .esw-field-full { grid-column:auto; }
+    #settingsConnectionsWorkspace .esw-card-footer { gap:6px; }
+}
+
+
+/* ExternalSoftware/Settings: compact, full-width key/value maintenance. */
+#settingsConnectionsWorkspace .esw-card-footer .esw-settings-link {
+    background:#F0F5F4;
+    border:1px solid #CCDAD6;
+    color:#004944;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-settings-link:hover {
+    background:#E5F1EE;
+    border-color:#A3B8B3;
+    color:#004944;
+}
+#externalSoftwareSettingsWorkspace {
+    box-sizing:border-box;
+    width:100%;
+    padding:12px 14px 26px;
+    color:#004944;
+}
+#externalSoftwareSettingsWorkspace .esws-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px 16px;
+    padding:14px 18px;
+    margin-bottom:14px;
+    background:#fff;
+    border:1px solid #DDE1E8;
+    border-radius:11px;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-main {
+    display:flex;
+    align-items:center;
+    gap:11px;
+    min-width:0;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-icon {
+    display:grid;
+    flex:0 0 38px;
+    place-items:center;
+    width:38px;
+    height:38px;
+    border-radius:9px;
+    background:#E7F3F0;
+    color:#004944;
+    font-size:16px;
+}
+#externalSoftwareSettingsWorkspace .esws-heading h1 {
+    margin:0;
+    font:700 18px/1.7 IRANSansBold,sans-serif;
+    color:#004944;
+    overflow-wrap:anywhere;
+}
+#externalSoftwareSettingsWorkspace .esws-heading h1 strong {
+    color:#5811B4;
+    font:inherit;
+}
+#externalSoftwareSettingsWorkspace .esws-heading-divider {
+    color:#A3B8B3;
+    margin-inline:4px;
+}
+#externalSoftwareSettingsWorkspace .esw-btn {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    gap:6px;
+    min-height:32px;
+    padding:5px 11px;
+    border:1px solid transparent;
+    border-radius:7px;
+    text-decoration:none;
+    white-space:nowrap;
+    cursor:pointer;
+    font:500 12px/1.6 IRANSansMedium,sans-serif;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-primary {
+    color:#fff;
+    background:#00665C;
+    border-color:#00665C;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-primary:hover { background:#004944;color:#fff; }
+#externalSoftwareSettingsWorkspace .esw-btn-secondary {
+    color:#004944;
+    background:#F0F5F4;
+    border-color:#CCDAD6;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-secondary:hover {
+    color:#004944;
+    background:#E4EFEC;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-danger {
+    color:#A5193B;
+    border-color:#EDB5C7;
+    background:#FCE8F0;
+}
+#externalSoftwareSettingsWorkspace .esw-btn-danger:hover { background:#F5CDD9; }
+#externalSoftwareSettingsWorkspace .esw-btn:disabled { opacity:.5;cursor:not-allowed; }
+#externalSoftwareSettingsWorkspace :is(.esw-btn,.esws-value):focus-visible {
+    outline:2px solid #5811B4;
+    outline-offset:2px;
+}
+#externalSoftwareSettingsWorkspace .esws-panel {
+    border:1px solid #DDE1E8;
+    border-radius:11px;
+    padding:16px 18px;
+    background:#fff;
+}
+#externalSoftwareSettingsWorkspace .esws-panel-title {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:0 0 12px;
+    border-bottom:1px solid #E1E6EC;
+}
+#externalSoftwareSettingsWorkspace .esws-panel-title h2 {
+    margin:0;
+    font:700 15px/1.7 IRANSansBold,sans-serif;
+}
+#externalSoftwareSettingsWorkspace .esws-feedback {
+    padding:12px 4px;
+    text-align:center;
+    font:400 12px/1.8 IRANSans,sans-serif;
+    color:#58646A;
+}
+#externalSoftwareSettingsWorkspace .esws-feedback:empty { display:none; }
+#externalSoftwareSettingsWorkspace .esws-feedback.is-error,
+#externalSoftwareSettingsWorkspace .esws-row-message.is-error { color:#A5193B; }
+#externalSoftwareSettingsWorkspace .esws-setting-list {
+    display:flex;
+    flex-direction:column;
+    gap:0;
+}
+#externalSoftwareSettingsWorkspace .esws-setting-row {
+    display:grid;
+    grid-template-columns:minmax(165px, .33fr) minmax(0,1fr);
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+    border-bottom:1px solid #EDF0F3;
+}
+#externalSoftwareSettingsWorkspace .esws-setting-row:last-child { border-bottom:0; }
+#externalSoftwareSettingsWorkspace .esws-key {
+    color:#004944;
+    font:700 13px/1.7 IRANSansBold,sans-serif;
+    overflow-wrap:anywhere;
+}
+#externalSoftwareSettingsWorkspace .esws-value-block {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0;
+}
+#externalSoftwareSettingsWorkspace .esws-value {
+    min-width:0;
+    max-width:480px;
+    flex:1 1 240px;
+    height:35px;
+    font:500 13px/1.8 IRANSansMedium,sans-serif;
+    border-color:#D0DCE0;
+    direction:ltr;
+    text-align:right;
+}
+#externalSoftwareSettingsWorkspace .esws-actions {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex-wrap:wrap;
+    flex:0 1 auto;
+}
+#externalSoftwareSettingsWorkspace .esws-actions button[hidden] { display:none!important; }
+#externalSoftwareSettingsWorkspace .esws-row-message {
+    color:#00665C;
+    font-size:11px;
+}
+@media(max-width:750px) {
+    #externalSoftwareSettingsWorkspace { padding:9px; }
+    #externalSoftwareSettingsWorkspace .esws-heading {
+        padding:11px;
+        align-items:flex-start;
+    }
+    #externalSoftwareSettingsWorkspace .esws-heading h1 { font-size:16px; }
+    #externalSoftwareSettingsWorkspace .esws-back { margin-inline-start:auto; }
+    #externalSoftwareSettingsWorkspace .esws-panel { padding:12px; }
+    #externalSoftwareSettingsWorkspace .esws-setting-row {
+        grid-template-columns:minmax(0,1fr);
+        gap:8px;
+    }
+    #externalSoftwareSettingsWorkspace .esws-value-block { flex-wrap:wrap;gap:8px; }
+    #externalSoftwareSettingsWorkspace .esws-value { max-width:none;flex:1 1 100%; }
+    #externalSoftwareSettingsWorkspace .esws-actions { width:100%; }
+}
+
+
+/* Card footer: icon-only maintenance actions on the right, navigation on the left (RTL). */
+#settingsConnectionsWorkspace .esw-card-tools,
+#settingsConnectionsWorkspace .esw-card-navigation {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+    min-width:0;
+}
+#settingsConnectionsWorkspace .esw-card-tools { flex:0 0 auto; }
+#settingsConnectionsWorkspace .esw-card-navigation {
+    justify-content:flex-end;
+    margin-inline-start:auto;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn {
+    display:inline-flex;
+    flex:0 0 34px;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    min-height:34px;
+    padding:0;
+    border-radius:7px;
+    font-size:14px;
+    line-height:1;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn-edit {
+    color:#00665C;
+    background:#E7F3F0;
+    border:1px solid #AACFC6;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-btn-edit:hover {
+    background:#D2EAE4;
+    border-color:#72AC9E;
+    color:#004944;
+}
+#settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn:focus-visible {
+    outline:2px solid #5811B4;
+    outline-offset:2px;
+}
+@media (max-width:580px) {
+    #settingsConnectionsWorkspace .esw-card-footer {
+        justify-content:space-between;
+        align-items:center;
+        row-gap:9px;
+    }
+    #settingsConnectionsWorkspace .esw-card-navigation {
+        gap:6px;
+        margin-inline-start:auto;
+    }
+    #settingsConnectionsWorkspace .esw-card-footer .esw-icon-btn {
+        flex-basis:32px;
+        width:32px;
+        height:32px;
+        min-height:32px;
+        font-size:13px;
+    }
 }

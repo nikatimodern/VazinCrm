@@ -3266,6 +3266,72 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return (factor, preFactor, quotationId, software.Title);
         }
 
+        private static Guid GetFactorSalespersonId(Factor factor)
+        {
+            if (!Guid.TryParse(factor.SelerId, out var salespersonId) || salespersonId == Guid.Empty)
+                throw new InvalidOperationException("کارشناس فروش این فاکتور در CRM مشخص نیست یا شناسه معتبری ندارد.");
+            return salespersonId;
+        }
+
+        private async Task<int?> ResolveExternalBrokerPartyIdAsync(
+            Factor factor, Guid softwareId, bool includeBroker, SepidarService service, CancellationToken ct)
+        {
+            // The user's per-invoice choice never creates or changes an external mapping.
+            if (!includeBroker)
+                return null;
+
+            var salespersonId = GetFactorSalespersonId(factor);
+            var mapping = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.EntityId == salespersonId
+                    && x.EntityName == nameof(AppUser)
+                    && x.ExternalSoftwareId == softwareId
+                    && x.MapType == ExternalMappingTypeEnum.کارشناسان)
+                .Select(x => new { x.ExEntityName, x.ExEntityId })
+                .SingleOrDefaultAsync(ct);
+
+            if (mapping == null)
+                throw new InvalidOperationException("ارتباط کارشناس فروش این فاکتور با نرم‌افزار مالی انتخاب‌شده مشخص نشده است");
+
+            if (mapping.ExEntityName != nameof(Party)
+                || !int.TryParse(mapping.ExEntityId, out var brokerPartyId) || brokerPartyId <= 0)
+                throw new InvalidOperationException("اطلاعات کارشناس فروش در نرم‌افزار مالی معتبر نیست.");
+
+            // First verify that the mapped external person exists, then verify
+            // whether Sepidar allows that person to act as an invoice broker.
+            var isBroker = await service.GetSepidarPartyIsBrokerAsync(brokerPartyId, ct);
+            if (!isBroker.HasValue)
+                throw new InvalidOperationException("شخص مربوط به کارشناس فروش در سپیدار پیدا نشد.");
+            if (!isBroker.Value)
+                throw new InvalidOperationException("این کارشناس در سپیدار به‌عنوان واسط فروش تعریف نشده است.");
+
+            var broker = await service.GetSepidarBrokerByIdAsync(brokerPartyId, ct);
+            if (broker == null || broker.DlRef <= 0)
+                throw new InvalidOperationException("برای واسط فروش این فاکتور در سپیدار کد تفصیلی فعال وجود ندارد.");
+
+            return brokerPartyId;
+        }
+
+        // The salesperson shown before enabling broker registration comes from
+        // the CRM invoice, independently of external mappings or IsBroker.
+        private async Task<string> GetFactorSalespersonNameAsync(Factor factor, CancellationToken ct)
+        {
+            if (!string.IsNullOrWhiteSpace(factor.SelerFullName))
+                return factor.SelerFullName.Trim();
+
+            if (!string.IsNullOrWhiteSpace(factor.SelerId))
+            {
+                var user = await userManager.Users.AsNoTracking()
+                    .Where(x => x.Id == factor.SelerId)
+                    .Select(x => new { x.FirstName, x.LastName })
+                    .FirstOrDefaultAsync(ct);
+                var name = (user?.FirstName + " " + user?.LastName).Trim();
+                if (!string.IsNullOrWhiteSpace(name))
+                    return name;
+            }
+
+            return "نامشخص";
+        }
+
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3287,7 +3353,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 await sepidarService.CompleteInvoiceExportPreviewAsync(preview, ct);
-                return Ok(new { softwareTitle, preview });
+                var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
+                    factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
+                var broker = await sepidarService.GetInvoiceBrokerPreviewAsync(brokerPartyId, preview, ct);
+                var salespersonName = await GetFactorSalespersonNameAsync(factor, ct);
+                return Ok(new { softwareTitle, preview, broker, salespersonName });
             }
             catch (InvalidOperationException ex)
             {
@@ -3343,7 +3413,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
                 var preview = await repository.PreviewAsync(factor, preFactor, quotationId, ct);
-                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, request.InvoiceNumber,ct);
+                var brokerPartyId = await ResolveExternalBrokerPartyIdAsync(
+                    factor, request.ExternalSoftwareId, request.IncludeBroker, sepidarService, ct);
+                // A mapping change after Preview requires a fresh confirmation.
+                if (request.IncludeBroker && request.PreviewBrokerPartyId != brokerPartyId)
+                    throw new InvalidOperationException("شخص مربوط به کارشناس فروش پس از پیش‌نمایش تغییر کرده است. دوباره پیش‌نمایش فاکتور را بررسی کنید.");
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview,
+                    request.InvoiceNumber, ct, brokerPartyId: brokerPartyId);
 
 
                 // The Sepidar insert commits before the CRM mapping is saved.
@@ -3670,7 +3746,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return BadRequest("نوع فروش معتبر نیست.");
 
                 if (request.ItemMappings == null || request.ItemMappings.Count == 0)
-                    return BadRequest("نگاشت کالاهای نرم‌افزار ارسال نشده است.");
+                    return BadRequest("کالای متناظر در نرم‌افزار مالی برای اقلام پیش‌فاکتور انتخاب نشده است.");
 
                 var service = GetSepidarService(request.ExternalSoftwareId);
 

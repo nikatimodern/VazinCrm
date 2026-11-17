@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Setting;
@@ -603,41 +602,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = "مدیر ارشد")]
-        public IActionResult ExternalSoftware()
-        {
-            return View();
-        }
 
-        [Authorize(Roles = "مدیر ارشد")]
-        [HttpPost]
-        public async Task<IActionResult> AddExternalSoftware([FromBody] ExternalSoftware model)
-        {
-            try
-            {
-                db.ExternalSoftwares.Add(model);
-                await db.SaveChangesAsync();
-
-                return Ok();
-            }
-            catch
-            {
-                return BadRequest();
-            }
-        }
-
-        public async Task<IActionResult> GetExternalSoftwares()
-        {
-            try
-            {
-                var data = await db.ExternalSoftwares.AsNoTracking().ToListAsync();
-
-                return Ok(data);
-            }
-            catch
-            {
-                return BadRequest();
-            }
-        }
     }
 }
