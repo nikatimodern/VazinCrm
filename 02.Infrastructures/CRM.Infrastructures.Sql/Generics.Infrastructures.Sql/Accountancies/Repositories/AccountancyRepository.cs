@@ -132,27 +132,30 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
                 query = query.ForFactor(id);
                 break;
             case 3:
-                query = query.ForDeal(id);
+                query = realizedDepositsOnly
+                    ? query.ForPreFactor().Where(payment => db.PreFactors.Any(preFactor =>
+                        preFactor.DealId == id && preFactor.Id == payment.pfid))
+                    : query.ForDeal(id);
                 deal = await db.Deals.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id, ct);
                 break;
             case 4:
                 query = query.ForCustomer(id).Where(a => a.Wallet);
                 break;
             case 5:
-                query = query.ForCustomer(id);
+                query = realizedDepositsOnly ? query.Where(payment => payment.CustomerId == id) : query.ForCustomer(id);
                 break;
         }
 
         if (depositsOnly)
         {
-            query = query.Where(a => a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور);
+            if (!realizedDepositsOnly || type != 5)
+                query = query.Where(a => a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور);
             query = query.Where(a => a.AccType == (returnsOnly ? AcEnum.برگشتی : AcEnum.واریزی));
             if (realizedDepositsOnly)
             {
                 query = query.Where(a => a.Status == AccStatusEnum.تایید_شده);
                 if (!returnsOnly)
                     query = query.Where(a => a.PayType == PayTypeEnum.نقدی
-                        || a.PayType == PayTypeEnum.تهاتری
                         || (a.PayType == PayTypeEnum.چکی && a.Vosoled));
             }
         }
