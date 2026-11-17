@@ -1403,12 +1403,15 @@ const getBackExternalMappingBtn = () => document.querySelector("#sendPreFactorTo
 
 let preFactorFinancialWizard = null;
 function getPreFactorFinancialWizard() {
-    return preFactorFinancialWizard ??= new ExternalFinancialWizard({
-        modal: getExternalMappingModal(),
-        container: getExternalMappingList(),
-        back: getBackExternalMappingBtn(),
-        confirm: getConfirmExternalMappingBtn(),
-    });
+    if (!preFactorFinancialWizard?.modal.isConnected) {
+        preFactorFinancialWizard = new ExternalFinancialWizard({
+            modal: getExternalMappingModal(),
+            container: getExternalMappingList(),
+            back: getBackExternalMappingBtn(),
+            confirm: getConfirmExternalMappingBtn(),
+        });
+    }
+    return preFactorFinancialWizard;
 }
 
 
@@ -1573,7 +1576,7 @@ function exSoftwarePreFactorRenderSaleType() {
         title: "انتخاب نوع فروش",
         subtitle: "نوع فروش پیش‌فاکتور را مشخص کنید",
         icon: `<i class="fas fa-file-invoice"></i>`,
-        step: "مرحله 1 از 5",
+        step: "مرحله ۱ از ۵",
         
         content: `
             <div>
@@ -1664,7 +1667,7 @@ function exSoftwarePreFactorRenderCustomer() {
         title: "تطبیق مشتری",
         subtitle: "اتصال مشتری CRM به نرم‌افزار مالی",
         icon: `<i class="fas fa-users"></i>`,
-        step: "مرحله 2 از 5",
+        step: "مرحله ۲ از ۵",
         
         content: `
             <div class="external-mapping-entity">
@@ -1910,7 +1913,7 @@ function exSoftwarePreFactorRenderStock() {
         title: "انتخاب انبار کالاها",
         subtitle: "برای هر ردیف پیش‌فاکتور انبار مقصد را مشخص کنید",
         icon: `<i class="fas fa-warehouse"></i>`,
-        step: "مرحله 4 از 5",
+        step: "مرحله ۴ از ۵",
         
         content: `
             <div class="external-item-mapping-list">
