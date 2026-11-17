@@ -61,7 +61,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 groupedItem.CustomerId, groupedItem.Orders, groupedItem.Invoices,
                 groupedItem.TotalItems, groupedItem.ReviewedItems, groupedItem.DiscrepancyItems,
                 CustomerName = customer.CompanyName != null && customer.CompanyName != ""
-                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile
+                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
+                ContactStatus = db.QualityControlCustomerContacts
+                    .Where(contact => contact.CustomerId == groupedItem.CustomerId)
+                    .Select(contact => contact.Status).FirstOrDefault()
             };
         var total = await customers.CountAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -85,9 +88,78 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Skip(request.Start).Take(request.Length)
             .Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
                 row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
-                row.TotalItems, row.ReviewedItems, row.DiscrepancyItems))
+                row.TotalItems, row.ReviewedItems, row.DiscrepancyItems, row.ContactStatus))
             .ToListAsync(cancellationToken);
         return new(total, filtered, data);
+    }
+
+    public async Task<SetQualityControlCustomerContactResult> SetCustomerContactStatusAsync(
+        SetQualityControlCustomerContactRequest request, QualityControlAccess access, string persianNow,
+        CancellationToken cancellationToken)
+    {
+        if (request.CustomerId == Guid.Empty ||
+            request.Status is not (QualityControlCustomerContactStatus.NoResponse
+                or QualityControlCustomerContactStatus.InvalidNumber))
+            return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
+
+        // Use the same eligibility/role scope as the customer QC queue.
+        var eligible = await (
+            from item in db.FactorItems.AsNoTracking()
+            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
+            join customer in db.Customers.AsNoTracking()
+                on (factor.CustomerId ?? deal.CustomerId) equals (Guid?)customer.Id
+            where customer.Id == request.CustomerId
+                && !customer.IsDeleted && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
+                && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
+                && factor.status == FactorStatus.تایید_شده && !factor.Returned
+            select item.Id
+        ).AnyAsync(cancellationToken);
+        if (!eligible)
+            return new(404, "مشتری یا فاکتور قابل بررسی یافت نشد.", QualityControlCustomerContactStatus.None);
+
+        var contact = await db.QualityControlCustomerContacts.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(item => item.CustomerId == request.CustomerId, cancellationToken);
+        var nextStatus = contact != null && !contact.IsDeleted && contact.Status == request.Status
+            ? QualityControlCustomerContactStatus.None : request.Status;
+        var now = DateTime.Now;
+        if (contact == null)
+        {
+            contact = new QualityControlCustomerContact
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = request.CustomerId,
+                Status = nextStatus
+            };
+            Stamp(contact, access, now, persianNow, true);
+            db.QualityControlCustomerContacts.Add(contact);
+        }
+        else
+        {
+            contact.IsDeleted = false;
+            contact.Status = nextStatus;
+            Stamp(contact, access, now, persianNow, false);
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "وضعیت تماس توسط کاربر دیگری تغییر کرده است. فهرست را تازه کنید.", nextStatus);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            return new(409, "وضعیت تماس تغییر کرده است. فهرست را تازه کنید.", nextStatus);
+        }
+
+        return new(200, nextStatus switch
+        {
+            QualityControlCustomerContactStatus.NoResponse => "عدم پاسخ مشتری ثبت شد.",
+            QualityControlCustomerContactStatus.InvalidNumber => "شماره نامعتبر مشتری ثبت شد.",
+            _ => "وضعیت تماس مشتری پاک شد."
+        }, nextStatus);
     }
 
     public async Task<QualityControlCustomerForm?> GetCustomerFormAsync(
