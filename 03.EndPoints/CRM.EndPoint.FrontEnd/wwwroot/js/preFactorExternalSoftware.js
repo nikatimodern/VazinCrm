@@ -201,21 +201,14 @@ function exSoftwarePreFactorRenderSaleType() {
         icon: `<i class="fas fa-file-invoice"></i>`,
         step: "مرحله ۱ از ۵",
         
-        content: `
-            <div>
-                <label for="externalMappingSaleTypeSelect" class="form-label mb-1">
-                    نوع فروش
-                </label>
-
-                <select id="externalMappingSaleTypeSelect" class="show-dropdown-arrow">
-                    ${(state.software.saleTypes ?? []).map(item => `
-                        <option value="${escapeHtml(item.saleTypeId)}" ${String(item.saleTypeId) === String(state.mappings.saleTypeId ?? "2") ? "selected" : ""}>
-                            ${escapeHtml(item.title)}
-                        </option>
-                    `).join("")}
-                </select>
-            </div>
-        `,
+        content: ExternalFinancialWizard.selectField({
+            id: "externalMappingSaleTypeSelect",
+            label: "نوع فروش",
+            selected: state.mappings.saleTypeId ?? "2",
+            options: (state.software.saleTypes ?? []).map(item => ({
+                value: item.saleTypeId, label: item.title,
+            })),
+        }),
     });
     
     const select = getExternalMappingList().querySelector("#externalMappingSaleTypeSelect");
@@ -292,33 +285,17 @@ function exSoftwarePreFactorRenderCustomer() {
         icon: `<i class="fas fa-users"></i>`,
         step: "مرحله ۲ از ۵",
         
-        content: `
-            <div class="external-mapping-entity">
-                <span class="external-mapping-label">
-                    مشتری در CRM
-                </span>
-
-                <span class="external-mapping-entity-name fbold">
-                    ${escapeHtml(software.crmCustomerTitle ?? "-")}
-                </span>
-            </div>
-
-            <div>
-                <label for="externalMappingCustomerSelect" class="form-label mb-0">
-                    مشتری معادل در نرم‌افزار مالی
-                </label>
-
-                <select id="externalMappingCustomerSelect" class="show-dropdown-arrow">
-                    <option value="">جستجو و انتخاب مشتری</option>
-
-                    ${(software.customers ?? []).map(customer => `
-                        <option value="${escapeHtml(customer.id)}" ${String(customer.id) === String(mappedCustomerId ?? "") ? "selected" : ""}>
-                            ${customer.dlCode ? `${escapeHtml(customer.dlCode)} - ` : ""}${escapeHtml(customer.fullName)}
-                        </option>
-                    `).join("")}
-                </select>
-            </div>
-        `,
+        content: ExternalFinancialWizard.crmCustomer(software.crmCustomerTitle ?? "-") +
+            ExternalFinancialWizard.selectField({
+                id: "externalMappingCustomerSelect",
+                label: "مشتری معادل در نرم‌افزار مالی",
+                placeholder: "جستجو و انتخاب مشتری",
+                selected: mappedCustomerId,
+                options: (software.customers ?? []).map(customer => ({
+                    value: customer.id,
+                    label: [customer.dlCode, customer.fullName].filter(Boolean).join(" - "),
+                })),
+            }),
     });
     
     const select = getExternalMappingList().querySelector("#externalMappingCustomerSelect");
