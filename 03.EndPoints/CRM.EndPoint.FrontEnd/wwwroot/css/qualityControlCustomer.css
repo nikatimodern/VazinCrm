@@ -93,6 +93,29 @@
     color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
+#qualityControlCustomerPage .qc-client-overview-action {
+    align-self: flex-start;
+    margin-top: auto;
+    border: 1px solid var(--qc-action);
+    border-radius: 7px;
+    background: #fff;
+    color: var(--qc-primary);
+    padding: 4px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    cursor: pointer;
+}
+#qualityControlCustomerPage .qc-client-overview-action:hover,
+#qualityControlCustomerPage .qc-client-overview-action.is-selected {
+    background: var(--qc-primary-light);
+    border-color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-overview-action:focus-visible {
+    outline: 2px solid var(--qc-primary);
+    outline-offset: 2px;
+}
+
 #qualityControlCustomerPage .qc-client-overview-invalid .qc-client-overview-value strong { color: #851B1D; }
 #qualityControlCustomerPage .qc-client-overview-no-answer .qc-client-overview-value strong { color: #5811B4; }
 #qualityControlCustomerPage .qc-client-overview-pending .qc-client-overview-value strong { color: #5811B4; }
@@ -128,6 +151,7 @@
 }
 #qualityControlCustomerPage .qc-client-filter select { min-width: 145px; }
 #qualityControlCustomerPage .qc-client-size select { min-width: 72px; }
+#qualityControlCustomerPage .qc-client-sort select { min-width: 220px; max-width: 270px; }
 #qualityControlCustomerPage .qc-client-button {
     display: inline-flex;
     justify-content: center;
@@ -547,6 +571,9 @@
     #qualityControlCustomerPage .qc-client-toolbar { padding: 8px; gap: 8px; }
     #qualityControlCustomerPage .qc-client-search { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-filter { flex: 1; justify-content: space-between; }
+    #qualityControlCustomerPage .qc-client-sort { flex-basis: 100%; }
+    #qualityControlCustomerPage .qc-client-sort select { min-width: 0; max-width: none; flex: 1; }
+    #qualityControlCustomerPage .qc-client-overview-action { padding: 2px 9px; font-size: 11px; }
     #qualityControlCustomerPage .qc-client-card { align-items: flex-start; padding: 10px; }
     #qualityControlCustomerPage .qc-client-profile { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-contact-actions { gap: 5px; }
