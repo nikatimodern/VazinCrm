@@ -21,12 +21,16 @@
             <div class="qc-client-overview-value">
                 <strong id="qcSummaryInvalidCustomers">—</strong><span>مشتری</span>
             </div>
+            <button type="button" class="qc-client-overview-action" data-qc-card-status="4"
+                    aria-pressed="false">مشاهده</button>
         </div>
         <div class="qc-client-overview-card qc-client-overview-no-answer">
             <div class="qc-client-overview-title">مشتریان بدون پاسخ</div>
             <div class="qc-client-overview-value">
                 <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
             </div>
+            <button type="button" class="qc-client-overview-action" data-qc-card-status="3"
+                    aria-pressed="false">مشاهده</button>
         </div>
         <div class="qc-client-overview-card qc-client-overview-pending">
             <div class="qc-client-overview-title">نیازمند بررسی</div>
@@ -34,6 +38,8 @@
                 <strong id="qcSummaryPendingCustomers">—</strong><span>مشتری</span>
             </div>
             <div class="qc-client-overview-breakdown">اقلام بررسی‌نشده: <strong id="qcSummaryPendingItems">—</strong></div>
+            <button type="button" class="qc-client-overview-action" data-qc-card-status="0"
+                    aria-pressed="true">مشاهده</button>
         </div>
         <div class="qc-client-overview-card qc-client-overview-reviewed">
             <div class="qc-client-overview-title">اقلام بررسی‌شده</div>
@@ -44,6 +50,8 @@
                 <span>دارای مغایرت: <strong id="qcSummaryDiscrepancyItems">—</strong></span>
                 <span>بدون مغایرت: <strong id="qcSummaryNoDiscrepancyItems">—</strong></span>
             </div>
+            <button type="button" class="qc-client-overview-action" data-qc-card-status="5"
+                    aria-pressed="false">مشاهده</button>
         </div>
     </section>
 
@@ -63,6 +71,19 @@
                 <option value="2">دارای مغایرت</option>
                 <option value="3">عدم پاسخ</option>
                 <option value="4">شماره نامعتبر</option>
+                <option value="5">دارای اقلام بررسی‌شده</option>
+            </select>
+        </div>
+        <div class="qc-client-filter qc-client-sort">
+            <label for="qcCustomerSort">مرتب‌سازی</label>
+            <select id="qcCustomerSort" class="form-select">
+                <option value="pending" selected>بیشترین اقلام بررسی‌نشده</option>
+                <option value="discrepancy">بیشترین اقلام دارای مغایرت</option>
+                <option value="reviewed">بیشترین اقلام بررسی‌شده</option>
+                <option value="invoices">بیشترین تعداد فاکتور</option>
+                <option value="orders">بیشترین تعداد سفارش</option>
+                <option value="name">نام مشتری (الفبایی)</option>
+                <option value="code">کد مشتری (صعودی)</option>
             </select>
         </div>
         <div class="qc-client-filter qc-client-size">
