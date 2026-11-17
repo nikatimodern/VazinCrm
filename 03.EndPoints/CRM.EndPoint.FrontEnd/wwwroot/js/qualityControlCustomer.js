@@ -239,7 +239,13 @@
                 : "برای ثبت کلی، وضعیت همه اقلام و پاسخ سؤال‌های مغایرت را تکمیل کنید.";
             content.querySelectorAll("[data-qc-save-item]").forEach(button => {
                 const item = items.find(item => item.factorItemId === button.dataset.qcSaveItem);
-                button.disabled = saving || !item || !isValid(item) || stateOf(item).saved;
+                if (!item) return;
+                const draft = stateOf(item);
+                button.disabled = saving || !isValid(item) || draft.saved;
+                button.textContent = draft.saved ? "ثبت‌شده" : "ثبت این قلم";
+                const badge = button.closest("[data-qc-item]")?.querySelector(".qc-client-item-top .qc-client-badge");
+                if (badge) badge.textContent = (draft.status === 2 ? "دارای مغایرت"
+                    : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده") + (draft.saved ? " · ثبت‌شده" : "");
             });
             modal.querySelectorAll("[data-bs-dismiss]").forEach(button => button.disabled = saving);
         }
