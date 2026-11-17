@@ -61,10 +61,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 groupedItem.CustomerId, groupedItem.Orders, groupedItem.Invoices,
                 groupedItem.TotalItems, groupedItem.ReviewedItems, groupedItem.DiscrepancyItems,
                 CustomerName = customer.CompanyName != null && customer.CompanyName != ""
-                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
-                ContactStatus = db.QualityControlCustomerContacts
-                    .Where(contact => contact.CustomerId == groupedItem.CustomerId)
-                    .Select(contact => contact.Status).FirstOrDefault()
+                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile
             };
         var total = await customers.CountAsync(cancellationToken);
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -83,13 +80,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             _ => customers
         };
         var filtered = await customers.CountAsync(cancellationToken);
-        var data = await customers.OrderByDescending(row => row.TotalItems - row.ReviewedItems)
+        var page = await customers.OrderByDescending(row => row.TotalItems - row.ReviewedItems)
             .ThenBy(row => row.CustomerName).ThenBy(row => row.CustomerId)
             .Skip(request.Start).Take(request.Length)
-            .Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
-                row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
-                row.TotalItems, row.ReviewedItems, row.DiscrepancyItems, row.ContactStatus))
             .ToListAsync(cancellationToken);
+
+        // Load contact statuses only for the current page, without complicating the grouped SQL.
+        var ids = page.Select(row => row.CustomerId).ToArray();
+        var contactStatuses = await db.QualityControlCustomerContacts.AsNoTracking()
+            .Where(contact => ids.Contains(contact.CustomerId))
+            .ToDictionaryAsync(contact => contact.CustomerId, contact => contact.Status, cancellationToken);
+        var data = page.Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
+            row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
+            row.TotalItems, row.ReviewedItems, row.DiscrepancyItems,
+            contactStatuses.GetValueOrDefault(row.CustomerId))).ToList();
         return new(total, filtered, data);
     }
 
