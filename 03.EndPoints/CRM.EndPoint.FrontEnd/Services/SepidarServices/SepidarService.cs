@@ -2233,10 +2233,15 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
 
-        if (invoiceItems.Count == 0 || invoiceItems.Any(x => !x.QuotationItemRef.HasValue || x.Quantity <= 0))
-            throw new InvalidOperationException("ردیف‌های فاکتور باید مقدار معتبر و ردیف پیش‌فاکتور مرتبط داشته باشند.");
+        if (invoiceItems.Count == 0 || invoiceItems.Any(x => x.Quantity <= 0))
+            throw new InvalidOperationException("مقدار ردیف‌های فاکتور معتبر نیست.");
 
-        var quantities = invoiceItems
+        // The user can replace a quoted item/stock on the new invoice. Such lines
+        // have no QuotationItemRef and must not increase the source row's UsedQuantity.
+        var linkedItems = invoiceItems.Where(x => x.QuotationItemRef.HasValue).ToList();
+        if (linkedItems.Count == 0) return;
+
+        var quantities = linkedItems
             .GroupBy(x => x.QuotationItemRef!.Value)
             .ToDictionary(x => x.Key, x => x.Sum(item => item.Quantity));
         var quotationItemIds = quantities.Keys.ToArray();
@@ -2249,7 +2254,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException("بعضی از ردیف‌های فاکتور به پیش‌فاکتور سپیدار انتخاب‌شده تعلق ندارند.");
 
         var quotationItemsById = quotationItems.ToDictionary(x => x.QuotationItemID);
-        foreach (var invoiceItem in invoiceItems)
+        foreach (var invoiceItem in linkedItems)
         {
             var quotationItem = quotationItemsById[invoiceItem.QuotationItemRef!.Value];
             if (quotationItem.ItemRef != invoiceItem.ItemRef || quotationItem.StockRef != invoiceItem.StockRef)
