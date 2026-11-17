@@ -14,6 +14,9 @@ public sealed class QualityControlCustomerContactConfig : IEntityTypeConfigurati
         builder.HasKey(contact => contact.Id);
         builder.HasIndex(contact => contact.CustomerId).IsUnique();
         builder.Property(contact => contact.Status).HasConversion<byte>().HasColumnType("tinyint");
+        builder.Property(contact => contact.LastNoResponseAt).HasColumnType("datetime2");
+        builder.Property(contact => contact.NoResponseAttempts).HasDefaultValue(0);
+        builder.Property(contact => contact.InvalidMobileAtMark).HasMaxLength(50);
         builder.Property(contact => contact.RowVersion).IsRowVersion();
         builder.HasOne<Customer>().WithMany().HasForeignKey(contact => contact.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
