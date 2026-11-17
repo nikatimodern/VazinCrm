@@ -24,6 +24,7 @@ async function loadFactorExternalSoftwares(factorId) {
     await sendApiRequest({
         url: "/Factor/GetExternalSoftwareFactors",
         params: { factorId },
+        showLoading: false,
         onSuccess: result => {
             if (externalFactorHistory.factorId === factorId)
                 renderExternalSoftwareFactors(result.data ?? []);
@@ -151,6 +152,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
             method: "POST",
             data: { ...state.request, includeBroker, previewBrokerPartyId: null },
             successMsg: null,
+            showLoading: false,
         });
         if (!result?.preview?.items?.length || externalFactorExportState !== state) return false;
         if (includeBroker && (!result.broker || !Number.isInteger(Number(result.broker.partyId)))) {
@@ -666,12 +668,19 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         state.stockCache ??= new Map();
         state.stocksByItem ??= [];
 
-        add.addEventListener("click", () => openSepidarItemCreation({
-            softwareId: state.request.externalSoftwareId,
-            softwareTitle: state.softwareTitle,
-            afterCreate: () => loadItems(state, true),
-            canOpen: () => get(state) && state.step === "items" && isModalOpen(modal()),
-        }));
+        add.addEventListener("click", async () => {
+            add.disabled = true;
+            try {
+                await openSepidarItemCreation({
+                    softwareId: state.request.externalSoftwareId,
+                    softwareTitle: state.softwareTitle,
+                    afterCreate: () => loadItems(state, true),
+                    canOpen: () => get(state) && state.step === "items" && isModalOpen(modal()),
+                });
+            } finally {
+                add.disabled = false;
+            }
+        });
 
         for (const item of state.items) {
             const itemId = String(item.factorItemId);
