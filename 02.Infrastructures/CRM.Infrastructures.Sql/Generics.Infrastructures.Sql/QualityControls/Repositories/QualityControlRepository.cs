@@ -172,6 +172,31 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 .Distinct())
         };
 
+        // Suppliers are the factories assigned through sales-to-supply invoice item allocations.
+        // Do not infer them from the internal UserTaminTxt or unallocated supply invoices.
+        var supplierNames = await (
+            from allocation in db.SupplyFactorItemAllocations.AsNoTracking()
+            join salesItem in db.FactorItems.AsNoTracking()
+                on allocation.FactorItemId equals (Guid?)salesItem.Id
+            join salesFactor in db.Factors.AsNoTracking()
+                on salesItem.factorId equals salesFactor.Id
+            join supplyItem in db.SupplyFactorItems.AsNoTracking()
+                on allocation.SupplyFactorItemId equals (Guid?)supplyItem.Id
+            join supplyFactor in db.SupplyFactors.AsNoTracking()
+                on supplyItem.SupplyFactorId equals supplyFactor.Id
+            where salesFactor.DealId == dealId
+                && allocation.Weight > 0
+                && allocation.WarehouseId == null
+            select supplyFactor.SupplierTxt
+        ).ToListAsync(cancellationToken);
+        deal = deal with
+        {
+            Suppliers = string.Join("، ", supplierNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase))
+        };
+
         // Only approved cash deposits and collected cheques contribute to these totals.
         var realizedDeposits = db.Accountancies.AsNoTracking()
             .Where(payment => payment.AccType == AcEnum.واریزی
