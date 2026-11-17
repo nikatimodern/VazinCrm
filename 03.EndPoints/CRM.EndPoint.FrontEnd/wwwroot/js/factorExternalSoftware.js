@@ -541,7 +541,6 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     const modal = () => document.getElementById("sendFactorToExternalSoftwareModal");
     const body = () => document.getElementById("externalFactorPreviewContent");
     const button = () => document.getElementById("confirmSendExternalFactorBtn");
-    const backButton = () => document.getElementById("backExternalFactorStepBtn");
     const html = value => escapeHtml(String(value ?? ""));
     const get = (state) => state === externalFactorExportState;
     const setButton = (text, disabled = false) =>
