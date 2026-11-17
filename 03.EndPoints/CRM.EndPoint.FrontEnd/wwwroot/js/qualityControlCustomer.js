@@ -215,7 +215,6 @@
             content.innerHTML = review.orders.map(order => '<section class="qc-client-order">'
                 + '<div class="qc-client-order-header"><h3>سفارش شماره ' + escape(order.serialNumber)
                 + '</h3><small>' + escape(order.title || "") + '</small></div>'
-                + (order.hasLegacyReview ? '<p class="qc-client-legacy-note">برای این سفارش سابقه کنترل کیفیت کلی ثبت شده است؛ نتایج اقلام هنوز جداگانه ثبت نشده‌اند.</p>' : "")
                 + order.invoices.map(invoice => '<section class="qc-client-invoice">'
                     + '<h4>فاکتور فروش شماره ' + escape(invoice.serialNumber)
                     + (invoice.date ? '<small> · ' + escape(invoice.date) + '</small>' : "") + '</h4>'
