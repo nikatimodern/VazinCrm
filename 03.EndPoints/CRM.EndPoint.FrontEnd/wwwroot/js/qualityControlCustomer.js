@@ -234,12 +234,12 @@
                 + '<div class="qc-client-item-top">'
                 + '<div class="qc-client-item-meta">'
                 + '<strong>' + escape(product) + '</strong>'
-                + (description ? '<span class="qc-client-item-spec">' + escape(description) + '</span>' : "")
-                + '<span>مقدار: ' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</span>'
+                + (description ? '<span class="qc-client-item-spec qc-client-item-value">' + escape(description) + '</span>' : "")
+                + '<span>مقدار: <span class="qc-client-item-value">' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</span></span>'
                 + '<span class="qc-client-party' + (item.supplierNames?.trim() ? '' : ' qc-client-party-unset')
-                + '">تأمین‌کننده: ' + escape(item.supplierNames?.trim() || "ثبت نشده") + '</span>'
+                + '">تأمین‌کننده: <span class="qc-client-item-value">' + escape(item.supplierNames?.trim() || "ثبت نشده") + '</span></span>'
                 + '<span class="qc-client-party' + (item.supplyExpert?.trim() ? '' : ' qc-client-party-unset')
-                + '">کارشناس تأمین: ' + escape(item.supplyExpert?.trim() || "ثبت نشده") + '</span>'
+                + '">کارشناس تأمین: <span class="qc-client-item-value">' + escape(item.supplyExpert?.trim() || "ثبت نشده") + '</span></span>'
                 + '</div>'
                 + '<div class="qc-client-item-controls">'
                 + '<div class="qc-client-item-actions">'
