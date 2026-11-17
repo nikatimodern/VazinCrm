@@ -553,7 +553,8 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         update(state);
     };
     const query = async (action, data) => sendApiRequest({
-        url: "/Factor/" + action, method: "POST", data, successMsg: null,
+        url: "/Factor/" + action, method: "POST", data,
+        successMsg: null, showLoading: false,
     });
 
     function showMode(state) {
