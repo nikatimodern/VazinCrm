@@ -100,7 +100,6 @@ class ExternalFinancialWizard {
             if (stocks === null) return;
 
             onLoaded(key, stocks);
-            if (!stocks.length) return;
 
             const options = stocks.map(stock => ({
                 value: String(stock.id),
@@ -117,6 +116,7 @@ class ExternalFinancialWizard {
                     text: String(retainedStock.title || retainedStock.stockId),
                 });
             }
+            if (!options.length) return;
             control.addOptions(options);
             control.refreshOptions(false);
             control.enable();
