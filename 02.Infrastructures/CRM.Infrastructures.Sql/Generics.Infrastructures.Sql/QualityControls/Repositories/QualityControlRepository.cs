@@ -74,6 +74,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Where(contact => contact.Status == QualityControlCustomerContactStatus.NoResponse
                 || contact.Status == QualityControlCustomerContactStatus.InvalidNumber)
             .ToDictionaryAsync(contact => contact.CustomerId, contact => contact.Status, cancellationToken);
+        // A registered invoice-item QC result takes precedence over an old contact outcome.
+        // Ignore any historical conflicting contact status everywhere in the queue.
+        foreach (var row in summaryRows.Where(row => row.ReviewedItems > 0))
+            contactStatuses.Remove(row.CustomerId);
 
         var invalidCustomers = 0;
         var noResponseCustomers = 0;
@@ -112,17 +116,19 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         customers = request.Status switch
         {
             0 => customers.Where(row => row.ReviewedItems < row.TotalItems
-                && !db.QualityControlCustomerContacts.Any(contact =>
+                && (row.ReviewedItems > 0 || !db.QualityControlCustomerContacts.Any(contact =>
                     contact.CustomerId == row.CustomerId
-                    && contact.Status != QualityControlCustomerContactStatus.None)),
+                    && contact.Status != QualityControlCustomerContactStatus.None))),
             1 => customers.Where(row => row.ReviewedItems == row.TotalItems),
             2 => customers.Where(row => row.DiscrepancyItems > 0),
-            3 => customers.Where(row => db.QualityControlCustomerContacts.Any(contact =>
-                contact.CustomerId == row.CustomerId
-                && contact.Status == QualityControlCustomerContactStatus.NoResponse)),
-            4 => customers.Where(row => db.QualityControlCustomerContacts.Any(contact =>
-                contact.CustomerId == row.CustomerId
-                && contact.Status == QualityControlCustomerContactStatus.InvalidNumber)),
+            3 => customers.Where(row => row.ReviewedItems == 0
+                && db.QualityControlCustomerContacts.Any(contact =>
+                    contact.CustomerId == row.CustomerId
+                    && contact.Status == QualityControlCustomerContactStatus.NoResponse)),
+            4 => customers.Where(row => row.ReviewedItems == 0
+                && db.QualityControlCustomerContacts.Any(contact =>
+                    contact.CustomerId == row.CustomerId
+                    && contact.Status == QualityControlCustomerContactStatus.InvalidNumber)),
             5 => customers.Where(row => row.ReviewedItems > 0),
             _ => customers
         };
