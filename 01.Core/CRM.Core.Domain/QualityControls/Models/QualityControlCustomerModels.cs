@@ -40,7 +40,8 @@ public sealed record SetQualityControlCustomerContactResult(
 public sealed record QualityControlCustomerSummary(
     int InvalidNumberCustomers, int NoResponseCustomers,
     int PendingCustomers, int PendingItems,
-    int ReviewedItems, int DiscrepancyItems, int NoDiscrepancyItems);
+    int ReviewedItems, int DiscrepancyItems, int NoDiscrepancyItems,
+    int TotalItems, int CompletedCustomers, int DueFollowUpsToday, int TotalNoResponseAttempts);
 
 public sealed record QualityControlCustomerListResult(
     int Total, int Filtered, IReadOnlyList<QualityControlCustomerRow> Data,
