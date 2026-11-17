@@ -36,6 +36,11 @@
             <div class="qc-client-overview-value">
                 <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
             </div>
+            <div class="qc-client-overview-breakdown qc-client-followup-stats">
+                <span>پیگیری امروز: <strong id="qcSummaryDueToday">—</strong></span>
+                <span>فردا: <strong id="qcSummaryTomorrow">—</strong></span>
+                <span>کل تلاش‌های بی‌پاسخ: <strong id="qcSummaryNoAnswerAttempts">—</strong></span>
+            </div>
         </div>
         <div class="qc-client-overview-card qc-client-overview-pending">
             <div class="qc-client-overview-head">
@@ -60,6 +65,17 @@
             <div class="qc-client-overview-breakdown">
                 <span>دارای مغایرت: <strong id="qcSummaryDiscrepancyItems">—</strong></span>
                 <span>بدون مغایرت: <strong id="qcSummaryNoDiscrepancyItems">—</strong></span>
+            </div>
+            <div class="qc-client-overview-progress">
+                <div class="qc-client-progress-caption">
+                    <span>پیشرفت: <strong id="qcSummaryProgressPercent">—</strong></span>
+                    <span>مشتری تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong></span>
+                </div>
+                <div id="qcSummaryProgressTrack" class="qc-client-progress-track" role="progressbar"
+                     aria-label="درصد پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span id="qcSummaryProgressFill" class="qc-client-progress-fill"></span>
+                </div>
+                <span class="qc-client-progress-total">مجموع اقلام: <strong id="qcSummaryTotalItems">—</strong></span>
             </div>
         </div>
         </section>
