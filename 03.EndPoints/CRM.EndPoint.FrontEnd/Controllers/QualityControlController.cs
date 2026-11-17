@@ -24,7 +24,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     public async Task<IActionResult> GetCustomers([FromQuery] QualityControlCustomerListRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid || request.Start < 0 || request.Length is < 1 or > 100
-            || (request.Status.HasValue && request.Status is not (0 or 1 or 2)))
+            || (request.Status.HasValue && request.Status is not (0 or 1 or 2 or 3 or 4)))
             return BadRequest(new { message = "فیلتر یا صفحه‌بندی معتبر نیست." });
         return Ok(await requests.QueryAsync(new GetQualityControlCustomersQuery(request), ct));
     }
