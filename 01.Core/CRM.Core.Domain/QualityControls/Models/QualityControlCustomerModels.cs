@@ -37,6 +37,28 @@ public sealed class SetQualityControlCustomerContactRequest
 public sealed record SetQualityControlCustomerContactResult(
     int StatusCode, string Message, QualityControlCustomerContactStatus Status);
 
+public sealed record QualityControlContactHistoryRow(
+    Guid Id, QualityControlCustomerContactStatus Status, string CreatedAt,
+    string? CreatedBy, int AttemptCount, bool IsLegacy, string? MobileAtAttempt,
+    string? Description, bool IsDeleted, string? DeleteReason,
+    string? DeletedBy, string? DeletedAt, string? RestoredBy, string? RestoredAt,
+    byte[] RowVersion);
+
+public sealed record QualityControlContactHistoryPage(
+    Guid CustomerId, string? CustomerName, bool CanManage, int Total,
+    IReadOnlyList<QualityControlContactHistoryRow> Data);
+
+public sealed class ChangeQualityControlContactHistoryRequest
+{
+    public Guid CustomerId { get; set; }
+    public Guid HistoryId { get; set; }
+    public bool Restore { get; set; }
+    public string? DeleteReason { get; set; }
+    public byte[]? RowVersion { get; set; }
+}
+
+public sealed record ChangeQualityControlContactHistoryResult(int StatusCode, string Message);
+
 public sealed record QualityControlCustomerSummary(
     int InvalidNumberCustomers, int NoResponseCustomers,
     int PendingCustomers, int PendingItems,
