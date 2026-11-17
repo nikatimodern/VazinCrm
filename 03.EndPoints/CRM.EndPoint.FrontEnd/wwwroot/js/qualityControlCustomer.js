@@ -406,6 +406,8 @@
             } finally {
                 savingItems.delete(itemId);
                 if (generation === formGeneration && isActive()) {
+                    if (succeeded && !flatten().some(item => stateOf(item).failed))
+                        formFeedback.textContent = "";
                     updateSaveActions();
                     if (succeeded) loadCustomers();
                 }
