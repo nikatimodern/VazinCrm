@@ -1319,61 +1319,37 @@ document.addEventListener("click", async (event) => {
  */
 
 function renderExternalSoftwarePreFactors(items = []) {
-    const container = document.getElementById("externalSoftwarePreFactors");
-    if (!container) return;
-    
-    if (!items.length) {
-        container.innerHTML = `
-            <div class="external-pf-empty">
-                این پیش‌فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.
-            </div>`;
-        return;
-    }
-    
-    
-    container.innerHTML = items.map(item => `
-        <div class="external-pf-card">
-            <div class="external-pf-info">
-                <div class="external-pf-field">
-                    <span class="external-pf-label">نرم‌افزار:</span>
-                    <span class="external-pf-value external-pf-software">
-                        ${escapeHtml(item.externalSoftwareTitle)}
-                    </span>
-                </div>
+    const history = new ExternalFinancialHistory({
+        modal: "externalSoftwarePreFactorsModal",
+        list: "externalSoftwarePreFactors",
+    });
+    const viewIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>';
+    const invoiceIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 12h-5M15 8h-5M19 17V5a2 2 0 0 0-2-2H4M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 1 1 1h3"/></svg>';
 
-                <div class="external-pf-field">
-                    <span class="external-pf-label">تاریخ ثبت:</span>
-                    <span class="external-pf-value">
-                        ${renderDateTimeHtml(item.creationDate) || "—"}<!--${renderDateTimeHtml(item.creationDate) || "—"}-->
-                    </span>
-                </div>
+    history.render(items, {
+        emptyText: "این پیش‌فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
+        fields: item => [
+            ["نرم‌افزار", item.externalSoftwareTitle, true],
+            ["تاریخ ثبت", item.creationDate
+                ? item.creationDate.slice(0, -3).split(" ").join(" | ") : "—", false, true],
+            ["شماره پیش‌فاکتور", item.externalPreFactorNumber],
+            ["مشتری", item.customerName],
+        ],
+        actions: item => {
+            const view = document.createElement("button");
+            view.type = "button";
+            view.className = "external-pf-action external-pf-view";
+            view.dataset.action = "view";
+            view.dataset.url = item.viewUrl || "";
+            view.innerHTML = viewIcon + " مشاهده";
 
-                <div class="external-pf-field">
-                    <span class="external-pf-label">شماره پیش‌فاکتور:</span>
-                    <span class="external-pf-value">
-                        ${escapeHtml(item.externalPreFactorNumber || "—")}
-                    </span>
-                </div>
-
-                <div class="external-pf-field">
-                    <span class="external-pf-label">مشتری:</span>
-                    <span class="external-pf-value" title="${escapeHtml(item.customerName)}">
-                        ${escapeHtml(item.customerName || "—")}
-                    </span>
-                </div>
-            </div>
-
-            <div class="external-pf-actions">
-                <button type="button" class="external-pf-action external-pf-view" data-action="view" data-url="${escapeHtml(item.viewUrl || "")}">
-                    <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg> 
-                    مشاهده
-                </button>
-
-                <button type="button" class="external-pf-action external-pf-invoices" data-action="invoices" data-software-id="${escapeHtml(item.externalSoftwareId)}">
-                    <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"></path><path d="M15 8h-5"></path><path d="M19 17V5a2 2 0 0 0-2-2H4"></path><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"></path></svg>
-                     فاکتورها
-                </button>
-            </div>
-        </div>
-    `).join("");
+            const invoices = document.createElement("button");
+            invoices.type = "button";
+            invoices.className = "external-pf-action external-pf-invoices";
+            invoices.dataset.action = "invoices";
+            invoices.dataset.softwareId = item.externalSoftwareId || "";
+            invoices.innerHTML = invoiceIcon + " فاکتورها";
+            return [view, invoices];
+        },
+    });
 }
