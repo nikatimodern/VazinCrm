@@ -17,7 +17,7 @@ public sealed class SaveQualityControlItemsCommandHandler(
     public async Task<SaveQualityControlItemsResult> HandleAsync(SaveQualityControlItemsCommand command, CancellationToken ct)
     {
         var request = command.Request;
-        if (request.CustomerId == Guid.Empty || request.Items == null || request.Items.Count is < 1 or > 500)
+        if (request.CustomerId == Guid.Empty || request.Items == null || request.Items.Count is < 1 or > 2000)
             return new(400, "مشتری یا اقلام کنترل کیفیت معتبر نیست.");
         return await repository.SaveItemsAsync(request,
             QualityControlAccessPolicy.For(await actor.GetAsync(ct)), dates.PersianNow(), ct);
