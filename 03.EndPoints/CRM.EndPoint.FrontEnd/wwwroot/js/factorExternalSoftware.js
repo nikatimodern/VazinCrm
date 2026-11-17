@@ -103,6 +103,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
 
         state.request.includeBroker = includeBroker;
         state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
+        state.request.previewToken = state.request.usePreFactor ? null : result.previewToken;
         state.hasLoadedPreview = true;
         state.step = "preview";
         document.getElementById("backExternalFactorStepBtn").hidden = false;
