@@ -183,11 +183,11 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
         var itemIds = mappings.Select(x => x.ItemId).Distinct().ToArray();
         var stockIds = mappings.Select(x => x.StockId).Distinct().ToArray();
         if (mappings.Any(x => x.ItemId <= 0 || x.StockId <= 0)
-            || await context.Items.AsNoTracking().CountAsync(x => itemIds.Contains(x.ItemID), ct) != itemIds.Length)
+            || await context.Items.AsNoTracking().CountAsync(x => itemIds.Contains(x.ItemID) && x.IsActive && x.Sellable, ct) != itemIds.Length)
             throw new InvalidOperationException("کالای انتخاب‌شده در سپیدار وجود ندارد.");
 
         var validItemStocks = await context.ItemStocks.AsNoTracking()
-            .Where(x => itemIds.Contains(x.ItemRef) && stockIds.Contains(x.StockRef))
+            .Where(x => itemIds.Contains(x.ItemRef) && stockIds.Contains(x.StockRef) && x.Stock.IsActive)
             .Select(x => new { x.ItemRef, x.StockRef }).ToListAsync(ct);
         var linked = validItemStocks.Select(x => (x.ItemRef, x.StockRef)).ToHashSet();
         if (mappings.Any(x => !linked.Contains((x.ItemId, x.StockId))))
