@@ -104,6 +104,8 @@ async function loadExternalFactorPreview(state, includeBroker) {
         state.request.includeBroker = includeBroker;
         state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
         state.hasLoadedPreview = true;
+        state.step = "preview";
+        document.getElementById("backExternalFactorStepBtn").hidden = false;
         document.getElementById("externalFactorPreviewContent").innerHTML =
             renderExternalFactorPreview(result, state);
         document.getElementById("externalFactorFinalNotice").hidden = false;
@@ -135,17 +137,25 @@ async function sendFactorToExternalSoftware(factorId) {
                 request: {
                     factorId: entityIds[0],
                     externalSoftwareId: externalSoftwareIds[0],
+                    usePreFactor: true,
                     includeBroker: false,
                     previewBrokerPartyId: null,
                 },
+                direct: { saleTypeId: "", customerId: "", items: {} },
                 processing: false,
+                hasLoadedPreview: false,
+                step: "mode",
             };
+            const prepared = await sendApiRequest({
+                url: "/Factor/PrepareExternalFactorModes", method: "POST",
+                data: state.request, successMsg: null,
+            });
+            if (!prepared || !prepared.softwareTitle) return;
+            state.softwareTitle = prepared.softwareTitle;
+            state.hasQuotation = prepared.hasQuotation === true;
             externalFactorExportState = state;
-            if (!await loadExternalFactorPreview(state, false)) {
-                if (externalFactorExportState === state) externalFactorExportState = null;
-                return;
-            }
             ModalToggle("chooseExternalSoftwareModal", "hide");
+            factorDirectWizard.showMode(state);
             ModalToggle("sendFactorToExternalSoftwareModal", "show");
         },
     });
@@ -190,7 +200,9 @@ function renderExternalFactorPreview(data, state) {
             <div class="external-mapping-stage-content">
                 <div class="external-mapping-stage-title">بررسی نهایی فاکتور</div>
                 <div class="external-mapping-stage-subtitle">
-                    پیش‌فاکتور سپیدار شماره ${escape(preview.quotationNumber)}؛ اطلاعات را بررسی کنید
+                    ${state.request.usePreFactor
+                        ? "پیش‌فاکتور سپیدار شماره " + escape(preview.quotationNumber)
+                        : "صدور مستقیم بدون پیش‌فاکتور سپیدار"}؛ اطلاعات را بررسی کنید
                 </div>
             </div>
             <span class="external-mapping-step">پیش‌نمایش</span>
@@ -395,6 +407,10 @@ document.addEventListener("click", async event => {
     
     const state = externalFactorExportState;
     if (!state || state.processing) return;
+    if (state.step !== "preview") {
+        await factorDirectWizard.confirm(state);
+        return;
+    }
 
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
