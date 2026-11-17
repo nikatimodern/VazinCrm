@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
+using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomers;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerForm;
 using CRM.Core.ApplicationServices.QualityControls.Services;
@@ -35,6 +36,15 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             return BadRequest(new { message = "مشتری معتبر نیست." });
         var result = await requests.QueryAsync(new GetQualityControlCustomerFormQuery(customerId), ct);
         return result == null ? NotFound(new { message = "مشتری یا فاکتورهای قابل بررسی یافت نشد." }) : Ok(result);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetCustomerContactStatus([FromBody] SetQualityControlCustomerContactRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات وضعیت تماس معتبر نیست." });
+        var result = await requests.CommandAsync(new SetQualityControlCustomerContactCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
