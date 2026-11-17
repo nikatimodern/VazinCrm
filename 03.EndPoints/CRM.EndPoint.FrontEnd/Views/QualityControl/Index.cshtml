@@ -68,13 +68,13 @@
             </div>
             <div class="qc-client-overview-progress">
                 <div class="qc-client-progress-caption">
-                    <span>پیشرفت: <strong id="qcSummaryProgressPercent">—</strong>
-                        از <strong id="qcSummaryTotalItems">—</strong> قلم</span>
-                    <span>تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong> مشتری</span>
+                    <span>کل اقلام فاکتور: <strong id="qcSummaryTotalItems">—</strong></span>
+                    <span>مشتریان تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong></span>
                 </div>
                 <div id="qcSummaryProgressTrack" class="qc-client-progress-track" role="progressbar"
                      aria-label="درصد پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                     <span id="qcSummaryProgressFill" class="qc-client-progress-fill"></span>
+                    <strong id="qcSummaryProgressPercent" class="qc-client-progress-percent">۰٪</strong>
                 </div>
             </div>
         </div>
@@ -127,6 +127,36 @@
     <div class="qc-client-paging">
         <span id="qcCustomerQueueCount"></span>
         <nav id="qcCustomerPages" aria-label="صفحه‌بندی مشتریان"></nav>
+    </div>
+
+    <div class="modal fade qc-client-history-modal" id="qcContactHistoryModal" tabindex="-1"
+         aria-labelledby="qcContactHistoryTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title h5" id="qcContactHistoryTitle">تاریخچه تماس مشتری</h2>
+                        <div id="qcContactHistoryCustomer" class="qc-client-subtitle"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="qc-client-history-toolbar">
+                        <span id="qcContactHistoryFeedback" role="status" aria-live="polite"></span>
+                        <label id="qcContactHistoryDeletedFilter" class="qc-client-history-filter" hidden>
+                            <input id="qcContactHistoryShowDeleted" type="checkbox" />
+                            نمایش سوابق حذف‌شده
+                        </label>
+                    </div>
+                    <div id="qcContactHistoryEntries" class="qc-client-history-entries" role="list"></div>
+                </div>
+                <div class="modal-footer qc-client-history-footer">
+                    <div id="qcContactHistoryPages"></div>
+                    <button type="button" class="qc-client-button qc-client-secondary"
+                            data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade qc-client-modal" id="qcCustomerReviewModal" tabindex="-1" data-bs-focus="false"
