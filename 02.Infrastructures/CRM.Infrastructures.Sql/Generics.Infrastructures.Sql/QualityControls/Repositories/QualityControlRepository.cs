@@ -27,6 +27,21 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .ToListAsync(cancellationToken);
     }
 
+    private static QualityControlCustomerContactStatus CurrentContactStatus(
+        QualityControlCustomerContact? contact, string? mobile, DateTime today, int pendingItems)
+    {
+        if (contact == null || pendingItems <= 0) return QualityControlCustomerContactStatus.None;
+        return contact.Status switch
+        {
+            QualityControlCustomerContactStatus.NoResponse
+                when contact.LastNoResponseAt?.Date >= today => QualityControlCustomerContactStatus.NoResponse,
+            QualityControlCustomerContactStatus.InvalidNumber
+                when string.Equals((contact.InvalidMobileAtMark ?? "").Trim(), (mobile ?? "").Trim(),
+                    StringComparison.Ordinal) => QualityControlCustomerContactStatus.InvalidNumber,
+            _ => QualityControlCustomerContactStatus.None
+        };
+    }
+
     // Customer queue counts only completed invoice-item reviews; historical deal-level records stay untouched.
     public async Task<QualityControlCustomerListResult> GetCustomersAsync(
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken)
@@ -67,17 +82,21 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         // selected status or pagination. Read one grouped row per customer, not every item.
         var summaryRows = await customers.Select(row => new
         {
-            row.CustomerId, row.TotalItems, row.ReviewedItems, row.DiscrepancyItems
+            row.CustomerId, row.Mobile, row.TotalItems, row.ReviewedItems, row.DiscrepancyItems
         }).ToListAsync(cancellationToken);
         var total = summaryRows.Count;
-        var contactStatuses = await db.QualityControlCustomerContacts.AsNoTracking()
-            .Where(contact => contact.Status == QualityControlCustomerContactStatus.NoResponse
-                || contact.Status == QualityControlCustomerContactStatus.InvalidNumber)
-            .ToDictionaryAsync(contact => contact.CustomerId, contact => contact.Status, cancellationToken);
-        // A registered invoice-item QC result takes precedence over an old contact outcome.
-        // Ignore any historical conflicting contact status everywhere in the queue.
-        foreach (var row in summaryRows.Where(row => row.ReviewedItems > 0))
-            contactStatuses.Remove(row.CustomerId);
+        var contacts = await db.QualityControlCustomerContacts.AsNoTracking()
+            .Where(contact => contact.Status != QualityControlCustomerContactStatus.None
+                || contact.NoResponseAttempts > 0)
+            .ToDictionaryAsync(contact => contact.CustomerId, cancellationToken);
+        // No background job is needed: overdue "no answer" expires at calendar midnight,
+        // and changed mobile numbers invalidate an existing "invalid number" flag.
+        var today = DateTime.Today;
+        var contactStatuses = summaryRows.ToDictionary(row => row.CustomerId, row =>
+        {
+            contacts.TryGetValue(row.CustomerId, out var contact);
+            return CurrentContactStatus(contact, row.Mobile, today, row.TotalItems - row.ReviewedItems);
+        });
 
         var invalidCustomers = 0;
         var noResponseCustomers = 0;
@@ -116,19 +135,23 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         customers = request.Status switch
         {
             0 => customers.Where(row => row.ReviewedItems < row.TotalItems
-                && (row.ReviewedItems > 0 || !db.QualityControlCustomerContacts.Any(contact =>
-                    contact.CustomerId == row.CustomerId
-                    && contact.Status != QualityControlCustomerContactStatus.None))),
+                && !db.QualityControlCustomerContacts.Any(contact => contact.CustomerId == row.CustomerId
+                    && ((contact.Status == QualityControlCustomerContactStatus.NoResponse
+                            && contact.LastNoResponseAt >= today)
+                        || (contact.Status == QualityControlCustomerContactStatus.InvalidNumber
+                            && (contact.InvalidMobileAtMark ?? "").Trim() == (row.Mobile ?? "").Trim())))),
             1 => customers.Where(row => row.ReviewedItems == row.TotalItems),
             2 => customers.Where(row => row.DiscrepancyItems > 0),
-            3 => customers.Where(row => row.ReviewedItems == 0
+            3 => customers.Where(row => row.ReviewedItems < row.TotalItems
                 && db.QualityControlCustomerContacts.Any(contact =>
                     contact.CustomerId == row.CustomerId
-                    && contact.Status == QualityControlCustomerContactStatus.NoResponse)),
-            4 => customers.Where(row => row.ReviewedItems == 0
+                    && contact.Status == QualityControlCustomerContactStatus.NoResponse
+                    && contact.LastNoResponseAt >= today)),
+            4 => customers.Where(row => row.ReviewedItems < row.TotalItems
                 && db.QualityControlCustomerContacts.Any(contact =>
                     contact.CustomerId == row.CustomerId
-                    && contact.Status == QualityControlCustomerContactStatus.InvalidNumber)),
+                    && contact.Status == QualityControlCustomerContactStatus.InvalidNumber
+                    && (contact.InvalidMobileAtMark ?? "").Trim() == (row.Mobile ?? "").Trim())),
             5 => customers.Where(row => row.ReviewedItems > 0),
             _ => customers
         };
@@ -157,7 +180,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var data = page.Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
             row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
             row.TotalItems, row.ReviewedItems, row.DiscrepancyItems,
-            contactStatuses.GetValueOrDefault(row.CustomerId))).ToList();
+            contactStatuses.GetValueOrDefault(row.CustomerId),
+            contacts.TryGetValue(row.CustomerId, out var contact) ? contact.NoResponseAttempts : 0)).ToList();
         return new(total, filtered, data, summary);
     }
 
