@@ -112,10 +112,12 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             select new
             {
                 FactorItemId = item.Id, item.ProductSmallName, item.Product, item.WeightCount, item.UnitTxt,
+                item.PfItemId, item.SupplierName,
                 DealId = deal.Id, DealSerial = deal.SerialNumber, DealTitle = deal.Title,
                 FactorId = factor.Id, FactorSerial = factor.SerialNumber, FactorDate = factor.Date,
-                SupplyExpert = db.PreFactors.Where(preFactor => preFactor.Id == factor.PfactorID)
-                    .Select(preFactor => preFactor.UserTaminTxt).FirstOrDefault() ?? factor.UserTaminTxt
+                PreFactorSupplyExpert = db.PreFactors.Where(preFactor => preFactor.Id == factor.PfactorID)
+                    .Select(preFactor => preFactor.UserTaminTxt).FirstOrDefault(),
+                FactorSupplyExpert = factor.UserTaminTxt
             }).ToListAsync(cancellationToken);
         if (raw.Count == 0)
             return null;
@@ -126,23 +128,64 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Where(review => ids.Contains(review.FactorItemId))
             .ToDictionaryAsync(review => review.FactorItemId, cancellationToken);
 
-        // Item allocation is the source of supplier provenance, not UserTaminTxt.
-        var suppliers = await (
+        // Match the actual sourcing of each invoice item. Warehouse-linked allocations may
+        // have their source item only on WarehouseProduct, so resolve both allocation paths.
+        var allocations = await (
             from allocation in db.SupplyFactorItemAllocations.AsNoTracking()
-            join supplyItem in db.SupplyFactorItems.AsNoTracking()
-                on allocation.SupplyFactorItemId equals (Guid?)supplyItem.Id
-            join supplyFactor in db.SupplyFactors.AsNoTracking()
-                on supplyItem.SupplyFactorId equals supplyFactor.Id
             where allocation.FactorItemId.HasValue
                 && ids.Contains(allocation.FactorItemId.Value) && allocation.Weight > 0
-            select new { allocation.FactorItemId, supplyFactor.SupplierId, supplyFactor.SupplierTxt }
+            from sourceProduct in db.WarehouseProducts.IgnoreQueryFilters().AsNoTracking()
+                .Where(product => product.Id == allocation.SourceWarehouseProductId).DefaultIfEmpty()
+            from supplyItem in db.SupplyFactorItems.IgnoreQueryFilters().AsNoTracking()
+                .Where(item => (Guid?)item.Id ==
+                    (allocation.SupplyFactorItemId ?? sourceProduct.SupplyFactorItemId)).DefaultIfEmpty()
+            from supplyFactor in db.SupplyFactors.IgnoreQueryFilters().AsNoTracking()
+                .Where(factor => supplyItem != null && factor.Id == supplyItem.SupplyFactorId).DefaultIfEmpty()
+            where supplyFactor != null && !string.IsNullOrEmpty(supplyFactor.SupplierTxt)
+            select new { FactorItemId = allocation.FactorItemId!.Value, supplyFactor.SupplierTxt }
         ).ToListAsync(cancellationToken);
-        var supplierMap = suppliers.GroupBy(item => item.FactorItemId!.Value)
+        var allocatedSuppliers = allocations.GroupBy(item => item.FactorItemId)
             .ToDictionary(group => group.Key, group => string.Join("، ",
-                group.GroupBy(item => item.SupplierId)
-                    .Select(names => names.Select(item => item.SupplierTxt)
-                        .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))?.Trim())
-                    .Where(name => !string.IsNullOrWhiteSpace(name))));
+                group.Select(item => item.SupplierTxt.Trim())
+                    .Where(name => name.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)));
+
+        // If an item has no invoice allocation, use only links for that exact item:
+        // its saved supplier, its originating production order, or its pre-invoice supply.
+        // Never take a supplier from another item merely because the deal is the same.
+        var pfItemIds = raw.Where(item => item.PfItemId.HasValue)
+            .Select(item => item.PfItemId!.Value).Distinct().ToArray();
+        var productionLinks = pfItemIds.Length == 0
+            ? new List<(Guid PfItemId, string? Expert, string? Supplier)>()
+            : (await (
+                from order in db.Orders.AsNoTracking()
+                join head in db.OrderHeads.AsNoTracking() on order.OrderHeadId equals (Guid?)head.Id
+                where order.PreFactorItemId.HasValue && pfItemIds.Contains(order.PreFactorItemId.Value)
+                    && !order.IsDeleted && !head.IsDeleted
+                select new { PfItemId = order.PreFactorItemId.Value, Expert = head.UserTaminTxt,
+                    Supplier = head.SupplierTxt }
+            ).ToListAsync(cancellationToken))
+            .Select(item => (item.PfItemId, item.Expert, item.Supplier)).ToList();
+        var productionByPfItem = productionLinks.GroupBy(item => item.PfItemId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        var pfSupplyLinks = pfItemIds.Length == 0
+            ? new List<(Guid PfItemId, string? Supplier)>()
+            : (await db.Supplies.AsNoTracking()
+                .Where(item => item.PfItemId.HasValue && pfItemIds.Contains(item.PfItemId.Value)
+                    && !item.IsDeleted && item.SupplierTxt != null)
+                .Select(item => new { PfItemId = item.PfItemId!.Value, Supplier = item.SupplierTxt })
+                .ToListAsync(cancellationToken))
+                .Select(item => (item.PfItemId, item.Supplier)).ToList();
+        var pfSuppliersByItem = pfSupplyLinks.GroupBy(item => item.PfItemId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        static string? JoinNames(IEnumerable<string?> names)
+        {
+            var distinct = names.Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            return distinct.Length == 0 ? null : string.Join("، ", distinct);
+        }
 
         var questions = await GetQuestionsAsync(cancellationToken);
         var orders = raw.GroupBy(item => new { item.DealId, item.DealSerial, item.DealTitle })
@@ -154,7 +197,16 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                         invoice.Select(item =>
                         {
                             reviews.TryGetValue(item.FactorItemId, out var review);
-                            supplierMap.TryGetValue(item.FactorItemId, out var supplierNames);
+                            allocatedSuppliers.TryGetValue(item.FactorItemId, out var supplierNames);
+                            productionByPfItem.TryGetValue(item.PfItemId ?? Guid.Empty, out var production);
+                            pfSuppliersByItem.TryGetValue(item.PfItemId ?? Guid.Empty, out var pfSupply);
+                            supplierNames = !string.IsNullOrWhiteSpace(supplierNames) ? supplierNames
+                                : JoinNames(new[] { item.SupplierName }) ??
+                                  JoinNames(production?.Select(link => link.Supplier) ?? Enumerable.Empty<string?>()) ??
+                                  JoinNames(pfSupply?.Select(link => link.Supplier) ?? Enumerable.Empty<string?>());
+                            var supplyExpert = JoinNames(production?.Select(link => link.Expert)
+                                ?? Enumerable.Empty<string?>()) ??
+                                JoinNames(new[] { item.PreFactorSupplyExpert, item.FactorSupplyExpert });
                             var savedQuestions = review?.Answers.Select(answer =>
                                 new QualityControlQuestionDto(answer.QuestionId, answer.QuestionTitleSnapshot,
                                     answer.QuestionTextSnapshot, answer.ZeroAnswerTextSnapshot,
@@ -165,7 +217,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 : review.Status == QualityControlOutcome.HasDiscrepancy
                                     ? QualityControlStatus.HasDiscrepancy : QualityControlStatus.NoDiscrepancy;
                             return new QualityControlInvoiceItem(item.FactorItemId, item.ProductSmallName,
-                                item.Product, item.WeightCount, item.UnitTxt, supplierNames, item.SupplyExpert,
+                                item.Product, item.WeightCount, item.UnitTxt, supplierNames, supplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
                         }).ToList())).ToList())).ToList();
         return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
