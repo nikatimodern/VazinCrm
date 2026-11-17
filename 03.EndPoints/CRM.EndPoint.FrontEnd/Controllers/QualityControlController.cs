@@ -2,13 +2,16 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.QualityControls.Commands.ChangeQualityControlContactHistory;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
+using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlContactHistory;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomers;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerForm;
 using CRM.Core.ApplicationServices.QualityControls.Services;
 using CRM.Core.ApplicationServices.Workspaces.Queries.GetWorkspacePage;
 using CRM.Core.Domain.QualityControls.Models;
+using CRM.Core.ApplicationServices.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,6 +49,32 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             return BadRequest(new { message = "اطلاعات وضعیت تماس معتبر نیست." });
         var result = await requests.CommandAsync(new SetQualityControlCustomerContactCommand(request), ct);
         return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetContactHistory(
+        Guid customerId, bool includeDeleted = false, int start = 0, int length = 20,
+        CancellationToken ct = default)
+    {
+        if (!ModelState.IsValid || customerId == Guid.Empty || start < 0 || length is < 1 or > 100)
+            return BadRequest(new { message = "شناسه مشتری یا صفحه‌بندی تاریخچه معتبر نیست." });
+        var data = await requests.QueryAsync(
+            new GetQualityControlContactHistoryQuery(customerId, includeDeleted, start, length), ct);
+        return data == null
+            ? NotFound(new { message = "مشتری واجد شرایط یافت نشد." })
+            : Ok(data);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = AppRoles.Admin)]
+    public async Task<IActionResult> ChangeContactHistory([FromBody] ChangeQualityControlContactHistoryRequest request,
+        CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null || request.CustomerId == Guid.Empty
+            || request.HistoryId == Guid.Empty || request.RowVersion == null)
+            return BadRequest(new { message = "اطلاعات تاریخچه تماس معتبر نیست." });
+        var result = await requests.CommandAsync(
+            new ChangeQualityControlContactHistoryCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
