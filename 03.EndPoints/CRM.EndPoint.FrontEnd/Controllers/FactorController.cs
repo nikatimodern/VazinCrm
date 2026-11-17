@@ -3284,6 +3284,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 ?? throw new InvalidOperationException("فاکتور CRM پیدا نشد.");
             if (factor.status == FactorStatus.ابطال_شده || factor.Returned || factor.ParentReturnedId.HasValue)
                 throw new InvalidOperationException("فاکتور ابطال‌شده یا برگشتی قابل انتقال نیست.");
+            // Some older CRM invoices keep the customer only on their CRM pre-factor.
+            if (!factor.CustomerId.HasValue)
+                factor.CustomerId = await db.PreFactors.AsNoTracking()
+                    .Where(x => x.Id == factor.PfactorID)
+                    .Select(x => x.CustomerId).SingleOrDefaultAsync(ct);
             return (factor, title);
         }
 
