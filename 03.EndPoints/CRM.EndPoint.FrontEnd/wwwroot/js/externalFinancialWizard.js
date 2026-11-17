@@ -36,6 +36,96 @@ class ExternalFinancialWizard {
         </div>`;
     }
 
+    /**
+     * Bind an inventory selector to a selected Sepidar item. Stocks are loaded from
+     * the existing item-specific endpoint, never from a global warehouse list.
+     * `cache` belongs to one financial-software destination, not the entire app.
+     */
+    static linkedStockField(target, {
+        id, softwareId, cache = new Map(), isCurrent = () => true,
+        onChange = () => {}, onLoaded = () => {}, onLoading = () => {},
+    }) {
+        const label = document.createElement("label");
+        label.className = "form-label external-item-match-stock-label";
+        label.htmlFor = id;
+        label.textContent = "انبار کالای انتخاب‌شده";
+
+        const select = document.createElement("select");
+        select.id = id;
+        select.className = "external-mapping-stock-select show-dropdown-arrow";
+        select.disabled = true;
+        select.append(new Option("", ""));
+
+        const hint = document.createElement("small");
+        hint.className = "external-item-match-stock-hint";
+        hint.textContent = "ابتدا کالای معادل را انتخاب کنید.";
+        target.append(label, select, hint);
+
+        const control = new TomSelect(select, {
+            placeholder: "جستجو و انتخاب انبار",
+            onChange,
+        });
+        control.disable();
+
+        let generation = 0;
+        const update = async (itemId, preferredStockId = "") => {
+            const version = ++generation;
+            control.clear(true);
+            control.clearOptions();
+            control.disable();
+            hint.textContent = itemId
+                ? "در حال دریافت انبارهای مرتبط…"
+                : "ابتدا کالای معادل را انتخاب کنید.";
+            if (!itemId) return;
+
+            onLoading(true);
+            const key = String(itemId);
+            let pending = cache.get(key);
+            if (!pending) {
+                pending = sendApiRequest({
+                    url: "/Factor/PrepareExternalStockMapping",
+                    method: "POST",
+                    successMsg: null,
+                    data: { externalSoftwareId: softwareId, itemIds: [Number(itemId)] },
+                }).then(result => {
+                    if (!Array.isArray(result?.stocksByItem)) return null;
+                    return result.stocksByItem.find(item => String(item.itemRef) === key)?.stocks ?? [];
+                }).catch(() => null);
+                cache.set(key, pending);
+            }
+
+            const stocks = await pending;
+            if (stocks === null) cache.delete(key);
+            if (version !== generation || !select.isConnected || !isCurrent()) return;
+            onLoading(false);
+            if (stocks === null) {
+                hint.textContent = "دریافت انبارها انجام نشد. کالا را دوباره انتخاب کنید.";
+                return;
+            }
+
+            onLoaded(key, stocks);
+            if (!stocks.length) {
+                hint.textContent = "انبار مرتبطی برای این کالا پیدا نشد.";
+                return;
+            }
+
+            control.addOptions(stocks.map(stock => ({
+                value: String(stock.id),
+                text: [stock.code, stock.title].filter(Boolean).join(" - "),
+            })));
+            control.refreshOptions(false);
+            control.enable();
+
+            const selected = stocks.some(stock => String(stock.id) === String(preferredStockId))
+                ? String(preferredStockId) : "";
+            control.setValue(selected, true);
+            if (!selected && preferredStockId) onChange("");
+            hint.textContent = "";
+        };
+
+        return { update, select };
+    }
+
     setDestinations(ids) {
         this.destinations = [...new Set(ids ?? [])];
         this.destinationIndex = 0;
