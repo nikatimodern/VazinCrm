@@ -470,7 +470,7 @@
             const fields = [
                 ["شماره سفارش", deal.serialNumber], ["مشتری", deal.customerName], ["کد مشتری", deal.customerCode],
                 ["تلفن", deal.customerTel], ["موبایل", deal.customerMobile],
-                ["کارشناس مسئول", deal.userCreator], ["مسئول تأمین", deal.supplyManagers], ["تأمین‌کننده", deal.suppliers], ["تاریخ ثبت", deal.createDate],
+                ["کارشناس مسئول", deal.userCreator], ["کارشناس تأمین", deal.supplyManagers], ["تأمین‌کننده", deal.suppliers], ["تاریخ ثبت", deal.createDate],
             ];
             const documents = [["پیش‌فاکتور", "preFactor"], ["فاکتور", "factor"], ["واریزی‌ها", "payments"], ["دستور تولید", "orderHead"], ["گزارش", "report"]];
             const documentButton = (label, key) => `<button type="button" data-qc-document="${key}"><strong>${label}</strong><b>${number.format(deal.counts?.[key] ?? 0)}</b></button>`;
