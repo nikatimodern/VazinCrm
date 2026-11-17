@@ -43,6 +43,20 @@
         const pageSignal = typeof PageRuntime !== "undefined" ? PageRuntime.current?.signal : null;
         const isActive = () => page.isConnected && !pageSignal?.aborted;
 
+        // Account for the actual shell/header height rather than guessing a
+        // fixed offset; only the customer queue scrolls on desktop.
+        function fitQueueToViewport() {
+            if (!isActive()) return;
+            const top = Math.max(0, page.getBoundingClientRect().top);
+            page.style.setProperty("--qc-workspace-height",
+                Math.max(320, Math.floor(window.innerHeight - top - 8)) + "px");
+        }
+        fitQueueToViewport();
+        window.addEventListener("resize", fitQueueToViewport,
+            pageSignal ? { signal: pageSignal } : undefined);
+        if (typeof enableMomentumScroll === "function")
+            enableMomentumScroll(queue, { signal: pageSignal });
+
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let listController = null, formController = null, formGeneration = 0;
         let review = null;
