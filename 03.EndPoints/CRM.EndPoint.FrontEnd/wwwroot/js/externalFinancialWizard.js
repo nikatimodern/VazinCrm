@@ -97,7 +97,10 @@ class ExternalFinancialWizard {
             if (stocks === null) cache.delete(key);
             if (version !== generation || !select.isConnected || !isCurrent()) return;
             onLoading(false);
-            if (stocks === null) return;
+            if (stocks === null) {
+                onChange("");
+                return;
+            }
 
             onLoaded(key, stocks);
 
@@ -116,7 +119,10 @@ class ExternalFinancialWizard {
                     text: String(retainedStock.title || retainedStock.stockId),
                 });
             }
-            if (!options.length) return;
+            if (!options.length) {
+                onChange("");
+                return;
+            }
             control.addOptions(options);
             control.refreshOptions(false);
             control.enable();
