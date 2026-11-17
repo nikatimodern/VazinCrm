@@ -1287,7 +1287,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (!brokerPartyId.HasValue)
             return null;
 
-        var rate = await sepidarContext.Quotations.AsNoTracking()
+        decimal? rate = preview.QuotationId == 0 ? 1m : await sepidarContext.Quotations.AsNoTracking()
             .Where(x => x.QuotationId == preview.QuotationId)
             .Select(x => (decimal?)x.Rate)
             .SingleOrDefaultAsync(ct);
@@ -1842,17 +1842,20 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(SepidarInvoiceExportPreview preview,
         CancellationToken ct = default)
     {
-        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
+        var quotation = preview.QuotationId > 0
+            ? await GetQuotationAsync(preview.QuotationId, ct)
+                ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.")
+            : null;
 
-        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
-                       ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
+        var customerId = quotation?.CustomerPartyRef ?? preview.CustomerPartyRef;
+        var customer = await GetSepidarCustomerByIdAsync(customerId, ct)
+                       ?? throw new InvalidOperationException("مشتری مقصد در سپیدار پیدا نشد.");
         preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
             ? customer.FullName
             : $"{customer.DlCode} - {customer.FullName}";
 
         var saleType = (await GetSaleTypes(ct))
-                       .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
+                       .SingleOrDefault(x => x.SaleTypeId == (quotation?.SaleTypeRef ?? preview.SaleTypeRef))
                        ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
         preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
 
@@ -1895,17 +1898,29 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (!factor.DateMiladi.HasValue)
             throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
 
-        var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
-
-        if (quotation.FiscalYearRef != preview.FiscalYearRef)
+        var quotation = preview.QuotationId > 0
+            ? await sepidarContext.Quotations.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
+                    ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.")
+            : null;
+        if (quotation != null && quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        SepidarPartyDto directCustomer = null;
+        if (quotation == null)
+        {
+            directCustomer = await GetSepidarCustomerByIdAsync(preview.CustomerPartyRef, ct)
+                ?? throw new InvalidOperationException("مشتری انتخاب‌شده در سپیدار پیدا نشد.");
+            if (!await sepidarContext.SaleTypes.AsNoTracking()
+                    .AnyAsync(x => x.SaleTypeId == preview.SaleTypeRef, ct))
+                throw new InvalidOperationException("نوع فروش انتخاب‌شده در سپیدار معتبر نیست.");
+        }
 
         var invoiceDate = factor.DateMiladi.Value;
         var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
             .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
         if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date || invoiceDate.Date > fiscalYear.EndDate.Date)
-            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی مقصد است.");
 
         await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
@@ -1924,17 +1939,17 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
             var invoice = new SalesInvoiceRecord {
                 InvoiceId = invoiceId,
-                QuotationRef = quotation.QuotationId,
-                CustomerPartyRef = quotation.CustomerPartyRef,
-                CustomerRealName = quotation.CustomerRealName,
-                CustomerRealName_En = quotation.CustomerRealName_En,
-                SaleTypeRef = quotation.SaleTypeRef,
-                PartyAddressRef = quotation.PartyAddressRef,
+                QuotationRef = quotation?.QuotationId,
+                CustomerPartyRef = quotation?.CustomerPartyRef ?? directCustomer.Id,
+                CustomerRealName = quotation?.CustomerRealName ?? directCustomer.FullName,
+                CustomerRealName_En = quotation?.CustomerRealName_En ?? directCustomer.FullName,
+                SaleTypeRef = quotation?.SaleTypeRef ?? preview.SaleTypeRef,
+                PartyAddressRef = quotation?.PartyAddressRef ?? directCustomer.PartyMainAddressRef,
                 Number = invoiceNumber,
                 Date = invoiceDate,
-                CurrencyRef = quotation.CurrencyRef,
+                CurrencyRef = quotation?.CurrencyRef ?? 1,
                 SLRef = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct), // حسابهاي دريافتني تجاري
-                DeliveryLocationRef = quotation.DeliveryLocationRef,
+                DeliveryLocationRef = quotation?.DeliveryLocationRef ?? 1,
                 State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,
                 PriceInBaseCurrency = preview.Price,
@@ -1947,13 +1962,13 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 Duty = 0,
                 DutyInBaseCurrency = 0,
                 NetPriceInBaseCurrency = preview.NetPrice,
-                Rate = quotation.Rate,
+                Rate = quotation?.Rate ?? 1m,
                 Version = 1,
                 Creator = 1,
                 CreationDate = now,
                 LastModifier = 1,
                 LastModificationDate = now,
-                FiscalYearRef = quotation.FiscalYearRef,
+                FiscalYearRef = quotation?.FiscalYearRef ?? preview.FiscalYearRef,
                 VoucherRef = null, // Set after posting the sales accounting voucher.
                 BaseOnInventoryDelivery = false,
                 OrderRef = null,
@@ -1970,7 +1985,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 SignatureRef = null
             };
 
-            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
+            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, invoice.Rate, ct);
             var broker = brokerPartyId.HasValue
                 ? await CalculateInvoiceBrokerAsync(brokerPartyId.Value, invoice.Price, invoice.Discount, invoice.Rate, ct)
                 : null;
@@ -1987,7 +2002,8 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
             // The quotation item tracks the cumulative quantity already invoiced.
             // Both this update and the invoice/delivery inserts share one SQL transaction.
-            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور
+            if (quotation != null)
+                await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // فقط صدور بر پایه پیش‌فاکتور
 
             // Insert the invoice first: InvoiceBroker.InvoiceRef is a foreign key to SLS.Invoice.
             // Both SaveChanges calls remain inside the same serializable SQL transaction.
@@ -2293,6 +2309,17 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
         return await IsInvoiceNumberAvailableForFiscalYearAsync(
             fiscalYearRef.Value, requestedInvoiceNumber, ct);
+    }
+
+    public async Task<bool> IsDirectInvoiceNumberAvailableAsync(
+        DateTime invoiceDate, int number, CancellationToken ct = default)
+    {
+        if (number <= 0) throw new InvalidOperationException("شماره فاکتور معتبر نیست.");
+        var yearId = await sepidarContext.FiscalYears.AsNoTracking()
+            .Where(x => invoiceDate.Date >= x.StartDate.Date && invoiceDate.Date <= x.EndDate.Date)
+            .Select(x => (int?)x.FiscalYearId).SingleOrDefaultAsync(ct)
+            ?? throw new InvalidOperationException("سال مالی تاریخ فاکتور در سپیدار پیدا نشد.");
+        return await IsInvoiceNumberAvailableForFiscalYearAsync(yearId, number, ct);
     }
 
     private async Task<bool> IsInvoiceNumberAvailableForFiscalYearAsync(
@@ -2650,7 +2677,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         for (var index = 0; index < itemCount; index++)
         {
             var item = items[index];
-            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId <= 0)
+            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId < 0)
                 throw new InvalidOperationException($"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
 
             invoiceItems.Add(new SalesInvoiceItemRecord {
@@ -2680,7 +2707,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 DutyInBaseCurrency = 0,
                 NetPriceInBaseCurrency = item.NetPrice,
                 Rate = rate,
-                QuotationItemRef = item.QuotationItemId,
+                QuotationItemRef = item.QuotationItemId > 0 ? item.QuotationItemId : null,
                 Description = null,
                 Description_En = null,
                 DiscountInvoiceItemRef = null,
