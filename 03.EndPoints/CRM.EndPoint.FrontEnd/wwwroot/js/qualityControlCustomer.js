@@ -32,6 +32,8 @@
         const saveHint = page.querySelector("#qcCustomerSaveHint");
         const searchInput = page.querySelector("#qcCustomerSearch");
         const statusFilter = page.querySelector("#qcCustomerStatus");
+        const sortControl = page.querySelector("#qcCustomerSort");
+        const cardButtons = [...page.querySelectorAll("[data-qc-card-status]")];
         const pageSize = page.querySelector("#qcCustomerPageSize");
         const token = form.querySelector('[name="__RequestVerificationToken"]');
         const faNumber = new Intl.NumberFormat("fa-IR");
@@ -116,9 +118,18 @@
                 : "";
         }
 
+        function syncCardSelection() {
+            cardButtons.forEach(button => {
+                const selected = button.dataset.qcCardStatus === statusFilter.value;
+                button.classList.toggle("is-selected", selected);
+                button.setAttribute("aria-pressed", String(selected));
+            });
+        }
+
         async function loadCustomers(reset = false) {
             if (!isActive()) return;
             if (reset) start = 0;
+            syncCardSelection();
             listController?.abort();
             const controller = listController = new AbortController();
             loading = true;
@@ -130,6 +141,7 @@
                     params: {
                         start, length: Number(pageSize.value), search,
                         status: statusFilter.value,
+                        sort: sortControl.value,
                     },
                     signal: controller.signal,
                     showLoading: false,
@@ -504,7 +516,17 @@
             if (!searchInput.value && search) { search = ""; loadCustomers(true); }
         });
         statusFilter.addEventListener("change", () => loadCustomers(true));
+        sortControl.addEventListener("change", () => loadCustomers(true));
         pageSize.addEventListener("change", () => loadCustomers(true));
+        page.querySelector(".qc-client-overview").addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-card-status]");
+            if (!button) return;
+            // The overview totals are global; reset search to show every customer in the selected group.
+            search = "";
+            searchInput.value = "";
+            statusFilter.value = button.dataset.qcCardStatus;
+            loadCustomers(true);
+        });
         pages.addEventListener("click", event => {
             const button = event.target.closest("[data-qc-page]");
             if (!button || button.disabled || loading) return;
