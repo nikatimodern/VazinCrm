@@ -24,9 +24,9 @@ namespace CRM.Infrastructures.Sql.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Reverting must not fail for reviews currently marked unchecked.
-            migrationBuilder.Sql("DELETE FROM [QualityControlItemAnswers] WHERE [QualityControlItemReviewId] IN (SELECT [Id] FROM [QualityControlItemReviews] WHERE [Status] = 0)");
-            migrationBuilder.Sql("DELETE FROM [QualityControlItemReviews] WHERE [Status] = 0");
+            // Do not silently delete historical answers or misclassify unchecked reviews.
+            migrationBuilder.Sql(@"IF EXISTS (SELECT 1 FROM [QualityControlItemReviews] WHERE [Status] = 0)
+                THROW 51000, 'Cannot roll back quality-control status constraint while unchecked reviews exist.', 1;");
             migrationBuilder.DropCheckConstraint(
                 name: "CK_QualityControlItemReviews_Status",
                 table: "QualityControlItemReviews");
