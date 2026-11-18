@@ -259,8 +259,21 @@
 #qualityControlCustomerPage .qc-client-overview-no-answer .qc-client-overview-value strong { color: #5811B4; }
 #qualityControlCustomerPage .qc-client-overview-pending .qc-client-overview-value strong { color: #5811B4; }
 #qualityControlCustomerPage .qc-client-overview-reviewed .qc-client-overview-value strong { color: var(--qc-primary); }
-@media (max-width: 1100px) {
-    #qualityControlCustomerPage .qc-client-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Adapt to the actual CRM workspace width, which may be narrower than the
+   browser because of the sidebar. A single KPI row keeps the customer queue
+   usable when the browser window is neither desktop-wide nor mobile-sized. */
+@container mainWrapper (min-width: 850px) and (max-width: 1099px) {
+    #qualityControlCustomerPage .qc-client-overview {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 7px;
+    }
+    #qualityControlCustomerPage .qc-client-overview-card { padding: 8px 9px; }
+    #qualityControlCustomerPage .qc-client-dashboard-top { margin-bottom: 8px; }
+}
+@container mainWrapper (max-width: 849px) {
+    #qualityControlCustomerPage .qc-client-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 @media (max-width: 420px) {
     #qualityControlCustomerPage .qc-client-overview { grid-template-columns: minmax(0, 1fr); }
@@ -335,6 +348,21 @@
     border-color: var(--qc-danger);
     background: var(--qc-danger-light);
     color: var(--qc-danger);
+}
+/* If wrapped cards and toolbar consume most of the viewport, do not
+   squeeze the customer queue to a single clipped row. The page then scrolls
+   normally, while the list keeps an independently usable scroll area. */
+@media (min-width: 768px) {
+    #qualityControlCustomerPage.qc-client-natural-scroll {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+    #qualityControlCustomerPage.qc-client-natural-scroll .qc-client-queue {
+        flex: 0 0 auto;
+        min-height: 220px;
+        max-height: min(55dvh, 480px);
+    }
 }
 #qualityControlCustomerPage .qc-client-queue {
     display: grid;
