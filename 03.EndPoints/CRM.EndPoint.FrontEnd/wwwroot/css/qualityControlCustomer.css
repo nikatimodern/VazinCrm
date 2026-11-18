@@ -420,26 +420,44 @@
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-primary:hover:not(:disabled) {
     border-color: var(--qc-primary);
 }
-/* The contact buttons share one outline while keeping independent click targets. */
+/* Three separate contact actions form one icon-only RTL button group. */
 #qualityControlCustomerPage .qc-client-call-group {
     display: inline-flex;
     align-items: stretch;
     flex: 0 0 auto;
     max-width: 100%;
+    --qc-contact-icon-size: var(--qc-card-control-height);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer {
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
-}
-#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open {
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: var(--qc-card-control-height);
-    padding-inline: 9px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    width: var(--qc-contact-icon-size);
+    min-width: var(--qc-contact-icon-size);
+    height: var(--qc-contact-icon-size);
+    min-height: var(--qc-contact-icon-size);
+    padding: 0;
+    border-radius: 0;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer {
+    border-start-start-radius: var(--qc-card-control-radius);
+    border-end-start-radius: var(--qc-card-control-radius);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open,
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid {
     border-inline-start-width: 0;
-    border-start-start-radius: 0;
-    border-end-start-radius: 0;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid {
+    border-start-end-radius: var(--qc-card-control-radius);
+    border-end-end-radius: var(--qc-card-control-radius);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--qc-primary);
+    outline-offset: 2px;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid {
     background: var(--qc-danger-light);
@@ -457,8 +475,9 @@
     border-color: color-mix(in srgb, var(--qc-secondary) 20%, var(--qc-border));
     color: var(--qc-secondary);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--qc-secondary) 11%, white);
+#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer:hover:not(:disabled),
+#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer.is-selected {
+    background: color-mix(in srgb, var(--qc-secondary) 17%, white);
     border-color: var(--qc-secondary);
 }
 /* Countdown is directly under this one button, without changing card row height. */
@@ -468,13 +487,6 @@
     align-items: stretch;
     flex: 0 0 auto;
 }
-#qualityControlCustomerPage .qc-client-no-answer-time {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    white-space: nowrap;
-    unicode-bidi: isolate;
-}
-#qualityControlCustomerPage .qc-client-no-answer-time[hidden],
 #qualityControlCustomerPage .qc-client-no-answer-progress[hidden] { display: none; }
 #qualityControlCustomerPage .qc-client-no-answer-progress {
     position: absolute;
@@ -939,9 +951,10 @@
     #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-stat-segment,
     #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-count-reviewed,
     #qualityControlCustomerPage .qc-client-card .qc-client-review-group .qc-client-badge { padding: 3px 6px; }
-    #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open {
-        min-width: 23px;
-        padding-inline: 6px;
+    #qualityControlCustomerPage .qc-client-call-group { --qc-contact-icon-size: 30px; }
+    #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button {
+        min-height: var(--qc-contact-icon-size);
+        padding: 0;
     }
     #qualityControlCustomerPage .qc-client-review-group {
         flex: 1 1 100%;
