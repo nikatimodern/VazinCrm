@@ -120,7 +120,8 @@
                     Math.ceil((Number(button.dataset.qcCooldownUntil || 0) - now) / 1000));
                 const complete = button.closest("[data-qc-complete]")?.dataset.qcComplete === "true";
                 button.disabled = contactBusy || complete || remaining > 0;
-                button.textContent = remaining > 0
+                const label = button.querySelector("[data-qc-no-answer-label]");
+                if (label) label.textContent = remaining > 0
                     ? "عدم پاسخ (" + faNumber.format(remaining) + " ث)" : "عدم پاسخ";
                 button.title = complete ? "تمام اقلام بررسی شده‌اند"
                     : remaining > 0 ? "ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
@@ -299,6 +300,9 @@
                     const label = contactStatus === 2 ? "شماره نامعتبر"
                         : contactStatus === 1 ? "عدم پاسخ · پیگیری فردا"
                             : complete ? "تکمیل‌شده" : "نیازمند بررسی";
+                    const statusIcon = contactStatus === 2 ? "fa-exclamation-triangle"
+                        : contactStatus === 1 ? "fa-phone-slash"
+                            : complete ? "fa-check-circle" : "fa-clock";
                     return '<article role="listitem" class="qc-client-card" data-qc-complete="' + complete + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
@@ -306,29 +310,32 @@
                             ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
                                 + faNumber.format(row.noResponseAttempts) + '</strong></small>' : '')
                         + '</div>'
-                        + '<div class="qc-client-stats"><span>' + faNumber.format(row.orders) + ' سفارش</span>'
-                        + '<span>' + faNumber.format(row.invoices) + ' فاکتور</span>'
+                        + '<div class="qc-client-stats"><span><i class="fa fa-shopping-cart" aria-hidden="true"></i> ' + faNumber.format(row.orders) + ' سفارش</span>'
+                        + '<span><i class="fa fa-file-invoice" aria-hidden="true"></i> ' + faNumber.format(row.invoices) + ' فاکتور</span>'
                         + (hasReviewed
-                            ? '<span class="qc-client-count-reviewed"><strong>بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
+                            ? '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
                                 + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
                                 + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
                             : '')
-                        + (pending > 0 ? '<span class="qc-client-count-pending">بررسی‌نشده: ' + faNumber.format(pending) + '</span>' : '')
+                        + (pending > 0 ? '<span class="qc-client-count-pending"><i class="fa fa-search" aria-hidden="true"></i> بررسی‌نشده: ' + faNumber.format(pending) + '</span>' : '')
                         + '</div>'
                         + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
-                        + (complete ? '<i class="fa fa-check-circle" aria-hidden="true"></i> ' : '') + label + '</span>'
+                        + '<i class="fa ' + statusIcon + '" aria-hidden="true"></i> ' + label + '</span>'
                         + '<div class="qc-client-contact-actions">'
                         + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
                         + ' title="مشاهده سابقه تماس‌های این مشتری"><i class="fa fa-history" aria-hidden="true"></i> تاریخچه تماس</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
                         + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
-                        + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
+                        + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
+                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> شماره نامعتبر</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
                         + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
-                        + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000) + '">عدم پاسخ</button>'
+                        + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
+                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i><span data-qc-no-answer-label>عدم پاسخ</span></button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
+                        + '<i class="fa fa-check-circle" aria-hidden="true"></i> '
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
                         + '</div></article>';
                 }).join("");
