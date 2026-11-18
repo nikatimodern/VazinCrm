@@ -1025,7 +1025,7 @@
     background: color-mix(in srgb, var(--qc-danger) 13%, white);
 }
 #qualityControlCustomerPage .qc-client-history-delete.is-holding::after {
-    animation: qc-contact-history-delete-hold 3s linear forwards;
+    animation: qc-contact-history-delete-hold 1s linear forwards;
 }
 @keyframes qc-contact-history-delete-hold {
     from { width: 0; }
