@@ -304,9 +304,8 @@
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
                         + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
-                        + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
-                        + (contactStatus === 1 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 1)
-                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
+                        + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
+                        + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
