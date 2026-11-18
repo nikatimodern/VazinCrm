@@ -8,7 +8,7 @@ using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyFactor;
 public sealed record DeleteSupplyFactorCommand(Guid Id) : ICommand<SupplyResult>;
-public sealed class DeleteSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<DeleteSupplyFactorCommand, SupplyResult>
+public sealed class DeleteSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor, ISupplyFinancialRepository financial) : ICommandHandler<DeleteSupplyFactorCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(DeleteSupplyFactorCommand command, CancellationToken cancellationToken)
     {
@@ -16,6 +16,9 @@ public sealed class DeleteSupplyFactorCommandHandler(ISupplyWriteRepository repo
         var current = await actor.FindAsync(cancellationToken);
         if (current == null)
             return SupplyResult.Unauthenticated();
+        await using var financialLock = await financial.LockAsync(id, cancellationToken);
+        if ((await financial.GetMappingsAsync(id, cancellationToken)).Count > 0)
+            return SupplyResult.Invalid("این فاکتور تأمین در فرایند انتقال مالی قرار دارد و قابل حذف نیست.");
         var user = current.User;
         await using var transaction = await repository.BeginTransactionAsync(true, cancellationToken);
         var item = await repository.GetSupplyFactorForUpdateAsync(id, cancellationToken);

@@ -68,7 +68,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             // Older type=1 rows are retained in the database but retired from this workspace.
             var counts = await db.ExternalMappings.AsNoTracking()
-                .Where(x => (int)x.MapType != 1)
+                .Where(x => (int)x.MapType != 1 && !x.ExEntityId.StartsWith(ExternalMapping.PendingIdPrefix))
                 .GroupBy(x => new { x.ExternalSoftwareId, x.MapType })
                 .Select(x => new { x.Key.ExternalSoftwareId, x.Key.MapType, Count = x.Count() })
                 .ToListAsync(ct);
@@ -220,6 +220,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 x => x.Id == mappingId && x.ExternalSoftwareId == softwareId, ct);
             if (mapping == null)
                 throw new KeyNotFoundException("ارتباط انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
+
+            if (mapping.MapType is ExternalMappingTypeEnum.تامین_کننده
+                or ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار)
+                throw new MappingConflictException("این ارتباط از گردش انتقال مالی فاکتور تأمین مدیریت می‌شود.");
 
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))

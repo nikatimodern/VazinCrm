@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
+using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Models;
 using CRM.Core.Domain.Sepidar.Invoices.Repositories;
@@ -143,6 +144,163 @@ public abstract class SepidarInvoiceExportRepository(SepidarContextDbBase contex
             Items = lines
         };
     }
+
+    public async Task<SepidarInvoiceExportPreview> PreviewWithQuotationMappingsAsync(
+        Factor factor, PreFactor preFactor, int quotationId,
+        IReadOnlyList<(Guid FactorItemId, int ItemId, int StockId)> mappings,
+        CancellationToken ct = default)
+    {
+        // PreviewAsync remains the single source of CRM invoice quantities, amounts,
+        // quotation item associations, and fiscal-year validation.
+        var preview = await PreviewAsync(factor, preFactor, quotationId, ct);
+        var factorItems = (factor.FactorItems ?? Array.Empty<FactorItem>())
+            .Where(x => !x.IsDeleted).OrderBy(x => x.Row).ToList();
+
+        if (mappings == null || mappings.Count != factorItems.Count
+            || mappings.GroupBy(x => x.FactorItemId).Any(x => x.Count() != 1))
+            throw new InvalidOperationException("برای همه ردیف‌های فاکتور کالا و انبار را مشخص کنید.");
+
+        var byId = mappings.ToDictionary(x => x.FactorItemId);
+        var changed = new List<(int ItemId, int StockId)>();
+        for (var index = 0; index < factorItems.Count; index++)
+        {
+            var line = preview.Items[index];
+            if (!byId.TryGetValue(factorItems[index].Id, out var mapping)
+                || mapping.ItemId <= 0 || mapping.StockId <= 0)
+                throw new InvalidOperationException($"کالا یا انبار ردیف {line.RowId} معتبر نیست.");
+
+            if (mapping.ItemId == line.ItemRef && mapping.StockId == line.StockRef)
+                continue;
+
+            changed.Add((mapping.ItemId, mapping.StockId));
+            // A changed item or stock must not consume the original quotation row.
+            // Leave the invoice header's QuotationRef intact; only altered lines are
+            // unlinked from the original quotation items.
+            line.QuotationItemId = 0;
+            line.ItemRef = mapping.ItemId;
+            line.StockRef = mapping.StockId;
+            line.ItemTitle = string.Empty;
+            line.StockTitle = string.Empty;
+        }
+
+        if (changed.Count == 0) return preview;
+
+        var itemIds = changed.Select(x => x.ItemId).Distinct().ToArray();
+        var stockIds = changed.Select(x => x.StockId).Distinct().ToArray();
+        var activeItems = await context.Items.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemID) && x.IsActive && x.Sellable)
+            .Select(x => x.ItemID).ToArrayAsync(ct);
+        if (activeItems.Length != itemIds.Length)
+            throw new InvalidOperationException("کالای جایگزین باید در سپیدار فعال و قابل فروش باشد.");
+
+        var validStockPairs = await context.ItemStocks.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemRef) && stockIds.Contains(x.StockRef) && x.Stock.IsActive)
+            .Select(x => new { x.ItemRef, x.StockRef }).ToListAsync(ct);
+        var pairs = validStockPairs.Select(x => (x.ItemRef, x.StockRef)).ToHashSet();
+        if (changed.Any(x => !pairs.Contains(x)))
+            throw new InvalidOperationException("انبار انتخاب‌شده برای یکی از کالاهای جایگزین معتبر نیست.");
+
+        return preview;
+    }
+
+    public async Task<SepidarInvoiceExportPreview> PreviewDirectAsync(
+        Factor factor, int saleTypeId, int customerPartyId,
+        IReadOnlyList<(Guid FactorItemId, int ItemId, int StockId)> mappings,
+        CancellationToken ct = default)
+    {
+        if (factor == null || factor.ParentReturnedId.HasValue || factor.Returned)
+            throw new InvalidOperationException("فاکتور برگشتی قابل انتقال نیست.");
+        if (factor.CurrencyType != CurrencyTypeEnum.ریال)
+            throw new InvalidOperationException("صدور مستقیم فاکتور ارزی فعلاً پشتیبانی نمی‌شود.");
+        if (!factor.DateMiladi.HasValue || factor.SerialNumber <= 0)
+            throw new InvalidOperationException("شماره یا تاریخ فاکتور CRM معتبر نیست.");
+        if (saleTypeId <= 0 || customerPartyId <= 0)
+            throw new InvalidOperationException("نوع فروش و مشتری مقصد را انتخاب کنید.");
+
+        var date = factor.DateMiladi.Value;
+        var yearId = await context.FiscalYears.AsNoTracking()
+            .Where(x => date.Date >= x.StartDate.Date && date.Date <= x.EndDate.Date)
+            .Select(x => (int?)x.FiscalYearId).SingleOrDefaultAsync(ct)
+            ?? throw new InvalidOperationException("سال مالی متناسب با تاریخ فاکتور در سپیدار پیدا نشد.");
+
+        var validSaleType = await context.SaleTypes.AsNoTracking()
+            .AnyAsync(x => x.SaleTypeId == saleTypeId, ct);
+        var validCustomer = await context.Parties.AsNoTracking()
+            .AnyAsync(x => x.PartyId == customerPartyId && x.IsCustomer, ct);
+        if (!validSaleType || !validCustomer)
+            throw new InvalidOperationException("نوع فروش یا مشتری مقصد در سپیدار معتبر نیست.");
+
+        var sourceItems = (factor.FactorItems ?? Array.Empty<FactorItem>())
+            .Where(x => !x.IsDeleted).OrderBy(x => x.Row).ToList();
+        if (sourceItems.Count == 0 || mappings == null
+            || mappings.Count != sourceItems.Count
+            || mappings.GroupBy(x => x.FactorItemId).Any(x => x.Count() != 1))
+            throw new InvalidOperationException("برای تمام اقلام فاکتور باید دقیقاً یک کالا و انبار انتخاب شود.");
+
+        var byId = mappings.ToDictionary(x => x.FactorItemId);
+        var itemIds = mappings.Select(x => x.ItemId).Distinct().ToArray();
+        var stockIds = mappings.Select(x => x.StockId).Distinct().ToArray();
+        if (mappings.Any(x => x.ItemId <= 0 || x.StockId <= 0)
+            || await context.Items.AsNoTracking().CountAsync(x => itemIds.Contains(x.ItemID) && x.IsActive && x.Sellable, ct) != itemIds.Length)
+            throw new InvalidOperationException("کالای انتخاب‌شده در سپیدار وجود ندارد.");
+
+        var validItemStocks = await context.ItemStocks.AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemRef) && stockIds.Contains(x.StockRef) && x.Stock.IsActive)
+            .Select(x => new { x.ItemRef, x.StockRef }).ToListAsync(ct);
+        var linked = validItemStocks.Select(x => (x.ItemRef, x.StockRef)).ToHashSet();
+        if (mappings.Any(x => !linked.Contains((x.ItemId, x.StockId))))
+            throw new InvalidOperationException("انبار انتخاب‌شده برای یکی از کالاهای سپیدار معتبر نیست.");
+
+        var lines = new List<SepidarInvoiceExportItemPreview>();
+        foreach (var source in sourceItems)
+        {
+            if (!byId.TryGetValue(source.Id, out var mapped))
+                throw new InvalidOperationException($"کالای معادل ردیف {source.Row} مشخص نیست.");
+            if (!decimal.TryParse(source.WeightCount, NumberStyles.Number,
+                    CultureInfo.InvariantCulture, out var quantity) || quantity <= 0)
+                throw new InvalidOperationException($"مقدار ردیف {source.Row} معتبر نیست.");
+
+            var net = source.TotalAmount;
+            var price = net + source.Discount - source.TaxAmount;
+            if (source.UnitAmount < 0 || price < 0 || net < 0
+                || source.Discount < 0 || source.Discount > price || source.TaxAmount < 0)
+                throw new InvalidOperationException($"مبالغ ردیف {source.Row} معتبر نیست.");
+
+            lines.Add(new SepidarInvoiceExportItemPreview
+            {
+                RowId = lines.Count + 1,
+                QuotationItemId = 0,
+                ItemRef = mapped.ItemId,
+                StockRef = mapped.StockId,
+                CrmProductTitle = $"{source.ProductSmallName} {source.Product}".Trim(),
+                ItemTitle = string.Empty,
+                StockTitle = string.Empty,
+                Quantity = quantity,
+                Fee = source.UnitAmount,
+                Price = price,
+                Discount = source.Discount,
+                Tax = source.TaxAmount,
+                NetPrice = net
+            });
+        }
+        if (lines.Sum(x => x.Price) != factor.SumTotalAmount
+            || lines.Sum(x => x.Discount) != factor.Discount
+            || lines.Sum(x => x.Tax) != factor.TotalTax
+            || lines.Sum(x => x.NetPrice) != factor.PaymentAmount)
+            throw new InvalidOperationException("جمع مبالغ ردیف‌ها با مبلغ نهایی فاکتور CRM برابر نیست.");
+
+        return new SepidarInvoiceExportPreview
+        {
+            QuotationId = 0, QuotationNumber = 0,
+            CustomerPartyRef = customerPartyId, SaleTypeRef = saleTypeId,
+            FiscalYearRef = yearId,
+            InvoiceDate = date, InvoiceDateText = factor.Date,
+            Price = factor.SumTotalAmount, Discount = factor.Discount,
+            Tax = factor.TotalTax, NetPrice = factor.PaymentAmount,
+            Items = lines
+        };
+    }
+
 }
 
 public sealed class Sepidar1InvoiceExportRepository(Sepidar1ContextDb db) : SepidarInvoiceExportRepository(db) { }

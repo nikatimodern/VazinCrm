@@ -182,6 +182,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<PreFactorService>();
             services.AddScoped<ExternalMappingService>();
+            services.AddScoped<ExternalTransferOptionsService>();
             services.AddSingleton<ExcelExportService>();
 
             services.AddScoped<ISmsIrService, SmsIrService>();

@@ -616,6 +616,8 @@ function dateTimePicker(container = document) {
                             window[onSelectCallback](this);
                         }
                     }
+                    if (datePicker.hasAttribute("data-datepicker-change"))
+                        datePicker.dispatchEvent(new Event("change", { bubbles: true }));
                 },
                 initialValueType: "persian",
                 position: [Number(positionX), Number(positionY)],
@@ -2403,7 +2405,7 @@ const carizoCardReads = new Map();
 const carizoAppliedGroups = new Map();
 let carizoCardVersion = 0;
 
-function disposeTaskCardPickers(container) {
+function disposeDateTimePickers(container) {
     container.querySelectorAll(".sdate,.sdateTime,.stime").forEach(input => {
         $(input).data("myPersianDatepicker")?.destroy();
         $(input).removeData("myPersianDatepicker");
@@ -2451,7 +2453,7 @@ async function refreshTaskCards(id) {
                 const column = Number(container.dataset.taskColumn ?? target.column);
                 [...container.children].filter(card => card.dataset.taskId === update.id || card.dataset.taskGroup === update.groupId)
                                        .forEach(card => {
-                                           disposeTaskCardPickers(card);
+                                           disposeDateTimePickers(card);
                                            card.remove();
                                        });
                 update.cards.filter(card => card.column === column).forEach(card => {
@@ -2505,7 +2507,7 @@ async function getAllTask(type, systematic = 0, loc = 1) {
             }
             if (res.status === 200) {
                 if (containerElm) {
-                    disposeTaskCardPickers(containerElm);
+                    disposeDateTimePickers(containerElm);
                     containerElm.innerHTML = res.data.html;
                     containerElm.dataset.taskColumn = String(type);
                     dateTimePicker(containerElm);
@@ -3136,14 +3138,21 @@ async function showExternalSoftwareModal(ids, config) {
     
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
-    
-    await sendApiRequest({
+
+    let blocked = false;
+    const result = await sendApiRequest({
         url: "/Home/GetAllExternalSoftware",
         method: "POST",
+        headers: { RequestVerificationToken: externalSoftwareModalElm.querySelector('[name="__RequestVerificationToken"]').value },
         successMsg: null,
         data: { entityIds, mapType: config.mapType },
         onSuccess: (res) => {
             const softwares = res.data;
+            if (softwares?.length && softwares.every(software => software.prerequisiteMissing)) {
+                blocked = true;
+                toastifyError(softwares[0].prerequisiteMessage);
+                return;
+            }
             ModalToggle(externalSoftwareModalElm);
             
             if (!softwares?.length) {
@@ -3158,23 +3167,27 @@ async function showExternalSoftwareModal(ids, config) {
             renderExternalSoftwares(softwares);
         },
     });
+    return blocked ? null : result;
 }
 
 function renderExternalSoftwares(softwares) {
     externalSoftwareList.innerHTML = softwares.map(software => `
-        <label for="ex-software-${software.id}" class="external-software-card ${software.isDisabled ? "is-disabled is-selected" : ""}" data-software-id="${software.id}">
-            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none" ${software.isDisabled ? "disabled checked" : ""}>
+        <label for="ex-software-${software.id}" class="external-software-card${software.isDisabled ? " is-disabled" : ""}${software.isAlreadySent ? " is-selected" : ""}" data-software-id="${software.id}">
+            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none" ${software.isDisabled ? "disabled" : ""} ${software.isAlreadySent ? "checked" : ""}>
 
             <span class="external-software-icon">
-                <i class="fas fa-check software-check-icon"></i>
+                ${software.isDisabled && !software.isAlreadySent
+                    ? '<i class="fas fa-ban" aria-hidden="true"></i>'
+                    : '<i class="fas fa-check software-check-icon" aria-hidden="true"></i>'}
             </span>
 
             <span class="external-software-info">
-                <span class="external-software-title">${software.title}</span>
-                ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
+                <span class="external-software-title">${escapeHtml(software.title)}</span>
+                ${software.isDisabled ? `<small class="text-muted">(${escapeHtml(
+                    software.isAlreadySent ? "قبلاً ارسال شده" : software.disabledReason || "امکان ثبت در این مقصد وجود ندارد")})</small>` : ""}
             </span>
 
-            <i class="fa-solid fa-circle-check external-software-check"></i>
+            ${software.isDisabled && !software.isAlreadySent ? "" : '<i class="fa-solid fa-circle-check external-software-check" aria-hidden="true"></i>'}
         </label>
     `).join("");
     

@@ -74,6 +74,12 @@
             </div>
 
             <div class="layered-card__layer col-12 col-lg-1 d-flex flex-row flex-lg-column justify-content-center align-items-center px-2 py-2 gap-4 gap-lg-3">
+                @if (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") || User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی")) {
+                    <button type="button" class="flex-center p-0 border-0 bg-transparent" style="color:var(--DarkColor)"
+                            aria-label="ارتباط مالی" data-title-right="ارتباط مالی" onclick="openSupplyFinancial('@supplyFactor.Id')">
+                        <i class="fa fa-link" aria-hidden="true"></i>
+                    </button>
+                }
                 <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@supplyFactor.Id', 8)">
                     <i class="fa fa-paperclip"></i>
                 </button>

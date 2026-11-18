@@ -16,7 +16,7 @@
 .crm-operations-theme :is(h1,h2) { font-size:18px; }
 .crm-operations-theme :is(h3,h4,h5) { font-size:16px; }
 .crm-operations-theme .search-group { border:1px solid var(--ops-border); border-radius:7px; overflow:hidden; background:#fff; }
-.crm-operations-theme .search-group input { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 14px/1.7 IRANSans; text-align:start; }
+.crm-operations-theme .search-group input { min-width:0; min-height:36px; border:0; box-shadow:none; font:400 14px/1.7 IRANSans; text-align:start; padding: .375rem .75rem; }
 .crm-operations-theme .search-group:focus-within { border-color:var(--ops-purple); box-shadow:0 0 0 2px var(--ops-purple-light); }
 .crm-operations-theme .search-icon { background:var(--ops-purple-light); color:var(--ops-purple); border:none; }
 .crm-operations-theme .filter-switch { display:flex; flex-wrap:wrap; gap:3px; padding:3px; border:1px solid var(--ops-border); border-radius:7px; background:#fff; }

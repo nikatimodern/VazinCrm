@@ -10,4 +10,5 @@ public class ExternalSoftwareAddItemRequest {
     public string ItemCode { get; set; }
     public decimal? ItemTaxRate { get; set; }
     public List<int> StockIds { get; set; }
+    public int? DefaultStockRef { get; set; }
 }

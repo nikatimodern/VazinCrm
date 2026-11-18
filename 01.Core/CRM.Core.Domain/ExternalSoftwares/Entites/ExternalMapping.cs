@@ -5,6 +5,8 @@ using CRM.Framework;
 namespace CRM.Core.Domain.ExternalSoftwares.Entites;
 
 public class ExternalMapping {
+    public const string PendingIdPrefix = "pending:";
+
     public Guid Id { get; set; }
     public string EntityName { get; set; }
     public Guid EntityId { get; set; }
@@ -23,4 +25,7 @@ public class ExternalMapping {
 
     public string UserCreatorID { get; set; }
     public string UserCreator { get; set; }
+
+    public bool HasPendingExternalId() =>
+        ExEntityId?.StartsWith(PendingIdPrefix, StringComparison.Ordinal) == true;
 }

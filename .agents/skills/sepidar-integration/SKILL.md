@@ -17,6 +17,13 @@ Use for any transfer, mapping, or lookup involving Sepidar or ExternalSoftware.
 7. Preserve Sepidar schema and verify actual EF mappings before using any column or relation.
 8. Report transfer prerequisites, changed mapping behavior, and unverified external assumptions.
 
+## Missing external documents and mapping cleanup
+- A missing external document is **not** permission to delete its CRM `ExternalMapping`. Do not remove mappings during reads, destination selection, history refresh or automatic reconciliation.
+- For sales quotations, sales invoices, purchase invoices and inventory receipts, keep the mapping, mark its financial-history card missing, and offer user-initiated removal. The delete endpoint must recheck that the external document is still absent and must never delete the external record.
+- Include uncompleted `pending:` purchase reservations in the history UI; retries may recover them, and the user can remove them only after confirming the reserved external document does not exist.
+- **Temporary exception:** `GetAllExternalSoftware` may automatically clean up *only* Cash mappings whose external entity is `PaymentHeader` or `Voucher` and whose target is confirmed missing, because Cash does not have a history modal yet.
+- New transfer types should be configured through the public `ExternalTransferOptionsService.Rules` registry, not added as ad hoc branches in `HomeController.GetAllExternalSoftware`. The public service method is `GetAllExternalSoftwareAsync`.
+
 ## Guardrails
 Never run destructive or production writes without approval. Do not invent accounting codes, stock references, or SQL columns. Never bypass duplicate checks to make a transfer succeed.
 

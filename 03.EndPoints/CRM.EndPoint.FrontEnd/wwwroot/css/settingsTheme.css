@@ -647,6 +647,7 @@
     border-color:#D0DCE0;
     direction:ltr;
     text-align:right;
+		padding: .375rem .75rem;
 }
 #externalSoftwareSettingsWorkspace .esws-actions {
     display:flex;

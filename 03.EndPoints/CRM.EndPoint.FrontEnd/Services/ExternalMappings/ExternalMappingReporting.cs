@@ -18,6 +18,8 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
+using CRM.Core.Domain.Sepidar.Purchases.Entities;
+using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
@@ -308,7 +310,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             // Keep legacy type=1 data untouched, but do not show the removed
             // accounting-document mapping type in ExternalSoftware/Mapping.
             var query = db.ExternalMappings.AsNoTracking()
-                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1);
+                .Where(x => x.ExternalSoftwareId == softwareId && (int)x.MapType != 1
+                    && !x.ExEntityId.StartsWith(ExternalMapping.PendingIdPrefix));
             if (mapType.HasValue)
                 query = query.Where(x => x.MapType == (ExternalMappingTypeEnum)mapType.Value);
 
@@ -342,6 +345,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || (isNumber && x.SerialNumber == number))
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(factors);
+
+                var supplies = await db.SupplyFactors.AsNoTracking()
+                    .Where(x => x.SerialNumber.Contains(search) || x.SupplierTxt.Contains(search))
+                    .Select(x => x.Id).Take(500).ToListAsync(ct);
+                matchedIds.UnionWith(supplies);
 
                 var cashes = await db.Cashes.AsNoTracking()
                     .Where(x => (x.CostDescription != null && x.CostDescription.Contains(search))
@@ -478,6 +486,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
             var documentCustomers = new Dictionary<(string, Guid), Guid>();
+            foreach (var batch in entries.Where(x => x.Kind == nameof(SupplyFactor))
+                .Select(x => x.EntityId).Distinct().Chunk(350))
+            {
+                var rows = await db.SupplyFactors.AsNoTracking().Where(x => batch.Contains(x.Id))
+                    .Select(x => new { x.Id, x.SerialNumber, x.Date, x.PaymentAmount, x.SupplierTxt }).ToListAsync(ct);
+                foreach (var row in rows)
+                    crmSides[(nameof(SupplyFactor), row.Id)] = new MappingReportSide(
+                        "فاکتور تأمین", row.Id.ToString(), row.SerialNumber, row.Date,
+                        row.PaymentAmount, row.SupplierTxt, "");
+            }
             foreach (var batch in userIds.Chunk(350))
             {
                 var ids = batch.Select(x => x.ToString()).ToArray();
@@ -623,6 +641,28 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
             await LoadSepidarSalesSidesAsync(entries, context, softwareTitle, sides, ct);
             await LoadSepidarFinanceSidesAsync(entries, context, sides, ct);
+            foreach (var batch in ExternalTargetBatches(entries, nameof(InventoryPurchaseInvoice)))
+            {
+                var rows = await context.InventoryPurchaseInvoices.AsNoTracking()
+                    .Where(x => batch.Contains(x.InventoryPurchaseInvoiceID))
+                    .Select(x => new { Id = x.InventoryPurchaseInvoiceID, x.Number, x.Date, x.TotalNetPrice })
+                    .ToListAsync(ct);
+                foreach (var row in rows)
+                    sides[(nameof(InventoryPurchaseInvoice), row.Id)] = new MappingReportSide(
+                        "فاکتور خرید", row.Id.ToString(), row.Number.ToString(),
+                        FormatLegacyPersianDate(row.Date), row.TotalNetPrice, "فاکتور خرید", "");
+            }
+            foreach (var batch in ExternalTargetBatches(entries, nameof(InventoryReceipt)))
+            {
+                var rows = await context.InventoryReceipts.AsNoTracking()
+                    .Where(x => batch.Contains(x.InventoryReceiptID))
+                    .Select(x => new { Id = x.InventoryReceiptID, x.Number, x.Date, x.TotalNetPrice })
+                    .ToListAsync(ct);
+                foreach (var row in rows)
+                    sides[(nameof(InventoryReceipt), row.Id)] = new MappingReportSide(
+                        "رسید انبار", row.Id.ToString(), row.Number.ToString(),
+                        FormatLegacyPersianDate(row.Date), row.TotalNetPrice, "رسید انبار", "");
+            }
             return sides;
         }
 

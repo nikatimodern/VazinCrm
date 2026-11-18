@@ -7,6 +7,8 @@ public class SepidarInvoiceExportPreview
 {
     public int QuotationId { get; set; }
     public int QuotationNumber { get; set; }
+    // Zero quotation ID means a standalone sales invoice with no source quotation.
+    public int CustomerPartyRef { get; set; }
     // Assigned by Sepidar only when the invoice is persisted, never copied from CRM.
     public int? InvoiceNumber { get; set; }
     public DateTime InvoiceDate { get; set; }

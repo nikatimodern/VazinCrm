@@ -10,7 +10,7 @@ using CRM.Core.Domain.Supplies.Repositories;
 
 namespace CRM.Core.ApplicationServices.Supplies.Commands.UpdateSupplyFactor;
 public sealed record UpdateSupplyFactorCommand(SupplyFactor Model) : ICommand<SupplyResult>;
-public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor) : ICommandHandler<UpdateSupplyFactorCommand, SupplyResult>
+public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repository, ISupplyInventoryRepository supplyWarehouse, ISupplyIntegrationServices integrations, CurrentActor actor, ISupplyFinancialRepository financial) : ICommandHandler<UpdateSupplyFactorCommand, SupplyResult>
 {
     public async Task<SupplyResult> HandleAsync(UpdateSupplyFactorCommand command, CancellationToken cancellationToken)
     {
@@ -21,6 +21,9 @@ public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repo
         var user = current.User;
         if (model == null)
             return SupplyResult.Invalid();
+        await using var financialLock = await financial.LockAsync(model.Id, cancellationToken);
+        if ((await financial.GetMappingsAsync(model.Id, cancellationToken)).Count > 0)
+            return SupplyResult.Invalid("این فاکتور تأمین در فرایند انتقال مالی قرار دارد و قابل ویرایش نیست.");
         await using var transaction = await repository.BeginTransactionAsync(false, cancellationToken);
         try
         {
