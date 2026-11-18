@@ -113,7 +113,8 @@
 #qualityControlCustomerPage .qc-client-overview-title {
     color: var(--qc-muted);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 400;
+    overflow-wrap: break-word;
 }
 #qualityControlCustomerPage .qc-client-overview-value {
     display: flex;
@@ -130,12 +131,14 @@
 #qualityControlCustomerPage .qc-client-overview-value span {
     font-size: 11px;
     color: var(--qc-muted);
+    font-weight: 400;
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown {
     display: flex;
     gap: 3px 13px;
     flex-wrap: wrap;
     font-size: 11px;
+    font-weight: 400;
     color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
@@ -179,6 +182,7 @@
     gap: 2px;
     color: var(--qc-muted);
     font-size: 11px;
+    font-weight: 400;
     line-height: 1.5;
 }
 #qualityControlCustomerPage .qc-client-progress-caption strong { font-weight: 700; }
