@@ -641,6 +641,12 @@
     outline: 2px solid var(--qc-primary);
     outline-offset: 2px;
 }
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button.is-saving {
+    opacity: 1;
+    cursor: progress;
+    background: var(--qc-primary-light);
+    color: var(--qc-primary);
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid {
     background: #F0F1F7;
     border-color: var(--qc-border);
