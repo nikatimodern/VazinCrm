@@ -158,7 +158,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 db.ReceivedSmses.Add(new ReceivedSms {
                     FarazId = item.MessageId,
                     Mobile = item.Mobile,
-                    SenderFullName = contacts.GetValueOrDefault(item.Mobile),
+                    SenderFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile)),
                     MessageText = item.MessageText,
                     Number = item.Number,
                     ReceivedDateTime = item.ReceivedDateTime,
@@ -242,7 +242,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                     FarazId = item.MessageId,
                     Mobile = item.Mobile,
                     Number = item.Number,
-                    ReceivedFullName = contacts.GetValueOrDefault(item.Mobile),
+                    ReceivedFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile)),
 
                     Type = item.Type,
                     TypeTxt = item.TypeTxt,
@@ -280,18 +280,21 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
 
             var users = await udb.Users
                 .AsNoTracking()
-                .Where(x => x.PhoneNumber != null && x.FullName != null)
-                .Select(x => new { x.PhoneNumber, x.FirstName, x.LastName, x.FullName })
+                .Where(x => x.PhoneNumber != null)
+                .Select(x => new { x.PhoneNumber, x.FirstName, x.LastName })
                 .ToListAsync(ct);
 
             foreach (var user in users)
             {
                 var mobile = TextService.NormalizeIranMobile(user.PhoneNumber);
+                var fullName = string.Join(" ", new[] { user.FirstName, user.LastName }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x.Trim()));
 
-                if (!numbers.Contains(mobile) || string.IsNullOrWhiteSpace(user.FullName) || TextService.NormalizeIranMobile(user.FullName) == mobile)
+                if (!numbers.Contains(mobile) || string.IsNullOrWhiteSpace(fullName) || TextService.NormalizeIranMobile(fullName) == mobile)
                     continue;
 
-                contacts.TryAdd(mobile, user.FullName);
+                contacts.TryAdd(mobile, fullName);
             }
 
             var missingNumbers = numbers.Except(contacts.Keys).ToList();
