@@ -941,12 +941,34 @@
     padding: 0;
     color: var(--qc-primary);
 }
-#qualityControlCustomerPage .qc-client-question {
-    border: 0;
-    border-bottom: 1px solid var(--qc-border);
+/* The three question panels share one row in wide review modals. */
+#qualityControlCustomerPage .qc-client-questions {
+    container-type: inline-size;
+}
+#qualityControlCustomerPage .qc-client-questions-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 10px;
     margin-bottom: 12px;
-    padding: 0 0 11px;
+}
+@container (min-width: 640px) {
+    #qualityControlCustomerPage .qc-client-questions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@container (min-width: 940px) {
+    #qualityControlCustomerPage .qc-client-questions-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+#qualityControlCustomerPage .qc-client-question {
+    border: 1px solid var(--qc-border);
+    border-radius: 8px;
+    margin: 0;
+    padding: 10px 11px;
     min-width: 0;
+    background: #fff;
 }
 #qualityControlCustomerPage .qc-client-question legend {
     float: none;
@@ -969,6 +991,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    max-width: 100%;
     border: 1px solid var(--qc-border);
     border-radius: 8px;
     padding: 7px 10px;
@@ -976,6 +1000,8 @@
     font-size: 12px;
     cursor: pointer;
 }
+#qualityControlCustomerPage .qc-client-choice input { flex: 0 0 auto; }
+#qualityControlCustomerPage .qc-client-choice span { min-width: 0; overflow-wrap: break-word; }
 #qualityControlCustomerPage .qc-client-choice:has(input:checked) {
     background: var(--qc-primary-light);
     border-color: var(--qc-action);
