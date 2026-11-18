@@ -1341,7 +1341,7 @@ function renderExternalSoftwarePreFactors(items = []) {
         ],
         actions: item => {
             if (item.isMissing) {
-                if (!item.mappingId) return [];
+                if (!item.mappingId || !item.canDeleteMissing) return [];
                 return [ExternalFinancialHistory.missingMappingAction({
                     modal: getExternalSoftwarePreFactorsModal(),
                     sourceId: externalSotwarePfId,
