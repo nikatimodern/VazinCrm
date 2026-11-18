@@ -4199,7 +4199,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var mappings = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.EntityId == factorId && x.EntityName == nameof(Factor)
-                    && x.MapType == ExternalMappingTypeEnum.فاکتور)
+                    && x.MapType == ExternalMappingTypeEnum.فاکتور
+                    && (x.ExEntityId == null || !x.ExEntityId.StartsWith(ExternalMapping.PendingIdPrefix)))
                 .OrderByDescending(x => x.CreateDate)
                 .Select(x => new {
                     MappingId = x.Id,
@@ -4312,7 +4313,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var mappings = await db.ExternalMappings
                     .AsNoTracking()
                     .Where(x => x.EntityId == preFactorId && x.EntityName == nameof(PreFactor)
-                        && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                        && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
+                        && (x.ExEntityId == null || !x.ExEntityId.StartsWith(ExternalMapping.PendingIdPrefix)))
                     .Select(x => new {
                         MappingId = x.Id,
                         x.ExternalSoftwareId,
