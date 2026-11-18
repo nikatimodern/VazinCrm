@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sms.Enums;
+using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.Sms;
 using CRM.Infrastructures.Sql;
 using Microsoft.AspNetCore.Mvc;
@@ -73,6 +74,14 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 query = query.Skip(start).Take(length);
 
             var data = await query.ToListAsync();
+            var unnamed = data.Where(x => string.IsNullOrWhiteSpace(x.ReceivedFullName)).ToList();
+            if (unnamed.Count > 0)
+            {
+                var names = await smsService.GetContactNamesAsync(
+                    unnamed.Select(x => x.Mobile), HttpContext.RequestAborted);
+                foreach (var sms in unnamed)
+                    sms.ReceivedFullName = names.GetValueOrDefault(TextService.NormalizeIranMobile(sms.Mobile));
+            }
 
             return Json(new {
                 draw,
@@ -132,6 +141,14 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 query = query.Skip(start).Take(length);
 
             var data = await query.ToListAsync();
+            var unnamed = data.Where(x => string.IsNullOrWhiteSpace(x.SenderFullName)).ToList();
+            if (unnamed.Count > 0)
+            {
+                var names = await smsService.GetContactNamesAsync(
+                    unnamed.Select(x => x.Mobile), HttpContext.RequestAborted);
+                foreach (var sms in unnamed)
+                    sms.SenderFullName = names.GetValueOrDefault(TextService.NormalizeIranMobile(sms.Mobile));
+            }
 
             return Json(new {
                 draw,

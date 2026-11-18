@@ -152,6 +152,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 if (existingSms.TryGetValue(item.MessageId, out var existing))
                 {
                     existing.Seen = item.Seen;
+                    if (string.IsNullOrWhiteSpace(existing.SenderFullName))
+                        existing.SenderFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile));
                     continue;
                 }
 
@@ -235,6 +237,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 {
                     existing.DeliveryState = item.DeliveryState;
                     existing.DeliveryStateTxt = item.DeliveryStateTxt;
+                    if (string.IsNullOrWhiteSpace(existing.ReceivedFullName))
+                        existing.ReceivedFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile));
                     continue;
                 }
 
