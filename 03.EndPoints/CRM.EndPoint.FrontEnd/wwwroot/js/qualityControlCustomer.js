@@ -642,6 +642,7 @@
 
         function questionMarkup(item, draft) {
             return '<div class="qc-client-questions"><h4>سؤال‌های کنترل کیفیت این قلم</h4>'
+                + '<div class="qc-client-questions-grid">'
                 + review.questions.map((question, index) => {
                     const option = (label, answer) => '<label class="qc-client-choice"><input type="radio"'
                         + ' name="q-' + escape(item.factorItemId) + '-' + escape(question.id) + '"'
@@ -653,6 +654,7 @@
                         + '<div class="qc-client-choices">' + option(question.zeroAnswerText, 0)
                         + option(question.oneAnswerText, 1) + '</div></fieldset>';
                 }).join("")
+                + '</div>'
                 + '<label class="qc-client-note-label" for="qc-note-' + escape(item.factorItemId) + '">'
                 + 'شرح مغایرت <small>(اختیاری)</small></label>'
                 + '<textarea id="qc-note-' + escape(item.factorItemId)
