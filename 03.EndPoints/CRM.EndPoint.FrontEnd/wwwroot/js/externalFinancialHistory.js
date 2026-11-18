@@ -47,6 +47,45 @@ class ExternalFinancialHistory {
         return card;
     }
 
+    /** Delete only a mapping whose destination document is rechecked as missing server-side. */
+    static missingMappingAction({ modal, sourceId, softwareId, mappingId, softwareTitle, url, onDeleted }) {
+        const button = this.element("button", "external-pf-action external-pf-remove", "حذف سابقه");
+        button.type = "button";
+        button.addEventListener("click", async () => {
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const confirmation = await Swal.fire({
+                    target: modal,
+                    title: "حذف سابقه ارسال",
+                    text: "ارتباط این سند با " + softwareTitle + " از CRM حذف شود؟",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "حذف سابقه",
+                    cancelButtonText: "انصراف",
+                    focusCancel: true,
+                });
+                if (!confirmation.isConfirmed || !modal.isConnected) return;
+                const token = modal.querySelector('[name="__RequestVerificationToken"]')?.value;
+                if (!token) {
+                    toastifyError("امکان تأیید امنیتی درخواست وجود ندارد.");
+                    return;
+                }
+                const result = await sendApiRequest({
+                    url, method: "POST", successMsg: null, showLoading: false,
+                    headers: { RequestVerificationToken: token },
+                    data: { sourceId, externalSoftwareId: softwareId, mappingId },
+                });
+                if (!result?.deleted) return;
+                toastifySuccess("سابقه ارسال حذف شد.");
+                await onDeleted?.();
+            } finally {
+                button.disabled = false;
+            }
+        });
+        return button;
+    }
+
     setTitle(title) {
         const heading = this.modal.querySelector(".modal-title");
         if (heading) heading.textContent = title;
@@ -62,12 +101,16 @@ class ExternalFinancialHistory {
         this.list.replaceChildren(this.constructor.element("div", "external-pf-empty", value));
     }
 
-    render(records, { emptyText, fields, actions } = {}) {
+    render(records, { emptyText, fields, actions, cardClass, statusMessage } = {}) {
         if (!records?.length) return this.message(emptyText ?? "سابقه‌ای ثبت نشده است.");
         const fragment = document.createDocumentFragment();
         for (const record of records) {
             const actionElements = actions?.(record) ?? [];
-            fragment.append(this.constructor.card(fields(record), actionElements));
+            const card = this.constructor.card(fields(record), actionElements, cardClass?.(record));
+            const text = statusMessage?.(record);
+            if (text) card.querySelector(".external-pf-info")?.append(
+                this.constructor.element("p", "external-pf-missing-message", text));
+            fragment.append(card);
         }
         this.list.replaceChildren(fragment);
     }
