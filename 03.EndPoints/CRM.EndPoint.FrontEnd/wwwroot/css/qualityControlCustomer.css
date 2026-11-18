@@ -829,6 +829,13 @@
 #qualityControlCustomerPage .qc-client-item[hidden] { display: none; }
 #qualityControlCustomerPage .qc-client-review-content { display: grid; gap: 14px; }
 #qualityControlCustomerPage .qc-client-order { padding: 12px; }
+/* Separate successive orders inside the QC modal by border color only. */
+#qualityControlCustomerPage .qc-client-review-content > .qc-client-order:nth-child(odd) {
+    border-color: var(--qc-action);
+}
+#qualityControlCustomerPage .qc-client-review-content > .qc-client-order:nth-child(even) {
+    border-color: var(--qc-secondary);
+}
 #qualityControlCustomerPage .qc-client-order-header { padding: 3px 2px 10px; }
 #qualityControlCustomerPage .qc-client-order h3 {
     font-size: 15px;
