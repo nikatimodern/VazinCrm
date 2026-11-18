@@ -503,6 +503,35 @@
             }, historyDeleteHoldMs);
         }
 
+        async function playHistoryDeleteBurst(button) {
+            if (!button.isConnected || !isActive()
+                || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            const action = button.closest(".qc-client-history-actions");
+            if (!action) return;
+
+            const particles = [];
+            // Use a small deterministic set of particles, localized to the button.
+            for (let i = 0; i < 18; i++) {
+                const particle = document.createElement("span");
+                particle.className = "qc-client-delete-particle";
+                particle.setAttribute("aria-hidden", "true");
+                const angle = (i * 137.5) * Math.PI / 180;
+                const distance = 23 + (i % 5) * 8;
+                particle.style.left = (8 + (i * 23 % 84)) + "%";
+                particle.style.top = (18 + (i * 17 % 64)) + "%";
+                particle.style.setProperty("--qc-particle-size", (2 + i % 4) + "px");
+                particle.style.setProperty("--qc-particle-x", Math.round(Math.cos(angle) * distance) + "px");
+                particle.style.setProperty("--qc-particle-y", Math.round(Math.sin(angle) * distance - 8) + "px");
+                particle.style.setProperty("--qc-particle-rotate", (i % 2 ? 85 : -95) + "deg");
+                action.append(particle);
+                particles.push(particle);
+            }
+            button.classList.add("is-disintegrating");
+            await new Promise(resolve => setTimeout(resolve, 420));
+            particles.forEach(particle => particle.remove());
+            button.classList.remove("is-disintegrating");
+        }
+
         async function changeContactHistory(button) {
             if (historyBusy || !historyCanManage || !historyCustomerId || !isActive()) return;
             const restore = button.dataset.qcHistoryAction === "restore";
@@ -545,6 +574,9 @@
                     historyFeedback.textContent = "تغییر سابقه تماس ناموفق بود؛ دوباره تلاش کنید.";
                     return;
                 }
+                // Animate the burst only after the server has confirmed soft-deletion.
+                if (!restore) await playHistoryDeleteBurst(button);
+                if (!isActive()) return;
                 await loadContactHistory();
                 await loadCustomers();
             } catch (error) {
