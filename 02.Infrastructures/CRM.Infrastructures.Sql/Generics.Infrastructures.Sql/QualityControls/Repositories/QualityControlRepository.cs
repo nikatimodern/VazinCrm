@@ -18,6 +18,10 @@ namespace CRM.Infrastructures.Sql.QualityControls.Repositories;
 
 public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlRepository
 {
+    private const int NoResponseCooldownSeconds = 60;
+
+    private static int CooldownRemaining(DateTime lastAttempt, DateTime now) =>
+        Math.Max(0, (int)Math.Ceiling((lastAttempt.AddSeconds(NoResponseCooldownSeconds) - now).TotalSeconds));
     private async Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken)
     {
         return await db.QualityControlQuestions.AsNoTracking().Where(question => question.IsActive)
@@ -199,11 +203,27 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Skip(request.Start).Take(request.Length)
             .ToListAsync(cancellationToken);
 
+        // Compute retry time for the current actor only, using active history entries.
+        // Fetch for the visible page so large customer sets do not inflate this query.
+        var now = DateTime.Now;
+        var pageCustomerIds = page.Select(row => row.CustomerId).ToArray();
+        var recentAttempts = await db.QualityControlContactHistories.AsNoTracking()
+            .Where(entry => pageCustomerIds.Contains(entry.CustomerId)
+                && entry.UserCreatorID == access.UserId
+                && entry.Status == QualityControlCustomerContactStatus.NoResponse
+                && entry.AttemptCount > 0 && !entry.IsLegacy
+                && entry.CreateDate > now.AddSeconds(-NoResponseCooldownSeconds))
+            .GroupBy(entry => entry.CustomerId)
+            .Select(group => new { CustomerId = group.Key, LastAttempt = group.Max(entry => entry.CreateDate) })
+            .ToDictionaryAsync(entry => entry.CustomerId, entry => entry.LastAttempt, cancellationToken);
+
         var data = page.Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
             row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
             row.TotalItems, row.ReviewedItems, row.DiscrepancyItems,
             contactStatuses.GetValueOrDefault(row.CustomerId),
-            contacts.TryGetValue(row.CustomerId, out var contact) ? contact.NoResponseAttempts : 0)).ToList();
+            contacts.TryGetValue(row.CustomerId, out var contact) ? contact.NoResponseAttempts : 0,
+            recentAttempts.TryGetValue(row.CustomerId, out var lastAttempt)
+                ? CooldownRemaining(lastAttempt, now) : 0)).ToList();
         return new(total, filtered, data, summary);
     }
 
@@ -244,6 +264,23 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var mobile = await db.Customers.AsNoTracking().Where(customer => customer.Id == request.CustomerId)
             .Select(customer => customer.Mobile).FirstOrDefaultAsync(cancellationToken);
         var now = DateTime.Now;
+        if (request.Status == QualityControlCustomerContactStatus.NoResponse)
+        {
+            // Limit only repeated attempts by the same staff member for this customer.
+            // Deleted history does not count, so correcting an accidental entry resets the guard.
+            var lastAttempt = await db.QualityControlContactHistories.AsNoTracking()
+                .Where(entry => entry.CustomerId == request.CustomerId
+                    && entry.UserCreatorID == access.UserId
+                    && entry.Status == QualityControlCustomerContactStatus.NoResponse
+                    && entry.AttemptCount > 0 && !entry.IsLegacy
+                    && entry.CreateDate > now.AddSeconds(-NoResponseCooldownSeconds))
+                .Select(entry => (DateTime?)entry.CreateDate)
+                .MaxAsync(cancellationToken);
+            var remaining = lastAttempt.HasValue ? CooldownRemaining(lastAttempt.Value, now) : 0;
+            if (remaining > 0)
+                return new(429, $"عدم پاسخ قبلاً ثبت شده است؛ {remaining} ثانیه دیگر دوباره تلاش کنید.",
+                    QualityControlCustomerContactStatus.NoResponse, remaining);
+        }
         var currentStatus = contact?.IsDeleted == false
             ? CurrentContactStatus(contact, mobile, now.Date, 1)
             : QualityControlCustomerContactStatus.None;
