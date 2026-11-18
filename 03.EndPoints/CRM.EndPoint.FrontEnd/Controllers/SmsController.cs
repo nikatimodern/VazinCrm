@@ -46,7 +46,7 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 // Look up contact numbers only when a name can be part of the search.
                 var contactMobiles = searchValue.Any(char.IsLetter)
                     ? await smsService.SearchContactMobileNumbersAsync(searchValue, HttpContext.RequestAborted)
-                    : [];
+                    : Array.Empty<string>();
                 var iranMobileSuffixes = contactMobiles
                     .Where(TextService.IsValidPhoneNumber)
                     .Select(x => x[1..])
@@ -139,7 +139,7 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 // Look up contact numbers only when a name can be part of the search.
                 var contactMobiles = searchValue.Any(char.IsLetter)
                     ? await smsService.SearchContactMobileNumbersAsync(searchValue, HttpContext.RequestAborted)
-                    : [];
+                    : Array.Empty<string>();
                 var iranMobileSuffixes = contactMobiles
                     .Where(TextService.IsValidPhoneNumber)
                     .Select(x => x[1..])
