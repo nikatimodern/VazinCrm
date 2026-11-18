@@ -13,6 +13,7 @@ using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
