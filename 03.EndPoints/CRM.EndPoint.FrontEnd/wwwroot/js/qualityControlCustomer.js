@@ -132,6 +132,11 @@
                 const remaining = Math.ceil(remainingMs / 1000);
                 const complete = button.closest("[data-qc-complete]")?.dataset.qcComplete === "true";
                 const showTimer = remaining > 0 && !complete;
+                // Preserve the local saving indicator until this request finishes.
+                if (button.classList.contains("is-saving")) {
+                    button.disabled = true;
+                    return;
+                }
                 button.disabled = contactBusy || complete || remaining > 0;
 
                 const track = button.parentElement?.querySelector("[data-qc-no-answer-progress]");
@@ -1023,8 +1028,16 @@
             if (contactButton) {
                 if (loading || contactBusy || !isActive() || contactButton.disabled) return;
                 contactBusy = true;
+                const originalIcon = contactButton.innerHTML;
+                const originalTitle = contactButton.title;
+                const originalLabel = contactButton.getAttribute("aria-label");
                 queue.querySelectorAll("[data-qc-contact]").forEach(button => button.disabled = true);
-                queueFeedback.textContent = "در حال ثبت وضعیت تماس…";
+                queueFeedback.textContent = "";
+                contactButton.classList.add("is-saving");
+                contactButton.setAttribute("aria-busy", "true");
+                contactButton.title = "در حال ثبت وضعیت تماس";
+                contactButton.setAttribute("aria-label", "در حال ثبت وضعیت تماس");
+                contactButton.innerHTML = '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>';
                 try {
                     const result = await sendApiRequest({
                         url: "/QualityControl/SetCustomerContactStatus",
@@ -1052,6 +1065,12 @@
                     }
                 } finally {
                     contactBusy = false;
+                    contactButton.classList.remove("is-saving");
+                    contactButton.removeAttribute("aria-busy");
+                    contactButton.innerHTML = originalIcon;
+                    contactButton.title = originalTitle;
+                    if (originalLabel === null) contactButton.removeAttribute("aria-label");
+                    else contactButton.setAttribute("aria-label", originalLabel);
                     if (isActive()) {
                         queue.querySelectorAll('[data-qc-contact="2"]').forEach(button => {
                             button.disabled = button.closest("[data-qc-complete]")
