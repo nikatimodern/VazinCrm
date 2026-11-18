@@ -226,9 +226,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (mapping == null)
                 throw new KeyNotFoundException("ارتباط انتخاب‌شده پیدا نشد یا قبلاً حذف شده است.");
 
-            if (mapping.MapType is ExternalMappingTypeEnum.تامین_کننده
-                or ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار)
-                throw new MappingConflictException("این ارتباط از گردش انتقال مالی فاکتور تأمین مدیریت می‌شود.");
+            if (mapping.HasPendingExternalId())
+                throw new MappingConflictException("ثبت این ارتباط هنوز نهایی نشده است.");
 
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))
@@ -319,6 +318,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 || x.EntityId == Guid.Empty
                 || !int.TryParse(x.ExEntityId, out var id) || id <= 0))
                 throw new ArgumentException("نوع ارتباط یا شناسه انتخاب‌شده معتبر نیست.");
+
+            if (edit == null && request.Items.Any(x => x.MapType is ExternalMappingTypeEnum.تامین_کننده
+                or ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار))
+                throw new ArgumentException("برای ثبت ارتباط جدید از گردش انتقال مالی فاکتور تأمین استفاده کنید.");
 
             var repeatedSources = request.Items.GroupBy(x => {
                 var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);
@@ -450,6 +453,50 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (!await targetDb.Parties.AsNoTracking()
                                 .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct))
                             throw new ArgumentException($"مشتری با شناسه {targetId} در نرم‌افزار مقصد معتبر نیست.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.تامین_کننده)
+                    {
+                        if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
+                            throw new ArgumentException("تأمین‌کننده انتخاب‌شده در CRM یافت نشد.");
+                        if (!await targetDb.Parties.AsNoTracking()
+                                .AnyAsync(x => x.PartyId == targetId && x.IsVendor && x.Dl != null, ct))
+                            throw new ArgumentException("تأمین‌کننده معتبر در نرم‌افزار مقصد پیدا نشد.");
+                    }
+                    else if (item.MapType is ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار)
+                    {
+                        if (!await db.SupplyFactors.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
+                            throw new ArgumentException("فاکتور تأمین انتخاب‌شده در CRM یافت نشد.");
+
+                        if (item.MapType == ExternalMappingTypeEnum.رسید_انبار)
+                        {
+                            var basePurchaseId = await targetDb.InventoryReceipts.AsNoTracking()
+                                .Where(x => x.InventoryReceiptID == targetId && !x.IsReturn)
+                                .Select(x => x.BasePurchaseInvoiceRef).SingleOrDefaultAsync(ct);
+                            if (!basePurchaseId.HasValue)
+                                throw new ArgumentException("رسید مرتبط با فاکتور خرید در نرم‌افزار مقصد پیدا نشد.");
+                            if (!existing.Any(x => x.EntityId == item.EntityId
+                                && x.MapType == ExternalMappingTypeEnum.فاکتور_خرید
+                                && x.ExEntityId == basePurchaseId.Value.ToString()))
+                                throw new MappingConflictException("رسید انتخاب‌شده به فاکتور خرید مرتبط با این فاکتور تأمین تعلق ندارد.");
+                        }
+                        else
+                        {
+                            if (!await targetDb.InventoryPurchaseInvoices.AsNoTracking()
+                                    .AnyAsync(x => x.InventoryPurchaseInvoiceID == targetId && x.Type == 1, ct))
+                                throw new ArgumentException("فاکتور خرید در نرم‌افزار مقصد پیدا نشد.");
+
+                            foreach (var linked in existing.Where(x => x.MapType == ExternalMappingTypeEnum.رسید_انبار
+                                         && (x.EntityId == item.EntityId || x.EntityId == edited?.EntityId)))
+                            {
+                                if (!int.TryParse(linked.ExEntityId, out var receiptId))
+                                    continue;
+                                var basePurchaseId = await targetDb.InventoryReceipts.AsNoTracking()
+                                    .Where(x => x.InventoryReceiptID == receiptId && !x.IsReturn)
+                                    .Select(x => x.BasePurchaseInvoiceRef).SingleOrDefaultAsync(ct);
+                                if (basePurchaseId.HasValue && (linked.EntityId != item.EntityId || basePurchaseId != targetId))
+                                    throw new MappingConflictException("ارتباط جدید با رسید انبار ثبت‌شده سازگار نیست.");
+                            }
+                        }
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.کارشناسان)
                     {

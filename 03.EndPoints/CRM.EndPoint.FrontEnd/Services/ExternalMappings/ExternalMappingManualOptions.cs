@@ -25,6 +25,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ExternalMappingTypeEnum.مرکز_هزینه => ("BaseCenterCash", "DL"),
                 ExternalMappingTypeEnum.مشتری => ("Customer", "Party"),
                 ExternalMappingTypeEnum.کارشناسان => ("AppUser", "Party"),
+                ExternalMappingTypeEnum.تامین_کننده => ("Customer", "Party"),
+                ExternalMappingTypeEnum.فاکتور_خرید => ("SupplyFactor", "InventoryPurchaseInvoice"),
+                ExternalMappingTypeEnum.رسید_انبار => ("SupplyFactor", "InventoryReceipt"),
                 ExternalMappingTypeEnum.کاربران => ("AppUser", ExternalUserEntityName),
                 _ => throw new ArgumentException("نوع ارتباط پشتیبانی نمی‌شود.")
             };
@@ -69,6 +72,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 switch (names.Source)
                 {
+                    case "SupplyFactor":
+                    {
+                        var rows = await db.SupplyFactors.AsNoTracking()
+                            .Where(x => x.Id == guid || x.SerialNumber.Contains(search)
+                                || x.SupplierTxt.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search))
+                            .OrderByDescending(x => x.SerialNumber).ThenBy(x => x.Id)
+                            .Select(x => new { x.Id, x.SerialNumber, x.SupplierTxt })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.SerialNumber, x.SupplierTxt), detail = "" }) };
+                    }
                     case "AppUser":
                     {
                         // Both expert-to-Party and user-to-FMK.User mappings require CRM employees.
@@ -168,6 +182,30 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
                 switch (names.Target)
                 {
+                    case "InventoryPurchaseInvoice":
+                    {
+                        var rows = await targetDb.InventoryPurchaseInvoices.AsNoTracking()
+                            .Where(x => x.Type == 1 && number > 0
+                                && (x.InventoryPurchaseInvoiceID == number || x.Number == number || x.InvoiceNumber == number))
+                            .OrderByDescending(x => x.InventoryPurchaseInvoiceID)
+                            .Select(x => new { Id = x.InventoryPurchaseInvoiceID, x.Number, x.Date })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.Number.ToString(), "فاکتور خرید"),
+                            detail = CRM.Framework.BaseServices.GetDatePersian(x.Date) }) };
+                    }
+                    case "InventoryReceipt":
+                    {
+                        var rows = await targetDb.InventoryReceipts.AsNoTracking()
+                            .Where(x => !x.IsReturn && x.BasePurchaseInvoiceRef != null && number > 0
+                                && (x.InventoryReceiptID == number || x.Number == number))
+                            .OrderByDescending(x => x.InventoryReceiptID)
+                            .Select(x => new { Id = x.InventoryReceiptID, x.Number, x.Date, x.BasePurchaseInvoiceRef })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.Number.ToString(), "رسید انبار"),
+                            detail = $"{CRM.Framework.BaseServices.GetDatePersian(x.Date)} | شناسه رسید {x.Id} | شناسه فاکتور خرید {x.BasePurchaseInvoiceRef}" }) };
+                    }
                     case ExternalUserEntityName:
                     {
                         var query = targetDb.SepidarUsers.AsNoTracking().Where(x => !x.IsDeleted && x.Status == true);
@@ -189,7 +227,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         // Expert mappings link CRM users to any person in the external
                         // software. Broker status is checked only when exporting an invoice.
                         var query = targetDb.Parties.AsNoTracking();
-                        if (mapType != (int)ExternalMappingTypeEnum.کارشناسان)
+                        if (mapType == (int)ExternalMappingTypeEnum.تامین_کننده)
+                            query = query.Where(x => x.IsVendor && x.Dl != null);
+                        else if (mapType != (int)ExternalMappingTypeEnum.کارشناسان)
                             query = query.Where(x => x.IsCustomer);
                         if (search.Length > 0)
                             query = query.Where(x => (number > 0 && x.PartyId == number)

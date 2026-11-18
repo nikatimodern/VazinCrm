@@ -492,7 +492,7 @@
                     ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
                         (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
                     : "") +
-                (row.status === "saved" && row.mappingId && ![7, 8, 9].includes(Number(row.mapType))
+                (row.status === "saved" && row.mappingId
                     ? '<span class="lmr-saved-actions">' +
                         '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
@@ -1178,6 +1178,9 @@
             4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
             5: { crm: ["Customer", "مشتریان CRM"], external: ["Party", "اشخاص مالی"] },
             6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] },
+            7: { crm: ["Customer", "تأمین‌کنندگان CRM"], external: ["Party", "تأمین‌کنندگان نرم‌افزار مالی"] },
+            8: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryPurchaseInvoice", "فاکتورهای خرید"] },
+            9: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryReceipt", "رسیدهای انبار"] },
             10: { crm: ["AppUser", "کاربران CRM"], external: ["User", "کاربران نرم‌افزار مالی"] }
         };
 
@@ -1416,7 +1419,7 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.filter(item => ![7, 8, 9].includes(Number(item.value))).forEach(item =>
+            state.types.filter(item => isEdit || ![7, 8, 9].includes(Number(item.value))).forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = isEdit ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.
