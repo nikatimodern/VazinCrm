@@ -530,8 +530,7 @@
     font-size: 12px;
 }
 #qualityControlCustomerPage .qc-client-stats .qc-client-stat-segment,
-#qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed,
-#qualityControlCustomerPage .qc-client-stats > .qc-client-count-pending {
+#qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -561,11 +560,6 @@
     font-size: 10px;
     color: var(--qc-primary);
     white-space: nowrap;
-}
-#qualityControlCustomerPage .qc-client-stats .qc-client-count-pending {
-    background: var(--qc-secondary-light);
-    border-color: color-mix(in srgb, var(--qc-secondary) 20%, var(--qc-border));
-    color: var(--qc-secondary);
 }
 #qualityControlCustomerPage .qc-client-badge {
     display: inline-flex;
@@ -944,13 +938,12 @@
     }
     #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-stat-segment,
     #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-count-reviewed,
-    #qualityControlCustomerPage .qc-client-card .qc-client-stats > .qc-client-count-pending,
     #qualityControlCustomerPage .qc-client-card .qc-client-review-group .qc-client-badge { padding: 3px 6px; }
     #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open {
         min-width: 23px;
         padding-inline: 6px;
     }
-    #qualityControlCustomerPage .qc-client-review-group:has(.qc-client-count-reviewed) {
+    #qualityControlCustomerPage .qc-client-review-group {
         flex: 1 1 100%;
     }
     #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed { flex: 1 1 auto; }
