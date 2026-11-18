@@ -505,50 +505,13 @@
             }, historyDeleteHoldMs);
         }
 
-        async function playHistoryDeleteBurst(button) {
+        async function playHistoryDeleteFade(button) {
             const card = button.closest(".qc-client-history-entry");
-            if (!card?.isConnected || !isActive()
-                || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-            const rect = card.getBoundingClientRect();
-            const parentRect = historyEntries.getBoundingClientRect();
-            const debris = document.createElement("span");
-            debris.className = "qc-client-history-debris";
-            debris.setAttribute("aria-hidden", "true");
-            debris.style.left = (rect.left - parentRect.left) + "px";
-            debris.style.top = (rect.top - parentRect.top) + "px";
-            debris.style.width = rect.width + "px";
-            debris.style.height = rect.height + "px";
-
-            // Scatter fragments across the complete card, not just the delete button.
-            const colors = ["var(--qc-danger)", "var(--qc-border)", "var(--qc-muted)",
-                "var(--qc-danger-light)", "var(--qc-primary-light)"];
-            const columns = 10, rows = 6;
-            for (let i = 0; i < columns * rows; i++) {
-                const fragment = document.createElement("span");
-                fragment.className = "qc-client-history-fragment";
-                const x = (i % columns + .2 + ((i * 7) % 9) / 15) / columns * rect.width;
-                const y = (Math.floor(i / columns) + .2 + ((i * 11) % 7) / 12) / rows * rect.height;
-                const angle = Math.atan2(y - rect.height / 2, x - rect.width / 2);
-                const distance = 28 + (i % 7) * 7;
-                fragment.style.left = x + "px";
-                fragment.style.top = y + "px";
-                fragment.style.setProperty("--qc-frag-size", (3 + i % 6) + "px");
-                fragment.style.setProperty("--qc-frag-height", (3 + (i * 3) % 8) + "px");
-                fragment.style.setProperty("--qc-frag-color", colors[i % colors.length]);
-                fragment.style.setProperty("--qc-frag-x", Math.round(Math.cos(angle) * distance) + "px");
-                fragment.style.setProperty("--qc-frag-y", Math.round(Math.sin(angle) * distance - 9) + "px");
-                fragment.style.setProperty("--qc-frag-rotate", ((i % 2 ? 1 : -1) * (45 + i % 100)) + "deg");
-                debris.append(fragment);
-            }
-            historyEntries.append(debris);
-            card.classList.add("is-disintegrating");
-            try {
+            if (!card?.isConnected || !isActive()) return;
+            card.classList.add("is-fading");
+            if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches)
                 await new Promise(resolve => setTimeout(resolve, 550));
-            } finally {
-                debris.remove();
-                // The card stays invisible until the refreshed history replaces it.
-            }
+            // Keep the faded card hidden until the refreshed history replaces it.
         }
 
         async function changeContactHistory(button) {
@@ -575,8 +538,8 @@
                     historyFeedback.textContent = "تغییر سابقه تماس ناموفق بود؛ دوباره تلاش کنید.";
                     return;
                 }
-                // Animate the burst only after the server has confirmed soft-deletion.
-                if (!restore) await playHistoryDeleteBurst(button);
+                // Fade the whole card only after the server confirms soft-deletion.
+                if (!restore) await playHistoryDeleteFade(button);
                 if (!isActive()) return;
                 await loadContactHistory();
                 await loadCustomers();
@@ -586,7 +549,7 @@
                 historyBusy = false;
                 if (button.isConnected) {
                     button.classList.remove("is-hold-complete");
-                    button.closest(".qc-client-history-entry")?.classList.remove("is-disintegrating");
+                    button.closest(".qc-client-history-entry")?.classList.remove("is-fading");
                 }
                 if (isActive()) historyEntries.querySelectorAll("[data-qc-history-action]")
                     .forEach(action => action.disabled = false);
