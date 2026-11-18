@@ -1906,15 +1906,14 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (quotation != null && quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
 
-        SepidarPartyDto directCustomer = null;
-        if (quotation == null)
-        {
-            directCustomer = await GetSepidarCustomerByIdAsync(preview.CustomerPartyRef, ct)
-                ?? throw new InvalidOperationException("مشتری انتخاب‌شده در سپیدار پیدا نشد.");
-            if (!await sepidarContext.SaleTypes.AsNoTracking()
-                    .AnyAsync(x => x.SaleTypeId == preview.SaleTypeRef, ct))
-                throw new InvalidOperationException("نوع فروش انتخاب‌شده در سپیدار معتبر نیست.");
-        }
+        // Resolve the Sepidar customer in both invoice modes. A quotation may
+        // have null customer names/address, so fallback data must never be null.
+        var customerPartyId = quotation?.CustomerPartyRef ?? preview.CustomerPartyRef;
+        var customer = await GetSepidarCustomerByIdAsync(customerPartyId, ct)
+            ?? throw new InvalidOperationException("مشتری فاکتور در سپیدار پیدا نشد.");
+        if (quotation == null && !await sepidarContext.SaleTypes.AsNoTracking()
+                .AnyAsync(x => x.SaleTypeId == preview.SaleTypeRef, ct))
+            throw new InvalidOperationException("نوع فروش انتخاب‌شده در سپیدار معتبر نیست.");
 
         var invoiceDate = factor.DateMiladi.Value;
         var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
@@ -1940,11 +1939,11 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             var invoice = new SalesInvoiceRecord {
                 InvoiceId = invoiceId,
                 QuotationRef = quotation?.QuotationId,
-                CustomerPartyRef = quotation?.CustomerPartyRef ?? directCustomer.Id,
-                CustomerRealName = quotation?.CustomerRealName ?? directCustomer.FullName,
-                CustomerRealName_En = quotation?.CustomerRealName_En ?? directCustomer.FullName,
+                CustomerPartyRef = customer.Id,
+                CustomerRealName = quotation?.CustomerRealName ?? customer.FullName,
+                CustomerRealName_En = quotation?.CustomerRealName_En ?? customer.FullName,
                 SaleTypeRef = quotation?.SaleTypeRef ?? preview.SaleTypeRef,
-                PartyAddressRef = quotation?.PartyAddressRef ?? directCustomer.PartyMainAddressRef,
+                PartyAddressRef = quotation?.PartyAddressRef ?? customer.PartyMainAddressRef,
                 Number = invoiceNumber,
                 Date = invoiceDate,
                 CurrencyRef = quotation?.CurrencyRef ?? 1,
