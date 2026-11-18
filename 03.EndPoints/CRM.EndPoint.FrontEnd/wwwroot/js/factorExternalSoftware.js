@@ -46,7 +46,7 @@ function renderExternalSoftwareFactors(items = []) {
         ],
         actions: item => {
             if (item.isMissing) {
-                if (!item.mappingId) return [];
+                if (!item.mappingId || !item.canDeleteMissing) return [];
                 return [ExternalFinancialHistory.missingMappingAction({
                     modal: document.getElementById("externalSoftwareFactorsModal"),
                     sourceId: externalFactorHistory.factorId,
