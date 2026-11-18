@@ -1036,7 +1036,7 @@
 }
 #qualityControlCustomerPage .qc-client-history-delete.is-holding::after {
     opacity: 1;
-    animation: qcHistoryDeleteTrace 15s linear forwards;
+    animation: qcHistoryDeleteTrace .5s linear forwards;
 }
 #qualityControlCustomerPage .qc-client-history-delete.is-hold-complete::after {
     opacity: 1;
