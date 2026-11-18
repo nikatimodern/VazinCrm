@@ -275,7 +275,6 @@
             lastReviewedHighlightTimer = null;
             queue.querySelectorAll(".qc-client-last-reviewed").forEach(card => {
                 card.classList.remove("qc-client-last-reviewed");
-                card.querySelector(".qc-client-last-reviewed-tag")?.remove();
             });
         }
 
@@ -368,8 +367,6 @@
                         + (isLastReviewed ? ' qc-client-last-reviewed' : '')
                         + '" data-qc-complete="' + complete + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
-                        + (isLastReviewed ? '<small class="qc-client-last-reviewed-tag">'
-                            + '<i class="fa fa-check-circle" aria-hidden="true"></i> آخرین مشتری بررسی‌شده</small>' : '')
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
                         + (Number(row.noResponseAttempts) > 0
                             ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
@@ -426,13 +423,6 @@
                     && !queue.querySelector(".qc-client-last-reviewed")) {
                     const temporaryCard = temporaryCompletedCustomerCard;
                     temporaryCard.classList.add("qc-client-last-reviewed", "qc-client-temporary-complete");
-                    const profile = temporaryCard.querySelector(".qc-client-profile");
-                    if (profile && !profile.querySelector(".qc-client-last-reviewed-tag")) {
-                        const tag = document.createElement("small");
-                        tag.className = "qc-client-last-reviewed-tag";
-                        tag.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> آخرین مشتری بررسی‌شده';
-                        profile.append(tag);
-                    }
                     queue.prepend(temporaryCard);
                     queueFeedback.textContent = "";
                 }
@@ -458,8 +448,7 @@
                             clearTimeout(lastReviewedHighlightTimer);
                             lastReviewedHighlightTimer = null;
                             card.classList.remove("qc-client-last-reviewed");
-                            card.querySelector(".qc-client-last-reviewed-tag")?.remove();
-                            if (card.classList.contains("qc-client-temporary-complete")) {
+                                        if (card.classList.contains("qc-client-temporary-complete")) {
                                 // The server has already excluded this fully reviewed customer
                                 // from the current filter (e.g. "نیازمند بررسی").
                                 card.remove();
