@@ -26,7 +26,8 @@ public enum QualityControlCustomerContactStatus : byte
 public sealed record QualityControlCustomerRow(
     Guid CustomerId, string? CustomerName, int CustomerCode, string? Mobile,
     int Orders, int Invoices, int TotalItems, int ReviewedItems, int DiscrepancyItems,
-    QualityControlCustomerContactStatus ContactStatus, int NoResponseAttempts);
+    QualityControlCustomerContactStatus ContactStatus, int NoResponseAttempts,
+    int NoResponseCooldownSeconds);
 
 public sealed class SetQualityControlCustomerContactRequest
 {
@@ -35,7 +36,8 @@ public sealed class SetQualityControlCustomerContactRequest
 }
 
 public sealed record SetQualityControlCustomerContactResult(
-    int StatusCode, string Message, QualityControlCustomerContactStatus Status);
+    int StatusCode, string Message, QualityControlCustomerContactStatus Status,
+    int RetryAfterSeconds = 0);
 
 public sealed record QualityControlContactHistoryRow(
     Guid Id, QualityControlCustomerContactStatus Status, string CreatedAt,
