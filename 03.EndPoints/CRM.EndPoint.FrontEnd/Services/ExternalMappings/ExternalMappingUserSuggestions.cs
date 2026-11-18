@@ -88,5 +88,61 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             }
             return result;
         }
+
+        // Exact and unique usernames are safe to suggest; nothing is saved automatically.
+        private async Task<List<MappingReportEntry>> BuildExternalUserSuggestionsAsync(
+            Guid softwareId, CancellationToken ct)
+        {
+            var sepidar = softwareId == Sepidar1SoftwareId
+                ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
+            var crmUsers = await userManager.Users.AsNoTracking()
+                .Select(x => new { x.Id, x.UserName }).ToListAsync(ct);
+            var externalUsers = await sepidar.SepidarUsers.AsNoTracking()
+                .Where(x => !x.IsDeleted)
+                .Select(x => new { x.UserID, x.UserName }).ToListAsync(ct);
+            var saved = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.ExternalSoftwareId == softwareId
+                    && x.MapType == ExternalMappingTypeEnum.کاربران)
+                .Select(x => new { x.EntityId, x.ExEntityId }).ToListAsync(ct);
+
+            var byUsername = externalUsers
+                .GroupBy(x => NormalizeExpertName(x.UserName))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
+                .ToDictionary(x => x.Key, x => x.Select(user => user.UserID).Distinct().ToArray());
+            var crmUsernameCounts = crmUsers
+                .GroupBy(x => NormalizeExpertName(x.UserName))
+                .ToDictionary(x => x.Key, x => x.Count());
+            var mappedCrm = saved.Select(x => x.EntityId).ToHashSet();
+            var mappedExternal = saved.Select(x => x.ExEntityId).ToHashSet(StringComparer.Ordinal);
+            var results = new List<MappingReportEntry>();
+
+            foreach (var user in crmUsers)
+            {
+                if (!Guid.TryParse(user.Id, out var id) || id == Guid.Empty || mappedCrm.Contains(id))
+                    continue;
+                var username = NormalizeExpertName(user.UserName);
+                if (string.IsNullOrEmpty(username)) continue;
+
+                var matches = byUsername.GetValueOrDefault(username) ?? Array.Empty<int>();
+                var available = matches.Where(x => !mappedExternal.Contains(x.ToString())).ToArray();
+                var duplicateCrmUsername = crmUsernameCounts[username] > 1;
+                var status = matches.Length == 0 ? "notMatched"
+                    : available.Length == 0 ? "blocked"
+                    : duplicateCrmUsername || available.Length > 1 ? "ambiguous"
+                    : available.Length == 1 && matches.Length == 1 ? "pending" : "notMatched";
+                var reason = status switch {
+                    "pending" => "UserAccountExactMatch",
+                    "blocked" => "UserAccountAlreadyMapped",
+                    "ambiguous" => "UserAccountMultipleMatches",
+                    _ => "UserAccountNoMatch"
+                };
+                var targetId = status == "pending" ? available[0] : (int?)null;
+                results.Add(new MappingReportEntry(
+                    $"user-account-{id}", "AppUser", id, status, reason,
+                    "", ExternalUserEntityName, targetId, Array.Empty<string>(),
+                    (int)ExternalMappingTypeEnum.کاربران, targetId?.ToString(), available));
+            }
+            return results;
+        }
     }
 }

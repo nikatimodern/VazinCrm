@@ -267,13 +267,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             }
 
             entries.AddRange(await BuildUserExpertSuggestionsAsync(softwareId, ct));
+            entries.AddRange(await BuildExternalUserSuggestionsAsync(softwareId, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
                     && (x.MapType == ExternalMappingTypeEnum.مشتری
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                         || x.MapType == ExternalMappingTypeEnum.فاکتور
-                        || x.MapType == ExternalMappingTypeEnum.کارشناسان))
+                        || x.MapType == ExternalMappingTypeEnum.کارشناسان
+                        || x.MapType == ExternalMappingTypeEnum.کاربران))
                 .CountAsync(ct);
 
             return new
@@ -282,7 +284,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     saved,
                     pendingCustomers = plan.PendingCustomers.Count,
                     pendingDocuments = plan.PendingDocuments.Count,
-                    pendingUsers = reportRows.Count(x => x.Status == "pending" && x.MapType == (int)ExternalMappingTypeEnum.کارشناسان),
+                    pendingUsers = reportRows.Count(x => x.Status == "pending"
+                        && (x.MapType == (int)ExternalMappingTypeEnum.کارشناسان
+                            || x.MapType == (int)ExternalMappingTypeEnum.کاربران)),
                     customerConflicts = plan.CustomerConflicts.Count,
                     blockedDocuments = reportRows.Count(x => x.Status == "blocked"),
                     unmatched = reportRows.Count(x => x.Status == "notMatched"),
@@ -366,7 +370,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     .Select(x => x.Id).Take(500).ToListAsync(ct);
                 matchedIds.UnionWith(centers);
 
-                // Search expert mappings by CRM employee name.
+                // Search expert and external-user mappings by CRM user name.
                 var employees = await userManager.Users.AsNoTracking()
                     .Where(x => (x.FirstName != null && x.FirstName.Contains(search))
                         || (x.LastName != null && x.LastName.Contains(search))
@@ -380,6 +384,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var targetDb = softwareId == Sepidar1SoftwareId
                     ? (SepidarContextDbBase)sdb : softwareId == Sepidar2SoftwareId
                         ? (SepidarContextDbBase)s2Db : null;
+                var externalUserIds = targetDb == null ? Array.Empty<string>()
+                    : (await targetDb.SepidarUsers.AsNoTracking()
+                        .Where(x => x.Name.Contains(search) || x.UserName.Contains(search))
+                        .Select(x => x.UserID).Take(500).ToListAsync(ct))
+                        .Select(x => x.ToString()).ToArray();
                 var partyIds = targetDb == null ? Array.Empty<string>()
                     : (await targetDb.Parties.AsNoTracking()
                         .Where(x => x.Name.Contains(search) || x.LastName.Contains(search)
@@ -390,7 +399,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 query = query.Where(x => x.ExEntityId.Contains(search)
                     || x.EntityId.ToString().Contains(search)
                     || ids.Contains(x.EntityId)
-                    || (x.ExEntityName == nameof(Party) && partyIds.Contains(x.ExEntityId)));
+                    || (x.ExEntityName == nameof(Party) && partyIds.Contains(x.ExEntityId))
+                    || (x.MapType == ExternalMappingTypeEnum.کاربران
+                        && x.ExEntityName == ExternalUserEntityName
+                        && externalUserIds.Contains(x.ExEntityId)));
             }
 
             var total = await query.CountAsync(ct);
@@ -644,6 +656,17 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
             await LoadSepidarSalesSidesAsync(entries, context, softwareTitle, sides, ct);
             await LoadSepidarFinanceSidesAsync(entries, context, sides, ct);
+            foreach (var batch in ExternalTargetBatches(entries, ExternalUserEntityName))
+            {
+                var users = await context.SepidarUsers.AsNoTracking()
+                    .Where(x => batch.Contains(x.UserID) && !x.IsDeleted)
+                    .Select(x => new { x.UserID, x.UserName, x.Name })
+                    .ToListAsync(ct);
+                foreach (var user in users)
+                    sides[(ExternalUserEntityName, user.UserID)] = new MappingReportSide(
+                        "کاربر " + softwareTitle, user.UserID.ToString(), user.UserName, "",
+                        null, global::CRM.EndPoint.FrontEnd.Services.TextService.NormalizePersianText(user.Name), "");
+            }
             foreach (var batch in ExternalTargetBatches(entries, nameof(InventoryPurchaseInvoice)))
             {
                 var rows = await context.InventoryPurchaseInvoices.AsNoTracking()
@@ -820,6 +843,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             nameof(Voucher) => "سند حسابداری",
                             nameof(PaymentHeader) => "اعلامیه پرداخت",
                             nameof(Party) => "شخص",
+                            ExternalUserEntityName => "کاربر",
                             nameof(DL) => "حساب تفصیلی",
                             _ => "معادل"
                         };

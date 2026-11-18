@@ -64,6 +64,10 @@
             UserExpertMultipleCrmUsers:["چند کارشناس CRM هم‌نام","چند کارشناس CRM نام یکسان دارند؛ ارتباط درست را پس از بررسی هویت، دستی ثبت کنید."],
             UserExpertNoMatch:["شخص هم‌نام یافت نشد","شخص متناظر قطعی پیدا نشده است؛ ارتباط کارشناس را دستی ثبت کنید."],
             UserExpertAlreadyMapped:["ارتباط شخص قبلاً ثبت شده","شخص مشابه در نرم‌افزار مالی به کارشناس دیگری متصل شده است."],
+            UserAccountExactMatch:["نام کاربری یکسان","نام کاربری CRM و کاربر نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserAccountMultipleMatches:["چند کاربر با نام کاربری مشابه","تطبیق قطعی نیست؛ کاربر مقصد را بررسی و انتخاب کنید."],
+            UserAccountAlreadyMapped:["کاربر مقصد قبلاً مرتبط شده","این حساب در نرم‌افزار مقصد قبلاً به کاربر دیگری متصل شده است."],
+            UserAccountNoMatch:["نام کاربری متناظر پیدا نشد","برای این کاربر CRM معادل قطعی در نرم‌افزار مالی پیدا نشده است؛ ارتباط را دستی ثبت کنید."],
             ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
         };
@@ -103,7 +107,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5,6].includes(Number(row.mapType)) &&
+                [2,3,5,6,10].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -199,6 +203,7 @@
                 case 4: return crm ? "کد مرکز هزینه" : "کد تفصیلی";
                 case 5: return crm ? "کد مشتری" : "کد تفصیلی";
                 case 6: return crm ? "نام کاربری" : "کد تفصیلی";
+                case 10: return "نام کاربری";
                 default: return "شماره";
             }
         }
@@ -541,7 +546,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5, 6]);
+                : new Set([2, 3, 5, 6, 10]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -842,7 +847,7 @@
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...[5, 6, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
+                ...[5, 6, 10, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
                 toastifyError("امکان ثبت ارتباط برای بعضی از موارد انتخاب‌شده وجود ندارد.");
@@ -1120,7 +1125,8 @@
             3: { crm: ["Factor", "فاکتورهای CRM"], external: ["Invoice", "فاکتورهای مالی"] },
             4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
             5: { crm: ["Customer", "مشتریان CRM"], external: ["Party", "اشخاص مالی"] },
-            6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] }
+            6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] },
+            10: { crm: ["AppUser", "کاربران CRM"], external: ["User", "کاربران نرم‌افزار مالی"] }
         };
 
         async function editSavedMapping(row) {

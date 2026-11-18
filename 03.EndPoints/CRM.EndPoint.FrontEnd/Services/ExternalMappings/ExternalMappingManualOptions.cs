@@ -23,6 +23,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ExternalMappingTypeEnum.مرکز_هزینه => ("BaseCenterCash", "DL"),
                 ExternalMappingTypeEnum.مشتری => ("Customer", "Party"),
                 ExternalMappingTypeEnum.کارشناسان => ("AppUser", "Party"),
+                ExternalMappingTypeEnum.کاربران => ("AppUser", ExternalUserEntityName),
                 _ => throw new ArgumentException("نوع ارتباط پشتیبانی نمی‌شود.")
             };
             var source = string.IsNullOrWhiteSpace(sourceEntity) ? defaultPair.Item1 : sourceEntity.Trim();
@@ -68,7 +69,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     case "AppUser":
                     {
-                        var query = userManager.Users.AsNoTracking().Where(x => x.IsEmployee);
+                        var query = userManager.Users.AsNoTracking();
+                        if (mapType == (int)ExternalMappingTypeEnum.کارشناسان)
+                            query = query.Where(x => x.IsEmployee);
                         if (search.Length > 0)
                             query = query.Where(x => ((x.FirstName ?? "") + " " + (x.LastName ?? ""))
                                     .Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
@@ -162,6 +165,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
                 switch (names.Target)
                 {
+                    case ExternalUserEntityName:
+                    {
+                        var query = targetDb.SepidarUsers.AsNoTracking().Where(x => !x.IsDeleted);
+                        query = query.Where(x => (number > 0 && x.UserID == number)
+                            || x.UserName.Contains(search) || x.Name.Contains(search));
+                        var rows = await query.OrderBy(x => x.UserName)
+                            .Select(x => new { x.UserID, x.UserName, x.Name })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new {
+                            id = x.UserID.ToString(),
+                            title = FormatManualOption(x.UserName, x.Name), detail = "" }) };
+                    }
                     case "Party":
                     {
                         // Expert mappings link CRM users to any person in the external

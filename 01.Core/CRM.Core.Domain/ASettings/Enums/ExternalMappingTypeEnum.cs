@@ -10,4 +10,5 @@ public enum ExternalMappingTypeEnum {
     تامین_کننده = 7,
     فاکتور_خرید = 8,
     رسید_انبار = 9,
+    کاربران = 10,
 }

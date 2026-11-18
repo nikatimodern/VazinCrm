@@ -16,6 +16,7 @@ using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.SaleTypes.Entities;
 using CRM.Core.Domain.Sepidar.Stocks.Entities;
 using CRM.Core.Domain.Sepidar.Units.Entities;
+using CRM.Core.Domain.Sepidar.Users.Entities;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,6 +56,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<QuotationItem> QuotationItems { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<Party> Parties { get; set; }
+    public DbSet<SepidarUser> SepidarUsers { get; set; }
     public DbSet<PartyAddress> PartyAddresses { get; set; }
     public DbSet<SaleType> SaleTypes { get; set; }
     public DbSet<Stock> Stocks { get; set; }
@@ -100,6 +102,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<QuotationItem>().ToTable("QuotationItem", "SLS");
         modelBuilder.Entity<Item>().ToTable("Item", "INV");
         modelBuilder.Entity<Party>().ToTable("Party", "GNR");
+        modelBuilder.Entity<SepidarUser>().ToTable("User", "FMK");
         modelBuilder.Entity<PartyAddress>().ToTable("PartyAddress", "GNR");
         modelBuilder.Entity<SaleType>().ToTable("SaleType", "SLS");
         modelBuilder.Entity<Stock>().ToTable("Stock", "INV");
