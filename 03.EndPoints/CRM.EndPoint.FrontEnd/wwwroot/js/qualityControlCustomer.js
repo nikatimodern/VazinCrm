@@ -554,24 +554,6 @@
         async function changeContactHistory(button) {
             if (historyBusy || !historyCanManage || !historyCustomerId || !isActive()) return;
             const restore = button.dataset.qcHistoryAction === "restore";
-            if (restore) {
-                if (typeof Swal === "undefined") {
-                    historyFeedback.textContent = "پنجره تأیید بازیابی در دسترس نیست.";
-                    return;
-                }
-                const response = await Swal.fire({
-                    title: "بازیابی سابقه تماس",
-                    text: "این سابقه دوباره در شمارنده‌ها و محاسبه وضعیت پیگیری منظور می‌شود.",
-                    icon: "question",
-                    confirmButtonText: "بازیابی",
-                    showCancelButton: true,
-                    cancelButtonText: "انصراف",
-                    confirmButtonColor: "#00665C",
-                    cancelButtonColor: "#656B75",
-                    reverseButtons: true,
-                });
-                if (!response.isConfirmed || !isActive()) return;
-            }
             historyBusy = true;
             historyEntries.querySelectorAll("[data-qc-history-action]").forEach(action => action.disabled = true);
             historyFeedback.textContent = restore ? "در حال بازیابی سابقه…" : "در حال حذف سابقه…";
