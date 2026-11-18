@@ -400,7 +400,8 @@
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-button {
     min-height: var(--qc-card-control-height);
-    border: 1px solid var(--qc-border);
+    border-width: 1px;
+    border-style: solid;
     border-radius: var(--qc-card-control-radius);
     padding: 4px 10px;
     line-height: 1.4;
