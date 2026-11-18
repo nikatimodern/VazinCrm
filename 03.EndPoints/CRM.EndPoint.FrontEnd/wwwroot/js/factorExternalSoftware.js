@@ -35,6 +35,9 @@ async function loadFactorExternalSoftwares(factorId) {
 function renderExternalSoftwareFactors(items = []) {
     getFactorFinancialHistory().render(items, {
         emptyText: "این فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
+        cardClass: item => item.isMissing ? "external-pf-missing" : "",
+        statusMessage: item => item.isMissing
+            ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
         fields: item => [
             ["نرم‌افزار", item.externalSoftwareTitle, true],
             ["تاریخ ثبت", item.creationDate],
@@ -42,6 +45,18 @@ function renderExternalSoftwareFactors(items = []) {
             ["مشتری", item.customerName],
         ],
         actions: item => {
+            if (item.isMissing) {
+                if (!item.mappingId) return [];
+                return [ExternalFinancialHistory.missingMappingAction({
+                    modal: document.getElementById("externalSoftwareFactorsModal"),
+                    sourceId: externalFactorHistory.factorId,
+                    softwareId: item.externalSoftwareId,
+                    mappingId: item.mappingId,
+                    softwareTitle: item.externalSoftwareTitle,
+                    url: "/Factor/DeleteMissingExternalFactorMapping",
+                    onDeleted: () => loadFactorExternalSoftwares(externalFactorHistory.factorId),
+                })];
+            }
             if (!item.viewUrl) return [];
             const link = document.createElement("a");
             link.className = "external-pf-action external-pf-view";
