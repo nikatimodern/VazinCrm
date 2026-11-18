@@ -4202,6 +4202,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     && x.MapType == ExternalMappingTypeEnum.فاکتور)
                 .OrderByDescending(x => x.CreateDate)
                 .Select(x => new {
+                    MappingId = x.Id,
                     x.ExternalSoftwareId,
                     SoftwareTitle = x.ExternalSoftware.Title,
                     x.ExEntityId,
@@ -4213,6 +4214,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             foreach (var mapping in mappings)
             {
                 var service = GetSepidarService(mapping.ExternalSoftwareId);
+                if (service == null)
+                    return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
                 var invoiceIdValid = int.TryParse(mapping.ExEntityId, out var invoiceId) && invoiceId > 0;
                 var invoice = service != null && invoiceIdValid
                     ? await service.GetInvoiceSummaryAsync(invoiceId)
@@ -4220,6 +4223,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 result.Add(new {
                     mapping.ExternalSoftwareId,
+                    mapping.MappingId,
+                    IsMissing = invoice == null,
                     ExternalSoftwareTitle = mapping.SoftwareTitle,
                     ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
                     CreationDate = mapping.CreateDateTxt,
@@ -4237,7 +4242,59 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpGet]
-        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
+                [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public Task<IActionResult> DeleteMissingExternalFactorMapping(
+            [FromBody] DeleteMissingExternalFinancialMappingRequest request, CancellationToken ct) =>
+            DeleteMissingFinancialMappingAsync(request, ExternalMappingTypeEnum.فاکتور, nameof(Factor), ct);
+
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public Task<IActionResult> DeleteMissingExternalPreFactorMapping(
+            [FromBody] DeleteMissingExternalFinancialMappingRequest request, CancellationToken ct) =>
+            DeleteMissingFinancialMappingAsync(request, ExternalMappingTypeEnum.پیش_فاکتور, nameof(PreFactor), ct);
+
+        private async Task<IActionResult> DeleteMissingFinancialMappingAsync(
+            DeleteMissingExternalFinancialMappingRequest request, ExternalMappingTypeEnum mapType,
+            string entityName, CancellationToken ct)
+        {
+            if (request == null || request.SourceId == Guid.Empty ||
+                request.ExternalSoftwareId == Guid.Empty || request.MappingId == Guid.Empty)
+                return BadRequest("شناسه سابقه ارسال معتبر نیست.");
+
+            var service = GetSepidarService(request.ExternalSoftwareId);
+            if (service == null)
+                return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
+
+            // Match the exact CRM source, destination, mapping type and mapping row.
+            var mapping = await db.ExternalMappings.SingleOrDefaultAsync(x =>
+                x.Id == request.MappingId && x.EntityId == request.SourceId &&
+                x.EntityName == entityName && x.ExternalSoftwareId == request.ExternalSoftwareId &&
+                x.MapType == mapType, ct);
+            if (mapping == null)
+                return NotFound("سابقه ارسال پیدا نشد.");
+            if (mapping.HasPendingExternalId())
+                return Conflict("این سابقه در حال ثبت است و قابل حذف نیست.");
+
+            // Verify that the destination document is still missing at the moment of deletion.
+            var validId = int.TryParse(mapping.ExEntityId, out var externalId) && externalId > 0;
+            if (validId)
+            {
+                var stillExists = mapType == ExternalMappingTypeEnum.فاکتور
+                    ? await service.GetInvoiceSummaryAsync(externalId) != null
+                    : await service.GetQuotationAsync(externalId, ct) != null;
+                if (stillExists)
+                    return Conflict("این سند هنوز در نرم‌افزار مالی وجود دارد و سابقه آن قابل حذف نیست.");
+            }
+
+            db.ExternalMappings.Remove(mapping);
+            await db.SaveChangesAsync(ct);
+            return Ok(new { deleted = true });
+        }
+
+public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
             try
             {
@@ -4252,12 +4309,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 var mappings = await db.ExternalMappings
                     .AsNoTracking()
-                    .Where(x => x.EntityId == preFactorId && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
+                    .Where(x => x.EntityId == preFactorId && x.EntityName == nameof(PreFactor)
+                        && x.MapType == ExternalMappingTypeEnum.پیش_فاکتور)
                     .Select(x => new {
+                        MappingId = x.Id,
                         x.ExternalSoftwareId,
                         SoftwareTitle = x.ExternalSoftware.Title,
                         x.ExEntityId,
-                        x.ExEntityName
+                        x.ExEntityName,
+                        x.CreateDateTxt
                     })
                     .ToListAsync();
 
@@ -4266,32 +4326,26 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 foreach (var mapping in mappings)
                 {
                     var service = GetSepidarService(mapping.ExternalSoftwareId);
-
                     if (service == null)
-                        continue;
+                        return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
 
-
-                    if (!int.TryParse(mapping.ExEntityId, out var exEntityId))
-                        continue;
-
-                    var externalPreFactor = await service.GetQuotationAsync(exEntityId);
-
-                    if (externalPreFactor == null)
-                        continue;
+                    var validId = int.TryParse(mapping.ExEntityId, out var externalId) && externalId > 0;
+                    var externalPreFactor = validId ? await service.GetQuotationAsync(externalId) : null;
 
                     result.Add(new ExternalSoftwarePreFactorDto {
+                        MappingId = mapping.MappingId,
+                        IsMissing = externalPreFactor == null,
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
                         PreFactorNumber = preFactor.SerialNumber.ToString(),
-                        ExternalPreFactorNumber = externalPreFactor.Number.ToString(),
-                        CreationDate = dtService.GetDateTimePersian(externalPreFactor.CreationDate),
-                        CustomerName = externalPreFactor.CustomerRealName,
-
-                        // TODO: Populate this if the invoice endpoint is implemented.
+                        ExternalPreFactorNumber = externalPreFactor?.Number.ToString() ?? "—",
+                        CreationDate = externalPreFactor != null
+                            ? dtService.GetDateTimePersian(externalPreFactor.CreationDate)
+                            : mapping.CreateDateTxt,
+                        CustomerName = externalPreFactor?.CustomerRealName ?? "—",
                         InvoicesCount = 0,
-
-                        // Replace with your actual CRM details route if needed.
-                        ViewUrl = Url.Action("Details", "Factor", new { id = preFactorId }) ?? string.Empty
+                        ViewUrl = externalPreFactor == null ? string.Empty
+                            : Url.Action("Details", "Factor", new { id = preFactorId }) ?? string.Empty
                     });
                 }
 
