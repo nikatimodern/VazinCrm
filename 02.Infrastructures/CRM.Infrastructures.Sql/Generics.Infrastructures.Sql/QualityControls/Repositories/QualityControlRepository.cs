@@ -20,8 +20,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
 {
     private const int NoResponseCooldownSeconds = 60;
 
-    private static int CooldownRemaining(DateTime lastAttempt, DateTime now) =>
-        Math.Max(0, (int)Math.Ceiling((lastAttempt.AddSeconds(NoResponseCooldownSeconds) - now).TotalSeconds));
+    private static int CooldownRemaining(DateTime? lastAttempt, DateTime now) =>
+        lastAttempt.HasValue
+            ? Math.Max(0, (int)Math.Ceiling((lastAttempt.Value.AddSeconds(NoResponseCooldownSeconds) - now).TotalSeconds))
+            : 0;
     private async Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken)
     {
         return await db.QualityControlQuestions.AsNoTracking().Where(question => question.IsActive)
