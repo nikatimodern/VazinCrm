@@ -902,7 +902,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (s1 == null) return NotFound();
 
-                s1.ExtraDescription = service.GetNoteInvoice(s1.InvoiceId);
+                s1.ExtraDescription = await service.GetNoteInvoiceAsync(s1.InvoiceId, HttpContext.RequestAborted);
 
                 var myCompany = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
                 SepidarFactorViewModel model = new SepidarFactorViewModel() {

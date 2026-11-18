@@ -91,12 +91,13 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public string GetNoteInvoice(int? refId)
+    public async Task<string> GetNoteInvoiceAsync(int invoiceId, CancellationToken ct)
     {
-        var note = sepidarContext.ExtraData
-            .Where(f => f.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && f.EntityRef == refId)
-            .FirstOrDefault().Note;
-        return note;
+        return await sepidarContext.ExtraData
+            .AsNoTracking()
+            .Where(x => x.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && x.EntityRef == invoiceId)
+            .Select(x => x.Note)
+            .FirstOrDefaultAsync(ct) ?? string.Empty;
     }
 
 
