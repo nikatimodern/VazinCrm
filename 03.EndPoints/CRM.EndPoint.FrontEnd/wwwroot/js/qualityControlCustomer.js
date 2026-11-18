@@ -112,6 +112,25 @@
         let historyController = null, historyBusy = false, historyCanManage = false;
         let midnightRefreshTimer = null;
 
+        // The server is authoritative; this countdown only makes the wait visible.
+        function refreshNoResponseCooldowns() {
+            const now = Date.now();
+            queue.querySelectorAll('[data-qc-contact="1"]').forEach(button => {
+                const remaining = Math.max(0,
+                    Math.ceil((Number(button.dataset.qcCooldownUntil || 0) - now) / 1000));
+                const complete = button.closest("[data-qc-complete]")?.dataset.qcComplete === "true";
+                button.disabled = contactBusy || complete || remaining > 0;
+                button.textContent = remaining > 0
+                    ? "عدم پاسخ (" + faNumber.format(remaining) + " ث)" : "عدم پاسخ";
+                button.title = complete ? "تمام اقلام بررسی شده‌اند"
+                    : remaining > 0 ? "ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
+                        : "ثبت یک تلاش تماس بدون پاسخ جدید";
+            });
+        }
+        const noResponseCooldownTimer = setInterval(() => {
+            if (isActive()) refreshNoResponseCooldowns();
+        }, 1000);
+
         function scheduleNextDayRefresh() {
             clearTimeout(midnightRefreshTimer);
             const now = new Date();
@@ -273,6 +292,7 @@
                     const hasReviewed = row.reviewedItems > 0;
                     const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
+                    const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     const color = contactStatus === 2 ? "invalid-phone"
                         : contactStatus === 1 ? "no-answer"
                             : complete ? "complete" : "pending";
@@ -306,11 +326,13 @@
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId) + '">شماره نامعتبر</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
                         + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
-                        + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId) + '">عدم پاسخ</button>'
+                        + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
+                        + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000) + '">عدم پاسخ</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
                         + '</div></article>';
                 }).join("");
+                refreshNoResponseCooldowns();
                 queueFeedback.textContent = total ? "" : "مشتری واجد شرایطی با این فیلتر یافت نشد.";
                 queueCount.textContent = faNumber.format(total) + " مشتری";
                 renderPager();
@@ -831,7 +853,7 @@
             }
             const contactButton = event.target.closest("[data-qc-contact]");
             if (contactButton) {
-                if (loading || contactBusy || !isActive()) return;
+                if (loading || contactBusy || !isActive() || contactButton.disabled) return;
                 contactBusy = true;
                 queue.querySelectorAll("[data-qc-contact]").forEach(button => button.disabled = true);
                 queueFeedback.textContent = "در حال ثبت وضعیت تماس…";
@@ -853,14 +875,22 @@
                     }
                     await loadCustomers();
                 } catch (error) {
-                    if (isActive()) queueFeedback.textContent = "خطا در ثبت وضعیت تماس؛ دوباره تلاش کنید.";
+                    if (isActive()) {
+                        if (Number(error?.response?.status) === 429) {
+                            await loadCustomers();
+                            queueFeedback.textContent = error.response.data?.message
+                                || "برای ثبت دوباره عدم پاسخ، یک دقیقه فاصله لازم است.";
+                        } else queueFeedback.textContent = "خطا در ثبت وضعیت تماس؛ دوباره تلاش کنید.";
+                    }
                 } finally {
                     contactBusy = false;
-                    if (isActive()) queue.querySelectorAll("[data-qc-contact]")
-                        .forEach(button => {
+                    if (isActive()) {
+                        queue.querySelectorAll('[data-qc-contact="2"]').forEach(button => {
                             button.disabled = button.closest("[data-qc-complete]")
                                 ?.dataset.qcComplete === "true";
                         });
+                        refreshNoResponseCooldowns();
+                    }
                 }
                 return;
             }
@@ -974,6 +1004,7 @@
         pageSignal?.addEventListener("abort", () => {
             queueLayoutObserver?.disconnect();
             clearTimeout(midnightRefreshTimer);
+            clearInterval(noResponseCooldownTimer);
             listController?.abort();
             formController?.abort();
             historyController?.abort();
@@ -981,6 +1012,7 @@
         window.addEventListener("pagehide", () => {
             queueLayoutObserver?.disconnect();
             clearTimeout(midnightRefreshTimer);
+            clearInterval(noResponseCooldownTimer);
         }, { once: true });
         scheduleNextDayRefresh();
         loadCustomers();
