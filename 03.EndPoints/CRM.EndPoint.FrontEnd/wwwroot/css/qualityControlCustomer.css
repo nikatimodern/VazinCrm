@@ -647,6 +647,14 @@
     color: var(--qc-primary);
     white-space: nowrap;
 }
+/* Emphasize only the discrepancy count, not the label or the whole review card. */
+#qualityControlCustomerPage .qc-client-count-reviewed .qc-client-discrepancy-count {
+    color: var(--qc-action);
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-count-reviewed .qc-client-discrepancy-count.has-discrepancy {
+    color: var(--qc-danger);
+}
 #qualityControlCustomerPage .qc-client-badge {
     display: inline-flex;
     align-items: center;
