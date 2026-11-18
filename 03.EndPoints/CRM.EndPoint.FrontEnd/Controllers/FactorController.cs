@@ -4225,6 +4225,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     mapping.ExternalSoftwareId,
                     mapping.MappingId,
                     IsMissing = invoice == null,
+                    CanDeleteMissing = User.IsInRole("مدیر ارشد") ||
+                        User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                     ExternalSoftwareTitle = mapping.SoftwareTitle,
                     ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
                     CreationDate = mapping.CreateDateTxt,
@@ -4335,6 +4337,8 @@ public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
                     result.Add(new ExternalSoftwarePreFactorDto {
                         MappingId = mapping.MappingId,
                         IsMissing = externalPreFactor == null,
+                        CanDeleteMissing = User.IsInRole("مدیر ارشد") ||
+                            User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
                         PreFactorNumber = preFactor.SerialNumber.ToString(),
