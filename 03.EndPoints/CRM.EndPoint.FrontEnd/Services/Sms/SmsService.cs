@@ -136,8 +136,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
-            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
-
             var farazIds = items
                 .Select(x => x.MessageId)
                 .Distinct()
@@ -147,13 +145,15 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 .Where(x => farazIds.Contains(x.FarazId))
                 .ToDictionaryAsync(x => x.FarazId, cancellationToken);
 
+            var contacts = await GetContactNamesAsync(
+                items.Where(x => !existingSms.ContainsKey(x.MessageId)).Select(x => x.Mobile),
+                cancellationToken);
+
             foreach (var item in items)
             {
                 if (existingSms.TryGetValue(item.MessageId, out var existing))
                 {
                     existing.Seen = item.Seen;
-                    if (string.IsNullOrWhiteSpace(existing.SenderFullName))
-                        existing.SenderFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile));
                     continue;
                 }
 
@@ -220,8 +220,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             if (items.Count == 0)
                 return;
 
-            var contacts = await GetContactNamesAsync(items.Select(x => x.Mobile), cancellationToken);
-
             var farazIds = items
                 .Select(x => x.MessageId)
                 .Distinct()
@@ -231,14 +229,16 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
                 .Where(x => farazIds.Contains(x.FarazId))
                 .ToDictionaryAsync(x => x.FarazId, cancellationToken);
 
+            var contacts = await GetContactNamesAsync(
+                items.Where(x => !existingSms.ContainsKey(x.MessageId)).Select(x => x.Mobile),
+                cancellationToken);
+
             foreach (var item in items)
             {
                 if (existingSms.TryGetValue(item.MessageId, out var existing))
                 {
                     existing.DeliveryState = item.DeliveryState;
                     existing.DeliveryStateTxt = item.DeliveryStateTxt;
-                    if (string.IsNullOrWhiteSpace(existing.ReceivedFullName))
-                        existing.ReceivedFullName = contacts.GetValueOrDefault(TextService.NormalizeIranMobile(item.Mobile));
                     continue;
                 }
 
@@ -268,40 +268,6 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
 
             await db.SaveChangesAsync(cancellationToken);
         }
-
-        public async Task<string[]> SearchContactMobileNumbersAsync(string searchText, CancellationToken ct = default)
-        {
-            if (string.IsNullOrWhiteSpace(searchText))
-                return [];
-
-            var term = searchText.Trim();
-
-            // Only persisted fields may be referenced inside the EF queries.
-            var users = await udb.Users
-                .AsNoTracking()
-                .Where(x => x.PhoneNumber != null &&
-                            ((x.FirstName != null && x.FirstName.Contains(term)) ||
-                             (x.LastName != null && x.LastName.Contains(term)) ||
-                             ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Contains(term)))
-                .Select(x => x.PhoneNumber)
-                .ToListAsync(ct);
-
-            var customers = await db.Customers
-                .AsNoTracking()
-                .Where(x => x.Mobile != null &&
-                            ((x.CompanyName != null && x.CompanyName.Contains(term)) ||
-                             (x.AgentName != null && x.AgentName.Contains(term)) ||
-                             ((x.CompanyName ?? "") + " " + (x.AgentName ?? "")).Contains(term)))
-                .Select(x => x.Mobile)
-                .ToListAsync(ct);
-
-            return users.Concat(customers)
-                .Select(TextService.NormalizeIranMobile)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .ToArray();
-        }
-
 
         public async Task<Dictionary<string, string>> GetContactNamesAsync(IEnumerable<string> mobiles, CancellationToken ct = default)
         {
