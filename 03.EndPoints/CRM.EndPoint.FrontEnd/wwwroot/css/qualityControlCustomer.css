@@ -972,9 +972,6 @@
     flex-wrap: wrap;
     gap: 8px;
 }
-#qualityControlCustomerPage .qc-client-history-heading strong {
-    color: var(--qc-primary);
-}
 #qualityControlCustomerPage .qc-client-history-meta {
     display: flex;
     flex-wrap: wrap;
