@@ -23,6 +23,45 @@
         const isActive = () => page.isConnected &&
             !(typeof PageRuntime !== "undefined" && PageRuntime.current?.signal?.aborted);
 
+        // Technical failures belong in DevTools; users only receive actionable messages.
+        function mappingFailure(action, error, message) {
+            console.error("[ExternalSoftware/Mapping] " + action, error);
+            if (isActive()) toastifyError(message);
+        }
+
+        function friendlyMappingError(error, fallback) {
+            const status = error?.response?.status;
+            if (status === 400) return "اطلاعات انتخاب‌شده معتبر نیست؛ موارد انتخابی را بررسی کنید.";
+            if (status === 403) return "برای انجام این عملیات دسترسی ندارید.";
+            if (status === 404) return "رکورد موردنظر پیدا نشد؛ فهرست را تازه‌سازی کنید.";
+            if (status === 409) return "این ارتباط با اطلاعات قبلی تداخل دارد؛ فهرست را تازه‌سازی کنید.";
+            if (status >= 500) return "در پردازش درخواست خطایی رخ داد؛ دوباره تلاش کنید.";
+            if (!error?.response) return "ارتباط با سرور برقرار نشد؛ اتصال را بررسی کنید.";
+            return fallback;
+        }
+
+        async function mappingRequest(options, action, message, relevant = isActive) {
+            let httpError = false;
+            try {
+                const result = await sendApiRequest({
+                    ...options,
+                    showError: false,
+                    onError(error) {
+                        httpError = true;
+                        console.error("[ExternalSoftware/Mapping] " + action, error);
+                        if (relevant()) toastifyError(friendlyMappingError(error, message));
+                    }
+                });
+                if (result === null && !httpError && relevant())
+                    mappingFailure(action, new Error("Request completed without response or HTTP error"), message);
+                return result;
+            } catch (error) {
+                console.error("[ExternalSoftware/Mapping] " + action, error);
+                if (relevant()) toastifyError(message);
+                return null;
+            }
+        }
+
         const statusNames = {
             saved:"ثبت‌شده", pending:"آماده ثبت", customerConflict:"تعارض مشتری",
             ambiguous:"تطبیق مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
@@ -697,12 +736,12 @@
             updateSummary();
             savedRoot.replaceChildren();
             feedback("saved", "در حال خواندن ارتباط‌های ثبت‌شده…");
-            const result = await sendApiRequest({
+            const result = await mappingRequest({
                 url: "/ExternalSoftware/GetSavedExternalMappings",
                 params: { softwareId, mapType: model.type || undefined, search: model.search,
                     page: model.page, pageSize: model.size },
                 showLoading: false, timeout: 90000
-            });
+            }, "دریافت ارتباط‌های ثبت‌شده", "فهرست ارتباط‌ها دریافت نشد؛ دوباره تلاش کنید.");
             if (!isActive() || request !== model.request || softwareId !== state.softwareId) return;
             if (!result) {
                 feedback("saved", "دریافت ارتباط‌های ثبت‌شده ناموفق بود.", true);
@@ -738,18 +777,21 @@
             const deleteButton = savedCard?.querySelector("[data-delete-mapping]");
             if (deleteButton) deleteButton.disabled = true;
 
-            const result = await sendApiRequest({
+            const result = await mappingRequest({
                 url: "/ExternalSoftware/DeleteExternalMapping",
                 method: "POST",
                 headers: { "RequestVerificationToken": token },
                 data: { softwareId, mappingId: row.mappingId },
                 timeout: 60000,
                 successMsg: null
-            });
+            }, "حذف ارتباط", "ارتباط حذف نشد؛ دوباره تلاش کنید.");
             state.deleting = false;
             if (!isActive() || softwareId !== state.softwareId) return;
 
             if (!result?.deleted) {
+                if (result !== null)
+                    mappingFailure("حذف ارتباط", new Error("Unexpected delete response: " + JSON.stringify(result)),
+                        "ارتباط حذف نشد؛ دوباره تلاش کنید.");
                 if (deleteButton) deleteButton.disabled = false;
                 return;
             }
@@ -768,10 +810,10 @@
             updateSummary();
             renderProposals();
 
-            const options = await sendApiRequest({
+            const options = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions",
                 showLoading: false
-            });
+            }, "دریافت تنظیمات تطبیق", "اطلاعات صفحه تطبیق دریافت نشد؛ صفحه را تازه‌سازی کنید.");
             if (!isActive() || softwareId !== state.softwareId) return;
             if (options) {
                 state.counts = options.counts || [];
@@ -790,11 +832,11 @@
             updateSummary();
             proposalRoot.replaceChildren();
             feedback("proposal", "در حال محاسبه تطبیق‌های " + state.softwareTitle + "…");
-            const result = await sendApiRequest({
+            const result = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingReview",
                 params: { softwareId },
                 showLoading: false, timeout: 180000
-            });
+            }, "محاسبه پیشنهادها", "محاسبه پیشنهادها انجام نشد؛ دوباره تلاش کنید.");
             if (!isActive() || softwareId !== state.softwareId || request !== model.request) return;
             model.calculating = false;
             if (!result) {
@@ -850,8 +892,9 @@
                 ...[5, 6, 10, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
-                toastifyError("امکان ثبت ارتباط برای بعضی از موارد انتخاب‌شده وجود ندارد.");
-                return;
+                mappingFailure("دسته‌بندی ثبت ارتباط", new Error("Selected map types are not supported"),
+                    "نوع یکی از ارتباط‌های انتخاب‌شده پشتیبانی نمی‌شود.");
+                return false;
             }
 
             const agreed = await confirmAlert({
@@ -862,7 +905,7 @@
                     "ارتباط‌ها پس از اعتبارسنجی دو رکورد در CRM ثبت می‌شوند.",
                 icon: "question", confirmText: "ثبت ارتباط", cancelText: "انصراف"
             });
-            if (!agreed) return;
+            if (!agreed) return null;
 
             const softwareId = state.softwareId;
             state.processing = true;
@@ -874,21 +917,26 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 6, 4, 0, 1, 2, 3]) {
+                for (const groupType of [5, 6, 10, 4, 0, 1, 2, 3]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
                         feedback("proposal", "در حال ثبت ارتباط‌ها: " +
                             format.format(savedCount) + " از " + format.format(items.length));
-                        const result = await sendApiRequest({
+                        const result = await mappingRequest({
                             url: "/ExternalSoftware/SaveSelectedExternalMappings",
                             method: "POST",
                             headers: { "RequestVerificationToken": token },
                             data: { externalSoftwareId: softwareId, items: batch },
                             timeout: 120000, successMsg: null
-                        });
+                        }, "ثبت ارتباط", "ارتباط ثبت نشد؛ دوباره تلاش کنید.");
                         if (result?.count !== batch.length) {
                             failed = true;
+                            if (result !== null)
+                                mappingFailure("ثبت ارتباط", new Error(
+                                    "Unexpected save response for mapType " + groupType +
+                                    ": expected " + batch.length + ", received " + JSON.stringify(result)),
+                                    "ثبت ارتباط کامل نشد؛ فهرست را تازه‌سازی کنید.");
                             break;
                         }
                         savedCount += result.count;
@@ -905,6 +953,7 @@
                 }
             } catch (error) {
                 failed = true;
+                mappingFailure("ثبت ارتباط", error, "ارتباط ثبت نشد؛ دوباره تلاش کنید.");
                 // Earlier batches may already have been committed. Report their count.
             } finally {
                 state.processing = false;
@@ -925,9 +974,9 @@
                 state.proposal.visible = [];
                 updateProposalTabs();
                 renderProposals();
-                const options = await sendApiRequest({
+                const options = await mappingRequest({
                     url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
-                });
+                }, "دریافت تنظیمات تطبیق", "اطلاعات صفحه تطبیق دریافت نشد؛ صفحه را تازه‌سازی کنید.");
                 if (options) state.counts = options.counts || [];
                 fillTypes("saved");
                 updateSummary();
@@ -952,14 +1001,17 @@
             const key = state.softwareId + ":" + row.mapType + ":" + id;
             if (state.preview.has(key)) return;
             const softwareId = state.softwareId;
-            const result = await sendApiRequest({
+            const result = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingTargetDetails",
                 params: { softwareId, mapType: row.mapType, targetId: Number(id) },
                 showLoading: false, showError: false, timeout: 30000
-            });
+            }, "بررسی معادل انتخاب‌شده", "اطلاعات معادل انتخاب‌شده دریافت نشد.");
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
             if (result?.target) state.preview.set(key, result.target);
-            else toastifyError("معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
+            else if (result !== null)
+                mappingFailure("بررسی معادل انتخاب‌شده",
+                    new Error("Target details missing from response"),
+                    "معادل انتخاب‌شده در نرم‌افزار مقصد پیدا نشد.");
             refreshProposalCard(row);
             updateSelection();
         }
@@ -1098,9 +1150,9 @@
 
         async function refreshSaved() {
             const softwareId = state.softwareId;
-            const options = await sendApiRequest({
+            const options = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
-            });
+            }, "دریافت تنظیمات تطبیق", "اطلاعات صفحه تطبیق دریافت نشد؛ صفحه را تازه‌سازی کنید.");
             if (!isActive() || softwareId !== state.softwareId) return;
             if (options) {
                 state.counts = options.counts || [];
@@ -1135,17 +1187,22 @@
             const softwareId = state.softwareId;
             const request = ++state.editRequest;
             try {
-                const result = await sendApiRequest({
+                const result = await mappingRequest({
                     url: "/ExternalSoftware/GetExternalMappingForEdit",
                     params: { softwareId, mappingId: row.mappingId },
                     showLoading: false, timeout: 30000
-                });
-                if (!isActive() || softwareId !== state.softwareId ||
-                    request !== state.editRequest || !result?.mappingId)
+                }, "دریافت اطلاعات ویرایش", "اطلاعات ارتباط برای ویرایش دریافت نشد.");
+                if (!isActive() || softwareId !== state.softwareId || request !== state.editRequest)
                     return;
+                if (result === null) return;
+                if (!result?.mappingId) {
+                    mappingFailure("دریافت اطلاعات ویرایش", new Error("Response missing mappingId"),
+                        "اطلاعات ارتباط ناقص است؛ فهرست را تازه‌سازی کنید.");
+                    return;
+                }
                 openManualMapping(result);
-            } catch {
-                toastifyError("اطلاعات ارتباط برای ویرایش دریافت نشد.");
+            } catch (error) {
+                mappingFailure("بازکردن فرم ویرایش", error, "اطلاعات ارتباط برای ویرایش دریافت نشد.");
             }
         }
 
@@ -1268,7 +1325,7 @@
                         return;
                     }
                     try {
-                        const result = await sendApiRequest({
+                        const result = await mappingRequest({
                             url: "/ExternalSoftware/GetManualMappingOptions",
                             params: {
                                 softwareId, ...type, side,
@@ -1277,7 +1334,7 @@
                             showLoading: false,
                             showError: false,
                             timeout: 30000
-                        });
+                        }, "جستجوی رکوردها", "نتایج جستجو دریافت نشد؛ دوباره تلاش کنید.", () => isActive() && state.manualOpen && softwareId === state.softwareId && request === state.manualRequests[side]);
                         if (!isActive() || !state.manualOpen || softwareId !== state.softwareId ||
                             request !== state.manualRequests[side] ||
                             manualSelects[side] !== instance) {
@@ -1285,8 +1342,9 @@
                             return;
                         }
                         if (!result?.options) {
-                            manualFeedback("جستجوی " + (isCrm ? "CRM" : state.softwareTitle) +
-                                " ناموفق بود؛ دوباره تلاش کنید.", true);
+                            if (result !== null)
+                                mappingFailure("جستجوی رکوردها", new Error("Response missing options"),
+                                    "نتایج جستجو معتبر نیست؛ دوباره تلاش کنید.");
                             callback();
                             return;
                         }
@@ -1299,10 +1357,10 @@
                             isVendor: option.isVendor === true,
                             isBroker: option.isBroker === true
                         })));
-                    } catch {
-                        if (state.manualOpen && request === state.manualRequests[side]) {
-                            manualFeedback("دریافت نتایج جستجو انجام نشد.", true);
-                        }
+                    } catch (error) {
+                        console.error("[ExternalSoftware/Mapping] نمایش نتایج جستجو", error);
+                        if (isActive() && state.manualOpen && request === state.manualRequests[side])
+                            toastifyError("نمایش نتایج جستجو انجام نشد؛ دوباره تلاش کنید.");
                         callback();
                     }
                 },
@@ -1422,8 +1480,7 @@
             if (!state.manualEditing) {
                 const success = await save([item]);
                 if (success) closeManualMapping();
-                else if (state.manualOpen)
-                    manualFeedback("ارتباط ثبت نشد؛ خطای ثبت را بررسی کنید.", true);
+                // The save handler reports failures through Console and Toastify.
                 manualSubmitState();
                 return;
             }
@@ -1435,7 +1492,7 @@
             get("lmrManualConfirmText").textContent = "در حال ذخیره…";
             manualSubmitState();
             try {
-                const result = await sendApiRequest({
+                const result = await mappingRequest({
                     url: "/ExternalSoftware/UpdateExternalMapping",
                     method: "POST",
                     headers: { "RequestVerificationToken": token },
@@ -1450,10 +1507,14 @@
                     },
                     timeout: 120000,
                     successMsg: null
-                });
+                }, "ویرایش ارتباط", "تغییرات ارتباط ذخیره نشد؛ دوباره تلاش کنید.");
                 updated = result?.updated === true;
-            } catch {
-                // The request helper displays server-side validation errors.
+                if (!updated && result !== null)
+                    mappingFailure("ویرایش ارتباط", new Error(
+                        "Unexpected update response: " + JSON.stringify(result)),
+                        "تغییرات ارتباط ذخیره نشد؛ فهرست را تازه‌سازی کنید.");
+            } catch (error) {
+                mappingFailure("ویرایش ارتباط", error, "تغییرات ارتباط ذخیره نشد؛ دوباره تلاش کنید.");
             } finally {
                 state.processing = false;
                 // Keep the destination fixed until this modal is closed.
@@ -1462,11 +1523,7 @@
             }
 
             if (!isActive() || softwareId !== state.softwareId) return;
-            if (!updated) {
-                if (state.manualOpen)
-                    manualFeedback("تغییرات ذخیره نشد؛ خطای نمایش‌داده‌شده را بررسی کنید.", true);
-                return;
-            }
+            if (!updated) return;
 
             closeManualMapping();
             toastifySuccess("تغییرات ارتباط ذخیره شد.");
@@ -1488,9 +1545,9 @@
 
         (async () => {
             feedback("saved", "در حال دریافت نرم‌افزارهای خارجی…");
-            const response = await sendApiRequest({
+            const response = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingWorkspaceOptions", showLoading: false
-            });
+            }, "دریافت تنظیمات تطبیق", "اطلاعات صفحه تطبیق دریافت نشد؛ صفحه را تازه‌سازی کنید.");
             if (!isActive()) return;
             if (!response) {
                 feedback("saved", "فهرست نرم‌افزارها دریافت نشد.", true);
