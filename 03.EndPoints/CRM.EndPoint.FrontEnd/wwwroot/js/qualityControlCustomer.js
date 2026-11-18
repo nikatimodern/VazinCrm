@@ -902,6 +902,14 @@
         statusFilter.addEventListener("change", () => loadCustomers(true));
         sortControl.addEventListener("change", () => loadCustomers(true));
         pageSize.addEventListener("change", () => loadCustomers(true));
+        page.querySelector("#qcCustomerClearFilters").addEventListener("click", () => {
+            search = "";
+            searchInput.value = "";
+            statusFilter.value = "";
+            sortControl.value = "pending";
+            pageSize.value = "5";
+            loadCustomers(true);
+        });
         page.querySelector(".qc-client-overview").addEventListener("click", event => {
             const button = event.target.closest("[data-qc-card-status]");
             if (!button) return;
