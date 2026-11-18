@@ -6,6 +6,7 @@ public class ExternalSoftwarePreFactorDto
 {
     public Guid MappingId { get; set; }
     public bool IsMissing { get; set; }
+    public bool CanDeleteMissing { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     public string ExternalSoftwareTitle { get; set; } = string.Empty;
 
