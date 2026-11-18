@@ -140,10 +140,10 @@
 }
 #qualityControlCustomerPage .qc-client-overview-breakdown strong { font-weight: 700; }
 #qualityControlCustomerPage .qc-client-pending-breakdown {
-    gap: 3px 10px;
+    gap: 3px 9px;
     align-content: start;
 }
-#qualityControlCustomerPage .qc-client-pending-breakdown > span:first-child {
+#qualityControlCustomerPage .qc-client-pending-customers {
     flex-basis: 100%;
 }
 #qualityControlCustomerPage .qc-client-followup-stats {
