@@ -352,7 +352,7 @@
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     const isLastReviewed = lastReviewedCustomerId === String(row.customerId).toLowerCase()
-                        && Date.now() < lastReviewedHighlightUntil;
+                        && (focusScrollPending || Date.now() < lastReviewedHighlightUntil);
                     // Review completion remains independent from contact history.
                     const color = complete ? "complete" : "pending";
                     const label = complete ? "تکمیل‌شده" : "نیازمند بررسی";
@@ -417,6 +417,7 @@
                     focusScrollPending = false;
                     const card = queue.querySelector(".qc-client-last-reviewed");
                     if (card) {
+                        lastReviewedHighlightUntil = Date.now() + 5000;
                         queue.scrollTop = 0;
                         card.scrollIntoView({
                             block: "nearest",
