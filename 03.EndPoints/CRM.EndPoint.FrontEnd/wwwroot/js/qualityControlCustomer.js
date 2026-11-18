@@ -441,33 +441,32 @@
                             block: "nearest",
                             behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                         });
+                        // End the focus only when the 5-second outline animation finishes.
+                        // A timeout is retained for reduced-motion or unsupported animations.
                         clearTimeout(lastReviewedHighlightTimer);
-                        lastReviewedHighlightTimer = setTimeout(() => {
-                            queue.querySelectorAll(".qc-client-last-reviewed").forEach(item => {
-                                if (item.classList.contains("qc-client-temporary-complete")) {
-                                    item.classList.add("qc-client-temporary-leaving");
-                                    let removed = false;
-                                    const remove = () => {
-                                        if (removed) return;
-                                        removed = true;
-                                        const wasVisible = item.isConnected;
-                                        item.remove();
-                                        if (wasVisible && !total && isActive()
-                                            && !queue.querySelector(".qc-client-card")) {
-                                            queueFeedback.textContent =
-                                                "مشتری واجد شرایطی با این فیلتر یافت نشد.";
-                                        }
-                                    };
-                                    item.addEventListener("animationend", remove, { once: true });
-                                    setTimeout(remove, 320); // Reduced-motion fallback
-                                } else {
-                                    item.classList.remove("qc-client-last-reviewed");
-                                    item.querySelector(".qc-client-last-reviewed-tag")?.remove();
-                                }
-                            });
-                            temporaryCompletedCustomerCard = null;
+                        let focusFinished = false;
+                        const finishFocus = () => {
+                            if (focusFinished || !isActive() || !card.isConnected) return;
+                            focusFinished = true;
+                            clearTimeout(lastReviewedHighlightTimer);
                             lastReviewedHighlightTimer = null;
-                        }, Math.max(0, lastReviewedHighlightUntil - Date.now()));
+                            card.classList.remove("qc-client-last-reviewed");
+                            card.querySelector(".qc-client-last-reviewed-tag")?.remove();
+                            if (card.classList.contains("qc-client-temporary-complete")) {
+                                // The server has already excluded this fully reviewed customer
+                                // from the current filter (e.g. "نیازمند بررسی").
+                                card.remove();
+                                if (!total && !queue.querySelector(".qc-client-card"))
+                                    queueFeedback.textContent = "مشتری واجد شرایطی با این فیلتر یافت نشد.";
+                            }
+                            temporaryCompletedCustomerCard = null;
+                        };
+                        card.addEventListener("animationend", event => {
+                            if (event.animationName === "qcLastReviewBorderRetract")
+                                finishFocus();
+                        }, { once: true });
+                        lastReviewedHighlightTimer = setTimeout(finishFocus,
+                            Math.max(0, lastReviewedHighlightUntil - Date.now()) + 100);
                     } else {
                         queueFeedback.textContent = "کنترل کیفیت «" + lastReviewedCustomerName
                             + "» ثبت شد؛ این مشتری دیگر با فیلتر فعلی مطابقت ندارد.";
