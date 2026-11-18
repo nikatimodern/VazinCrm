@@ -545,18 +545,6 @@
         background-color: var(--qc-primary-light);
     }
 }
-#qualityControlCustomerPage .qc-client-profile .qc-client-last-reviewed-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    justify-self: start;
-    border-radius: 6px;
-    padding: 3px 6px;
-    background: var(--qc-primary-light);
-    color: var(--qc-primary);
-    font-size: 10px;
-    font-weight: 700;
-}
 /* One visual system for action buttons and informational chips on customer cards. */
 #qualityControlCustomerPage .qc-client-contact-actions {
     display: flex;
