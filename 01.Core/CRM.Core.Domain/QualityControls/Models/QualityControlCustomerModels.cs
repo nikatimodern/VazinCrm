@@ -55,7 +55,6 @@ public sealed class ChangeQualityControlContactHistoryRequest
     public Guid CustomerId { get; set; }
     public Guid HistoryId { get; set; }
     public bool Restore { get; set; }
-    public string? DeleteReason { get; set; }
     public byte[]? RowVersion { get; set; }
 }
 
