@@ -13,18 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Sepidar.Quotations.Entites;
-using CRM.Core.Domain.Sepidar.Invoices.Entities;
-using CRM.Core.Domain.ExternalSoftwares.Entites;
 using System.Threading;
-using System.Data.SqlTypes;
-using CRM.Core.Domain.ASettings.Enums;
-using CRM.Core.Domain.Cashes.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
-using CRM.Core.Domain.Factors.Entities;
-using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Sepidar.Parties.Entities;
-using CRM.Core.Domain.Factors.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
@@ -34,8 +23,6 @@ using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 using CRM.EndPoint.FrontEnd.Services.Sms;
-using CRM.Core.Domain.Deals.Enums;
-using CRM.Core.Domain.Supplies.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -220,7 +207,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             if (request?.EntityIds == null || request.EntityIds.Count == 0 ||
                 request.EntityIds.Any(id => id == Guid.Empty) ||
-                !externalTransferOptions.TryGetRule(request.MapType, out var rule))
+                !externalTransferOptions.TryGetRule(request.MapType, out _))
                 return BadRequest();
 
             try
