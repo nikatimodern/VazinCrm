@@ -972,6 +972,12 @@
                 || event.clientY < rect.top || event.clientY > rect.bottom)
                 cancelHistoryDeleteHold();
         }, pageSignal ? { signal: pageSignal } : undefined);
+        historyEntries.addEventListener("pointerout", event => {
+            const hold = historyDeleteHold;
+            if (hold?.input === "pointer" && hold.inputId === event.pointerId
+                && event.target === hold.button && !hold.button.contains(event.relatedTarget))
+                cancelHistoryDeleteHold();
+        });
         historyEntries.addEventListener("keydown", event => {
             const button = event.target.closest('[data-qc-history-action="delete"]');
             if (!button || !["Enter", " "].includes(event.key)) return;
@@ -984,6 +990,10 @@
             event.preventDefault();
             if (historyDeleteHold?.input === "keyboard"
                 && historyDeleteHold.inputId === event.key) cancelHistoryDeleteHold();
+        });
+        historyEntries.addEventListener("focusout", event => {
+            if (historyDeleteHold?.input === "keyboard"
+                && historyDeleteHold.button === event.target) cancelHistoryDeleteHold();
         });
         historyEntries.addEventListener("click", event => {
             const button = event.target.closest("[data-qc-history-action]");
