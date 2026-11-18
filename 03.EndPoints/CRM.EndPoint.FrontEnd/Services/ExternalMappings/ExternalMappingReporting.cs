@@ -55,7 +55,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             List<MappingReportTargetOption> Options, Guid? MappingId,
             string CreatedAt = null, string CreatedBy = null);
 
-        private sealed record MappingReportTargetOption(int Id, string Title, string Description);
+        private sealed record MappingReportTargetOption(
+            int Id, string Title, string Description,
+            bool? IsCustomer = null, bool? IsEmployee = null,
+            bool? IsVendor = null, bool? IsBroker = null);
 
 
 
@@ -828,7 +831,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             || candidate.Number == "-" ? ""
                             : $"{ExternalCodeLabel(entry.TargetEntity)}: {candidate.Number} | ";
                         return new MappingReportTargetOption(id,
-                            readableTitle, $"{number}شناسه: {id}");
+                            readableTitle, $"{number}شناسه: {id}",
+                            candidate?.IsCustomer, candidate?.IsEmployee,
+                            candidate?.IsVendor, candidate?.IsBroker);
                     }).ToList();
 
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,

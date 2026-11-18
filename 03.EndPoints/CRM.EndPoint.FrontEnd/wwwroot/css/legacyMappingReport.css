@@ -443,6 +443,7 @@
     display:flex;
     flex-direction:column;
     gap:2px;
+    flex:1 1 auto;
     min-width:0;
 }
 .legacy-mapping-report .lmr-choice-text strong {
@@ -694,8 +695,8 @@
     color:#233933;
     overflow-wrap:anywhere;
 }
-/* Saved Party names and active-role badges share one compact line. */
-.legacy-mapping-report .lmr-saved-party-main {
+/* Party names and active-role badges share one compact line in all mapping cards. */
+.legacy-mapping-report .lmr-party-main {
     display:flex;
     align-items:center;
     width:100%;
@@ -704,7 +705,7 @@
     overflow:hidden;
     white-space:nowrap;
 }
-.legacy-mapping-report .lmr-saved-party-main > strong {
+.legacy-mapping-report .lmr-party-main > strong {
     flex:1 1 auto;
     min-width:0;
     overflow:hidden;
@@ -754,7 +755,7 @@
 .legacy-mapping-report .lmr-party-badge-vendor { color:#855a13; background:#fcf3df; border-color:#f2e5c8; }
 .legacy-mapping-report .lmr-party-badge-broker { color:#7047a5; background:#f2ebfb; border-color:#e6daf8; }
 .legacy-mapping-report .lmr-party-badge-none { color:#66757a; background:#f1f3f4; border-color:#e3e8eb; }
-/* Enlarge the badges in saved mapping cards only; keep manual TomSelect compact. */
+/* Keep card badges readable in both tabs; leave manual TomSelect compact. */
 .legacy-mapping-report .lmr-decision-card .lmr-party-badge {
     font-size:11px;
     padding:2px 6px;

@@ -210,6 +210,11 @@
                 ? "مشتری: " + name : name;
         }
 
+        function hasPartyRoleFlags(data) {
+            return data && ["isCustomer", "isEmployee", "isVendor", "isBroker"]
+                .some(field => typeof data[field] === "boolean");
+        }
+
         function partyRoleBadges(data, escapeOption) {
             const roles = [
                 ["isCustomer", "مشتری", "customer"],
@@ -246,16 +251,13 @@
                 details.push('شناسه: ' + escape(side.id));
             const numberText = details.length
                 ? '<small>' + details.join(' | ') + '</small>' : "";
-            // Party flags are provided only for actual Party records. Restrict badges
-            // to saved external mappings; other entity types keep their current UI.
-            const hasPartyRoles = !crm && row.status === "saved" &&
-                ["isCustomer", "isEmployee", "isVendor", "isBroker"]
-                    .some(field => typeof side[field] === "boolean");
+            // Role flags exist only on actual Sepidar Party records.
+            const hasPartyRoles = !crm && hasPartyRoleFlags(side);
             const title = escape(sideDisplayName(row, side, crm));
             const name = '<strong' + (hasPartyRoles ? ' title="' + title + '"' : '') +
                 '>' + title + '</strong>';
             const main = hasPartyRoles
-                ? '<div class="lmr-saved-party-main">' + name +
+                ? '<div class="lmr-party-main">' + name +
                   '<span class="lmr-party-badges" aria-label="نقش‌های شخص در سپیدار">' +
                   partyRoleBadges(side, escape) + '</span></div>'
                 : name;
@@ -285,11 +287,18 @@
                     const detail = crmSide
                         ? (code && code !== "-" ? codeLabel + ': ' + code : "")
                         : (item.description || 'شناسه: ' + id);
+                    const escapedTitle = escape(show(title));
+                    const hasPartyRoles = !crmSide && hasPartyRoleFlags(item);
+                    const nameContent = hasPartyRoles
+                        ? '<span class="lmr-party-main"><strong title="' + escapedTitle +
+                          '">' + escapedTitle + '</strong>' +
+                          '<span class="lmr-party-badges" aria-label="نقش‌های شخص در سپیدار">' +
+                          partyRoleBadges(item, escape) + '</span></span>'
+                        : '<strong>' + escapedTitle + '</strong>';
                     return '<label class="lmr-choice' +
                         (selected && canChoose ? ' is-picked' : '') +
                         (!canChoose ? ' is-readonly' : '') + '">' +
-                        choice + '<span class="lmr-choice-text"><strong>' +
-                        escape(show(title)) + '</strong>' +
+                        choice + '<span class="lmr-choice-text">' + nameContent +
                         (detail ? '<small>' + escape(detail) + '</small>' : '') +
                         '</span></label>';
                 }).join("") + '</div>';
