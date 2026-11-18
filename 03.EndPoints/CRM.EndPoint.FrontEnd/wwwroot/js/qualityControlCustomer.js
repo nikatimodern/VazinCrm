@@ -26,6 +26,10 @@
         const progressTrack = page.querySelector("#qcSummaryProgressTrack");
         const unreviewedCount = page.querySelector("#qcSummaryUnreviewedItems");
         const pausedCount = page.querySelector("#qcSummaryPausedItems");
+        const pendingTotalItems = page.querySelector("#qcSummaryPendingTotalItems");
+        const pendingTotalCustomers = page.querySelector("#qcSummaryPendingTotalCustomers");
+        const reviewedTotalCustomers = page.querySelector("#qcSummaryReviewedTotalCustomers");
+        const unfinishedCustomersCount = page.querySelector("#qcSummaryUnfinishedCustomers");
         const pages = page.querySelector("#qcCustomerPages");
         const modal = page.querySelector("#qcCustomerReviewModal");
         const historyModal = page.querySelector("#qcContactHistoryModal");
@@ -212,6 +216,15 @@
                     const pausedItems = Math.max(0, unreviewedItems - actionableItems);
                     unreviewedCount.textContent = faNumber.format(unreviewedItems);
                     pausedCount.textContent = faNumber.format(pausedItems);
+                    pendingTotalItems.textContent = faNumber.format(allItems);
+                    // The global total includes every eligible customer regardless of
+                    // the selected status filter, search or current page.
+                    const allCustomers = Math.max(0, Number(result.total) || 0);
+                    const completedCustomers = Math.max(0, Number(result.summary.completedCustomers) || 0);
+                    const unfinishedCustomers = Math.max(0, allCustomers - completedCustomers);
+                    unfinishedCustomersCount.textContent = faNumber.format(unfinishedCustomers);
+                    pendingTotalCustomers.textContent = faNumber.format(allCustomers);
+                    reviewedTotalCustomers.textContent = faNumber.format(allCustomers);
                     const percent = allItems > 0
                         ? Math.min(100, Math.round(100 * checkedItems / allItems))
                         : 0;
