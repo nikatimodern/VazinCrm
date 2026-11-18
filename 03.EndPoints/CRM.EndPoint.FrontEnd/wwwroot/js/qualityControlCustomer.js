@@ -130,11 +130,6 @@
                 const showTimer = remaining > 0 && !complete;
                 button.disabled = contactBusy || complete || remaining > 0;
 
-                const time = button.querySelector("[data-qc-no-answer-time]");
-                if (time) {
-                    time.hidden = !showTimer;
-                    if (showTimer) time.textContent = formatCooldown(remaining);
-                }
                 const track = button.parentElement?.querySelector("[data-qc-no-answer-progress]");
                 if (track) {
                     track.hidden = !showTimer;
@@ -143,9 +138,12 @@
                         if (fill) fill.style.width = (remainingMs / cooldownDurationMs * 100) + "%";
                     }
                 }
-                button.title = complete ? "تمام اقلام بررسی شده‌اند"
-                    : showTimer ? "ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
-                        : "ثبت یک تلاش تماس بدون پاسخ جدید";
+                button.title = complete ? "عدم پاسخ؛ تمام اقلام بررسی شده‌اند"
+                    : showTimer ? "عدم پاسخ؛ ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
+                        : button.classList.contains("is-selected")
+                            ? "عدم پاسخ ثبت شده؛ ثبت تلاش تماس جدید"
+                            : "عدم پاسخ؛ ثبت یک تلاش تماس بدون پاسخ جدید";
+                button.setAttribute("aria-label", button.title);
             });
         }
         const noResponseCooldownTimer = setInterval(() => {
@@ -313,15 +311,10 @@
                     const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
-                    const color = contactStatus === 2 ? "invalid-phone"
-                        : contactStatus === 1 ? "no-answer"
-                            : complete ? "complete" : "pending";
-                    const label = contactStatus === 2 ? "شماره نامعتبر"
-                        : contactStatus === 1 ? "عدم پاسخ · پیگیری فردا"
-                            : complete ? "تکمیل‌شده" : "نیازمند بررسی";
-                    const statusIcon = contactStatus === 2 ? "fa-exclamation-triangle"
-                        : contactStatus === 1 ? "fa-phone-slash"
-                            : complete ? "fa-check-circle" : "fa-clock";
+                    // Review completion remains independent from contact history.
+                    const color = complete ? "complete" : "pending";
+                    const label = complete ? "تکمیل‌شده" : "نیازمند بررسی";
+                    const statusIcon = complete ? "fa-check-circle" : "fa-clock";
                     return '<article role="listitem" class="qc-client-card" data-qc-complete="' + complete + '">'
                         + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
@@ -343,22 +336,26 @@
                         + '<div class="qc-client-contact-actions">'
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
                         + '<span class="qc-client-no-answer-action">'
-                        + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
-                        + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
+                        + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
+                        + (contactStatus === 1 ? ' is-selected' : '') + '"'
+                        + (complete ? ' disabled' : '')
+                        + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
                         + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
-                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i><span>عدم پاسخ</span>'
-                        + '<span class="qc-client-no-answer-time" data-qc-no-answer-time dir="ltr" hidden></span></button>'
+                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i></button>'
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
                         + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
-                        + ' title="مشاهده تاریخچه تماس مشتری" aria-label="مشاهده تاریخچه تماس مشتری">'
-                        + '<i class="fa fa-history" aria-hidden="true"></i></button></span>'
+                        + ' title="تاریخچه تماس" aria-label="مشاهده تاریخچه تماس مشتری">'
+                        + '<i class="fa fa-history" aria-hidden="true"></i></button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
-                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
+                        + '" title="' + (complete ? 'شماره نامعتبر؛ تمام اقلام بررسی شده‌اند'
+                            : contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                        + ' aria-label="' + (contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                        + (complete ? ' disabled' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
-                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> شماره نامعتبر</button>'
+                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></button></span>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + '<i class="fa fa-check-circle" aria-hidden="true"></i> '
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
