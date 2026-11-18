@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
+using CRM.Core.Domain.Cashes.Entities;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
@@ -85,13 +86,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
-                var ExternalMappings = await db.ExternalMappings.Where(f => f.EntityName == "cash").ToListAsync();
+                /*var ExternalMappings = await db.ExternalMappings.Where(f => f.EntityName == "cash").ToListAsync();
                 foreach (var ex in ExternalMappings)
                 {
                     ex.EntityName = nameof(Cash);
                 }
 
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync();*/
 
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
