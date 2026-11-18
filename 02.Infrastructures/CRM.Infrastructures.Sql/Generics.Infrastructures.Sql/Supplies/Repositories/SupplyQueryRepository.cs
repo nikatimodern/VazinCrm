@@ -20,6 +20,7 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Supplies.Models;
 using CRM.Core.Domain.Supplies.Repositories;
+using CRM.Core.Domain.RequestAmounts.Enums;
 using CRM.Core.Domain.Supplies.Rules;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Warehouses.Enums;
@@ -440,11 +441,19 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
     public async Task<SupplyResult> GetSupplyBaseDataAsync(CancellationToken cancellationToken)
     {
         var extraBaseItems = await db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.هزینه_اضافی_تولید)
-            .Select(f => new { Value = f.Id, Text = f.Title }).ToListAsync(cancellationToken);
+            .Select(f => new {
+                Value = f.Id,
+                Text = f.Title
+            }).ToListAsync(cancellationToken);
+        
         var suppliers = await db.Customers.Where(f => f.RoleType == RoleTypeEnum.تامین_کننده || f.RoleType == RoleTypeEnum.تامین_کننده_مشتری)
             .OrderByDescending(f => f.CreateDate)
-            .Select(f => new { Value = f.Id, Text = $"{f.CompanyName ?? ""} {f.AgentName ?? ""} ({f.CustomerCode})".Trim(), })
+            .Select(f => new {
+                Value = f.Id,
+                Text = $"{f.CompanyName ?? ""} {f.AgentName ?? ""} ({f.CustomerCode})".Trim(),
+            })
             .ToListAsync(cancellationToken);
+        
         var model = new {
             extraBaseItems,
             suppliers
@@ -777,8 +786,10 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
 
         var paidAmounts = db.RequestAmountPayments
             .AsNoTracking()
-            .Where(x => x.RequestAmount.SupplierId.HasValue)
-            .GroupBy(x => x.RequestAmount.SupplierId.Value)
+            .Where(x => x.RequestAmount.TargetPersonId.HasValue
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.تنخواه
+                && x.RequestAmount.RequestAmountType != RequestAmountTypeEnum.عودت_به_مشتری)
+            .GroupBy(x => x.RequestAmount.TargetPersonId!.Value)
             .Select(g => new {
                 SupplierId = g.Key,
                 SupplyAmount = 0m,

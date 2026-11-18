@@ -22,7 +22,7 @@ public interface ICustomerRepository
 {
     Task<Customer?> GetAsync(Guid id, bool includeDeleted, bool includeRelations, CancellationToken cancellationToken);
     Task<Customer?> GetByMobileAsync(string mobile, CancellationToken cancellationToken);
-    Task<List<CustomerOption>> SearchOptionsAsync(string search, CancellationToken cancellationToken);
+    Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken cancellationToken);
     Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken cancellationToken);
     Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken cancellationToken);
     Task<List<Customer>> GetDuplicatesAsync(Customer model, CancellationToken cancellationToken);

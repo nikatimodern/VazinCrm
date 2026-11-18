@@ -24,11 +24,18 @@ public sealed class UpdateRequestAmountCommandHandler(IRequestAmountRepository r
         var model = request.Model;
         if (model == null)
             return new(400);
+        if (!Enum.IsDefined(model.RequestAmountType) || !model.TargetPersonId.HasValue || model.TargetPersonId.Value == Guid.Empty)
+            return new(400, "مقصد درخواست وجه معتبر نیست.");
+        var targetName = await repository.GetTargetPersonTextAsync(model.RequestAmountType, model.TargetPersonId.Value, ct);
+        if (string.IsNullOrWhiteSpace(targetName))
+            return new(400, "شخص مقصد با نقش انتخاب‌شده یافت نشد.");
+        model.TargetPersonTxt = targetName;
         await repository.BeginAsync(ct);
         try
         {
             var user = (await actor.GetAsync(ct)).User;
             model.RequestStatusTxt = model.RequestStatus.ToString().Replace("_", " ");
+            model.RequestAmountTypeTxt = model.RequestAmountType.ToString().Replace("_", " ");
             model.DocTypeTxt = model.DocType.ToString().Replace("_", " ");
             model.ModifyDate = DateTime.Now;
             model.ModifyDateTxt = dates.PersianNow();
@@ -36,7 +43,20 @@ public sealed class UpdateRequestAmountCommandHandler(IRequestAmountRepository r
             model.UserModifyID = user.Id;
             var entity = await repository.GetAsync(model.Id, true, ct);
             if (entity == null)
+            {
+                await repository.RollbackAsync(CancellationToken.None);
                 return new(404, "رکوردی یافت نشد!");
+            }
+
+            // Changing the recipient after a payment was recorded would make the
+            // existing destination bank account belong to the wrong person.
+            if (entity.RequestAmountPayments?.Any() == true &&
+                (entity.TargetPersonId != model.TargetPersonId ||
+                 entity.RequestAmountType.GetTargetKind() != model.RequestAmountType.GetTargetKind()))
+            {
+                await repository.RollbackAsync(CancellationToken.None);
+                return new(400, "پس از ثبت پرداخت، تغییر شخص مقصد یا نوع مقصد مجاز نیست.");
+            }
             await audit.LogAsync(entity, model, LogActionEnum.ویرایش, user, ct, ["RequestAmountOrderHeads"]);
             repository.Apply(entity, model);
             entity.RequestAmountSupplyFactor = model.RequestAmountSupplyFactor;

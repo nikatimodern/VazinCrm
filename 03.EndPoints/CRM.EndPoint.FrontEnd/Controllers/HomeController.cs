@@ -85,6 +85,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             try
             {
 
+                var ExternalMappings = await db.ExternalMappings.Where(f => f.EntityName == "cash").ToListAsync();
+                foreach (var ex in ExternalMappings)
+                {
+                    ex.EntityName = nameof(Cash);
+                }
+
+                await db.SaveChangesAsync();
+
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();

@@ -287,7 +287,7 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var recordsTotal = 0;
+        var recordsTotal = await db.BankAccounts.CountAsync(ct);
         var dataF = db.BankAccounts.AsQueryable();
         if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
         {
@@ -317,10 +317,11 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
             dataF = dataF.Where(f => f.BankAccountType == (BankAccountTypeEnum)type);
         }
 
+        // Counts must be computed before Skip/Take for DataTables server-side paging.
+        var recordsFiltered = await dataF.CountAsync(ct);
         if (pageSize != -1)
             dataF = dataF.Skip(skip).Take(pageSize);
         var data = await dataF.ToListAsync(ct);
-        recordsTotal = await dataF.CountAsync(ct);
-        return new(draw, recordsTotal, recordsTotal, data);
+        return new(draw, recordsFiltered, recordsTotal, data);
     }
 }

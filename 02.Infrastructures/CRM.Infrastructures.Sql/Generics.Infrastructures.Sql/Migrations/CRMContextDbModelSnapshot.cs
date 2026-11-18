@@ -360,9 +360,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("CustomerCode")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -394,6 +391,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.ToTable("BankAccounts");
                 });
@@ -4102,12 +4101,6 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasPrecision(20)
                         .HasColumnType("decimal(20,0)");
 
-                    b.Property<Guid?>("CashierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CashierTxt")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CommentText")
                         .HasColumnType("nvarchar(max)");
 
@@ -4147,16 +4140,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestNumber"));
 
+                    b.Property<Guid?>("TargetPersonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetPersonTxt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("RequestStatus")
                         .HasColumnType("int");
 
                     b.Property<string>("RequestStatusTxt")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SupplierTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -4172,6 +4165,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TargetPersonId");
 
                     b.ToTable("RequestAmounts");
                 });
@@ -7050,6 +7045,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Accountancies.Entities.BankAccount", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", "Customer")
+                        .WithMany("BankAccounts")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.CallRecordings.Entities.CallParticipant", b =>
                 {
                     b.HasOne("CRM.Core.Domain.CallRecordings.Entities.CallRecording", "CallRecording")
@@ -7983,6 +7988,8 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
             modelBuilder.Entity("CRM.Core.Domain.Customers.Entities.Customer", b =>
                 {
                     b.Navigation("Accountancies");
+
+                    b.Navigation("BankAccounts");
 
                     b.Navigation("Contacts");
 

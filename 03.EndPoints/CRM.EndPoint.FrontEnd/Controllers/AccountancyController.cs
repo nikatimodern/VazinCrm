@@ -92,7 +92,9 @@ public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
         return Ok(await dispatcher.QueryAsync(new GetAccountanciesTableQuery(await ReadTableAsync(ct), model.ToApplicationFilter(), model.AccType, model.PayType), ct));
     }
 
+    [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> GetAllBankAccountJson(BankAccountTypeEnum? type = null, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetBankAccountOptionsQuery(type), ct));
+    [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> GetAllBankAccount(CancellationToken ct)
     {
         var form = await Request.ReadFormAsync(ct);
@@ -100,16 +102,20 @@ public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
         return Ok(await dispatcher.QueryAsync(new GetBankAccountsTableQuery(await ReadTableAsync(ct), model?._type), ct));
     }
 
+    [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> GetBankAccount(Guid id, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetBankAccountDetailsQuery(id), ct));
     public async Task<IActionResult> DelAccountancy(Guid id, CancellationToken ct) => Map(await dispatcher.CommandAsync(new DelAccountancyCommand(id), ct));
     [HttpGet]
     public async Task<IActionResult> AddInvoiceWalletToPf(Guid id, Guid pfId, CancellationToken ct) => Map(await dispatcher.CommandAsync(new AddInvoiceWalletToPfCommand(id, pfId), ct));
-    [HttpPost]
+
+    // All mutations of a bank account require the same financial-management roles.
+    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> UpBankAccount([FromBody] BankAccount model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new UpBankAccountCommand(model), ct));
-    [HttpPost]
+    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> AddBankAccount([FromBody] BankAccount model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new AddBankAccountCommand(model), ct));
-    [HttpPost]
+    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> ChangeActiveBankAccount([FromBody] BankAccount model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new ChangeActiveBankAccountCommand(model), ct));
+    [Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> DelBankAccountItem(Guid id, CancellationToken ct) => Map(await dispatcher.CommandAsync(new DelBankAccountItemCommand(id), ct));
     [HttpPost]
     public async Task<IActionResult> AcceptAccountancy([FromQuery] AccStatusEnum status, [FromBody] DescriptionIdVModel model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new AcceptAccountancyCommand(status, model.Id, model.Description), ct));

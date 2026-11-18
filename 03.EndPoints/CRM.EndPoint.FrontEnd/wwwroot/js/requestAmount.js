@@ -175,8 +175,31 @@ async function showEditPaymentModal(id) {
     });
     if (!data) return;
     
-    await showAttachReqAmount();
+    // Resolve the requests attached to this payment, not a stale request from
+    // the last payment-list modal. This also restores grouped-edit state.
+    const linkedRequests = await sendApiRequest({
+        url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
+        params: { paymentId: id },
+        showLoading: false,
+    });
+    if (!Array.isArray(linkedRequests) || !linkedRequests.length) {
+        toastifyError("درخواست‌های مرتبط با این پرداخت یافت نشد.");
+        return;
+    }
+
     paymentData = data.payment;
+    reqAmountId = linkedRequests[0].id;
+    isGroupPayment = linkedRequests.length > 1;
+    requestAmountListData = isGroupPayment ? linkedRequests : null;
+    requestAmountPaymentMap = isGroupPayment
+        ? linkedRequests.map(item => ({
+            paymentId: id,
+            requestAmountId: item.id,
+            amount: item.requestAmountPayments?.find(payment => String(payment.paymentId).toLowerCase() === String(id).toLowerCase())?.amount ?? 0,
+        }))
+        : [];
+
+    await showAttachReqAmount();
     mySer.convertJsonToForm(paymentData, "reqAmountAttachForm");
     if (paymentData.paymentMode === 1) {
         const targetInputAmount = reqAmountAttachModal.querySelector("input[name='amount']");
@@ -195,16 +218,15 @@ let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal")
 
 let isGroupPayment = false;
 async function showSetAmountPaymentItemModal(filterIds) {
-    isGroupPayment = true;
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/GetRequestsAmountByFilteredIds",
         data: { filterIds },
         successMsg: null,
         onSuccess: (res) => {
+            isGroupPayment = true;
             requestAmountListData = res.data;
-            
-            
+            requestAmountPaymentMap = [];
             createSetAmountPaymentItem(false);
             ModalToggle(reqAmountPaymentModal);
         },
@@ -212,7 +234,6 @@ async function showSetAmountPaymentItemModal(filterIds) {
 }
 
 async function showEditAmountPaymentItemModal() {
-    isGroupPayment = true;
     const data = await sendApiRequest({
         url: "/RequestAmount/GetRequestAmountsWithPaidAmountByPayment",
         params: { paymentId: paymentData.id },
@@ -220,8 +241,8 @@ async function showEditAmountPaymentItemModal() {
     
     if (!data) return;
     
+    isGroupPayment = true;
     requestAmountListData = data;
-    
     createSetAmountPaymentItem(true);
     ModalToggle(reqAmountPaymentModal);
 }
@@ -305,25 +326,114 @@ async function goToStepAttachReqAmount() {
 }
 
 function cancelRequestAmountPaymentModal() {
-    isGroupPayment = false;
+    // While editing a grouped payment, cancelling the amount editor should
+    // return to the attachment modal without turning the payment into a single one.
+    if (!reqAmountAttachModal?.classList.contains("show")) {
+        isGroupPayment = false;
+        requestAmountPaymentMap = [];
+        requestAmountListData = null;
+    }
     mySer.emptyForm("setAmountPaymentForm");
     ModalToggle(reqAmountPaymentModal, "hide");
 }
 
 
 let isLoadedBankAccounts = false;
-const showAttachReqAmount = async (id) => {
-    if (id) {
-        reqAmountId = id;
+let requestPaymentTargetContext = null;
+
+// A single request is loaded by its ID; grouped payments already have the
+// requests returned by GetRequestsAmountByFilteredIds / GetRequestsByPayment.
+async function resolveRequestPaymentTarget() {
+    const groupedRequests = isGroupPayment && Array.isArray(requestAmountListData)
+        ? requestAmountListData
+        : null;
+    // One destination account cannot represent different recipients in a group payment.
+    if (groupedRequests && (!groupedRequests.length || groupedRequests.some(item =>
+        String(item.targetPersonId || "").toLowerCase() !== String(groupedRequests[0].targetPersonId || "").toLowerCase()
+        || Number(item.requestAmountType === 6 ? 4 : item.requestAmountType === 3 ? 3 : 2)
+            !== Number(groupedRequests[0].requestAmountType === 6 ? 4 : groupedRequests[0].requestAmountType === 3 ? 3 : 2)))) {
+        return null;
     }
+    let request = groupedRequests?.[0] || null;
+
+    if (!request && reqAmountId && !groupedRequests) {
+        const details = await sendApiRequest({
+            url: "/RequestAmount/GetRequestAmount",
+            params: { id: reqAmountId },
+            showLoading: false,
+            showError: false,
+        });
+        request = details?.requestAmount;
+    }
+    if (!request) return null;
+
+    const requestType = Number(request.requestAmountType);
+    // 6: customer refund; 3: petty cash; other types: supplier.
+    const bankAccountType = requestType === 6 ? 4 : requestType === 3 ? 3 : 2;
+    return {
+        bankAccountType,
+        targetPersonId: request.targetPersonId || null,
+        targetPersonTxt: request.targetPersonTxt || "",
+    };
+}
+
+async function refreshRequestAmountBankAccountOptions() {
+    const select = reqAmountAttachModal?.querySelector("select[name='toAccountId']");
+    if (!select) return;
+    const context = requestPaymentTargetContext;
+    const linkedPersonId = context && (context.bankAccountType === 2 || context.bankAccountType === 4)
+        ? context.targetPersonId
+        : null;
+
+    // Remove the previous request's choices before fetching, so a failed
+    // refresh cannot expose accounts from another recipient.
+    if (select.tomselect) {
+        select.tomselect.clear(true);
+        select.tomselect.clearOptions();
+    } else {
+        select.replaceChildren();
+    }
+
+    // Supplier/customer requests show strictly the accounts linked to their
+    // target person. Without a person or linked account, TomSelect is empty.
+    // Petty-cash requests keep the cashier account category.
+    const isPersonTarget = context?.bankAccountType === 2 || context?.bankAccountType === 4;
+    await getAllBankAccounts([
+        {
+            element: select,
+            type: context?.bankAccountType === 3 ? [3] : [],
+            isTomSelect: true,
+            preferredCustomerId: linkedPersonId,
+            onlyLinkedToCustomer: isPersonTarget || !context,
+            autoSelectLinked: Boolean(linkedPersonId),
+        },
+    ], true);
+}
+
+const openNewRequestAmountBankAccount = () => {
+    const context = requestPaymentTargetContext;
+    return toggleAddBankAccountModal({
+        bankAccountType: context?.bankAccountType ?? 2,
+        customerId: context?.bankAccountType === 2 || context?.bankAccountType === 4
+            ? context.targetPersonId
+            : null,
+        customerText: context?.targetPersonTxt || "",
+        onSaved: refreshRequestAmountBankAccountOptions,
+    });
+};
+
+const showAttachReqAmount = async (id) => {
+    if (id) reqAmountId = id;
+
     if (!isLoadedBankAccounts) {
         await getAllBankAccounts([
             { element: "#reqAmountAttachModal select[name='fromAccountId']", type: [1] },
-            { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
         ]);
         isLoadedBankAccounts = true;
     }
-    
+
+    requestPaymentTargetContext = await resolveRequestPaymentTarget();
+    await refreshRequestAmountBankAccountOptions();
     ModalToggle(reqAmountAttachModal, "show");
 };
 
@@ -332,6 +442,11 @@ const cancelReqAmountAttach = () => {
     ModalToggle(reqAmountAttachModal, "hide");
     reqAmountAttachment = [];
     paymentData = {};
+    requestPaymentTargetContext = null;
+    isGroupPayment = false;
+    requestAmountPaymentMap = [];
+    requestAmountListData = null;
+    reqAmountPaymentModal?.querySelector("#setAmountPaymentForm")?.replaceChildren();
     document.getElementById("imageDisplayReqAmountAt").innerHTML = "";
     document.getElementById("reqAmountAttach").value = "";
     mySer.emptyForm("reqAmountAttachForm");
@@ -376,10 +491,10 @@ const submitReqAmountAttach = async () => {
         data: model,
         onSuccess: async (res) => {
             if (res.status === 200) {
+                const wasGroupPayment = isGroupPayment;
                 cancelReqAmountAttach();
-                if (isGroupPayment) {
-                    cancelRequestAmountPaymentModal();
-                    requestSelection.hideSelectionMode();
+                if (wasGroupPayment && typeof requestSelection !== "undefined") {
+                    requestSelection?.hideSelectionMode?.();
                 }
                 if (model.id && paymentTable) {
                     paymentTable.ajax.reload();
@@ -391,46 +506,6 @@ const submitReqAmountAttach = async () => {
 };
 
 
-const addBankAccountModal = document.getElementById("addBankAccountModal");
-function toggleAddBankAccountModal() {
-    mySer.emptyForm("addBankAccountForm");
-    ModalToggle(addBankAccountModal);
-}
-
-async function submitAddBankAccount() {
-    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
-    
-    const cartNumber = addBankAccountModal.querySelector("#cartNumberId").value.trim();
-    const accountNumber = addBankAccountModal.querySelector("#accountNumberId").value.trim();
-    const shebaNumber = addBankAccountModal.querySelector("#shebaNumberId").value.trim();
-    
-    const hasValue = cartNumber || accountNumber || shebaNumber;
-    
-    if (!hasValue) {
-        addBankAccountModal.querySelector("#cartNumberId").focus();
-        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
-        return;
-    }
-    
-    
-    const model = mySer.convertFormToJSON("addBankAccountForm");
-    if (model.shebaNumber?.trim()) {
-        model.shebaNumber = "IR " + model.shebaNumber.trim();
-    }
-    
-    await sendApiRequest({
-        method: "POST",
-        url: "/Accountancy/AddBankAccount",
-        data: model,
-        onSuccess: async () => {
-            toggleAddBankAccountModal();
-            await getAllBankAccounts([
-                { element: "#reqAmountAttachModal select[name='toAccountId']", type: [2, 3], isTomSelect: true },
-            ], true);
-        },
-    });
-}
-
 /*--------------------------------------------------------------------------------*/
 
 const addReqAmountModal = document.getElementById("addRequestAmountModal");
@@ -439,21 +514,24 @@ let requestAmountData = {};
 let isFromOrderHead = false;
 let ohReqAmountId;
 async function showAddRequestAmountModal(ohId, ohNumber) {
-    enableMomentumScrollScope(addReqAmountModal);
+    // Keep the TomSelect dropdown on native scrolling; modal-wide momentum
+    // handlers intercept its wheel events and make the list feel sluggish.
     await setupSelectOptionsReqAmount();
     if (ohId) {
         ohReqAmountId = ohId;
         isFromOrderHead = true;
         requestAmountData.requestAmountType = 1;
         orderHeadsSelectedIds = [ohId];
+        addReqAmountModal.querySelector("#reqAmountOrderHead").value = String(ohNumber ?? "");
         addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = `درخواست پیش پرداخت حواله ${ohNumber}`;
     }
     
     if (ohId || ohReqAmountId) {
         const reqAmountTypeWrapper = addReqAmountModal.querySelector("#requestAmountTypeWrapper");
-        reqAmountTypeWrapper?.remove();
-        /*reqAmountType.value = "1";
-        toggleElementsDisabled(reqAmountType, true);*/
+        reqAmountTypeWrapper?.classList.add("d-none");
+        const typeSelect = addReqAmountModal.querySelector("#requestAmountTypeId");
+        typeSelect.value = "1";
+        typeSelect.dispatchEvent(new Event("change"));
     }
     ModalToggle(addReqAmountModal);
 }
@@ -479,76 +557,114 @@ async function getAllRequestAmountByOrderHead(ohId) {
 
 
 let isSetupReqAmountModal = false;
+let requestTargetKind = "";
+let requestSupplierOptions = [];
+let requestCashierOptions = [];
+let requestSupplierSummaryToken = 0;
+
+function requestTargetSelect() {
+    return addReqAmountModal?.querySelector("#reqAmountTargetPersonId")?.tomselect;
+}
+
+// The option's target kind is generated from RequestAmountTypeEnum on the server.
+function updateRequestAmountTargetField() {
+    const kind = addReqAmountModal.querySelector("#requestAmountTypeId")?.selectedOptions[0]?.dataset.targetKind || "";
+    const wrapper = addReqAmountModal.querySelector("#reqAmountTargetPersonWrapper");
+    const select = addReqAmountModal.querySelector("#reqAmountTargetPersonId");
+    const dropdown = requestTargetSelect();
+    const labels = { supplier: "تأمین‌کننده", cashier: "تنخواه‌دار", customer: "مشتری" };
+    const hasTarget = Boolean(labels[kind]);
+    
+    wrapper.classList.toggle("d-none", !hasTarget);
+    toggleElementsRequired(select, hasTarget);
+    addReqAmountModal.querySelector("#reqAmountTargetPersonLabel").textContent = hasTarget ? `${labels[kind]}:` : "شخص مقصد:";
+    
+    if (requestTargetKind !== kind && dropdown) {
+        requestTargetKind = kind;
+        requestSupplierSummaryToken++;
+        dropdown.clear(true);
+        dropdown.clearOptions();
+        const choices = kind === "supplier" ? requestSupplierOptions
+            : kind === "cashier" ? requestCashierOptions : [];
+        dropdown.addOptions(choices);
+        dropdown.refreshOptions(false);
+        dropdown.settings.placeholder = hasTarget ? `انتخاب ${labels[kind]}` : "انتخاب شخص";
+        dropdown.control_input?.setAttribute("placeholder", dropdown.settings.placeholder);
+        if (kind === "cashier") {
+            const ownCashier = choices.find(x => x.target)?.value;
+            if (ownCashier) dropdown.setValue(ownCashier, true);
+        }
+        addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor").replaceChildren();
+    }
+}
+
+async function renderRequestSupplierSummary(supplierId) {
+    const container = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
+    const token = ++requestSupplierSummaryToken;
+    container.replaceChildren();
+    if (requestTargetKind !== "supplier" || !supplierId) return;
+    
+    const summary = await getSupplierFinancialSummary(supplierId);
+    if (token !== requestSupplierSummaryToken || requestTargetKind !== "supplier"
+        || requestTargetSelect()?.getValue() !== supplierId || !summary) return;
+    
+    const debt = summary.supplierDebt ?? 0;
+    const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
+    const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
+    container.innerHTML = `
+        <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size:12px;color:#666">
+            <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
+                <span>جمع فاکتورها: <b dir="ltr" style="color:#333">${(summary.totalSupplyAmount ?? 0).toLocaleString()}</b> <span class="fs-small">ریال</span></span>
+                <span class="d-none d-sm-inline">|</span>
+                <span>جمع پرداختی‌ها: <b dir="ltr" style="color:#333">${(summary.totalPaidAmount ?? 0).toLocaleString()}</b> <span class="fs-small">ریال</span></span>
+            </div>
+            <div class="px-2 py-1 rounded" style="background:${debtBackground};color:${debtColor}">
+                مانده بدهی: <b dir="ltr">${debt.toLocaleString()}</b> <span class="fs-small">ریال</span>
+            </div>
+        </div>`;
+}
+
 async function setupSelectOptionsReqAmount() {
     if (isSetupReqAmountModal) return;
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    
     const [suppliersData, cashiersData] = await Promise.all([getSupplyBaseData(), getAllCashiers()]);
+    if (!suppliersData || !cashiersData) return;
     
-    const selectSupplier = new TomSelect("#reqAmountSupplierId", {
-        options: suppliersData.suppliers,
-        placeholder: "انتخاب تامین کننده",
+    requestSupplierOptions = suppliersData.suppliers ?? [];
+    requestCashierOptions = cashiersData;
+    
+    new TomSelect("#reqAmountTargetPersonId", {
+        options: [],
+        placeholder: "انتخاب شخص",
         maxItems: 1,
         selectOnTab: true,
-        
-        async onItemAdd(supplierId) {
-            selectSupplier.disable();
-            const supplierSummary = await getSupplierFinancialSummary(supplierId);
-            console.log(supplierSummary);
-            if (supplierSummary !== null) {
-                const debt = supplierSummary.supplierDebt;
-                const debtColor = debt < 0 ? "#b42318" : debt > 0 ? "#16803c" : "#666";
-                const debtBackground = debt < 0 ? "#fff3f3" : debt > 0 ? "#f0faf3" : "#f5f5f5";
-                
-                totalAmountSupFactorElm.innerHTML = `
-                    <div class="d-flex flex-column align-items-end justify-content-center gap-1" style="font-size: 12px;color: #666">
-                        <div class="d-flex flex-column flex-sm-row align-items-end justify-content-end column-gap-3 me-1">
-                            <span>
-                                جمع فاکتورها:
-                                <b dir="ltr" style="color: #333">${(supplierSummary.totalSupplyAmount ?? 0)?.toLocaleString()}</b>
-                                <span class="fs-small">ریال</span>
-                            </span>
-                
-                            <span class="d-none d-sm-inline">|</span>
-                
-                            <span>
-                                جمع پرداختی‌ها:
-                                <b dir="ltr" style="color: #333">${(supplierSummary.totalPaidAmount ?? 0)?.toLocaleString()}</b>
-                                <span class="fs-small">ریال</span>
-                            </span>
-                        </div>
-                
-                        <div class="px-2 py-1 rounded" style="background: ${debtBackground};color: ${debtColor}">
-                            مانده بدهی:
-                            <b dir="ltr">${(debt ?? 0)?.toLocaleString()}</b>
-                            <span class="fs-small">ریال</span>
-                        </div>
-                    </div>
-                `;
-            }
-            selectSupplier.enable();
+        loadThrottle: 300,
+        shouldLoad: query => requestTargetKind === "customer" && query.trim().length > 0,
+        load(query, callback) {
+            if (requestTargetKind !== "customer") return callback();
+            sendApiRequest({
+                url: "/Customer/GetCustomerOp",
+                params: { search: query.trim(), roleType: 1 },
+                showLoading: false,
+            }).then(result => {
+                if (requestTargetKind !== "customer") return callback();
+                callback(Array.isArray(result)
+                    ? result.map(item => ({ value: item.id, text: item.text }))
+                    : []);
+            }).catch(() => callback());
         },
-        
-        onDelete() {
-            totalAmountSupFactorElm.innerHTML = "";
+        onChange(value) {
+            void renderRequestSupplierSummary(value);
         },
     });
-    
-    new TomSelect("#reqAmountCashierId", {
-        options: cashiersData,
-        items: cashiersData.find(i => i.target)?.value,
-        placeholder: "انتخاب تنخواه دار",
-        maxItems: 1,
-        selectOnTab: true,
-    });
-    
     isSetupReqAmountModal = true;
+    updateRequestAmountTargetField();
 }
 
 
 async function getAllCashiers() {
     return await sendApiRequest({
         url: "/Cash/GetAllCashiers",
+        params: { useEntityId: true },
         showLoading: false,
     });
 }
@@ -572,21 +688,23 @@ async function getSupplierFinancialSummary(supplierId) {
 
 async function submitRequestAmountModal() {
     if (!await mySer.CheckValidForm("requestAmountForm")) return;
-    const supplierSelect = addReqAmountModal.querySelector("#reqAmountSupplierId");
-    const cashierSelect = addReqAmountModal.querySelector("#reqAmountCashierId");
-    
     const formData = mySer.convertFormToJSON("requestAmountForm");
+    const targetSelect = requestTargetSelect();
+    const targetPersonId = targetSelect?.getValue() || null;
+    if (!targetPersonId) {
+        targetSelect?.focus();
+        toastifyError("شخص مقصد را انتخاب کنید.");
+        return;
+    }
     const model = {
         ...requestAmountData,
         ...formData,
-        cashierId: formData.cashierId || null,
-        supplierId: formData.supplierId || null,
-        supplierTxt: supplierSelect.selectedOptions[0].innerText,
-        cashierTxt: cashierSelect.selectedOptions[0].innerText,
+        targetPersonId,
+        targetPersonTxt: targetSelect.options[targetPersonId]?.text || "",
         requestAmountSupplyFactor: supplyFactorsSelectedIds.map(id => ({ supplyFactorId: id, requestAmountId: requestAmountData.id })),
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
     };
-    
+    const relatedOrderHeadId = ohReqAmountId;
     await sendApiRequest({
         method: "POST",
         url: model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount",
@@ -595,32 +713,29 @@ async function submitRequestAmountModal() {
             cancelRequestAmountModal();
             await refreshRequestAmountDom();
             const currentPath = window.location.pathname.toLowerCase();
-            if (currentPath.includes("order") && !model.id) {
-                await showAllRequestAmountModal(ohReqAmountId);
+            if (currentPath.includes("order") && !model.id && relatedOrderHeadId) {
+                await showAllRequestAmountModal(relatedOrderHeadId);
             }
         },
     });
 }
 
-
 function cancelRequestAmountModal() {
-    ModalToggle(addReqAmountModal);
+    ModalToggle(addReqAmountModal, "hide");
     mySer.emptyForm("requestAmountForm");
     supplyFactorsSelectedIds = [];
     orderHeadsSelectedIds = [];
     requestAmountData = {};
     isFromOrderHead = false;
-    
-    const ohInputWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const ohInput = addReqAmountModal.querySelector("input#reqAmountOrderHead");
-    ohInputWrapper.classList.add("d-none");
-    toggleElementsRequired(ohInput, false);
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    totalAmountSupFactorElm.innerHTML = "";
-    /*  const reqAmountType = addReqAmountModal.querySelector("#requestAmountTypeId");
-      if (reqAmountType) toggleElementsDisabled(reqAmountType, false);*/
+    ohReqAmountId = null;
+    const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
+    ohWrapper.classList.add("d-none");
+    toggleElementsRequired(addReqAmountModal.querySelector("#reqAmountOrderHead"), false);
+    addReqAmountModal.querySelector("#requestAmountTypeWrapper")?.classList.remove("d-none");
+    addReqAmountModal.querySelector("#reqAmountModalTitleId").textContent = "درخواست وجه";
+    addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor").replaceChildren();
+    updateRequestAmountTargetField();
 }
-
 
 async function showEditRequestAmountModal(id) {
     await showAddRequestAmountModal();
@@ -634,9 +749,21 @@ async function showEditRequestAmountModal(id) {
     const supplyFactorSerials = data.supplyFactorSerials;
     const orderHeadSerials = data.orderHeadSerials;
     
-    mySer.convertJsonToForm(requestAmountData, "requestAmountForm");
-    supplyFactorsSelectedIds = requestAmountData.requestAmountSupplyFactor.map(r => r.supplyFactorId);
-    orderHeadsSelectedIds = requestAmountData.requestAmountOrderHeads.map(r => r.orderHeadId);
+    // Set the type first so its target-entity switch cannot discard the selected person.
+    const typeSelect = addReqAmountModal.querySelector("#requestAmountTypeId");
+    typeSelect.value = String(requestAmountData.requestAmountType);
+    typeSelect.dispatchEvent(new Event("change"));
+    mySer.convertJsonToForm(requestAmountData, "requestAmountForm", ["requestAmountType", "targetPersonId"]);
+    const targetSelect = requestTargetSelect();
+    if (requestAmountData.targetPersonId && targetSelect) {
+        const personId = String(requestAmountData.targetPersonId);
+        if (!targetSelect.options[personId]) {
+            targetSelect.addOption({ value: personId, text: requestAmountData.targetPersonTxt || "شخص مقصد" });
+        }
+        targetSelect.setValue(personId);
+    }
+    supplyFactorsSelectedIds = (requestAmountData.requestAmountSupplyFactor || []).map(r => r.supplyFactorId);
+    orderHeadsSelectedIds = (requestAmountData.requestAmountOrderHeads || []).map(r => r.orderHeadId);
     
     const inpElmSupplyFactor = addReqAmountModal.querySelector("#reqAmountSupplyFactor");
     if (inpElmSupplyFactor) {
@@ -657,46 +784,20 @@ const deleteRequestAmount = async (id) => {
     });
 };
 
-addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", async (e) => {
-    const type = Number(e.target.value);
-    
+addReqAmountModal?.querySelector("select#requestAmountTypeId")?.addEventListener("change", event => {
+    const type = Number(event.target.value);
     const ohWrapper = addReqAmountModal.querySelector("#reqAmountOrderHeadWrapper");
-    const cashierWrapper = addReqAmountModal.querySelector("#reqAmountCashierWrapper");
-    const supplierWrapper = addReqAmountModal.querySelector("#reqAmountSupplierWrapper");
+    const orderHeadInput = ohWrapper.querySelector("input");
+    const isAdvance = type === 1;
     
-    const totalAmountSupFactorElm = addReqAmountModal.querySelector("#reqAmountTotalAmountSupFactor");
-    
-    const toggleField = (wrapper, show) => {
-        const input = wrapper.querySelector("input, select");
-        wrapper.classList.toggle("d-none", !show);
-        toggleElementsRequired(input, show);
-        
-        if (show) {
-            if (wrapper.id === "reqAmountCashierWrapper") {
-                const target = Object.values(input.tomselect.options).find(o => o.target)?.value;
-                if (target) input.tomselect.setValue(target);
-            }
-        } else {
-            if (input?.tomselect) {
-                input.tomselect.clear();
-            }
-            
-            if (wrapper.id === "reqAmountOrderHeadWrapper") {
-                orderHeadsSelectedIds = [];
-                input.value = "";
-            }
-            
-            if (wrapper.id === "reqAmountSupplierWrapper") {
-                totalAmountSupFactorElm.innerHTML = "";
-            }
-        }
-    };
-    
-    toggleField(ohWrapper, type === 1);
-    toggleField(supplierWrapper, type === 1 || type === 2 || type === 4 || type === 5);
-    toggleField(cashierWrapper, type === 3);
+    ohWrapper.classList.toggle("d-none", !isAdvance);
+    toggleElementsRequired(orderHeadInput, isAdvance);
+    if (!isAdvance) {
+        orderHeadsSelectedIds = [];
+        orderHeadInput.value = "";
+    }
+    updateRequestAmountTargetField();
 });
-
 
 const closeDocTypeSelect = (select) => {
     select.classList.add("d-none");
