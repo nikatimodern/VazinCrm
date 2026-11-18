@@ -4,6 +4,8 @@ namespace CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 
 public class ExternalSoftwarePreFactorDto
 {
+    public Guid MappingId { get; set; }
+    public bool IsMissing { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     public string ExternalSoftwareTitle { get; set; } = string.Empty;
 
