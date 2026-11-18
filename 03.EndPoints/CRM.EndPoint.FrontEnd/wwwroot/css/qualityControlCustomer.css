@@ -997,9 +997,16 @@
     flex: 0 0 auto;
     gap: 5px;
 }
+/* Mirror the main menu's perimeter orbit, scoped to history deletion only. */
+@property --qc-history-delete-orbit-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+#qualityControlCustomerPage .qc-client-history-actions { position: relative; }
 #qualityControlCustomerPage .qc-client-history-delete {
     position: relative;
-    overflow: hidden;
+    isolation: isolate;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -1013,30 +1020,73 @@
 #qualityControlCustomerPage .qc-client-history-delete::after {
     content: "";
     position: absolute;
-    inset-inline-start: 0;
-    bottom: 0;
-    width: 0;
-    height: 3px;
-    background: var(--qc-danger);
+    inset: -1px;
+    padding: 2px;
+    border-radius: inherit;
     pointer-events: none;
+    opacity: 0;
+    background: conic-gradient(from var(--qc-history-delete-orbit-angle),
+        transparent 0deg 245deg, var(--qc-danger) 320deg,
+        #fff 338deg, var(--qc-danger) 350deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
 }
 #qualityControlCustomerPage .qc-client-history-delete.is-holding {
     border-color: var(--qc-danger);
     background: color-mix(in srgb, var(--qc-danger) 13%, white);
 }
 #qualityControlCustomerPage .qc-client-history-delete.is-holding::after {
-    animation: qc-contact-history-delete-hold 1s linear forwards;
+    opacity: 1;
+    animation: qcHistoryDeleteOrbit 1s linear forwards;
 }
-@keyframes qc-contact-history-delete-hold {
-    from { width: 0; }
-    to { width: 100%; }
+@keyframes qcHistoryDeleteOrbit {
+    to { --qc-history-delete-orbit-angle: 360deg; }
+}
+/* On successful deletion the button breaks apart into small, non-interactive flecks. */
+#qualityControlCustomerPage .qc-client-history-delete.is-disintegrating {
+    pointer-events: none;
+    animation: qcHistoryDeleteDisintegrate .42s ease-in forwards;
+}
+#qualityControlCustomerPage .qc-client-history-delete.is-disintegrating::after {
+    opacity: 0;
+}
+@keyframes qcHistoryDeleteDisintegrate {
+    0%   { opacity: 1; filter: blur(0); transform: scale(1); }
+    38%  { opacity: .92; filter: blur(.4px); transform: scale(1.07); }
+    100% { opacity: 0; filter: blur(4px); transform: scale(.77); }
+}
+#qualityControlCustomerPage .qc-client-delete-particle {
+    position: absolute;
+    z-index: 3;
+    width: var(--qc-particle-size, 4px);
+    height: var(--qc-particle-size, 4px);
+    border-radius: 1px;
+    pointer-events: none;
+    background: var(--qc-danger);
+    box-shadow: 0 0 4px color-mix(in srgb, var(--qc-danger) 40%, transparent);
+    animation: qcHistoryDeleteDust .42s cubic-bezier(.18, .65, .3, 1) both;
+}
+#qualityControlCustomerPage .qc-client-delete-particle:nth-of-type(3n) {
+    background: var(--qc-danger-light);
+    border: 1px solid var(--qc-danger);
+}
+@keyframes qcHistoryDeleteDust {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+    100% { opacity: 0; transform: translate(var(--qc-particle-x), var(--qc-particle-y))
+                             scale(.25) rotate(var(--qc-particle-rotate)); }
 }
 @media (prefers-reduced-motion: reduce) {
     #qualityControlCustomerPage .qc-client-history-delete.is-holding::after {
         animation: none;
-        width: 100%;
-        opacity: .35;
+        background: var(--qc-danger);
+        opacity: .7;
     }
+    #qualityControlCustomerPage .qc-client-history-delete.is-disintegrating {
+        animation: none;
+        opacity: 0;
+    }
+    #qualityControlCustomerPage .qc-client-delete-particle { animation: none; opacity: 0; }
 }
 #qualityControlCustomerPage .qc-client-history-restore {
     color: var(--qc-action);
