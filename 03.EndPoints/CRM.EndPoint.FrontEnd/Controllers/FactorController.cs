@@ -4243,8 +4243,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-        [HttpGet]
-                [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public Task<IActionResult> DeleteMissingExternalFactorMapping(
@@ -4296,7 +4294,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(new { deleted = true });
         }
 
-public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
+[Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [HttpGet]
+        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
             try
             {
