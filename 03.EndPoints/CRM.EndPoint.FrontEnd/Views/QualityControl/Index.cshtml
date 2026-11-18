@@ -93,13 +93,12 @@
     <div class="qc-client-toolbar">
         <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
             <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
-            <div class="qc-client-search-field">
-                <i class="fa fa-search" aria-hidden="true"></i>
+            <div class="qc-client-search-group">
                 <input id="qcCustomerSearch" type="search" class="form-control"
                        placeholder="نام، کد یا موبایل مشتری" autocomplete="off" />
+                <button type="submit" class="qc-client-button qc-client-primary qc-client-search-submit"
+                        title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
             </div>
-            <button type="submit" class="qc-client-button qc-client-primary qc-client-search-submit"
-                    title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
         </form>
         <div class="qc-client-filter">
             <label for="qcCustomerStatus">وضعیت بررسی</label>
