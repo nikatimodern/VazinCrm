@@ -49,12 +49,16 @@
                         aria-pressed="true">مشاهده</button>
             </div>
             <div class="qc-client-overview-value">
-                <strong id="qcSummaryPendingCustomers">—</strong><span>مشتری</span>
+                <strong id="qcSummaryUnreviewedItems">—</strong>
+                <span>قلم از <b id="qcSummaryPendingTotalItems">—</b> قلم</span>
             </div>
             <div class="qc-client-overview-breakdown qc-client-pending-breakdown">
-                <span>کل اقلام بررسی‌نشده: <strong id="qcSummaryUnreviewedItems">—</strong></span>
-                <span>در صف: <strong id="qcSummaryPendingItems">—</strong></span>
-                <span title="اقلام مشتریان دارای شماره نامعتبر یا عدم پاسخ فعال">موقتاً خارج از صف: <strong id="qcSummaryPausedItems">—</strong></span>
+                <span>در صف: <strong id="qcSummaryPendingItems">—</strong> قلم
+                    (<strong id="qcSummaryPendingCustomers">—</strong> مشتری)</span>
+                <span title="اقلام مشتریان دارای شماره نامعتبر یا عدم پاسخ فعال">موقتاً خارج از صف: <strong id="qcSummaryPausedItems">—</strong> قلم</span>
+                <span class="qc-client-pending-customers">مشتریان تکمیل‌نشده:
+                    <strong id="qcSummaryUnfinishedCustomers">—</strong>
+                    از <strong id="qcSummaryPendingTotalCustomers">—</strong> مشتری</span>
             </div>
         </div>
         <div class="qc-client-overview-card qc-client-overview-reviewed">
@@ -72,7 +76,8 @@
             </div>
             <div class="qc-client-overview-progress">
                 <div class="qc-client-progress-caption">
-                    <span>مشتریان تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong></span>
+                    <span>مشتریان تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong>
+                        از <strong id="qcSummaryReviewedTotalCustomers">—</strong> مشتری</span>
                 </div>
                 <div id="qcSummaryProgressTrack" class="qc-client-progress-track" role="progressbar"
                      aria-label="درصد پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
