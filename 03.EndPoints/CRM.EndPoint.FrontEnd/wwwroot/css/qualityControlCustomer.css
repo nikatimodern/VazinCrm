@@ -531,40 +531,18 @@
     --qc-card-control-height: 38px;
     --qc-card-control-radius: 9px;
 }
-/* Transient cue after an actual QC save; not a permanent customer status. */
-/* The green outline retracts from a full circle to its start point in five seconds. */
-@property --qc-last-review-border-angle {
-    syntax: "<angle>";
-    inherits: false;
-    initial-value: 360deg;
-}
+/* Temporarily tint the last reviewed customer, then fade to the normal surface. */
 #qualityControlCustomerPage .qc-client-card.qc-client-last-reviewed {
-    position: relative;
+    animation: qcLastReviewBackgroundFade 5s ease-out both;
 }
-#qualityControlCustomerPage .qc-client-card.qc-client-last-reviewed::after {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: 1;
-    padding: 2px;
-    border-radius: inherit;
-    pointer-events: none;
-    background: conic-gradient(from 0deg,
-        var(--qc-action) 0deg var(--qc-last-review-border-angle),
-        transparent var(--qc-last-review-border-angle) 360deg);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: qcLastReviewBorderRetract 5s linear both;
-}
-@keyframes qcLastReviewBorderRetract {
-    from { --qc-last-review-border-angle: 360deg; }
-    to { --qc-last-review-border-angle: 0deg; }
+@keyframes qcLastReviewBackgroundFade {
+    0%, 88% { background-color: var(--qc-primary-light); }
+    100% { background-color: #fff; }
 }
 @media (prefers-reduced-motion: reduce) {
-    #qualityControlCustomerPage .qc-client-card.qc-client-last-reviewed::after {
+    #qualityControlCustomerPage .qc-client-card.qc-client-last-reviewed {
         animation: none;
-        --qc-last-review-border-angle: 360deg;
+        background-color: var(--qc-primary-light);
     }
 }
 #qualityControlCustomerPage .qc-client-profile .qc-client-last-reviewed-tag {
