@@ -74,14 +74,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         if (search.Length > 0)
                             query = query.Where(x => ((x.FirstName ?? "") + " " + (x.LastName ?? ""))
                                     .Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
-                                || (x.UserName != null && x.UserName.Contains(search))
+                                || (x.UserName != null && x.UserName.Replace("ي", "ی")
+                                    .Replace("ى", "ی").Replace("ك", "ک").Contains(search))
                                 || x.Id == search);
                         var records = await query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
                             .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName })
                             .Take(size).ToListAsync(ct);
                         return new { options = records.Where(x => Guid.TryParse(x.Id, out _))
                             .Select(x => new { id = x.Id,
-                                title = FormatManualOption(x.UserName, (x.FirstName + " " + x.LastName).Trim()),
+                                title = FormatManualOption(TextService.NormalizePersianText(x.UserName),
+                                    (x.FirstName + " " + x.LastName).Trim()),
                                 detail = "" }) };
                     }
                     case "Customer":
@@ -167,14 +169,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     case ExternalUserEntityName:
                     {
                         var query = targetDb.SepidarUsers.AsNoTracking().Where(x => !x.IsDeleted && x.Status == true);
+                        // The query is normalized above; apply the same replacements in SQL
+                        // so Arabic letters stored by Sepidar match Persian keyboard input.
                         query = query.Where(x => (number > 0 && x.UserID == number)
-                            || x.UserName.Contains(search) || x.Name.Contains(search));
+                            || x.UserName.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                            || x.Name.Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search));
                         var rows = await query.OrderBy(x => x.UserName)
                             .Select(x => new { x.UserID, x.UserName, x.Name })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new {
                             id = x.UserID.ToString(),
-                            title = FormatManualOption(x.UserName, x.Name), detail = "" }) };
+                            title = FormatManualOption(TextService.NormalizePersianText(x.UserName), x.Name),
+                            detail = "" }) };
                     }
                     case "Party":
                     {
