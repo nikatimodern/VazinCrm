@@ -1299,6 +1299,7 @@ async function getPreFactorExternalSotwares(id) {
     await sendApiRequest({
         url: "/Factor/GetExternalSoftwarePreFactors",
         params: { preFactorId: id },
+        showLoading: false,
         onSuccess: (res) => {
             renderExternalSoftwarePreFactors(res.data);
         },
@@ -1328,6 +1329,9 @@ function renderExternalSoftwarePreFactors(items = []) {
 
     history.render(items, {
         emptyText: "این پیش‌فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
+        cardClass: item => item.isMissing ? "external-pf-missing" : "",
+        statusMessage: item => item.isMissing
+            ? "پیش‌فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
         fields: item => [
             ["نرم‌افزار", item.externalSoftwareTitle, true],
             ["تاریخ ثبت", item.creationDate
@@ -1336,6 +1340,18 @@ function renderExternalSoftwarePreFactors(items = []) {
             ["مشتری", item.customerName],
         ],
         actions: item => {
+            if (item.isMissing) {
+                if (!item.mappingId) return [];
+                return [ExternalFinancialHistory.missingMappingAction({
+                    modal: getExternalSoftwarePreFactorsModal(),
+                    sourceId: externalSotwarePfId,
+                    softwareId: item.externalSoftwareId,
+                    mappingId: item.mappingId,
+                    softwareTitle: item.externalSoftwareTitle,
+                    url: "/Factor/DeleteMissingExternalPreFactorMapping",
+                    onDeleted: () => getPreFactorExternalSotwares(externalSotwarePfId),
+                })];
+            }
             const view = document.createElement("button");
             view.type = "button";
             view.className = "external-pf-action external-pf-view";
