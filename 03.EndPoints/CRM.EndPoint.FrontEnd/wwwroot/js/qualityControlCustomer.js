@@ -111,7 +111,7 @@
         let historyCustomerId = null, historyStart = 0, historyTotal = 0;
         let historyController = null, historyBusy = false, historyCanManage = false;
         let historyDeleteHold = null;
-        const historyDeleteHoldMs = 3000;
+        const historyDeleteHoldMs = 1000;
         let midnightRefreshTimer = null;
 
         // The server is authoritative; the timer only visualizes its 60-second lock.
@@ -420,7 +420,7 @@
                     : '<button type="button" class="qc-client-button qc-client-history-delete"'
                         + ' data-qc-history-action="delete" data-qc-history-id="' + escape(row.id)
                         + '" data-qc-history-version="' + escape(row.rowVersion)
-                        + '" title="برای حذف، ۳ ثانیه نگه دارید" aria-label="حذف سابقه؛ دکمه را ۳ ثانیه نگه دارید">'
+                        + '" title="برای حذف، ۱ ثانیه نگه دارید" aria-label="حذف سابقه؛ دکمه را ۱ ثانیه نگه دارید">'
                         + '<i class="fa fa-trash" aria-hidden="true"></i> حذف</button>';
                 return '<article role="listitem" class="qc-client-history-entry' + (row.isDeleted ? ' is-deleted' : '') + '">'
                     + '<div class="qc-client-history-info">'
@@ -539,6 +539,7 @@
                         restore,
                     },
                     showLoading: false,
+                    successMsg: restore ? "سابقه تماس بازیابی شد" : "سابقه تماس حذف شد",
                 });
                 if (!result || !result.message) {
                     historyFeedback.textContent = "تغییر سابقه تماس ناموفق بود؛ دوباره تلاش کنید.";
@@ -948,7 +949,7 @@
                 + (button.dataset.qcHistoryPage === "next" ? 20 : -20));
             loadContactHistory();
         });
-        // Delete requires a continuous three-second hold, not a click or a confirmation modal.
+        // Delete requires a continuous one-second hold, not a click or a confirmation modal.
         historyEntries.addEventListener("pointerdown", event => {
             const button = event.target.closest('[data-qc-history-action="delete"]');
             if (!button || event.button !== 0 || !event.isPrimary) return;
@@ -1000,7 +1001,7 @@
             if (!button || button.disabled) return;
             if (button.dataset.qcHistoryAction === "delete") {
                 event.preventDefault();
-                if (!historyBusy) historyFeedback.textContent = "برای حذف، دکمه را ۳ ثانیه نگه دارید.";
+                if (!historyBusy) historyFeedback.textContent = "برای حذف، دکمه را ۱ ثانیه نگه دارید.";
                 return;
             }
             changeContactHistory(button);
