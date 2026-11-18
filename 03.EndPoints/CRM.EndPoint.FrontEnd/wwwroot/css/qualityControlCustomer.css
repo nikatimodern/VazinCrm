@@ -420,6 +420,27 @@
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-primary:hover:not(:disabled) {
     border-color: var(--qc-primary);
 }
+/* The contact buttons share one outline while keeping independent click targets. */
+#qualityControlCustomerPage .qc-client-call-group {
+    display: inline-flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    max-width: 100%;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--qc-card-control-height);
+    padding-inline: 9px;
+    border-inline-start-width: 0;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid {
     background: var(--qc-danger-light);
     border-color: color-mix(in srgb, var(--qc-danger) 20%, var(--qc-border));
@@ -508,7 +529,9 @@
     gap: 7px;
     font-size: 12px;
 }
-#qualityControlCustomerPage .qc-client-stats > span {
+#qualityControlCustomerPage .qc-client-stats .qc-client-stat-segment,
+#qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed,
+#qualityControlCustomerPage .qc-client-stats > .qc-client-count-pending {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -580,6 +603,33 @@
 #qualityControlCustomerPage .qc-client-completed .fa-check-circle {
     font-size: 15px;
     color: var(--qc-action);
+}
+/* Read-only counts and status stay distinct from buttons, but join like segmented controls. */
+#qualityControlCustomerPage .qc-client-segment-group {
+    display: inline-flex;
+    align-items: stretch;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+#qualityControlCustomerPage .qc-client-segment-group > :first-child {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+#qualityControlCustomerPage .qc-client-segment-group > :last-child {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    border-inline-start-width: 0;
+}
+#qualityControlCustomerPage .qc-client-segment-group > :only-child {
+    border-radius: var(--qc-card-control-radius);
+    border-inline-start-width: 1px;
+}
+#qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed {
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-review-group .qc-client-badge {
+    text-align: center;
 }
 #qualityControlCustomerPage .qc-client-contact-actions .qc-client-button:disabled {
     cursor: not-allowed;
@@ -892,8 +942,22 @@
         min-height: 23px;
         padding: 1px 5px;
     }
-    #qualityControlCustomerPage .qc-client-card .qc-client-stats > span,
-    #qualityControlCustomerPage .qc-client-card .qc-client-badge { padding: 3px 6px; }
+    #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-stat-segment,
+    #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-count-reviewed,
+    #qualityControlCustomerPage .qc-client-card .qc-client-stats > .qc-client-count-pending,
+    #qualityControlCustomerPage .qc-client-card .qc-client-review-group .qc-client-badge { padding: 3px 6px; }
+    #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open {
+        min-width: 23px;
+        padding-inline: 6px;
+    }
+    #qualityControlCustomerPage .qc-client-review-group:has(.qc-client-count-reviewed) {
+        flex: 1 1 100%;
+    }
+    #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed { flex: 1 1 auto; }
+    #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed small,
+    #qualityControlCustomerPage .qc-client-review-group .qc-client-badge {
+        white-space: normal;
+    }
     #qualityControlCustomerPage .qc-client-stats { flex: 1; }
     #qualityControlCustomerPage .qc-client-item-search { padding: 8px; gap: 6px; }
     #qualityControlCustomerPage .qc-client-item-search label { flex-basis: 100%; }
