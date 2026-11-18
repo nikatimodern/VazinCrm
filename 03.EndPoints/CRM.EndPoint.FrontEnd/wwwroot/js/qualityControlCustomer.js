@@ -112,19 +112,37 @@
         let historyController = null, historyBusy = false, historyCanManage = false;
         let midnightRefreshTimer = null;
 
-        // The server is authoritative; this countdown only makes the wait visible.
+        // The server is authoritative; the timer only visualizes its 60-second lock.
+        const cooldownDurationMs = 60_000;
+        const faTwoDigits = new Intl.NumberFormat("fa-IR", {
+            minimumIntegerDigits: 2, useGrouping: false,
+        });
+        const formatCooldown = seconds =>
+            faTwoDigits.format(Math.floor(seconds / 60)) + ":" + faTwoDigits.format(seconds % 60);
         function refreshNoResponseCooldowns() {
             const now = Date.now();
             queue.querySelectorAll('[data-qc-contact="1"]').forEach(button => {
-                const remaining = Math.max(0,
-                    Math.ceil((Number(button.dataset.qcCooldownUntil || 0) - now) / 1000));
+                const remainingMs = Math.max(0, Number(button.dataset.qcCooldownUntil || 0) - now);
+                const remaining = Math.ceil(remainingMs / 1000);
                 const complete = button.closest("[data-qc-complete]")?.dataset.qcComplete === "true";
+                const showTimer = remaining > 0 && !complete;
                 button.disabled = contactBusy || complete || remaining > 0;
-                const label = button.querySelector("[data-qc-no-answer-label]");
-                if (label) label.textContent = remaining > 0
-                    ? "عدم پاسخ (" + faNumber.format(remaining) + " ث)" : "عدم پاسخ";
+
+                const time = button.querySelector("[data-qc-no-answer-time]");
+                if (time) {
+                    time.hidden = !showTimer;
+                    if (showTimer) time.textContent = formatCooldown(remaining);
+                }
+                const track = button.parentElement?.querySelector("[data-qc-no-answer-progress]");
+                if (track) {
+                    track.hidden = !showTimer;
+                    if (showTimer) {
+                        const fill = track.querySelector("[data-qc-no-answer-progress-fill]");
+                        if (fill) fill.style.width = (remainingMs / cooldownDurationMs * 100) + "%";
+                    }
+                }
                 button.title = complete ? "تمام اقلام بررسی شده‌اند"
-                    : remaining > 0 ? "ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
+                    : showTimer ? "ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
                         : "ثبت یک تلاش تماس بدون پاسخ جدید";
             });
         }
@@ -329,11 +347,15 @@
                         + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
                         + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> شماره نامعتبر</button>'
+                        + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
                         + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
                         + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
-                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i><span data-qc-no-answer-label>عدم پاسخ</span></button>'
+                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i><span>عدم پاسخ</span>'
+                        + '<span class="qc-client-no-answer-time" data-qc-no-answer-time dir="ltr" hidden></span></button>'
+                        + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
+                        + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + '<i class="fa fa-check-circle" aria-hidden="true"></i> '
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
