@@ -460,16 +460,23 @@
     outline-offset: 2px;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid {
-    background: var(--qc-danger-light);
-    border-color: color-mix(in srgb, var(--qc-danger) 20%, var(--qc-border));
-    color: var(--qc-danger);
+    background: #F0F1F7;
+    border-color: var(--qc-border);
+    color: var(--qc-muted);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid:hover:not(:disabled),
+#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid:not(.is-selected):hover:not(:disabled) {
+    background: #E7EAF0;
+    border-color: color-mix(in srgb, var(--qc-muted) 25%, var(--qc-border));
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid.is-selected {
-    background: color-mix(in srgb, var(--qc-danger) 13%, white);
+    background: var(--qc-danger-light);
     border-color: var(--qc-danger);
+    color: var(--qc-danger);
+    font-weight: 700;
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid.is-selected { font-weight: 700; }
+#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid.is-selected:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--qc-danger) 13%, white);
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer {
     background: var(--qc-secondary-light);
     border-color: color-mix(in srgb, var(--qc-secondary) 20%, var(--qc-border));
