@@ -448,6 +448,7 @@
                         const finishFocus = () => {
                             if (focusFinished || !isActive() || !card.isConnected) return;
                             focusFinished = true;
+                            card.removeEventListener("animationend", onOutlineEnd);
                             clearTimeout(lastReviewedHighlightTimer);
                             lastReviewedHighlightTimer = null;
                             card.classList.remove("qc-client-last-reviewed");
@@ -461,10 +462,11 @@
                             }
                             temporaryCompletedCustomerCard = null;
                         };
-                        card.addEventListener("animationend", event => {
+                        const onOutlineEnd = event => {
                             if (event.animationName === "qcLastReviewBorderRetract")
                                 finishFocus();
-                        }, { once: true });
+                        };
+                        card.addEventListener("animationend", onOutlineEnd);
                         lastReviewedHighlightTimer = setTimeout(finishFocus,
                             Math.max(0, lastReviewedHighlightUntil - Date.now()) + 100);
                     } else {
