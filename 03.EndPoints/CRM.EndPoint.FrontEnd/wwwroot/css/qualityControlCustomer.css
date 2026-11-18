@@ -1046,40 +1046,14 @@
     to { --qc-history-delete-border-progress: 360deg; }
 }
 
-/* Only after a successful soft-delete, the entire history entry disintegrates. */
-#qualityControlCustomerPage .qc-client-history-entries { position: relative; }
-#qualityControlCustomerPage .qc-client-history-entry.is-disintegrating {
+/* Soft-fade the full card after the server has confirmed deletion. */
+#qualityControlCustomerPage .qc-client-history-entry.is-fading {
     pointer-events: none;
-    transform-origin: 50% 50%;
-    animation: qcHistoryCardDisintegrate .55s ease-in forwards;
+    animation: qcHistoryCardFade .55s ease-out forwards;
 }
-@keyframes qcHistoryCardDisintegrate {
-    0% { opacity: 1; transform: scale(1); filter: blur(0); }
-    22% { opacity: 1; transform: scale(1.015); filter: blur(0); }
-    65% { opacity: .55; transform: scale(.99) translateY(-2px); filter: blur(1px); }
-    100% { opacity: 0; transform: scale(.94) translateY(-5px); filter: blur(5px); }
-}
-#qualityControlCustomerPage .qc-client-history-debris {
-    position: absolute;
-    z-index: 5;
-    pointer-events: none;
-    overflow: visible;
-}
-#qualityControlCustomerPage .qc-client-history-fragment {
-    position: absolute;
-    width: var(--qc-frag-size, 5px);
-    height: var(--qc-frag-height, 5px);
-    border-radius: 1px;
-    background: var(--qc-frag-color, var(--qc-border));
-    box-shadow: 0 0 3px color-mix(in srgb, var(--qc-danger) 20%, transparent);
-    pointer-events: none;
-    animation: qcHistoryCardDust .55s cubic-bezier(.18, .65, .3, 1) both;
-}
-@keyframes qcHistoryCardDust {
-    0% { opacity: 0; transform: translate(0, 0) scale(.65) rotate(0); }
-    16% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
-    100% { opacity: 0; transform: translate(var(--qc-frag-x), var(--qc-frag-y))
-                             scale(.15) rotate(var(--qc-frag-rotate)); }
+@keyframes qcHistoryCardFade {
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
     #qualityControlCustomerPage .qc-client-history-delete.is-holding::after {
@@ -1090,11 +1064,10 @@
         opacity: 1;
         background: var(--qc-danger);
     }
-    #qualityControlCustomerPage .qc-client-history-entry.is-disintegrating {
+    #qualityControlCustomerPage .qc-client-history-entry.is-fading {
         animation: none;
         opacity: 0;
     }
-    #qualityControlCustomerPage .qc-client-history-fragment { animation: none; opacity: 0; }
 }
 #qualityControlCustomerPage .qc-client-history-restore {
     color: var(--qc-action);
