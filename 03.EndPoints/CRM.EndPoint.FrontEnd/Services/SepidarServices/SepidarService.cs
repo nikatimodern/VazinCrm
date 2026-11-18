@@ -624,14 +624,29 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     //--------------------------------------------------------- VOUCHER ---------------------------------------------------------
-    private async Task<int> GetNextVoucherNumberAsync(int fiscalYearId, CancellationToken ct = default)
+    private sealed class VoucherNumbers
     {
-        var lastNumber = await sepidarContext.Vouchers
-            .AsNoTracking()
-            .Where(x => x.FiscalYearRef == fiscalYearId)
-            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
+        public int Number { get; set; }
+        public int ReferenceNumber { get; set; }
+    }
 
-        return lastNumber + 1;
+    private async Task<(int Number, int ReferenceNumber)> GetNextVoucherNumbersAsync(int fiscalYearId, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction is null)
+            throw new InvalidOperationException("ثبت سند حسابداری در سپیدار آغاز نشد و شماره‌ای به سند اختصاص پیدا نکرد.");
+
+        // Keep the fiscal-year range locked until the voucher insert commits.
+        var numbers = await sepidarContext.Database.SqlQuery<VoucherNumbers>($"""
+            SELECT COALESCE(MAX(Number), 0) + 1 AS Number,
+                   COALESCE(MAX(ReferenceNumber), 0) + 1 AS ReferenceNumber
+            FROM ACC.Voucher WITH (UPDLOCK, HOLDLOCK)
+            WHERE FiscalYearRef = {fiscalYearId}
+            """).SingleAsync(ct);
+
+        if (numbers is null)
+            throw new InvalidOperationException("شماره سند و شماره عطف در سپیدار مشخص نشد. سند حسابداری ثبت نشد.");
+
+        return (numbers.Number, numbers.ReferenceNumber);
     }
 
     private async Task<int> GetNextVoucherDailyNumberAsync(DateTime date, int fiscalYearId, CancellationToken ct = default)
@@ -661,14 +676,14 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             CheckFiscalYearWithCRM(cash.CostDate, currentFinancialYear);
             var fiscalYearId = currentFinancialYear.FiscalYearId;
 
-            var voucherNumber = await GetNextVoucherNumberAsync(fiscalYearId, ct);
+            var voucherNumbers = await GetNextVoucherNumbersAsync(fiscalYearId, ct);
             var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, fiscalYearId, ct);
 
             var voucher = new Voucher {
                 VoucherId = voucherId,
-                Number = voucherNumber,
+                Number = voucherNumbers.Number,
                 Date = cash.CostDateMiladi,
-                ReferenceNumber = voucherNumber,
+                ReferenceNumber = voucherNumbers.ReferenceNumber,
                 State = 1,
                 Type = 1,
                 FiscalYearRef = fiscalYearId,
@@ -863,14 +878,11 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken ct = default)
     {
-        // شماره سند
-        var voucherNumber = await GetNextVoucherNumberAsync(paymentHeader.FiscalYearRef, ct);
+        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucherNumbers = await GetNextVoucherNumbersAsync(paymentHeader.FiscalYearRef, ct);
 
         // شماره روزانه
         var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, paymentHeader.FiscalYearRef, ct);
-
-        // PaymentHeaderId
-        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
 
         // ساخت Voucher
 
@@ -883,11 +895,11 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
         var voucher = new Voucher {
             VoucherId = voucherId,
-            Number = voucherNumber,
+            Number = voucherNumbers.Number,
 
             Date = cash.CostDateMiladi,
 
-            ReferenceNumber = voucherNumber, // هنوز قطعی نکرده‌ایم همیشه برابر Number باشد
+            ReferenceNumber = voucherNumbers.ReferenceNumber,
 
             SecondaryNumber = null,
 
@@ -2126,13 +2138,13 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         var baseDescription =
             $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType?.Title ?? "نامشخص"}";
         var now = DateTime.Now;
-        var voucherNumber = await GetNextVoucherNumberAsync(invoice.FiscalYearRef, ct);
         var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucherNumbers = await GetNextVoucherNumbersAsync(invoice.FiscalYearRef, ct);
         var voucher = new Voucher {
             VoucherId = voucherId,
-            Number = voucherNumber,
+            Number = voucherNumbers.Number,
             Date = invoice.Date,
-            ReferenceNumber = voucherNumber,
+            ReferenceNumber = voucherNumbers.ReferenceNumber,
             SecondaryNumber = null,
             State = 1,
             Type = 2,

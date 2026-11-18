@@ -548,7 +548,7 @@ public partial class SepidarService
         var receipt = draft.Receipt;
         var lines = draft.VoucherLines;
         var id = await GetLockedNextPurchaseIdAsync("ACC.Voucher", 1, ct);
-        var number = await GetNextVoucherNumberAsync(receipt.FiscalYearRef, ct);
+        var voucherNumbers = await GetNextVoucherNumbersAsync(receipt.FiscalYearRef, ct);
         var description = $"بابت رسيد انبار شماره {receipt.Number} تاريخ {BaseServices.GetDatePersian(receipt.Date)}";
         var linePrefix = $"{description} نوع خريد (داخلي)";
         var invoiceSuffix = draft.SupplierInvoiceNumber.HasValue
@@ -566,8 +566,8 @@ public partial class SepidarService
         }
         sepidarContext.Add(new Voucher {
             VoucherId = id,
-            Number = number,
-            ReferenceNumber = number,
+            Number = voucherNumbers.Number,
+            ReferenceNumber = voucherNumbers.ReferenceNumber,
             Date = receipt.Date,
             State = 1,
             Type = 2,
