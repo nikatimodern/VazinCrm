@@ -434,6 +434,38 @@
     background: color-mix(in srgb, var(--qc-secondary) 11%, white);
     border-color: var(--qc-secondary);
 }
+/* Countdown is directly under this one button, without changing card row height. */
+#qualityControlCustomerPage .qc-client-no-answer-action {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+}
+#qualityControlCustomerPage .qc-client-no-answer-time {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
+    unicode-bidi: isolate;
+}
+#qualityControlCustomerPage .qc-client-no-answer-time[hidden],
+#qualityControlCustomerPage .qc-client-no-answer-progress[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-no-answer-progress {
+    position: absolute;
+    inset-inline: 5px;
+    bottom: -4px;
+    height: 3px;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--qc-secondary) 15%, white);
+}
+#qualityControlCustomerPage .qc-client-no-answer-progress-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--qc-secondary);
+    border-radius: inherit;
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-history-open:hover:not(:disabled) {
     background: var(--qc-primary-light);
     border-color: color-mix(in srgb, var(--qc-primary) 25%, var(--qc-border));
