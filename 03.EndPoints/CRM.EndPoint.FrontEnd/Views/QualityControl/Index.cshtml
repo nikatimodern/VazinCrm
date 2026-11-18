@@ -93,9 +93,13 @@
     <div class="qc-client-toolbar">
         <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
             <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
-            <input id="qcCustomerSearch" type="search" class="form-control"
-                   placeholder="نام، کد یا موبایل مشتری" autocomplete="off" />
-            <button type="submit" class="qc-client-button qc-client-primary">جستجو</button>
+            <div class="qc-client-search-field">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input id="qcCustomerSearch" type="search" class="form-control"
+                       placeholder="نام، کد یا موبایل مشتری" autocomplete="off" />
+            </div>
+            <button type="submit" class="qc-client-button qc-client-primary qc-client-search-submit"
+                    title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
         </form>
         <div class="qc-client-filter">
             <label for="qcCustomerStatus">وضعیت بررسی</label>
@@ -130,6 +134,8 @@
                 <option value="50">۵۰</option>
             </select>
         </div>
+        <button id="qcCustomerClearFilters" type="button" class="qc-client-button qc-client-clear-filters"
+                title="پاک کردن فیلترها"><i class="fa fa-trash-alt" aria-hidden="true"></i> پاک کردن فیلترها</button>
     </div>
     <div id="qcCustomerQueueFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
     <div id="qcCustomerQueue" class="qc-client-queue" role="list"></div>
