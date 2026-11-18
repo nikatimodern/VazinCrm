@@ -242,6 +242,20 @@
             });
         }
 
+        function showCustomerQueueSkeleton() {
+            const card = '<article class="qc-client-card qc-client-skeleton" aria-hidden="true">'
+                + '<div class="qc-client-skeleton-profile">'
+                + '<span class="qc-client-skeleton-bar is-name"></span>'
+                + '<span class="qc-client-skeleton-bar is-detail"></span></div>'
+                + '<div class="qc-client-skeleton-stats">'
+                + '<span class="qc-client-skeleton-bar is-orders"></span>'
+                + '<span class="qc-client-skeleton-bar is-review"></span></div>'
+                + '<div class="qc-client-skeleton-actions">'
+                + '<span class="qc-client-skeleton-bar is-contacts"></span>'
+                + '<span class="qc-client-skeleton-bar is-action"></span></div></article>';
+            queue.innerHTML = card.repeat(3);
+        }
+
         async function loadCustomers(reset = false) {
             if (!isActive()) return;
             if (reset) start = 0;
@@ -250,7 +264,15 @@
             const controller = listController = new AbortController();
             loading = true;
             queue.setAttribute("aria-busy", "true");
-            queueFeedback.textContent = "در حال دریافت مشتریان…";
+            queue.setAttribute("aria-label", "در حال دریافت مشتریان");
+            queueFeedback.textContent = "";
+            // Keep existing customer cards in place during filter/sort refreshes.
+            if (queue.querySelector(".qc-client-card:not(.qc-client-skeleton)")) {
+                queue.classList.add("is-refreshing");
+            } else {
+                queue.classList.remove("is-refreshing");
+                showCustomerQueueSkeleton();
+            }
             try {
                 const result = await sendApiRequest({
                     url: "/QualityControl/GetCustomers",
@@ -264,6 +286,7 @@
                 });
                 if (!isActive() || controller.signal.aborted) return;
                 if (!result || !Array.isArray(result.data)) {
+                    queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
                     queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
                     return;
                 }
@@ -365,10 +388,16 @@
                 queueFeedback.textContent = total ? "" : "مشتری واجد شرایطی با این فیلتر یافت نشد.";
                 queueCount.textContent = faNumber.format(total) + " مشتری";
                 renderPager();
+            } catch (error) {
+                if (!isActive() || controller.signal.aborted) return;
+                queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
+                queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
             } finally {
                 if (listController === controller) {
                     loading = false;
+                    queue.classList.remove("is-refreshing");
                     queue.removeAttribute("aria-busy");
+                    queue.removeAttribute("aria-label");
                 }
             }
         }
