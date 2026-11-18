@@ -223,13 +223,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 !externalTransferOptions.TryGetRule(request.MapType, out var rule))
                 return BadRequest();
 
-            if (rule.AllowedRoles != null && !rule.AllowedRoles.Any(User.IsInRole))
-                return Forbid();
-
             try
             {
                 return Ok(await externalTransferOptions.GetAllExternalSoftwareAsync(
-                    request.EntityIds, request.MapType, ct));
+                    request.EntityIds, request.MapType, User, ct));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
             }
             catch (System.Data.Common.DbException)
             {
