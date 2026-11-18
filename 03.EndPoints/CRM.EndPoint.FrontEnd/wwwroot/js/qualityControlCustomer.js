@@ -13,7 +13,6 @@
             ["noResponseCustomers", "#qcSummaryTomorrow"],
             ["dueFollowUpsToday", "#qcSummaryDueToday"],
             ["totalNoResponseAttempts", "#qcSummaryNoAnswerAttempts"],
-            ["pendingCustomers", "#qcSummaryPendingCustomers"],
             ["pendingItems", "#qcSummaryPendingItems"],
             ["reviewedItems", "#qcSummaryReviewedItems"],
             ["discrepancyItems", "#qcSummaryDiscrepancyItems"],
