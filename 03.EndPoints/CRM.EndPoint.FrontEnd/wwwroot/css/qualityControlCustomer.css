@@ -561,20 +561,10 @@
     from { --qc-last-review-border-angle: 360deg; }
     to { --qc-last-review-border-angle: 0deg; }
 }
-#qualityControlCustomerPage .qc-client-card.qc-client-temporary-leaving {
-    animation: qcCompletedCardLeave .25s ease-in both;
-    pointer-events: none;
-}
-@keyframes qcCompletedCardLeave {
-    to { opacity: 0; transform: translateY(-4px); }
-}
 @media (prefers-reduced-motion: reduce) {
     #qualityControlCustomerPage .qc-client-card.qc-client-last-reviewed::after {
         animation: none;
         --qc-last-review-border-angle: 360deg;
-    }
-    #qualityControlCustomerPage .qc-client-card.qc-client-temporary-leaving {
-        animation: none;
     }
 }
 #qualityControlCustomerPage .qc-client-profile .qc-client-last-reviewed-tag {
