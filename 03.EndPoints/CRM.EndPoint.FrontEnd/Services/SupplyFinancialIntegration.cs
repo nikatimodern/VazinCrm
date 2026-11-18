@@ -56,9 +56,9 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         {
             var service = Resolve(software.Id);
             var purchaseMapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
-                && x.MapType == MapType(false) && !IsPending(x));
+                && x.MapType == MapType(false));
             var receiptMapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
-                && x.MapType == MapType(true) && !IsPending(x));
+                && x.MapType == MapType(true));
             var purchase = purchaseMapping == null ? null
                 : await service.FindPurchaseDocumentAsync(false, ReadId(purchaseMapping), ct);
             var receipt = receiptMapping != null ? await service.FindPurchaseDocumentAsync(true, ReadId(receiptMapping), ct)
@@ -84,8 +84,10 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         var mapping = await repository.GetMappingAsync(sourceId, softwareId, MapType(receipt), ct);
         if (mapping == null || mapping.Id != mappingId)
             return SupplyResult.Missing("سابقه ارسال پیدا نشد.");
-        if (IsPending(mapping) || await service.PurchaseDocumentExistsAsync(receipt, ReadId(mapping), ct))
-            return SupplyResult.Invalid("این سابقه قابل حذف نیست. فهرست سوابق را دوباره بررسی کنید.");
+        // A pending reservation is also a CRM record. Allow explicit deletion only
+        // when the reserved external document is confirmed absent.
+        if (await service.PurchaseDocumentExistsAsync(receipt, ReadId(mapping), ct))
+            return SupplyResult.Invalid("این سند هنوز در نرم‌افزار مالی وجود دارد و ارتباط آن قابل حذف نیست.");
 
         await repository.DeleteMappingAsync(mapping, ct);
         return SupplyResult.Success(new { Deleted = true });
@@ -241,38 +243,16 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         }
 
         var id = ReadId(mapping);
-        SepidarService.PurchaseDocument document;
-        try
-        {
-            document = request.Receipt
-                ? await service.AddSupplyReceiptAsync(id, creator,
-                    purchaseId, request.StockId,
-                    GetReceiptDate(request), request.Description, request.RowDescriptions, request.PreviewToken, ct)
-                : await service.AddSupplyPurchaseAsync(id, creator, source, request.VendorId, Selections(request),
-                    request.Description, request.PreviewToken, ct);
-        }
-        catch (Exception failure) when (!ct.IsCancellationRequested && failure is InvalidOperationException or DbUpdateException)
-        {
-            await DiscardUncommittedReservationAsync(service, mapping, request.Receipt, id);
-            throw;
-        }
+        // Keep the pending CRM mapping if the external write fails. Its reserved
+        // ID makes retries recoverable; only the user may remove a missing record.
+        var document = request.Receipt
+            ? await service.AddSupplyReceiptAsync(id, creator,
+                purchaseId, request.StockId,
+                GetReceiptDate(request), request.Description, request.RowDescriptions, request.PreviewToken, ct)
+            : await service.AddSupplyPurchaseAsync(id, creator, source, request.VendorId, Selections(request),
+                request.Description, request.PreviewToken, ct);
         await CompleteAsync(mapping, document.Id);
         return SupplyResult.Success(document);
-    }
-
-    private async Task DiscardUncommittedReservationAsync(SepidarService service, ExternalMapping mapping, bool receipt, int id)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        try
-        {
-            if (!await service.PurchaseDocumentExistsAsync(receipt, id, timeout.Token))
-                await repository.DeleteMappingAsync(mapping, timeout.Token);
-        }
-        catch (Exception failure) when (failure is System.Data.Common.DbException or DbUpdateException
-            or OperationCanceledException or InvalidOperationException)
-        {
-            // Keep the reservation for recovery when cleanup cannot establish the outcome.
-        }
     }
 
     private DateTime GetReceiptDate(SupplyFinancialRequest request)
