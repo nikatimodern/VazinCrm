@@ -167,3 +167,38 @@
 		padding: 5px;
 	}
 }
+
+/* Mappings whose document is no longer present in the destination software. */
+.external-pf-card.external-pf-missing {
+    border-color: var(--color-danger, #C2185B);
+    border-right-color: var(--color-danger, #C2185B);
+    background: var(--color-danger-light, #FCE8F0);
+}
+
+.external-pf-missing .external-pf-value:not(.external-pf-software),
+.external-pf-missing .external-pf-missing-message {
+    color: var(--color-danger, #C2185B);
+}
+
+.external-pf-missing-message {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--color-danger, #C2185B);
+}
+
+.external-pf-remove {
+    color: var(--color-danger, #C2185B);
+    border-color: currentColor;
+    background: var(--color-surface, #fff);
+}
+
+.external-pf-remove:hover:not(:disabled) {
+    background: var(--color-danger-light, #FCE8F0);
+}
+
+.external-pf-remove:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
