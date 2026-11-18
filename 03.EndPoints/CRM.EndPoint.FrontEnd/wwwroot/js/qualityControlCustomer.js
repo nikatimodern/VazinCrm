@@ -310,7 +310,6 @@
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
                     const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
-                    const hasReviewed = row.reviewedItems > 0;
                     const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
@@ -335,14 +334,11 @@
                         + '<span class="qc-client-stat-segment"><i class="fa fa-shopping-cart" aria-hidden="true"></i> ' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span class="qc-client-stat-segment"><i class="fa fa-file-invoice" aria-hidden="true"></i> ' + faNumber.format(row.invoices) + ' فاکتور</span></span>'
                         + '<span class="qc-client-segment-group qc-client-review-group" role="group" aria-label="آمار و وضعیت بررسی مشتری">'
-                        + (hasReviewed
-                            ? '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + ' از ' + faNumber.format(row.totalItems) + '</strong>'
-                                + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
-                                + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
-                            : '')
+                        + '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + ' از ' + faNumber.format(row.totalItems) + '</strong>'
+                        + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
+                        + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
                         + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
                         + '<i class="fa ' + statusIcon + '" aria-hidden="true"></i> ' + label + '</span></span>'
-                        + (pending > 0 ? '<span class="qc-client-count-pending"><i class="fa fa-search" aria-hidden="true"></i> بررسی‌نشده: ' + faNumber.format(pending) + '</span>' : '')
                         + '</div>'
                         + '<div class="qc-client-contact-actions">'
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
