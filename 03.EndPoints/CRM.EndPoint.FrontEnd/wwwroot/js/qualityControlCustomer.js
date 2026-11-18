@@ -110,6 +110,8 @@
         let listController = null, formController = null, formGeneration = 0;
         let historyCustomerId = null, historyStart = 0, historyTotal = 0;
         let historyController = null, historyBusy = false, historyCanManage = false;
+        let historyDeleteHold = null;
+        const historyDeleteHoldMs = 3000;
         let midnightRefreshTimer = null;
 
         // The server is authoritative; the timer only visualizes its 60-second lock.
@@ -405,7 +407,7 @@
                 const audit = row.isDeleted
                     ? '<div>حذف‌شده توسط <strong>' + escape(row.deletedBy || "نامشخص") + '</strong>'
                         + (row.deletedAt ? ' در <strong>' + escape(row.deletedAt) + '</strong>' : '')
-                        + ' · دلیل: <strong>' + escape(row.deleteReason || "ثبت نشده") + '</strong></div>'
+                        + (row.deleteReason ? ' · دلیل: <strong>' + escape(row.deleteReason) + '</strong>' : '') + '</div>'
                     : (row.restoredAt ? '<div>بازیابی توسط <strong>' + escape(row.restoredBy || "نامشخص")
                         + '</strong> در <strong>' + escape(row.restoredAt) + '</strong>'
                         + (row.deleteReason ? ' · دلیل حذف قبلی: <strong>' + escape(row.deleteReason) + '</strong>' : '')
@@ -417,7 +419,8 @@
                         + '<i class="fa fa-undo" aria-hidden="true"></i> بازیابی</button>'
                     : '<button type="button" class="qc-client-button qc-client-history-delete"'
                         + ' data-qc-history-action="delete" data-qc-history-id="' + escape(row.id)
-                        + '" data-qc-history-version="' + escape(row.rowVersion) + '">'
+                        + '" data-qc-history-version="' + escape(row.rowVersion)
+                        + '" title="برای حذف، ۳ ثانیه نگه دارید" aria-label="حذف سابقه؛ دکمه را ۳ ثانیه نگه دارید">'
                         + '<i class="fa fa-trash" aria-hidden="true"></i> حذف</button>';
                 return '<article role="listitem" class="qc-client-history-entry' + (row.isDeleted ? ' is-deleted' : '') + '">'
                     + '<div class="qc-client-history-info">'
@@ -432,6 +435,7 @@
         }
 
         async function loadContactHistory() {
+            cancelHistoryDeleteHold();
             if (!historyCustomerId || !isActive()) return;
             historyController?.abort();
             const controller = historyController = new AbortController();
@@ -466,6 +470,7 @@
         }
 
         function openContactHistory(customerId) {
+            cancelHistoryDeleteHold();
             if (!customerId || !isActive()) return;
             historyCustomerId = customerId;
             historyStart = 0;
@@ -478,44 +483,49 @@
             loadContactHistory();
         }
 
+        function cancelHistoryDeleteHold() {
+            if (!historyDeleteHold) return;
+            clearTimeout(historyDeleteHold.timer);
+            historyDeleteHold.button.classList.remove("is-holding");
+            historyDeleteHold = null;
+        }
+
+        function startHistoryDeleteHold(button, input, inputId) {
+            if (historyBusy || !historyCanManage || !historyCustomerId || !isActive()
+                || button.disabled || historyDeleteHold) return;
+            const hold = { button, input, inputId, timer: null };
+            historyDeleteHold = hold;
+            button.classList.add("is-holding");
+            hold.timer = setTimeout(() => {
+                if (historyDeleteHold !== hold || !isActive() || !button.isConnected) return;
+                cancelHistoryDeleteHold();
+                changeContactHistory(button);
+            }, historyDeleteHoldMs);
+        }
+
         async function changeContactHistory(button) {
             if (historyBusy || !historyCanManage || !historyCustomerId || !isActive()) return;
             const restore = button.dataset.qcHistoryAction === "restore";
-            if (typeof Swal === "undefined") {
-                historyFeedback.textContent = "پنجره تأیید عملیات در دسترس نیست.";
-                return;
+            if (restore) {
+                if (typeof Swal === "undefined") {
+                    historyFeedback.textContent = "پنجره تأیید بازیابی در دسترس نیست.";
+                    return;
+                }
+                const response = await Swal.fire({
+                    title: "بازیابی سابقه تماس",
+                    text: "این سابقه دوباره در شمارنده‌ها و محاسبه وضعیت پیگیری منظور می‌شود.",
+                    icon: "question",
+                    confirmButtonText: "بازیابی",
+                    showCancelButton: true,
+                    cancelButtonText: "انصراف",
+                    confirmButtonColor: "#00665C",
+                    cancelButtonColor: "#656B75",
+                    reverseButtons: true,
+                });
+                if (!response.isConfirmed || !isActive()) return;
             }
-            const option = restore ? {
-                title: "بازیابی سابقه تماس",
-                text: "این سابقه دوباره در شمارنده‌ها و محاسبه وضعیت پیگیری منظور می‌شود.",
-                icon: "question",
-                confirmButtonText: "بازیابی",
-            } : {
-                title: "حذف سابقه تماس",
-                text: "سابقه به صورت نرم حذف می‌شود و مدیر ارشد امکان بازیابی آن را دارد.",
-                icon: "warning",
-                input: "textarea",
-                inputPlaceholder: "دلیل حذف را بنویسید...",
-                inputAttributes: { maxlength: 500 },
-                preConfirm: value => {
-                    if (!value?.trim()) {
-                        Swal.showValidationMessage("ثبت دلیل حذف الزامی است.");
-                        return false;
-                    }
-                    return value.trim();
-                },
-                confirmButtonText: "حذف سابقه",
-            };
-            const response = await Swal.fire({
-                ...option,
-                showCancelButton: true,
-                cancelButtonText: "انصراف",
-                confirmButtonColor: restore ? "#00665C" : "#851B1D",
-                cancelButtonColor: "#656B75",
-                reverseButtons: true,
-            });
-            if (!response.isConfirmed || !isActive()) return;
             historyBusy = true;
+            historyEntries.querySelectorAll("[data-qc-history-action]").forEach(action => action.disabled = true);
             historyFeedback.textContent = restore ? "در حال بازیابی سابقه…" : "در حال حذف سابقه…";
             try {
                 const result = await sendApiRequest({
@@ -527,7 +537,6 @@
                         historyId: button.dataset.qcHistoryId,
                         rowVersion: button.dataset.qcHistoryVersion,
                         restore,
-                        deleteReason: restore ? null : response.value,
                     },
                     showLoading: false,
                 });
@@ -541,6 +550,8 @@
                 if (isActive()) historyFeedback.textContent = "خطا هنگام تغییر سابقه؛ تاریخچه را تازه کنید.";
             } finally {
                 historyBusy = false;
+                if (isActive()) historyEntries.querySelectorAll("[data-qc-history-action]")
+                    .forEach(action => action.disabled = false);
             }
         }
 
@@ -937,11 +948,65 @@
                 + (button.dataset.qcHistoryPage === "next" ? 20 : -20));
             loadContactHistory();
         });
+        // Delete requires a continuous three-second hold, not a click or a confirmation modal.
+        historyEntries.addEventListener("pointerdown", event => {
+            const button = event.target.closest('[data-qc-history-action="delete"]');
+            if (!button || event.button !== 0 || !event.isPrimary) return;
+            event.preventDefault();
+            button.focus({ preventScroll: true });
+            startHistoryDeleteHold(button, "pointer", event.pointerId);
+        });
+        window.addEventListener("pointerup", event => {
+            if (historyDeleteHold?.input === "pointer"
+                && historyDeleteHold.inputId === event.pointerId) cancelHistoryDeleteHold();
+        }, pageSignal ? { signal: pageSignal } : undefined);
+        window.addEventListener("pointercancel", event => {
+            if (historyDeleteHold?.input === "pointer"
+                && historyDeleteHold.inputId === event.pointerId) cancelHistoryDeleteHold();
+        }, pageSignal ? { signal: pageSignal } : undefined);
+        window.addEventListener("pointermove", event => {
+            const hold = historyDeleteHold;
+            if (hold?.input !== "pointer" || hold.inputId !== event.pointerId) return;
+            const rect = hold.button.getBoundingClientRect();
+            if (event.clientX < rect.left || event.clientX > rect.right
+                || event.clientY < rect.top || event.clientY > rect.bottom)
+                cancelHistoryDeleteHold();
+        }, pageSignal ? { signal: pageSignal } : undefined);
+        historyEntries.addEventListener("keydown", event => {
+            const button = event.target.closest('[data-qc-history-action="delete"]');
+            if (!button || !["Enter", " "].includes(event.key)) return;
+            event.preventDefault();
+            if (!event.repeat) startHistoryDeleteHold(button, "keyboard", event.key);
+        });
+        historyEntries.addEventListener("keyup", event => {
+            const button = event.target.closest('[data-qc-history-action="delete"]');
+            if (!button || !["Enter", " "].includes(event.key)) return;
+            event.preventDefault();
+            if (historyDeleteHold?.input === "keyboard"
+                && historyDeleteHold.inputId === event.key) cancelHistoryDeleteHold();
+        });
         historyEntries.addEventListener("click", event => {
             const button = event.target.closest("[data-qc-history-action]");
-            if (button && !button.disabled) changeContactHistory(button);
+            if (!button || button.disabled) return;
+            if (button.dataset.qcHistoryAction === "delete") {
+                event.preventDefault();
+                if (!historyBusy) historyFeedback.textContent = "برای حذف، دکمه را ۳ ثانیه نگه دارید.";
+                return;
+            }
+            changeContactHistory(button);
         });
+        historyEntries.addEventListener("contextmenu", event => {
+            if (event.target.closest('[data-qc-history-action="delete"]')) event.preventDefault();
+        });
+        historyModal.querySelector(".modal-body")?.addEventListener("scroll", cancelHistoryDeleteHold);
+        historyModal.addEventListener("hide.bs.modal", cancelHistoryDeleteHold);
+        window.addEventListener("blur", cancelHistoryDeleteHold,
+            pageSignal ? { signal: pageSignal } : undefined);
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) cancelHistoryDeleteHold();
+        }, pageSignal ? { signal: pageSignal } : undefined);
         historyModal.addEventListener("hidden.bs.modal", () => {
+            cancelHistoryDeleteHold();
             historyController?.abort();
             historyCustomerId = null;
             historyEntries.replaceChildren();
@@ -1031,6 +1096,7 @@
             formFeedback.textContent = "";
         });
         pageSignal?.addEventListener("abort", () => {
+            cancelHistoryDeleteHold();
             queueLayoutObserver?.disconnect();
             clearTimeout(midnightRefreshTimer);
             clearInterval(noResponseCooldownTimer);
@@ -1039,6 +1105,7 @@
             historyController?.abort();
         }, { once: true });
         window.addEventListener("pagehide", () => {
+            cancelHistoryDeleteHold();
             queueLayoutObserver?.disconnect();
             clearTimeout(midnightRefreshTimer);
             clearInterval(noResponseCooldownTimer);
