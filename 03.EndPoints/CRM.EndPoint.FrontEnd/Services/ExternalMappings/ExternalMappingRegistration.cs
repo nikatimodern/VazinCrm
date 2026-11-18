@@ -463,8 +463,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     else if (item.MapType == ExternalMappingTypeEnum.کاربران)
                     {
                         if (!await userManager.Users.AsNoTracking()
-                                .AnyAsync(x => x.Id == item.EntityId.ToString(), ct))
-                            throw new ArgumentException("کاربر انتخاب‌شده در CRM پیدا نشد.");
+                                .AnyAsync(x => x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
+                            throw new ArgumentException("کارمند انتخاب‌شده در CRM پیدا نشد.");
                         if (!await targetDb.SepidarUsers.AsNoTracking()
                                 .AnyAsync(x => x.UserID == targetId && !x.IsDeleted && x.Status == true, ct))
                             throw new ArgumentException("کاربر انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا حذف شده است.");

@@ -96,6 +96,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var sepidar = softwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
             var crmUsers = await userManager.Users.AsNoTracking()
+                .Where(x => x.IsEmployee)
                 .Select(x => new { x.Id, x.UserName }).ToListAsync(ct);
             var externalUsers = await sepidar.SepidarUsers.AsNoTracking()
                 .Where(x => !x.IsDeleted && x.Status == true)

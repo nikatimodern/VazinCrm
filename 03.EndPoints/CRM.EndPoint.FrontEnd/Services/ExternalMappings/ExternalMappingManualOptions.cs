@@ -69,9 +69,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     case "AppUser":
                     {
-                        var query = userManager.Users.AsNoTracking();
-                        if (mapType == (int)ExternalMappingTypeEnum.کارشناسان)
-                            query = query.Where(x => x.IsEmployee);
+                        // Both expert-to-Party and user-to-FMK.User mappings require CRM employees.
+                        var query = userManager.Users.AsNoTracking().Where(x => x.IsEmployee);
                         if (search.Length > 0)
                             query = query.Where(x => ((x.FirstName ?? "") + " " + (x.LastName ?? ""))
                                     .Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
