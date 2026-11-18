@@ -499,37 +499,56 @@
             hold.timer = setTimeout(() => {
                 if (historyDeleteHold !== hold || !isActive() || !button.isConnected) return;
                 cancelHistoryDeleteHold();
+                // Keep the completed outline visible until the server responds.
+                button.classList.add("is-hold-complete");
                 changeContactHistory(button);
             }, historyDeleteHoldMs);
         }
 
         async function playHistoryDeleteBurst(button) {
-            if (!button.isConnected || !isActive()
+            const card = button.closest(".qc-client-history-entry");
+            if (!card?.isConnected || !isActive()
                 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-            const action = button.closest(".qc-client-history-actions");
-            if (!action) return;
 
-            const particles = [];
-            // Use a small deterministic set of particles, localized to the button.
-            for (let i = 0; i < 18; i++) {
-                const particle = document.createElement("span");
-                particle.className = "qc-client-delete-particle";
-                particle.setAttribute("aria-hidden", "true");
-                const angle = (i * 137.5) * Math.PI / 180;
-                const distance = 23 + (i % 5) * 8;
-                particle.style.left = (8 + (i * 23 % 84)) + "%";
-                particle.style.top = (18 + (i * 17 % 64)) + "%";
-                particle.style.setProperty("--qc-particle-size", (2 + i % 4) + "px");
-                particle.style.setProperty("--qc-particle-x", Math.round(Math.cos(angle) * distance) + "px");
-                particle.style.setProperty("--qc-particle-y", Math.round(Math.sin(angle) * distance - 8) + "px");
-                particle.style.setProperty("--qc-particle-rotate", (i % 2 ? 85 : -95) + "deg");
-                action.append(particle);
-                particles.push(particle);
+            const rect = card.getBoundingClientRect();
+            const parentRect = historyEntries.getBoundingClientRect();
+            const debris = document.createElement("span");
+            debris.className = "qc-client-history-debris";
+            debris.setAttribute("aria-hidden", "true");
+            debris.style.left = (rect.left - parentRect.left) + "px";
+            debris.style.top = (rect.top - parentRect.top) + "px";
+            debris.style.width = rect.width + "px";
+            debris.style.height = rect.height + "px";
+
+            // Scatter fragments across the complete card, not just the delete button.
+            const colors = ["var(--qc-danger)", "var(--qc-border)", "var(--qc-muted)",
+                "var(--qc-danger-light)", "var(--qc-primary-light)"];
+            const columns = 10, rows = 6;
+            for (let i = 0; i < columns * rows; i++) {
+                const fragment = document.createElement("span");
+                fragment.className = "qc-client-history-fragment";
+                const x = (i % columns + .2 + ((i * 7) % 9) / 15) / columns * rect.width;
+                const y = (Math.floor(i / columns) + .2 + ((i * 11) % 7) / 12) / rows * rect.height;
+                const angle = Math.atan2(y - rect.height / 2, x - rect.width / 2);
+                const distance = 28 + (i % 7) * 7;
+                fragment.style.left = x + "px";
+                fragment.style.top = y + "px";
+                fragment.style.setProperty("--qc-frag-size", (3 + i % 6) + "px");
+                fragment.style.setProperty("--qc-frag-height", (3 + (i * 3) % 8) + "px");
+                fragment.style.setProperty("--qc-frag-color", colors[i % colors.length]);
+                fragment.style.setProperty("--qc-frag-x", Math.round(Math.cos(angle) * distance) + "px");
+                fragment.style.setProperty("--qc-frag-y", Math.round(Math.sin(angle) * distance - 9) + "px");
+                fragment.style.setProperty("--qc-frag-rotate", ((i % 2 ? 1 : -1) * (45 + i % 100)) + "deg");
+                debris.append(fragment);
             }
-            button.classList.add("is-disintegrating");
-            await new Promise(resolve => setTimeout(resolve, 420));
-            particles.forEach(particle => particle.remove());
-            // Keep the disintegrated button hidden until the history list is refreshed.
+            historyEntries.append(debris);
+            card.classList.add("is-disintegrating");
+            try {
+                await new Promise(resolve => setTimeout(resolve, 550));
+            } finally {
+                debris.remove();
+                // The card stays invisible until the refreshed history replaces it.
+            }
         }
 
         async function changeContactHistory(button) {
@@ -583,7 +602,10 @@
                 if (isActive()) historyFeedback.textContent = "خطا هنگام تغییر سابقه؛ تاریخچه را تازه کنید.";
             } finally {
                 historyBusy = false;
-                if (button.isConnected) button.classList.remove("is-disintegrating");
+                if (button.isConnected) {
+                    button.classList.remove("is-hold-complete");
+                    button.closest(".qc-client-history-entry")?.classList.remove("is-disintegrating");
+                }
                 if (isActive()) historyEntries.querySelectorAll("[data-qc-history-action]")
                     .forEach(action => action.disabled = false);
             }
