@@ -500,6 +500,7 @@ document.addEventListener("click", async event => {
             url: "/Factor/SendFactorToExternalSoftware",
             method: "POST",
             data: { ...state.request, invoiceNumber: parsed.number },
+            headers: ExternalFinancialWizard.antiforgeryHeaders("sendFactorToExternalSoftwareModal"),
             timeout: 0,
             successMsg: "فاکتور با موفقیت در سپیدار ثبت شد",
         });
@@ -577,6 +578,8 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     };
     const query = async (action, data) => sendApiRequest({
         url: "/Factor/" + action, method: "POST", data,
+        headers: action === "SaveExternalFactorCustomer"
+            ? ExternalFinancialWizard.antiforgeryHeaders(modal()) : undefined,
         successMsg: null, showLoading: false,
     });
 

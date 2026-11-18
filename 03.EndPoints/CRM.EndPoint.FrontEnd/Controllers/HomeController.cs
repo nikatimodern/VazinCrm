@@ -203,6 +203,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         /* ----------------------------------------------- External Softwares ----------------------------------------------- */
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> GetAllExternalSoftware([FromBody] ExternalSoftwareRequestDto request, CancellationToken ct)
         {
             if (request?.EntityIds == null || request.EntityIds.Count == 0 ||

@@ -3143,6 +3143,7 @@ async function showExternalSoftwareModal(ids, config) {
     const result = await sendApiRequest({
         url: "/Home/GetAllExternalSoftware",
         method: "POST",
+        headers: { RequestVerificationToken: externalSoftwareModalElm.querySelector('[name="__RequestVerificationToken"]').value },
         successMsg: null,
         data: { entityIds, mapType: config.mapType },
         onSuccess: (res) => {

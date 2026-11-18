@@ -14,6 +14,14 @@ class ExternalFinancialWizard {
         this.destinationIndex = 0;
     }
 
+    /** Read the antiforgery token rendered inside the financial transfer modal. */
+    static antiforgeryHeaders(modal) {
+        const host = typeof modal === "string" ? document.getElementById(modal) : modal;
+        const token = host?.querySelector('[name="__RequestVerificationToken"]')?.value;
+        if (!token) throw new Error("Financial transfer antiforgery token is missing.");
+        return { RequestVerificationToken: token };
+    }
+
     /** Shared compact field markup for sale type, customer and other lookups. */
     static selectField({ id, label, options = [], selected = "", placeholder = null }) {
         const safe = value => escapeHtml(String(value ?? ""));

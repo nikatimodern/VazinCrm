@@ -46,17 +46,19 @@ public sealed class ExternalTransferOptionsService(
 
     // Adding a transfer type requires one configuration entry, not another controller branch.
     // Never enable automatic cleanup for a type that has a manual history/delete UI.
+    private static readonly string[] FinancialRoles = ["مدیر ارشد", "مدیر عامل", "مدیر مالی", "کارشناس مالی"];
+
     public static IReadOnlyDictionary<ExternalMappingTypeEnum, TransferRule> Rules { get; } =
         new Dictionary<ExternalMappingTypeEnum, TransferRule> {
             [ExternalMappingTypeEnum.تنخواه] =
                 new(nameof(Cash), CleanupMissingCashDocuments: true),
-            [ExternalMappingTypeEnum.پیش_فاکتور] = new(nameof(PreFactor)),
-            [ExternalMappingTypeEnum.فاکتور] = new(nameof(Factor)),
+            [ExternalMappingTypeEnum.پیش_فاکتور] = new(nameof(PreFactor), AllowedRoles: FinancialRoles),
+            [ExternalMappingTypeEnum.فاکتور] = new(nameof(Factor), AllowedRoles: FinancialRoles),
             [ExternalMappingTypeEnum.فاکتور_خرید] = new(nameof(SupplyFactor),
-                AllowedRoles: ["مدیر ارشد", "مدیر مالی", "کارشناس مالی"],
+                AllowedRoles: FinancialRoles,
                 SupportedDestinationsOnly: true),
             [ExternalMappingTypeEnum.رسید_انبار] = new(nameof(SupplyFactor),
-                AllowedRoles: ["مدیر ارشد", "مدیر مالی", "کارشناس مالی"],
+                AllowedRoles: FinancialRoles,
                 SupportedDestinationsOnly: true,
                 Prerequisite: ExternalMappingTypeEnum.فاکتور_خرید,
                 PrerequisiteMessage: "برای ثبت رسید انبار، ابتدا فاکتور خرید را در نرم‌افزار مالی ثبت کنید.",

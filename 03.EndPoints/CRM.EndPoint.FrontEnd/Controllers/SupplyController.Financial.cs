@@ -18,7 +18,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 public partial class SupplyController
 {
-    internal const string FinancialExportRoles = "مدیر ارشد,مدیر مالی,کارشناس مالی";
+    internal const string FinancialExportRoles = "مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
 
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> FinancialHistory(Guid sourceId, CancellationToken ct) =>

@@ -3,6 +3,7 @@
 <div class="modal fade" id="@Model.ModalId" data-bs-backdrop="static" tabindex="-1" aria-labelledby="@Model.TitleId" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content external-mapping-modal">
+            @Html.AntiForgeryToken()
             <div class="modal-header">
                 <div class="external-mapping-heading">
                     <span class="external-mapping-icon" aria-hidden="true"><i class="fas fa-desktop"></i></span>

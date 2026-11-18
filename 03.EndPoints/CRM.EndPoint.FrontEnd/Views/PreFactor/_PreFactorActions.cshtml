@@ -39,7 +39,7 @@
         </button>
     }
 
-    @if (acceptedCard && (User.IsFinancial() || User.IsAdmin())) {
+    @if (acceptedCard && (User.IsFinancial() || User.IsAdmin() || User.IsInRole("مدیر عامل"))) {
         <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی" onclick="showPreFactorExternalSotwaresModal('@Model.Id', '@Model.SerialNumber')">
             <span class="pf-accepted-card__action-icon" style="@(acceptedCard ? null : "display:contents")" aria-hidden="true">
                 <i class="fa fa-link" aria-hidden="true"></i>

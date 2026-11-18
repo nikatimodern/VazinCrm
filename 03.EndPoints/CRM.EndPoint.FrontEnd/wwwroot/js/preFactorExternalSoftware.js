@@ -320,6 +320,7 @@ async function exSoftwarePreFactorConfirmCustomer() {
     await sendApiRequest({
         url: "/Factor/SaveExternalCustomerMapping",
         method: "POST",
+        headers: ExternalFinancialWizard.antiforgeryHeaders(getExternalMappingModal()),
         successMsg: null,
         showLoading: false,
         data: {
@@ -618,6 +619,7 @@ async function exSoftwarePreFactorSubmit() {
     await sendApiRequest({
         url: "/Factor/SendPreFactorsToExternalSoftware",
         method: "POST",
+        headers: ExternalFinancialWizard.antiforgeryHeaders(getExternalMappingModal()),
         successMsg: "انتقال پیش‌فاکتور با موفقیت انجام شد",
         data: request,
         onSuccess: exSoftwarePreFactorFinish,

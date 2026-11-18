@@ -64,6 +64,7 @@ using Microsoft.Playwright;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class FactorController : Controller {
+        private const string FinancialExportRoles = "مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
         private readonly Service genService;
         private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
@@ -882,6 +883,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
         public async Task<IActionResult> PreviewFactorSepidarPrint(int id, Guid? softwareId = null)
         {
@@ -3321,7 +3323,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .PreviewDirectAsync(factor, request.SaleTypeId, request.ExternalCustomerId, mappings, ct);
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorModes(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3349,7 +3351,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3379,8 +3381,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -3422,7 +3425,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorQuotationItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3460,7 +3463,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3547,7 +3550,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return "نامشخص";
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -3598,7 +3601,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> CheckExternalFactorInvoiceNumber(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
@@ -3635,8 +3638,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
             try
@@ -3708,7 +3712,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> GetAllSepidarStocksPartial([FromBody] SendToExternalSoftwaresDto request)
         {
@@ -3738,6 +3742,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalSaleType([FromBody] SendToExternalSoftwaresDto request)
         {
@@ -3771,6 +3776,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(result);
         }
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] SendToExternalSoftwaresDto request)
         {
@@ -3850,7 +3856,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveExternalCustomerMapping([FromBody] SaveExternalCustomerMappingRequest request)
         {
             var preFactor = await db.PreFactors
@@ -3916,6 +3924,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok();
         }
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalItemMapping([FromBody] PrepareExternalItemMappingRequest request, CancellationToken ct)
         {
@@ -3964,6 +3973,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             });
         }
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalStockMapping([FromBody] PrepareExternalItemMappingRequest request)
         {
@@ -3982,8 +3992,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] ExternalSoftwarePreFactorRequest request, CancellationToken ct)
         {
             if (request == null)
@@ -4082,6 +4093,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         /* ---------------------------------------------------- Add Item In Sepidar ---------------------------------------------------- */
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalUnits([FromBody] SendToExternalSoftwaresDto request)
         {
@@ -4110,6 +4122,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         public async Task<IActionResult> GetLastSepidarItemCode([FromBody] SendToExternalSoftwaresDto request)
         {
@@ -4139,7 +4152,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendItemToExternalSoftware([FromBody] ExternalSoftwareAddItemRequest request, CancellationToken ct)
@@ -4182,7 +4195,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
         {
@@ -4243,14 +4256,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(result);
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public Task<IActionResult> DeleteMissingExternalFactorMapping(
             [FromBody] DeleteMissingExternalFinancialMappingRequest request, CancellationToken ct) =>
             DeleteMissingFinancialMappingAsync(request, ExternalMappingTypeEnum.فاکتور, nameof(Factor), ct);
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public Task<IActionResult> DeleteMissingExternalPreFactorMapping(
@@ -4295,7 +4308,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(new { deleted = true });
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
