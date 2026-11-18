@@ -69,12 +69,16 @@ public sealed class ExternalTransferOptionsService(
     public async Task<IReadOnlyList<DestinationOption>> GetAllExternalSoftwareAsync(
         IReadOnlyCollection<Guid> sourceIds, ExternalMappingTypeEnum mapType, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(sourceIds);
         if (!TryGetRule(mapType, out var rule))
             throw new ArgumentOutOfRangeException(nameof(mapType));
 
         var ids = sourceIds.Distinct().ToArray();
+        if (ids.Length == 0 || ids.Any(id => id == Guid.Empty))
+            throw new ArgumentException("Source IDs must be nonempty.", nameof(sourceIds));
+
         var mappings = await LoadMappingsAsync(ids, mapType, rule, ct);
-        var existence = await CheckExternalRecordsAsync(mappings);
+        var existence = await CheckExternalRecordsAsync(mappings, ct);
         await CleanupMissingCashDocumentsAsync(mappings, existence, rule, ct);
 
         var byDestination = mappings.ToLookup(m =>
@@ -87,6 +91,7 @@ public sealed class ExternalTransferOptionsService(
         var options = new List<DestinationOption>(softwares.Count);
         foreach (var software in softwares)
         {
+            ct.ThrowIfCancellationRequested();
             var service = Resolve(software.Id);
             if (rule.SupportedDestinationsOnly && service == null)
                 continue;
@@ -110,13 +115,14 @@ public sealed class ExternalTransferOptionsService(
     }
 
     private async Task<Dictionary<Guid, bool?>> CheckExternalRecordsAsync(
-        IReadOnlyCollection<ExternalMapping> mappings)
+        IReadOnlyCollection<ExternalMapping> mappings, CancellationToken ct)
     {
         // A destination record may have several CRM mappings. Check each target once.
         var checkedRecords = new Dictionary<(Guid SoftwareId, string EntityName, string EntityId), bool?>();
         var existence = new Dictionary<Guid, bool?>();
         foreach (var mapping in mappings.Where(x => !x.HasPendingExternalId()))
         {
+            ct.ThrowIfCancellationRequested();
             var service = Resolve(mapping.ExternalSoftwareId);
             if (service == null)
             {
