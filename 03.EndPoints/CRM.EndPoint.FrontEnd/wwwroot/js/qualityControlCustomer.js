@@ -63,17 +63,46 @@
         const pageSignal = typeof PageRuntime !== "undefined" ? PageRuntime.current?.signal : null;
         const isActive = () => page.isConnected && !pageSignal?.aborted;
 
-        // Account for the actual shell/header height rather than guessing a
-        // fixed offset; only the customer queue scrolls on desktop.
+        // Keep independent list scrolling when there is enough room. When
+        // the sidebar / wrapped dashboard makes the queue too short, let the
+        // whole page scroll instead of hiding nearly every customer card.
         function fitQueueToViewport() {
             if (!isActive()) return;
             const top = Math.max(0, page.getBoundingClientRect().top);
-            page.style.setProperty("--qc-workspace-height",
-                Math.max(320, Math.floor(window.innerHeight - top - 8)) + "px");
+            const available = Math.max(0, Math.floor(window.innerHeight - top - 8));
+            page.style.setProperty("--qc-workspace-height", available + "px");
+
+            if (window.innerWidth < 768) {
+                page.classList.remove("qc-client-natural-scroll");
+                return;
+            }
+
+            const outerHeight = element => {
+                const style = getComputedStyle(element);
+                return element.getBoundingClientRect().height
+                    + (parseFloat(style.marginTop) || 0)
+                    + (parseFloat(style.marginBottom) || 0);
+            };
+            const fixedHeight = [...page.children]
+                .filter(element => element !== queue && !element.classList.contains("modal"))
+                .reduce((sum, element) => sum + outerHeight(element), 0);
+            const pageStyle = getComputedStyle(page);
+            const padding = (parseFloat(pageStyle.paddingTop) || 0)
+                + (parseFloat(pageStyle.paddingBottom) || 0);
+            const remainingQueueHeight = available - fixedHeight - padding;
+            page.classList.toggle("qc-client-natural-scroll", remainingQueueHeight < 200);
         }
         fitQueueToViewport();
         window.addEventListener("resize", fitQueueToViewport,
             pageSignal ? { signal: pageSignal } : undefined);
+        // Responsive text wrapping also changes the available height.
+        const queueLayoutObserver = typeof ResizeObserver === "undefined" ? null
+            : new ResizeObserver(fitQueueToViewport);
+        if (queueLayoutObserver) {
+            [...page.children].filter(element =>
+                element !== queue && !element.classList.contains("modal"))
+                .forEach(element => queueLayoutObserver.observe(element));
+        }
         if (typeof enableMomentumScroll === "function")
             enableMomentumScroll(queue, { signal: pageSignal });
 
@@ -944,12 +973,16 @@
             formFeedback.textContent = "";
         });
         pageSignal?.addEventListener("abort", () => {
+            queueLayoutObserver?.disconnect();
             clearTimeout(midnightRefreshTimer);
             listController?.abort();
             formController?.abort();
             historyController?.abort();
         }, { once: true });
-        window.addEventListener("pagehide", () => clearTimeout(midnightRefreshTimer), { once: true });
+        window.addEventListener("pagehide", () => {
+            queueLayoutObserver?.disconnect();
+            clearTimeout(midnightRefreshTimer);
+        }, { once: true });
         scheduleNextDayRefresh();
         loadCustomers();
     });
