@@ -446,14 +446,15 @@
                             block: "nearest",
                             behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                         });
-                        // End the focus only when the 5-second outline animation finishes.
-                        // A timeout is retained for reduced-motion or unsupported animations.
+                        // Remove the temporary green background after five seconds.
+                        // The completed card leaves only if it no longer matches the server filter.
+                        // Keep a fallback for reduced-motion or unsupported animations.
                         clearTimeout(lastReviewedHighlightTimer);
                         let focusFinished = false;
                         const finishFocus = () => {
                             if (focusFinished || !isActive() || !card.isConnected) return;
                             focusFinished = true;
-                            card.removeEventListener("animationend", onOutlineEnd);
+                            card.removeEventListener("animationend", onHighlightEnd);
                             clearTimeout(lastReviewedHighlightTimer);
                             lastReviewedHighlightTimer = null;
                             card.classList.remove("qc-client-last-reviewed");
@@ -467,11 +468,11 @@
                             }
                             temporaryCompletedCustomerCard = null;
                         };
-                        const onOutlineEnd = event => {
-                            if (event.animationName === "qcLastReviewBorderRetract")
+                        const onHighlightEnd = event => {
+                            if (event.target === card && event.animationName === "qcLastReviewBackgroundFade")
                                 finishFocus();
                         };
-                        card.addEventListener("animationend", onOutlineEnd);
+                        card.addEventListener("animationend", onHighlightEnd);
                         lastReviewedHighlightTimer = setTimeout(finishFocus,
                             Math.max(0, lastReviewedHighlightUntil - Date.now()) + 100);
                     } else {
