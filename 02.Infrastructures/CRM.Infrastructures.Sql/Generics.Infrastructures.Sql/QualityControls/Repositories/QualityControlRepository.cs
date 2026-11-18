@@ -247,9 +247,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var currentStatus = contact?.IsDeleted == false
             ? CurrentContactStatus(contact, mobile, now.Date, 1)
             : QualityControlCustomerContactStatus.None;
-        // A second click on the same day cancels; a new click tomorrow records
-        // another attempt (yesterday's no-response has already expired).
-        var nextStatus = currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
+        // Every no-response click is a separate contact attempt, even on the same day.
+        // Only the invalid-number flag can be toggled off by clicking it again.
+        var nextStatus = request.Status == QualityControlCustomerContactStatus.NoResponse
+            ? QualityControlCustomerContactStatus.NoResponse
+            : currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
         if (contact == null)
         {
             contact = new QualityControlCustomerContact
