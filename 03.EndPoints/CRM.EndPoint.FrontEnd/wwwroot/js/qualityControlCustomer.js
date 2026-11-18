@@ -529,7 +529,7 @@
             button.classList.add("is-disintegrating");
             await new Promise(resolve => setTimeout(resolve, 420));
             particles.forEach(particle => particle.remove());
-            button.classList.remove("is-disintegrating");
+            // Keep the disintegrated button hidden until the history list is refreshed.
         }
 
         async function changeContactHistory(button) {
@@ -583,6 +583,7 @@
                 if (isActive()) historyFeedback.textContent = "خطا هنگام تغییر سابقه؛ تاریخچه را تازه کنید.";
             } finally {
                 historyBusy = false;
+                if (button.isConnected) button.classList.remove("is-disintegrating");
                 if (isActive()) historyEntries.querySelectorAll("[data-qc-history-action]")
                     .forEach(action => action.disabled = false);
             }
