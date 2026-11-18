@@ -330,25 +330,22 @@
                             ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
                                 + faNumber.format(row.noResponseAttempts) + '</strong></small>' : '')
                         + '</div>'
-                        + '<div class="qc-client-stats"><span><i class="fa fa-shopping-cart" aria-hidden="true"></i> ' + faNumber.format(row.orders) + ' سفارش</span>'
-                        + '<span><i class="fa fa-file-invoice" aria-hidden="true"></i> ' + faNumber.format(row.invoices) + ' فاکتور</span>'
+                        + '<div class="qc-client-stats">'
+                        + '<span class="qc-client-segment-group qc-client-order-group" role="group" aria-label="سفارش‌ها و فاکتورهای مشتری">'
+                        + '<span class="qc-client-stat-segment"><i class="fa fa-shopping-cart" aria-hidden="true"></i> ' + faNumber.format(row.orders) + ' سفارش</span>'
+                        + '<span class="qc-client-stat-segment"><i class="fa fa-file-invoice" aria-hidden="true"></i> ' + faNumber.format(row.invoices) + ' فاکتور</span></span>'
+                        + '<span class="qc-client-segment-group qc-client-review-group" role="group" aria-label="آمار و وضعیت بررسی مشتری">'
                         + (hasReviewed
-                            ? '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + '</strong>'
+                            ? '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + ' از ' + faNumber.format(row.totalItems) + '</strong>'
                                 + '<small>مغایرت: ' + faNumber.format(row.discrepancyItems)
                                 + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
                             : '')
+                        + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
+                        + '<i class="fa ' + statusIcon + '" aria-hidden="true"></i> ' + label + '</span></span>'
                         + (pending > 0 ? '<span class="qc-client-count-pending"><i class="fa fa-search" aria-hidden="true"></i> بررسی‌نشده: ' + faNumber.format(pending) + '</span>' : '')
                         + '</div>'
-                        + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
-                        + '<i class="fa ' + statusIcon + '" aria-hidden="true"></i> ' + label + '</span>'
                         + '<div class="qc-client-contact-actions">'
-                        + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
-                        + ' title="مشاهده سابقه تماس‌های این مشتری"><i class="fa fa-history" aria-hidden="true"></i> تاریخچه تماس</button>'
-                        + '<button type="button" class="qc-client-button qc-client-contact-invalid'
-                        + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
-                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
-                        + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
-                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> شماره نامعتبر</button>'
+                        + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer"'
                         + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : ' title="ثبت یک تلاش تماس بدون پاسخ جدید"')
@@ -358,6 +355,14 @@
                         + '<span class="qc-client-no-answer-time" data-qc-no-answer-time dir="ltr" hidden></span></button>'
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
+                        + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
+                        + ' title="مشاهده تاریخچه تماس مشتری" aria-label="مشاهده تاریخچه تماس مشتری">'
+                        + '<i class="fa fa-history" aria-hidden="true"></i></button></span>'
+                        + '<button type="button" class="qc-client-button qc-client-contact-invalid'
+                        + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
+                        + '"' + (complete ? ' disabled title="تمام اقلام بررسی شده‌اند"' : '')
+                        + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
+                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> شماره نامعتبر</button>'
                         + '<button type="button" class="qc-client-button qc-client-primary" data-qc-customer="' + escape(row.customerId) + '">'
                         + '<i class="fa fa-check-circle" aria-hidden="true"></i> '
                         + (pending > 0 ? "کنترل کیفیت" : "مشاهده / ویرایش") + '</button>'
