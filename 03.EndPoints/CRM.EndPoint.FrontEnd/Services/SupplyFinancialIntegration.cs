@@ -20,19 +20,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.EndPoint.FrontEnd.Services;
 
 public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository repository,
     Sepidar1Service first, Sepidar2Service second, UserManager<AppUser> users,
-    IHttpContextAccessor http, DateTimeServices dates) : ISupplyFinancialIntegration
+    IHttpContextAccessor http, DateTimeServices dates, SepidarUserResolver sepidarUsers) : ISupplyFinancialIntegration
 {
-    private static readonly Guid FirstId = new("2f3d8024-6c2c-491f-c921-08df26b00138");
-    private static readonly Guid SecondId = new("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
     private sealed record FinancialPreview(string PreviewToken, string DateText, string SupplierTxt,
         string Stock, string SerialNumber, string Description, decimal? TotalPrice,
         decimal? TotalTax, decimal? Discount, decimal? Total, bool Voucher, object Items);
 
-    private SepidarService Resolve(Guid id) => id == FirstId ? first : id == SecondId ? second
+    private SepidarService Resolve(Guid id) => id == Sepidar1SoftwareId ? first : id == Sepidar2SoftwareId ? second
         : throw new InvalidOperationException("نرم‌افزار مالی انتخاب‌شده برای انتقال تأمین پشتیبانی نمی‌شود.");
 
     private async Task<SepidarService> GetDestinationAsync(Guid id, CancellationToken ct)
@@ -52,7 +52,7 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
         var source = await GetSourceAsync(sourceId, ct);
         var maps = await repository.GetMappingsAsync(sourceId, ct);
         var results = new List<SupplyFinancialDestination>();
-        foreach (var software in (await repository.GetDestinationsAsync(ct)).Where(x => x.Id == FirstId || x.Id == SecondId))
+        foreach (var software in (await repository.GetDestinationsAsync(ct)).Where(x => x.Id == Sepidar1SoftwareId || x.Id == Sepidar2SoftwareId))
         {
             var service = Resolve(software.Id);
             var purchaseMapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id
@@ -230,8 +230,7 @@ public sealed class SupplyFinancialIntegration(ISupplyFinancialRepository reposi
             return preview;
         if (preview.Data is not FinancialPreview prepared || prepared.PreviewToken != request.PreviewToken)
             return SupplyResult.Invalid("اطلاعات سند تغییر کرده است. پیش‌نمایش جدید را بررسی کنید.");
-        if (!int.TryParse(await repository.GetCreatorIdAsync(request.ExternalSoftwareId, ct), out var creator) || creator <= 0)
-            return SupplyResult.Invalid("شناسه کاربر ثبت خرید برای نرم‌افزار مقصد تنظیم نشده است.");
+        var creator = await sepidarUsers.GetCurrentExternalUserIdAsync(request.ExternalSoftwareId, service, ct);
 
         if (mapping == null)
         {

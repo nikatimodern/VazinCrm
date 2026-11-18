@@ -14,7 +14,6 @@ public interface ISupplyFinancialRepository
     Task<IReadOnlyList<ExternalSoftware>> GetDestinationsAsync(CancellationToken ct);
     Task<IReadOnlyList<ExternalMapping>> GetMappingsAsync(Guid sourceId, CancellationToken ct);
     Task<ExternalMapping> GetMappingAsync(Guid sourceId, Guid destinationId, ExternalMappingTypeEnum type, CancellationToken ct);
-    Task<string> GetCreatorIdAsync(Guid destinationId, CancellationToken ct);
     Task SaveMappingAsync(ExternalMapping mapping, CancellationToken ct);
     Task DeleteMappingAsync(ExternalMapping mapping, CancellationToken ct);
     Task<IAsyncDisposable> LockAsync(Guid sourceId, CancellationToken ct);

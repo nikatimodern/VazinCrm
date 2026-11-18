@@ -36,11 +36,6 @@ public sealed class SupplyFinancialRepository(CRMContextDb db) : ISupplyFinancia
         db.ExternalMappings.SingleOrDefaultAsync(x => x.EntityId == sourceId && x.ExternalSoftwareId == destinationId
             && x.MapType == type && x.EntityName == (type == ExternalMappingTypeEnum.تامین_کننده ? "Customer" : nameof(SupplyFactor)), ct);
 
-    public Task<string> GetCreatorIdAsync(Guid destinationId, CancellationToken ct) =>
-        db.ExternalSoftwareSettings.AsNoTracking().Where(x => x.ExternalSoftwareId == destinationId
-            && x.SettingNameCode == ExternalSoftwareSettingTypeEnum.شناسه_کاربر_ثبت_خرید)
-            .Select(x => x.SettingValue).SingleOrDefaultAsync(ct);
-
     public async Task SaveMappingAsync(ExternalMapping mapping, CancellationToken ct)
     {
         if (db.Entry(mapping).State == EntityState.Detached)

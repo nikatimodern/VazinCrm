@@ -17,6 +17,8 @@ using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 
 /// <summary>
@@ -27,10 +29,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 public sealed class ExternalTransferOptionsService(
     CRMContextDb db, Sepidar1Service first, Sepidar2Service second)
 {
-    private static readonly Guid FirstSoftwareId =
-        Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
-    private static readonly Guid SecondSoftwareId =
-        Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
 
     public sealed record TransferRule(
         string SourceEntity,
@@ -222,6 +220,6 @@ public sealed class ExternalTransferOptionsService(
     }
 
     private SepidarService Resolve(Guid softwareId) =>
-        softwareId == FirstSoftwareId ? first :
-        softwareId == SecondSoftwareId ? second : null;
+        softwareId == Sepidar1SoftwareId ? first :
+        softwareId == Sepidar2SoftwareId ? second : null;
 }

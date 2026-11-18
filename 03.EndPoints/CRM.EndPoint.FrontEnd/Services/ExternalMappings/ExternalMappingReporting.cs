@@ -30,6 +30,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 {
     public sealed partial class ExternalMappingService

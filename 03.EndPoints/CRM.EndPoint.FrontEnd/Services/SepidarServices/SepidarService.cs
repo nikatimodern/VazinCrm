@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -31,6 +31,10 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace CRM.EndPoint.FrontEnd.Services.SepidarServices;
 
 public partial class SepidarService(SepidarContextDbBase sepidarContext) {
+    internal Task<bool> IsActiveUserAsync(int id, CancellationToken ct) =>
+        sepidarContext.SepidarUsers.AsNoTracking()
+            .AnyAsync(x => x.UserID == id && !x.IsDeleted && x.Status == true, ct);
+
     public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
     {
         return await sepidarContext.vwInvoice
@@ -105,7 +109,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
 
     public async Task<(string entityName, string entityId)?> SendCashToSepidar(Cash cash, string tafsiliCode, int costCenterId,
-        string tafsiliCash)
+        string tafsiliCash, int creator, CancellationToken ct)
     {
         var dl = await GetDlByCodeAsync(tafsiliCode);
         var tafsiliId = dl.DLId;
@@ -115,10 +119,10 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         switch (dl.Type)
         {
             case 4: // حساب بانكي
-                return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId, sepidarCashId);
+                return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId, sepidarCashId, creator, ct);
 
             case 2: // طرف مقابل
-                return await AddVoucherAsync2(cash, tafsiliId, costCenterId);
+                return await AddVoucherAsync2(cash, tafsiliId, costCenterId, creator, ct);
 
             default:
                 return null;
@@ -482,7 +486,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId, int sepidarCashId,
+    private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId, int sepidarCashId, int creator,
         CancellationToken ct = default)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
@@ -520,9 +524,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 ItemType = 4, // فعلا
                 State = 2, // فعلا
                 CreatorForm = "0", // فعلا
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
                 Version = 1,
                 Rate = 1,
@@ -552,7 +556,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             // The payment document is always saved; its accounting voucher is optional.
             if (await GetRequiredSepidarBooleanSettingAsync("PaymentAutoVoucher", ct))
             {
-                var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
+                var voucher = await AddVoucherAsync(cash, paymentHeader, creator, ct);
                 paymentHeader.Voucher = voucher;
                 paymentHeader.Version = 2;
                 await sepidarContext.SaveChangesAsync(ct);
@@ -665,7 +669,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         "SG.Accounting.VoucherManagement.Common, " +
         "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId, CancellationToken ct = default)
+    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId, int creator, CancellationToken ct = default)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -691,9 +695,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 Description = cash.CostDescription,
                 Description_En = cash.CostDescription,
                 Version = 1,
-                Creator = 1,
+                Creator = creator,
                 CreationDate = DateTime.Now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = DateTime.Now,
                 DailyNumber = dailyNumber,
                 IssuerSystem = 3,
@@ -877,7 +881,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken ct = default)
+    private async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, int creator, CancellationToken ct = default)
     {
         var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
         var voucherNumbers = await GetNextVoucherNumbersAsync(paymentHeader.FiscalYearRef, ct);
@@ -913,9 +917,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             Description_En = description,
 
             Version = 1,
-            Creator = 1,
+            Creator = creator,
             CreationDate = now,
-            LastModifier = 1,
+            LastModifier = creator,
             LastModificationDate = now,
 
             DailyNumber = dailyNumber,
@@ -1425,7 +1429,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int externalCustomerId, int saleTypeId,
-        List<ExternalPreFactorItemMapping> itemMappings, CancellationToken ct = default)
+        List<ExternalPreFactorItemMapping> itemMappings, int creator, CancellationToken ct = default)
     {
         // Customer validation
         var customer = await GetSepidarCustomerByIdAsync(externalCustomerId, ct);
@@ -1488,7 +1492,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             SaleTypeRef = saleTypeId
         };
 
-        var quotationId = await AddQuotationAsync(request, ct);
+        var quotationId = await AddQuotationAsync(request, creator, ct);
 
         return (nameof(Quotation), quotationId.ToString());
     }
@@ -1504,7 +1508,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"شماره پیش‌فاکتور {serialNumber} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task<int> AddQuotationAsync(SepidarQuotationRequest request, CancellationToken ct = default)
+    private async Task<int> AddQuotationAsync(SepidarQuotationRequest request, int creator, CancellationToken ct = default)
     {
         if (request.Items == null || request.Items.Count == 0)
             throw new InvalidOperationException("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1559,9 +1563,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 Rate = 1,
                 Version = 1,
 
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
 
                 Closed = false,
@@ -1728,7 +1732,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
     //--------------------------------------------------------- Item ---------------------------------------------------------
 
-    public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, CancellationToken ct = default)
+    public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, int creator, CancellationToken ct = default)
     {
         // unit validation
         var unit = await GetSepidarUnitByIdAsync(request.ItemUnit, ct);
@@ -1751,7 +1755,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (request.DefaultStockRef is int defaultStockRef && !validStockIds.Contains(defaultStockRef))
             throw new InvalidOperationException("انبار پیش‌فرض باید یکی از انبارهای انتخاب‌شده برای کالا باشد.");
 
-        await AddItemAsync(request, ct);
+        await AddItemAsync(request, creator, ct);
     }
 
     private async Task CheckItemCodeAsync(string code, CancellationToken ct = default)
@@ -1765,7 +1769,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"کد محصول {code} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
+    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, int creator, CancellationToken ct)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -1783,9 +1787,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 Title_En = request.ItemTitle,
                 UnitRef = request.ItemUnit,
                 DefaultStockRef = request.DefaultStockRef,
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
                 Version = 0,
                 IsActive = true,
@@ -1902,7 +1906,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int? requestedInvoiceNumber = null,
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int creator, int? requestedInvoiceNumber = null,
         CancellationToken ct = default, int? brokerPartyId = null)
     {
         if (preview?.Items == null || preview.Items.Count == 0)
@@ -1976,9 +1980,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 NetPriceInBaseCurrency = preview.NetPrice,
                 Rate = quotation?.Rate ?? 1m,
                 Version = 1,
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
                 FiscalYearRef = quotation?.FiscalYearRef ?? preview.FiscalYearRef,
                 VoucherRef = null, // Set after posting the sales accounting voucher.

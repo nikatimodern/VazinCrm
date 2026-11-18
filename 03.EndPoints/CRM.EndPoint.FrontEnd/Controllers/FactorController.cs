@@ -62,6 +62,8 @@ using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using Microsoft.Playwright;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class FactorController : Controller {
         private const string FinancialExportRoles = "مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
@@ -86,6 +88,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly UserManager<AppUser> userManager;
         private readonly SignInManager<AppUser> signInManager;
 
+        private readonly SepidarUserResolver sepidarUsers;
+
         public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, Sepidar1Service sepidar1Service,
             Sepidar2Service sepidar2Service,
             Sepidar1InvoiceExportRepository sepidar1InvoiceExportRepository,
@@ -95,10 +99,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
             IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
             IDocumentRenderService documentRender, PreFactorService preFactorService,
-            ILogger<FactorController> logger)
+            ILogger<FactorController> logger, SepidarUserResolver sepidarUsers)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
+            this.sepidarUsers = sepidarUsers;
             this.sepidar1Service = sepidar1Service;
             this.sepidar2Service = sepidar2Service;
             this.sepidar1InvoiceExportRepository = sepidar1InvoiceExportRepository;
@@ -3198,8 +3203,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         /* ------------------------------------------------ sendToExternalSoftware ------------------------------------------------ */
 
-        private static readonly Guid Sepidar1SoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
-        private static readonly Guid Sepidar2SoftwareId = Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
 
         private SepidarService GetSepidarService(Guid softwareId)
         {
@@ -3680,7 +3683,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 // A mapping change after Preview requires a fresh confirmation.
                 if (request.IncludeBroker && request.PreviewBrokerPartyId != brokerPartyId)
                     throw new InvalidOperationException("شخص مربوط به کارشناس فروش پس از پیش‌نمایش تغییر کرده است. دوباره پیش‌نمایش فاکتور را بررسی کنید.");
-                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview,
+                var creator = await sepidarUsers.GetCurrentExternalUserIdAsync(request.ExternalSoftwareId, sepidarService, ct);
+                var invoiceId = await sepidarService.AddInvoiceAsync(factor, preview, creator,
                     request.InvoiceNumber, ct, brokerPartyId: brokerPartyId);
 
 
@@ -4061,7 +4065,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
                 // Send
-                var result = await service.SendPreFactorToSepidar(pf, request.ExternalCustomerId, request.SaleTypeId, request.ItemMappings, ct);
+                var creator = await sepidarUsers.GetCurrentExternalUserIdAsync(request.ExternalSoftwareId, service, ct);
+                var result = await service.SendPreFactorToSepidar(pf, request.ExternalCustomerId, request.SaleTypeId, request.ItemMappings, creator, ct);
 
                 if (!result.HasValue)
                     return BadRequest("ثبت پیش‌فاکتور در نرم‌افزار مالی انجام نشد.");
@@ -4184,7 +4189,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     return BadRequest("شناسه نرم‌افزار نامعتبر است.");
 
                 // Send
-                await service.SendItemToSepidar(request, ct);
+                var creator = await sepidarUsers.GetCurrentExternalUserIdAsync(request.ExternalSoftwareId, service, ct);
+                await service.SendItemToSepidar(request, creator, ct);
 
                 return Ok();
             }

@@ -117,12 +117,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers
             var value = request.SettingValue?.Trim();
             if (string.IsNullOrWhiteSpace(value) || value.Length > 500)
                 return BadRequest("مقدار تنظیم باید بین ۱ تا ۵۰۰ کاراکتر باشد.");
-            if (settingType == ExternalSoftwareSettingTypeEnum.شناسه_کاربر_ثبت_خرید)
-            {
-                value = Services.TextService.ToEnglishNumber(value);
-                if (!int.TryParse(value, out var userId) || userId <= 0)
-                    return BadRequest("شناسه کاربر ثبت خرید باید عدد صحیح مثبت باشد.");
-            }
 
             await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
             if (!await db.ExternalSoftwares.AsNoTracking()
