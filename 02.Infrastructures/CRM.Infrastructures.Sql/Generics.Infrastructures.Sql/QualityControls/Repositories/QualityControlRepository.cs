@@ -748,9 +748,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         string persianNow, CancellationToken cancellationToken)
     {
         if (request.CustomerId == Guid.Empty || request.HistoryId == Guid.Empty || request.RowVersion == null
-            || request.RowVersion.Length != 8
-            || request.DeleteReason?.Trim().Length > 500)
-            return new(400, "شناسه، نسخه یا اطلاعات حذف سابقه معتبر نیست.");
+            || request.RowVersion.Length != 8)
+            return new(400, "شناسه یا نسخه سابقه تماس معتبر نیست.");
         if (!await IsHistoryCustomerVisibleAsync(request.CustomerId, access, cancellationToken))
             return new(404, "مشتری واجد شرایط یافت نشد.");
 
@@ -779,9 +778,6 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             entry.DeletedAt = now;
             entry.DeletedById = access.UserId;
             entry.DeletedByName = access.UserName;
-            // A reason is optional; actor, time and reversible soft-delete remain audited.
-            entry.DeleteReason = string.IsNullOrWhiteSpace(request.DeleteReason)
-                ? null : request.DeleteReason.Trim();
         }
         Stamp(entry, access, now, persianNow, false);
         try
