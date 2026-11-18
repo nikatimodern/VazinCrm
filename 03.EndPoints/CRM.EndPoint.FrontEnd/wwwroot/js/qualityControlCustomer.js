@@ -24,6 +24,8 @@
         const progressPercent = page.querySelector("#qcSummaryProgressPercent");
         const progressFill = page.querySelector("#qcSummaryProgressFill");
         const progressTrack = page.querySelector("#qcSummaryProgressTrack");
+        const unreviewedCount = page.querySelector("#qcSummaryUnreviewedItems");
+        const pausedCount = page.querySelector("#qcSummaryPausedItems");
         const pages = page.querySelector("#qcCustomerPages");
         const modal = page.querySelector("#qcCustomerReviewModal");
         const historyModal = page.querySelector("#qcContactHistoryModal");
@@ -203,6 +205,13 @@
                     // awaiting another call or correction of an invalid number.
                     const allItems = Math.max(0, Number(result.summary.totalItems) || 0);
                     const checkedItems = Math.max(0, Number(result.summary.reviewedItems) || 0);
+                    const actionableItems = Math.max(0, Number(result.summary.pendingItems) || 0);
+                    const unreviewedItems = Math.max(0, allItems - checkedItems);
+                    // Some unreviewed items belong to clients temporarily out of the
+                    // actionable queue because of a no-answer or invalid-number flag.
+                    const pausedItems = Math.max(0, unreviewedItems - actionableItems);
+                    unreviewedCount.textContent = faNumber.format(unreviewedItems);
+                    pausedCount.textContent = faNumber.format(pausedItems);
                     const percent = allItems > 0
                         ? Math.min(100, Math.round(100 * checkedItems / allItems))
                         : 0;
