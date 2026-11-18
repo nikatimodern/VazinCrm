@@ -4239,7 +4239,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     mapping.ExternalSoftwareId,
                     mapping.MappingId,
                     IsMissing = invoice == null,
-                    CanDeleteMissing = User.IsInRole("مدیر ارشد") ||
+                    CanDeleteMissing = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
                         User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                     ExternalSoftwareTitle = mapping.SoftwareTitle,
                     ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
@@ -4352,7 +4352,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     result.Add(new ExternalSoftwarePreFactorDto {
                         MappingId = mapping.MappingId,
                         IsMissing = externalPreFactor == null,
-                        CanDeleteMissing = User.IsInRole("مدیر ارشد") ||
+                        CanDeleteMissing = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
                             User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
