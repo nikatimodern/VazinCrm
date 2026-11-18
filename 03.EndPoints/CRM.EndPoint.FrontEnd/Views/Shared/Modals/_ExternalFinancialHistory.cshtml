@@ -8,6 +8,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <div class="modal-body">
+                @Html.AntiForgeryToken()
                 @if (!string.IsNullOrEmpty(Model.TabsPartial)) {
                     <partial name="@Model.TabsPartial" />
                 }
