@@ -110,7 +110,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var exists = target switch {
                 ExternalUserEntityName
                     => await sepidar.SepidarUsers.AsNoTracking()
-                        .AnyAsync(x => x.UserID == targetId && !x.IsDeleted, ct),
+                        .AnyAsync(x => x.UserID == targetId && !x.IsDeleted && x.Status == true, ct),
                 nameof(Party) when type == ExternalMappingTypeEnum.مشتری
                     => await sepidar.Parties.AsNoTracking()
                         .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct),
@@ -466,7 +466,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 .AnyAsync(x => x.Id == item.EntityId.ToString(), ct))
                             throw new ArgumentException("کاربر انتخاب‌شده در CRM پیدا نشد.");
                         if (!await targetDb.SepidarUsers.AsNoTracking()
-                                .AnyAsync(x => x.UserID == targetId && !x.IsDeleted, ct))
+                                .AnyAsync(x => x.UserID == targetId && !x.IsDeleted && x.Status == true, ct))
                             throw new ArgumentException("کاربر انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا حذف شده است.");
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.مرکز_هزینه)

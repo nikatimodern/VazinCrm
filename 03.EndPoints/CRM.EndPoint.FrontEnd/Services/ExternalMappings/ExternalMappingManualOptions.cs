@@ -167,7 +167,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 {
                     case ExternalUserEntityName:
                     {
-                        var query = targetDb.SepidarUsers.AsNoTracking().Where(x => !x.IsDeleted);
+                        var query = targetDb.SepidarUsers.AsNoTracking().Where(x => !x.IsDeleted && x.Status == true);
                         query = query.Where(x => (number > 0 && x.UserID == number)
                             || x.UserName.Contains(search) || x.Name.Contains(search));
                         var rows = await query.OrderBy(x => x.UserName)

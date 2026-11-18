@@ -98,7 +98,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var crmUsers = await userManager.Users.AsNoTracking()
                 .Select(x => new { x.Id, x.UserName }).ToListAsync(ct);
             var externalUsers = await sepidar.SepidarUsers.AsNoTracking()
-                .Where(x => !x.IsDeleted)
+                .Where(x => !x.IsDeleted && x.Status == true)
                 .Select(x => new { x.UserID, x.UserName }).ToListAsync(ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId

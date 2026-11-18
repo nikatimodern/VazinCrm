@@ -386,7 +386,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         ? (SepidarContextDbBase)s2Db : null;
                 var externalUserIds = targetDb == null ? Array.Empty<string>()
                     : (await targetDb.SepidarUsers.AsNoTracking()
-                        .Where(x => x.Name.Contains(search) || x.UserName.Contains(search))
+                        .Where(x => !x.IsDeleted && x.Status == true
+                            && (x.Name.Contains(search) || x.UserName.Contains(search)))
                         .Select(x => x.UserID).Take(500).ToListAsync(ct))
                         .Select(x => x.ToString()).ToArray();
                 var partyIds = targetDb == null ? Array.Empty<string>()
@@ -659,7 +660,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             foreach (var batch in ExternalTargetBatches(entries, ExternalUserEntityName))
             {
                 var users = await context.SepidarUsers.AsNoTracking()
-                    .Where(x => batch.Contains(x.UserID) && !x.IsDeleted)
+                    .Where(x => batch.Contains(x.UserID) && !x.IsDeleted && x.Status == true)
                     .Select(x => new { x.UserID, x.UserName, x.Name })
                     .ToListAsync(ct);
                 foreach (var user in users)
