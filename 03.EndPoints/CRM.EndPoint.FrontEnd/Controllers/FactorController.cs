@@ -4294,7 +4294,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(new { deleted = true });
         }
 
-[Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
