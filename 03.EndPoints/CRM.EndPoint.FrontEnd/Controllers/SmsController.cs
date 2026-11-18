@@ -43,21 +43,42 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
+                // Look up contact numbers only when a name can be part of the search.
+                var contactMobiles = searchValue.Any(char.IsLetter)
+                    ? await smsService.SearchContactMobileNumbersAsync(searchValue, HttpContext.RequestAborted)
+                    : [];
+                var iranMobileSuffixes = contactMobiles
+                    .Where(TextService.IsValidPhoneNumber)
+                    .Select(x => x[1..])
+                    .ToArray();
+                var otherMobiles = contactMobiles
+                    .Where(x => !TextService.IsValidPhoneNumber(x))
+                    .ToArray();
+
                 if (searchValue.Length < 3)
                 {
                     query = query.Where(x =>
-                        x.Mobile.Equals(searchValue) ||
-                        x.MessageText.Equals(searchValue) ||
-                        x.FarazId.ToString().Equals(searchValue) ||
-                        x.Number.Equals(searchValue)
+                        x.Mobile == searchValue ||
+                        x.MessageText == searchValue ||
+                        x.FarazId.ToString() == searchValue ||
+                        x.Number == searchValue ||
+                        (x.ReceivedFullName != null && x.ReceivedFullName.Contains(searchValue)) ||
+                        ((x.ReceivedFullName == null || x.ReceivedFullName.Trim() == "") && x.Mobile != null &&
+                            ((x.Mobile.Length >= 10 && iranMobileSuffixes.Contains(x.Mobile.Substring(x.Mobile.Length - 10))) ||
+                             otherMobiles.Contains(x.Mobile)))
                     );
-                } else
+                }
+                else
                 {
                     query = query.Where(x =>
-                        x.Mobile.Contains(searchValue) ||
-                        x.MessageText.Contains(searchValue) ||
+                        (x.Mobile != null && x.Mobile.Contains(searchValue)) ||
+                        (x.MessageText != null && x.MessageText.Contains(searchValue)) ||
                         x.FarazId.ToString().Contains(searchValue) ||
-                        x.Number.Contains(searchValue)
+                        (x.Number != null && x.Number.Contains(searchValue)) ||
+                        (x.ReceivedFullName != null && x.ReceivedFullName.Contains(searchValue)) ||
+                        ((x.ReceivedFullName == null || x.ReceivedFullName.Trim() == "") && x.Mobile != null &&
+                            ((x.Mobile.Length >= 10 && iranMobileSuffixes.Contains(x.Mobile.Substring(x.Mobile.Length - 10))) ||
+                             otherMobiles.Contains(x.Mobile)))
                     );
                 }
             }
@@ -115,21 +136,42 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
+                // Look up contact numbers only when a name can be part of the search.
+                var contactMobiles = searchValue.Any(char.IsLetter)
+                    ? await smsService.SearchContactMobileNumbersAsync(searchValue, HttpContext.RequestAborted)
+                    : [];
+                var iranMobileSuffixes = contactMobiles
+                    .Where(TextService.IsValidPhoneNumber)
+                    .Select(x => x[1..])
+                    .ToArray();
+                var otherMobiles = contactMobiles
+                    .Where(x => !TextService.IsValidPhoneNumber(x))
+                    .ToArray();
+
                 if (searchValue.Length < 3)
                 {
                     query = query.Where(x =>
-                        x.Mobile.Equals(searchValue) ||
-                        x.MessageText.Equals(searchValue) ||
-                        x.FarazId.ToString().Equals(searchValue) ||
-                        x.Number.Equals(searchValue)
+                        x.Mobile == searchValue ||
+                        x.MessageText == searchValue ||
+                        x.FarazId.ToString() == searchValue ||
+                        x.Number == searchValue ||
+                        (x.SenderFullName != null && x.SenderFullName.Contains(searchValue)) ||
+                        ((x.SenderFullName == null || x.SenderFullName.Trim() == "") && x.Mobile != null &&
+                            ((x.Mobile.Length >= 10 && iranMobileSuffixes.Contains(x.Mobile.Substring(x.Mobile.Length - 10))) ||
+                             otherMobiles.Contains(x.Mobile)))
                     );
-                } else
+                }
+                else
                 {
                     query = query.Where(x =>
-                        x.Mobile.Contains(searchValue) ||
-                        x.MessageText.Contains(searchValue) ||
+                        (x.Mobile != null && x.Mobile.Contains(searchValue)) ||
+                        (x.MessageText != null && x.MessageText.Contains(searchValue)) ||
                         x.FarazId.ToString().Contains(searchValue) ||
-                        x.Number.Contains(searchValue)
+                        (x.Number != null && x.Number.Contains(searchValue)) ||
+                        (x.SenderFullName != null && x.SenderFullName.Contains(searchValue)) ||
+                        ((x.SenderFullName == null || x.SenderFullName.Trim() == "") && x.Mobile != null &&
+                            ((x.Mobile.Length >= 10 && iranMobileSuffixes.Contains(x.Mobile.Substring(x.Mobile.Length - 10))) ||
+                             otherMobiles.Contains(x.Mobile)))
                     );
                 }
             }

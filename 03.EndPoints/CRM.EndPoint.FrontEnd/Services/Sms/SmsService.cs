@@ -269,6 +269,40 @@ namespace CRM.EndPoint.FrontEnd.Services.Sms {
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task<string[]> SearchContactMobileNumbersAsync(string searchText, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+                return [];
+
+            var term = searchText.Trim();
+
+            // Only persisted fields may be referenced inside the EF queries.
+            var users = await udb.Users
+                .AsNoTracking()
+                .Where(x => x.PhoneNumber != null &&
+                            ((x.FirstName != null && x.FirstName.Contains(term)) ||
+                             (x.LastName != null && x.LastName.Contains(term)) ||
+                             ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Contains(term)))
+                .Select(x => x.PhoneNumber)
+                .ToListAsync(ct);
+
+            var customers = await db.Customers
+                .AsNoTracking()
+                .Where(x => x.Mobile != null &&
+                            ((x.CompanyName != null && x.CompanyName.Contains(term)) ||
+                             (x.AgentName != null && x.AgentName.Contains(term)) ||
+                             ((x.CompanyName ?? "") + " " + (x.AgentName ?? "")).Contains(term)))
+                .Select(x => x.Mobile)
+                .ToListAsync(ct);
+
+            return users.Concat(customers)
+                .Select(TextService.NormalizeIranMobile)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToArray();
+        }
+
+
         public async Task<Dictionary<string, string>> GetContactNamesAsync(IEnumerable<string> mobiles, CancellationToken ct = default)
         {
             var numbers = mobiles
