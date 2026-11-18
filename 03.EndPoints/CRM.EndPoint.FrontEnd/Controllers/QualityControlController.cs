@@ -48,7 +48,8 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
         if (!ModelState.IsValid || request == null)
             return BadRequest(new { message = "اطلاعات وضعیت تماس معتبر نیست." });
         var result = await requests.CommandAsync(new SetQualityControlCustomerContactCommand(request), ct);
-        return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status });
+        return StatusCode(result.StatusCode, new { message = result.Message, status = result.Status,
+            retryAfterSeconds = result.RetryAfterSeconds });
     }
 
     [HttpGet]
