@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.ASettings.Enums;
@@ -67,11 +68,15 @@ public sealed class ExternalTransferOptionsService(
         Rules.TryGetValue(mapType, out rule);
 
     public async Task<IReadOnlyList<DestinationOption>> GetAllExternalSoftwareAsync(
-        IReadOnlyCollection<Guid> sourceIds, ExternalMappingTypeEnum mapType, CancellationToken ct)
+        IReadOnlyCollection<Guid> sourceIds, ExternalMappingTypeEnum mapType,
+        ClaimsPrincipal user, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(sourceIds);
+        ArgumentNullException.ThrowIfNull(user);
         if (!TryGetRule(mapType, out var rule))
             throw new ArgumentOutOfRangeException(nameof(mapType));
+        if (rule.AllowedRoles != null && !rule.AllowedRoles.Any(user.IsInRole))
+            throw new UnauthorizedAccessException();
 
         var ids = sourceIds.Distinct().ToArray();
         if (ids.Length == 0 || ids.Any(id => id == Guid.Empty))
