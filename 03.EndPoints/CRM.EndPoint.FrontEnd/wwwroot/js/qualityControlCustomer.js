@@ -110,6 +110,7 @@
         let lastReviewedCustomerId = null, lastReviewedCustomerName = "";
         let lastReviewedHighlightUntil = 0, lastReviewedHighlightTimer = null;
         let reviewHasSavedChanges = false, focusScrollPending = false;
+        let temporaryCompletedCustomerCard = null;
         let listController = null, formController = null, formGeneration = 0;
         let historyCustomerId = null, historyStart = 0, historyTotal = 0;
         let historyController = null, historyBusy = false, historyCanManage = false;
@@ -264,6 +265,7 @@
             lastReviewedCustomerName = "";
             lastReviewedHighlightUntil = 0;
             focusScrollPending = false;
+            temporaryCompletedCustomerCard = null;
             clearTimeout(lastReviewedHighlightTimer);
             lastReviewedHighlightTimer = null;
             queue.querySelectorAll(".qc-client-last-reviewed").forEach(card => {
@@ -413,6 +415,22 @@
                 queueFeedback.textContent = total ? "" : "مشتری واجد شرایطی با این فیلتر یافت نشد.";
                 queueCount.textContent = faNumber.format(total) + " مشتری";
                 renderPager();
+                // If completion removed this customer from the current filter,
+                // briefly show a snapshot without changing server counts or paging.
+                if (focusScrollPending && temporaryCompletedCustomerCard
+                    && !queue.querySelector(".qc-client-last-reviewed")) {
+                    const temporaryCard = temporaryCompletedCustomerCard;
+                    temporaryCard.classList.add("qc-client-last-reviewed", "qc-client-temporary-complete");
+                    const profile = temporaryCard.querySelector(".qc-client-profile");
+                    if (profile && !profile.querySelector(".qc-client-last-reviewed-tag")) {
+                        const tag = document.createElement("small");
+                        tag.className = "qc-client-last-reviewed-tag";
+                        tag.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> آخرین مشتری بررسی‌شده';
+                        profile.append(tag);
+                    }
+                    queue.prepend(temporaryCard);
+                    queueFeedback.textContent = "";
+                }
                 if (focusScrollPending) {
                     focusScrollPending = false;
                     const card = queue.querySelector(".qc-client-last-reviewed");
@@ -426,9 +444,28 @@
                         clearTimeout(lastReviewedHighlightTimer);
                         lastReviewedHighlightTimer = setTimeout(() => {
                             queue.querySelectorAll(".qc-client-last-reviewed").forEach(item => {
-                                item.classList.remove("qc-client-last-reviewed");
-                                item.querySelector(".qc-client-last-reviewed-tag")?.remove();
+                                if (item.classList.contains("qc-client-temporary-complete")) {
+                                    item.classList.add("qc-client-temporary-leaving");
+                                    let removed = false;
+                                    const remove = () => {
+                                        if (removed) return;
+                                        removed = true;
+                                        const wasVisible = item.isConnected;
+                                        item.remove();
+                                        if (wasVisible && !total && isActive()
+                                            && !queue.querySelector(".qc-client-card")) {
+                                            queueFeedback.textContent =
+                                                "مشتری واجد شرایطی با این فیلتر یافت نشد.";
+                                        }
+                                    };
+                                    item.addEventListener("animationend", remove, { once: true });
+                                    setTimeout(remove, 320); // Reduced-motion fallback
+                                } else {
+                                    item.classList.remove("qc-client-last-reviewed");
+                                    item.querySelector(".qc-client-last-reviewed-tag")?.remove();
+                                }
                             });
+                            temporaryCompletedCustomerCard = null;
                             lastReviewedHighlightTimer = null;
                         }, Math.max(0, lastReviewedHighlightUntil - Date.now()));
                     } else {
@@ -1188,6 +1225,41 @@
         modal.addEventListener("hidden.bs.modal", () => {
             const editedCustomerId = reviewHasSavedChanges ? review?.customerId : null;
             const editedCustomerName = review?.customerName || "مشتری";
+            temporaryCompletedCustomerCard = null;
+            if (editedCustomerId && review) {
+                const items = flatten();
+                const isComplete = items.length > 0 && items.every(item => {
+                    const draft = stateOf(item);
+                    return draft?.saved && draft.status !== 0;
+                });
+                if (isComplete) {
+                    const selector = '[data-qc-customer="' + editedCustomerId + '"]';
+                    const currentCard = queue.querySelector(selector)?.closest(".qc-client-card");
+                    if (currentCard) {
+                        const card = currentCard.cloneNode(true);
+                        card.dataset.qcComplete = "true";
+                        const count = card.querySelector(".qc-client-count-reviewed strong");
+                        if (count) count.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: '
+                            + faNumber.format(items.length) + " از " + faNumber.format(items.length);
+                        const discrepancy = items.filter(item => stateOf(item).status === 2).length;
+                        const details = card.querySelector(".qc-client-count-reviewed small");
+                        if (details) details.innerHTML = '<span class="qc-client-discrepancy-count'
+                            + (discrepancy ? ' has-discrepancy' : '') + '">مغایرت: '
+                            + faNumber.format(discrepancy) + '</span> · بدون مغایرت: '
+                            + faNumber.format(items.length - discrepancy);
+                        const badge = card.querySelector(".qc-client-review-group .qc-client-badge");
+                        if (badge) {
+                            badge.className = "qc-client-badge qc-client-complete qc-client-completed";
+                            badge.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> تکمیل‌شده';
+                        }
+                        const button = card.querySelector("[data-qc-customer]");
+                        if (button) button.innerHTML =
+                            '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش';
+                        card.querySelectorAll("[data-qc-contact]").forEach(button => button.disabled = true);
+                        temporaryCompletedCustomerCard = card;
+                    }
+                }
+            }
             reviewHasSavedChanges = false;
             review = null;
             drafts.clear();
