@@ -73,25 +73,54 @@ public sealed class ExternalTransferOptionsService(
             throw new ArgumentOutOfRangeException(nameof(mapType));
 
         var ids = sourceIds.Distinct().ToArray();
-        var prerequisiteEntity = rule.Prerequisite is { } prerequisite
-            ? Rules[prerequisite].SourceEntity : null;
+        var mappings = await LoadMappingsAsync(ids, mapType, rule, ct);
+        var existence = await CheckExternalRecordsAsync(mappings);
+        await CleanupMissingCashDocumentsAsync(mappings, existence, rule, ct);
 
-        var mappings = await db.ExternalMappings.AsNoTracking()
+        var byDestination = mappings.ToLookup(m =>
+            (m.ExternalSoftwareId, m.EntityId, m.MapType));
+        var softwares = await db.ExternalSoftwares.AsNoTracking()
+            .OrderBy(x => x.Title)
+            .Select(x => new { x.Id, x.Title })
+            .ToListAsync(ct);
+
+        var options = new List<DestinationOption>(softwares.Count);
+        foreach (var software in softwares)
+        {
+            var service = Resolve(software.Id);
+            if (rule.SupportedDestinationsOnly && service == null)
+                continue;
+
+            options.Add(await BuildOptionAsync(software.Id, software.Title, service,
+                ids, mapType, rule, byDestination, existence, ct));
+        }
+        return options;
+    }
+
+    private Task<List<ExternalMapping>> LoadMappingsAsync(
+        Guid[] ids, ExternalMappingTypeEnum mapType, TransferRule rule, CancellationToken ct)
+    {
+        var prerequisiteEntity = rule.Prerequisite is { } type
+            ? Rules[type].SourceEntity : null;
+        return db.ExternalMappings.AsNoTracking()
             .Where(x => ids.Contains(x.EntityId) &&
                 ((x.EntityName == rule.SourceEntity && x.MapType == mapType) ||
                  (x.EntityName == prerequisiteEntity && x.MapType == rule.Prerequisite)))
             .ToListAsync(ct);
+    }
 
-        // A single external record may be linked to several CRM entities.
-        // Cache existence checks per destination/record to avoid repeated lookups.
-        var existence = new Dictionary<Guid, bool?>();
+    private async Task<Dictionary<Guid, bool?>> CheckExternalRecordsAsync(
+        IReadOnlyCollection<ExternalMapping> mappings)
+    {
+        // A destination record may have several CRM mappings. Check each target once.
         var checkedRecords = new Dictionary<(Guid SoftwareId, string EntityName, string EntityId), bool?>();
+        var existence = new Dictionary<Guid, bool?>();
         foreach (var mapping in mappings.Where(x => !x.HasPendingExternalId()))
         {
             var service = Resolve(mapping.ExternalSoftwareId);
             if (service == null)
             {
-                existence[mapping.Id] = null;
+                existence[mapping.Id] = null; // Unknown is never proof of deletion.
                 continue;
             }
 
@@ -103,86 +132,79 @@ public sealed class ExternalTransferOptionsService(
             }
             existence[mapping.Id] = found;
         }
+        return existence;
+    }
 
-        // Temporary legacy exception: Cash does not have its own missing-history action.
-        // Only PaymentHeader/Voucher mappings proven missing are removed automatically.
-        if (rule.CleanupMissingCashDocuments)
+    private async Task CleanupMissingCashDocumentsAsync(
+        List<ExternalMapping> mappings, IReadOnlyDictionary<Guid, bool?> existence,
+        TransferRule rule, CancellationToken ct)
+    {
+        if (!rule.CleanupMissingCashDocuments) return;
+
+        // Cash has no financial-history modal. This exception must not spread to
+        // quotations, sales invoices, purchase invoices, receipts or new types.
+        var missingCash = mappings.Where(m =>
+            m.MapType == ExternalMappingTypeEnum.تنخواه &&
+            m.EntityName == nameof(Cash) &&
+            (m.ExEntityName == nameof(PaymentHeader) || m.ExEntityName == nameof(Voucher)) &&
+            existence.GetValueOrDefault(m.Id) == false).ToArray();
+        if (missingCash.Length == 0) return;
+
+        db.ExternalMappings.RemoveRange(missingCash);
+        await db.SaveChangesAsync(ct);
+        var removedIds = missingCash.Select(m => m.Id).ToHashSet();
+        mappings.RemoveAll(m => removedIds.Contains(m.Id));
+    }
+
+    private static async Task<DestinationOption> BuildOptionAsync(
+        Guid softwareId, string title, SepidarService service, IReadOnlyList<Guid> ids,
+        ExternalMappingTypeEnum mapType, TransferRule rule,
+        ILookup<(Guid SoftwareId, Guid SourceId, ExternalMappingTypeEnum MapType), ExternalMapping> mappings,
+        IReadOnlyDictionary<Guid, bool?> existence, CancellationToken ct)
+    {
+        var eligible = 0;
+        var registered = 0;
+        var missing = 0;
+        var pending = 0;
+
+        foreach (var sourceId in ids)
         {
-            var missingCash = mappings.Where(m =>
-                m.MapType == ExternalMappingTypeEnum.تنخواه &&
-                m.EntityName == nameof(Cash) &&
-                (m.ExEntityName == nameof(PaymentHeader) || m.ExEntityName == nameof(Voucher)) &&
-                existence.GetValueOrDefault(m.Id) == false).ToArray();
-            if (missingCash.Length > 0)
+            ExternalMapping dependency = null;
+            if (rule.Prerequisite is { } requiredType)
             {
-                db.ExternalMappings.RemoveRange(missingCash);
-                await db.SaveChangesAsync(ct);
-                var removedIds = missingCash.Select(m => m.Id).ToHashSet();
-                mappings.RemoveAll(m => removedIds.Contains(m.Id));
+                dependency = mappings[(softwareId, sourceId, requiredType)]
+                    .FirstOrDefault(m => existence.GetValueOrDefault(m.Id) == true);
+                if (dependency == null) continue;
             }
-        }
 
-        var mappingLookup = mappings.ToLookup(m => (m.ExternalSoftwareId, m.EntityId, m.MapType));
-        var softwares = await db.ExternalSoftwares.AsNoTracking()
-            .OrderBy(s => s.Title)
-            .Select(s => new { s.Id, s.Title })
-            .ToListAsync(ct);
-
-        var options = new List<DestinationOption>(softwares.Count);
-        foreach (var software in softwares)
-        {
-            var service = Resolve(software.Id);
-            if (rule.SupportedDestinationsOnly && service == null)
+            eligible++;
+            var current = mappings[(softwareId, sourceId, mapType)].ToArray();
+            if (current.Any(m => m.HasPendingExternalId()))
+            {
+                pending++;
                 continue;
-
-            var eligible = 0;
-            var registered = 0;
-            var missing = 0;
-            var pending = 0;
-
-            foreach (var sourceId in ids)
-            {
-                ExternalMapping dependency = null;
-                if (rule.Prerequisite is { } requiredType)
-                {
-                    dependency = mappingLookup[(software.Id, sourceId, requiredType)]
-                        .FirstOrDefault(m => existence.GetValueOrDefault(m.Id) == true);
-                    if (dependency == null)
-                        continue;
-                }
-                eligible++;
-
-                var saved = mappingLookup[(software.Id, sourceId, mapType)].ToArray();
-                if (saved.Any(m => m.HasPendingExternalId()))
-                {
-                    pending++;
-                    continue;
-                }
-
-                if (saved.Any(m => existence.GetValueOrDefault(m.Id) != false))
-                    registered++;
-                else if (saved.Length > 0)
-                    missing++;
-                else if (dependency != null && rule.HasRelatedDocument != null &&
-                         service != null && int.TryParse(dependency.ExEntityId, out var parentId) &&
-                         await rule.HasRelatedDocument(service, parentId, ct))
-                    registered++;
             }
-
-            var prerequisiteMissing = rule.Prerequisite.HasValue && eligible == 0;
-            var fullyBlocked = eligible > 0 && registered + missing + pending == eligible;
-            options.Add(new DestinationOption(
-                software.Id, software.Title,
-                prerequisiteMissing || fullyBlocked,
-                registered == ids.Length,
-                prerequisiteMissing,
-                prerequisiteMissing ? rule.PrerequisiteMessage : null,
-                prerequisiteMissing ? "پیش‌نیاز ثبت در مقصد موجود نیست" :
-                    missing > 0 && fullyBlocked ? "سند مقصد پیدا نشد" :
-                    pending > 0 && fullyBlocked ? "در حال ثبت در نرم‌افزار مالی" : null));
+            if (current.Any(m => existence.GetValueOrDefault(m.Id) != false))
+                registered++;
+            else if (current.Length > 0)
+                missing++;
+            else if (dependency != null && rule.HasRelatedDocument != null &&
+                     service != null && int.TryParse(dependency.ExEntityId, out var parentId) &&
+                     await rule.HasRelatedDocument(service, parentId, ct))
+                registered++;
         }
 
-        return options;
+        var prerequisiteMissing = rule.Prerequisite.HasValue && eligible == 0;
+        var fullyBlocked = eligible > 0 && registered + missing + pending == eligible;
+        return new DestinationOption(
+            softwareId, title,
+            prerequisiteMissing || fullyBlocked,
+            registered == ids.Count,
+            prerequisiteMissing,
+            prerequisiteMissing ? rule.PrerequisiteMessage : null,
+            prerequisiteMissing ? "پیش‌نیاز ثبت در مقصد موجود نیست" :
+                missing > 0 && fullyBlocked ? "سند مقصد پیدا نشد" :
+                pending > 0 && fullyBlocked ? "در حال ثبت در نرم‌افزار مالی" : null);
     }
 
     private SepidarService Resolve(Guid softwareId) =>
