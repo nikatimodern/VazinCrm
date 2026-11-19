@@ -107,11 +107,9 @@
             enableMomentumScroll(queue, { signal: pageSignal });
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
-        let lastReviewedCustomerId = null, lastReviewedCustomerName = "";
         let lastCheckedCustomerId = null; // Badge stays until another successfully saved review.
-        let lastReviewedHighlightUntil = 0, lastReviewedHighlightTimer = null;
-        let reviewHasSavedChanges = false, focusScrollPending = false;
-        let temporaryCompletedCustomerCard = null;
+        let lastReviewedHighlightTimer = null;
+        let reviewHasSavedChanges = false;
         let listController = null, formController = null, formGeneration = 0;
         let historyCustomerId = null, historyStart = 0, historyTotal = 0;
         let historyController = null, historyBusy = false, historyCanManage = false;
@@ -267,11 +265,6 @@
         }
 
         function clearReviewFocus() {
-            lastReviewedCustomerId = null;
-            lastReviewedCustomerName = "";
-            lastReviewedHighlightUntil = 0;
-            focusScrollPending = false;
-            temporaryCompletedCustomerCard = null;
             clearTimeout(lastReviewedHighlightTimer);
             lastReviewedHighlightTimer = null;
             queue.querySelectorAll(".qc-client-last-reviewed").forEach(card => {
@@ -279,22 +272,24 @@
             });
         }
 
-        async function loadCustomers(reset = false) {
+        // summaryOnly refreshes server totals, without changing any visible card or its position.
+        async function loadCustomers(reset = false, summaryOnly = false) {
             if (!isActive()) return;
             if (reset) start = 0;
-            syncCardSelection();
+            if (!summaryOnly) syncCardSelection();
             listController?.abort();
             const controller = listController = new AbortController();
-            loading = true;
-            queue.setAttribute("aria-busy", "true");
-            queue.setAttribute("aria-label", "در حال دریافت مشتریان");
-            queueFeedback.textContent = "";
-            // Keep existing customer cards in place during filter/sort refreshes.
-            if (queue.querySelector(".qc-client-card:not(.qc-client-skeleton)")) {
-                queue.classList.add("is-refreshing");
-            } else {
-                queue.classList.remove("is-refreshing");
-                showCustomerQueueSkeleton();
+            if (!summaryOnly) {
+                loading = true;
+                queue.setAttribute("aria-busy", "true");
+                queue.setAttribute("aria-label", "در حال دریافت مشتریان");
+                queueFeedback.textContent = "";
+                if (queue.querySelector(".qc-client-card:not(.qc-client-skeleton)")) {
+                    queue.classList.add("is-refreshing");
+                } else {
+                    queue.classList.remove("is-refreshing");
+                    showCustomerQueueSkeleton();
+                }
             }
             try {
                 const result = await sendApiRequest({
@@ -303,15 +298,16 @@
                         start, length: Number(pageSize.value), search,
                         status: statusFilter.value,
                         sort: sortControl.value,
-                        focusCustomerId: lastReviewedCustomerId || undefined,
                     },
                     signal: controller.signal,
                     showLoading: false,
                 });
                 if (!isActive() || controller.signal.aborted) return;
                 if (!result || !Array.isArray(result.data)) {
-                    queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
-                    queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
+                    if (!summaryOnly) {
+                        queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
+                        queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
+                    }
                     return;
                 }
                 if (result.summary) {
@@ -348,6 +344,11 @@
                         faNumber.format(checkedItems) + " از " + faNumber.format(allItems) + " قلم");
                 }
                 total = Number(result.filtered ?? 0);
+                if (summaryOnly) {
+                    queueCount.textContent = faNumber.format(total) + " مشتری";
+                    renderPager();
+                    return;
+                }
                 if (start >= total && start > 0) {
                     start = Math.max(0, (Math.ceil(total / Number(pageSize.value)) - 1) * Number(pageSize.value));
                     return loadCustomers();
@@ -358,14 +359,12 @@
                     const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
-                    const isLastReviewed = lastReviewedCustomerId === String(row.customerId).toLowerCase()
-                        && (focusScrollPending || Date.now() < lastReviewedHighlightUntil);
+                    // Sorting is only applied on explicit list loads, never after a QC save.
                     // Review completion remains independent from contact history.
                     const color = complete ? "complete" : "pending";
                     const label = complete ? "تکمیل‌شده" : "نیازمند بررسی";
                     const statusIcon = complete ? "fa-check-circle" : "fa-clock";
                     return '<article role="listitem" class="qc-client-card'
-                        + (isLastReviewed ? ' qc-client-last-reviewed' : '')
                         + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
                             ? ' qc-client-last-checked' : '')
                         + '" data-qc-complete="' + complete + '">'
@@ -421,64 +420,16 @@
                 queueFeedback.textContent = total ? "" : "مشتری واجد شرایطی با این فیلتر یافت نشد.";
                 queueCount.textContent = faNumber.format(total) + " مشتری";
                 renderPager();
-                // If completion removed this customer from the current filter,
-                // briefly show a snapshot without changing server counts or paging.
-                if (focusScrollPending && temporaryCompletedCustomerCard
-                    && !queue.querySelector(".qc-client-last-reviewed")) {
-                    const temporaryCard = temporaryCompletedCustomerCard;
-                    temporaryCard.classList.add("qc-client-last-reviewed", "qc-client-temporary-complete", "qc-client-last-checked");
-                    queue.prepend(temporaryCard);
-                    queueFeedback.textContent = "";
-                }
-                if (focusScrollPending) {
-                    focusScrollPending = false;
-                    const card = queue.querySelector(".qc-client-last-reviewed");
-                    if (card) {
-                        lastReviewedHighlightUntil = Date.now() + 5000;
-                        queue.scrollTop = 0;
-                        card.scrollIntoView({
-                            block: "nearest",
-                            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                        });
-                        // Remove the temporary green background after five seconds.
-                        // The completed card leaves only if it no longer matches the server filter.
-                        // Keep a fallback for reduced-motion or unsupported animations.
-                        clearTimeout(lastReviewedHighlightTimer);
-                        let focusFinished = false;
-                        const finishFocus = () => {
-                            if (focusFinished || !isActive() || !card.isConnected) return;
-                            focusFinished = true;
-                            card.removeEventListener("animationend", onHighlightEnd);
-                            clearTimeout(lastReviewedHighlightTimer);
-                            lastReviewedHighlightTimer = null;
-                            card.classList.remove("qc-client-last-reviewed");
-                                        if (card.classList.contains("qc-client-temporary-complete")) {
-                                // The server has already excluded this fully reviewed customer
-                                // from the current filter (e.g. "نیازمند بررسی").
-                                card.remove();
-                                if (!total && !queue.querySelector(".qc-client-card"))
-                                    queueFeedback.textContent = "مشتری واجد شرایطی با این فیلتر یافت نشد.";
-                            }
-                            temporaryCompletedCustomerCard = null;
-                        };
-                        const onHighlightEnd = event => {
-                            if (event.target === card && event.animationName === "qcLastReviewBackgroundFade")
-                                finishFocus();
-                        };
-                        card.addEventListener("animationend", onHighlightEnd);
-                        lastReviewedHighlightTimer = setTimeout(finishFocus,
-                            Math.max(0, lastReviewedHighlightUntil - Date.now()) + 100);
-                    } else {
-                        queueFeedback.textContent = "کنترل کیفیت «" + lastReviewedCustomerName
-                            + "» ثبت شد؛ این مشتری دیگر با فیلتر فعلی مطابقت ندارد.";
-                    }
-                }
             } catch (error) {
                 if (!isActive() || controller.signal.aborted) return;
-                queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
-                queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
+                if (summaryOnly) {
+                    console.error("QC summary refresh failed:", error);
+                } else {
+                    queue.querySelectorAll(".qc-client-skeleton").forEach(card => card.remove());
+                    queueFeedback.textContent = "دریافت صف کنترل کیفیت انجام نشد. دوباره جستجو کنید.";
+                }
             } finally {
-                if (listController === controller) {
+                if (listController === controller && !summaryOnly) {
                     loading = false;
                     queue.classList.remove("is-refreshing");
                     queue.removeAttribute("aria-busy");
@@ -1237,43 +1188,18 @@
             formGeneration++;
         });
         modal.addEventListener("hidden.bs.modal", () => {
-            const editedCustomerId = reviewHasSavedChanges ? review?.customerId : null;
-            const editedCustomerName = review?.customerName || "مشتری";
-            temporaryCompletedCustomerCard = null;
-            if (editedCustomerId && review) {
-                const items = flatten();
-                const isComplete = items.length > 0 && items.every(item => {
-                    const draft = stateOf(item);
-                    return draft?.saved && draft.status !== 0;
-                });
-                if (isComplete) {
-                    const selector = '[data-qc-customer="' + editedCustomerId + '"]';
-                    const currentCard = queue.querySelector(selector)?.closest(".qc-client-card");
-                    if (currentCard) {
-                        const card = currentCard.cloneNode(true);
-                        card.dataset.qcComplete = "true";
-                        const count = card.querySelector(".qc-client-count-reviewed strong");
-                        if (count) count.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: '
-                            + faNumber.format(items.length) + " از " + faNumber.format(items.length);
-                        const discrepancy = items.filter(item => stateOf(item).status === 2).length;
-                        const details = card.querySelector(".qc-client-count-reviewed small");
-                        if (details) details.innerHTML = '<span class="qc-client-discrepancy-count'
-                            + (discrepancy ? ' has-discrepancy' : '') + '">مغایرت: '
-                            + faNumber.format(discrepancy) + '</span> · بدون مغایرت: '
-                            + faNumber.format(items.length - discrepancy);
-                        const badge = card.querySelector(".qc-client-review-group .qc-client-badge");
-                        if (badge) {
-                            badge.className = "qc-client-badge qc-client-complete qc-client-completed";
-                            badge.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> تکمیل‌شده';
-                        }
-                        const button = card.querySelector("[data-qc-customer]");
-                        if (button) button.innerHTML =
-                            '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش';
-                        card.querySelectorAll("[data-qc-contact]").forEach(button => button.disabled = true);
-                        temporaryCompletedCustomerCard = card;
-                    }
-                }
-            }
+            const editedCustomerId = reviewHasSavedChanges ? String(review?.customerId || "").toLowerCase() : null;
+            // Derive the displayed counts from confirmed saves, before clearing modal state.
+            const items = editedCustomerId ? flatten() : [];
+            const reviewed = items.filter(item => {
+                const draft = stateOf(item);
+                return draft?.saved && draft.status !== 0;
+            }).length;
+            const discrepancy = items.filter(item => {
+                const draft = stateOf(item);
+                return draft?.saved && draft.status === 2;
+            }).length;
+            const complete = items.length > 0 && reviewed === items.length;
             reviewHasSavedChanges = false;
             review = null;
             drafts.clear();
@@ -1283,14 +1209,65 @@
             itemSearchBar.hidden = true;
             itemSearchEmpty.hidden = true;
             formFeedback.textContent = "";
-            if (editedCustomerId && isActive()) {
-                lastCheckedCustomerId = String(editedCustomerId).toLowerCase();
-                lastReviewedCustomerId = String(editedCustomerId).toLowerCase();
-                lastReviewedCustomerName = editedCustomerName;
-                lastReviewedHighlightUntil = Date.now() + 5000;
-                focusScrollPending = true;
-                loadCustomers(true);
+
+            if (!editedCustomerId || !isActive()) return;
+            // Do not reload or re-sort the customer list after saving a review.
+            // Only update the edited card in-place, retaining other cards and scroll position.
+            clearReviewFocus();
+            lastCheckedCustomerId = editedCustomerId;
+            queue.querySelectorAll(".qc-client-last-checked").forEach(card =>
+                card.classList.remove("qc-client-last-checked"));
+            const card = [...queue.querySelectorAll(".qc-client-card")].find(element =>
+                element.querySelector("[data-qc-customer]")?.dataset.qcCustomer?.toLowerCase()
+                    === editedCustomerId);
+            if (card) {
+                const count = card.querySelector(".qc-client-count-reviewed strong");
+                if (count) count.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: '
+                    + faNumber.format(reviewed) + " از " + faNumber.format(items.length);
+                const details = card.querySelector(".qc-client-count-reviewed small");
+                if (details) details.innerHTML = '<span class="qc-client-discrepancy-count'
+                    + (discrepancy ? ' has-discrepancy' : '') + '">مغایرت: '
+                    + faNumber.format(discrepancy) + '</span> · بدون مغایرت: '
+                    + faNumber.format(reviewed - discrepancy);
+                card.dataset.qcComplete = String(complete);
+                const badge = card.querySelector(".qc-client-review-group .qc-client-badge");
+                if (badge) {
+                    badge.className = "qc-client-badge qc-client-"
+                        + (complete ? "complete qc-client-completed" : "pending");
+                    badge.innerHTML = complete
+                        ? '<i class="fa fa-check-circle" aria-hidden="true"></i> تکمیل‌شده'
+                        : '<i class="fa fa-clock" aria-hidden="true"></i> نیازمند بررسی';
+                }
+                const button = card.querySelector("[data-qc-customer]");
+                if (button) button.innerHTML = complete
+                    ? '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش'
+                    : '<i class="fa fa-check-circle" aria-hidden="true"></i> کنترل کیفیت';
+                card.querySelectorAll("[data-qc-contact]").forEach(button => {
+                    button.disabled = complete;
+                    if (reviewed > 0) button.classList.remove("is-selected");
+                });
+                card.classList.add("qc-client-last-checked", "qc-client-last-reviewed");
+                refreshNoResponseCooldowns();
+                // The card stays in its original slot for the entire five-second fade.
+                // Only remove it afterwards when the selected status no longer includes it.
+                const selectedStatus = statusFilter.value;
+                const leavesFilter = (complete && ["0", "3", "4"].includes(selectedStatus))
+                    || (selectedStatus === "1" && !complete)
+                    || (selectedStatus === "2" && discrepancy === 0)
+                    || (selectedStatus === "5" && reviewed === 0);
+                lastReviewedHighlightTimer = setTimeout(() => {
+                    if (!isActive() || !card.isConnected) return;
+                    card.classList.remove("qc-client-last-reviewed");
+                    if (leavesFilter) {
+                        card.remove();
+                        if (!queue.querySelector(".qc-client-card") && !total)
+                            queueFeedback.textContent = "مشتری واجد شرایطی با این فیلتر یافت نشد.";
+                    }
+                    lastReviewedHighlightTimer = null;
+                }, 5000);
             }
+            // Refresh the KPI totals and filtered count without replacing or moving any card.
+            void loadCustomers(false, true);
         });
         pageSignal?.addEventListener("abort", () => {
             clearReviewFocus();
