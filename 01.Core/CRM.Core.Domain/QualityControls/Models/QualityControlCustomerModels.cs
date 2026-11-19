@@ -11,8 +11,6 @@ public sealed class QualityControlCustomerListRequest
     public string? Search { get; set; }
     // Sort by actionable workload by default, before applying pagination.
     public string Sort { get; set; } = "pending";
-    // Keep the most recently edited customer visible after review, if it still matches filters.
-    public Guid? FocusCustomerId { get; set; }
     // null: all; 0: pending excluding contact-blocked customers; 1: fully reviewed;
     // 2: has discrepancy; 3: no answer; 4: invalid phone; 5: at least one reviewed item.
     public int? Status { get; set; } = 0;
