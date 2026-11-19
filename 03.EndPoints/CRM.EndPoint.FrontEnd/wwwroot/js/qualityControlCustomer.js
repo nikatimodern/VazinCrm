@@ -768,7 +768,9 @@
                 customerNoteSaving = false;
                 if (generation === formGeneration && isActive()) {
                     customerNoteText.disabled = false;
-                    customerNoteText.dispatchEvent(new Event("input"));
+                    const filled = Boolean(customerNoteText.value.trim());
+                    customerNoteSave.disabled = !filled || !review;
+                    customerNoteClear.disabled = !filled;
                 }
             }
         });
