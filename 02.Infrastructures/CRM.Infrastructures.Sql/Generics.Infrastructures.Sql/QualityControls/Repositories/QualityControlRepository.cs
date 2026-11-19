@@ -242,6 +242,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Select(group => new { CustomerId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(entry => entry.CustomerId, entry => entry.Count, cancellationToken);
 
+        var customersWithNotes = await db.QualityControlCustomerNotes.AsNoTracking()
+            .Where(note => pageCustomerIds.Contains(note.CustomerId))
+            .Select(note => note.CustomerId).Distinct()
+            .ToHashSetAsync(cancellationToken);
+
         var data = page.Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
             row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
             row.TotalItems, row.ReviewedItems, row.DiscrepancyItems,
@@ -249,7 +254,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             contacts.TryGetValue(row.CustomerId, out var contact) ? contact.NoResponseAttempts : 0,
             recentAttempts.TryGetValue(row.CustomerId, out var lastAttempt)
                 ? CooldownRemaining(lastAttempt, now) : 0,
-            historyCounts.GetValueOrDefault(row.CustomerId))).ToList();
+            historyCounts.GetValueOrDefault(row.CustomerId))
+            { HasNotes = customersWithNotes.Contains(row.CustomerId) }).ToList();
         return new(total, filtered, data, summary);
     }
 

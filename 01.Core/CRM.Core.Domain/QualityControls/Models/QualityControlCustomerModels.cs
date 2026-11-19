@@ -27,7 +27,10 @@ public sealed record QualityControlCustomerRow(
     Guid CustomerId, string? CustomerName, int CustomerCode, string? Mobile,
     int Orders, int Invoices, int TotalItems, int ReviewedItems, int DiscrepancyItems,
     QualityControlCustomerContactStatus ContactStatus, int NoResponseAttempts,
-    int NoResponseCooldownSeconds, int ContactHistoryCount);
+    int NoResponseCooldownSeconds, int ContactHistoryCount)
+{
+    public bool HasNotes { get; init; }
+}
 
 public sealed class SetQualityControlCustomerContactRequest
 {

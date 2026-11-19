@@ -1681,3 +1681,56 @@
         font-size: 10px;
     }
 }
+
+/* Customer notes are managed separately from the invoice-item review modal. */
+#qualityControlCustomerPage .qc-client-card .qc-client-notes-button {
+    border-color: var(--qc-border);
+    background: transparent;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-notes-button.has-notes i {
+    color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-notes-button:hover:not(:disabled) {
+    background: var(--qc-secondary);
+    color: #fff;
+    border-color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-notes-button:hover:not(:disabled) i {
+    color: inherit;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .modal-dialog {
+    max-width: 620px;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .modal-content {
+    border: 1px solid var(--qc-border);
+    border-radius: 12px;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .modal-header,
+#qualityControlCustomerPage .qc-client-notes-modal .modal-footer {
+    padding: 10px 14px;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .modal-body {
+    padding: 12px 14px;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .qc-client-customer-notes {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+}
+#qualityControlCustomerPage .qc-client-notes-modal #qcCustomerNoteText {
+    min-height: 86px;
+    font-size: 14px;
+}
+@media (max-width: 767px) {
+    #qualityControlCustomerPage .qc-client-notes-modal .modal-dialog {
+        margin-inline: 10px;
+    }
+    #qualityControlCustomerPage .qc-client-notes-modal .qc-client-notes-actions .qc-client-button,
+    #qualityControlCustomerPage .qc-client-notes-modal .modal-footer .qc-client-button {
+        min-height: 23px;
+        font-size: 11px;
+        padding: 1px 5px;
+    }
+}
