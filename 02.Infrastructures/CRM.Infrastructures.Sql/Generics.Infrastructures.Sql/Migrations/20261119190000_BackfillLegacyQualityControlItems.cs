@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CRM.Infrastructures.Sql.Migrations;
 
 /// <summary>
-/// One-time, additive migration from the old deal-level quality control to
-/// per-invoice-line reviews. Does not infer which line caused a deal-level issue.
+/// One-time, additive migration of only discrepancy-free legacy deal reviews
+/// into per-invoice-line reviews. Historical discrepancies are not migrated.
 /// </summary>
 [DbContext(typeof(CRMContextDb))]
 [Migration("20261119190000_BackfillLegacyQualityControlItems")]
@@ -17,11 +17,11 @@ public partial class BackfillLegacyQualityControlItems : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         // The migration runner executes this SQL in its transaction.
-        // Only already-reviewed legacy deals qualify:
-        //   1 = no discrepancy, 2 = discrepancy, NULL = derive from saved answers.
-        // 4/5 (no answer / invalid number) and NULL without answers are excluded.
-        // Both reviewed outcomes become "no discrepancy" at item level, because
-        // old deal-wide discrepancies have no reliable invoice-line attribution.
+        // Only confirmed discrepancy-free legacy reviews qualify:
+        // Status 1, or NULL with saved question answers, and NO answer = 1.
+        // Status 2, any positive answer, contact statuses 4/5 and incomplete
+        // NULL rows are excluded. Ambiguous status/answer combinations are
+        // deliberately excluded and listed in the manual-review report.
         // Existing item reviews (including soft-deleted ones) are never overwritten.
         migrationBuilder.Sql(@"
 ;WITH LegacyReviewed AS
@@ -31,12 +31,7 @@ public partial class BackfillLegacyQualityControlItems : Migration
            qc.CreateDate, qc.ModifyDate,
            qc.CreateDateTxt, qc.ModifyDateTxt,
            qc.UserCreatorID, qc.UserCreator,
-           qc.UserModifyID, qc.UserModify,
-           CASE WHEN qc.Status = 2 OR EXISTS
-               (SELECT 1 FROM dbo.QualityControlAnswers AS a
-                WHERE a.QualityControlId = qc.Id
-                  AND a.IsDeleted = 0 AND a.Answer = 1)
-                THEN 1 ELSE 0 END AS HadLegacyDiscrepancy
+           qc.UserModifyID, qc.UserModify
     FROM dbo.QualityControls AS qc
     INNER JOIN dbo.Deals AS d ON d.Id = qc.DealId
     WHERE qc.IsDeleted = 0
@@ -44,7 +39,7 @@ public partial class BackfillLegacyQualityControlItems : Migration
       AND d.FinancialStatus = 1
       AND
       (
-          qc.Status IN (1, 2)
+          qc.Status = 1
           OR
           (
               qc.Status IS NULL
@@ -52,6 +47,12 @@ public partial class BackfillLegacyQualityControlItems : Migration
                   (SELECT 1 FROM dbo.QualityControlAnswers AS a
                    WHERE a.QualityControlId = qc.Id AND a.IsDeleted = 0)
           )
+      )
+      AND NOT EXISTS
+      (
+          SELECT 1 FROM dbo.QualityControlAnswers AS a
+          WHERE a.QualityControlId = qc.Id
+            AND a.IsDeleted = 0 AND a.Answer = 1
       )
 ),
 EligibleItems AS
@@ -76,11 +77,8 @@ SELECT NEWID(), source.FactorItemId, 1, NULL,
        0, source.UserCreatorID, source.UserCreator,
        source.UserModifyID, source.UserModify,
        CONCAT(
-           N'بک‌فیل کنترل کیفیت قدیمی؛ شناسه رکورد اصلی: ',
-           CONVERT(nvarchar(36), source.LegacyQualityControlId),
-           CASE WHEN source.HadLegacyDiscrepancy = 1
-               THEN N'؛ نتیجه قدیمی: دارای مغایرت (قلم مشخص نبود؛ همه اقلام بدون مغایرت ثبت شدند).'
-               ELSE N'؛ نتیجه قدیمی: بدون مغایرت.' END
+           N'بک‌فیل کنترل کیفیت قدیمی بدون مغایرت؛ شناسه رکورد اصلی: ',
+           CONVERT(nvarchar(36), source.LegacyQualityControlId)
        )
 FROM EligibleItems AS source
 WHERE NOT EXISTS
