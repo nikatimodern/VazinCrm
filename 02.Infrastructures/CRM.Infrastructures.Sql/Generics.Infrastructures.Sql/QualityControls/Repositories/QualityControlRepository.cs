@@ -184,23 +184,21 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             _ => customers
         };
         var filtered = await customers.CountAsync(cancellationToken);
-        // Preserve regular ordering, but temporarily place an edited customer
-        // at the top of the filtered result so changing counts cannot hide them
-        // on a later page. Focus never bypasses the current filter or access scope.
-        var prioritized = customers.OrderByDescending(row => row.CustomerId == request.FocusCustomerId);
+        // Respect only the user-selected sort. A recently reviewed customer must
+        // never receive special priority or jump to the first row.
         var sorted = request.Sort switch
         {
-            "discrepancy" => prioritized.ThenByDescending(row => row.DiscrepancyItems)
+            "discrepancy" => customers.OrderByDescending(row => row.DiscrepancyItems)
                 .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
-            "reviewed" => prioritized.ThenByDescending(row => row.ReviewedItems)
+            "reviewed" => customers.OrderByDescending(row => row.ReviewedItems)
                 .ThenByDescending(row => row.DiscrepancyItems),
-            "invoices" => prioritized.ThenByDescending(row => row.Invoices)
+            "invoices" => customers.OrderByDescending(row => row.Invoices)
                 .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
-            "orders" => prioritized.ThenByDescending(row => row.Orders)
+            "orders" => customers.OrderByDescending(row => row.Orders)
                 .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
-            "name" => prioritized.ThenBy(row => row.CustomerName),
-            "code" => prioritized.ThenBy(row => row.CustomerCode),
-            _ => prioritized.ThenByDescending(row => row.TotalItems - row.ReviewedItems)
+            "name" => customers.OrderBy(row => row.CustomerName),
+            "code" => customers.OrderBy(row => row.CustomerCode),
+            _ => customers.OrderByDescending(row => row.TotalItems - row.ReviewedItems)
                 .ThenByDescending(row => row.DiscrepancyItems)
         };
         var page = await sorted.ThenBy(row => row.CustomerId)
