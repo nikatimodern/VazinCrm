@@ -235,8 +235,17 @@ public sealed partial class ExternalMappingService
                     "ابتدا معادل فاکتور خرید این فاکتور تأمین را مشخص کنید.");
                 continue;
             }
-            var receipts = (receiptsByPurchase.GetValueOrDefault(purchaseId) ?? [])
+            var relatedReceipts = receiptsByPurchase.GetValueOrDefault(purchaseId) ?? [];
+            var receipts = relatedReceipts
                 .Where(x => !usedReceipts.Contains(x.Id.ToString())).ToList();
+            if (relatedReceipts.Count > 0 && receipts.Count == 0)
+            {
+                Add(source, ExternalMappingTypeEnum.رسید_انبار, "blocked",
+                    "SupplyReceiptAlreadyMapped", nameof(InventoryReceipt), null,
+                    relatedReceipts.Select(x => x.Id),
+                    $"رسیدهای فاکتور خرید با شناسه {purchaseId} قبلاً ارتباط داده شده‌اند.");
+                continue;
+            }
             if (receipts.Count == 0)
             {
                 Add(source, ExternalMappingTypeEnum.رسید_انبار, "notMatched",
