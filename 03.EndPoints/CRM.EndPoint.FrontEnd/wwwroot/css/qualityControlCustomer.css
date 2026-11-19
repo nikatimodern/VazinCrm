@@ -79,13 +79,74 @@
     border-color: color-mix(in srgb, var(--qc-kpi-accent) 22%, #E0E5ED);
     box-shadow: 0 4px 12px rgba(22, 39, 62, .075);
 }
-#qualityControlCustomerPage .qc-client-overview-invalid {
-    --qc-kpi-tint: #FFF5EB;
-    --qc-kpi-accent: #955610;
+#qualityControlCustomerPage .qc-client-overview-contact {
+    --qc-kpi-tint: #FAF2DF;
+    --qc-kpi-accent: #8F6210;
 }
-#qualityControlCustomerPage .qc-client-overview-no-answer {
-    --qc-kpi-tint: #EEF5FC;
-    --qc-kpi-accent: #175E93;
+#qualityControlCustomerPage .qc-client-overview-discrepancy {
+    --qc-kpi-tint: #FCE8F0;
+    --qc-kpi-accent: #B01358;
+}
+/* Two individually actionable contact statuses share the same gold KPI card. */
+#qualityControlCustomerPage .qc-client-contact-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 5px;
+    min-width: 0;
+    padding: 5px 7px;
+    border-radius: 8px;
+    background: var(--qc-kpi-tint);
+    border: 1px solid color-mix(in srgb, var(--qc-kpi-accent) 14%, white);
+}
+#qualityControlCustomerPage .qc-client-contact-summary-label {
+    flex: 1 1 100%;
+    color: #624F30;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-value {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    white-space: nowrap;
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-value strong {
+    color: var(--qc-kpi-accent);
+    font-size: 23px;
+    font-weight: 850;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-value span {
+    color: #624F30;
+    font-size: 10px;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    color: #624F30;
+    font-size: 10px;
+    line-height: 1.2;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-foot strong {
+    color: var(--qc-kpi-accent);
+    font-size: 11px;
+    font-weight: 800;
+}
+#qualityControlCustomerPage .qc-client-contact-summary-item .qc-client-overview-action {
+    min-height: 22px;
+    padding: 1px 7px;
+    font-size: 10px;
 }
 #qualityControlCustomerPage .qc-client-overview-pending {
     --qc-kpi-tint: #F5F0FF;
@@ -138,9 +199,9 @@
     flex: 0 0 auto;
     min-height: 26px;
     padding: 2px 9px;
-    border: 1px solid var(--qc-action);
+    border: 1px solid var(--qc-kpi-accent);
     border-radius: 7px;
-    background: var(--qc-action);
+    background: var(--qc-kpi-accent);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -149,19 +210,19 @@
     transition: background-color .15s ease, box-shadow .15s ease;
 }
 #qualityControlCustomerPage .qc-client-overview-action:hover {
-    background: var(--qc-primary);
-    border-color: var(--qc-primary);
+    background: color-mix(in srgb, var(--qc-kpi-accent) 82%, #111);
+    border-color: color-mix(in srgb, var(--qc-kpi-accent) 82%, #111);
     color: #fff;
 }
 #qualityControlCustomerPage .qc-client-overview-action.is-selected,
 #qualityControlCustomerPage .qc-client-overview-action[aria-pressed="true"] {
-    background: var(--qc-primary);
-    border-color: var(--qc-primary);
-    box-shadow: 0 0 0 2px var(--qc-primary-light);
+    background: var(--qc-kpi-accent);
+    border-color: var(--qc-kpi-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-kpi-accent) 24%, transparent);
     color: #fff;
 }
 #qualityControlCustomerPage .qc-client-overview-action:focus-visible {
-    outline: 2px solid var(--qc-primary);
+    outline: 2px solid var(--qc-kpi-accent);
     outline-offset: 2px;
 }
 #qualityControlCustomerPage .qc-client-overview-value {
@@ -313,6 +374,11 @@
     #qualityControlCustomerPage .qc-client-overview-value > strong { font-size: 23px; }
     #qualityControlCustomerPage .qc-client-overview-value span { font-size: 10px; }
     #qualityControlCustomerPage .qc-client-overview-breakdown { font-size: 10px; gap: 1px 6px; }
+    #qualityControlCustomerPage .qc-client-contact-summary-grid { gap: 4px; }
+    #qualityControlCustomerPage .qc-client-contact-summary-item { padding: 5px; gap: 3px; }
+    #qualityControlCustomerPage .qc-client-contact-summary-label { font-size: 10px; }
+    #qualityControlCustomerPage .qc-client-contact-summary-value strong { font-size: 21px; }
+    #qualityControlCustomerPage .qc-client-contact-summary-foot { font-size: 9px; }
 }
 @container mainWrapper (max-width: 390px) {
     #qualityControlCustomerPage .qc-client-overview { grid-template-columns: minmax(0,1fr); }
