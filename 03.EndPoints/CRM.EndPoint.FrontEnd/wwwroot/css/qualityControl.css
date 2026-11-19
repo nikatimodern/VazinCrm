@@ -78,6 +78,15 @@
 .quality-control-page .qc-actions .qc-button-no-response:hover { background: var(--color-secondary-light); }
 .quality-control-page .qc-actions .qc-button-invalid-number { border-color: var(--color-danger); color: var(--color-danger); }
 .quality-control-page .qc-actions .qc-button-invalid-number:hover { background: var(--color-danger-light); }
+.quality-control-page .qc-actions .qc-description-button { gap: .35rem; color: var(--color-text-muted); border-color: var(--color-border); }
+.quality-control-page .qc-actions .qc-description-button:hover { background: var(--color-background); }
+.quality-control-page .qc-actions .qc-description-button.qc-has-description i { color: var(--color-secondary); }
+.quality-control-page #qcDescriptionModal .modal-header,
+.quality-control-page #qcDescriptionModal .modal-footer { padding: .65rem .85rem; }
+.quality-control-page #qcDescriptionModal .modal-body { padding: .85rem; }
+.quality-control-page #qcDescriptionModal .qc-button { min-height: 34px; padding: .35rem .75rem; }
+.quality-control-page #qcDescriptionModal .form-control { min-height: 110px; padding: .55rem .7rem; }
+
 .quality-control-page .qc-filter-item input:disabled + label { opacity: .45; cursor: not-allowed; }
 .quality-control-page .qc-actions .qc-button.qc-icon-button { width: 32px; padding-inline: 0; flex-shrink: 0; }
 @media (max-width: 767px) {
@@ -159,7 +168,7 @@
 .quality-control-page #qcDescription { resize: vertical; }
 .quality-control-page .qc-readonly-result { display: grid; gap: .75rem; }
 .quality-control-page .qc-readonly-result[hidden], .quality-control-page .qc-form-fields[hidden] { display: none; }
-.quality-control-page .qc-result-heading, .quality-control-page .qc-result-notes h3 { margin: 0; font: 1rem IRANSansBold; }
+.quality-control-page .qc-result-heading { margin: 0; font: 1rem IRANSansBold; }
 .quality-control-page .qc-result-card { padding: .85rem; border: 1px solid var(--color-border); border-radius: 12px; }
 .quality-control-page .qc-result-card h4 { display: flex; align-items: baseline; gap: .65rem; margin: 0 0 .7rem; font: .95rem/1.8 IRANSansBold; overflow-wrap: anywhere; }
 .quality-control-page .qc-result-number { flex-shrink: 0; display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary); }
@@ -168,8 +177,6 @@
 .quality-control-page .qc-result-answer strong { font-weight: normal; font-family: IRANSansMedium; }
 .quality-control-page .qc-result-matched { background: var(--color-primary-light); color: var(--color-primary); }
 .quality-control-page .qc-result-discrepancy { background: var(--color-danger-light); color: var(--color-danger); }
-.quality-control-page .qc-result-notes { padding: 1rem; background: var(--color-background); border-radius: 10px; }
-.quality-control-page .qc-result-notes p { margin: .5rem 0 0; white-space: pre-wrap; line-height: 1.9; overflow-wrap: anywhere; }
 .quality-control-page .qc-tabs { display: flex; gap: .5rem; margin-block: .75rem; border-bottom: 1px solid var(--color-border); padding-bottom: .5rem; }
 .quality-control-page .qc-tabs button { flex: 1; padding: .5rem; min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-muted); background: var(--color-surface); }
 .quality-control-page .qc-tabs button.active { color: var(--color-secondary); background: var(--color-secondary-light); border-color: var(--color-secondary); }

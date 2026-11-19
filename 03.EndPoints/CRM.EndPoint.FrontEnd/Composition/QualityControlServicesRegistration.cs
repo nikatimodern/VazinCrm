@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControl;
+using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlDescription;
 using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControl;
 using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlNoResponse;
 using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlInvalidNumber;
@@ -23,6 +24,7 @@ public static class QualityControlServicesRegistration
         services.AddScoped<IQueryHandler<GetQualityControlFormQuery, QualityControlForm>, GetQualityControlFormQueryHandler>();
         services.AddScoped<IQueryHandler<GetQualityControlQuestionsQuery, IReadOnlyList<QualityControlQuestionDto>>, GetQualityControlQuestionsQueryHandler>();
         services.AddScoped<ICommandHandler<SaveQualityControlCommand, QualityControlSaveResult>, SaveQualityControlCommandHandler>();
+        services.AddScoped<ICommandHandler<SaveQualityControlDescriptionCommand, QualityControlSaveResult>, SaveQualityControlDescriptionCommandHandler>();
         services.AddScoped<ICommandHandler<DeleteQualityControlCommand, QualityControlSaveResult>, DeleteQualityControlCommandHandler>();
         services.AddScoped<ICommandHandler<MarkQualityControlNoResponseCommand, QualityControlSaveResult>, MarkQualityControlNoResponseCommandHandler>();
         services.AddScoped<ICommandHandler<MarkQualityControlInvalidNumberCommand, QualityControlSaveResult>, MarkQualityControlInvalidNumberCommandHandler>();

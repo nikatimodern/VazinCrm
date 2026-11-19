@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControl;
+using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlDescription;
 using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControl;
 using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlNoResponse;
 using CRM.Core.ApplicationServices.QualityControls.Commands.MarkQualityControlInvalidNumber;
@@ -44,6 +45,15 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             return BadRequest(new { message = "سفارش معتبر نیست." });
         var form = await requests.QueryAsync(new GetQualityControlFormQuery(dealId), ct);
         return form == null ? NotFound(new { message = "سفارش یافت نشد یا به آن دسترسی ندارید." }) : Ok(form);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveDescription([FromBody] SaveQualityControlDescriptionRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات توضیحات معتبر نیست." });
+        var result = await requests.CommandAsync(new SaveQualityControlDescriptionCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message, rowVersion = result.RowVersion });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

@@ -127,8 +127,6 @@
                                 <div id="qcFormFeedback" class="qc-feedback" role="status" aria-live="polite"></div>
                                 <fieldset id="qcFormFields" class="qc-form-fields" disabled>
                                     <div id="qcQuestions"></div>
-                                    <label for="qcDescription" class="mb-1">توضیحات تکمیلی <small class="text-muted">(اختیاری)</small></label>
-                                    <textarea id="qcDescription" name="description" class="form-control" rows="2" maxlength="4000"></textarea>
                                 </fieldset>
                             </form>
                             <section id="qcReadOnlyResult" class="qc-readonly-result" aria-label="نتیجه کنترل کیفیت" hidden></section>
@@ -143,6 +141,29 @@
                     <button type="submit" form="qualityControlForm" id="qcSubmit" class="qc-button qc-button-primary" disabled>ثبت کنترل کیفیت</button>
                     <button type="button" class="qc-button qc-button-neutral" data-bs-dismiss="modal">انصراف</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="qcDescriptionModal" tabindex="-1" aria-labelledby="qcDescriptionModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="qcDescriptionModalTitle">توضیحات سفارش</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <form id="qcDescriptionForm">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div id="qcDescriptionSummary" class="qc-order-summary mb-2"></div>
+                        <div id="qcDescriptionFeedback" class="qc-feedback" role="status" aria-live="polite"></div>
+                        <label for="qcDescription" class="d-block mb-1">توضیحات</label>
+                        <textarea id="qcDescription" name="description" class="form-control" rows="4" maxlength="4000" placeholder="توضیحات مربوط به این سفارش را بنویسید..."></textarea>
+                    </div>
+                    <div class="modal-footer gap-2">
+                        <button id="qcDescriptionSubmit" type="submit" class="qc-button qc-button-primary" disabled>ذخیره توضیحات</button>
+                        <button type="button" class="qc-button qc-button-neutral" data-bs-dismiss="modal">انصراف</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
