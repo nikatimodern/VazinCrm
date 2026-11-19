@@ -82,7 +82,19 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 groupedItem.CustomerId, groupedItem.Orders, groupedItem.Invoices,
                 groupedItem.TotalItems, groupedItem.ReviewedItems, groupedItem.DiscrepancyItems,
                 CustomerName = customer.CompanyName != null && customer.CompanyName != ""
-                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile
+                    ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
+                // Only projected into SQL when the "latest" sort is selected.
+                // Include QC item edits and changes to the customer's contact status.
+                LastReviewModified = (
+                    from invoiceItem in eligible
+                    join review in db.QualityControlItemReviews.AsNoTracking()
+                        on invoiceItem.ItemId equals review.FactorItemId
+                    where invoiceItem.CustomerId == groupedItem.CustomerId
+                    select review.ModifyDate
+                ).Max(),
+                LastContactModified = db.QualityControlCustomerContacts.AsNoTracking()
+                    .Where(contact => contact.CustomerId == groupedItem.CustomerId)
+                    .Max(contact => contact.ModifyDate)
             };
         // Summary is global for the eligible QC queue: it is not affected by search,
         // selected status or pagination. Read one grouped row per customer, not every item.
@@ -192,6 +204,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
             "reviewed" => customers.OrderByDescending(row => row.ReviewedItems)
                 .ThenByDescending(row => row.DiscrepancyItems),
+            "latest" => customers.OrderByDescending(row =>
+                (row.LastReviewModified ?? DateTime.MinValue) >= (row.LastContactModified ?? DateTime.MinValue)
+                    ? row.LastReviewModified : row.LastContactModified),
             "invoices" => customers.OrderByDescending(row => row.Invoices)
                 .ThenByDescending(row => row.TotalItems - row.ReviewedItems),
             "orders" => customers.OrderByDescending(row => row.Orders)
