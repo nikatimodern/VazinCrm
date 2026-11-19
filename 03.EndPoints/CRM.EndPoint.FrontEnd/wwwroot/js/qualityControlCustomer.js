@@ -277,6 +277,14 @@
             if (!isActive()) return;
             if (reset) start = 0;
             if (!summaryOnly) syncCardSelection();
+            // A summary-only refresh can interrupt an in-flight list request.
+            // Never leave its loading overlay or busy state stuck on the queue.
+            if (summaryOnly && loading) {
+                loading = false;
+                queue.classList.remove("is-refreshing");
+                queue.removeAttribute("aria-busy");
+                queue.removeAttribute("aria-label");
+            }
             listController?.abort();
             const controller = listController = new AbortController();
             if (!summaryOnly) {
@@ -1246,7 +1254,11 @@
                     button.disabled = complete;
                     if (reviewed > 0) button.classList.remove("is-selected");
                 });
-                card.classList.add("qc-client-last-checked", "qc-client-last-reviewed");
+                card.classList.add("qc-client-last-checked");
+                // Restart the green fade when this same customer is reviewed again.
+                card.classList.remove("qc-client-last-reviewed");
+                void card.offsetWidth;
+                card.classList.add("qc-client-last-reviewed");
                 refreshNoResponseCooldowns();
                 // The card stays in its original slot for the entire five-second fade.
                 // Only remove it afterwards when the selected status no longer includes it.
