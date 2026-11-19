@@ -124,12 +124,19 @@
         });
         const formatCooldown = seconds =>
             faTwoDigits.format(Math.floor(seconds / 60)) + ":" + faTwoDigits.format(seconds % 60);
+        function contactCountBadge(count) {
+            const value = Math.max(0, Number(count) || 0);
+            if (!value) return "";
+            const text = value > 9 ? "۹+" : faNumber.format(value);
+            return '<span class="qc-client-contact-count" aria-hidden="true">' + text + '</span>';
+        }
         function refreshNoResponseCooldowns() {
             const now = Date.now();
             queue.querySelectorAll('[data-qc-contact="1"]').forEach(button => {
                 const remainingMs = Math.max(0, Number(button.dataset.qcCooldownUntil || 0) - now);
                 const remaining = Math.ceil(remainingMs / 1000);
                 const complete = button.closest("[data-qc-complete]")?.dataset.qcComplete === "true";
+                const attempts = Math.max(0, Number(button.dataset.qcNoAnswerCount) || 0);
                 const showTimer = remaining > 0 && !complete;
                 // Preserve the local saving indicator until this request finishes.
                 if (button.classList.contains("is-saving")) {
@@ -147,10 +154,11 @@
                     }
                 }
                 button.title = complete ? "عدم پاسخ؛ تمام اقلام بررسی شده‌اند"
-                    : showTimer ? "عدم پاسخ؛ ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر امکان‌پذیر است"
-                        : button.classList.contains("is-selected")
-                            ? "عدم پاسخ ثبت شده؛ ثبت تلاش تماس جدید"
-                            : "عدم پاسخ؛ ثبت یک تلاش تماس بدون پاسخ جدید";
+                    : showTimer ? "عدم پاسخ؛ " + faNumber.format(attempts)
+                        + " تلاش ثبت‌شده؛ ثبت مجدد تا " + faNumber.format(remaining) + " ثانیه دیگر"
+                    : attempts > 0 ? "عدم پاسخ؛ " + faNumber.format(attempts)
+                        + " تلاش ثبت‌شده؛ ثبت تلاش تماس جدید"
+                    : "عدم پاسخ؛ ثبت یک تلاش تماس بدون پاسخ جدید";
                 button.setAttribute("aria-label", button.title);
             });
         }
@@ -376,6 +384,8 @@
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
                     const contactStatus = Number(row.contactStatus) || 0;
+                    const noResponseAttempts = Math.max(0, Number(row.noResponseAttempts) || 0);
+                    const contactHistoryCount = Math.max(0, Number(row.contactHistoryCount) || 0);
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     // Sorting is only applied on explicit list loads, never after a QC save.
@@ -387,9 +397,6 @@
                         + '<div class="qc-client-profile"><div class="qc-client-name-line"><strong>'
                         + escape(row.customerName || "مشتری بدون نام") + '</strong></div>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
-                        + (Number(row.noResponseAttempts) > 0
-                            ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
-                                + faNumber.format(row.noResponseAttempts) + '</strong></small>' : '')
                         + '</div>'
                         + '<div class="qc-client-stats">'
                         + '<span class="qc-client-segment-group qc-client-order-group" role="group" aria-label="سفارش‌ها و فاکتورهای مشتری">'
@@ -405,17 +412,24 @@
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
-                        + (contactStatus === 1 ? ' is-selected' : '') + '"'
+                        + (contactStatus === 1 ? ' is-selected' : '')
+                        + (noResponseAttempts > 0 ? ' has-count' : '') + '"'
                         + (complete ? ' disabled' : '')
                         + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
                         + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
-                        + '"><i class="fa fa-phone-slash" aria-hidden="true"></i></button>'
+                        + '" data-qc-no-answer-count="' + noResponseAttempts + '">'
+                        + '<i class="fa fa-phone-slash" aria-hidden="true"></i>'
+                        + contactCountBadge(noResponseAttempts) + '</button>'
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
-                        + '<button type="button" class="qc-client-button qc-client-history-open" data-qc-history="' + escape(row.customerId) + '"'
-                        + ' title="تاریخچه تماس" aria-label="مشاهده تاریخچه تماس مشتری">'
-                        + '<i class="fa fa-history" aria-hidden="true"></i></button>'
+                        + '<button type="button" class="qc-client-button qc-client-history-open'
+                        + (contactHistoryCount > 0 ? ' has-count' : '')
+                        + '" data-qc-history="' + escape(row.customerId) + '"'
+                        + ' title="تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه"'
+                        + ' aria-label="مشاهده تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه">'
+                        + '<i class="fa fa-history" aria-hidden="true"></i>'
+                        + contactCountBadge(contactHistoryCount) + '</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
                         + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
                         + '" title="' + (complete ? 'شماره نامعتبر؛ تمام اقلام بررسی شده‌اند'
