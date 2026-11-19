@@ -10,12 +10,7 @@
         const form = page.querySelector("#qualityControlForm");
         const fields = page.querySelector("#qcFormFields");
         const questions = page.querySelector("#qcQuestions");
-        const descriptionModal = page.querySelector("#qcDescriptionModal");
-        const descriptionForm = page.querySelector("#qcDescriptionForm");
         const description = page.querySelector("#qcDescription");
-        const descriptionSummary = page.querySelector("#qcDescriptionSummary");
-        const descriptionFeedback = page.querySelector("#qcDescriptionFeedback");
-        const descriptionSubmit = page.querySelector("#qcDescriptionSubmit");
         const readOnlyResult = page.querySelector("#qcReadOnlyResult");
         const summary = page.querySelector("#qcOrderSummary");
         const feedback = page.querySelector("#qcFormFeedback");
@@ -35,11 +30,6 @@
         };
         let tableRequest = null;
         let formRequest = null;
-        let descriptionRequest = null;
-        let descriptionGeneration = 0;
-        let descriptionDealId = null;
-        let descriptionRowVersion = null;
-        let descriptionSaving = false;
         let factorSummaryRequest = null;
         let formGeneration = 0;
         let selectedDealId = null;
@@ -117,7 +107,6 @@
         function renderRows(rows) {
             body.innerHTML = rows.map((row, index) => {
                 const status = statuses[row.status] ?? statuses[0];
-                const notesButton = `<button type="button" class="qc-button qc-description-button${row.hasDescription ? " qc-has-description" : ""}" data-qc-description-id="${escapeHtml(row.dealId)}" title="${row.hasDescription ? "مشاهده یا ویرایش توضیحات" : "ثبت توضیحات"}"><i class="fa fa-comment-dots" aria-hidden="true"></i><span>توضیحات</span></button>`;
                 return `<article class="qc-record-card qc-record-${status.color}" role="listitem">
                     <div class="qc-record-field "><span class="qc-field-label">ردیف</span>${number.format(start + index + 1)}</div>
                     <div class="qc-record-field "><span class="qc-field-label">شماره سفارش</span>${escapeHtml(row.serialNumber ?? "-")}</div>
@@ -129,19 +118,16 @@
                     <div class="qc-record-field "><span class="qc-field-label">وضعیت کنترل کیفیت</span><span class="qc-badge qc-quality-status qc-badge-${status.color}">${status.label}</span></div>
                     <div class="qc-record-field qc-actions"><span class="qc-field-label">عملیات</span>${row.status === 0 ? `
                         <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
-                        ${notesButton}
-                        <button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}">عدم پاسخ</button>
-                        <button type="button" class="qc-button qc-button-invalid-number" data-qc-invalid-number-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}">شماره نامعتبر</button>`
+                        <button type="button" class="qc-button qc-button-no-response" data-qc-no-response-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">عدم پاسخ</button>
+                        <button type="button" class="qc-button qc-button-invalid-number" data-qc-invalid-number-id="${escapeHtml(row.dealId)}" data-qc-serial="${escapeHtml(row.serialNumber)}">شماره نامعتبر</button>`
                         : row.status === 4 || row.status === 5 ? `
                         <button type="button" class="qc-button" data-qc-deal-id="${escapeHtml(row.dealId)}">کنترل کیفیت</button>
-                        ${notesButton}
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion ?? "")}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
                         : row.rowVersion ? `
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" data-qc-view="true" title="نمایش کنترل کیفیت" aria-label="نمایش کنترل کیفیت"><i class="fa fa-eye" aria-hidden="true"></i></button>
                         <button type="button" class="qc-button qc-icon-button" data-qc-deal-id="${escapeHtml(row.dealId)}" title="ویرایش کنترل کیفیت" aria-label="ویرایش کنترل کیفیت"><i class="fa fa-pencil" aria-hidden="true"></i></button>
-                        ${notesButton}
                         <button type="button" class="qc-button qc-icon-button qc-button-danger" data-qc-delete-id="${escapeHtml(row.dealId)}" data-qc-version="${escapeHtml(row.rowVersion)}" data-qc-serial="${escapeHtml(row.serialNumber)}" title="حذف کنترل کیفیت" aria-label="حذف کنترل کیفیت"><i class="fa fa-trash" aria-hidden="true"></i></button>`
-                        : notesButton}</div>
+                        : "—"}</div>
                 </article>`;
             }).join("");
         }
@@ -263,11 +249,6 @@
             }
         });
         page.addEventListener("click", event => {
-            const notesButton = event.target.closest("[data-qc-description-id]");
-            if (notesButton) {
-                openDescription(notesButton.dataset.qcDescriptionId);
-                return;
-            }
             const temporaryStatusButton = event.target.closest("[data-qc-no-response-id], [data-qc-invalid-number-id]");
             if (temporaryStatusButton) {
                 markTemporaryStatus(temporaryStatusButton);
@@ -338,85 +319,8 @@
             tableRequest?.abort();
             formRequest?.abort();
             factorSummaryRequest?.abort();
-            descriptionRequest?.abort();
         }, { once: true });
         loadTable();
-
-        descriptionModal.addEventListener("hide.bs.modal", event => {
-            if (descriptionSaving) {
-                event.preventDefault();
-                return;
-            }
-            descriptionRequest?.abort();
-            descriptionGeneration++;
-        });
-        descriptionForm.addEventListener("submit", saveDescription);
-
-        async function openDescription(dealId) {
-            if (!isActive() || saving || deleting || markingTemporaryStatus || descriptionSaving) return;
-            descriptionRequest?.abort();
-            const controller = descriptionRequest = new AbortController();
-            const generation = ++descriptionGeneration;
-            descriptionDealId = dealId;
-            descriptionRowVersion = null;
-            descriptionForm.reset();
-            description.disabled = true;
-            descriptionSubmit.disabled = true;
-            descriptionSummary.textContent = "در حال دریافت اطلاعات سفارش…";
-            descriptionFeedback.textContent = "";
-            descriptionForm.setAttribute("aria-busy", "true");
-            ModalToggle(descriptionModal, "show");
-
-            const result = await sendApiRequest({
-                url: "/QualityControl/GetForm",
-                params: { dealId },
-                signal: controller.signal,
-                showLoading: false,
-            });
-            if (!isActive() || controller.signal.aborted || generation !== descriptionGeneration) return;
-            descriptionForm.setAttribute("aria-busy", "false");
-            if (!result?.deal) {
-                descriptionFeedback.textContent = "دریافت توضیحات انجام نشد. مودال را ببندید و دوباره باز کنید.";
-                return;
-            }
-            descriptionRowVersion = result.rowVersion ?? null;
-            description.value = result.description ?? "";
-            const deal = result.deal;
-            descriptionSummary.textContent = `سفارش شماره ${deal.serialNumber} — ${deal.title || "بدون عنوان"} | ${deal.customerName || "بدون نام"}`;
-            description.disabled = false;
-            descriptionSubmit.disabled = false;
-            description.focus();
-        }
-
-        async function saveDescription(event) {
-            event.preventDefault();
-            if (!isActive() || descriptionSaving || !descriptionDealId || description.disabled || !descriptionForm.reportValidity()) return;
-            descriptionSaving = true;
-            description.disabled = true;
-            descriptionSubmit.disabled = true;
-            descriptionSubmit.textContent = "در حال ذخیره…";
-            descriptionForm.setAttribute("aria-busy", "true");
-            let result;
-            try {
-                result = await sendApiRequest({
-                    url: "/QualityControl/SaveDescription",
-                    method: "POST",
-                    headers: { RequestVerificationToken: descriptionForm.querySelector('[name="__RequestVerificationToken"]').value },
-                    data: { dealId: descriptionDealId, description: description.value, rowVersion: descriptionRowVersion },
-                    successMsg: "توضیحات با موفقیت ذخیره شد.",
-                });
-            } finally {
-                descriptionSaving = false;
-                description.disabled = false;
-                descriptionSubmit.disabled = false;
-                descriptionSubmit.textContent = "ذخیره توضیحات";
-                descriptionForm.setAttribute("aria-busy", "false");
-            }
-            if (!result || !isActive()) return;
-            descriptionRowVersion = result.rowVersion ?? null;
-            ModalToggle(descriptionModal, "hide");
-            await loadTable();
-        }
 
         modal.addEventListener("hide.bs.modal", event => {
             if (viewingDocument) return;
@@ -489,8 +393,9 @@
             resultDeal = deal;
             summary.textContent = `سفارش شماره ${deal.serialNumber} — ${deal.title || "بدون عنوان"} | ${deal.customerName || "بدون نام"}${deal.customerCode != null ? ` (کد مشتری: ${deal.customerCode})` : ""}`;
             rowVersion = result.rowVersion ?? null;
+            description.value = result.description ?? "";
             if (readOnly) {
-                renderReadOnlyResult(result.questions, result.noResponse);
+                renderReadOnlyResult(result.questions, result.description, result.noResponse);
                 readOnlyResult.hidden = false;
             } else {
                 renderQuestions(result.questions);
@@ -615,7 +520,7 @@
             }
         });
 
-        function renderReadOnlyResult(items, noResponse = false) {
+        function renderReadOnlyResult(items, notes, noResponse = false) {
             if (noResponse) {
                 const message = document.createElement("p");
                 message.className = "qc-result-heading";
@@ -649,6 +554,14 @@
                 card.append(question, answer);
                 fragment.append(card);
             });
+            const noteSection = document.createElement("section");
+            noteSection.className = "qc-result-notes";
+            const noteTitle = document.createElement("h3");
+            noteTitle.textContent = "توضیحات تکمیلی";
+            const noteText = document.createElement("p");
+            noteText.textContent = notes?.trim() || "توضیحی ثبت نشده است.";
+            noteSection.append(noteTitle, noteText);
+            fragment.append(noteSection);
             readOnlyResult.replaceChildren(fragment);
         }
 
@@ -704,7 +617,7 @@
                 toastifyError("پاسخ معتبر به همهٔ سؤال‌ها الزامی است.");
                 return;
             }
-            const data = { dealId: selectedDealId, rowVersion, answers };
+            const data = { dealId: selectedDealId, description: description.value, rowVersion, answers };
             setSaving(true);
             let result;
             try {

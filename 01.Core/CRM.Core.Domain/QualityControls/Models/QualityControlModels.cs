@@ -50,7 +50,6 @@ public sealed class QualityControlRow
     public int? CustomerCode { get; set; }
     public bool FinancialApproved { get; set; }
     public QualityControlStatus Status { get; set; }
-    public bool HasDescription { get; set; }
 }
 
 public sealed record QualityControlFinancialCounts(int All, int Delivered, int Undelivered);
@@ -76,13 +75,6 @@ public sealed class SaveQualityControlRequest
     public string? Description { get; set; }
     public byte[]? RowVersion { get; set; }
     public List<QualityControlAnswerInput>? Answers { get; set; }
-}
-
-public sealed class SaveQualityControlDescriptionRequest
-{
-    public Guid DealId { get; set; }
-    public string? Description { get; set; }
-    public byte[]? RowVersion { get; set; }
 }
 
 public sealed record QualityControlAnswerInput(Guid QuestionId, int? Answer);
