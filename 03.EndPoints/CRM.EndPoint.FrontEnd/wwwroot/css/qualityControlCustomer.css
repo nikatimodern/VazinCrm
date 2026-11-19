@@ -343,22 +343,28 @@
     #qualityControlCustomerPage .qc-client-overview-action { transition: none; }
 }
 
+/* Keep horizontal labels beside each select on desktop; allow natural wrapping on narrow workspaces. */
+@container mainWrapper (min-width: 768px) and (max-width: 1119px) {
+    #qualityControlCustomerPage .qc-client-filter { flex-basis: 175px; min-width: 140px; }
+    #qualityControlCustomerPage .qc-client-sort { flex-basis: 235px; min-width: 190px; }
+    #qualityControlCustomerPage .qc-client-size { flex-basis: 100px; min-width: 95px; }
+}
 /* Compact, single-row desktop filters; the status menu retains every original option. */
 #qualityControlCustomerPage .qc-client-toolbar {
     background: #fff;
     border: 1px solid color-mix(in srgb, var(--qc-secondary) 15%, var(--qc-border));
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
-    gap: 10px 12px;
-    align-items: flex-end;
-    box-shadow: 0 2px 10px rgba(33, 37, 41, .04);
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    gap: 6px 9px;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(33, 37, 41, .035);
 }
 #qualityControlCustomerPage .qc-client-search {
     display: flex;
     align-items: stretch;
-    flex: 2 1 300px;
-    min-width: 240px;
+    flex: 2 1 270px;
+    min-width: 200px;
 }
 #qualityControlCustomerPage .qc-client-search-group {
     display: flex;
@@ -370,12 +376,14 @@
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;
-    min-height: 36px;
+    height: 32px;
+    min-height: 32px;
+    padding-block: 2px;
     border: 1px solid color-mix(in srgb, var(--qc-secondary) 45%, var(--qc-border));
     border-radius: 0;
-    border-start-start-radius: 9px;
-    border-end-start-radius: 9px;
-    padding-inline: 12px;
+    border-start-start-radius: 8px;
+    border-end-start-radius: 8px;
+    padding-inline: 9px;
     font-size: 12px;
 }
 #qualityControlCustomerPage .qc-client-search input:focus {
@@ -385,48 +393,58 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-secondary) 13%, transparent);
 }
 #qualityControlCustomerPage .qc-client-toolbar .qc-client-search-submit {
-    flex: 0 0 40px;
-    width: 40px;
-    min-height: 36px;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 32px;
+    min-height: 32px;
     padding: 0;
     border-radius: 0;
-    border-start-end-radius: 9px;
-    border-end-end-radius: 9px;
+    border-start-end-radius: 8px;
+    border-end-end-radius: 8px;
     border-inline-start-width: 0;
-    font-size: 16px;
+    font-size: 14px;
 }
 #qualityControlCustomerPage .qc-client-filter {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-    flex: 0 1 175px;
-    min-width: 140px;
-    font-size: 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 205px;
+    min-width: 170px;
+    font-size: 11px;
 }
 #qualityControlCustomerPage .qc-client-filter label {
+    flex: 0 0 auto;
     margin: 0;
     text-align: right;
+    white-space: nowrap;
     color: var(--qc-primary);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
 }
 #qualityControlCustomerPage .qc-client-filter select {
-    width: 100%;
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
-    min-height: 36px;
-    border-radius: 9px;
-    font-size: 12px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 8px;
+    padding-block: 2px;
+    padding-inline-start: 8px;
+    font-size: 11px;
 }
-#qualityControlCustomerPage .qc-client-sort { flex-basis: 240px; }
+#qualityControlCustomerPage .qc-client-sort { flex-basis: 280px; min-width: 215px; }
 #qualityControlCustomerPage .qc-client-size {
-    flex-basis: 82px;
-    min-width: 76px;
+    flex-basis: 125px;
+    min-width: 110px;
 }
 #qualityControlCustomerPage .qc-client-toolbar .qc-client-clear-filters {
     flex: 0 0 auto;
-    min-height: 36px;
+    height: 32px;
+    min-height: 32px;
+    padding: 3px 9px;
     white-space: nowrap;
+    font-size: 11px;
     color: var(--qc-secondary);
     border-color: var(--qc-secondary);
     background: #fff;
@@ -1219,17 +1237,27 @@
     #qualityControlCustomerPage .qc-client-queue { max-height: 48dvh; min-height: 180px; }
     #qualityControlCustomerPage .qc-client-header h1 { font-size: 18px; }
     #qualityControlCustomerPage .qc-client-header { align-items: flex-start; }
-    #qualityControlCustomerPage .qc-client-toolbar { padding: 9px; gap: 8px; }
+    #qualityControlCustomerPage .qc-client-toolbar { padding: 8px; gap: 7px; }
     #qualityControlCustomerPage .qc-client-search { flex: 1 1 100%; min-width: 0; }
-    #qualityControlCustomerPage .qc-client-filter { flex: 1 1 calc(50% - 4px); min-width: 0; }
+    #qualityControlCustomerPage .qc-client-search input { height: 36px; min-height: 36px; }
+    #qualityControlCustomerPage .qc-client-filter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 3px;
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+    }
+    #qualityControlCustomerPage .qc-client-filter select { width: 100%; height: 36px; min-height: 36px; }
     #qualityControlCustomerPage .qc-client-sort { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-size { flex: 1 1 76px; }
     #qualityControlCustomerPage .qc-client-toolbar .qc-client-search-submit {
         flex-basis: 36px;
         width: 36px;
+        height: 36px;
         min-height: 36px;
     }
     #qualityControlCustomerPage .qc-client-toolbar .qc-client-clear-filters {
+        height: 36px;
         min-height: 36px;
         padding: 4px 8px;
         font-size: 11px;
