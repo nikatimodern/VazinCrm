@@ -2,10 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.QualityControls.Commands.AddQualityControlCustomerNote;
 using CRM.Core.ApplicationServices.QualityControls.Commands.ChangeQualityControlContactHistory;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlContactHistory;
+using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerNotes;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomers;
 using CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerForm;
 using CRM.Core.ApplicationServices.QualityControls.Services;
@@ -40,6 +42,30 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             return BadRequest(new { message = "مشتری معتبر نیست." });
         var result = await requests.QueryAsync(new GetQualityControlCustomerFormQuery(customerId), ct);
         return result == null ? NotFound(new { message = "مشتری یا فاکتورهای قابل بررسی یافت نشد." }) : Ok(result);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCustomerNotes(
+        Guid customerId, int start = 0, int length = 10, CancellationToken ct = default)
+    {
+        if (!ModelState.IsValid || customerId == Guid.Empty || start < 0 || length is < 1 or > 50)
+            return BadRequest(new { message = "مشتری یا صفحه‌بندی یادداشت‌ها معتبر نیست." });
+        var result = await requests.QueryAsync(
+            new GetQualityControlCustomerNotesQuery(customerId, start, length), ct);
+        return result == null
+            ? NotFound(new { message = "مشتری واجد شرایط یافت نشد." })
+            : Ok(result);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddCustomerNote(
+        [FromBody] AddQualityControlCustomerNoteRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null || request.CustomerId == Guid.Empty
+            || string.IsNullOrWhiteSpace(request.Description) || request.Description.Length > 4000)
+            return BadRequest(new { message = "یادداشت مشتری معتبر نیست." });
+        var result = await requests.CommandAsync(new AddQualityControlCustomerNoteCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
