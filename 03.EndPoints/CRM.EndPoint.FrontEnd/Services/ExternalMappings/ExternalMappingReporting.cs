@@ -288,7 +288,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 summary = new {
                     saved,
-                    pendingCustomers = plan.PendingCustomers.Count,
+                    pendingCustomers = plan.PendingCustomers.Count +
+                        reportRows.Count(x => x.Status == "pending"
+                            && x.MapType == (int)ExternalMappingTypeEnum.تامین_کننده),
                     pendingDocuments = plan.PendingDocuments.Count +
                         reportRows.Count(x => x.Status == "pending"
                             && (x.MapType == (int)ExternalMappingTypeEnum.فاکتور_خرید

@@ -117,6 +117,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 nameof(Party) when type == ExternalMappingTypeEnum.مشتری
                     => await sepidar.Parties.AsNoTracking()
                         .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct),
+                nameof(Party) when type == ExternalMappingTypeEnum.تامین_کننده
+                    => await sepidar.Parties.AsNoTracking()
+                        .AnyAsync(x => x.PartyId == targetId && x.IsVendor && x.Dl != null, ct),
                 nameof(Party)
                     => await sepidar.Parties.AsNoTracking()
                         .AnyAsync(x => x.PartyId == targetId, ct),
@@ -326,9 +329,6 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 || x.EntityId == Guid.Empty
                 || !int.TryParse(x.ExEntityId, out var id) || id <= 0))
                 throw new ArgumentException("نوع ارتباط یا شناسه انتخاب‌شده معتبر نیست.");
-
-            if (edit == null && request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.تامین_کننده))
-                throw new ArgumentException("برای ثبت ارتباط تأمین‌کننده از گردش انتقال مالی استفاده کنید.");
 
             var repeatedSources = request.Items.GroupBy(x => {
                 var pair = GetMappingEntityNames(x.MapType, x.EntityName, x.ExEntityName);

@@ -64,7 +64,7 @@
 
         const statusNames = {
             saved:"ثبت‌شده", pending:"آماده ثبت", customerConflict:"تعارض مشتری",
-            ambiguous:"تطبیق مبهم", blocked:"منتظر مشتری", notMatched:"بدون تطبیق قطعی"
+            ambiguous:"تطبیق مبهم", blocked:"متوقف", notMatched:"بدون تطبیق قطعی"
         };
         const reasonNames = {
             MultipleSepidarParties:["چند مشتری سپیدار برای یک مشتری CRM","پیش‌فاکتورها یا فاکتورهای این مشتری به اشخاص متفاوت سپیدار اشاره دارند. در ارتباط‌های پایین مشخص است هر کدام متعلق به کدام مشتری است."],
@@ -108,6 +108,12 @@
             UserAccountAlreadyMapped:["کاربر مقصد قبلاً مرتبط شده","این حساب در نرم‌افزار مقصد قبلاً به کاربر دیگری متصل شده است."],
             UserAccountNoMatch:["نام کاربری متناظر پیدا نشد","برای این کاربر CRM معادل قطعی در نرم‌افزار مالی پیدا نشده است؛ ارتباط را دستی ثبت کنید."],
             SupplyInvoiceNumberNotNumeric:["شماره فاکتور تأمین قابل تطبیق نیست","شماره صادرشده توسط تأمین‌کننده باید عددی باشد تا با شماره فاکتور تأمین‌کننده در سپیدار تطبیق شود."],
+            SupplierPurchaseNotMatched:["فاکتور خرید مرتبط پیدا نشد","برای این تأمین‌کننده هنوز فاکتور خرید دارای معادل قطعی پیدا نشده است."],
+            SupplierVendorNotFound:["تأمین‌کننده سپیدار معتبر نیست","فاکتور خرید پیدا شد اما شخص تأمین‌کننده فعال با نقش تأمین‌کننده در سپیدار شناسایی نشد."],
+            SupplierMultipleParties:["چند تأمین‌کننده سپیدار","فاکتورهای خرید این تأمین‌کننده به اشخاص متفاوتی در سپیدار اشاره دارند؛ معادل صحیح را بررسی کنید."],
+            SupplierPartyUsedByMultipleCrmSuppliers:["چند تأمین‌کننده CRM برای یک شخص","این شخص سپیدار برای بیش از یک تأمین‌کننده CRM پیشنهاد شده است؛ ارتباط صحیح را تعیین کنید."],
+            SupplierPartyAlreadyMapped:["شخص سپیدار قبلاً مرتبط شده","این شخص به تأمین‌کننده دیگری در CRM متصل شده است؛ ارتباط قبلی را بررسی کنید."],
+            SupplierExistingMappingMismatch:["مغایرت در ارتباط تأمین‌کننده","شخص ثبت‌شده برای این تأمین‌کننده با اطلاعات فاکتورهای خرید تطبیق ندارد؛ ارتباط ثبت‌شده را بررسی کنید."],
             SupplyPurchaseNoMatch:["فاکتور خرید مطابق پیدا نشد","شماره فاکتور تأمین‌کننده، مبلغ، سال مالی و تأمین‌کننده را بررسی کنید."],
             SupplyPurchaseAmbiguous:["چند فاکتور خرید احتمالی","چند فاکتور خرید با اطلاعات مشابه وجود دارد؛ معادل درست را مشخص کنید."],
             SupplyPurchaseAlreadyMapped:["فاکتور خرید قبلاً مرتبط شده","این فاکتور خرید قبلاً به فاکتور تأمین دیگری متصل شده است."],
@@ -155,7 +161,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5,6,8,9,10].includes(Number(row.mapType)) &&
+                [2,3,5,6,7,8,9,10].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -251,6 +257,7 @@
                 case 4: return crm ? "کد مرکز هزینه" : "کد تفصیلی";
                 case 5: return crm ? "کد مشتری" : "کد تفصیلی";
                 case 6: return crm ? "نام کاربری" : "کد تفصیلی";
+                case 7: return crm ? "کد تأمین‌کننده" : "کد تفصیلی";
                 case 8: return crm ? "شماره فاکتور تأمین" : "شماره فاکتور خرید";
                 case 9: return crm ? "شماره فاکتور تأمین" : "شماره رسید انبار";
                 case 10: return "نام کاربری";
@@ -596,7 +603,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5, 6, 8, 9, 10]);
+                : new Set([2, 3, 5, 6, 7, 8, 9, 10]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -910,7 +917,7 @@
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...[5, 6, 10, 4, 0, 1, 2, 3, 8, 9].flatMap(type => items.filter(x => x.mapType === type))
+                ...[5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
                 mappingFailure("دسته‌بندی ثبت ارتباط", new Error("Selected map types are not supported"),
@@ -938,7 +945,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 6, 10, 4, 0, 1, 2, 3, 8, 9]) {
+                for (const groupType of [5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -1440,7 +1447,7 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.filter(item => isEdit || Number(item.value) !== 7).forEach(item =>
+            state.types.forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = isEdit ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.

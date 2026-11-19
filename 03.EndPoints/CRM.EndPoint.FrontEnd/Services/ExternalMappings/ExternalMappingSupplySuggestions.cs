@@ -9,7 +9,10 @@ using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.Sepidar.Purchases.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
+
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 
@@ -271,6 +274,8 @@ public sealed partial class ExternalMappingService
             }
         }
 
+        result.AddRange(await BuildSupplierSuggestionsAsync(
+            softwareId, context, sources, linkedPurchaseIds, ct));
         return result;
     }
 }
