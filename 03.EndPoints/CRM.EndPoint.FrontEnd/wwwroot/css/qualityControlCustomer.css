@@ -172,17 +172,22 @@
     min-width: 0;
     flex: 1 1 auto;
 }
+/* The four KPI headings use plain theme-colored glyphs, without icon tiles. */
 #qualityControlCustomerPage .qc-client-overview-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 26px;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    background: var(--qc-kpi-tint);
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     color: var(--qc-kpi-accent);
-    font-size: 13px;
+    font-size: 16px;
+    line-height: 1;
 }
 #qualityControlCustomerPage .qc-client-overview-title {
     color: #222C38;
@@ -201,24 +206,29 @@
     padding: 2px 9px;
     border: 1px solid var(--qc-kpi-accent);
     border-radius: 7px;
-    background: var(--qc-kpi-accent);
-    color: #fff;
+    background: transparent;
+    color: var(--qc-kpi-accent);
     font-size: 11px;
     font-weight: 700;
     line-height: 1.3;
     cursor: pointer;
-    transition: background-color .15s ease, box-shadow .15s ease;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 #qualityControlCustomerPage .qc-client-overview-action:hover {
-    background: color-mix(in srgb, var(--qc-kpi-accent) 82%, #111);
-    border-color: color-mix(in srgb, var(--qc-kpi-accent) 82%, #111);
+    background: var(--qc-kpi-accent);
+    border-color: var(--qc-kpi-accent);
     color: #fff;
 }
 #qualityControlCustomerPage .qc-client-overview-action.is-selected,
 #qualityControlCustomerPage .qc-client-overview-action[aria-pressed="true"] {
-    background: var(--qc-kpi-accent);
+    background: transparent;
     border-color: var(--qc-kpi-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-kpi-accent) 24%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--qc-kpi-accent) 25%, transparent);
+    color: var(--qc-kpi-accent);
+}
+#qualityControlCustomerPage .qc-client-overview-action.is-selected:hover,
+#qualityControlCustomerPage .qc-client-overview-action[aria-pressed="true"]:hover {
+    background: var(--qc-kpi-accent);
     color: #fff;
 }
 #qualityControlCustomerPage .qc-client-overview-action:focus-visible {
@@ -368,7 +378,7 @@
     #qualityControlCustomerPage .qc-client-overview-head { flex-wrap: wrap; gap: 4px; }
     #qualityControlCustomerPage .qc-client-overview-heading { flex-basis: 100%; }
     #qualityControlCustomerPage .qc-client-overview-title { font-size: 12px; }
-    #qualityControlCustomerPage .qc-client-overview-icon { width: 24px; height: 24px; flex-basis: 24px; border-radius: 7px; font-size: 12px; }
+    #qualityControlCustomerPage .qc-client-overview-icon { width: auto; height: auto; flex-basis: auto; border-radius: 0; font-size: 14px; }
     #qualityControlCustomerPage .qc-client-overview-action { min-height: 25px; padding: 2px 7px; font-size: 10px; }
     #qualityControlCustomerPage .qc-client-overview-value { padding: 4px 6px; min-height: 34px; }
     #qualityControlCustomerPage .qc-client-overview-value > strong { font-size: 23px; }
@@ -685,11 +695,17 @@
     white-space: nowrap;
     transition: background-color .15s ease, border-color .15s ease;
 }
+/* Customer-card main action uses the same outline-then-fill interaction as KPI actions. */
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-primary {
     border-color: var(--qc-action);
+    background: transparent;
+    color: var(--qc-action);
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-primary:hover:not(:disabled) {
-    border-color: var(--qc-primary);
+    background: var(--qc-action);
+    border-color: var(--qc-action);
+    color: #fff;
 }
 /* Three separate contact actions form one icon-only RTL button group. */
 #qualityControlCustomerPage .qc-client-call-group {
