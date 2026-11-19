@@ -108,6 +108,7 @@
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let lastReviewedCustomerId = null, lastReviewedCustomerName = "";
+        let lastCheckedCustomerId = null; // Badge stays until another successfully saved review.
         let lastReviewedHighlightUntil = 0, lastReviewedHighlightTimer = null;
         let reviewHasSavedChanges = false, focusScrollPending = false;
         let temporaryCompletedCustomerCard = null;
@@ -365,8 +366,11 @@
                     const statusIcon = complete ? "fa-check-circle" : "fa-clock";
                     return '<article role="listitem" class="qc-client-card'
                         + (isLastReviewed ? ' qc-client-last-reviewed' : '')
+                        + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
+                            ? ' qc-client-last-checked' : '')
                         + '" data-qc-complete="' + complete + '">'
-                        + '<div class="qc-client-profile"><strong>' + escape(row.customerName || "مشتری بدون نام") + '</strong>'
+                        + '<div class="qc-client-profile"><div class="qc-client-name-line"><strong>'
+                        + escape(row.customerName || "مشتری بدون نام") + '</strong></div>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
                         + (Number(row.noResponseAttempts) > 0
                             ? '<small class="qc-client-retry-count">تلاش‌های بدون پاسخ: <strong>'
@@ -422,7 +426,7 @@
                 if (focusScrollPending && temporaryCompletedCustomerCard
                     && !queue.querySelector(".qc-client-last-reviewed")) {
                     const temporaryCard = temporaryCompletedCustomerCard;
-                    temporaryCard.classList.add("qc-client-last-reviewed", "qc-client-temporary-complete");
+                    temporaryCard.classList.add("qc-client-last-reviewed", "qc-client-temporary-complete", "qc-client-last-checked");
                     queue.prepend(temporaryCard);
                     queueFeedback.textContent = "";
                 }
@@ -1280,6 +1284,7 @@
             itemSearchEmpty.hidden = true;
             formFeedback.textContent = "";
             if (editedCustomerId && isActive()) {
+                lastCheckedCustomerId = String(editedCustomerId).toLowerCase();
                 lastReviewedCustomerId = String(editedCustomerId).toLowerCase();
                 lastReviewedCustomerName = editedCustomerName;
                 lastReviewedHighlightUntil = Date.now() + 5000;
