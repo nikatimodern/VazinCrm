@@ -41,6 +41,13 @@
         const historyShowDeleted = page.querySelector("#qcContactHistoryShowDeleted");
         const form = page.querySelector("#qcCustomerReviewForm");
         const formFeedback = page.querySelector("#qcCustomerFormFeedback");
+        const customerNotesList = page.querySelector("#qcCustomerNotesList");
+        const customerNotesCount = page.querySelector("#qcCustomerNotesCount");
+        const customerNotesMore = page.querySelector("#qcCustomerNotesMore");
+        const customerNoteText = page.querySelector("#qcCustomerNoteText");
+        const customerNoteSave = page.querySelector("#qcCustomerNoteSave");
+        const customerNoteClear = page.querySelector("#qcCustomerNoteClear");
+        const customerNoteFeedback = page.querySelector("#qcCustomerNoteFeedback");
         const summary = page.querySelector("#qcCustomerReviewSummary");
         const content = page.querySelector("#qcCustomerReviewContent");
         const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
@@ -116,6 +123,8 @@
         let historyController = null, historyBusy = false, historyCanManage = false;
         let historyDeleteHold = null;
         const historyDeleteHoldMs = 500;
+        let customerNotesController = null, customerNotesStart = 0, customerNotesTotal = 0;
+        let customerNotesLoading = false, customerNoteSaving = false;
         let midnightRefreshTimer = null;
 
         // The server is authoritative; the timer only visualizes its 60-second lock.
@@ -237,7 +246,8 @@
         }
 
         function hasUnsavedWork() {
-            return saving || savingItems.size > 0 || noteTimers.size > 0;
+            return saving || savingItems.size > 0 || noteTimers.size > 0
+                || customerNoteSaving || Boolean(customerNoteText.value.trim());
         }
 
         function renderPager() {
@@ -647,9 +657,136 @@
             }
         }
 
+
+        // Notes are customer-level history; they never mutate invoice-item QC results.
+        async function loadCustomerNotes(reset = true) {
+            if (!review || !isActive() || customerNotesLoading) return;
+            const customerId = review.customerId;
+            const generation = formGeneration;
+            if (reset) {
+                customerNotesStart = 0;
+                customerNotesList.replaceChildren();
+            }
+            customerNotesController?.abort();
+            const controller = customerNotesController = new AbortController();
+            customerNotesLoading = true;
+            customerNotesMore.disabled = true;
+            if (reset) customerNotesList.innerHTML =
+                '<span class="qc-client-notes-placeholder">در حال دریافت یادداشت‌ها…</span>';
+            try {
+                const data = await sendApiRequest({
+                    url: "/QualityControl/GetCustomerNotes",
+                    params: { customerId, start: customerNotesStart, length: 10 },
+                    signal: controller.signal,
+                    showLoading: false,
+                });
+                if (!isActive() || controller.signal.aborted || generation !== formGeneration
+                    || review?.customerId !== customerId) return;
+                if (!data || !Array.isArray(data.data)) {
+                    customerNoteFeedback.textContent = "دریافت یادداشت‌ها انجام نشد؛ دوباره تلاش کنید.";
+                    return;
+                }
+                if (reset) customerNotesList.replaceChildren();
+                const markup = data.data.map(note => {
+                    const source = Number(note.source);
+                    const provenance = source === 2 ? " · سابقه قدیمی"
+                        : source === 1 ? " · ثبت از تماس AI" : "";
+                    return '<article class="qc-client-notes-entry"><div class="qc-client-notes-entry-meta">'
+                        + '<strong>' + escape(note.createdBy || "کارشناس") + '</strong>'
+                        + '<span>' + escape(note.createdAt || "") + '</span>'
+                        + (provenance ? '<span>' + provenance + '</span>' : "")
+                        + '</div><p>' + escape(note.description || "") + '</p></article>';
+                }).join("");
+                customerNotesList.insertAdjacentHTML("beforeend", markup);
+                customerNotesStart += data.data.length;
+                customerNotesTotal = Math.max(0, Number(data.total) || 0);
+                customerNotesCount.textContent = faNumber.format(customerNotesTotal) + " یادداشت";
+                if (!customerNotesTotal)
+                    customerNotesList.innerHTML =
+                        '<span class="qc-client-notes-placeholder">هنوز یادداشتی برای این مشتری ثبت نشده است.</span>';
+                customerNotesMore.hidden = customerNotesStart >= customerNotesTotal;
+                customerNoteFeedback.textContent = "";
+            } catch (error) {
+                if (!controller.signal.aborted && isActive())
+                    customerNoteFeedback.textContent = "خطا در دریافت یادداشت‌ها؛ مجدداً تلاش کنید.";
+            } finally {
+                if (customerNotesController === controller) {
+                    customerNotesLoading = false;
+                    customerNotesMore.disabled = false;
+                }
+            }
+        }
+
+        customerNoteText.addEventListener("input", () => {
+            const filled = Boolean(customerNoteText.value.trim());
+            customerNoteSave.disabled = customerNoteSaving || !filled || !review;
+            customerNoteClear.disabled = customerNoteSaving || !filled;
+            customerNoteFeedback.textContent = "";
+        });
+        customerNoteClear.addEventListener("click", () => {
+            if (customerNoteSaving) return;
+            customerNoteText.value = "";
+            customerNoteText.dispatchEvent(new Event("input"));
+        });
+        customerNotesMore.addEventListener("click", () => {
+            if (!customerNotesLoading) void loadCustomerNotes(false);
+        });
+        customerNoteSave.addEventListener("click", async () => {
+            if (!review || customerNoteSaving || !isActive()) return;
+            const description = customerNoteText.value.trim();
+            if (!description || description.length > 4000) {
+                customerNoteFeedback.textContent = "متن یادداشت باید بین ۱ تا ۴۰۰۰ کاراکتر باشد.";
+                return;
+            }
+            const customerId = review.customerId;
+            const generation = formGeneration;
+            customerNoteSaving = true;
+            customerNoteSave.disabled = true;
+            customerNoteClear.disabled = true;
+            customerNoteText.disabled = true;
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/AddCustomerNote", method: "POST",
+                    headers: { RequestVerificationToken: token.value },
+                    data: { customerId, description },
+                    showLoading: false,
+                });
+                if (!isActive() || generation !== formGeneration || review?.customerId !== customerId) return;
+                if (!result?.message) {
+                    customerNoteFeedback.textContent = "ثبت یادداشت انجام نشد؛ دوباره تلاش کنید.";
+                    return;
+                }
+                customerNoteText.value = "";
+                customerNotesLoading = false;
+                customerNotesController?.abort();
+                await loadCustomerNotes(true);
+                customerNoteFeedback.textContent = "یادداشت ثبت شد.";
+            } catch (error) {
+                if (isActive() && generation === formGeneration)
+                    customerNoteFeedback.textContent = "ثبت یادداشت ناموفق بود؛ متن حفظ شده است.";
+            } finally {
+                customerNoteSaving = false;
+                if (generation === formGeneration && isActive()) {
+                    customerNoteText.disabled = false;
+                    customerNoteText.dispatchEvent(new Event("input"));
+                }
+            }
+        });
+
         async function openCustomer(customerId) {
             if (hasUnsavedWork() || !isActive()) return;
             formController?.abort();
+            customerNotesController?.abort();
+            customerNotesLoading = false;
+            customerNotesStart = 0;
+            customerNotesTotal = 0;
+            customerNotesList.innerHTML = '<span class="qc-client-notes-placeholder">در حال دریافت سوابق…</span>';
+            customerNotesCount.textContent = "";
+            customerNotesMore.hidden = true;
+            customerNoteText.value = "";
+            customerNoteSave.disabled = true;
+            customerNoteClear.disabled = true;
+            customerNoteFeedback.textContent = "";
             const controller = formController = new AbortController();
             const generation = ++formGeneration;
             noteTimers.forEach(timer => clearTimeout(timer));
@@ -701,6 +838,7 @@
             formFeedback.textContent = "";
             itemSearchBar.hidden = false;
             renderReview();
+            void loadCustomerNotes(true);
         }
 
         function questionMarkup(item, draft) {
@@ -1211,7 +1349,13 @@
             if (!saveAllButton.disabled) saveRemaining(flatten());
         });
         modal.addEventListener("hide.bs.modal", event => {
-            if (hasUnsavedWork()) { event.preventDefault(); return; }
+            if (hasUnsavedWork()) {
+                if (customerNoteText.value.trim())
+                    customerNoteFeedback.textContent = "ابتدا یادداشت را ثبت یا متن آن را پاک کنید.";
+                event.preventDefault();
+                return;
+            }
+            customerNotesController?.abort();
             formController?.abort();
             formGeneration++;
         });
@@ -1231,6 +1375,12 @@
             reviewHasSavedChanges = false;
             review = null;
             drafts.clear();
+            customerNotesController?.abort();
+            customerNotesLoading = false;
+            customerNoteText.value = "";
+            customerNoteText.disabled = false;
+            customerNoteSave.disabled = true;
+            customerNoteClear.disabled = true;
             content.replaceChildren();
             summary.replaceChildren();
             itemSearch.value = "";
@@ -1301,6 +1451,7 @@
             listController?.abort();
             formController?.abort();
             historyController?.abort();
+            customerNotesController?.abort();
         }, { once: true });
         window.addEventListener("pagehide", () => {
             clearReviewFocus();
