@@ -86,6 +86,29 @@ public sealed record QualityControlCustomerForm(Guid CustomerId, string? Custome
     string? Mobile, string? AgentName, IReadOnlyList<QualityControlCustomerOrder> Orders,
     IReadOnlyList<QualityControlQuestionDto> Questions);
 
+// Separate customer-level history; individual invoice items retain their own review descriptions.
+public enum QualityControlCustomerNoteSource : byte
+{
+    Manual = 0,
+    CallAi = 1,
+    Legacy = 2
+}
+
+public sealed record QualityControlCustomerNoteRow(
+    Guid Id, string Description, QualityControlCustomerNoteSource Source,
+    string CreatedAt, string? CreatedBy);
+
+public sealed record QualityControlCustomerNotesPage(
+    Guid CustomerId, int Total, IReadOnlyList<QualityControlCustomerNoteRow> Data);
+
+public sealed class AddQualityControlCustomerNoteRequest
+{
+    public Guid CustomerId { get; set; }
+    public string? Description { get; set; }
+}
+
+public sealed record AddQualityControlCustomerNoteResult(int StatusCode, string Message);
+
 public sealed class SaveQualityControlItemsRequest
 {
     public Guid CustomerId { get; set; }
