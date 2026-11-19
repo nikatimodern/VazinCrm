@@ -7,6 +7,7 @@ using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
 using CRM.Core.Domain.Sepidar.Purchases.Entities;
+using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 

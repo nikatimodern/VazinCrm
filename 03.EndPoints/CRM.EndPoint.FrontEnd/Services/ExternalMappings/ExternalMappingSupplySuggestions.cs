@@ -11,11 +11,11 @@ using CRM.Core.Domain.Supplies.Entities;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings;
-
 public sealed partial class ExternalMappingService
 {
     private sealed record SupplySuggestionSource(
