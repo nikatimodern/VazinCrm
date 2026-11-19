@@ -10,36 +10,51 @@
 <section id="qualityControlCustomerPage" class="qc-customer-page" dir="rtl">
     <div class="qc-client-dashboard-top">
     <section class="qc-client-overview" aria-label="خلاصه وضعیت کنترل کیفیت مشتریان">
-        <div class="qc-client-overview-card qc-client-overview-invalid">
+        <div class="qc-client-overview-card qc-client-overview-contact">
             <div class="qc-client-overview-head">
                 <div class="qc-client-overview-heading">
-                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-phone-slash"></i></span>
-                    <div class="qc-client-overview-title">مشتریان با شماره نامعتبر</div>
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-headset"></i></span>
+                    <div class="qc-client-overview-title">وضعیت تماس مشتریان</div>
                 </div>
-                <button type="button" class="qc-client-overview-action" data-qc-card-status="4"
-                        aria-pressed="false">مشاهده</button>
             </div>
-            <div class="qc-client-overview-value">
-                <strong id="qcSummaryInvalidCustomers">—</strong><span>مشتری</span>
-            </div>
-            <div class="qc-client-overview-breakdown"><span>شماره تماس نیازمند اصلاح است</span></div>
-        </div>
-        <div class="qc-client-overview-card qc-client-overview-no-answer">
-            <div class="qc-client-overview-head">
-                <div class="qc-client-overview-heading">
-                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-phone-volume"></i></span>
-                    <div class="qc-client-overview-title">مشتریان بدون پاسخ</div>
+            <div class="qc-client-contact-summary-grid">
+                <div class="qc-client-contact-summary-item">
+                    <span class="qc-client-contact-summary-label">شماره نامعتبر</span>
+                    <div class="qc-client-contact-summary-value">
+                        <strong id="qcSummaryInvalidCustomers">—</strong><span>مشتری</span>
+                    </div>
+                    <button type="button" class="qc-client-overview-action" data-qc-card-status="4"
+                            title="مشاهده مشتریان با شماره نامعتبر" aria-pressed="false">مشاهده</button>
                 </div>
-                <button type="button" class="qc-client-overview-action" data-qc-card-status="3"
-                        aria-pressed="false">مشاهده</button>
+                <div class="qc-client-contact-summary-item">
+                    <span class="qc-client-contact-summary-label">بدون پاسخ</span>
+                    <div class="qc-client-contact-summary-value">
+                        <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
+                    </div>
+                    <button type="button" class="qc-client-overview-action" data-qc-card-status="3"
+                            title="مشاهده مشتریان بدون پاسخ" aria-pressed="false">مشاهده</button>
+                </div>
             </div>
-            <div class="qc-client-overview-value">
-                <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
-            </div>
-            <div class="qc-client-overview-breakdown qc-client-followup-stats">
+            <div class="qc-client-contact-summary-foot">
                 <span>پیگیری امروز: <strong id="qcSummaryDueToday">—</strong></span>
                 <span>فردا: <strong id="qcSummaryTomorrow">—</strong></span>
                 <span>کل تلاش‌های بی‌پاسخ: <strong id="qcSummaryNoAnswerAttempts">—</strong></span>
+            </div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-discrepancy">
+            <div class="qc-client-overview-head">
+                <div class="qc-client-overview-heading">
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-exclamation-triangle"></i></span>
+                    <div class="qc-client-overview-title">اقلام دارای مغایرت</div>
+                </div>
+                <button type="button" class="qc-client-overview-action" data-qc-card-status="2"
+                        title="مشاهده مشتریان دارای مغایرت" aria-pressed="false">مشاهده</button>
+            </div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryDiscrepancyItems">—</strong><span>قلم</span>
+            </div>
+            <div class="qc-client-overview-breakdown">
+                <span>مغایرت‌های ثبت‌شده در کنترل کیفیت</span>
             </div>
         </div>
         <div class="qc-client-overview-card qc-client-overview-pending">
@@ -78,7 +93,6 @@
                 <strong id="qcSummaryReviewedItems">—</strong><span>قلم از <b id="qcSummaryTotalItems">—</b> قلم</span>
             </div>
             <div class="qc-client-overview-breakdown">
-                <span>دارای مغایرت: <strong id="qcSummaryDiscrepancyItems">—</strong></span>
                 <span>بدون مغایرت: <strong id="qcSummaryNoDiscrepancyItems">—</strong></span>
             </div>
             <div class="qc-client-overview-progress">
