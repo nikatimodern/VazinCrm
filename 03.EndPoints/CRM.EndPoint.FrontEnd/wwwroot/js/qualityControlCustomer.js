@@ -16,6 +16,7 @@
             ["pendingItems", "#qcSummaryPendingItems"],
             ["reviewedItems", "#qcSummaryReviewedItems"],
             ["discrepancyItems", "#qcSummaryDiscrepancyItems"],
+            ["totalItems", "#qcSummaryDiscrepancyTotalItems"],
             ["noDiscrepancyItems", "#qcSummaryNoDiscrepancyItems"],
             ["completedCustomers", "#qcSummaryCompletedCustomers"],
             ["totalItems", "#qcSummaryTotalItems"],
