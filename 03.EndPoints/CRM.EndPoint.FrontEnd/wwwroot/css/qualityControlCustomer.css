@@ -794,11 +794,17 @@
     background: #F0F1F7;
     white-space: nowrap;
 }
-#qualityControlCustomerPage .qc-client-stats .qc-client-count-reviewed {
+/* One summary chip shows both the status and the item review totals. */
+#qualityControlCustomerPage .qc-client-stats .qc-client-review-group .qc-client-count-reviewed {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: 1px;
+    background: var(--qc-secondary-light);
+    border-color: color-mix(in srgb, var(--qc-secondary) 20%, var(--qc-border));
+    color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-stats .qc-client-review-group.qc-client-review-complete .qc-client-count-reviewed {
     background: var(--qc-primary-light);
     border-color: color-mix(in srgb, var(--qc-action) 20%, var(--qc-border));
     color: var(--qc-primary);
@@ -807,9 +813,12 @@
     font-size: 12px;
     font-weight: 700;
 }
+#qualityControlCustomerPage .qc-client-review-group.qc-client-review-complete .qc-client-count-reviewed strong i {
+    color: var(--qc-action);
+}
 #qualityControlCustomerPage .qc-client-count-reviewed small {
     font-size: 10px;
-    color: var(--qc-primary);
+    color: inherit;
     white-space: nowrap;
 }
 /* Emphasize only the discrepancy count, not the label or the whole review card. */
@@ -880,9 +889,6 @@
 }
 #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed {
     min-width: 0;
-}
-#qualityControlCustomerPage .qc-client-review-group .qc-client-badge {
-    text-align: center;
 }
 #qualityControlCustomerPage .qc-client-contact-actions .qc-client-button:disabled {
     cursor: not-allowed;
@@ -1247,8 +1253,7 @@
         padding: 1px 5px;
     }
     #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-stat-segment,
-    #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-count-reviewed,
-    #qualityControlCustomerPage .qc-client-card .qc-client-review-group .qc-client-badge { padding: 3px 6px; }
+    #qualityControlCustomerPage .qc-client-card .qc-client-stats .qc-client-count-reviewed { padding: 3px 6px; }
     #qualityControlCustomerPage .qc-client-call-group { --qc-contact-icon-size: 30px; }
     #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button {
         min-height: var(--qc-contact-icon-size);
@@ -1259,8 +1264,7 @@
     }
     #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed { flex: 1 1 auto; }
     #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed,
-    #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed small,
-    #qualityControlCustomerPage .qc-client-review-group .qc-client-badge {
+    #qualityControlCustomerPage .qc-client-review-group .qc-client-count-reviewed small {
         white-space: normal;
     }
     #qualityControlCustomerPage .qc-client-stats { flex: 1; }
