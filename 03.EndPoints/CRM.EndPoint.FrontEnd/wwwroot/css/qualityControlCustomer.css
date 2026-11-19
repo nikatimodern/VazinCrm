@@ -12,7 +12,7 @@
     padding: 0 14px 12px;
     direction: rtl;
 }
-/* Keep the page heading, KPI cards, filters and pager outside the scrolling list. */
+/* Keep the KPI cards, filters and pager outside the scrolling list. */
 @media (min-width: 768px) {
     #qualityControlCustomerPage {
         display: flex;
@@ -25,7 +25,6 @@
         flex-shrink: 0;
     }
 }
-#qualityControlCustomerPage .qc-client-header,
 #qualityControlCustomerPage .qc-client-toolbar,
 #qualityControlCustomerPage .qc-client-paging,
 #qualityControlCustomerPage .qc-client-card,
@@ -40,7 +39,6 @@
     align-items: center;
     flex-wrap: wrap;
 }
-#qualityControlCustomerPage .qc-client-header,
 #qualityControlCustomerPage .qc-client-paging,
 #qualityControlCustomerPage .qc-client-item-top,
 #qualityControlCustomerPage .qc-client-review-summary,
@@ -49,16 +47,6 @@
 }
 /* QC analytics overview: compact, premium summary cards. */
 #qualityControlCustomerPage .qc-client-dashboard-top { min-width: 0; margin-bottom: 6px; }
-#qualityControlCustomerPage .qc-client-header { margin-bottom: 6px; }
-#qualityControlCustomerPage h1 {
-    font-size: 22px;
-    line-height: 1.35;
-    font-weight: 800;
-    color: var(--qc-primary);
-    margin: 0 0 3px;
-}
-#qualityControlCustomerPage p { margin: 0; }
-#qualityControlCustomerPage .qc-client-header p,
 #qualityControlCustomerPage .qc-client-subtitle,
 #qualityControlCustomerPage .qc-client-feedback,
 #qualityControlCustomerPage .qc-client-save-hint {
@@ -299,15 +287,6 @@
     font-weight: 800;
     line-height: 1;
     pointer-events: none;
-}
-@container mainWrapper (min-width: 1380px) {
-    #qualityControlCustomerPage .qc-client-dashboard-top {
-        display: grid;
-        grid-template-columns: 235px minmax(0,1fr);
-        align-items: center;
-        gap: 11px;
-    }
-    #qualityControlCustomerPage .qc-client-header { margin-bottom: 0; }
 }
 @container mainWrapper (min-width: 880px) and (max-width: 1080px) {
     #qualityControlCustomerPage .qc-client-overview { gap: 6px; }
@@ -1235,8 +1214,6 @@
     /* On narrow/short viewports, retain page access to every control and
        still scroll the customer list independently. */
     #qualityControlCustomerPage .qc-client-queue { max-height: 48dvh; min-height: 180px; }
-    #qualityControlCustomerPage .qc-client-header h1 { font-size: 18px; }
-    #qualityControlCustomerPage .qc-client-header { align-items: flex-start; }
     #qualityControlCustomerPage .qc-client-toolbar { padding: 8px; gap: 7px; }
     #qualityControlCustomerPage .qc-client-search { flex: 1 1 100%; min-width: 0; }
     #qualityControlCustomerPage .qc-client-search input { height: 36px; min-height: 36px; }
