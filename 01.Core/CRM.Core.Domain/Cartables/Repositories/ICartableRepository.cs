@@ -11,7 +11,7 @@ using CRM.Core.Domain.Querying;
 namespace CRM.Core.Domain.Cartables.Repositories;
 public sealed record CartableReadScope(string UserId, bool ReadAll, bool SupplyAdmin);
 public sealed record CartablePreFactors(IList<PreFactor> Data, ASetting? Setting);
-public sealed record CartableSupplyData(List<PreFactor> PreFactors, Dictionary<int, int> FilterCounts);
+public sealed record CartableSupplyData(List<PreFactor> PreFactors, Dictionary<int, int> FilterCounts, Dictionary<Guid, List<int>> OrderNumbers);
 public sealed record CartableFinancialData(List<CartableFinancialRow> Data, Dictionary<int, int> FilterCounts);
 public sealed record CartableSalesData(List<CartableSalesRow> Data, Dictionary<int, int> FilterCounts);
 public class CartableFinancialRow

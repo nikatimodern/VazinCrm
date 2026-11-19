@@ -4,6 +4,7 @@
 @{ Layout = null; }
 <div class="pf-accepted-list">
     @foreach (var item in Model.PreFactors) {
+        var orderNumbers = Model.OrderNumbers.TryGetValue(item.Id, out var numbers) ? numbers : null;
         <article class="pf-accepted-card @(item.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : item.SupplyMismatch ? "factor-card--returned" : "")">
             @if (!Model.IsAdmin && item.UserTaminId.ToString() != Model.UserId) {
                 <div class="disabled-overlay"></div>
@@ -37,6 +38,16 @@
                             <div class="pf-accepted-card__row"><span>بهای تأمین</span><strong>
                                     <bdi dir="ltr">@string.Format("{0:n0}", item.TotalSupplyAmount ?? 0)</bdi>
                                     <small>@(item.CurrencyTypeTxt ?? "ريال")</small></strong></div>
+                        }
+                        @if (orderNumbers is { Count: > 0 }) {
+                            <div class="pf-accepted-card__row">
+                                <span>شماره حواله‌ها</span>
+                                <strong class="supply-card__order-numbers">
+                                    @foreach (var number in orderNumbers) {
+                                        <bdi dir="ltr" class="supply-card__order-number">#@number</bdi>
+                                    }
+                                </strong>
+                            </div>
                         }
                         <div class="pf-accepted-card__row"><span>وضعیت</span><strong>@item.PftypeTxt</strong></div>
                         @if (item.SupplyMismatch) {

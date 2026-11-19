@@ -9,4 +9,5 @@ public class TaminViewModel {
    public ASetting Setting { get; set; }
    public string UserId { get; set; }
    public bool IsAdmin { get; set; }
+   public Dictionary<System.Guid, List<int>> OrderNumbers { get; set; } = new();
 }

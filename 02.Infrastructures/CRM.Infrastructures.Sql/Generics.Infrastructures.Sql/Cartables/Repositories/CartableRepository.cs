@@ -145,7 +145,11 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
-            queryBase = queryBase.Where(s => EF.Functions.Like(s.AgentName, $"%{search}%") || EF.Functions.Like(s.Customer, $"%{search}%") || s.SerialNumber == serialVal);
+            queryBase = queryBase.Where(s =>
+                EF.Functions.Like(s.AgentName, $"%{search}%") ||
+                EF.Functions.Like(s.Customer, $"%{search}%") ||
+                s.SerialNumber == serialVal ||
+                (serialVal > 0 && db.OrderHeads.Any(order => order.Prefactor == s.Id && order.OrderNumber == serialVal)));
         }
         else if (!scope.SupplyAdmin)
         {
@@ -167,6 +171,16 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         };
         var preFactors = await query.OrderByDescending(f => f.ModifyDate).Take(100).Include(f => f.PreFactorItems).ToListAsync(ct);
         var pfIds = preFactors.Select(f => f.Id).ToList();
+        // Fetch all voucher numbers for the displayed pre-factors in one query.
+        var orders = await db.OrderHeads.AsNoTracking()
+            .Where(order => order.Prefactor.HasValue && pfIds.Contains(order.Prefactor.Value))
+            .Select(order => new { PreFactorId = order.Prefactor!.Value, order.OrderNumber })
+            .Distinct()
+            .OrderBy(order => order.OrderNumber)
+            .ToListAsync(ct);
+        var orderNumbersByPreFactor = orders
+            .GroupBy(order => order.PreFactorId)
+            .ToDictionary(group => group.Key, group => group.Select(order => order.OrderNumber).ToList());
         var supplies = await db.Supplies.Where(f => pfIds.Contains(f.PfId)).GroupBy(f => f.PfId).Select(f => new { pfId = f.Key, totalAmount = f.Sum(g => g.TotalAmount), //totalWeight = f.Where(g => g.SupplyType == SupplyTypeEnum.هزینه_تولید).Sum(g => Convert.ToDecimal(g.Weight)),
         totalItems = f.Where(g => g.SupplyType == SupplyTypeEnum.هزینه_تولید).GroupBy(g => g.PfItemId).Count() }).ToListAsync(ct);
         foreach (var pf in preFactors)
@@ -184,7 +198,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
             pf.SupplyMismatch = s.totalItems != pfItemsCount; //|| s.totalWeight != pfItemsWeight;
         }
 
-        return new(preFactors, filterCounts);
+        return new(preFactors, filterCounts, orderNumbersByPreFactor);
     }
 
     public async Task<CartableFinancialData> GetFinancialAsync(string? search, int type, int searchNumber, CancellationToken ct)
