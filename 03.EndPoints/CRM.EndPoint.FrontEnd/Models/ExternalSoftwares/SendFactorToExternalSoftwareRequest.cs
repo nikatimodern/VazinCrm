@@ -8,6 +8,7 @@ public class SendFactorToExternalSoftwareRequest
     public Guid FactorId { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     // Null means use the next invoice number in the selected Sepidar fiscal year.
+    public string InvoiceDateText { get; set; }
     public int? InvoiceNumber { get; set; }
     // Optional per-invoice broker; the broker identity is always resolved from ExternalMappings.
     public bool IncludeBroker { get; set; }

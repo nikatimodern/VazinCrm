@@ -1,7 +1,7 @@
 @model (string ModalId, string TitleId, string SubtitleId, string BodyId, string BackId, string ConfirmId)
 
 <div class="modal fade" id="@Model.ModalId" data-bs-backdrop="static" tabindex="-1" aria-labelledby="@Model.TitleId" data-bs-focus="false">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content external-mapping-modal">
             @Html.AntiForgeryToken()
             <div class="modal-header">

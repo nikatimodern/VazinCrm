@@ -160,6 +160,9 @@ async function loadExternalFactorPreview(state, includeBroker) {
     const previousInvoiceNumber = state.hasLoadedPreview
         ? document.getElementById("externalFactorInvoiceNumber")?.value
         : null;
+    const dateInput = document.getElementById("externalFactorInvoiceDate");
+    if (state.hasLoadedPreview && dateInput)
+        state.request.invoiceDateText = toEnglishDigits(dateInput.value.trim());
     state.processing = true;
     toggleElementsDisabled(button, true);
 
@@ -180,6 +183,7 @@ async function loadExternalFactorPreview(state, includeBroker) {
         state.request.includeBroker = includeBroker;
         state.request.previewBrokerPartyId = includeBroker ? Number(result.broker.partyId) : null;
         state.request.previewToken = result.previewToken;
+        state.request.invoiceDateText = result.preview.invoiceDateText;
         state.hasLoadedPreview = true;
         state.step = "preview";
         getFactorFinancialWizard().render({
@@ -202,6 +206,9 @@ async function loadExternalFactorPreview(state, includeBroker) {
         if (previousInvoiceNumber != null) {
             document.getElementById("externalFactorInvoiceNumber").value = previousInvoiceNumber;
         }
+        const invoiceDateInput = document.getElementById("externalFactorInvoiceDate");
+        invoiceDateInput.setAttribute("data-datepicker-change", "");
+        dateTimePicker(document.getElementById("sendFactorToExternalSoftwareModal"));
         return true;
     } finally {
         if (externalFactorExportState === state) {
@@ -286,8 +293,9 @@ function renderExternalFactorPreview(data, state) {
                            class="ex-preview-invoice-number digitNumber" placeholder="-">
                 </div>
                 <div class="ex-preview-field">
-                    <span class="ex-preview-label">تاریخ:</span>
-                    <strong>${escape(date)}</strong>
+                    <label class="ex-preview-label" for="externalFactorInvoiceDate">تاریخ:</label>
+                    <input id="externalFactorInvoiceDate" type="text" dir="ltr" autocomplete="off"
+                           maxlength="10" class="sdate ex-preview-invoice-number" value="${escape(date)}">
                 </div>
                 <div class="ex-preview-field ex-preview-customer">
                     <span class="ex-preview-label">مشتری:</span>
@@ -481,6 +489,12 @@ document.addEventListener("click", async event => {
         return;
     }
 
+    const dateText = toEnglishDigits(document.getElementById("externalFactorInvoiceDate").value.trim());
+    if (!/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(dateText)) {
+        toastifyError("تاریخ فاکتور معتبر نیست.");
+        return;
+    }
+    state.request.invoiceDateText = dateText;
     const parsed = parseExternalFactorInvoiceNumber();
     if (parsed.error) {
         setExternalFactorInvoiceNumberInvalid(true);

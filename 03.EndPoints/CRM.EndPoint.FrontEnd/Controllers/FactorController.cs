@@ -3269,6 +3269,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 || !int.TryParse(mapping.ExEntityId, out var quotationId) || quotationId <= 0)
                 throw new InvalidOperationException("پیش‌فاکتور این فاکتور در نرم‌افزار انتخاب‌شده ثبت نشده است.");
 
+            ApplyExternalInvoiceDate(factor, request);
             return (factor, preFactor, quotationId, software.Title);
         }
 
@@ -3294,13 +3295,37 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factor.CustomerId = await db.PreFactors.AsNoTracking()
                     .Where(x => x.Id == factor.PfactorID)
                     .Select(x => x.CustomerId).SingleOrDefaultAsync(ct);
+            ApplyExternalInvoiceDate(factor, request);
             return (factor, title);
+        }
+
+        private void ApplyExternalInvoiceDate(Factor factor, SendFactorToExternalSoftwareRequest request)
+        {
+            if (request.InvoiceDateText == null) return;
+            var text = TextService.ToEnglishNumber(request.InvoiceDateText.Trim());
+            if (!System.Text.RegularExpressions.Regex.IsMatch(text, @"^[0-9]{4}/[0-9]{2}/[0-9]{2}$"))
+                throw new InvalidOperationException("تاریخ فاکتور را به صورت سال/ماه/روز وارد کنید.");
+            try
+            {
+                var parts = text.Split('/');
+                factor.DateMiladi = new System.Globalization.PersianCalendar()
+                    .ToDateTime(int.Parse(parts[0]), int.Parse(parts[1]), int.Parse(parts[2]), 0, 0, 0, 0);
+                factor.Date = text;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                throw new InvalidOperationException("تاریخ فاکتور معتبر نیست.");
+            }
         }
 
         private static string GetDirectInvoicePreviewToken(SepidarInvoiceExportPreview preview)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(
-                System.Text.Json.JsonSerializer.Serialize(preview));
+            var snapshot = System.Text.Json.JsonSerializer.SerializeToNode(preview);
+            // Date and fiscal year are validated again during final submission.
+            snapshot.AsObject().Remove(nameof(SepidarInvoiceExportPreview.InvoiceDate));
+            snapshot.AsObject().Remove(nameof(SepidarInvoiceExportPreview.InvoiceDateText));
+            snapshot.AsObject().Remove(nameof(SepidarInvoiceExportPreview.FiscalYearRef));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(snapshot.ToJsonString());
             return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
         }
 
@@ -3623,11 +3648,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var sepidarService = GetSepidarService(request.ExternalSoftwareId)
                     ?? throw new InvalidOperationException("سرویس سپیدار انتخاب‌شده پیدا نشد.");
 
-                var available = request.UsePreFactor
-                    ? await sepidarService.IsInvoiceNumberAvailableAsync(quotationId, invoiceNumber, ct)
-                    : await sepidarService.IsDirectInvoiceNumberAvailableAsync(
-                        directFactor.DateMiladi ?? throw new InvalidOperationException("تاریخ فاکتور معتبر نیست."),
-                        invoiceNumber, ct);
+                if (request.UsePreFactor)
+                    (directFactor, _, _, _) = await GetMappedFactorForExportAsync(request, ct);
+                var available = await sepidarService.IsDirectInvoiceNumberAvailableAsync(
+                    directFactor.DateMiladi ?? throw new InvalidOperationException("تاریخ فاکتور معتبر نیست."),
+                    invoiceNumber, ct);
                 return Ok(new {
                     available,
                     message = available

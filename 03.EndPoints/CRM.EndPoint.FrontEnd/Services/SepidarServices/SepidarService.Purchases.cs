@@ -109,13 +109,6 @@ public partial class SepidarService
         var serial = TextService.ToEnglishNumber(source.SerialNumber ?? "").Trim();
         int? supplierNumber = int.TryParse(serial, NumberStyles.None, CultureInfo.InvariantCulture, out var number)
             && number > 0 ? number : null;
-        if (serial.Length > 0 && supplierNumber?.ToString(CultureInfo.InvariantCulture) != serial)
-        {
-            var sourceNumber = "شماره فاکتور تأمین‌کننده: " + source.SerialNumber.Trim();
-            description = string.IsNullOrWhiteSpace(description) ? sourceNumber : description + "\n" + sourceNumber;
-            if (description.Length > 400)
-                throw new InvalidOperationException("شماره فاکتور تأمین‌کننده و توضیحات از طول مجاز بیشتر است.");
-        }
         var currencyId = await sepidarContext.Currencies.AsNoTracking()
             .Where(x => x.Title.Trim() == "ریال" || x.Title.Trim() == "ريال")
             .Select(x => (int?)x.CurrencyID)
