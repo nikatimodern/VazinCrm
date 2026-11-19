@@ -270,6 +270,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 
             entries.AddRange(await BuildUserExpertSuggestionsAsync(softwareId, ct));
             entries.AddRange(await BuildExternalUserSuggestionsAsync(softwareId, ct));
+            entries.AddRange(await BuildSupplyFactorSuggestionsAsync(softwareId, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
@@ -277,7 +278,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
                         || x.MapType == ExternalMappingTypeEnum.فاکتور
                         || x.MapType == ExternalMappingTypeEnum.کارشناسان
-                        || x.MapType == ExternalMappingTypeEnum.کاربران))
+                        || x.MapType == ExternalMappingTypeEnum.کاربران
+                        || x.MapType == ExternalMappingTypeEnum.تامین_کننده
+                        || x.MapType == ExternalMappingTypeEnum.فاکتور_خرید
+                        || x.MapType == ExternalMappingTypeEnum.رسید_انبار))
                 .CountAsync(ct);
 
             return new
@@ -285,7 +289,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 summary = new {
                     saved,
                     pendingCustomers = plan.PendingCustomers.Count,
-                    pendingDocuments = plan.PendingDocuments.Count,
+                    pendingDocuments = plan.PendingDocuments.Count +
+                        reportRows.Count(x => x.Status == "pending"
+                            && (x.MapType == (int)ExternalMappingTypeEnum.فاکتور_خرید
+                                || x.MapType == (int)ExternalMappingTypeEnum.رسید_انبار)),
                     pendingUsers = reportRows.Count(x => x.Status == "pending"
                         && (x.MapType == (int)ExternalMappingTypeEnum.کارشناسان
                             || x.MapType == (int)ExternalMappingTypeEnum.کاربران)),
@@ -846,6 +853,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             nameof(Voucher) => "سند حسابداری",
                             nameof(PaymentHeader) => "اعلامیه پرداخت",
                             nameof(Party) => "شخص",
+                            nameof(InventoryPurchaseInvoice) => "فاکتور خرید",
+                            nameof(InventoryReceipt) => "رسید انبار",
                             ExternalUserEntityName => "کاربر",
                             nameof(DL) => "حساب تفصیلی",
                             _ => "معادل"

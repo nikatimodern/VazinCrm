@@ -107,6 +107,14 @@
             UserAccountMultipleMatches:["چند کاربر با نام کاربری مشابه","تطبیق قطعی نیست؛ کاربر مقصد را بررسی و انتخاب کنید."],
             UserAccountAlreadyMapped:["کاربر مقصد قبلاً مرتبط شده","این حساب در نرم‌افزار مقصد قبلاً به کاربر دیگری متصل شده است."],
             UserAccountNoMatch:["نام کاربری متناظر پیدا نشد","برای این کاربر CRM معادل قطعی در نرم‌افزار مالی پیدا نشده است؛ ارتباط را دستی ثبت کنید."],
+            SupplyInvoiceNumberNotNumeric:["شماره فاکتور تأمین قابل تطبیق نیست","شماره صادرشده توسط تأمین‌کننده باید عددی باشد تا با شماره فاکتور تأمین‌کننده در سپیدار تطبیق شود."],
+            SupplyPurchaseNoMatch:["فاکتور خرید مطابق پیدا نشد","شماره فاکتور تأمین‌کننده، مبلغ، سال مالی و تأمین‌کننده را بررسی کنید."],
+            SupplyPurchaseAmbiguous:["چند فاکتور خرید احتمالی","چند فاکتور خرید با اطلاعات مشابه وجود دارد؛ معادل درست را مشخص کنید."],
+            SupplyPurchaseAlreadyMapped:["فاکتور خرید قبلاً مرتبط شده","این فاکتور خرید قبلاً به فاکتور تأمین دیگری متصل شده است."],
+            SupplyReceiptPurchaseMissing:["ابتدا فاکتور خرید را مشخص کنید","پیشنهاد رسید انبار پس از انتخاب معادل قطعی فاکتور خرید قابل ثبت است."],
+            SupplyReceiptPurchasePending:["رسید مرتبط با فاکتور خرید پیشنهادی","پیش از ثبت رسید، ارتباط فاکتور خرید باید ثبت شود. در ثبت گروهی این ترتیب رعایت می‌شود."],
+            SupplyReceiptNotFound:["رسید انبار یافت نشد","برای فاکتور خرید متناظر، رسید انبار غیرمرجوعی وجود ندارد."],
+            SupplyReceiptAmbiguous:["چند رسید مرتبط وجود دارد","چند رسید به این فاکتور خرید متصل هستند؛ رسید درست را انتخاب کنید."],
             ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
         };
@@ -146,7 +154,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5,6,10].includes(Number(row.mapType)) &&
+                [2,3,5,6,8,9,10].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -242,6 +250,8 @@
                 case 4: return crm ? "کد مرکز هزینه" : "کد تفصیلی";
                 case 5: return crm ? "کد مشتری" : "کد تفصیلی";
                 case 6: return crm ? "نام کاربری" : "کد تفصیلی";
+                case 8: return crm ? "شماره فاکتور تأمین" : "شماره فاکتور خرید";
+                case 9: return crm ? "شماره فاکتور تأمین" : "شماره رسید انبار";
                 case 10: return "نام کاربری";
                 default: return "شماره";
             }
@@ -585,7 +595,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5, 6, 10]);
+                : new Set([2, 3, 5, 6, 8, 9, 10]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -885,11 +895,21 @@
 
         async function save(items) {
             if (state.processing || !items.length) return;
+            // Receipt records depend on a confirmed purchase mapping. If a purchase is
+            // only suggested, select it together with its receipt or save it first.
+            const pendingReceipts = state.proposal.rows.filter(row =>
+                Number(row.mapType) === 9 && row.reason === "SupplyReceiptPurchasePending");
+            if (items.some(item => Number(item.mapType) === 9
+                && pendingReceipts.some(row => row.entityId === item.entityId || row.crm?.id === item.entityId)
+                && !items.some(parent => Number(parent.mapType) === 8 && parent.entityId === item.entityId))) {
+                toastifyError("ابتدا ارتباط فاکتور خرید را ثبت کنید یا آن را همراه با رسید انبار انتخاب کنید.");
+                return false;
+            }
 
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
             const ordered = [
-                ...[5, 6, 10, 4, 0, 1, 2, 3].flatMap(type => items.filter(x => x.mapType === type))
+                ...[5, 6, 10, 4, 0, 1, 2, 3, 8, 9].flatMap(type => items.filter(x => x.mapType === type))
             ];
             if (ordered.length !== items.length) {
                 mappingFailure("دسته‌بندی ثبت ارتباط", new Error("Selected map types are not supported"),
@@ -917,7 +937,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 6, 10, 4, 0, 1, 2, 3]) {
+                for (const groupType of [5, 6, 10, 4, 0, 1, 2, 3, 8, 9]) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -1419,7 +1439,7 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.filter(item => isEdit || ![7, 8, 9].includes(Number(item.value))).forEach(item =>
+            state.types.filter(item => isEdit || Number(item.value) !== 7).forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = isEdit ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.
