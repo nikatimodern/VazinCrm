@@ -264,6 +264,18 @@
             queue.innerHTML = card.repeat(3);
         }
 
+        function reviewSummaryMarkup(reviewed, count, discrepancy) {
+            const complete = reviewed === count;
+            const icon = complete ? "fa-check-circle" : "fa-clock";
+            const status = complete ? "تکمیل‌شده" : "نیازمند بررسی";
+            return '<strong><i class="fa ' + icon + '" aria-hidden="true"></i> ' + status
+                + ' · ' + faNumber.format(reviewed) + ' از ' + faNumber.format(count) + ' قلم</strong>'
+                + '<small><span class="qc-client-discrepancy-count'
+                + (discrepancy > 0 ? ' has-discrepancy' : '') + '">مغایرت: '
+                + faNumber.format(discrepancy) + '</span> · بدون مغایرت: '
+                + faNumber.format(Math.max(0, reviewed - discrepancy)) + '</small>';
+        }
+
         function clearReviewFocus() {
             clearTimeout(lastReviewedHighlightTimer);
             lastReviewedHighlightTimer = null;
@@ -363,15 +375,11 @@
                 }
                 queue.innerHTML = result.data.map(row => {
                     const pending = row.totalItems - row.reviewedItems;
-                    const withoutDiscrepancy = Math.max(0, row.reviewedItems - row.discrepancyItems);
                     const contactStatus = Number(row.contactStatus) || 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     // Sorting is only applied on explicit list loads, never after a QC save.
                     // Review completion remains independent from contact history.
-                    const color = complete ? "complete" : "pending";
-                    const label = complete ? "تکمیل‌شده" : "نیازمند بررسی";
-                    const statusIcon = complete ? "fa-check-circle" : "fa-clock";
                     return '<article role="listitem" class="qc-client-card'
                         + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
                             ? ' qc-client-last-checked' : '')
@@ -387,14 +395,11 @@
                         + '<span class="qc-client-segment-group qc-client-order-group" role="group" aria-label="سفارش‌ها و فاکتورهای مشتری">'
                         + '<span class="qc-client-stat-segment"><i class="fa fa-shopping-cart" aria-hidden="true"></i> ' + faNumber.format(row.orders) + ' سفارش</span>'
                         + '<span class="qc-client-stat-segment"><i class="fa fa-file-invoice" aria-hidden="true"></i> ' + faNumber.format(row.invoices) + ' فاکتور</span></span>'
-                        + '<span class="qc-client-segment-group qc-client-review-group" role="group" aria-label="آمار و وضعیت بررسی مشتری">'
-                        + '<span class="qc-client-count-reviewed"><strong><i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: ' + faNumber.format(row.reviewedItems) + ' از ' + faNumber.format(row.totalItems) + '</strong>'
-                        + '<small><span class="qc-client-discrepancy-count'
-                        + (Number(row.discrepancyItems) > 0 ? ' has-discrepancy' : '') + '">مغایرت: '
-                        + faNumber.format(row.discrepancyItems) + '</span>'
-                        + ' · بدون مغایرت: ' + faNumber.format(withoutDiscrepancy) + '</small></span>'
-                        + '<span class="qc-client-badge qc-client-' + color + (complete ? ' qc-client-completed' : '') + '">'
-                        + '<i class="fa ' + statusIcon + '" aria-hidden="true"></i> ' + label + '</span></span>'
+                        + '<span class="qc-client-segment-group qc-client-review-group qc-client-review-' + (complete ? 'complete' : 'pending')
+                        + '" role="group" aria-label="آمار و وضعیت بررسی مشتری">'
+                        + '<span class="qc-client-count-reviewed">'
+                        + reviewSummaryMarkup(row.reviewedItems, row.totalItems, Number(row.discrepancyItems) || 0)
+                        + '</span></span>'
                         + '</div>'
                         + '<div class="qc-client-contact-actions">'
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
@@ -1229,23 +1234,14 @@
                 element.querySelector("[data-qc-customer]")?.dataset.qcCustomer?.toLowerCase()
                     === editedCustomerId);
             if (card) {
-                const count = card.querySelector(".qc-client-count-reviewed strong");
-                if (count) count.innerHTML = '<i class="fa fa-check-circle" aria-hidden="true"></i> بررسی‌شده: '
-                    + faNumber.format(reviewed) + " از " + faNumber.format(items.length);
-                const details = card.querySelector(".qc-client-count-reviewed small");
-                if (details) details.innerHTML = '<span class="qc-client-discrepancy-count'
-                    + (discrepancy ? ' has-discrepancy' : '') + '">مغایرت: '
-                    + faNumber.format(discrepancy) + '</span> · بدون مغایرت: '
-                    + faNumber.format(reviewed - discrepancy);
-                card.dataset.qcComplete = String(complete);
-                const badge = card.querySelector(".qc-client-review-group .qc-client-badge");
-                if (badge) {
-                    badge.className = "qc-client-badge qc-client-"
-                        + (complete ? "complete qc-client-completed" : "pending");
-                    badge.innerHTML = complete
-                        ? '<i class="fa fa-check-circle" aria-hidden="true"></i> تکمیل‌شده'
-                        : '<i class="fa fa-clock" aria-hidden="true"></i> نیازمند بررسی';
+                const reviewGroup = card.querySelector(".qc-client-review-group");
+                if (reviewGroup) {
+                    reviewGroup.classList.toggle("qc-client-review-complete", complete);
+                    reviewGroup.classList.toggle("qc-client-review-pending", !complete);
+                    const summary = reviewGroup.querySelector(".qc-client-count-reviewed");
+                    if (summary) summary.innerHTML = reviewSummaryMarkup(reviewed, items.length, discrepancy);
                 }
+                card.dataset.qcComplete = String(complete);
                 const button = card.querySelector("[data-qc-customer]");
                 if (button) button.innerHTML = complete
                     ? '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش'
