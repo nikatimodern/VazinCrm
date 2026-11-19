@@ -1596,3 +1596,88 @@
         padding: 3px 7px;
     }
 }
+
+/* Customer-level QC notes: separate from per-invoice-item discrepancy details. */
+#qualityControlCustomerPage .qc-client-customer-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid var(--qc-border);
+    border-radius: 10px;
+    background: #F8FAFC;
+}
+#qualityControlCustomerPage .qc-client-notes-heading,
+#qualityControlCustomerPage .qc-client-notes-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+#qualityControlCustomerPage .qc-client-notes-heading { justify-content: space-between; }
+#qualityControlCustomerPage .qc-client-notes-heading h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-notes-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 210px;
+    overflow-y: auto;
+}
+#qualityControlCustomerPage .qc-client-notes-entry {
+    border: 1px solid var(--qc-border);
+    border-radius: 7px;
+    background: #fff;
+    padding: 7px 9px;
+}
+#qualityControlCustomerPage .qc-client-notes-entry-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 9px;
+    color: var(--qc-muted);
+    font-size: 10px;
+}
+#qualityControlCustomerPage .qc-client-notes-entry-meta strong {
+    color: var(--qc-primary);
+    font-size: 11px;
+}
+#qualityControlCustomerPage .qc-client-notes-entry p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+#qualityControlCustomerPage .qc-client-notes-placeholder {
+    font-size: 11px;
+    color: var(--qc-muted);
+    padding: 7px 0;
+}
+#qualityControlCustomerPage #qcCustomerNoteText { min-height: 64px; font-size: 12px; }
+#qualityControlCustomerPage .qc-client-notes-more { align-self: flex-start; }
+#qualityControlCustomerPage .qc-client-notes-more[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-notes-actions { justify-content: flex-end; }
+#qualityControlCustomerPage #qcCustomerNoteFeedback {
+    margin-inline-end: auto;
+    color: var(--qc-muted);
+    font-size: 11px;
+}
+@media (max-width: 767px) {
+    #qualityControlCustomerPage .qc-client-customer-notes { padding: 8px; }
+    #qualityControlCustomerPage .qc-client-notes-actions .qc-client-button {
+        min-height: 28px;
+        padding: 2px 7px;
+        font-size: 10px;
+    }
+}
