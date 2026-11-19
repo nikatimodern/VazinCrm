@@ -385,7 +385,7 @@ function renderExternalFactorPreview(data, state) {
                 </div>
             </div>
         </div>
-        <p class="text-muted small mt-3 mb-0">
+        <p class="text-muted small mb-0">
             با ثبت فاکتور، خروج انبار و سند حسابداری مطابق تنظیمات نرم‌افزار مالی صادر می‌شوند.
         </p>`;
 }

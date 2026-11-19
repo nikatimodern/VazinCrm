@@ -6807,6 +6807,19 @@ table tr.payment-vosoled > td {
 	box-shadow: 0 10px 30px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .04);
 }
 
+.ts-dropdown.crm-tom-select-overlay {
+	position: fixed;
+	inset: auto;
+	z-index: 1060;
+	margin: 0;
+	padding: 0;
+	overflow: visible;
+}
+
+.ts-dropdown.crm-tom-select-overlay-above {
+	transform: translateY(-100%);
+}
+
 
 /* option */
 .bank-option {
@@ -8852,7 +8865,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 #addRequestAmountModal .request-amount-modal-actions .buttonCancel2:hover { background:#F0F1F7; }
 #addRequestAmountModal button:focus-visible { outline:2px solid var(--request-purple); outline-offset:2px; }
 @media (max-width:575px) {
-    #addRequestAmountModal .modal-dialog { margin:8px; }
     #addRequestAmountModal .request-amount-modal-header { padding:10px 12px; }
     #addRequestAmountModal #reqAmountModalTitleId { font-size:14px; }
     #addRequestAmountModal .modal-body { padding:12px; }
