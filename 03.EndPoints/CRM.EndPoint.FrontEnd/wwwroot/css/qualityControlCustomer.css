@@ -630,6 +630,11 @@
     max-width: 100%;
     --qc-contact-icon-size: var(--qc-card-control-height);
 }
+/* A completed customer needs no contact-status actions or contact-history group.
+   This also reacts immediately when the review modal marks the card complete. */
+#qualityControlCustomerPage .qc-client-card[data-qc-complete="true"] .qc-client-call-group {
+    display: none;
+}
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button {
     display: inline-flex;
     align-items: center;
@@ -642,6 +647,9 @@
     min-height: var(--qc-contact-icon-size);
     padding: 0;
     border-radius: 0;
+    background: #F0F1F7;
+    border-color: var(--qc-border);
+    color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer {
     border-start-start-radius: var(--qc-card-control-radius);
@@ -667,33 +675,19 @@
     background: var(--qc-primary-light);
     color: var(--qc-primary);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid {
+/* Every contact-state button stays neutral; only the selected glyph lights up. */
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button:hover:not(:disabled),
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button.is-selected,
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button.is-selected:hover:not(:disabled) {
     background: #F0F1F7;
     border-color: var(--qc-border);
     color: var(--qc-muted);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid:not(.is-selected):hover:not(:disabled) {
-    background: #E7EAF0;
-    border-color: color-mix(in srgb, var(--qc-muted) 25%, var(--qc-border));
-}
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid.is-selected {
-    background: var(--qc-danger-light);
-    border-color: var(--qc-danger);
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.is-selected i {
     color: var(--qc-danger);
-    font-weight: 700;
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-invalid.is-selected:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--qc-danger) 13%, white);
-}
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer {
-    background: var(--qc-secondary-light);
-    border-color: color-mix(in srgb, var(--qc-secondary) 20%, var(--qc-border));
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.is-selected i {
     color: var(--qc-secondary);
-}
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer:hover:not(:disabled),
-#qualityControlCustomerPage .qc-client-card .qc-client-contact-no-answer.is-selected {
-    background: color-mix(in srgb, var(--qc-secondary) 17%, white);
-    border-color: var(--qc-secondary);
 }
 /* Countdown is directly under this one button, without changing card row height. */
 #qualityControlCustomerPage .qc-client-no-answer-action {
@@ -721,8 +715,8 @@
     border-radius: inherit;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-history-open:hover:not(:disabled) {
-    background: var(--qc-primary-light);
-    border-color: color-mix(in srgb, var(--qc-primary) 25%, var(--qc-border));
+    background: #F0F1F7;
+    border-color: var(--qc-border);
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-contact-actions .qc-client-button i,
 #qualityControlCustomerPage .qc-client-card .qc-client-stats i,
@@ -1471,7 +1465,7 @@
 #qualityControlCustomerPage .qc-client-history-footer #qcContactHistoryPages button:disabled { opacity: .45; }
 #qualityControlCustomerPage .qc-client-history-open {
     padding-inline: 8px;
-    color: var(--qc-primary);
+    color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-history-open i { font-size: 13px; }
 @media (max-width: 767px) {
