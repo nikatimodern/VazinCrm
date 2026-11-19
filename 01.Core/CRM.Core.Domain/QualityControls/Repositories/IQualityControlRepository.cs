@@ -12,6 +12,11 @@ public interface IQualityControlRepository
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
     Task<QualityControlCustomerForm?> GetCustomerFormAsync(
         Guid customerId, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<QualityControlCustomerNotesPage?> GetCustomerNotesAsync(
+        Guid customerId, int start, int length, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<AddQualityControlCustomerNoteResult> AddCustomerNoteAsync(
+        AddQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken);
     Task<SaveQualityControlItemsResult> SaveItemsAsync(
         SaveQualityControlItemsRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
     Task<SetQualityControlCustomerContactResult> SetCustomerContactStatusAsync(
