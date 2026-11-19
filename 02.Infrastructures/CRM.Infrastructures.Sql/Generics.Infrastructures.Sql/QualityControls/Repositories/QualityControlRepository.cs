@@ -234,13 +234,22 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Select(group => new { CustomerId = group.Key, LastAttempt = group.Max(entry => entry.CreateDate) })
             .ToDictionaryAsync(entry => entry.CustomerId, entry => entry.LastAttempt, cancellationToken);
 
+        // Count only active contact-history records for the visible customers.
+        // Soft-deleted records are excluded by the history entity's query filter.
+        var historyCounts = await db.QualityControlContactHistories.AsNoTracking()
+            .Where(entry => pageCustomerIds.Contains(entry.CustomerId))
+            .GroupBy(entry => entry.CustomerId)
+            .Select(group => new { CustomerId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(entry => entry.CustomerId, entry => entry.Count, cancellationToken);
+
         var data = page.Select(row => new QualityControlCustomerRow(row.CustomerId, row.CustomerName,
             row.CustomerCode, row.Mobile, row.Orders, row.Invoices,
             row.TotalItems, row.ReviewedItems, row.DiscrepancyItems,
             contactStatuses.GetValueOrDefault(row.CustomerId),
             contacts.TryGetValue(row.CustomerId, out var contact) ? contact.NoResponseAttempts : 0,
             recentAttempts.TryGetValue(row.CustomerId, out var lastAttempt)
-                ? CooldownRemaining(lastAttempt, now) : 0)).ToList();
+                ? CooldownRemaining(lastAttempt, now) : 0,
+            historyCounts.GetValueOrDefault(row.CustomerId))).ToList();
         return new(total, filtered, data, summary);
     }
 
