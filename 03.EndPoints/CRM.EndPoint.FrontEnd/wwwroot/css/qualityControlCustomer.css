@@ -705,6 +705,7 @@
     display: none;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -755,8 +756,37 @@
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.is-selected i {
     color: var(--qc-danger);
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.is-selected i {
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.is-selected i,
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.has-count > i {
     color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open.has-count > i {
+    color: var(--qc-primary);
+}
+/* Small badges appear only for positive counts; no layout shift or colored button frame. */
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-count {
+    position: absolute;
+    top: -4px;
+    inset-inline-start: -2px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border: 1px solid #fff;
+    border-radius: 8px;
+    background: var(--qc-primary);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+    direction: rtl;
+    pointer-events: none;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer .qc-client-contact-count {
+    background: var(--qc-secondary);
 }
 /* Countdown is directly under this one button, without changing card row height. */
 #qualityControlCustomerPage .qc-client-no-answer-action {
