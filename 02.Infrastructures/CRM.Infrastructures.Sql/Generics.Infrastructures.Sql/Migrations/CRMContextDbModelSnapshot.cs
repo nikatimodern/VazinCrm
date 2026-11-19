@@ -3767,6 +3767,60 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
 
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CallRecordingId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description").IsRequired().HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("IsDeleted").HasColumnType("bit");
+
+                    b.Property<Guid?>("LegacyQualityControlId").HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalTranscript").HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
+                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+
+                    b.Property<byte>("Source").HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CallRecordingId").IsUnique()
+                        .HasFilter("[CallRecordingId] IS NOT NULL");
+
+                    b.HasIndex("CustomerId", "CreateDate");
+
+                    b.HasIndex("LegacyQualityControlId").IsUnique()
+                        .HasFilter("[LegacyQualityControlId] IS NOT NULL");
+
+                    b.ToTable("QualityControlCustomerNotes");
+                });
+
+
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7743,6 +7797,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany()
