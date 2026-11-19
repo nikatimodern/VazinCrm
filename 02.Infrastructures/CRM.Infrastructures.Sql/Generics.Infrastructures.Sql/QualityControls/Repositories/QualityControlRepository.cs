@@ -683,6 +683,47 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             updated.Select(review => new QualityControlItemVersion(review.FactorItemId, review.RowVersion)).ToList());
     }
 
+    public async Task<QualityControlCustomerNotesPage?> GetCustomerNotesAsync(
+        Guid customerId, int start, int length, QualityControlAccess access, CancellationToken cancellationToken)
+    {
+        if (customerId == Guid.Empty || start < 0 || length is < 1 or > 50
+            || !await IsHistoryCustomerVisibleAsync(customerId, access, cancellationToken))
+            return null;
+
+        var notes = db.QualityControlCustomerNotes.AsNoTracking()
+            .Where(note => note.CustomerId == customerId);
+        var total = await notes.CountAsync(cancellationToken);
+        var page = await notes.OrderByDescending(note => note.CreateDate)
+            .ThenByDescending(note => note.Id)
+            .Skip(start).Take(length).ToListAsync(cancellationToken);
+        return new(customerId, total, page.Select(note => new QualityControlCustomerNoteRow(
+            note.Id, note.Description, note.Source,
+            PersianDateTime(note.CreateDate), note.UserCreator)).ToList());
+    }
+
+    public async Task<AddQualityControlCustomerNoteResult> AddCustomerNoteAsync(
+        AddQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken)
+    {
+        var description = request.Description?.Trim();
+        if (request.CustomerId == Guid.Empty || string.IsNullOrWhiteSpace(description)
+            || description.Length > 4000)
+            return new(400, "متن یادداشت باید بین ۱ تا ۴۰۰۰ کاراکتر باشد.");
+
+        if (!await IsHistoryCustomerVisibleAsync(request.CustomerId, access, cancellationToken))
+            return new(404, "مشتری واجد شرایط کنترل کیفیت یافت نشد.");
+
+        var note = new QualityControlCustomerNote
+        {
+            Id = Guid.NewGuid(), CustomerId = request.CustomerId,
+            Description = description, Source = QualityControlCustomerNoteSource.Manual
+        };
+        Stamp(note, access, DateTime.Now, persianNow, true);
+        db.QualityControlCustomerNotes.Add(note);
+        await db.SaveChangesAsync(cancellationToken);
+        return new(200, "یادداشت مشتری ثبت شد.");
+    }
+
     private async Task<bool> IsHistoryCustomerVisibleAsync(Guid customerId, QualityControlAccess access,
         CancellationToken ct)
     {
