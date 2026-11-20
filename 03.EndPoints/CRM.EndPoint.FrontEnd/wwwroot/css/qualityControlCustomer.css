@@ -1052,7 +1052,7 @@
 }
 #qualityControlCustomerPage .qc-client-modal .modal-body {
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
 }
 #qualityControlCustomerPage .qc-client-modal .modal-header {
     background: #fff;
@@ -1894,25 +1894,62 @@
 }
 
 
-/* QC customer review: a compact row-based item table and focused discrepancy dialog. */
-#qualityControlCustomerPage .qc-client-modal .modal-body {
-    background: #F8F9FB;
-    padding: 12px 14px;
-}
+/* QC customer review: fixed modal controls with an independently scrollable table. */
 #qualityControlCustomerPage .qc-client-modal .modal-dialog {
     --bs-modal-width: min(1380px, calc(100vw - 38px));
 }
+#qualityControlCustomerPage .qc-client-modal .modal-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#qualityControlCustomerPage .qc-client-modal .modal-header,
+#qualityControlCustomerPage .qc-client-modal .modal-footer {
+    flex: 0 0 auto;
+    background: #fff;
+}
+#qualityControlCustomerPage .qc-client-modal .modal-footer {
+    padding: 9px 14px;
+    border-top: 1px solid var(--qc-border);
+}
+#qualityControlCustomerPage .qc-client-modal .modal-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: #F8F9FB;
+    padding: 12px 14px;
+}
+#qualityControlCustomerPage .qc-client-modal #qcCustomerReviewForm {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
 #qualityControlCustomerPage .qc-client-review-toolbar {
-    display: grid;
-    gap: 9px;
-    padding: 10px 12px;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
     margin-bottom: 10px;
 }
 #qualityControlCustomerPage .qc-client-review-summary {
     display: flex;
+    width: 100%;
     justify-content: space-between;
+    align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+    border: 1px solid var(--qc-border);
+    background: #fff;
+    border-radius: 10px;
+    padding: 9px 12px;
 }
 #qualityControlCustomerPage .qc-client-review-overview {
     display: grid;
@@ -1954,11 +1991,21 @@
 }
 #qualityControlCustomerPage .qc-client-review-filterbar {
     display: flex;
+    width: 100%;
     align-items: center;
     gap: 10px;
-    padding-top: 9px;
-    border-top: 1px solid var(--qc-border);
     min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--qc-border);
+    border-radius: 10px;
+    background: #fff;
+}
+#qualityControlCustomerPage .qc-client-filter-label {
+    flex: 0 0 auto;
+    color: var(--qc-primary);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
 }
 #qualityControlCustomerPage .qc-client-item-filters {
     display: flex;
@@ -1997,14 +2044,27 @@
     margin: 0;
 }
 #qualityControlCustomerPage .qc-client-item-search[hidden] { display: none; }
-#qualityControlCustomerPage .qc-client-review-content { display: block; min-width: 0; }
+#qualityControlCustomerPage .qc-client-review-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
 #qualityControlCustomerPage .qc-client-review-table-wrap {
-    overflow-x: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
     max-width: 100%;
+    max-height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
     background: #fff;
     border: 1px solid var(--qc-border);
     border-radius: 9px;
-    scrollbar-width: thin;
 }
 #qualityControlCustomerPage .qc-client-review-table {
     border-collapse: separate;
@@ -2015,6 +2075,9 @@
     font-size: 11px;
 }
 #qualityControlCustomerPage .qc-client-review-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     background: #DFEFE9;
     color: #163D38;
     padding: 10px 8px;
@@ -2197,8 +2260,8 @@
     padding: 4px 12px;
 }
 @media (max-width: 991px) {
-    #qualityControlCustomerPage .qc-client-review-filterbar { flex-wrap: wrap; }
-    #qualityControlCustomerPage .qc-client-item-filters { flex: 1 1 100%; }
+    #qualityControlCustomerPage .qc-client-review-filterbar { flex-wrap: wrap; gap: 7px; }
+    #qualityControlCustomerPage .qc-client-item-filters { flex: 1 1 auto; }
     #qualityControlCustomerPage .qc-client-item-search {
         flex: 1 1 100%;
         border-inline-start: 0;

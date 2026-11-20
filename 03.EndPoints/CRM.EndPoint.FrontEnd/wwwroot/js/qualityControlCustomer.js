@@ -68,7 +68,6 @@
         const issueTitle = page.querySelector("#qcIssueTitle");
         const issueSubtitle = page.querySelector("#qcIssueSubtitle");
         const issueFeedback = page.querySelector("#qcIssueFeedback");
-        const scroll = page.querySelector("#qcCustomerReviewScroll");
         const saveAllButton = page.querySelector("#qcCustomerSaveAll");
         const saveHint = page.querySelector("#qcCustomerSaveHint");
         const searchInput = page.querySelector("#qcCustomerSearch");
@@ -127,6 +126,8 @@
         }
         if (typeof enableMomentumScroll === "function")
             enableMomentumScroll(queue, { signal: pageSignal });
+        if (typeof enableMomentumScrollScope === "function")
+            enableMomentumScrollScope(content, { signal: pageSignal });
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
         let lastCheckedCustomerId = null; // Badge stays until another successfully saved review.
@@ -1068,7 +1069,11 @@
 
         function renderReview() {
             if (!review) return;
-            const scrollPosition = scroll.scrollTop;
+            const previousTableViewport = content.querySelector(".qc-client-review-table-wrap");
+            const scrollPosition = {
+                top: previousTableViewport?.scrollTop ?? 0,
+                left: previousTableViewport?.scrollLeft ?? 0,
+            };
             const entries = reviewRows().map((entry, index) => ({ ...entry, originalIndex: index }));
             if (itemSortField) {
                 entries.sort((a, b) => {
@@ -1094,7 +1099,11 @@
                 + entries.map((entry, index) => renderReviewRow(entry, index)).join("")
                 + '</tbody></table></div>';
             refreshReviewState();
-            scroll.scrollTop = scrollPosition;
+            const tableViewport = content.querySelector(".qc-client-review-table-wrap");
+            if (tableViewport) {
+                tableViewport.scrollTop = scrollPosition.top;
+                tableViewport.scrollLeft = scrollPosition.left;
+            }
         }
 
         function refreshReviewState() {
