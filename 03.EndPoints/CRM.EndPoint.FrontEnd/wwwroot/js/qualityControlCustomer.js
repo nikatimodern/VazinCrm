@@ -53,6 +53,7 @@
         const customerNoteSaveLabel = page.querySelector("#qcCustomerNoteSaveLabel");
         const customerNoteLabel = page.querySelector("#qcCustomerNoteLabel");
         const customerNoteFeedback = page.querySelector("#qcCustomerNoteFeedback");
+        const reviewToolbar = page.querySelector("#qcCustomerReviewToolbar");
         const summary = page.querySelector("#qcCustomerReviewSummary");
         const content = page.querySelector("#qcCustomerReviewContent");
         const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
@@ -936,6 +937,7 @@
             review = null;
             reviewHasSavedChanges = false;
             saveAllButton.disabled = true;
+            reviewToolbar.hidden = true;
             summary.replaceChildren();
             content.replaceChildren();
             itemSearch.value = "";
@@ -977,6 +979,7 @@
                 });
             });
             formFeedback.textContent = "";
+            reviewToolbar.hidden = false;
             itemSearchBar.hidden = false;
             renderReview();
         }
@@ -1071,8 +1074,8 @@
                 + '<small>' + faNumber.format(review.orders.length) + ' سفارش · '
                 + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
                 + ' فاکتور</small></div><div class="qc-client-summary-tags">'
-                + '<span>' + faNumber.format(pending) + ' بررسی‌نشده</span>'
-                + '<span>' + faNumber.format(issues) + ' دارای مغایرت</span></div>';
+                + '<span title="' + faNumber.format(pending) + ' قلم بررسی‌نشده">' + faNumber.format(reviewed) + ' بررسی‌شده</span>'
+                + '<span class="qc-client-summary-issues">' + faNumber.format(issues) + ' دارای مغایرت</span></div>';
 
             const busy = hasUnsavedWork();
             saveAllButton.disabled = busy || pending === 0;
@@ -1523,6 +1526,7 @@
             drafts.clear();
             content.replaceChildren();
             summary.replaceChildren();
+            reviewToolbar.hidden = true;
             itemSearch.value = "";
             itemSearchBar.hidden = true;
             itemSearchEmpty.hidden = true;

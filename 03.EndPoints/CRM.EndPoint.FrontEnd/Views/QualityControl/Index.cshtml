@@ -244,7 +244,7 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div>
+                    <div class="qc-client-review-heading">
                         <h2 class="modal-title h5" id="qcCustomerModalTitle">کنترل کیفیت اقلام مشتری</h2>
                         <div id="qcCustomerModalSubtitle" class="qc-client-subtitle"></div>
                     </div>
@@ -254,15 +254,20 @@
                     <form id="qcCustomerReviewForm">
                         @Html.AntiForgeryToken()
                         <div id="qcCustomerFormFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
-                        <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
-                        <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
-                            <label for="qcInvoiceItemSearch">جستجو در اقلام فاکتورها</label>
-                            <input id="qcInvoiceItemSearch" type="search" class="form-control"
-                                   placeholder="نام یا مشخصات کالا، مقدار یا تأمین‌کننده..." autocomplete="off" />
-                            <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
-                                پاک کردن
-                            </button>
-                            <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                        <div id="qcCustomerReviewToolbar" class="qc-client-review-toolbar" hidden>
+                            <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
+                            <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
+                                <label for="qcInvoiceItemSearch" class="visually-hidden">جستجو در اقلام فاکتورها</label>
+                                <div class="qc-client-item-search-field">
+                                    <i class="fa fa-search" aria-hidden="true"></i>
+                                    <input id="qcInvoiceItemSearch" type="search" class="form-control"
+                                           placeholder="جستجو در اقلام فاکتورها (نام کالا، مقدار، تأمین‌کننده...)" autocomplete="off" />
+                                </div>
+                                <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
+                                    پاک کردن
+                                </button>
+                                <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                            </div>
                         </div>
                         <div id="qcInvoiceItemSearchEmpty" class="qc-client-search-empty" role="status" hidden>
                             قلمی مطابق جستجو پیدا نشد.

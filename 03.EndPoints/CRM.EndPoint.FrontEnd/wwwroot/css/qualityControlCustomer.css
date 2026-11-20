@@ -1054,51 +1054,160 @@
     min-height: 0;
     overflow-y: auto;
 }
-#qualityControlCustomerPage .qc-client-modal .modal-header { background: #fff; }
+#qualityControlCustomerPage .qc-client-modal .modal-header {
+    background: #fff;
+    padding: 10px 14px;
+    gap: 12px;
+}
 #qualityControlCustomerPage .qc-client-modal .modal-title { color: var(--qc-primary); }
 #qualityControlCustomerPage .qc-client-modal .modal-body { background: #F0F1F7; }
-#qualityControlCustomerPage .qc-client-review-summary {
+#qualityControlCustomerPage .qc-client-review-heading {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    gap: 12px;
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-review-heading .modal-title {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 17px;
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-review-heading .qc-client-subtitle {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-inline-start: 1px solid var(--qc-border);
+    padding-inline-start: 12px;
+}
+#qualityControlCustomerPage .qc-client-review-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 7px 10px;
+    margin-bottom: 12px;
     background: #fff;
     border: 1px solid var(--qc-border);
     border-radius: 10px;
-    padding: 12px;
-    margin: 8px 0 14px;
+}
+#qualityControlCustomerPage .qc-client-review-toolbar[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-review-summary {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 12px;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
 }
 #qualityControlCustomerPage .qc-client-review-summary > div:first-child {
     display: grid;
-    gap: 5px;
+    gap: 1px;
+    white-space: nowrap;
 }
-#qualityControlCustomerPage .qc-client-review-summary small { color: var(--qc-muted); font-size: 11px; }
+#qualityControlCustomerPage .qc-client-review-summary small {
+    color: var(--qc-muted);
+    font-size: 11px;
+}
+#qualityControlCustomerPage .qc-client-summary-tags {
+    flex-wrap: nowrap;
+    gap: 6px;
+}
 #qualityControlCustomerPage .qc-client-summary-tags span {
     background: #F0F1F7;
     padding: 5px 8px;
     border-radius: 7px;
     font-size: 12px;
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-summary-tags .qc-client-summary-issues {
+    color: var(--qc-danger);
+    background: var(--qc-danger-light);
 }
 #qualityControlCustomerPage .qc-client-item-search {
     display: flex;
+    flex: 1 1 260px;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    border: 1px solid var(--qc-border);
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    background: #fff;
+    gap: 7px;
+    flex-wrap: nowrap;
+    min-width: 0;
+    padding: 0;
+    padding-inline-start: 10px;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    border-inline-start: 1px solid var(--qc-border);
 }
-#qualityControlCustomerPage .qc-client-item-search label {
+#qualityControlCustomerPage .qc-client-item-search-field {
+    position: relative;
+    flex: 1 1 180px;
+    min-width: 130px;
+}
+#qualityControlCustomerPage .qc-client-item-search-field i {
+    position: absolute;
+    inset-inline-start: 11px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--qc-primary);
-    font-size: 12px;
-    font-weight: 700;
+    pointer-events: none;
 }
 #qualityControlCustomerPage .qc-client-item-search input {
-    flex: 1 1 220px;
-    min-width: 140px;
+    width: 100%;
+    height: 34px;
+    min-height: 34px;
+    padding-inline-start: 34px;
+    font-size: 12px;
+}
+#qualityControlCustomerPage .qc-client-item-search .qc-client-button {
+    min-height: 32px;
+    padding: 4px 9px;
+    white-space: nowrap;
 }
 #qualityControlCustomerPage .qc-client-search-count {
     font-size: 11px;
     color: var(--qc-muted);
     white-space: nowrap;
+}
+@media (max-width: 991px) {
+    #qualityControlCustomerPage .qc-client-review-toolbar { flex-wrap: wrap; gap: 8px; }
+    #qualityControlCustomerPage .qc-client-review-summary {
+        flex: 1 1 100%;
+        justify-content: space-between;
+    }
+    #qualityControlCustomerPage .qc-client-item-search {
+        flex: 1 1 100%;
+        border-inline-start: 0;
+        border-top: 1px solid var(--qc-border);
+        padding: 7px 0 0;
+    }
+}
+@media (max-width: 767px) {
+    #qualityControlCustomerPage .qc-client-modal .modal-header { padding: 8px 12px; }
+    #qualityControlCustomerPage .qc-client-review-heading { flex-wrap: wrap; gap: 3px 8px; }
+    #qualityControlCustomerPage .qc-client-review-heading .modal-title {
+        font-size: 15px;
+        white-space: normal;
+    }
+    #qualityControlCustomerPage .qc-client-review-heading .qc-client-subtitle {
+        flex: 1 1 100%;
+        padding-inline-start: 0;
+        border-inline-start: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    #qualityControlCustomerPage .qc-client-review-toolbar { padding: 8px; }
+    #qualityControlCustomerPage .qc-client-review-summary { flex-wrap: wrap; gap: 6px; }
+    #qualityControlCustomerPage .qc-client-item-search { flex-wrap: wrap; gap: 6px; }
+    #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 160px; }
+    #qualityControlCustomerPage .qc-client-item-search .qc-client-button {
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+    }
 }
 #qualityControlCustomerPage .qc-client-search-empty {
     padding: 15px;
@@ -1384,9 +1493,7 @@
         white-space: normal;
     }
     #qualityControlCustomerPage .qc-client-stats { flex: 1; }
-    #qualityControlCustomerPage .qc-client-item-search { padding: 8px; gap: 6px; }
-    #qualityControlCustomerPage .qc-client-item-search label { flex-basis: 100%; }
-    #qualityControlCustomerPage .qc-client-item-search input { flex: 1 1 160px; }
+    #qualityControlCustomerPage .qc-client-item-search input { min-width: 0; }
     #qualityControlCustomerPage .qc-client-order { padding: 9px; }
     #qualityControlCustomerPage .qc-client-item { padding: 7px 8px; }
     #qualityControlCustomerPage .qc-client-item-meta { flex-basis: 100%; gap: 2px 9px; }
