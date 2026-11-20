@@ -392,6 +392,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             from item in db.FactorItems.AsNoTracking()
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
+            join saved in db.QualityControlItemReviews.AsNoTracking()
+                on item.Id equals saved.FactorItemId into itemReviews
+            from saved in itemReviews.DefaultIfEmpty()
             where (factor.CustomerId ?? deal.CustomerId) == customerId
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
@@ -399,9 +402,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             select new
             {
                 Item = item, Factor = factor, Deal = deal,
-                ReviewStatus = db.QualityControlItemReviews.AsNoTracking()
-                    .Where(review => review.FactorItemId == item.Id)
-                    .Select(review => (int?)review.Status).FirstOrDefault() ?? 0
+                ReviewStatus = saved == null ? 0 : (int)saved.Status
             };
 
         var totals = await eligible.GroupBy(item => 1).Select(group => new
