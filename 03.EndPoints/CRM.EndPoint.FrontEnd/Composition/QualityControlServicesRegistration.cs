@@ -1,5 +1,7 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.AddQualityControlCustomerNote;
+using CRM.Core.ApplicationServices.QualityControls.Commands.UpdateQualityControlCustomerNote;
+using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControlCustomerNote;
 using CRM.Core.ApplicationServices.QualityControls.Commands.ChangeQualityControlContactHistory;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
@@ -21,6 +23,8 @@ public static class QualityControlServicesRegistration
         services.AddScoped<IQualityControlRepository, QualityControlRepository>();
         services.AddScoped<IQueryHandler<GetQualityControlCustomerNotesQuery, QualityControlCustomerNotesPage?>, GetQualityControlCustomerNotesQueryHandler>();
         services.AddScoped<ICommandHandler<AddQualityControlCustomerNoteCommand, AddQualityControlCustomerNoteResult>, AddQualityControlCustomerNoteCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateQualityControlCustomerNoteCommand, QualityControlCustomerNoteChangeResult>, UpdateQualityControlCustomerNoteCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteQualityControlCustomerNoteCommand, QualityControlCustomerNoteChangeResult>, DeleteQualityControlCustomerNoteCommandHandler>();
         services.AddScoped<IQueryHandler<GetQualityControlCustomersQuery, QualityControlCustomerListResult>, GetQualityControlCustomersQueryHandler>();
         services.AddScoped<IQueryHandler<GetQualityControlCustomerFormQuery, QualityControlCustomerForm?>, GetQualityControlCustomerFormQueryHandler>();
         services.AddScoped<ICommandHandler<SaveQualityControlItemsCommand, SaveQualityControlItemsResult>, SaveQualityControlItemsCommandHandler>();

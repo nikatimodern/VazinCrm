@@ -99,7 +99,7 @@ public enum QualityControlCustomerNoteSource : byte
 
 public sealed record QualityControlCustomerNoteRow(
     Guid Id, string Description, QualityControlCustomerNoteSource Source,
-    string CreatedAt, string? CreatedBy);
+    string CreatedAt, string? CreatedBy, byte[] RowVersion);
 
 public sealed record QualityControlCustomerNotesPage(
     Guid CustomerId, int Total, IReadOnlyList<QualityControlCustomerNoteRow> Data);
@@ -111,6 +111,23 @@ public sealed class AddQualityControlCustomerNoteRequest
 }
 
 public sealed record AddQualityControlCustomerNoteResult(int StatusCode, string Message);
+
+public sealed class UpdateQualityControlCustomerNoteRequest
+{
+    public Guid CustomerId { get; set; }
+    public Guid NoteId { get; set; }
+    public string? Description { get; set; }
+    public byte[]? RowVersion { get; set; }
+}
+
+public sealed class DeleteQualityControlCustomerNoteRequest
+{
+    public Guid CustomerId { get; set; }
+    public Guid NoteId { get; set; }
+    public byte[]? RowVersion { get; set; }
+}
+
+public sealed record QualityControlCustomerNoteChangeResult(int StatusCode, string Message);
 
 public sealed class SaveQualityControlItemsRequest
 {

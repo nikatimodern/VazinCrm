@@ -1734,3 +1734,54 @@
         padding: 1px 5px;
     }
 }
+
+/* Customer notes: editor first, history below, with compact per-note actions. */
+#qualityControlCustomerPage .qc-client-notes-history {
+    display: grid;
+    gap: 7px;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--qc-border);
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-notes-modal .qc-client-notes-list {
+    max-height: 270px;
+}
+#qualityControlCustomerPage .qc-client-notes-entry-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+#qualityControlCustomerPage .qc-client-notes-entry-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+}
+#qualityControlCustomerPage .qc-client-notes-entry-actions .qc-client-button {
+    width: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 3px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-notes-entry-actions .qc-client-button:hover:not(:disabled) {
+    background: var(--qc-secondary-light);
+    color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-notes-entry-actions .qc-note-delete {
+    color: var(--qc-danger);
+}
+#qualityControlCustomerPage .qc-client-notes-entry-actions .qc-note-delete:hover:not(:disabled) {
+    background: var(--qc-danger-light);
+    color: var(--qc-danger);
+}
+#qualityControlCustomerPage .qc-client-notes-entry.is-editing {
+    border-color: var(--qc-secondary);
+    background: var(--qc-secondary-light);
+}
+#qualityControlCustomerPage #qcCustomerNoteCancelEdit[hidden] {
+    display: none;
+}
