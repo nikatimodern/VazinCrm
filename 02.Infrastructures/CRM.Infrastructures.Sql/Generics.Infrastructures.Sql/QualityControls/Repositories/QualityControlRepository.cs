@@ -704,7 +704,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             .Skip(start).Take(length).ToListAsync(cancellationToken);
         return new(customerId, total, page.Select(note => new QualityControlCustomerNoteRow(
             note.Id, note.Description, note.Source,
-            PersianDateTime(note.CreateDate), note.UserCreator)).ToList());
+            PersianDateTime(note.CreateDate), note.UserCreator, note.RowVersion)).ToList());
     }
 
     public async Task<AddQualityControlCustomerNoteResult> AddCustomerNoteAsync(
@@ -728,6 +728,76 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         db.QualityControlCustomerNotes.Add(note);
         await db.SaveChangesAsync(cancellationToken);
         return new(200, "یادداشت مشتری ثبت شد.");
+    }
+
+
+    public async Task<QualityControlCustomerNoteChangeResult> UpdateCustomerNoteAsync(
+        UpdateQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken)
+    {
+        var description = request.Description?.Trim();
+        if (request.CustomerId == Guid.Empty || request.NoteId == Guid.Empty
+            || request.RowVersion is not { Length: 8 }
+            || string.IsNullOrWhiteSpace(description) || description.Length > 4000)
+            return new(400, "اطلاعات ویرایش یادداشت معتبر نیست.");
+
+        if (!await IsHistoryCustomerVisibleAsync(request.CustomerId, access, cancellationToken))
+            return new(404, "مشتری واجد شرایط کنترل کیفیت یافت نشد.");
+
+        var note = await db.QualityControlCustomerNotes.FirstOrDefaultAsync(
+            item => item.Id == request.NoteId && item.CustomerId == request.CustomerId, cancellationToken);
+        if (note == null)
+            return new(404, "یادداشت یافت نشد یا قبلاً حذف شده است.");
+        if (!note.RowVersion.SequenceEqual(request.RowVersion))
+            return new(409, "یادداشت توسط کاربر دیگری تغییر کرده است. فهرست را دوباره دریافت کنید.");
+
+        if (note.Description == description)
+            return new(200, "متن یادداشت تغییری نکرده است.");
+
+        db.Entry(note).Property(item => item.RowVersion).OriginalValue = request.RowVersion;
+        note.Description = description;
+        Stamp(note, access, DateTime.Now, persianNow, false);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "یادداشت هم‌زمان ویرایش یا حذف شده است. فهرست را دوباره دریافت کنید.");
+        }
+        return new(200, "یادداشت ویرایش شد.");
+    }
+
+    public async Task<QualityControlCustomerNoteChangeResult> DeleteCustomerNoteAsync(
+        DeleteQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken)
+    {
+        if (request.CustomerId == Guid.Empty || request.NoteId == Guid.Empty
+            || request.RowVersion is not { Length: 8 })
+            return new(400, "اطلاعات حذف یادداشت معتبر نیست.");
+
+        if (!await IsHistoryCustomerVisibleAsync(request.CustomerId, access, cancellationToken))
+            return new(404, "مشتری واجد شرایط کنترل کیفیت یافت نشد.");
+
+        var note = await db.QualityControlCustomerNotes.FirstOrDefaultAsync(
+            item => item.Id == request.NoteId && item.CustomerId == request.CustomerId, cancellationToken);
+        if (note == null)
+            return new(404, "یادداشت یافت نشد یا قبلاً حذف شده است.");
+        if (!note.RowVersion.SequenceEqual(request.RowVersion))
+            return new(409, "یادداشت توسط کاربر دیگری تغییر کرده است. فهرست را دوباره دریافت کنید.");
+
+        db.Entry(note).Property(item => item.RowVersion).OriginalValue = request.RowVersion;
+        note.IsDeleted = true;
+        Stamp(note, access, DateTime.Now, persianNow, false);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new(409, "یادداشت هم‌زمان ویرایش یا حذف شده است. فهرست را دوباره دریافت کنید.");
+        }
+        return new(200, "یادداشت حذف شد.");
     }
 
     private async Task<bool> IsHistoryCustomerVisibleAsync(Guid customerId, QualityControlAccess access,

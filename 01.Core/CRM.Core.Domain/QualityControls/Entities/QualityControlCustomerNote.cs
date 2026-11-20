@@ -5,7 +5,7 @@ using CRM.Framework.Domain;
 
 namespace CRM.Core.Domain.QualityControls.Entities;
 
-// Append-only customer QC notes, independent from invoice-item reviews and sales Reports.
+// Customer QC notes support audited edits and soft deletion, independently of item reviews and sales Reports.
 public sealed class QualityControlCustomerNote : BaseEntity
 {
     public Guid CustomerId { get; set; }

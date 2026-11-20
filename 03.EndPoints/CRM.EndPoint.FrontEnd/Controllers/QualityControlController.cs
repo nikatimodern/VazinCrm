@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.QualityControls.Commands.AddQualityControlCustomerNote;
+using CRM.Core.ApplicationServices.QualityControls.Commands.UpdateQualityControlCustomerNote;
+using CRM.Core.ApplicationServices.QualityControls.Commands.DeleteQualityControlCustomerNote;
 using CRM.Core.ApplicationServices.QualityControls.Commands.ChangeQualityControlContactHistory;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SaveQualityControlItems;
 using CRM.Core.ApplicationServices.QualityControls.Commands.SetQualityControlCustomerContact;
@@ -65,6 +67,26 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             || string.IsNullOrWhiteSpace(request.Description) || request.Description.Length > 4000)
             return BadRequest(new { message = "یادداشت مشتری معتبر نیست." });
         var result = await requests.CommandAsync(new AddQualityControlCustomerNoteCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCustomerNote(
+        [FromBody] UpdateQualityControlCustomerNoteRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات ویرایش یادداشت معتبر نیست." });
+        var result = await requests.CommandAsync(new UpdateQualityControlCustomerNoteCommand(request), ct);
+        return StatusCode(result.StatusCode, new { message = result.Message });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteCustomerNote(
+        [FromBody] DeleteQualityControlCustomerNoteRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || request == null)
+            return BadRequest(new { message = "اطلاعات حذف یادداشت معتبر نیست." });
+        var result = await requests.CommandAsync(new DeleteQualityControlCustomerNoteCommand(request), ct);
         return StatusCode(result.StatusCode, new { message = result.Message });
     }
 

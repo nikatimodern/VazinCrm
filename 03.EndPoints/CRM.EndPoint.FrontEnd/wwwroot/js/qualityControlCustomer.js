@@ -49,6 +49,9 @@
         const customerNoteText = page.querySelector("#qcCustomerNoteText");
         const customerNoteSave = page.querySelector("#qcCustomerNoteSave");
         const customerNoteClear = page.querySelector("#qcCustomerNoteClear");
+        const customerNoteCancelEdit = page.querySelector("#qcCustomerNoteCancelEdit");
+        const customerNoteSaveLabel = page.querySelector("#qcCustomerNoteSaveLabel");
+        const customerNoteLabel = page.querySelector("#qcCustomerNoteLabel");
         const customerNoteFeedback = page.querySelector("#qcCustomerNoteFeedback");
         const summary = page.querySelector("#qcCustomerReviewSummary");
         const content = page.querySelector("#qcCustomerReviewContent");
@@ -66,6 +69,7 @@
         const cardButtons = [...page.querySelectorAll("[data-qc-card-status]")];
         const pageSize = page.querySelector("#qcCustomerPageSize");
         const token = form.querySelector('[name="__RequestVerificationToken"]');
+        const notesToken = notesModal.querySelector('[name="__RequestVerificationToken"]');
         const faNumber = new Intl.NumberFormat("fa-IR");
         const faCodeNumber = new Intl.NumberFormat("fa-IR", { useGrouping: false });
         const escape = value => String(value ?? "").replace(/[&<>"']/g, char =>
@@ -126,8 +130,10 @@
         let historyDeleteHold = null;
         const historyDeleteHoldMs = 500;
         let customerNotesController = null, customerNotesStart = 0, customerNotesTotal = 0;
-        let customerNotesLoading = false, customerNoteSaving = false;
+        let customerNotesLoading = false, customerNoteSaving = false, customerNoteDeleting = false;
         let notesCustomerId = null, notesGeneration = 0;
+        let editingCustomerNote = null;
+        const customerNoteRows = new Map();
         let midnightRefreshTimer = null;
 
         // The server is authoritative; the timer only visualizes its 60-second lock.
@@ -672,6 +678,7 @@
             if (reset) {
                 customerNotesStart = 0;
                 customerNotesList.replaceChildren();
+                customerNoteRows.clear();
             }
             customerNotesController?.abort();
             const controller = customerNotesController = new AbortController();
@@ -694,14 +701,23 @@
                 }
                 if (reset) customerNotesList.replaceChildren();
                 const markup = data.data.map(note => {
+                    customerNoteRows.set(note.id, note);
                     const source = Number(note.source);
                     const provenance = source === 2 ? " · سابقه قدیمی"
                         : source === 1 ? " · ثبت از تماس AI" : "";
-                    return '<article class="qc-client-notes-entry"><div class="qc-client-notes-entry-meta">'
+                    return '<article class="qc-client-notes-entry" role="listitem" data-qc-note-entry="' + escape(note.id) + '">'
+                        + '<div class="qc-client-notes-entry-top"><div class="qc-client-notes-entry-meta">'
                         + '<strong>' + escape(note.createdBy || "کارشناس") + '</strong>'
                         + '<span>' + escape(note.createdAt || "") + '</span>'
                         + (provenance ? '<span>' + provenance + '</span>' : "")
-                        + '</div><p>' + escape(note.description || "") + '</p></article>';
+                        + '</div><div class="qc-client-notes-entry-actions">'
+                        + '<button type="button" class="qc-client-button qc-note-edit" data-qc-note-action="edit"'
+                        + ' data-qc-note-id="' + escape(note.id) + '" title="ویرایش یادداشت" aria-label="ویرایش یادداشت">'
+                        + '<i class="fa fa-pencil-alt" aria-hidden="true"></i></button>'
+                        + '<button type="button" class="qc-client-button qc-note-delete" data-qc-note-action="delete"'
+                        + ' data-qc-note-id="' + escape(note.id) + '" title="حذف یادداشت" aria-label="حذف یادداشت">'
+                        + '<i class="fa fa-trash-alt" aria-hidden="true"></i></button>'
+                        + '</div></div><p>' + escape(note.description || "") + '</p></article>';
                 }).join("");
                 customerNotesList.insertAdjacentHTML("beforeend", markup);
                 customerNotesStart += data.data.length;
@@ -711,6 +727,9 @@
                     customerNotesList.innerHTML =
                         '<span class="qc-client-notes-placeholder">هنوز یادداشتی برای این مشتری ثبت نشده است.</span>';
                 customerNotesMore.hidden = customerNotesStart >= customerNotesTotal;
+                const noteButton = [...queue.querySelectorAll("[data-qc-customer-notes]")]
+                    .find(button => button.dataset.qcCustomerNotes === customerId);
+                noteButton?.classList.toggle("has-notes", customerNotesTotal > 0);
                 customerNoteFeedback.textContent = "";
             } catch (error) {
                 if (!controller.signal.aborted && isActive())
@@ -723,10 +742,90 @@
             }
         }
 
+        function resetCustomerNoteEditor() {
+            editingCustomerNote = null;
+            customerNoteText.value = "";
+            customerNoteLabel.textContent = "یادداشت جدید";
+            customerNoteSaveLabel.textContent = "ثبت یادداشت";
+            customerNoteCancelEdit.hidden = true;
+            customerNotesList.querySelectorAll(".is-editing").forEach(entry => entry.classList.remove("is-editing"));
+            customerNoteText.dispatchEvent(new Event("input"));
+        }
+
+        function hasUnsubmittedCustomerNote() {
+            const text = customerNoteText.value.trim();
+            return Boolean(text) && (!editingCustomerNote || text !== editingCustomerNote.description.trim());
+        }
+
+        customerNoteCancelEdit.addEventListener("click", () => {
+            if (!customerNoteSaving && !customerNoteDeleting) {
+                resetCustomerNoteEditor();
+                customerNoteFeedback.textContent = "";
+            }
+        });
+        customerNotesList.addEventListener("click", async event => {
+            const button = event.target.closest("[data-qc-note-action]");
+            if (!button || customerNoteSaving || customerNoteDeleting || !isActive() || !notesCustomerId) return;
+            const note = customerNoteRows.get(button.dataset.qcNoteId);
+            if (!note) {
+                customerNoteFeedback.textContent = "یادداشت تغییر کرده است؛ فهرست را دوباره دریافت کنید.";
+                return;
+            }
+            if (hasUnsubmittedCustomerNote()) {
+                customerNoteFeedback.textContent = "ابتدا متن فعلی را ثبت کنید یا آن را پاک کنید.";
+                return;
+            }
+            if (button.dataset.qcNoteAction === "edit") {
+                editingCustomerNote = note;
+                customerNoteText.value = note.description;
+                customerNoteLabel.textContent = "ویرایش یادداشت";
+                customerNoteSaveLabel.textContent = "ذخیره ویرایش";
+                customerNoteCancelEdit.hidden = false;
+                customerNoteText.dispatchEvent(new Event("input"));
+                customerNotesList.querySelectorAll(".is-editing").forEach(entry => entry.classList.remove("is-editing"));
+                button.closest(".qc-client-notes-entry")?.classList.add("is-editing");
+                customerNoteText.focus();
+                customerNoteText.scrollIntoView({ block: "nearest", behavior: "auto" });
+                return;
+            }
+            if (button.dataset.qcNoteAction !== "delete") return;
+
+            const customerId = notesCustomerId, generation = notesGeneration;
+            customerNoteDeleting = true;
+            button.disabled = true;
+            try {
+                const confirmed = await confirmAlert({
+                    title: "حذف یادداشت",
+                    text: "این یادداشت از فهرست حذف شود؟",
+                    confirmText: "حذف یادداشت",
+                });
+                if (!confirmed || !isActive() || generation !== notesGeneration || notesCustomerId !== customerId) return;
+                const result = await sendApiRequest({
+                    url: "/QualityControl/DeleteCustomerNote", method: "POST",
+                    headers: { RequestVerificationToken: notesToken.value },
+                    data: { customerId, noteId: note.id, rowVersion: note.rowVersion },
+                    showLoading: false,
+                });
+                if (!isActive() || generation !== notesGeneration || notesCustomerId !== customerId) return;
+                if (!result?.message) {
+                    customerNoteFeedback.textContent = "حذف یادداشت انجام نشد؛ فهرست را تازه کنید.";
+                    return;
+                }
+                resetCustomerNoteEditor();
+                customerNotesController?.abort();
+                customerNotesLoading = false;
+                await loadCustomerNotes(true);
+                customerNoteFeedback.textContent = "یادداشت حذف شد.";
+            } finally {
+                customerNoteDeleting = false;
+                if (button.isConnected) button.disabled = false;
+            }
+        });
+
         customerNoteText.addEventListener("input", () => {
             const filled = Boolean(customerNoteText.value.trim());
-            customerNoteSave.disabled = customerNoteSaving || !filled || !notesCustomerId;
-            customerNoteClear.disabled = customerNoteSaving || !filled;
+            customerNoteSave.disabled = customerNoteSaving || customerNoteDeleting || !filled || !notesCustomerId;
+            customerNoteClear.disabled = customerNoteSaving || customerNoteDeleting || !filled;
             customerNoteFeedback.textContent = "";
         });
         customerNoteClear.addEventListener("click", () => {
@@ -738,7 +837,7 @@
             if (!customerNotesLoading) void loadCustomerNotes(false);
         });
         customerNoteSave.addEventListener("click", async () => {
-            if (!notesCustomerId || customerNoteSaving || !isActive()) return;
+            if (!notesCustomerId || customerNoteSaving || customerNoteDeleting || !isActive()) return;
             const description = customerNoteText.value.trim();
             if (!description || description.length > 4000) {
                 customerNoteFeedback.textContent = "متن یادداشت باید بین ۱ تا ۴۰۰۰ کاراکتر باشد.";
@@ -746,30 +845,33 @@
             }
             const customerId = notesCustomerId;
             const generation = notesGeneration;
+            const editedNote = editingCustomerNote;
             customerNoteSaving = true;
             customerNoteSave.disabled = true;
             customerNoteClear.disabled = true;
             customerNoteText.disabled = true;
             try {
                 const result = await sendApiRequest({
-                    url: "/QualityControl/AddCustomerNote", method: "POST",
-                    headers: { RequestVerificationToken: token.value },
-                    data: { customerId, description },
+                    url: editedNote ? "/QualityControl/UpdateCustomerNote" : "/QualityControl/AddCustomerNote",
+                    method: "POST",
+                    headers: { RequestVerificationToken: notesToken.value },
+                    data: editedNote
+                        ? { customerId, noteId: editedNote.id, rowVersion: editedNote.rowVersion, description }
+                        : { customerId, description },
                     showLoading: false,
                 });
                 if (!isActive() || generation !== notesGeneration || notesCustomerId !== customerId) return;
                 if (!result?.message) {
-                    customerNoteFeedback.textContent = "ثبت یادداشت انجام نشد؛ دوباره تلاش کنید.";
+                    customerNoteFeedback.textContent = editedNote
+                        ? "ویرایش یادداشت انجام نشد؛ فهرست را تازه کنید."
+                        : "ثبت یادداشت انجام نشد؛ دوباره تلاش کنید.";
                     return;
                 }
-                customerNoteText.value = "";
+                resetCustomerNoteEditor();
                 customerNotesController?.abort();
                 customerNotesLoading = false;
                 await loadCustomerNotes(true);
-                const noteButton = [...queue.querySelectorAll("[data-qc-customer-notes]")]
-                    .find(button => button.dataset.qcCustomerNotes === customerId);
-                noteButton?.classList.add("has-notes");
-                customerNoteFeedback.textContent = "یادداشت ثبت شد.";
+                customerNoteFeedback.textContent = editedNote ? "یادداشت ویرایش شد." : "یادداشت ثبت شد.";
             } catch (error) {
                 if (isActive() && generation === notesGeneration)
                     customerNoteFeedback.textContent = "ثبت یادداشت ناموفق بود؛ متن حفظ شده است.";
@@ -785,7 +887,7 @@
         });
 
         function openCustomerNotes(customerId, customerName) {
-            if (!customerId || !isActive() || customerNoteSaving) return;
+            if (!customerId || !isActive() || customerNoteSaving || customerNoteDeleting) return;
             customerNotesController?.abort();
             notesCustomerId = customerId;
             notesGeneration++;
@@ -795,10 +897,8 @@
             customerNotesList.innerHTML = '<span class="qc-client-notes-placeholder">در حال دریافت یادداشت‌ها…</span>';
             customerNotesCount.textContent = "";
             customerNotesMore.hidden = true;
-            customerNoteText.value = "";
+            resetCustomerNoteEditor();
             customerNoteText.disabled = false;
-            customerNoteSave.disabled = true;
-            customerNoteClear.disabled = true;
             customerNoteFeedback.textContent = "";
             notesSubtitle.textContent = customerName || "";
             ModalToggle(notesModal, "show");
@@ -806,11 +906,11 @@
         }
 
         notesModal.addEventListener("hide.bs.modal", event => {
-            if (customerNoteSaving || customerNoteText.value.trim()) {
+            if (customerNoteSaving || customerNoteDeleting || hasUnsubmittedCustomerNote()) {
                 event.preventDefault();
-                customerNoteFeedback.textContent = customerNoteSaving
-                    ? "ثبت یادداشت در حال انجام است."
-                    : "ابتدا یادداشت را ثبت کنید یا متن آن را پاک کنید.";
+                customerNoteFeedback.textContent = customerNoteSaving || customerNoteDeleting
+                    ? "تغییر یادداشت در حال انجام است."
+                    : "ابتدا متن را ثبت کنید یا ویرایش را لغو کنید.";
                 return;
             }
             customerNotesController?.abort();
@@ -819,6 +919,8 @@
         notesModal.addEventListener("hidden.bs.modal", () => {
             notesCustomerId = null;
             customerNotesLoading = false;
+            customerNoteRows.clear();
+            resetCustomerNoteEditor();
             customerNotesList.replaceChildren();
             customerNoteFeedback.textContent = "";
         });
