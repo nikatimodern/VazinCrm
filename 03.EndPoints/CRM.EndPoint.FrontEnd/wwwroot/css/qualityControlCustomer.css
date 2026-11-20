@@ -1126,11 +1126,6 @@
     background: transparent;
     border: 0;
 }
-#qualityControlCustomerPage .qc-client-review-summary > div:first-child {
-    display: grid;
-    gap: 1px;
-    white-space: nowrap;
-}
 #qualityControlCustomerPage .qc-client-review-summary small {
     color: var(--qc-muted);
     font-size: 11px;
@@ -1915,6 +1910,24 @@
     flex-direction: column;
     overflow: hidden;
 }
+/* Few-row reviews size to their content; larger reviews retain the scrolling table. */
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact:not(.qc-client-issue-expanded) .modal-content {
+    height: auto;
+    max-height: min(84dvh, 820px);
+}
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .modal-body,
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact #qcCustomerReviewForm,
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-content,
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-table-wrap {
+    flex: 0 1 auto;
+}
+#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-table-wrap {
+    max-height: min(50dvh, 480px);
+}
+#qualityControlCustomerPage .qc-client-modal.qc-client-issue-expanded .modal-content {
+    height: min(84dvh, 820px);
+}
+
 #qualityControlCustomerPage .qc-client-modal .modal-header,
 #qualityControlCustomerPage .qc-client-modal .modal-footer {
     flex: 0 0 auto;
@@ -1944,23 +1957,23 @@
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
     padding: 0;
     border: 0;
     background: transparent;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 #qualityControlCustomerPage .qc-client-review-summary {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr) minmax(200px, 290px);
     width: 100%;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     flex: 0 0 auto;
     flex-wrap: nowrap;
     margin: 0;
-    padding: 10px 14px;
+    padding: 7px 12px;
     border: 1px solid var(--qc-border);
     border-radius: 10px;
     background: #fff;
@@ -1975,9 +1988,9 @@
 }
 #qualityControlCustomerPage .qc-client-review-overview-icon {
     display: inline-grid;
-    flex: 0 0 35px;
-    width: 35px;
-    height: 35px;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
     place-items: center;
     border-radius: 9px;
     background: var(--qc-primary-light);
@@ -2059,7 +2072,7 @@
     align-items: center;
     column-gap: 14px;
     min-width: 0;
-    padding: 8px 12px;
+    padding: 5px 10px;
     border: 1px solid var(--qc-border);
     border-radius: 10px;
     background: #fff;

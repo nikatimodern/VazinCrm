@@ -946,6 +946,7 @@
             itemStatusFilter = "all";
             itemSortField = "";
             itemSortDirection = 1;
+            modal.classList.remove("qc-client-modal-compact", "qc-client-issue-expanded");
             saveAllButton.disabled = true;
             reviewToolbar.hidden = true;
             summary.replaceChildren();
@@ -1078,6 +1079,7 @@
                 left: previousTableViewport?.scrollLeft ?? 0,
             };
             const entries = reviewRows().map((entry, index) => ({ ...entry, originalIndex: index }));
+            modal.classList.toggle("qc-client-modal-compact", entries.length <= 7);
             if (itemSortField) {
                 entries.sort((a, b) => {
                     const first = String(a[itemSortField].serialNumber ?? "");
@@ -1499,6 +1501,7 @@
         function closeIssueDialog() {
             if (!issueItemId) return;
             issueOverlay.hidden = true;
+            modal.classList.remove("qc-client-issue-expanded");
             issueItemId = null;
             issueFeedback.textContent = "";
             issueQuestions.replaceChildren();
@@ -1522,6 +1525,7 @@
             issueSubtitle.textContent = item.productSmallName || item.product || "قلم بدون عنوان";
             issueQuestions.innerHTML = questionMarkup(item, draft);
             issueFeedback.textContent = "";
+            modal.classList.add("qc-client-issue-expanded");
             issueOverlay.hidden = false;
             refreshReviewState();
             issueOverlay.querySelector('input[type="radio"]')?.focus({ preventScroll: true });
@@ -1657,6 +1661,7 @@
             issueItemId = null;
             issueReturnFocus = null;
             issueOverlay.hidden = true;
+            modal.classList.remove("qc-client-modal-compact", "qc-client-issue-expanded");
             issueQuestions.replaceChildren();
             review = null;
             drafts.clear();
