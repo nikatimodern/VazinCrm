@@ -36,6 +36,8 @@ public sealed class SetQualityControlCustomerContactRequest
 {
     public Guid CustomerId { get; set; }
     public QualityControlCustomerContactStatus Status { get; set; }
+    // Confirm phone correction without toggling an invalid marker back on.
+    public bool ConfirmCorrectedNumber { get; set; }
 }
 
 public sealed record SetQualityControlCustomerContactResult(

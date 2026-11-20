@@ -265,7 +265,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     {
         if (request.CustomerId == Guid.Empty ||
             request.Status is not (QualityControlCustomerContactStatus.NoResponse
-                or QualityControlCustomerContactStatus.InvalidNumber))
+                or QualityControlCustomerContactStatus.InvalidNumber)
+            || (request.ConfirmCorrectedNumber
+                && request.Status != QualityControlCustomerContactStatus.InvalidNumber))
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
         // Use the same eligibility/role scope as the customer QC queue.
@@ -316,11 +318,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var currentStatus = contact?.IsDeleted == false
             ? CurrentContactStatus(contact, mobile, now.Date, 1)
             : QualityControlCustomerContactStatus.None;
+        // A stale confirmation must never turn an invalid marker back on.
+        if (request.ConfirmCorrectedNumber
+            && (contact == null || contact.IsDeleted
+                || contact.Status != QualityControlCustomerContactStatus.InvalidNumber))
+            return new(409, "وضعیت شماره تماس تغییر کرده است. فهرست مشتریان را تازه کنید.",
+                currentStatus);
+
         // Every no-response click is a separate contact attempt, even on the same day.
         // Only the invalid-number flag can be toggled off by clicking it again.
-        var nextStatus = request.Status == QualityControlCustomerContactStatus.NoResponse
-            ? QualityControlCustomerContactStatus.NoResponse
-            : currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
+        var nextStatus = request.ConfirmCorrectedNumber
+            ? QualityControlCustomerContactStatus.None
+            : request.Status == QualityControlCustomerContactStatus.NoResponse
+                ? QualityControlCustomerContactStatus.NoResponse
+                : currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
         if (contact == null)
         {
             contact = new QualityControlCustomerContact
@@ -356,8 +367,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             Status = nextStatus,
             AttemptCount = nextStatus == QualityControlCustomerContactStatus.NoResponse ? 1 : 0,
             MobileAtAttempt = (mobile ?? "").Trim(),
-            Description = nextStatus == QualityControlCustomerContactStatus.None
-                ? "لغو وضعیت تماس ثبت‌شده" : null
+            Description = request.ConfirmCorrectedNumber
+                ? "تأیید اصلاح شماره نامعتبر پیش از کنترل کیفیت"
+                : nextStatus == QualityControlCustomerContactStatus.None
+                    ? "لغو وضعیت تماس ثبت‌شده" : null
         };
         Stamp(history, access, now, persianNow, true);
         db.QualityControlContactHistories.Add(history);
@@ -379,7 +392,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         {
             QualityControlCustomerContactStatus.NoResponse => "عدم پاسخ ثبت شد؛ مشتری فردا دوباره در صف بررسی قرار می‌گیرد.",
             QualityControlCustomerContactStatus.InvalidNumber => "شماره نامعتبر مشتری ثبت شد.",
-            _ => "وضعیت تماس مشتری پاک شد."
+            _ => request.ConfirmCorrectedNumber
+                ? "اصلاح شماره تأیید شد و وضعیت شماره نامعتبر پاک شد."
+                : "وضعیت تماس مشتری پاک شد."
         }, nextStatus);
     }
 

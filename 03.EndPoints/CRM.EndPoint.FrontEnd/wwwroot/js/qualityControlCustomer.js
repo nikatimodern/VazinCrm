@@ -502,7 +502,8 @@
                     return '<article role="listitem" class="qc-client-card'
                         + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
                             ? ' qc-client-last-checked' : '')
-                        + '" data-qc-complete="' + complete + '">'
+                        + '" data-qc-complete="' + complete
+                        + '" data-qc-invalid-number="' + (contactStatus === 2) + '">'
                         + '<div class="qc-client-profile"><div class="qc-client-name-line"><strong>'
                         + escape(row.customerName || "مشتری بدون نام") + '</strong></div>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
@@ -522,7 +523,7 @@
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
                         + (contactStatus === 1 ? ' is-selected' : '')
-                        + (noResponseAttempts > 0 ? ' has-count' : '') + '"'
+                        + (noResponseAttempts > 0 ? ' has-count has-value' : '') + '"'
                         + (complete ? ' disabled' : '')
                         + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
@@ -533,14 +534,14 @@
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
                         + '<button type="button" class="qc-client-button qc-client-history-open'
-                        + (contactHistoryCount > 0 ? ' has-count' : '')
+                        + (contactHistoryCount > 0 ? ' has-count has-value' : '')
                         + '" data-qc-history="' + escape(row.customerId) + '"'
                         + ' title="تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه"'
                         + ' aria-label="مشاهده تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه">'
                         + '<i class="fa fa-history" aria-hidden="true"></i>'
                         + contactCountBadge(contactHistoryCount) + '</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
-                        + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
+                        + (contactStatus === 2 ? ' is-selected has-value' : '') + '" aria-pressed="' + (contactStatus === 2)
                         + '" title="' + (complete ? 'شماره نامعتبر؛ تمام اقلام بررسی شده‌اند'
                             : contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
                         + ' aria-label="' + (contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
@@ -1497,7 +1498,62 @@
                 return;
             }
             const button = event.target.closest("[data-qc-customer]");
-            if (button && !loading && !contactBusy) openCustomer(button.dataset.qcCustomer);
+            if (!button || loading || contactBusy || !isActive()) return;
+
+            const customerId = button.dataset.qcCustomer;
+            const card = button.closest(".qc-client-card");
+            if (card?.dataset.qcInvalidNumber !== "true") {
+                void openCustomer(customerId);
+                return;
+            }
+
+            contactBusy = true;
+            try {
+                const confirmed = await confirmAlert({
+                    title: "شماره تماس نیاز به اصلاح دارد",
+                    text: "شماره این مشتری قبلاً نامعتبر ثبت شده است. آیا اصلاح شماره انجام شده است؟",
+                    icon: "warning",
+                    confirmText: "بله، اصلاح شده است",
+                    cancelText: "خیر، هنوز اصلاح نشده",
+                    confirmButtonColor: "#00695c",
+                });
+                if (!confirmed || !isActive()) return;
+
+                queueFeedback.textContent = "";
+                const result = await sendApiRequest({
+                    url: "/QualityControl/SetCustomerContactStatus",
+                    method: "POST",
+                    headers: { RequestVerificationToken: token.value },
+                    data: { customerId, status: 2, confirmCorrectedNumber: true },
+                    showLoading: false,
+                });
+                if (!isActive()) return;
+                if (Number(result?.status) !== 0) {
+                    queueFeedback.textContent = "تأیید اصلاح شماره ثبت نشد؛ فهرست را تازه کنید.";
+                    await loadCustomers();
+                    return;
+                }
+
+                // Update the card immediately before refreshing the server-backed queue.
+                card.dataset.qcInvalidNumber = "false";
+                const invalidButton = card.querySelector('[data-qc-contact="2"]');
+                if (invalidButton) {
+                    invalidButton.classList.remove("is-selected", "has-value");
+                    invalidButton.setAttribute("aria-pressed", "false");
+                    invalidButton.title = "شماره نامعتبر";
+                    invalidButton.setAttribute("aria-label", "شماره نامعتبر");
+                }
+                await loadCustomers();
+                if (isActive()) await openCustomer(customerId);
+            } catch (error) {
+                if (isActive()) {
+                    queueFeedback.textContent = "تأیید اصلاح شماره انجام نشد؛ دوباره تلاش کنید.";
+                    await loadCustomers();
+                }
+            } finally {
+                contactBusy = false;
+                if (isActive()) refreshNoResponseCooldowns();
+            }
         });
         historyShowDeleted.addEventListener("change", () => {
             historyStart = 0;

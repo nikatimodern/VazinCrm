@@ -2527,3 +2527,17 @@
     #qualityControlCustomerPage .qc-client-review-paging select { min-height: 25px; height: 25px; }
     #qualityControlCustomerPage .qc-client-review-pages button { min-height: 25px; }
 }
+
+/* Highlight saved contact indicators, not their gray group backgrounds. */
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button.has-value:disabled {
+    opacity: 1;
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.has-value > i.fa {
+    color: var(--qc-secondary);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open.has-value > i.fa {
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.has-value > i.fa {
+    color: var(--qc-danger);
+}
