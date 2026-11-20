@@ -1057,13 +1057,13 @@
                 + '>تلاش مجدد</button></td>'
                 + '<td class="qc-client-review-actions">'
                 + '<button type="button" class="qc-client-button '
-                + (draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
+                + (draft.saved && !draft.failed && draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
                 + '" data-qc-set-status="1" data-qc-item-id="' + escape(item.factorItemId)
-                + '" aria-pressed="' + (draft.status === 1) + '"><i class="fa fa-check-circle" aria-hidden="true"></i> بدون مغایرت</button>'
+                + '" aria-pressed="' + (draft.saved && !draft.failed && draft.status === 1) + '"><i class="fa fa-check-circle" aria-hidden="true"></i> بدون مغایرت</button>'
                 + '<button type="button" class="qc-client-button '
-                + (draft.status === 2 ? "qc-client-issue-selected" : "qc-client-secondary")
+                + (draft.saved && !draft.failed && draft.status === 2 ? "qc-client-issue-selected" : "qc-client-secondary")
                 + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId)
-                + '" aria-pressed="' + (draft.status === 2) + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> دارای مغایرت</button>'
+                + '" aria-pressed="' + (draft.saved && !draft.failed && draft.status === 2) + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> دارای مغایرت</button>'
                 + '</td></tr>';
         }
 
@@ -1151,7 +1151,8 @@
                             : draft.failed ? " · خطای ثبت" : draft.saved ? " · ثبت‌شده" : "");
                 }
                 row.querySelectorAll("[data-qc-set-status]").forEach(button => {
-                    const selected = Number(button.dataset.qcSetStatus) === draft.status;
+                    const selected = draft.saved && !draft.failed && !savingItems.has(id)
+                        && Number(button.dataset.qcSetStatus) === draft.status;
                     button.classList.toggle("qc-client-ok-selected", selected && draft.status === 1);
                     button.classList.toggle("qc-client-issue-selected", selected && draft.status === 2);
                     button.classList.toggle("qc-client-secondary", !selected);

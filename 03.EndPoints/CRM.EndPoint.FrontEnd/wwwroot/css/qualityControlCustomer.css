@@ -2126,24 +2126,22 @@
     padding: 3px 7px;
     margin-inline-end: 4px;
     font-size: 11px;
-    border: 1px solid var(--qc-action);
-    color: var(--qc-action);
-    background: transparent;
+    border: 1px solid var(--qc-border);
+    color: var(--qc-muted);
+    background: #F0F1F7;
 }
-#qualityControlCustomerPage .qc-client-review-actions .qc-client-button[data-qc-set-status="2"] {
-    border-color: var(--qc-danger);
-    color: var(--qc-danger);
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button:hover:not(:disabled):not(.qc-client-ok-selected):not(.qc-client-issue-selected) {
+    background: #E6E9EE;
+    border-color: #C4CAD3;
 }
 #qualityControlCustomerPage .qc-client-review-actions .qc-client-ok-selected {
+    border-color: var(--qc-action);
+    color: var(--qc-primary);
     background: var(--qc-primary-light);
 }
 #qualityControlCustomerPage .qc-client-review-actions .qc-client-issue-selected {
-    background: var(--qc-danger-light);
-}
-#qualityControlCustomerPage .qc-client-review-actions .qc-client-button:hover:not(:disabled) {
-    background: var(--qc-primary-light);
-}
-#qualityControlCustomerPage .qc-client-review-actions .qc-client-button[data-qc-set-status="2"]:hover:not(:disabled) {
+    border-color: var(--qc-danger);
+    color: var(--qc-danger);
     background: var(--qc-danger-light);
 }
 #qualityControlCustomerPage .qc-client-review-actions .qc-client-button:disabled { opacity: .5; }
