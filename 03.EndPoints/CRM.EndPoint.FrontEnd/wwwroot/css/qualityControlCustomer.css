@@ -1216,27 +1216,7 @@
     #qualityControlCustomerPage .qc-client-item-search { flex-wrap: wrap; gap: 6px; }
     #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 160px; }
 }
-#qualityControlCustomerPage .qc-client-search-empty {
-    position: absolute;
-    inset-inline: 0;
-    top: 46px;
-    bottom: 0;
-    z-index: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    margin: 0;
-    text-align: center;
-    color: var(--qc-muted);
-    font-size: 13px;
-    font-weight: 600;
-    background: #fff;
-    border: 0;
-    border-radius: 0;
-}
 #qualityControlCustomerPage .qc-client-item-search[hidden],
-#qualityControlCustomerPage .qc-client-search-empty[hidden],
 #qualityControlCustomerPage .qc-client-order[hidden],
 #qualityControlCustomerPage .qc-client-invoice[hidden],
 #qualityControlCustomerPage .qc-client-item[hidden] { display: none; }
@@ -2239,6 +2219,17 @@
     min-width: 1090px;
     direction: rtl;
     font-size: 11px;
+}
+#qualityControlCustomerPage .qc-client-review-table.is-empty { height: 100%; }
+#qualityControlCustomerPage .qc-client-review-table tbody tr.qc-client-empty-row td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--qc-muted);
+    background: #fff;
+    border-radius: 0;
 }
 #qualityControlCustomerPage .qc-client-review-table th {
     position: sticky;

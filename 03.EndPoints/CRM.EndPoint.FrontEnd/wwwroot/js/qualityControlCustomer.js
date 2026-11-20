@@ -59,7 +59,6 @@
         const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
         const itemSearch = page.querySelector("#qcInvoiceItemSearch");
         const itemSearchCount = page.querySelector("#qcInvoiceItemSearchCount");
-        const itemSearchEmpty = page.querySelector("#qcInvoiceItemSearchEmpty");
         const itemStatusFilters = page.querySelector("#qcInvoiceItemStatusFilters");
         const itemPageSize = page.querySelector("#qcInvoiceItemPageSize");
         const itemPaging = page.querySelector("#qcInvoiceItemPaging");
@@ -230,7 +229,6 @@
             if (!review) return;
             itemSearchCount.textContent = faNumber.format(review.filteredItems) + " از "
                 + faNumber.format(review.totalItems) + " قلم";
-            itemSearchEmpty.hidden = review.filteredItems !== 0;
             itemStatusFilters.querySelectorAll("[data-qc-item-filter]").forEach(button => {
                 const selected = button.dataset.qcItemFilter === itemStatusFilter;
                 button.classList.toggle("is-active", selected);
@@ -495,6 +493,10 @@
                     const contactStatus = Number(row.contactStatus) || 0;
                     const noResponseAttempts = Math.max(0, Number(row.noResponseAttempts) || 0);
                     const contactHistoryCount = Math.max(0, Number(row.contactHistoryCount) || 0);
+                    const hasNoResponse = row.hasNoResponse === true
+                        || noResponseAttempts > 0 || contactStatus === 1;
+                    const hasInvalidNumber = row.isInvalidNumber === true || contactStatus === 2;
+                    const hasContactHistory = row.hasContactHistory === true || contactHistoryCount > 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     // Sorting is only applied on explicit list loads, never after a QC save.
@@ -503,7 +505,7 @@
                         + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
                             ? ' qc-client-last-checked' : '')
                         + '" data-qc-complete="' + complete
-                        + '" data-qc-invalid-number="' + (contactStatus === 2) + '">'
+                        + '" data-qc-invalid-number="' + hasInvalidNumber + '">'
                         + '<div class="qc-client-profile"><div class="qc-client-name-line"><strong>'
                         + escape(row.customerName || "مشتری بدون نام") + '</strong></div>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
@@ -522,33 +524,37 @@
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
-                        + (contactStatus === 1 ? ' is-selected' : '')
-                        + (noResponseAttempts > 0 ? ' has-count' : '')
-                        + (noResponseAttempts > 0 || contactStatus === 1 ? ' has-value' : '') + '"'
+                        + (hasNoResponse ? ' is-selected has-value' : '')
+                        + (noResponseAttempts > 0 ? ' has-count' : '') + '"'
                         + (complete ? ' disabled' : '')
                         + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
                         + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
                         + '" data-qc-no-answer-count="' + noResponseAttempts + '">'
-                        + '<i class="fa fa-phone-slash" aria-hidden="true"></i>'
+                        + '<i class="fa fa-phone-slash" aria-hidden="true"'
+                        + (hasNoResponse ? ' style="color:var(--qc-secondary) !important"' : '') + '></i>'
                         + contactCountBadge(noResponseAttempts) + '</button>'
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
                         + '<button type="button" class="qc-client-button qc-client-history-open'
-                        + (contactHistoryCount > 0 ? ' has-count has-value' : '')
+                        + (hasContactHistory ? ' has-value' : '')
+                        + (contactHistoryCount > 0 ? ' has-count' : '')
                         + '" data-qc-history="' + escape(row.customerId) + '"'
                         + ' title="تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه"'
                         + ' aria-label="مشاهده تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه">'
-                        + '<i class="fa fa-history" aria-hidden="true"></i>'
+                        + '<i class="fa fa-history" aria-hidden="true"'
+                        + (hasContactHistory ? ' style="color:var(--qc-primary) !important"' : '') + '></i>'
                         + contactCountBadge(contactHistoryCount) + '</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
-                        + (contactStatus === 2 ? ' is-selected has-value' : '') + '" aria-pressed="' + (contactStatus === 2)
+                        + (hasInvalidNumber ? ' is-selected has-value' : '') + '" aria-pressed="' + hasInvalidNumber
                         + '" title="' + (complete ? 'شماره نامعتبر؛ تمام اقلام بررسی شده‌اند'
-                            : contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
-                        + ' aria-label="' + (contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                            : hasInvalidNumber ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                        + ' aria-label="' + (hasInvalidNumber ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
                         + (complete ? ' disabled' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
-                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></button></span>'
+                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"'
+                        + (hasInvalidNumber ? ' style="color:var(--qc-danger) !important"' : '')
+                        + '></i></button></span>'
                         + '<button type="button" class="qc-client-button qc-client-notes-button'
                         + (row.hasNotes ? ' has-notes' : '') + '" data-qc-customer-notes="' + escape(row.customerId)
                         + '" title="توضیحات مشتری" aria-label="نمایش و ثبت توضیحات مشتری">'
@@ -1044,7 +1050,6 @@
             content.replaceChildren();
             itemSearch.value = "";
             itemSearchBar.hidden = true;
-            itemSearchEmpty.hidden = true;
             itemSearchCount.textContent = "";
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت مشتری";
             page.querySelector("#qcCustomerModalSubtitle").textContent = "";
@@ -1167,9 +1172,10 @@
                 + (itemSortField === field
                     ? (itemSortDirection < 0 ? 'fa-sort-down' : 'fa-sort-up') : 'fa-sort')
                 + '" aria-hidden="true"></i></button>';
+            const isEmpty = entries.length === 0;
             content.innerHTML = '<div class="qc-client-review-table-wrap" role="region"'
                 + ' aria-label="جدول اقلام کنترل کیفیت" tabindex="0">'
-                + '<table class="qc-client-review-table"><thead><tr>'
+                + '<table class="qc-client-review-table' + (isEmpty ? ' is-empty' : '') + '"><thead><tr>'
                 + '<th scope="col">' + sortHeading("row", "ردیف")
                 + '</th><th scope="col">' + sortHeading("order", "شماره سفارش")
                 + '</th><th scope="col">' + sortHeading("invoice", "شماره فاکتور")
@@ -1179,11 +1185,10 @@
                 + '</th><th scope="col">' + sortHeading("expert", "کارشناس تأمین")
                 + '</th><th scope="col">' + sortHeading("status", "وضعیت کنترل کیفیت")
                 + '<th scope="col">عملیات</th></tr></thead><tbody>'
-                + entries.map((entry, index) => renderReviewRow(entry, index)).join("")
+                + (isEmpty
+                    ? '<tr class="qc-client-empty-row"><td colspan="9" role="status">قلمی مطابق جستجو یا فیلتر انتخاب‌شده پیدا نشد.</td></tr>'
+                    : entries.map((entry, index) => renderReviewRow(entry, index)).join(""))
                 + '</tbody></table></div>';
-            // Keep the empty-state notice within the table viewport, beneath the sticky header.
-            // Reattach the same node after each render so its aria-live/hidden state is preserved.
-            content.querySelector(".qc-client-review-table-wrap")?.appendChild(itemSearchEmpty);
             refreshReviewState();
             const tableViewport = content.querySelector(".qc-client-review-table-wrap");
             if (tableViewport) {
@@ -1817,7 +1822,6 @@
             reviewToolbar.hidden = true;
             itemSearch.value = "";
             itemSearchBar.hidden = true;
-            itemSearchEmpty.hidden = true;
             itemPaging.hidden = true;
             itemPages.replaceChildren();
             itemPageLoading = false;

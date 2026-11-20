@@ -30,6 +30,9 @@ public sealed record QualityControlCustomerRow(
     int NoResponseCooldownSeconds, int ContactHistoryCount)
 {
     public bool HasNotes { get; init; }
+    public bool HasNoResponse { get; init; }
+    public bool IsInvalidNumber { get; init; }
+    public bool HasContactHistory { get; init; }
 }
 
 public sealed class SetQualityControlCustomerContactRequest

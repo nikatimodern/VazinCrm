@@ -255,7 +255,14 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             recentAttempts.TryGetValue(row.CustomerId, out var lastAttempt)
                 ? CooldownRemaining(lastAttempt, now) : 0,
             historyCounts.GetValueOrDefault(row.CustomerId))
-            { HasNotes = customersWithNotes.Contains(row.CustomerId) }).ToList();
+            {
+                HasNotes = customersWithNotes.Contains(row.CustomerId),
+                HasNoResponse = contacts.TryGetValue(row.CustomerId, out var savedContact)
+                    && savedContact.NoResponseAttempts > 0,
+                IsInvalidNumber = contactStatuses.GetValueOrDefault(row.CustomerId)
+                    == QualityControlCustomerContactStatus.InvalidNumber,
+                HasContactHistory = historyCounts.GetValueOrDefault(row.CustomerId) > 0
+            }).ToList();
         return new(total, filtered, data, summary);
     }
 
