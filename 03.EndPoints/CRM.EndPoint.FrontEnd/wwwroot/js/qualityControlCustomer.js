@@ -972,11 +972,17 @@
             }
             review = result;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت: " + (review.customerName || "مشتری");
-            const customerDetails = ["کد مشتری: " + faCodeNumber.format(review.customerCode)];
+            const customerDetails = [
+                '<span class="qc-client-customer-meta">کد مشتری: <strong>'
+                + escape(faCodeNumber.format(review.customerCode)) + '</strong></span>',
+            ];
             if (review.agentName?.trim() && review.agentName.trim() !== review.customerName?.trim())
-                customerDetails.push("نماینده: " + review.agentName.trim());
-            if (review.mobile?.trim()) customerDetails.push("موبایل: " + review.mobile.trim());
-            page.querySelector("#qcCustomerModalSubtitle").textContent = customerDetails.join(" | ");
+                customerDetails.push('<span class="qc-client-customer-meta">نماینده: <strong>'
+                    + escape(review.agentName.trim()) + '</strong></span>');
+            if (review.mobile?.trim())
+                customerDetails.push('<span class="qc-client-customer-meta"><i class="fa fa-phone" aria-hidden="true"></i> موبایل: <strong dir="ltr">'
+                    + escape(review.mobile.trim()) + '</strong></span>');
+            page.querySelector("#qcCustomerModalSubtitle").innerHTML = customerDetails.join("");
             flatten().forEach(item => {
                 const status = Number(item.status) || 0;
                 drafts.set(item.factorItemId, {
@@ -1114,11 +1120,13 @@
             const withoutIssues = items.filter(item => stateOf(item).status === 1).length;
             const issues = items.filter(item => stateOf(item).status === 2).length;
             const progress = items.length ? Math.round(100 * reviewed / items.length) : 0;
-            summary.innerHTML = '<div class="qc-client-review-overview"><strong>'
+            summary.innerHTML = '<div class="qc-client-review-overview">'
+                + '<span class="qc-client-review-overview-icon" aria-hidden="true"><i class="fa fa-box-open"></i></span>'
+                + '<div class="qc-client-review-overview-text"><strong>'
                 + faNumber.format(items.length) + ' قلم ثبت‌شده</strong><small>'
                 + faNumber.format(review.orders.length) + ' سفارش · '
                 + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
-                + ' فاکتور</small></div>'
+                + ' فاکتور</small></div></div>'
                 + '<div class="qc-client-summary-tags">'
                 + '<span>' + faNumber.format(reviewed) + ' بررسی‌شده</span>'
                 + '<span class="qc-client-summary-ok">' + faNumber.format(withoutIssues) + ' بدون مغایرت</span>'

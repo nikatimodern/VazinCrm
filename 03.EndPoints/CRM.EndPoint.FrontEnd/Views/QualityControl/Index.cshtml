@@ -257,17 +257,19 @@
                         <div id="qcCustomerReviewToolbar" class="qc-client-review-toolbar" hidden>
                             <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
                             <div class="qc-client-review-filterbar">
-                                <span class="qc-client-filter-label">وضعیت کنترل کیفیت:</span>
-                                <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
+                                <div class="qc-client-filter-controls">
+                                    <span class="qc-client-filter-label">وضعیت کنترل کیفیت:</span>
+                                    <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
                                     <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="all" aria-pressed="true">همه <span data-qc-filter-count="all">۰</span></button>
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="0" aria-pressed="false">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="1" aria-pressed="false">بدون مغایرت <span data-qc-filter-count="1">۰</span></button>
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="2" aria-pressed="false">دارای مغایرت <span data-qc-filter-count="2">۰</span></button>
+                                    </div>
                                 </div>
                                 <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
                                     <label for="qcInvoiceItemSearch" class="visually-hidden">جستجو در اقلام فاکتورها</label>
                                     <div class="qc-client-item-search-field">
-                                        <i class="fa fa-search" aria-hidden="true"></i>
+                                        <span class="qc-client-search-icon" aria-hidden="true"><i class="fa fa-search"></i></span>
                                         <input id="qcInvoiceItemSearch" type="search" class="form-control"
                                                placeholder="جستجوی کالا، سفارش، فاکتور یا تأمین‌کننده..." autocomplete="off" />
                                     </div>
