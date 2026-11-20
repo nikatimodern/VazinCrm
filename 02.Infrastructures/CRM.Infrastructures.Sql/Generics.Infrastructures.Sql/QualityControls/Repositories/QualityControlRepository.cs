@@ -383,8 +383,133 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         }, nextStatus);
     }
 
+    // Filter, sort and paginate in SQL; enrich supplier and review details for the selected page only.
     public async Task<QualityControlCustomerForm?> GetCustomerFormAsync(
-        Guid customerId, QualityControlAccess access, CancellationToken cancellationToken)
+        Guid customerId, QualityControlItemPageRequest request, QualityControlAccess access,
+        CancellationToken cancellationToken)
+    {
+        var eligible =
+            from item in db.FactorItems.AsNoTracking()
+            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
+            where (factor.CustomerId ?? deal.CustomerId) == customerId
+                && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
+                && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
+                && factor.status == FactorStatus.تایید_شده && !factor.Returned
+            select new
+            {
+                Item = item, Factor = factor, Deal = deal,
+                ReviewStatus = db.QualityControlItemReviews.AsNoTracking()
+                    .Where(review => review.FactorItemId == item.Id)
+                    .Select(review => (int?)review.Status).FirstOrDefault() ?? 0
+            };
+
+        var totals = await eligible.GroupBy(item => 1).Select(group => new
+        {
+            Total = group.Count(),
+            Reviewed = group.Count(item => item.ReviewStatus != 0),
+            Discrepancies = group.Count(item => item.ReviewStatus == 2),
+            Orders = group.Select(item => item.Deal.Id).Distinct().Count(),
+            Invoices = group.Select(item => item.Factor.Id).Distinct().Count()
+        }).FirstOrDefaultAsync(cancellationToken);
+        if (totals == null || totals.Total == 0) return null;
+
+        var filtered = eligible;
+        if (request.Status.HasValue)
+        {
+            var status = request.Status.Value;
+            filtered = filtered.Where(item => item.ReviewStatus == status);
+        }
+
+        var search = request.Search?.Trim();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = "%" + search.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+            var isSerial = int.TryParse(search, out var serial);
+            filtered = filtered.Where(row =>
+                (isSerial && (row.Deal.SerialNumber == serial || row.Factor.SerialNumber == serial))
+                || (row.Item.ProductSmallName != null && EF.Functions.Like(row.Item.ProductSmallName, pattern))
+                || (row.Item.Product != null && EF.Functions.Like(row.Item.Product, pattern))
+                || (row.Item.WeightCount != null && EF.Functions.Like(row.Item.WeightCount, pattern))
+                || (row.Item.SupplierName != null && EF.Functions.Like(row.Item.SupplierName, pattern))
+                || (row.Factor.UserTaminTxt != null && EF.Functions.Like(row.Factor.UserTaminTxt, pattern))
+                || db.PreFactors.AsNoTracking().Any(preFactor =>
+                    preFactor.Id == row.Factor.PfactorID
+                    && preFactor.UserTaminTxt != null && EF.Functions.Like(preFactor.UserTaminTxt, pattern))
+                || db.Supplies.AsNoTracking().Any(supply =>
+                    supply.PfItemId == row.Item.PfItemId && !supply.IsDeleted
+                    && supply.SupplierTxt != null && EF.Functions.Like(supply.SupplierTxt, pattern)));
+        }
+        var filteredCount = await filtered.CountAsync(cancellationToken);
+        var ordered = request.Sort switch
+        {
+            "invoice" => request.Descending
+                ? filtered.OrderByDescending(row => row.Factor.SerialNumber)
+                : filtered.OrderBy(row => row.Factor.SerialNumber),
+            "product" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.ProductSmallName ?? row.Item.Product)
+                : filtered.OrderBy(row => row.Item.ProductSmallName ?? row.Item.Product),
+            "quantity" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.WeightCount)
+                : filtered.OrderBy(row => row.Item.WeightCount),
+            "supplier" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.SupplierName)
+                : filtered.OrderBy(row => row.Item.SupplierName),
+            "expert" => request.Descending
+                ? filtered.OrderByDescending(row => row.Factor.UserTaminTxt)
+                : filtered.OrderBy(row => row.Factor.UserTaminTxt),
+            "status" => request.Descending
+                ? filtered.OrderByDescending(row => row.ReviewStatus)
+                : filtered.OrderBy(row => row.ReviewStatus),
+            "row" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.Row)
+                : filtered.OrderBy(row => row.Item.Row),
+            _ => request.Descending
+                ? filtered.OrderByDescending(row => row.Deal.SerialNumber)
+                : filtered.OrderBy(row => row.Deal.SerialNumber)
+        };
+        var selectedQuery = ordered.ThenByDescending(row => row.Factor.SerialNumber)
+            .ThenBy(row => row.Item.Row).ThenBy(row => row.Item.Id)
+            .Select(row => row.Item.Id);
+
+        var start = request.Length == 0 || filteredCount == 0 ? 0
+            : Math.Min(request.Start, (filteredCount - 1) / request.Length * request.Length);
+        var idsQuery = selectedQuery.Skip(start);
+        if (request.Length > 0) idsQuery = idsQuery.Take(request.Length);
+        var selectedIds = await idsQuery.ToArrayAsync(cancellationToken);
+
+        var form = selectedIds.Length == 0
+            ? null
+            : await GetCustomerFormSubsetAsync(customerId, selectedIds, access, cancellationToken);
+        if (form == null)
+        {
+            var customer = await db.Customers.AsNoTracking()
+                .Where(item => item.Id == customerId && !item.IsDeleted)
+                .Select(item => new { item.Id, item.CompanyName, item.AgentName, item.CustomerCode, item.Mobile })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (customer == null) return null;
+            form = new QualityControlCustomerForm(customer.Id,
+                !string.IsNullOrWhiteSpace(customer.CompanyName) ? customer.CompanyName : customer.AgentName,
+                customer.CustomerCode, customer.Mobile, customer.AgentName,
+                Array.Empty<QualityControlCustomerOrder>(), await GetQuestionsAsync(cancellationToken));
+        }
+
+        return form with
+        {
+            Start = start,
+            Length = request.Length,
+            FilteredItems = filteredCount,
+            TotalItems = totals.Total,
+            ReviewedItems = totals.Reviewed,
+            DiscrepancyItems = totals.Discrepancies,
+            NoDiscrepancyItems = totals.Reviewed - totals.Discrepancies,
+            OrdersCount = totals.Orders,
+            InvoicesCount = totals.Invoices
+        };
+    }
+
+    private async Task<QualityControlCustomerForm?> GetCustomerFormSubsetAsync(
+        Guid customerId, Guid[] selectedIds, QualityControlAccess access, CancellationToken cancellationToken)
     {
         var customer = await db.Customers.AsNoTracking().Where(item => item.Id == customerId && !item.IsDeleted)
             .Select(item => new { item.Id, item.CompanyName, item.AgentName, item.CustomerCode, item.Mobile })
@@ -397,6 +522,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == customerId
+                && selectedIds.Contains(item.Id)
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
@@ -511,9 +637,16 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 item.Product, item.WeightCount, item.UnitTxt, supplierNames, supplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
                         }).ToList())).ToList())).ToList();
-        return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
-            ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
-            customer.AgentName, orders, questions);
+        var rowsById = orders.SelectMany(order => order.Invoices.SelectMany(invoice =>
+                invoice.Items.Select(item => new QualityControlCustomerItemRow(
+                    order.SerialNumber, invoice.SerialNumber, invoice.Date, item))))
+            .ToDictionary(row => row.Item.FactorItemId);
+        return new QualityControlCustomerForm(customer.Id,
+            !string.IsNullOrWhiteSpace(customer.CompanyName) ? customer.CompanyName : customer.AgentName,
+            customer.CustomerCode, customer.Mobile, customer.AgentName, orders, questions)
+        {
+            Data = selectedIds.Where(rowsById.ContainsKey).Select(id => rowsById[id]).ToList()
+        };
     }
 
     public async Task<SaveQualityControlItemsResult> SaveItemsAsync(

@@ -85,9 +85,38 @@ public sealed record QualityControlCustomerInvoice(Guid Id, int SerialNumber, st
 public sealed record QualityControlCustomerOrder(Guid Id, int SerialNumber, string? Title,
     IReadOnlyList<QualityControlCustomerInvoice> Invoices);
 
+public sealed class QualityControlItemPageRequest
+{
+    public int Start { get; set; }
+    // 0 returns all matching records. Otherwise pagination runs in the database.
+    public int Length { get; set; } = 5;
+    public string? Search { get; set; }
+    // null = all; 0 = pending; 1 = without discrepancy; 2 = with discrepancy.
+    public int? Status { get; set; } = 0;
+    public string Sort { get; set; } = "order";
+    public bool Descending { get; set; } = true;
+}
+
+public sealed record QualityControlCustomerItemRow(
+    int OrderSerialNumber, int InvoiceSerialNumber, string? InvoiceDate, QualityControlInvoiceItem Item);
+
 public sealed record QualityControlCustomerForm(Guid CustomerId, string? CustomerName, int CustomerCode,
     string? Mobile, string? AgentName, IReadOnlyList<QualityControlCustomerOrder> Orders,
-    IReadOnlyList<QualityControlQuestionDto> Questions);
+    IReadOnlyList<QualityControlQuestionDto> Questions)
+{
+    public IReadOnlyList<QualityControlCustomerItemRow> Data { get; init; }
+        = Array.Empty<QualityControlCustomerItemRow>();
+    public int Start { get; init; }
+    public int Length { get; init; } = 5;
+    public int FilteredItems { get; init; }
+    public int TotalItems { get; init; }
+    public int ReviewedItems { get; init; }
+    public int DiscrepancyItems { get; init; }
+    public int NoDiscrepancyItems { get; init; }
+    public int PendingItems => TotalItems - ReviewedItems;
+    public int OrdersCount { get; init; }
+    public int InvoicesCount { get; init; }
+}
 
 // Separate customer-level history; individual invoice items retain their own review descriptions.
 public enum QualityControlCustomerNoteSource : byte

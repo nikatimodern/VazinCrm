@@ -38,11 +38,16 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCustomerForm(Guid customerId, CancellationToken ct)
+    public async Task<IActionResult> GetCustomerForm(
+        Guid customerId, [FromQuery] QualityControlItemPageRequest page, CancellationToken ct)
     {
-        if (!ModelState.IsValid || customerId == Guid.Empty)
-            return BadRequest(new { message = "مشتری معتبر نیست." });
-        var result = await requests.QueryAsync(new GetQualityControlCustomerFormQuery(customerId), ct);
+        if (!ModelState.IsValid || customerId == Guid.Empty || page.Start < 0
+            || page.Length is not (0 or 5 or 10 or 25 or 50)
+            || (page.Status.HasValue && page.Status is not (0 or 1 or 2))
+            || page.Sort is not ("order" or "invoice" or "product" or "quantity" or "supplier" or "expert" or "status" or "row")
+            || page.Search?.Length > 200)
+            return BadRequest(new { message = "فیلتر یا صفحه‌بندی اقلام معتبر نیست." });
+        var result = await requests.QueryAsync(new GetQualityControlCustomerFormQuery(customerId, page), ct);
         return result == null ? NotFound(new { message = "مشتری یا فاکتورهای قابل بررسی یافت نشد." }) : Ok(result);
     }
 
