@@ -258,7 +258,7 @@
                             <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
                             <div class="qc-client-review-filterbar">
                                 <div class="qc-client-filter-controls">
-                                    <span class="qc-client-filter-label">وضعیت کنترل کیفیت:</span>
+                                    <span class="qc-client-filter-label"><i class="fa fa-filter" aria-hidden="true"></i> فیلتر وضعیت:</span>
                                     <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="all" aria-pressed="false">همه <span data-qc-filter-count="all">۰</span></button>
                                     <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="0" aria-pressed="true">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
@@ -273,6 +273,16 @@
                                         <input id="qcInvoiceItemSearch" type="search" class="form-control" maxlength="200"
                                                placeholder="جستجوی کالا، سفارش، فاکتور یا تأمین‌کننده..." autocomplete="off" />
                                     </div>
+                                    <label class="qc-client-review-page-size" for="qcInvoiceItemPageSize">
+                                        تعداد در صفحه
+                                        <select id="qcInvoiceItemPageSize" class="form-select" aria-label="تعداد اقلام هر صفحه">
+                                            <option value="5" selected>۵</option>
+                                            <option value="10">۱۰</option>
+                                            <option value="25">۲۵</option>
+                                            <option value="50">۵۰</option>
+                                            <option value="0">همه</option>
+                                        </select>
+                                    </label>
                                     <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
                                 </div>
                             </div>
@@ -282,13 +292,6 @@
                         </div>
                         <div id="qcCustomerReviewContent" class="qc-client-review-content"></div>
                         <div id="qcInvoiceItemPaging" class="qc-client-review-paging" hidden>
-                            <label for="qcInvoiceItemPageSize">تعداد در صفحه
-                                <select id="qcInvoiceItemPageSize" class="form-select" aria-label="تعداد اقلام هر صفحه">
-                                    <option value="5" selected>۵</option><option value="10">۱۰</option>
-                                    <option value="25">۲۵</option><option value="50">۵۰</option>
-                                    <option value="0">همه</option>
-                                </select>
-                            </label>
                             <span id="qcInvoiceItemPagingCount" class="qc-client-review-paging-count" aria-live="polite"></span>
                             <nav id="qcInvoiceItemPages" class="qc-client-review-pages" aria-label="صفحه‌بندی اقلام"></nav>
                         </div>

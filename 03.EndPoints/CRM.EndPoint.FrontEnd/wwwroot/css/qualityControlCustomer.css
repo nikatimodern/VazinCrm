@@ -2053,26 +2053,39 @@
     grid-template-columns: max-content minmax(0, 1fr);
     width: 100%;
     align-items: center;
-    column-gap: 14px;
+    column-gap: 10px;
     min-width: 0;
-    padding: 5px 10px;
+    padding: 4px 8px;
     border: 1px solid var(--qc-border);
     border-radius: 10px;
     background: #fff;
 }
 #qualityControlCustomerPage .qc-client-filter-controls {
-    display: flex;
+    display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
     min-width: 0;
+    padding: 3px 8px;
+    background: #F5F9F8;
+    border: 1px solid #BDD6CE;
+    border-radius: 9px;
 }
 #qualityControlCustomerPage .qc-client-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     flex: 0 0 auto;
     color: var(--qc-primary);
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-filter-label i {
+    color: var(--qc-action);
+    font-size: 13px;
 }
 #qualityControlCustomerPage .qc-client-item-filters {
     display: flex;
@@ -2159,6 +2172,28 @@
     background: transparent;
 }
 #qualityControlCustomerPage .qc-client-item-search input:focus { box-shadow: none; }
+#qualityControlCustomerPage .qc-client-review-page-size {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--qc-primary);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-review-page-size select {
+    width: auto;
+    min-width: 70px;
+    height: 32px;
+    min-height: 32px;
+    padding: 3px 8px;
+    padding-inline-end: 25px;
+    border-color: var(--qc-border);
+    border-radius: 7px;
+    font-size: 12px;
+}
 #qualityControlCustomerPage .qc-client-search-count {
     color: var(--qc-muted);
     font-size: 11px;
@@ -2442,7 +2477,10 @@
     #qualityControlCustomerPage .qc-client-review-filterbar {
         padding: 8px;
     }
-    #qualityControlCustomerPage .qc-client-filter-controls { gap: 6px; }
+    #qualityControlCustomerPage .qc-client-filter-controls {
+        gap: 6px;
+        padding: 4px 6px;
+    }
     #qualityControlCustomerPage .qc-client-item-filter {
         min-height: 23px;
         padding: 1px 5px;
@@ -2452,6 +2490,7 @@
         flex-wrap: wrap;
     }
     #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 155px; }
+    #qualityControlCustomerPage .qc-client-review-page-size { font-size: 11px; }
     #qualityControlCustomerPage .qc-client-review-actions .qc-client-button {
         min-height: 23px;
         padding: 1px 5px;
@@ -2483,22 +2522,6 @@
     color: var(--qc-muted);
 }
 #qualityControlCustomerPage .qc-client-review-paging[hidden] { display: none; }
-#qualityControlCustomerPage .qc-client-review-paging label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0;
-    font-weight: 600;
-    white-space: nowrap;
-}
-#qualityControlCustomerPage .qc-client-review-paging select {
-    width: auto;
-    min-width: 72px;
-    height: 30px;
-    min-height: 30px;
-    padding-block: 3px;
-    font-size: 12px;
-}
 #qualityControlCustomerPage .qc-client-review-pages {
     display: flex;
     align-items: center;
@@ -2524,7 +2547,7 @@
 #qualityControlCustomerPage .qc-client-review-pages button:disabled { opacity: .45; cursor: not-allowed; }
 #qualityControlCustomerPage .qc-client-review-content.is-refreshing { opacity: .65; pointer-events: none; }
 @media (max-width: 767px) {
-    #qualityControlCustomerPage .qc-client-review-paging select { min-height: 25px; height: 25px; }
+    #qualityControlCustomerPage .qc-client-review-page-size select { min-height: 25px; height: 25px; }
     #qualityControlCustomerPage .qc-client-review-pages button { min-height: 25px; }
 }
 
