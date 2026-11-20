@@ -436,9 +436,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 || db.PreFactors.AsNoTracking().Any(preFactor =>
                     preFactor.Id == row.Factor.PfactorID
                     && preFactor.UserTaminTxt != null && EF.Functions.Like(preFactor.UserTaminTxt, pattern))
-                || db.Supplies.AsNoTracking().Any(supply =>
+                || (row.Item.PfItemId.HasValue && db.Supplies.AsNoTracking().Any(supply =>
                     supply.PfItemId == row.Item.PfItemId && !supply.IsDeleted
-                    && supply.SupplierTxt != null && EF.Functions.Like(supply.SupplierTxt, pattern)));
+                    && supply.SupplierTxt != null && EF.Functions.Like(supply.SupplierTxt, pattern))));
         }
         var filteredCount = await filtered.CountAsync(cancellationToken);
         var ordered = request.Sort switch

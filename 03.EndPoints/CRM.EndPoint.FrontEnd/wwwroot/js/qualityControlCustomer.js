@@ -242,7 +242,10 @@
             return {
                 customerId, start: itemPageStart, length: Number(itemPageSize.value),
                 status: itemStatusFilter === "all" ? "" : itemStatusFilter,
-                search: itemSearch.value.trim(), sort: itemSortField,
+                search: itemSearch.value.trim()
+                    .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06F0))
+                    .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660)),
+                sort: itemSortField,
                 descending: itemSortDirection < 0,
             };
         }
