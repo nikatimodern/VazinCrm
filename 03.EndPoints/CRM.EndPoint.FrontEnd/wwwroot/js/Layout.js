@@ -1711,21 +1711,54 @@ const setCountChat = (chatsCount) => {
     countChatElm?.classList.toggle("d-none", !Boolean(chatsCount));
     countChatElm.textContent = chatsCount || "";
 };
-const setCountEmail = (emailsCount) => {
-    const countEmailElm = document.getElementById("CountEmailId");
-    if (!countEmailElm) return;
-    
-    countEmailElm?.classList.toggle("d-none", !Boolean(emailsCount));
-    countEmailElm.textContent = emailsCount || "";
-    
-    if (emailsCount) {
-        const text = `شما <b>${emailsCount}</b> پیام دریافتی مشاهده نشده دارید.`;
-        setTimeout(() => notificationChange(text, { link: "/Email/Index", isBlank: false }, "default"), 3000);
+// Persist the last observed badge count only within this tab and for this user.
+// The first fetch establishes a baseline, not an "incoming" notification.
+const countNotificationTimers = new Map();
+const countNotificationFallback = new Map();
+function notifyOnCountIncrease(type, rawCount, buildText, link) {
+    const userId = window.userContext?.id;
+    if (!userId) return; // Never compare counts between unidentified users.
+    const count = Math.max(0, Number(rawCount) || 0);
+    const key = `crm:badge-count:v1:${userId}:${type}`;
+    let oldValue = null;
+    try {
+        oldValue = sessionStorage.getItem(key);
+        sessionStorage.setItem(key, String(count));
+    } catch {
+        oldValue = countNotificationFallback.has(key)
+            ? String(countNotificationFallback.get(key)) : null;
     }
+    countNotificationFallback.set(key, count);
+    const previous = oldValue === null ? null : Number(oldValue);
+
+    if (previous !== null && count > previous) {
+        // Consolidate bursts of updates into a single current notification.
+        clearTimeout(countNotificationTimers.get(type));
+        countNotificationTimers.set(type, setTimeout(() => {
+            countNotificationTimers.delete(type);
+            if (window.userContext?.id !== userId) return;
+            notificationChange(buildText(count), { link, isBlank: false }, "default");
+        }, 3000));
+    } else if (previous !== null && count < previous) {
+        // Cancel a pending alert if its count is already outdated.
+        clearTimeout(countNotificationTimers.get(type));
+        countNotificationTimers.delete(type);
+    }
+}
+
+const setCountEmail = (emailsCount) => {
+    const count = Math.max(0, Number(emailsCount) || 0);
+    const countEmailElm = document.getElementById("CountEmailId");
+    if (countEmailElm) {
+        countEmailElm.classList.toggle("d-none", count === 0);
+        countEmailElm.textContent = count || "";
+    }
+
+    notifyOnCountIncrease("email", count,
+        value => `شما <b>${value}</b> پیام دریافتی مشاهده نشده دارید.`, "/Email/Index");
 };
 
 
-let oldSumCount = null;
 const setCountEnvelope = (countObj) => {
     const countResult = {
         salesAdmin: {
@@ -1749,11 +1782,9 @@ const setCountEnvelope = (countObj) => {
     const countEnvelopeElm = document.getElementById("CountEnvelopeId");
     setBadge(countEnvelopeElm, sumCount);
     
-    if (sumCount && sumCount > oldSumCount) {
-        const text = `شما در کارتابل خود <b>${sumCount}</b> مورد بررسی نشده دارید`;
-        setTimeout(() => notificationChange(text, { link: `/cartable/Index?tab=${locationTabIdEnvelope}`, isBlank: false }, "default"), 3000);
-    }
-    oldSumCount = sumCount;
+    notifyOnCountIncrease("cartable", sumCount,
+        value => `شما در کارتابل خود <b>${value}</b> مورد بررسی نشده دارید`,
+        `/cartable/Index?tab=${locationTabIdEnvelope || ""}`);
     
     const cartableTabsElm = document.getElementById("CartableTabs");
     if (!cartableTabsElm) return;

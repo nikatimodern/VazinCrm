@@ -78,6 +78,11 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControl> QualityControls { get; set; }
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion> QualityControlQuestions { get; set; }
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlAnswer> QualityControlAnswers { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview> QualityControlItemReviews { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer> QualityControlItemAnswers { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact> QualityControlCustomerContacts { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory> QualityControlContactHistories { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote> QualityControlCustomerNotes { get; set; }
 
         public DbSet<Agent> Agents { get; set; }
         public DbSet<Contact> Contacts { get; set; }

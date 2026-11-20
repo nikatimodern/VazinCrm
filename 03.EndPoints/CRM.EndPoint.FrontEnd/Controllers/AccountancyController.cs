@@ -36,6 +36,7 @@ using CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAcc;
 using CRM.Core.ApplicationServices.Accountancies.Commands.AddAccountancyTransfer;
 using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveAccountancyTransfer;
 using CRM.Core.ApplicationServices.Accountancies.Commands.RemoveVosolInvoice;
+using CRM.Core.ApplicationServices.QualityControls.Services;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
@@ -65,7 +66,19 @@ public class AccountancyController(ICqrsDispatcher dispatcher) : Controller
 
     public async Task<IActionResult> GetAllPaymentCartablePartial(string serVal, CartableEnum cartable, int type = 1, PayTypeEnum? payType = null, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetAccountancyCartableQuery(serVal, cartable, type, payType), ct));
     [HttpGet]
-    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false, bool realizedDepositsOnly = false, bool returnsOnly = false, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetAccountancyPaymentsQuery(type, id, passType, depositsOnly, realizedDepositsOnly, returnsOnly), ct));
+    public async Task<IActionResult> GetAllPaymentPartial(int type, Guid id, int passType, bool depositsOnly = false, bool realizedDepositsOnly = false, bool returnsOnly = false, CancellationToken ct = default)
+    {
+        // The specialized realized-deposit view is used by quality control only.
+        if (realizedDepositsOnly)
+        {
+            if (!QualityControlAccessPolicy.Roles.Split(',').Any(User.IsInRole))
+                return Forbid();
+            if (!depositsOnly || returnsOnly || type is not (3 or 5))
+                return BadRequest(new { message = "فیلتر واریزی معتبر نیست." });
+        }
+        return Ok(await dispatcher.QueryAsync(
+            new GetAccountancyPaymentsQuery(type, id, passType, depositsOnly, realizedDepositsOnly, returnsOnly), ct));
+    }
     [HttpPost]
     public async Task<IActionResult> AddAccountancyTransfer([FromBody] AccountancyTransfer model, CancellationToken ct)
         => Map(await dispatcher.CommandAsync(new AddAccountancyTransferCommand(model), ct));

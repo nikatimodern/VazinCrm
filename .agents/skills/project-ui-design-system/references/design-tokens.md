@@ -82,6 +82,36 @@ Paths below are relative to `03.EndPoints/CRM.EndPoint.FrontEnd/`. Inspected dur
 | Tables | Clear headers, subtle hover, sufficient cell spacing, readable state badges. Avoid saturating whole rows. Choose responsive scrolling, existing responsive controls, or mobile cards according to content and existing structure; preserve access to every necessary field/action. |
 | Menus and filters | Limited teal/purple emphasis for selection; explicit active state and keyboard focus. Preserve responsive navigation and role-based visibility. |
 
+| Label–value details | In compact detail rows, cards and modals, keep the descriptive label in its existing style and emphasize **only the value** with bold weight. Do not make the entire pair bold. Preserve RTL ordering, inline layout and wrapping. |
+
+### Action and status controls in cards (project-wide)
+
+When a card places actionable buttons alongside read-only counters or status chips (for example, customer QC cards), treat them as **one visual family** without making read-only chips look clickable:
+
+- Give sibling controls the same subtle **1px border thickness**, corner radius, compact vertical rhythm, and baseline minimum height. Apply the border to neutral counters and colored status chips as well as secondary buttons; avoid a row where some have borders and others have none. Multi-line chips may grow naturally rather than clip.
+- Keep the primary action filled with `--color-primary-action` and white text; its 1px border matches the fill and should not look like an extra outline. Other actions use restrained white or lightly tinted backgrounds with **soft borders derived from their semantic color**. Informational chips use the matching light surface plus a subtle 1px border.
+- Use official palette roles: teal for primary/success, purple for pending or no-response, `--color-danger` / `--color-danger-light` for invalid numbers and warnings, gray for neutral quantities. Do **not** substitute legacy burgundy/red `#851B1D` for the official danger token `#C2185B` in new styling.
+- Maintain an obvious interaction distinction: buttons have pointer/hover/focus/disabled states; static counters and statuses remain non-interactive. Text and suitable existing icons communicate state independently of color; hide purely decorative icons from assistive technology.
+- Use page/component-scoped selectors and token references, not global `.btn`/`.badge` overrides. Check the actual cascade so a generic border declaration does not override a semantic border color. Wrap flex rows at narrow widths, preserve RTL and long Persian labels, and follow the mobile button-density skill's smaller action sizing without clipping multi-line chips.
+
+
+
+When showing descriptive pairs such as `مقدار: ۲۰۰ کیلوگرم`, `تأمین‌کننده: مهرپور`, `کارشناس تأمین: علی نیرومند`, or `ابعاد: ۲۰×۳۰`:
+
+- **Label/title:** retain the component's existing color, size and normal font weight. Do not bold the label or change its visual treatment just to emphasize the value.
+- **Value:** wrap only the actual value in `<strong>` or use a scoped `font-weight: 700` class with the existing IRANSans typography. This also applies to meaningful unlabelled values such as specifications displayed next to product names.
+- Keep label and value together in RTL flow where possible. On narrow screens allow wrapping without clipping or reversing their order.
+- Reuse existing semantic markup and styles. For JavaScript-rendered rows, escape dynamic values before inserting HTML. Avoid global overrides of `span`, `strong`, `small`, badges or form labels.
+- Apply this consistently to newly created or edited label–value displays across the CRM, not only Quality Control. Preserve the current spacing, colors and data.
+
+Example (illustrative; no new shared CSS class required):
+
+```html
+<span class="item-detail">کارشناس تأمین: <strong>علی نیرومند</strong></span>
+<span class="item-detail">مقدار: <strong>۲۰۰ کیلوگرم</strong></span>
+```
+
+
 Status pairs (foreground on background):
 
 | Meaning | Foreground | Background | Additional cue |

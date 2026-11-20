@@ -1,147 +1,282 @@
 @{
-    ViewData["Title"] = "کنترل کیفیت";
+    ViewData["Title"] = "کنترل کیفیت مشتریان";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/qualityControl.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/qualityControlCustomer.css?release=7.5.6" asp-append-version="true" />
 }
 
-<section id="qualityControlPage" class="quality-control-page" dir="rtl" aria-labelledby="qualityControlHeading">
-    <h1 id="qualityControlHeading" class="visually-hidden">کنترل کیفیت سفارش‌ها</h1>
-    <div class="qc-results">
-        <div class="qc-table-toolbar">
-            <form id="qcSearchForm" class="qc-search" role="search">
-                <label class="visually-hidden" for="qcSearch">جستجو</label>
-                <input id="qcSearch" type="search" class="form-control" placeholder="جستجوی سفارش یا مشتری" />
-                <button type="submit" class="qc-search-submit" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg></button>
-            </form>
-            <div class="qc-filters">
-                <fieldset class="qc-filter-group">
-                    <legend>وضعیت سفارش</legend>
-                    <ul class="qc-filter-options">
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcFinancialStatus" id="qcFinancialAll" value="" />
-                            <label for="qcFinancialAll">همه <span data-qc-financial-count="all"></span></label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcFinancialStatus" id="qcFinancialApproved" value="1" checked />
-                            <label for="qcFinancialApproved">تحویل شده <span data-qc-financial-count="delivered"></span></label>
-                        </li>
-                        <li class="qc-filter-item">
-                            <input type="radio" name="qcFinancialStatus" id="qcFinancialPending" value="0" />
-                            <label for="qcFinancialPending">تحویل نشده <span data-qc-financial-count="undelivered"></span></label>
-                        </li>
-                    </ul>
-                </fieldset>
-                <fieldset class="qc-filter-group">
-                    <legend>وضعیت بررسی</legend>
-                    <ul class="qc-filter-options">
-                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewAll" value="" checked /><label for="qcReviewAll">همه</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewUnchecked" value="0" /><label for="qcReviewUnchecked">بررسی نشده</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcReviewStatus" id="qcReviewChecked" value="3" /><label for="qcReviewChecked">بررسی شده</label></li>
-                    </ul>
-                </fieldset>
-                <fieldset class="qc-filter-group">
-                    <legend>نتیجه کنترل کیفیت (بررسی‌شده‌ها)</legend>
-                    <ul class="qc-filter-options">
-                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusAll" value="" checked /><label for="qcStatusAll">همه</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusMatched" value="1" /><label for="qcStatusMatched">بدون مغایرت</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusMismatched" value="2" /><label for="qcStatusMismatched">دارای مغایرت</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusNoResponse" value="4" /><label for="qcStatusNoResponse">عدم پاسخ</label></li>
-                        <li class="qc-filter-item"><input type="radio" name="qcStatus" id="qcStatusInvalidNumber" value="5" /><label for="qcStatusInvalidNumber">شماره نامعتبر</label></li>
-                    </ul>
-                </fieldset>
-            </div>
-
-
-            <div class="qc-top-controls">
-                <label class="qc-page-size" for="qcPageSizeTop">
-                    تعداد در صفحه
-                    <select id="qcPageSizeTop" class="form-select">
-                        <option value="5" selected>۵</option>
-                        <option value="10">۱۰</option>
-                        <option value="25">۲۵</option>
-                        <option value="50">۵۰</option>
-                        <option value="100">۱۰۰</option>
-                    </select>
-                </label><nav id="qcPaginationTop" class="qc-pagination" aria-label="صفحه‌بندی بالای سفارش‌ها"></nav>
-            </div>
-            <div class="qc-mobile-sort">
-                <label for="qcMobileSort">مرتب‌سازی</label>
-                <select id="qcMobileSort" class="form-select">
-                    <option value="createDate">تاریخ ثبت</option>
-                    <option value="serialNumber">شماره سفارش</option>
-                    <option value="title">عنوان سفارش</option>
-                    <option value="customerName">مشتری</option>
-                    <option value="userCreator">ثبت‌کننده</option>
-                    <option value="financialApproved">وضعیت سفارش</option>
-                    <option value="status">وضعیت کنترل کیفیت</option>
-                </select>
-                <button id="qcMobileSortDirection" type="button" class="qc-button" aria-label="ترتیب نزولی">نزولی ↓</button>
-            </div>
-        </div>
-        <section id="qualityControlRecords" class="qc-records" aria-label="سفارش‌های کنترل کیفیت" aria-describedby="qcTableInfo qcTableFeedback">
-            <div class="qc-records-scroll">
-                <div class="qc-record-header" aria-hidden="true">
-                    <button type="button" data-qc-sort="createDate">ردیف</button><button type="button" data-qc-sort="serialNumber">شماره سفارش</button><button type="button" data-qc-sort="title">عنوان سفارش</button><button type="button" data-qc-sort="customerName">مشتری</button><button type="button" data-qc-sort="createDate">تاریخ ثبت</button><button type="button" data-qc-sort="userCreator">ثبت‌کننده</button><button type="button" data-qc-sort="financialApproved">وضعیت سفارش</button><button type="button" data-qc-sort="status">وضعیت کنترل کیفیت</button><span>عملیات</span>
+<section id="qualityControlCustomerPage" class="qc-customer-page" dir="rtl">
+    <div class="qc-client-dashboard-top">
+    <section class="qc-client-overview" aria-label="خلاصه وضعیت کنترل کیفیت مشتریان">
+        <div class="qc-client-overview-card qc-client-overview-contact">
+            <div class="qc-client-overview-head">
+                <div class="qc-client-overview-heading">
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-headset"></i></span>
+                    <div class="qc-client-overview-title">وضعیت تماس مشتریان</div>
                 </div>
-                <div id="qcRecordList" class="qc-record-list" role="list"></div>
             </div>
-        </section>
-        <div id="qcTableFeedback" role="status" aria-live="polite"></div>
-        <button id="qcRetry" type="button" class="qc-button qc-button-primary" hidden>تلاش مجدد</button>
-        <div class="qc-table-footer">
-            <label class="qc-page-size" for="qcPageSize">
-                تعداد در صفحه
-                <select id="qcPageSize" class="form-select">
-                    <option value="5" selected>۵</option>
-                    <option value="10">۱۰</option>
-                    <option value="25">۲۵</option>
-                    <option value="50">۵۰</option>
-                    <option value="100">۱۰۰</option>
-                </select>
-            </label>
-            <nav id="qcPagination" class="qc-pagination" aria-label="صفحه‌بندی سفارش‌ها"></nav>
-            <span id="qcTableInfo" role="status" aria-live="polite"></span>
+            <div class="qc-client-contact-summary-grid">
+                <div class="qc-client-contact-summary-item">
+                    <span class="qc-client-contact-summary-label">شماره نامعتبر</span>
+                    <div class="qc-client-contact-summary-value">
+                        <strong id="qcSummaryInvalidCustomers">—</strong><span>مشتری</span>
+                    </div>
+                    <button type="button" class="qc-client-overview-action" data-qc-card-status="4"
+                            title="مشاهده مشتریان با شماره نامعتبر" aria-pressed="false">مشاهده</button>
+                </div>
+                <div class="qc-client-contact-summary-item">
+                    <span class="qc-client-contact-summary-label">بدون پاسخ</span>
+                    <div class="qc-client-contact-summary-value">
+                        <strong id="qcSummaryNoAnswerCustomers">—</strong><span>مشتری</span>
+                    </div>
+                    <button type="button" class="qc-client-overview-action" data-qc-card-status="3"
+                            title="مشاهده مشتریان بدون پاسخ" aria-pressed="false">مشاهده</button>
+                </div>
+            </div>
+            <div class="qc-client-contact-summary-foot">
+                <span>پیگیری امروز: <strong id="qcSummaryDueToday">—</strong></span>
+                <span>فردا: <strong id="qcSummaryTomorrow">—</strong></span>
+                <span>کل تلاش‌های بی‌پاسخ: <strong id="qcSummaryNoAnswerAttempts">—</strong></span>
+            </div>
         </div>
-
+        <div class="qc-client-overview-card qc-client-overview-discrepancy">
+            <div class="qc-client-overview-head">
+                <div class="qc-client-overview-heading">
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-exclamation-triangle"></i></span>
+                    <div class="qc-client-overview-title">اقلام دارای مغایرت</div>
+                </div>
+                <button type="button" class="qc-client-overview-action" data-qc-card-status="2"
+                        title="مشاهده مشتریان دارای مغایرت" aria-pressed="false">مشاهده</button>
+            </div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryDiscrepancyItems">—</strong><span>قلم از <b id="qcSummaryDiscrepancyTotalItems">—</b> قلم</span>
+            </div>
+            <div class="qc-client-overview-breakdown">
+                <span>مغایرت‌های ثبت‌شده در کنترل کیفیت</span>
+            </div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-pending">
+            <div class="qc-client-overview-head">
+                <div class="qc-client-overview-heading">
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-search"></i></span>
+                    <div class="qc-client-overview-title">نیازمند بررسی</div>
+                </div>
+                <button type="button" class="qc-client-overview-action" data-qc-card-status="0"
+                        aria-pressed="true">مشاهده</button>
+            </div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryUnreviewedItems">—</strong>
+                <span>قلم از <b id="qcSummaryPendingTotalItems">—</b> قلم</span>
+            </div>
+            <div class="qc-client-overview-breakdown qc-client-pending-breakdown">
+                <div class="qc-client-pending-queue">
+                    <span>در صف: <strong id="qcSummaryPendingItems">—</strong> قلم</span>
+                    <span title="اقلام مشتریان دارای شماره نامعتبر یا عدم پاسخ فعال">موقتاً خارج از صف: <strong id="qcSummaryPausedItems">—</strong> قلم</span>
+                </div>
+                <span class="qc-client-pending-customers">مشتریان تکمیل‌نشده:
+                    <strong id="qcSummaryUnfinishedCustomers">—</strong>
+                    از <strong id="qcSummaryPendingTotalCustomers">—</strong> مشتری</span>
+            </div>
+        </div>
+        <div class="qc-client-overview-card qc-client-overview-reviewed">
+            <div class="qc-client-overview-head">
+                <div class="qc-client-overview-heading">
+                    <span class="qc-client-overview-icon" aria-hidden="true"><i class="fa fa-clipboard-check"></i></span>
+                    <div class="qc-client-overview-title">اقلام بررسی‌شده</div>
+                </div>
+                <button type="button" class="qc-client-overview-action" data-qc-card-status="5"
+                        aria-pressed="false">مشاهده</button>
+            </div>
+            <div class="qc-client-overview-value">
+                <strong id="qcSummaryReviewedItems">—</strong><span>قلم از <b id="qcSummaryTotalItems">—</b> قلم</span>
+            </div>
+            <div class="qc-client-overview-breakdown">
+                <span>بدون مغایرت: <strong id="qcSummaryNoDiscrepancyItems">—</strong></span>
+            </div>
+            <div class="qc-client-overview-progress">
+                <div class="qc-client-progress-caption">
+                    <span>مشتریان تکمیل‌شده: <strong id="qcSummaryCompletedCustomers">—</strong>
+                        از <strong id="qcSummaryReviewedTotalCustomers">—</strong> مشتری</span>
+                </div>
+                <div id="qcSummaryProgressTrack" class="qc-client-progress-track" role="progressbar"
+                     aria-label="درصد پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span id="qcSummaryProgressFill" class="qc-client-progress-fill"></span>
+                    <strong id="qcSummaryProgressPercent" class="qc-client-progress-percent">۰٪</strong>
+                </div>
+            </div>
+        </div>
+        </section>
     </div>
-    <div class="modal fade" id="qualityControlModal" tabindex="-1" data-bs-focus="false" aria-labelledby="qualityControlModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
+
+    <div class="qc-client-toolbar">
+        <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
+            <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
+            <div class="qc-client-search-group">
+                <input id="qcCustomerSearch" type="search" class="form-control"
+                       placeholder="نام، کد یا موبایل مشتری" autocomplete="off" />
+                <button type="submit" class="qc-client-button qc-client-primary qc-client-search-submit"
+                        title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
+            </div>
+        </form>
+        <div class="qc-client-filter">
+            <label for="qcCustomerStatus">وضعیت بررسی</label>
+            <select id="qcCustomerStatus" class="form-select">
+                <option value="">همه</option>
+                <option value="0">نیازمند بررسی</option>
+                <option value="1">تکمیل‌شده</option>
+                <option value="2">دارای مغایرت</option>
+                <option value="3">عدم پاسخ</option>
+                <option value="4">شماره نامعتبر</option>
+                <option value="5">دارای اقلام بررسی‌شده</option>
+            </select>
+        </div>
+        <div class="qc-client-filter qc-client-sort">
+            <label for="qcCustomerSort">مرتب‌سازی</label>
+            <select id="qcCustomerSort" class="form-select">
+                <option value="pending" selected>بیشترین اقلام بررسی‌نشده</option>
+                <option value="discrepancy">بیشترین اقلام دارای مغایرت</option>
+                <option value="reviewed">بیشترین اقلام بررسی‌شده</option>
+                <option value="latest">آخرین تغییرات</option>
+                <option value="invoices">بیشترین تعداد فاکتور</option>
+                <option value="orders">بیشترین تعداد سفارش</option>
+                <option value="name">نام مشتری (الفبایی)</option>
+                <option value="code">کد مشتری (صعودی)</option>
+            </select>
+        </div>
+        <div class="qc-client-filter qc-client-size">
+            <label for="qcCustomerPageSize">تعداد</label>
+            <select id="qcCustomerPageSize" class="form-select">
+                <option value="5" selected>۵</option>
+                <option value="10">۱۰</option>
+                <option value="25">۲۵</option>
+                <option value="50">۵۰</option>
+            </select>
+        </div>
+        <button id="qcCustomerClearFilters" type="button" class="qc-client-button qc-client-clear-filters"
+                title="پاک کردن فیلترها"><i class="fa fa-trash-alt" aria-hidden="true"></i> پاک کردن فیلترها</button>
+    </div>
+    <div id="qcCustomerQueueFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
+    <div id="qcCustomerQueue" class="qc-client-queue" role="list"></div>
+    <div class="qc-client-paging">
+        <span id="qcCustomerQueueCount"></span>
+        <nav id="qcCustomerPages" aria-label="صفحه‌بندی مشتریان"></nav>
+    </div>
+
+    <div class="modal fade qc-client-history-modal" id="qcContactHistoryModal" tabindex="-1"
+         aria-labelledby="qcContactHistoryTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title h5" id="qualityControlModalTitle">کنترل کیفیت سفارش</h2>
+                    <div>
+                        <h2 class="modal-title h5" id="qcContactHistoryTitle">تاریخچه تماس مشتری</h2>
+                        <div id="qcContactHistoryCustomer" class="qc-client-subtitle"></div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="qcOrderSummary" class="qc-order-summary"></div>
-                    <div class="qc-tabs" role="tablist" aria-label="بخش‌های سفارش">
-                        <button id="qcQuestionsTab" class="active" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcQuestionsPanel" aria-controls="qcQuestionsPanel" aria-selected="true">سؤال‌های کنترل کیفیت</button>
-                        <button id="qcDetailsTab" type="button" role="tab" data-bs-toggle="tab" data-bs-target="#qcDetailsPanel" aria-controls="qcDetailsPanel" aria-selected="false" tabindex="-1">اطلاعات و اسناد سفارش</button>
+                    <div class="qc-client-history-toolbar">
+                        <span id="qcContactHistoryFeedback" role="status" aria-live="polite"></span>
+                        <label id="qcContactHistoryDeletedFilter" class="qc-client-history-filter" hidden>
+                            <input id="qcContactHistoryShowDeleted" type="checkbox" />
+                            نمایش سوابق حذف‌شده
+                        </label>
                     </div>
-                    <div class="tab-content bootstrap-only w-100">
-                        <div id="qcQuestionsPanel" class="tab-pane active" role="tabpanel" aria-labelledby="qcQuestionsTab">
-                            <form id="qualityControlForm">
-                                @Html.AntiForgeryToken()
-                                <div id="qcFormFeedback" class="qc-feedback" role="status" aria-live="polite"></div>
-                                <fieldset id="qcFormFields" class="qc-form-fields" disabled>
-                                    <div id="qcQuestions"></div>
-                                    <label for="qcDescription" class="mb-1">توضیحات تکمیلی <small class="text-muted">(اختیاری)</small></label>
-                                    <textarea id="qcDescription" name="description" class="form-control" rows="2" maxlength="4000"></textarea>
-                                </fieldset>
-                            </form>
-                            <section id="qcReadOnlyResult" class="qc-readonly-result" aria-label="نتیجه کنترل کیفیت" hidden></section>
-                        </div>
-                        <div id="qcDetailsPanel" class="tab-pane" role="tabpanel" aria-labelledby="qcDetailsTab">
-                            <div id="qcDetailsFeedback" role="status">برای مشاهده اطلاعات سفارش، این بخش را باز کنید.</div>
-                            <div id="qcDetailsJson" class="qc-details-json" hidden></div>
-                        </div>
-                    </div>
+                    <div id="qcContactHistoryEntries" class="qc-client-history-entries" role="list"></div>
                 </div>
-                <div class="modal-footer gap-2">
-                    <button type="submit" form="qualityControlForm" id="qcSubmit" class="qc-button qc-button-primary" disabled>ثبت کنترل کیفیت</button>
-                    <button type="button" class="qc-button qc-button-neutral" data-bs-dismiss="modal">انصراف</button>
+                <div class="modal-footer qc-client-history-footer">
+                    <div id="qcContactHistoryPages"></div>
+                    <button type="button" class="qc-client-button qc-client-secondary"
+                            data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade qc-client-notes-modal" id="qcCustomerNotesModal" tabindex="-1"
+         aria-labelledby="qcCustomerNotesModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title h5" id="qcCustomerNotesModalTitle">توضیحات مشتری</h2>
+                        <div id="qcCustomerNotesModalSubtitle" class="qc-client-subtitle"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <section class="qc-client-customer-notes" aria-labelledby="qcCustomerNotesTitle">
+                        <label id="qcCustomerNoteLabel" class="qc-client-note-label" for="qcCustomerNoteText">یادداشت جدید</label>
+                        <textarea id="qcCustomerNoteText" class="form-control" rows="3" maxlength="4000"
+                                  placeholder="نکات مهم مشتری، نتیجه تماس یا موارد پیگیری را بنویسید..."></textarea>
+                        <div class="qc-client-notes-actions">
+                            <span id="qcCustomerNoteFeedback" role="status" aria-live="polite"></span>
+                            <button id="qcCustomerNoteClear" type="button" class="qc-client-button qc-client-secondary" disabled>پاک کردن متن</button>
+                            <button id="qcCustomerNoteCancelEdit" type="button" class="qc-client-button qc-client-secondary" hidden>انصراف از ویرایش</button>
+                            <button id="qcCustomerNoteSave" type="button" class="qc-client-button qc-client-primary" disabled>
+                                <i class="fa fa-save" aria-hidden="true"></i> <span id="qcCustomerNoteSaveLabel">ثبت یادداشت</span>
+                            </button>
+                        </div>
+                        <div class="qc-client-notes-history" aria-labelledby="qcCustomerNotesTitle">
+                            <div class="qc-client-notes-heading">
+                                <h3 id="qcCustomerNotesTitle"><i class="fa fa-sticky-note" aria-hidden="true"></i> یادداشت‌های ثبت‌شده</h3>
+                                <span id="qcCustomerNotesCount" class="qc-client-notes-count" aria-live="polite"></span>
+                            </div>
+                            <div id="qcCustomerNotesList" class="qc-client-notes-list" role="list" aria-live="polite">
+                                <span class="qc-client-notes-placeholder">در حال دریافت سوابق…</span>
+                            </div>
+                            <button id="qcCustomerNotesMore" type="button"
+                                    class="qc-client-button qc-client-outline qc-client-notes-more" hidden>مشاهده یادداشت‌های بیشتر</button>
+                        </div>
+                    </section>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="qc-client-button qc-client-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade qc-client-modal" id="qcCustomerReviewModal" tabindex="-1" data-bs-focus="false"
+         aria-labelledby="qcCustomerModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title h5" id="qcCustomerModalTitle">کنترل کیفیت اقلام مشتری</h2>
+                        <div id="qcCustomerModalSubtitle" class="qc-client-subtitle"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body" id="qcCustomerReviewScroll">
+                    <form id="qcCustomerReviewForm">
+                        @Html.AntiForgeryToken()
+                        <div id="qcCustomerFormFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
+                        <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
+                        <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
+                            <label for="qcInvoiceItemSearch">جستجو در اقلام فاکتورها</label>
+                            <input id="qcInvoiceItemSearch" type="search" class="form-control"
+                                   placeholder="نام یا مشخصات کالا، مقدار یا تأمین‌کننده..." autocomplete="off" />
+                            <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
+                                پاک کردن
+                            </button>
+                            <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                        </div>
+                        <div id="qcInvoiceItemSearchEmpty" class="qc-client-search-empty" role="status" hidden>
+                            قلمی مطابق جستجو پیدا نشد.
+                        </div>
+                        <div id="qcCustomerReviewContent" class="qc-client-review-content"></div>
+                    </form>
+                </div>
+                <div class="modal-footer qc-client-footer">
+                    <span id="qcCustomerSaveHint" class="qc-client-save-hint"></span>
+                    <button type="button" id="qcCustomerSaveAll" class="qc-client-button qc-client-primary" disabled>
+                        <i class="fa fa-save" aria-hidden="true"></i>
+                        ثبت کلی اقلام بررسی‌نشده بدون مغایرت
+                    </button>
+                    <button type="button" class="qc-client-button qc-client-secondary" data-bs-dismiss="modal">بستن</button>
                 </div>
             </div>
         </div>
@@ -149,21 +284,5 @@
 </section>
 
 @section Scripts {
-    <script src="~/js/deal/deal-documents.js?release=7.5.6" data-page-bindings="currentDealDocumentData,showModalDealPreFactors,showModalDealFactors,showModalDealReports,showModalDealOrders,showModalDealSupplyFactors,showModalDealInvoices,getPreFactorFromDeal,getReportFromDeal,getSupplyFactorsFromDeal,getOrdersFromDeal,getInvoicesFromDeal,refreshDealPreFactors,refreshDealFactors,refreshDealReports,refreshDealOrders,refreshDealSupplyFactors,deletedPrefactorToggle" asp-append-version="true"></script>
-    <script src="~/js/qualityControl.js?release=7.5.6" asp-append-version="true"></script>
+    <script src="~/js/qualityControlCustomer.js?release=7.5.6" asp-append-version="true"></script>
 }
-
-<partial name="~/Views/PreFactor/Modals/_PreFactorModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_DeliverModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorAttachmentsModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorMobileModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorChangeUsersModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_PreFactorContainerModal.cshtml" />
-<partial name="~/Views/PreFactor/Modals/_SendPreFactorToExternalSoftwareModal.cshtml" />
-<partial name="~/Views/Factor/Modals/_FactorContainerModal.cshtml" />
-<partial name="~/Views/Order/Modals/_UndeliveredOrderHeadsModal.cshtml" />
-<partial name="~/Views/Order/Modals/_CreateOrderModal.cshtml" />
-<partial name="~/Views/Order/Modals/_OrderHeadsContainerModal.cshtml" />
-<partial name="~/Views/Accountancy/Modals/_InvoiceListModal.cshtml" />
-<partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
-<partial name="~/Views/Report/Modals/_ReportContainerModal.cshtml" />

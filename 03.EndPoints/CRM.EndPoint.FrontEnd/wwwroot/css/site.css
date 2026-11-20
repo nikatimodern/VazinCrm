@@ -6168,6 +6168,303 @@ table tr.payment-vosoled > td {
 }
 
 
+/* Compact, theme-aligned deposit/refund dialog. Scope to this modal, used across CRM pages. */
+#InvoiceModalId {
+	--invoice-theme: #004944;
+	--invoice-theme-action: #00665C;
+	--invoice-theme-light: #E7F3F0;
+	--invoice-surface-border: #DDE1E8;
+	--invoice-theme-focus: rgb(0 102 92 / 14%);
+}
+
+#InvoiceModalId.backward-mode {
+	--invoice-theme: #C2185B;
+	--invoice-theme-action: #C2185B;
+	--invoice-theme-light: #FCE8F0;
+	--invoice-theme-focus: rgb(194 24 91 / 14%);
+}
+
+#InvoiceModalId .invoice-dialog-content {
+	padding: 0;
+	background: #fff;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 12px;
+	box-shadow: 0 14px 32px rgb(33 37 41 / 12%);
+}
+
+#InvoiceModalId .modalHeader-invoice {
+	background: var(--invoice-theme);
+	color: #fff;
+	border-radius: 8px;
+	margin: 10px 12px 0;
+	padding: 8px 12px;
+	min-height: 40px;
+	align-items: center;
+	font-size: 16px;
+	line-height: 1.6;
+}
+
+#InvoiceModalId .invoice-dialog-body {
+	padding: 12px 14px;
+}
+
+#InvoiceModalId .modalContent-invoice {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+#InvoiceModalId #PayFactorFormId {
+	gap: 12px;
+}
+
+#InvoiceModalId .invoice-dialog-section {
+	padding: 12px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-dialog-section .sectionTitle-invoice {
+	position: static;
+	display: block;
+	margin: 0 0 10px;
+	padding: 0;
+	background: transparent;
+	color: var(--invoice-theme);
+	font-family: IRANSansBold;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+#InvoiceModalId .invoice-payment-options {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+}
+
+#InvoiceModalId .invoice-payment-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-width: 0;
+	min-height: 39px;
+	margin: 0;
+	padding: 7px 8px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 7px;
+	background: #F7F9FA;
+	color: #545961;
+	font-size: 13px;
+	cursor: pointer;
+	transition: border-color .15s, background-color .15s;
+}
+
+#InvoiceModalId .invoice-payment-option:hover,
+#InvoiceModalId .invoice-payment-option:has(input:checked) {
+	background: var(--invoice-theme-light);
+	border-color: var(--invoice-theme-action);
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-payment-option:focus-within {
+	outline: 2px solid var(--invoice-theme-action);
+	outline-offset: 2px;
+}
+
+#InvoiceModalId .invoice-payment-option .form-check-input {
+	float: none;
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	min-height: 0;
+	margin: 0;
+	cursor: pointer;
+}
+
+#InvoiceModalId .invoice-transaction-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px 12px;
+}
+
+#InvoiceModalId .invoice-transaction-fields:has(.ReceiveDateDiv:not(.d-none)) {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#InvoiceModalId .invoice-field {
+	min-width: 0;
+}
+
+#InvoiceModalId .invoice-field > label {
+	display: block;
+	margin-bottom: 5px;
+	color: #545961;
+	font-size: 12px;
+	line-height: 1.6;
+	text-align: right;
+}
+
+#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control) {
+	width: 100%;
+	min-height: 36px;
+	height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 7px;
+	background-color: #fff;
+	color: #212529;
+	font-size: 13px;
+	text-align: right;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-field .form-select {
+	padding-inline-end: 26px;
+	background-position: left 10px center;
+}
+
+#InvoiceModalId .invoice-field .form-control::placeholder {
+	color: #838E98;
+}
+
+#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control):focus,
+#InvoiceModalId .invoice-field .ts-wrapper.focus .ts-control {
+	border-color: var(--invoice-theme-action);
+	box-shadow: 0 0 0 3px var(--invoice-theme-focus);
+	outline: 0;
+}
+
+#InvoiceModalId .toBankAccountWrapperSelect,
+#InvoiceModalId .toBankAccountWrapperTxt,
+#InvoiceModalId .toNameWrapper {
+	margin-top: 10px;
+}
+
+#InvoiceModalId .invoice-receipt-upload {
+	min-height: 96px;
+	padding: 12px;
+	gap: 8px;
+	border: 1px dashed #B8C9C5;
+	border-radius: 8px;
+	background: #F7F9FA;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-receipt-upload:is(:hover, .dragover) {
+	border-color: var(--invoice-theme-action);
+	background: var(--invoice-theme-light);
+	box-shadow: none;
+	transform: none;
+}
+
+#InvoiceModalId .invoice-receipt-upload > label {
+	max-width: 100%;
+	margin: 0;
+	padding: 8px 12px;
+	border: 1px dashed #B8C9C5;
+	border-radius: 7px;
+	background: #fff;
+	color: #545961;
+	font-size: 12px;
+	line-height: 1.8;
+	white-space: normal;
+}
+
+#InvoiceModalId .invoice-receipt-upload > label:hover {
+	border-color: var(--invoice-theme-action);
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-receipt-upload > label svg {
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-receipt-upload .image-display:not(:empty) {
+	padding-top: 7px;
+}
+
+#InvoiceModalId .invoice-dialog-footer {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin: 0;
+	padding: 12px 14px;
+	border-top: 1px solid var(--invoice-surface-border);
+	background: #fff;
+}
+
+#InvoiceModalId .invoice-dialog-footer button {
+	min-width: 72px;
+	min-height: 34px;
+	margin: 0;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-submit-button {
+	background: var(--invoice-theme-action);
+	color: #fff;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-submit-button:hover {
+	background: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-cancel-button {
+	background: #F0F1F7;
+	border: 1px solid var(--invoice-surface-border);
+	color: #545961;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-cancel-button:hover {
+	background: #E5E8EF;
+}
+
+#InvoiceModalId .invoice-dialog-footer button:focus-visible,
+#InvoiceModalId .invoice-receipt-upload > label:focus-visible {
+	outline: 2px solid var(--invoice-theme-action);
+	outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+	#InvoiceModalId .modalHeader-invoice {
+		margin: 8px 8px 0;
+		min-height: 34px;
+		padding: 6px 10px;
+		font-size: 14px;
+	}
+	#InvoiceModalId .invoice-dialog-body {
+		padding: 10px;
+	}
+	#InvoiceModalId .invoice-dialog-section {
+		padding: 10px;
+	}
+	#InvoiceModalId .invoice-payment-options {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	#InvoiceModalId .invoice-transaction-fields,
+	#InvoiceModalId .invoice-transaction-fields:has(.ReceiveDateDiv:not(.d-none)) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control) {
+		height: 40px;
+		min-height: 40px;
+	}
+	#InvoiceModalId .invoice-dialog-footer {
+		padding: 10px;
+	}
+}
+
+
+
 .cursor-pointer {
 	cursor: pointer;
 }

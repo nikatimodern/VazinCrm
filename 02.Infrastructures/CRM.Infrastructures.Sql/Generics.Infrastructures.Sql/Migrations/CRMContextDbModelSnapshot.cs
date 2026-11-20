@@ -3702,6 +3702,343 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         });
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttemptCount").ValueGeneratedOnAdd().HasColumnType("int").HasDefaultValue(0);
+
+                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DeletedById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DeletedByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("DeletedAt").HasColumnType("datetime2");
+
+                    b.Property<string>("DeleteReason").HasMaxLength(500).HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted").HasColumnType("bit");
+
+                    b.Property<bool>("IsLegacy").HasColumnType("bit");
+
+                    b.Property<string>("MobileAtAttempt").HasMaxLength(50).HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RestoredAt").HasColumnType("datetime2");
+
+                    b.Property<string>("RestoredById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RestoredByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+
+                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
+                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+
+                    b.Property<byte>("Status").HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId", "CreateDate");
+
+                    b.ToTable("QualityControlContactHistories", t =>
+                        {
+                            t.HasCheckConstraint("CK_QcContactHistories_Status", "[Status] IN (0, 1, 2)");
+                            t.HasCheckConstraint("CK_QcContactHistories_Attempts", "[AttemptCount] >= 0");
+                        });
+                });
+
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CallRecordingId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description").IsRequired().HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("IsDeleted").HasColumnType("bit");
+
+                    b.Property<Guid?>("LegacyQualityControlId").HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalTranscript").HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
+                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+
+                    b.Property<byte>("Source").HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CallRecordingId").IsUnique()
+                        .HasFilter("[CallRecordingId] IS NOT NULL");
+
+                    b.HasIndex("CustomerId", "CreateDate");
+
+                    b.HasIndex("LegacyQualityControlId").IsUnique()
+                        .HasFilter("[LegacyQualityControlId] IS NOT NULL");
+
+                    b.ToTable("QualityControlCustomerNotes");
+                });
+
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("InvalidMobileAtMark")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastNoResponseAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NoResponseAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("QualityControlCustomerContacts", t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControlCustomerContacts_Status", "[Status] IN (0, 1, 2)");
+                        });
+                });
+
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("FactorItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactorItemId")
+                        .IsUnique();
+
+                    b.ToTable("QualityControlItemReviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (0, 1, 2)");
+                        });
+                });
+
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Answer")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OneAnswerTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid>("QualityControlItemReviewId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("QuestionTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("QuestionTitleSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("SortOrderSnapshot")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ZeroAnswerTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("QualityControlItemReviewId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("QualityControlItemAnswers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControlItemAnswers_Answer", "[Answer] IN (0, 1)");
+                        });
+                });
+
+
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7458,6 +7795,63 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("Question");
                 });
 
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Factors.Entities.FactorItem", "FactorItem")
+                        .WithMany()
+                        .HasForeignKey("FactorItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FactorItem");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", "QualityControlItemReview")
+                        .WithMany("Answers")
+                        .HasForeignKey("QualityControlItemReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("QualityControlItemReview");
+
+                    b.Navigation("Question");
+                });
             modelBuilder.Entity("CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem", b =>
                 {
                     b.HasOne("CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote", "ReleaseNote")
@@ -8092,6 +8486,11 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControl", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
                 {
                     b.Navigation("Answers");
                 });

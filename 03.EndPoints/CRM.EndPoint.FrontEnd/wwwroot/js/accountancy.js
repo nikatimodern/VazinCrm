@@ -4,6 +4,7 @@ let Invo_id = null;
 let Invo_type = null;
 let InvoiceType = null;
 let invoicePassType = null;
+let invoiceListRealizedDepositsOnly = false;
 let AccType = null;
 
 let AccParentId = null;
@@ -98,8 +99,9 @@ const RefreshDataInvoice = async (id = Invo_id, type = Invo_type) => {
     FLshowLoading();
     
     const [amountData, paymentData] = await Promise.all([
-        getAllAmountPartial(id, type),
-        getAllPaymentPartial(id, type, invoicePassType),
+        invoiceListRealizedDepositsOnly ? Promise.resolve("") : getAllAmountPartial(id, type),
+        getAllPaymentPartial(id, type, invoicePassType,
+            invoiceListRealizedDepositsOnly, invoiceListRealizedDepositsOnly),
     ]);
     
     document.getElementById("PayContentId").innerHTML = paymentData.html;
@@ -400,8 +402,9 @@ function closeModalTransferInvoice() {
 }
 
 
-const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns = false) => {
+const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns = false, realizedDepositsOnly = false) => {
     invoicePassType = passType;
+    invoiceListRealizedDepositsOnly = realizedDepositsOnly;
     
     Invo_id = id;
     Invo_type = type;

@@ -21,6 +21,7 @@ Use this as the visual reference for new and edited Vazin CRM interfaces. Read [
 - Prefer existing shared styling; add CSS only for a demonstrated need. Scope new selectors to the page/component and use logical spacing properties where appropriate.
 - Avoid scattered hardcoded colors, unnecessary Bootstrap overrides, and `!important`. Do not globally redefine `.btn`, `.badge`, `.modal`, or `.form-control` to fix one page.
 - Use the official palette for new designs. Explain any genuine need for an outside color; never use success or danger merely as decoration.
+- In card rows mixing actions and read-only counters/status chips, follow [the common 1px border, radius, and height rule](references/design-tokens.md#action-and-status-controls-in-cards). Keep primary actions filled and secondary/status colors semantic while preserving non-interactive chip behavior.
 - Use vanilla JavaScript and existing project helpers rather than duplicate components. Verify the loaded `site.js` contracts before using requests, notifications, loading, validation, or formatting.
 - Make loading, empty, error, disabled, selected, hover, and keyboard-focus states understandable. Prevent duplicate submission and preserve focus, scrolling, and cleanup for modals and enhanced selects.
 
