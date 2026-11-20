@@ -1910,24 +1910,6 @@
     flex-direction: column;
     overflow: hidden;
 }
-/* Few-row reviews size to their content; larger reviews retain the scrolling table. */
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact:not(.qc-client-issue-expanded) .modal-content {
-    height: auto;
-    max-height: min(84dvh, 820px);
-}
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .modal-body,
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact #qcCustomerReviewForm,
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-content,
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-table-wrap {
-    flex: 0 1 auto;
-}
-#qualityControlCustomerPage .qc-client-modal.qc-client-modal-compact .qc-client-review-table-wrap {
-    max-height: min(50dvh, 480px);
-}
-#qualityControlCustomerPage .qc-client-modal.qc-client-issue-expanded .modal-content {
-    height: min(84dvh, 820px);
-}
-
 #qualityControlCustomerPage .qc-client-modal .modal-header,
 #qualityControlCustomerPage .qc-client-modal .modal-footer {
     flex: 0 0 auto;
