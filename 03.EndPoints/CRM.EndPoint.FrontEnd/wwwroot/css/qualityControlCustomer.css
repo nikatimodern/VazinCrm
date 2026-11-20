@@ -1217,13 +1217,23 @@
     #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 160px; }
 }
 #qualityControlCustomerPage .qc-client-search-empty {
-    padding: 15px;
-    margin-bottom: 12px;
+    position: absolute;
+    inset-inline: 0;
+    top: 46px;
+    bottom: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin: 0;
     text-align: center;
     color: var(--qc-muted);
+    font-size: 13px;
+    font-weight: 600;
     background: #fff;
-    border: 1px dashed var(--qc-border);
-    border-radius: 10px;
+    border: 0;
+    border-radius: 0;
 }
 #qualityControlCustomerPage .qc-client-item-search[hidden],
 #qualityControlCustomerPage .qc-client-search-empty[hidden],
@@ -2208,6 +2218,7 @@
     overflow: hidden;
 }
 #qualityControlCustomerPage .qc-client-review-table-wrap {
+    position: relative;
     flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
@@ -2551,16 +2562,22 @@
     #qualityControlCustomerPage .qc-client-review-pages button { min-height: 25px; }
 }
 
-/* Highlight saved contact indicators, not their gray group backgrounds. */
+/* Only the icon lights up for a saved value; the button surface stays neutral.
+   This covers values on disabled cooldown buttons and after a QC modal closes. */
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-button.has-value:disabled {
     opacity: 1;
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.has-value > i.fa {
-    color: var(--qc-secondary);
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.has-value > i.fa,
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-no-answer.is-selected > i.fa {
+    color: var(--qc-secondary) !important;
+    opacity: 1;
 }
 #qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-history-open.has-value > i.fa {
-    color: var(--qc-primary);
+    color: var(--qc-primary) !important;
+    opacity: 1;
 }
-#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.has-value > i.fa {
-    color: var(--qc-danger);
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.has-value > i.fa,
+#qualityControlCustomerPage .qc-client-card .qc-client-call-group .qc-client-contact-invalid.is-selected > i.fa {
+    color: var(--qc-danger) !important;
+    opacity: 1;
 }

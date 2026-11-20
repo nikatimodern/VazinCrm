@@ -523,7 +523,8 @@
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
                         + (contactStatus === 1 ? ' is-selected' : '')
-                        + (noResponseAttempts > 0 ? ' has-count has-value' : '') + '"'
+                        + (noResponseAttempts > 0 ? ' has-count' : '')
+                        + (noResponseAttempts > 0 || contactStatus === 1 ? ' has-value' : '') + '"'
                         + (complete ? ' disabled' : '')
                         + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
@@ -1180,6 +1181,9 @@
                 + '<th scope="col">عملیات</th></tr></thead><tbody>'
                 + entries.map((entry, index) => renderReviewRow(entry, index)).join("")
                 + '</tbody></table></div>';
+            // Keep the empty-state notice within the table viewport, beneath the sticky header.
+            // Reattach the same node after each render so its aria-live/hidden state is preserved.
+            content.querySelector(".qc-client-review-table-wrap")?.appendChild(itemSearchEmpty);
             refreshReviewState();
             const tableViewport = content.querySelector(".qc-client-review-table-wrap");
             if (tableViewport) {
@@ -1842,9 +1846,10 @@
                 if (button) button.innerHTML = complete
                     ? '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش'
                     : '<i class="fa fa-check-circle" aria-hidden="true"></i> کنترل کیفیت';
+                // Reviewing an item does not reset the customer's recorded contact state.
+                // Only the dedicated contact-status endpoint may change these indicators.
                 card.querySelectorAll("[data-qc-contact]").forEach(button => {
                     button.disabled = complete;
-                    if (reviewed > 0) button.classList.remove("is-selected");
                 });
                 card.classList.add("qc-client-last-checked");
                 // Restart the green fade when this same customer is reviewed again.
