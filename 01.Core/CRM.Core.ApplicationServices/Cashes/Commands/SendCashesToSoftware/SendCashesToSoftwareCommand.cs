@@ -18,6 +18,8 @@ using CRM.Core.ApplicationServices.Cashes.Abstractions;
 using CRM.Core.ApplicationServices.Cashes.Dtos;
 using CRM.Core.ApplicationServices.Cashes.Services;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.Core.ApplicationServices.Cashes.Commands.SendCashesToSoftware;
 public sealed record SendCashesToSoftwareCommand(IList<Guid> Ids, IList<Guid> SoftwareIds) : ICommand<CashOutcome>;
 public sealed class SendCashesToSoftwareCommandHandler(ICashRepository repository, ICashExternalRepository external, CurrentActor actor, ICashEffects effects) : ICommandHandler<SendCashesToSoftwareCommand, CashOutcome>
@@ -29,7 +31,7 @@ public sealed class SendCashesToSoftwareCommandHandler(ICashRepository repositor
             var current = await actor.GetAsync(ct);
             foreach (var software in request.SoftwareIds ?? [])
             {
-                if (software != Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138") && software != Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca"))
+                if (software != Sepidar1SoftwareId && software != Sepidar2SoftwareId)
                     return new(400, "شناسه نرم‌افزار نامعتبر است");
                 var cashCode = await external.GetCashAccountAsync(software, ct);
                 if (cashCode == null)
@@ -48,7 +50,7 @@ public sealed class SendCashesToSoftwareCommandHandler(ICashRepository repositor
                     var result = await effects.SendAsync(software, cash, code ?? "", centerId, cashCode, ct);
                     if (result.HasValue)
                     {
-                        external.AddMapping(new ExternalMapping { ExternalSoftwareId = software, EntityName = nameof(cash), EntityId = cash.Id, MapType = ExternalMappingTypeEnum.تنخواه, MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه), UserCreatorID = current.User.Id, UserCreator = current.User.FullName, ExEntityName = result.Value.EntityName, ExEntityId = result.Value.EntityId });
+                        external.AddMapping(new ExternalMapping { ExternalSoftwareId = software, EntityName = nameof(Cash), EntityId = cash.Id, MapType = ExternalMappingTypeEnum.تنخواه, MapTypeTxt = nameof(ExternalMappingTypeEnum.تنخواه), UserCreatorID = current.User.Id, UserCreator = current.User.FullName, ExEntityName = result.Value.EntityName, ExEntityId = result.Value.EntityId });
                         await repository.SaveAsync(ct);
                     }
                 }

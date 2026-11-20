@@ -616,6 +616,8 @@ function dateTimePicker(container = document) {
                             window[onSelectCallback](this);
                         }
                     }
+                    if (datePicker.hasAttribute("data-datepicker-change"))
+                        datePicker.dispatchEvent(new Event("change", { bubbles: true }));
                 },
                 initialValueType: "persian",
                 position: [Number(positionX), Number(positionY)],
@@ -1709,21 +1711,54 @@ const setCountChat = (chatsCount) => {
     countChatElm?.classList.toggle("d-none", !Boolean(chatsCount));
     countChatElm.textContent = chatsCount || "";
 };
-const setCountEmail = (emailsCount) => {
-    const countEmailElm = document.getElementById("CountEmailId");
-    if (!countEmailElm) return;
-    
-    countEmailElm?.classList.toggle("d-none", !Boolean(emailsCount));
-    countEmailElm.textContent = emailsCount || "";
-    
-    if (emailsCount) {
-        const text = `شما <b>${emailsCount}</b> پیام دریافتی مشاهده نشده دارید.`;
-        setTimeout(() => notificationChange(text, { link: "/Email/Index", isBlank: false }, "default"), 3000);
+// Persist the last observed badge count only within this tab and for this user.
+// The first fetch establishes a baseline, not an "incoming" notification.
+const countNotificationTimers = new Map();
+const countNotificationFallback = new Map();
+function notifyOnCountIncrease(type, rawCount, buildText, link) {
+    const userId = window.userContext?.id;
+    if (!userId) return; // Never compare counts between unidentified users.
+    const count = Math.max(0, Number(rawCount) || 0);
+    const key = `crm:badge-count:v1:${userId}:${type}`;
+    let oldValue = null;
+    try {
+        oldValue = sessionStorage.getItem(key);
+        sessionStorage.setItem(key, String(count));
+    } catch {
+        oldValue = countNotificationFallback.has(key)
+            ? String(countNotificationFallback.get(key)) : null;
     }
+    countNotificationFallback.set(key, count);
+    const previous = oldValue === null ? null : Number(oldValue);
+
+    if (previous !== null && count > previous) {
+        // Consolidate bursts of updates into a single current notification.
+        clearTimeout(countNotificationTimers.get(type));
+        countNotificationTimers.set(type, setTimeout(() => {
+            countNotificationTimers.delete(type);
+            if (window.userContext?.id !== userId) return;
+            notificationChange(buildText(count), { link, isBlank: false }, "default");
+        }, 3000));
+    } else if (previous !== null && count < previous) {
+        // Cancel a pending alert if its count is already outdated.
+        clearTimeout(countNotificationTimers.get(type));
+        countNotificationTimers.delete(type);
+    }
+}
+
+const setCountEmail = (emailsCount) => {
+    const count = Math.max(0, Number(emailsCount) || 0);
+    const countEmailElm = document.getElementById("CountEmailId");
+    if (countEmailElm) {
+        countEmailElm.classList.toggle("d-none", count === 0);
+        countEmailElm.textContent = count || "";
+    }
+
+    notifyOnCountIncrease("email", count,
+        value => `شما <b>${value}</b> پیام دریافتی مشاهده نشده دارید.`, "/Email/Index");
 };
 
 
-let oldSumCount = null;
 const setCountEnvelope = (countObj) => {
     const countResult = {
         salesAdmin: {
@@ -1747,11 +1782,9 @@ const setCountEnvelope = (countObj) => {
     const countEnvelopeElm = document.getElementById("CountEnvelopeId");
     setBadge(countEnvelopeElm, sumCount);
     
-    if (sumCount && sumCount > oldSumCount) {
-        const text = `شما در کارتابل خود <b>${sumCount}</b> مورد بررسی نشده دارید`;
-        setTimeout(() => notificationChange(text, { link: `/cartable/Index?tab=${locationTabIdEnvelope}`, isBlank: false }, "default"), 3000);
-    }
-    oldSumCount = sumCount;
+    notifyOnCountIncrease("cartable", sumCount,
+        value => `شما در کارتابل خود <b>${value}</b> مورد بررسی نشده دارید`,
+        `/cartable/Index?tab=${locationTabIdEnvelope || ""}`);
     
     const cartableTabsElm = document.getElementById("CartableTabs");
     if (!cartableTabsElm) return;
@@ -1808,6 +1841,9 @@ const getAllBankAccountsJson = async (rerender, type) => {
  * @property {number[]} type
  * @property {boolean} [isDisable]
  * @property {boolean} [isTomSelect]
+ * @property {string|null} [preferredCustomerId] Prefer accounts attached to this person.
+ * @property {boolean} [autoSelectLinked] Select the first matching account if present.
+ * @property {boolean} [onlyLinkedToCustomer] Show only supplier/customer accounts linked to preferredCustomerId (or none if missing).
  */
 /**
  * @param {BankAccountSelectOptions[]} selects
@@ -1827,9 +1863,25 @@ const getAllBankAccounts = async (selects, rerender = false) => {
         const data = await getAllBankAccountsJson(rerender);
         
         resolvedSelects.forEach(x => {
-            const filteredData = data.filter(d => x.type.includes(d.type));
+            const preferredPersonId = x.preferredCustomerId
+                ? String(x.preferredCustomerId).toLowerCase()
+                : null;
+            const belongsToPerson = account => preferredPersonId
+                && account.customerId
+                && String(account.customerId).toLowerCase() === preferredPersonId;
+
+            // Request payments must never show accounts belonging to a different person.
+            // Other selectors retain the existing preferred-person behavior.
+            const filteredData = x.onlyLinkedToCustomer
+                ? data.filter(d => belongsToPerson(d) && (d.type === 2 || d.type === 4))
+                : data.filter(d => x.type.includes(d.type)
+                    || (belongsToPerson(d) && (d.type === 2 || d.type === 4)));
             if (x.isTomSelect) {
-                createSupplierTomSelect(x.element, filteredData);
+                const ordered = preferredPersonId
+                    ? filteredData.slice().sort((a, b) => Number(Boolean(belongsToPerson(b))) - Number(Boolean(belongsToPerson(a))))
+                    : filteredData;
+                const preferred = x.autoSelectLinked ? ordered.find(belongsToPerson) : null;
+                createSupplierTomSelect(x.element, ordered, preferred?.value ?? null);
                 return;
             }
             
@@ -1909,7 +1961,7 @@ const buildBankAccountUi = (item) => {
 };
 
 
-const createSupplierTomSelect = (element, items) => {
+const createSupplierTomSelect = (element, items, selectedId = null) => {
     
     if (element.tomselect) {
         element.tomselect.destroy();
@@ -1973,7 +2025,234 @@ const createSupplierTomSelect = (element, items) => {
             `,
         },
     });
+
+    if (selectedId != null) {
+        element.tomselect.setValue(String(selectedId), true);
+    }
 };
+
+
+// The bank-account modal is hosted once by _Layout and can be opened by any page.
+// Page-specific refreshes are supplied through onSaved, not coupled to requestAmount.js.
+const bankAccountModalState = {
+    original: null,
+    onSaved: null,
+    personRoleType: null,
+    saving: false,
+};
+
+function getBankAccountModal() {
+    return document.getElementById("addBankAccountModal");
+}
+
+function selectedBankAccountPersonRole() {
+    const typeSelect = getBankAccountModal()?.querySelector("#bankAccountTypeModalId");
+    return Number(typeSelect?.selectedOptions[0]?.dataset.personRole || 0);
+}
+
+function updateBankAccountPersonField() {
+    const modal = getBankAccountModal();
+    if (!modal) return;
+    const person = modal.querySelector("#bankAccountCustomerId");
+    const wrapper = modal.querySelector("#bankAccountPersonWrapper");
+    const roleType = selectedBankAccountPersonRole();
+    const isPersonAccount = roleType > 0;
+
+    wrapper.classList.toggle("d-none", !isPersonAccount);
+    person.required = isPersonAccount;
+    if (roleType !== bankAccountModalState.personRoleType) {
+        // Recreate the search control when switching supplier/customer so stale
+        // TomSelect search results can never be shown for the wrong role.
+        person.tomselect?.destroy();
+        person.replaceChildren();
+        person.value = "";
+        bankAccountModalState.personRoleType = roleType;
+        if (isPersonAccount) {
+            person.disabled = false;
+            new TomSelect(person, {
+                placeholder: `جستجوی ${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}`,
+                maxItems: 1,
+                loadThrottle: 300,
+                shouldLoad: query => query.trim().length > 0,
+                load(query, callback) {
+                    const currentRole = selectedBankAccountPersonRole();
+                    sendApiRequest({
+                        url: "/Customer/GetCustomerOp",
+                        params: { search: query.trim(), roleType: currentRole },
+                        showLoading: false,
+                        showError: false,
+                    }).then(items => callback(
+                        Array.isArray(items)
+                            ? items.map(person => ({ value: person.id, text: person.text?.replace("کد مشتری:", "کد شخص:") || "" }))
+                            : []
+                    )).catch(() => callback());
+                },
+            });
+        } else {
+            person.disabled = true;
+        }
+    }
+    modal.querySelector("#bankAccountPersonWrapper label").textContent =
+        `${modal.querySelector("#bankAccountTypeModalId").selectedOptions[0]?.textContent?.trim() || "شخص"}:`;
+}
+
+function initializeBankAccountModal() {
+    const modal = getBankAccountModal();
+    if (!modal || modal.dataset.bankAccountInitialized === "true") return modal;
+    modal.dataset.bankAccountInitialized = "true";
+    modal.querySelector("#bankAccountTypeModalId").addEventListener("change", updateBankAccountPersonField);
+    modal.querySelector("#addBankAccountForm").addEventListener("submit", event => {
+        event.preventDefault();
+        void submitAddBankAccount();
+    });
+    modal.addEventListener("hidden.bs.modal", resetBankAccountModal);
+    modal.addEventListener("hide.bs.modal", event => {
+        if (bankAccountModalState.saving) event.preventDefault();
+    });
+    return modal;
+}
+
+function resetBankAccountModal() {
+    const modal = getBankAccountModal();
+    if (!modal) return;
+    bankAccountModalState.original = null;
+    bankAccountModalState.onSaved = null;
+    bankAccountModalState.saving = false;
+    mySer.emptyForm("addBankAccountForm");
+    modal.querySelector("#bankAccountTypeModalId").value = "";
+    updateBankAccountPersonField();
+    const submitButton = modal.querySelector("#bankAccountModalSubmitBtn");
+    submitButton.disabled = false;
+    submitButton.textContent = "ثبت";
+    modal.querySelector("#bankAccountModalTitle").textContent = "افزودن حساب بانکی";
+}
+
+/**
+ * Shared create/edit bank-account modal.
+ * @param {{id?: string, bankAccountType?: number, customerId?: string, customerText?: string, onSaved?: (account: object) => (void | Promise<void>)}} options
+ */
+async function toggleAddBankAccountModal(options = {}) {
+    const modal = initializeBankAccountModal();
+    if (!modal || bankAccountModalState.saving) return;
+    if (isModalOpen(modal)) {
+        ModalToggle(modal, "hide");
+        return;
+    }
+    const { id = null, bankAccountType = null, customerId = null, customerText = null, onSaved = null } = options || {};
+    const original = id ? await sendApiRequest({
+        url: "/Accountancy/GetBankAccount",
+        params: { id },
+    }) : null;
+    if (id && !original) return;
+
+    resetBankAccountModal();
+    bankAccountModalState.original = original;
+    bankAccountModalState.onSaved = typeof onSaved === "function" ? onSaved : null;
+
+    if (original) {
+        mySer.convertJsonToForm(original, "addBankAccountForm", ["customerId", "shebaNumber"]);
+        const sheba = modal.querySelector("#shebaNumberId");
+        sheba.value = (original.shebaNumber || "").replace(/^IR[\s-]*/i, "");
+        modal.querySelector("#bankAccountModalTitle").textContent = "ویرایش حساب بانکی";
+        modal.querySelector("#bankAccountModalSubmitBtn").textContent = "ذخیره تغییرات";
+
+        if (original.customerId && selectedBankAccountPersonRole() > 0) {
+            const customer = await sendApiRequest({
+                url: "/Customer/GetCustomer",
+                params: { id: original.customerId },
+            });
+            const selector = modal.querySelector("#bankAccountCustomerId").tomselect;
+            if (customer && selector) {
+                const name = [customer.companyName, customer.agentName].filter(Boolean).join(" ").trim();
+                selector.addOption({
+                    value: customer.id,
+                    text: `${name || "شخص"} (کد: ${customer.customerCode ?? "-"})`,
+                });
+                selector.setValue(customer.id, true);
+            }
+        }
+    } else if (bankAccountType != null) {
+        const typeSelect = modal.querySelector("#bankAccountTypeModalId");
+        typeSelect.value = String(bankAccountType);
+        typeSelect.dispatchEvent(new Event("change"));
+    }
+
+    // For a new supplier/customer account, preselect the person from the
+    // originating request without loading every Customer into TomSelect.
+    if (!original && customerId && selectedBankAccountPersonRole() > 0) {
+        const personSelect = modal.querySelector("#bankAccountCustomerId").tomselect;
+        if (personSelect) {
+            const personId = String(customerId);
+            personSelect.addOption({
+                value: personId,
+                text: customerText || "شخص مرتبط",
+            });
+            personSelect.setValue(personId, true);
+        }
+    }
+
+    ModalToggle(modal, "show");
+}
+
+async function submitAddBankAccount() {
+    const modal = getBankAccountModal();
+    if (!modal || bankAccountModalState.saving) return;
+    if (!await mySer.CheckValidForm("addBankAccountForm")) return;
+
+    const cartNumber = modal.querySelector("#cartNumberId").value.trim();
+    const accountNumber = modal.querySelector("#accountNumberId").value.trim();
+    const shebaNumber = modal.querySelector("#shebaNumberId").value.trim().replace(/^IR[\s-]*/i, "");
+    if (!cartNumber && !accountNumber && !shebaNumber) {
+        modal.querySelector("#cartNumberId").focus();
+        toastifyError("حداقل یکی از موارد شماره کارت، شماره حساب یا شماره شبا باید وارد شود.");
+        return;
+    }
+
+    const personRole = selectedBankAccountPersonRole();
+    const personSelect = modal.querySelector("#bankAccountCustomerId");
+    const customerId = personRole ? (personSelect.tomselect?.getValue() || personSelect.value) : null;
+    if (personRole && !customerId) {
+        personSelect.tomselect?.focus();
+        return;
+    }
+
+    const model = {
+        ...(bankAccountModalState.original || {}),
+        ...mySer.convertFormToJSON("addBankAccountForm"),
+        customerId: customerId || null,
+        shebaNumber: shebaNumber ? `IR ${shebaNumber}` : "",
+    };
+    const isEdit = !!bankAccountModalState.original;
+    const submitButton = modal.querySelector("#bankAccountModalSubmitBtn");
+    bankAccountModalState.saving = true;
+    submitButton.disabled = true;
+    try {
+        const response = await sendApiRequest({
+            url: isEdit ? "/Accountancy/UpBankAccount" : "/Accountancy/AddBankAccount",
+            method: "POST",
+            data: model,
+            returnFullResponse: true,
+            successMsg: isEdit ? "با موفقیت ویرایش شد" : "اطلاعات حساب با موفقیت ثبت شد",
+        });
+        if (!response || response.status !== 200) return;
+
+        // Saved accounts must be visible to all bank selectors after SPA navigation.
+        Object.keys(bankAccountsCache).forEach(key => delete bankAccountsCache[key]);
+        const onSaved = bankAccountModalState.onSaved;
+        bankAccountModalState.saving = false;
+        ModalToggle(modal, "hide");
+        if (onSaved) {
+            try {
+                await onSaved(model);
+            } catch (error) {
+                console.error("Unable to refresh bank account options:", error);
+            }
+        }
+    } finally {
+        bankAccountModalState.saving = false;
+        submitButton.disabled = false;
+    }
+}
 
 
 function showTaminDropdown() {
@@ -2403,7 +2682,7 @@ const carizoCardReads = new Map();
 const carizoAppliedGroups = new Map();
 let carizoCardVersion = 0;
 
-function disposeTaskCardPickers(container) {
+function disposeDateTimePickers(container) {
     container.querySelectorAll(".sdate,.sdateTime,.stime").forEach(input => {
         $(input).data("myPersianDatepicker")?.destroy();
         $(input).removeData("myPersianDatepicker");
@@ -2451,7 +2730,7 @@ async function refreshTaskCards(id) {
                 const column = Number(container.dataset.taskColumn ?? target.column);
                 [...container.children].filter(card => card.dataset.taskId === update.id || card.dataset.taskGroup === update.groupId)
                                        .forEach(card => {
-                                           disposeTaskCardPickers(card);
+                                           disposeDateTimePickers(card);
                                            card.remove();
                                        });
                 update.cards.filter(card => card.column === column).forEach(card => {
@@ -2505,7 +2784,7 @@ async function getAllTask(type, systematic = 0, loc = 1) {
             }
             if (res.status === 200) {
                 if (containerElm) {
-                    disposeTaskCardPickers(containerElm);
+                    disposeDateTimePickers(containerElm);
                     containerElm.innerHTML = res.data.html;
                     containerElm.dataset.taskColumn = String(type);
                     dateTimePicker(containerElm);
@@ -3136,14 +3415,21 @@ async function showExternalSoftwareModal(ids, config) {
     
     externalSoftwareList.innerHTML = "";
     toggleElementsDisabled(sendToSoftwareBtn);
-    
-    await sendApiRequest({
+
+    let blocked = false;
+    const result = await sendApiRequest({
         url: "/Home/GetAllExternalSoftware",
         method: "POST",
+        headers: { RequestVerificationToken: externalSoftwareModalElm.querySelector('[name="__RequestVerificationToken"]').value },
         successMsg: null,
         data: { entityIds, mapType: config.mapType },
         onSuccess: (res) => {
             const softwares = res.data;
+            if (softwares?.length && softwares.every(software => software.prerequisiteMissing)) {
+                blocked = true;
+                toastifyError(softwares[0].prerequisiteMessage);
+                return;
+            }
             ModalToggle(externalSoftwareModalElm);
             
             if (!softwares?.length) {
@@ -3158,23 +3444,27 @@ async function showExternalSoftwareModal(ids, config) {
             renderExternalSoftwares(softwares);
         },
     });
+    return blocked ? null : result;
 }
 
 function renderExternalSoftwares(softwares) {
     externalSoftwareList.innerHTML = softwares.map(software => `
-        <label for="ex-software-${software.id}" class="external-software-card ${software.isDisabled ? "is-disabled is-selected" : ""}" data-software-id="${software.id}">
-            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none" ${software.isDisabled ? "disabled checked" : ""}>
+        <label for="ex-software-${software.id}" class="external-software-card${software.isDisabled ? " is-disabled" : ""}${software.isAlreadySent ? " is-selected" : ""}" data-software-id="${software.id}">
+            <input id="ex-software-${software.id}" type="checkbox" value="${software.id}" class="d-none" ${software.isDisabled ? "disabled" : ""} ${software.isAlreadySent ? "checked" : ""}>
 
             <span class="external-software-icon">
-                <i class="fas fa-check software-check-icon"></i>
+                ${software.isDisabled && !software.isAlreadySent
+                    ? '<i class="fas fa-ban" aria-hidden="true"></i>'
+                    : '<i class="fas fa-check software-check-icon" aria-hidden="true"></i>'}
             </span>
 
             <span class="external-software-info">
-                <span class="external-software-title">${software.title}</span>
-                ${software.isDisabled ? `<small class="text-muted">(قبلاً ارسال شده)</small>` : ""}
+                <span class="external-software-title">${escapeHtml(software.title)}</span>
+                ${software.isDisabled ? `<small class="text-muted">(${escapeHtml(
+                    software.isAlreadySent ? "قبلاً ارسال شده" : software.disabledReason || "امکان ثبت در این مقصد وجود ندارد")})</small>` : ""}
             </span>
 
-            <i class="fa-solid fa-circle-check external-software-check"></i>
+            ${software.isDisabled && !software.isAlreadySent ? "" : '<i class="fa-solid fa-circle-check external-software-check" aria-hidden="true"></i>'}
         </label>
     `).join("");
     

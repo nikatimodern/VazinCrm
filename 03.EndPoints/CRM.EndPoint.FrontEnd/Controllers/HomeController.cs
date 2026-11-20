@@ -13,18 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CRM.Core.Domain.Sepidar.Quotations.Entites;
-using CRM.Core.Domain.Sepidar.Invoices.Entities;
-using CRM.Core.Domain.ExternalSoftwares.Entites;
 using System.Threading;
-using System.Data.SqlTypes;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
-using CRM.Core.Domain.PreFactors.Entities;
-using CRM.Core.Domain.Factors.Entities;
-using CRM.Core.Domain.Customers.Entities;
-using CRM.Core.Domain.Sepidar.Parties.Entities;
-using CRM.Core.Domain.Factors.Enum;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services.AI;
@@ -32,9 +22,8 @@ using CRM.EndPoint.FrontEnd.Services.Asterisk;
 using CRM.EndPoint.FrontEnd.Services.Carizo;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
-using CRM.EndPoint.FrontEnd.Services.SepidarServices;
+using CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 using CRM.EndPoint.FrontEnd.Services.Sms;
-using CRM.Core.Domain.Deals.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     [Authorize]
@@ -58,8 +47,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly TaskServices ts;
         private readonly SmsService smsService;
         private readonly Sepidar2ContextDb s2Db;
-        private readonly Sepidar1Service sepidar1Service;
-        private readonly Sepidar2Service sepidar2Service;
+        private readonly ExternalTransferOptionsService externalTransferOptions;
         private readonly ISmsIrService smsIrService;
 
         public HomeController(IWebHostEnvironment appEnvironment,
@@ -67,7 +55,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService,
-            Sepidar2ContextDb s2db, Sepidar1Service sepidar1Service, Sepidar2Service sepidar2Service)
+            Sepidar2ContextDb s2db, ExternalTransferOptionsService externalTransferOptions)
         {
             this.appEnvironment = appEnvironment;
             this.conf = conf;
@@ -83,8 +71,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.ts = ts;
             this.smsService = smsService;
             s2Db = s2db;
-            this.sepidar1Service = sepidar1Service;
-            this.sepidar2Service = sepidar2Service;
+            this.externalTransferOptions = externalTransferOptions;
             this.smsIrService = smsIrService;
             this.issabelService = issabelService;
             this.aiPrompts = aiPrompts;
@@ -98,7 +85,6 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-
 
                 ViewBag.SubTitle = "سامانه مدیریت مشتری";
                 return View();
@@ -217,92 +203,31 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         /* ----------------------------------------------- External Softwares ----------------------------------------------- */
 
         [HttpPost]
-        public async Task<IActionResult> GetAllExternalSoftware([FromBody] ExternalSoftwareRequestDto request)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GetAllExternalSoftware([FromBody] ExternalSoftwareRequestDto request, CancellationToken ct)
         {
-            if (request.EntityIds.Count == 0 || request.EntityIds.Any(id => id == Guid.Empty))
+            if (request?.EntityIds == null || request.EntityIds.Count == 0 ||
+                request.EntityIds.Any(id => id == Guid.Empty) ||
+                !externalTransferOptions.TryGetRule(request.MapType, out _))
                 return BadRequest();
 
-            var entityName = request.MapType switch {
-                ExternalMappingTypeEnum.تنخواه => nameof(Cash),
-                ExternalMappingTypeEnum.پیش_فاکتور => nameof(PreFactor),
-                ExternalMappingTypeEnum.فاکتور => nameof(Factor),
-                _ => null
-            };
-
-            if (entityName == null)
-                return BadRequest();
-
-            var entityIds = request.EntityIds.Distinct().ToList();
-
-            await ValidateExternalMappingsAsync(entityIds, entityName, request.MapType);
-
-            var softwares = await db.ExternalSoftwares
-                .AsNoTracking()
-                .OrderBy(x => x.Title)
-                .Select(x => new {
-                    x.Id,
-                    x.Title,
-                    IsDisabled = entityIds.All(entityId =>
-                        db.ExternalMappings.Any(m =>
-                            m.EntityName == entityName &&
-                            m.EntityId == entityId &&
-                            m.ExternalSoftwareId == x.Id &&
-                            m.MapType == request.MapType))
-                })
-                .ToListAsync();
-
-            return Ok(softwares);
-        }
-
-        private async Task ValidateExternalMappingsAsync(List<Guid> entityIds, string entityName, ExternalMappingTypeEnum mapType)
-        {
-            var mappings = await db.ExternalMappings
-                .Where(x =>
-                    entityIds.Contains(x.EntityId) &&
-                    x.EntityName == entityName &&
-                    x.MapType == mapType)
-                .ToListAsync();
-
-            if (mappings.Count == 0) return;
-
-            var hasChanges = false;
-            foreach (var mapping in mappings)
+            try
             {
-                var exists = await CheckExternalEntityExistsAsync(mapping.ExternalSoftwareId, mapping.ExEntityId, mapping.ExEntityName);
-
-                if (exists == false)
-                {
-                    db.ExternalMappings.Remove(mapping);
-                    hasChanges = true;
-                }
+                return Ok(await externalTransferOptions.GetAllExternalSoftwareAsync(
+                    request.EntityIds, request.MapType, User, ct));
             }
-
-            if (hasChanges)
-                await db.SaveChangesAsync();
-        }
-
-        private async Task<bool?> CheckExternalEntityExistsAsync(Guid externalSoftwareId, string exEntityId, string exEntityName)
-        {
-            var service = GetSepidarService(externalSoftwareId);
-
-            if (service == null)
-                return null;
-
-            return await service.EntityExistsAsync(exEntityName, exEntityId);
-        }
-
-        private static readonly Guid Sepidar1SoftwareId = Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
-        private static readonly Guid Sepidar2SoftwareId = Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
-
-        private SepidarService GetSepidarService(Guid softwareId)
-        {
-            if (softwareId == Sepidar1SoftwareId)
-                return sepidar1Service;
-
-            if (softwareId == Sepidar2SoftwareId)
-                return sepidar2Service;
-
-            return null;
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (System.Data.Common.DbException)
+            {
+                return StatusCode(503, "بررسی وضعیت مقصدهای مالی انجام نشد.");
+            }
+            catch (DbUpdateException)
+            {
+                return StatusCode(503, "بررسی وضعیت مقصدهای مالی انجام نشد.");
+            }
         }
     }
 }

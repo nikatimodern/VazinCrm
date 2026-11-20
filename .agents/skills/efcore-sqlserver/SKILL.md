@@ -7,6 +7,11 @@ description: Diagnose, implement, and optimize EF Core LINQ queries, entity rela
 
 Use for queries, schema mapping, performance, concurrency, and persistence bugs.
 
+## Fluent API organization
+- Place each new entity configuration in its own `<Entity>Config.cs` file under the owning Infrastructure module's `Configs/` folder. Follow the structure in `Reports/Configs/` and mirror the folder path in the namespace. For Sepidar purchases, use `Sepidar/Purchases/Configs/`.
+- Implement `IEntityTypeConfiguration<TEntity>` and use the owning DbContext's existing configuration discovery. When multiple DbContexts scan the same assembly, restrict discovery as needed so new mappings load only in their owning contexts. Verify the model for both the intended context and any other context sharing discovery.
+- For concrete entities queried or written by a feature, declare a named `public DbSet<TEntity> EntityNames { get; set; }` on the owning DbContext, following its existing naming conventions. Use that property for reads and writes in feature code instead of calling `context.Set<TEntity>()`. Keep table and schema mappings in the entity's Fluent API configuration.
+
 ## Procedure
 1. Identify the exact DbContext and entity mapping (`CRMContextDb` or the appropriate Sepidar context).
 2. Keep repository interfaces in `CRM.Core.Domain`, SQL implementations and Fluent API in `CRM.Infrastructures.Sql`; never introduce EF Core dependencies into Domain or the existing ApplicationServices layer. Inspect entity properties, navigation mappings, keys, indexes, and existing migrations before proposing changes.

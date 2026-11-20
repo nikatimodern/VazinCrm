@@ -481,12 +481,7 @@ body.drag-active #overlay {
 	#allDealsContainer .tasks-container {
 		height: calc(100dvh - 236px);
 	}
-	
-	#dealModal .modal-body {
-		max-height: calc(100dvh - 130px);
-		overflow: auto
-	}
-	
+		
 	.deal-column-header {
 		padding: 6px;
 		font-size: 14px;

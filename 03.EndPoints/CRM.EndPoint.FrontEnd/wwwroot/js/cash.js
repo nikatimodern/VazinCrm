@@ -105,6 +105,26 @@ async function sendCashToExternalSoftwares(id) {
     await showExternalSoftwareModal(id, {
         mapType: 0,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
+            const chooser = document.getElementById("chooseExternalSoftwareModal");
+            const result = await Swal.fire({
+                target: chooser,
+                title: "تأیید ارسال تنخواه",
+                text: "تنخواه‌های انتخاب‌شده به نرم‌افزارهای مالی انتخاب‌شده ارسال شوند؟",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "تأیید و ارسال",
+                cancelButtonText: "انصراف",
+                focusCancel: true,
+            });
+            if (!result.isConfirmed) {
+                if (isModalOpen(chooser)) {
+                    const sendButton = chooser.querySelector("#sendToSoftwareBtn");
+                    toggleElementsDisabled(sendButton, false);
+                    sendButton?.focus();
+                }
+                return;
+            }
+
             await sendApiRequest({
                 url: "/Cash/SendCashesToExternalSoftware",
                 method: "POST",

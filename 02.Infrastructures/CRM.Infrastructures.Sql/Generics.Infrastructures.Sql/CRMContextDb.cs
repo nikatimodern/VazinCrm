@@ -79,6 +79,11 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControl> QualityControls { get; set; }
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion> QualityControlQuestions { get; set; }
         public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlAnswer> QualityControlAnswers { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview> QualityControlItemReviews { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer> QualityControlItemAnswers { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact> QualityControlCustomerContacts { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory> QualityControlContactHistories { get; set; }
+        public DbSet<CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote> QualityControlCustomerNotes { get; set; }
 
         public DbSet<Agent> Agents { get; set; }
         public DbSet<Contact> Contacts { get; set; }
@@ -130,10 +135,15 @@ namespace CRM.Infrastructures.Sql {
             base.OnModelCreating(modelBuilder);
             // Access security tables belong to the Identity database, not to CRMContextDb.
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly, type =>
+                
                 type != typeof(AccessEntityConfiguration) &&
                 type != typeof(AccessPermissionConfiguration) &&
                 type != typeof(AccessRolePermissionConfiguration) &&
-                type != typeof(AccessUserPermissionConfiguration));
+                type != typeof(AccessUserPermissionConfiguration) &&
+                type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace
+
+                );
+            
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
 

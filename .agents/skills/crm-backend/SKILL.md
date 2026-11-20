@@ -16,6 +16,8 @@ Use for controllers, endpoints, business logic, repository contracts, and CQRS-r
 
 Dependencies point inward. Do not reference SQL, EF Core or MVC from Domain. Keep controllers thin. Use Domain repository interfaces in application code rather than concrete SQL implementations.
 
+Place new EF Core Fluent API configurations in the owning Infrastructure module's `Configs/` folder, with one `IEntityTypeConfiguration<TEntity>` class per entity. Use named `DbSet<TEntity>` properties for concrete entity reads and writes in feature code. Follow the [EF Core mapping and context discovery rules](../efcore-sqlserver/SKILL.md#fluent-api-organization).
+
 ## Mandatory Dispatcher for CQRS
 - Whenever an operation uses CQRS, controllers and other entry points must send its Command or Query through the existing `ICqrsDispatcher`. Do not inject `ICommandHandler<,>` or `IQueryHandler<,>` into controllers or call their `HandleAsync` methods directly.
 - For a controller requested to be fully converted to CQRS, `ICqrsDispatcher` must be its only injected dependency and every action must dispatch its application operation. Page initialization such as `Index` should dispatch a meaningful page-data Query and pass the result to the view; do not add empty handlers just to satisfy this rule.

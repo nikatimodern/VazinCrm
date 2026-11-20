@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,22 +46,24 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 if (searchValue.Length < 3)
                 {
                     query = query.Where(x =>
-                        x.Mobile.Equals(searchValue) ||
-                        x.MessageText.Equals(searchValue) ||
-                        x.FarazId.ToString().Equals(searchValue) ||
-                        x.Number.Equals(searchValue)
+                        x.Mobile == searchValue ||
+                        x.MessageText == searchValue ||
+                        x.FarazId.ToString() == searchValue ||
+                        x.Number == searchValue ||
+                        (x.ReceivedFullName != null && x.ReceivedFullName.Contains(searchValue))
                     );
-                } else
+                }
+                else
                 {
                     query = query.Where(x =>
-                        x.Mobile.Contains(searchValue) ||
-                        x.MessageText.Contains(searchValue) ||
+                        (x.Mobile != null && x.Mobile.Contains(searchValue)) ||
+                        (x.MessageText != null && x.MessageText.Contains(searchValue)) ||
                         x.FarazId.ToString().Contains(searchValue) ||
-                        x.Number.Contains(searchValue)
+                        (x.Number != null && x.Number.Contains(searchValue)) ||
+                        (x.ReceivedFullName != null && x.ReceivedFullName.Contains(searchValue))
                     );
                 }
             }
-
             if (!string.IsNullOrWhiteSpace(patternTypeValue) && Enum.TryParse<SmsPatternType>(patternTypeValue, out var patternType))
             {
                 query = query.Where(x => x.PatternType == patternType);
@@ -109,22 +112,24 @@ public class SmsController(SmsService smsService, CRMContextDb db) : Controller 
                 if (searchValue.Length < 3)
                 {
                     query = query.Where(x =>
-                        x.Mobile.Equals(searchValue) ||
-                        x.MessageText.Equals(searchValue) ||
-                        x.FarazId.ToString().Equals(searchValue) ||
-                        x.Number.Equals(searchValue)
+                        x.Mobile == searchValue ||
+                        x.MessageText == searchValue ||
+                        x.FarazId.ToString() == searchValue ||
+                        x.Number == searchValue ||
+                        (x.SenderFullName != null && x.SenderFullName.Contains(searchValue))
                     );
-                } else
+                }
+                else
                 {
                     query = query.Where(x =>
-                        x.Mobile.Contains(searchValue) ||
-                        x.MessageText.Contains(searchValue) ||
+                        (x.Mobile != null && x.Mobile.Contains(searchValue)) ||
+                        (x.MessageText != null && x.MessageText.Contains(searchValue)) ||
                         x.FarazId.ToString().Contains(searchValue) ||
-                        x.Number.Contains(searchValue)
+                        (x.Number != null && x.Number.Contains(searchValue)) ||
+                        (x.SenderFullName != null && x.SenderFullName.Contains(searchValue))
                     );
                 }
             }
-
 
             var recordsFiltered = await query.CountAsync();
 

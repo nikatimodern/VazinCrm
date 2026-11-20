@@ -6168,6 +6168,303 @@ table tr.payment-vosoled > td {
 }
 
 
+/* Compact, theme-aligned deposit/refund dialog. Scope to this modal, used across CRM pages. */
+#InvoiceModalId {
+	--invoice-theme: #004944;
+	--invoice-theme-action: #00665C;
+	--invoice-theme-light: #E7F3F0;
+	--invoice-surface-border: #DDE1E8;
+	--invoice-theme-focus: rgb(0 102 92 / 14%);
+}
+
+#InvoiceModalId.backward-mode {
+	--invoice-theme: #C2185B;
+	--invoice-theme-action: #C2185B;
+	--invoice-theme-light: #FCE8F0;
+	--invoice-theme-focus: rgb(194 24 91 / 14%);
+}
+
+#InvoiceModalId .invoice-dialog-content {
+	padding: 0;
+	background: #fff;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 12px;
+	box-shadow: 0 14px 32px rgb(33 37 41 / 12%);
+}
+
+#InvoiceModalId .modalHeader-invoice {
+	background: var(--invoice-theme);
+	color: #fff;
+	border-radius: 8px;
+	margin: 10px 12px 0;
+	padding: 8px 12px;
+	min-height: 40px;
+	align-items: center;
+	font-size: 16px;
+	line-height: 1.6;
+}
+
+#InvoiceModalId .invoice-dialog-body {
+	padding: 12px 14px;
+}
+
+#InvoiceModalId .modalContent-invoice {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+#InvoiceModalId #PayFactorFormId {
+	gap: 12px;
+}
+
+#InvoiceModalId .invoice-dialog-section {
+	padding: 12px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-dialog-section .sectionTitle-invoice {
+	position: static;
+	display: block;
+	margin: 0 0 10px;
+	padding: 0;
+	background: transparent;
+	color: var(--invoice-theme);
+	font-family: IRANSansBold;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+#InvoiceModalId .invoice-payment-options {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+}
+
+#InvoiceModalId .invoice-payment-option {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-width: 0;
+	min-height: 39px;
+	margin: 0;
+	padding: 7px 8px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 7px;
+	background: #F7F9FA;
+	color: #545961;
+	font-size: 13px;
+	cursor: pointer;
+	transition: border-color .15s, background-color .15s;
+}
+
+#InvoiceModalId .invoice-payment-option:hover,
+#InvoiceModalId .invoice-payment-option:has(input:checked) {
+	background: var(--invoice-theme-light);
+	border-color: var(--invoice-theme-action);
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-payment-option:focus-within {
+	outline: 2px solid var(--invoice-theme-action);
+	outline-offset: 2px;
+}
+
+#InvoiceModalId .invoice-payment-option .form-check-input {
+	float: none;
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	min-height: 0;
+	margin: 0;
+	cursor: pointer;
+}
+
+#InvoiceModalId .invoice-transaction-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px 12px;
+}
+
+#InvoiceModalId .invoice-transaction-fields:has(.ReceiveDateDiv:not(.d-none)) {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#InvoiceModalId .invoice-field {
+	min-width: 0;
+}
+
+#InvoiceModalId .invoice-field > label {
+	display: block;
+	margin-bottom: 5px;
+	color: #545961;
+	font-size: 12px;
+	line-height: 1.6;
+	text-align: right;
+}
+
+#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control) {
+	width: 100%;
+	min-height: 36px;
+	height: 36px;
+	padding: 6px 10px;
+	border: 1px solid var(--invoice-surface-border);
+	border-radius: 7px;
+	background-color: #fff;
+	color: #212529;
+	font-size: 13px;
+	text-align: right;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-field .form-select {
+	padding-inline-end: 26px;
+	background-position: left 10px center;
+}
+
+#InvoiceModalId .invoice-field .form-control::placeholder {
+	color: #838E98;
+}
+
+#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control):focus,
+#InvoiceModalId .invoice-field .ts-wrapper.focus .ts-control {
+	border-color: var(--invoice-theme-action);
+	box-shadow: 0 0 0 3px var(--invoice-theme-focus);
+	outline: 0;
+}
+
+#InvoiceModalId .toBankAccountWrapperSelect,
+#InvoiceModalId .toBankAccountWrapperTxt,
+#InvoiceModalId .toNameWrapper {
+	margin-top: 10px;
+}
+
+#InvoiceModalId .invoice-receipt-upload {
+	min-height: 96px;
+	padding: 12px;
+	gap: 8px;
+	border: 1px dashed #B8C9C5;
+	border-radius: 8px;
+	background: #F7F9FA;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-receipt-upload:is(:hover, .dragover) {
+	border-color: var(--invoice-theme-action);
+	background: var(--invoice-theme-light);
+	box-shadow: none;
+	transform: none;
+}
+
+#InvoiceModalId .invoice-receipt-upload > label {
+	max-width: 100%;
+	margin: 0;
+	padding: 8px 12px;
+	border: 1px dashed #B8C9C5;
+	border-radius: 7px;
+	background: #fff;
+	color: #545961;
+	font-size: 12px;
+	line-height: 1.8;
+	white-space: normal;
+}
+
+#InvoiceModalId .invoice-receipt-upload > label:hover {
+	border-color: var(--invoice-theme-action);
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-receipt-upload > label svg {
+	color: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-receipt-upload .image-display:not(:empty) {
+	padding-top: 7px;
+}
+
+#InvoiceModalId .invoice-dialog-footer {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin: 0;
+	padding: 12px 14px;
+	border-top: 1px solid var(--invoice-surface-border);
+	background: #fff;
+}
+
+#InvoiceModalId .invoice-dialog-footer button {
+	min-width: 72px;
+	min-height: 34px;
+	margin: 0;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	box-shadow: none;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-submit-button {
+	background: var(--invoice-theme-action);
+	color: #fff;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-submit-button:hover {
+	background: var(--invoice-theme);
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-cancel-button {
+	background: #F0F1F7;
+	border: 1px solid var(--invoice-surface-border);
+	color: #545961;
+}
+
+#InvoiceModalId .invoice-dialog-footer .invoice-cancel-button:hover {
+	background: #E5E8EF;
+}
+
+#InvoiceModalId .invoice-dialog-footer button:focus-visible,
+#InvoiceModalId .invoice-receipt-upload > label:focus-visible {
+	outline: 2px solid var(--invoice-theme-action);
+	outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+	#InvoiceModalId .modalHeader-invoice {
+		margin: 8px 8px 0;
+		min-height: 34px;
+		padding: 6px 10px;
+		font-size: 14px;
+	}
+	#InvoiceModalId .invoice-dialog-body {
+		padding: 10px;
+	}
+	#InvoiceModalId .invoice-dialog-section {
+		padding: 10px;
+	}
+	#InvoiceModalId .invoice-payment-options {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	#InvoiceModalId .invoice-transaction-fields,
+	#InvoiceModalId .invoice-transaction-fields:has(.ReceiveDateDiv:not(.d-none)) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	#InvoiceModalId .invoice-field :is(.form-control, .form-select, .ts-control) {
+		height: 40px;
+		min-height: 40px;
+	}
+	#InvoiceModalId .invoice-dialog-footer {
+		padding: 10px;
+	}
+}
+
+
+
 .cursor-pointer {
 	cursor: pointer;
 }
@@ -6805,6 +7102,19 @@ table tr.payment-vosoled > td {
 	border-radius: .5rem;
 	border: 1px solid #e6eaef;
 	box-shadow: 0 10px 30px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .04);
+}
+
+.ts-dropdown.crm-tom-select-overlay {
+	position: fixed;
+	inset: auto;
+	z-index: 1060;
+	margin: 0;
+	padding: 0;
+	overflow: visible;
+}
+
+.ts-dropdown.crm-tom-select-overlay-above {
+	transform: translateY(-100%);
 }
 
 
@@ -7983,7 +8293,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-.external-software-card:hover {
+.external-software-card:not(.is-disabled):hover {
 	border-color: #04857c;
 	background: #f6fbfa;
 }
@@ -8053,6 +8363,16 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	opacity: .5;
 	cursor: not-allowed;
 	background: #f3f4f6;
+}
+
+.external-software-card.is-disabled:not(.is-selected) {
+	opacity: 1;
+	color: var(--color-text-muted, #545961);
+}
+
+.external-software-card.is-disabled:not(.is-selected) .external-software-icon {
+	background: var(--color-background, #F0F1F7);
+	color: var(--color-text-muted, #545961);
 }
 
 
@@ -8388,19 +8708,19 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn {
+.external-mapping-modal [data-external-mapping-confirm] {
 	background-color: #04857c;
 	border-color: #04857c;
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn:hover:not(:disabled) {
+.external-mapping-modal [data-external-mapping-confirm]:hover:not(:disabled) {
 	background-color: #036e67;
 	border-color: #036e67;
 }
 
 
-.external-mapping-modal #confirmExternalMappingBtn:disabled {
+.external-mapping-modal [data-external-mapping-confirm]:disabled {
 	opacity: .5;
 	cursor: not-allowed;
 }
@@ -8473,7 +8793,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	overflow-wrap: anywhere;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number {
 	box-sizing: border-box;
 	width: 86px;
 	min-width: 0;
@@ -8490,12 +8810,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	box-shadow: none;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number::placeholder {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number::placeholder {
 	color: #788781;
 	opacity: 1;
 }
 
-#sendFactorToExternalSoftwareModal .ex-preview-invoice-number:focus {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number:focus {
 	border-color: #04857c;
 	box-shadow: 0 0 0 1px rgba(4, 133, 124, .12);
 }
@@ -8545,6 +8865,178 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	}
 }
 
+
+
+/* Optional salesperson/broker section in Sepidar invoice preview only. */
+#sendFactorToExternalSoftwareModal .external-factor-broker {
+    margin: 0 0 16px;
+    border: 1px solid #dfeae6;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 9px 14px;
+    position: relative;
+    background: #f8fbfa;
+    cursor: pointer;
+    transition: background-color .2s ease;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-toggle.is-active {
+    background: #edf8f5;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-switch {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 24px;
+    position: relative;
+    border-radius: 999px;
+    background: #a3b2ac;
+    transition: background-color .2s ease;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(20, 56, 47, .18);
+    transition: transform .2s ease;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-input:checked + .external-factor-broker-switch {
+    background: #04857c;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-input:checked + .external-factor-broker-switch::after {
+    transform: translateX(-18px);
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-input:focus-visible + .external-factor-broker-switch {
+    outline: 3px solid rgba(4, 133, 124, .27);
+    outline-offset: 3px;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-input:disabled + .external-factor-broker-switch {
+    opacity: .6;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-toggle-text {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-title {
+    color: #253b35;
+    font: 13px/1.5 IRANSansBold, IRANSans, sans-serif;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-seller {
+    color: #647972;
+    font: 12px/1.6 IRANSans, sans-serif;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-seller strong {
+    color: #007c70;
+    font: 12px/1.6 IRANSansBold, IRANSans, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-icon {
+    flex-shrink: 0;
+    color: #04857c;
+    font-size: 18px;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-details {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 12px 14px;
+    border-top: 1px solid #dfeae6;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 4px 12px;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-detail:not(:last-child) {
+    border-left: 1px solid #e6eeeb;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-detail > span {
+    color: #788781;
+    font-size: 11px;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-detail > strong {
+    color: #263a35;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+#sendFactorToExternalSoftwareModal .external-factor-broker-detail > small {
+    color: #697e77;
+    font-size: 11px;
+}
+
+@media (max-width: 576px) {
+    #sendFactorToExternalSoftwareModal .external-factor-broker-toggle {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    #sendFactorToExternalSoftwareModal .external-factor-broker-icon {
+        display: none;
+    }
+
+    #sendFactorToExternalSoftwareModal .external-factor-broker-details {
+        grid-template-columns: 1fr;
+        padding: 6px 14px;
+    }
+
+    #sendFactorToExternalSoftwareModal .external-factor-broker-detail {
+        padding: 10px 0;
+    }
+
+    #sendFactorToExternalSoftwareModal .external-factor-broker-detail:not(:last-child) {
+        border-left: 0;
+        border-bottom: 1px solid #e6eeeb;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #sendFactorToExternalSoftwareModal .external-factor-broker-toggle,
+    #sendFactorToExternalSoftwareModal .external-factor-broker-switch,
+    #sendFactorToExternalSoftwareModal .external-factor-broker-switch::after {
+        transition: none;
+    }
+}
 
 .external-prefactor-preview .table-responsive {
 	border: 1px solid #e6ecea;
@@ -8607,175 +9099,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 }
 
 
-/* -------------------------------------------------- */
-
-
-.external-pf-toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 12px;
-	color: #344b48;
-	font-size: 13px;
-	font-family: IRANSansBold;
-}
-
-
-.external-pf-send {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 7px 10px;
-	color: #fff;
-	background: #05665e;
-	border: 0;
-	border-radius: 6px;
-	font-size: 12px;
-	white-space: nowrap;
-}
-
-
-.external-pf-send:hover {
-	color: #fff;
-	background: #034f49;
-}
-
-
-.external-pf-list {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-
-.external-pf-card {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	min-height: 88px;
-	padding: 10px 14px;
-	background: #fff;
-	border: 1px solid #e0e9e7;
-	border-right: 3px solid #078078;
-	border-radius: 8px;
-}
-
-
-.external-pf-info {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(130px, 1fr));
-	gap: 7px 20px;
-	flex: 1;
-	min-width: 0;
-}
-
-
-.external-pf-field {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	min-width: 0;
-	font-size: 12px;
-}
-
-
-.external-pf-label {
-	flex-shrink: 0;
-	color: #8a9693;
-}
-
-
-.external-pf-value {
-	overflow: hidden;
-	color: #263e3b;
-	font-family: IRANSansBold;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-
-.external-pf-software {
-	color: #05665e;
-	font-family: IRANSansBold;
-}
-
-
-.external-pf-actions {
-	display: flex;
-	flex-shrink: 0;
-	flex-direction: column;
-	gap: 5px;
-}
-
-
-.external-pf-action {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 5px;
-	min-width: 88px;
-	padding: 5px 9px;
-	border: 1px solid #dce6e4;
-	border-radius: 5px;
-	font-size: 11px;
-	font-family: IRANSansBold;
-	white-space: nowrap;
-	cursor: pointer;
-}
-
-
-.external-pf-view {
-	color: #05665e;
-	background: #fff;
-}
-
-
-.external-pf-invoices {
-	color: #fff;
-	background: #05665e;
-	border-color: #05665e;
-}
-
-
-.external-pf-view:hover {
-	background: #edf8f5;
-}
-
-
-.external-pf-invoices:hover {
-	background: #034f49;
-}
-
-
-.external-pf-empty {
-	padding: 25px 12px;
-	color: #84918e;
-	text-align: center;
-	font-size: 12px;
-	border: 1px dashed #d5e1de;
-	border-radius: 8px;
-}
-
-
-@media (max-width: 576px) {
-	.external-pf-card {
-		gap: 8px;
-		padding: 9px;
-	}
-	
-	.external-pf-info {
-		grid-template-columns: 1fr;
-		gap: 6px;
-	}
-	
-	.external-pf-action {
-		min-width: 75px;
-		padding: 5px;
-	}
-}
-
 /* Shared filter dialog: all callers retain their existing field IDs and callbacks. */
 #FilterModal { --bs-modal-width:560px; --filter-primary:#004944; --filter-action:#00665C; --filter-border:#A3B8B3; --filter-secondary:#5811B4; }
 #FilterModal .modal-content { max-height:calc(100dvh - 24px); border:1px solid var(--filter-border); border-radius:12px; background:#fff; box-shadow:0 12px 36px rgb(33 37 41 / 18%); }
@@ -8832,14 +9155,13 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 #addRequestAmountModal .ts-dropdown .active { background:#E7F3F0; color:var(--request-primary); }
 #addRequestAmountModal textarea { resize:vertical; min-height:76px; }
 #addRequestAmountModal .currencyHint { color:#545961; font-size:12px; }
-#addRequestAmountModal .request-amount-modal-actions { display:flex; flex-direction:row-reverse; justify-content:flex-end; flex-wrap:wrap; gap:7px; border-top:1px solid var(--request-border); padding-top:12px; margin-top:2px; }
+#addRequestAmountModal .request-amount-modal-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:7px; border-top:1px solid var(--request-border); padding-top:12px; margin-top:2px; }
 #addRequestAmountModal .request-amount-modal-actions button { min-height:36px; min-width:76px; padding:5px 14px; border:1px solid var(--request-border); border-radius:6px; box-shadow:none; font:500 14px/1.7 IRANSansMedium; }
 #addRequestAmountModal .request-amount-modal-actions .buttonGreen3 { background:#00665C; color:#fff; border-color:#00665C; }
 #addRequestAmountModal .request-amount-modal-actions .buttonCancel2 { background:#fff; color:#545961; }
 #addRequestAmountModal .request-amount-modal-actions .buttonCancel2:hover { background:#F0F1F7; }
 #addRequestAmountModal button:focus-visible { outline:2px solid var(--request-purple); outline-offset:2px; }
 @media (max-width:575px) {
-    #addRequestAmountModal .modal-dialog { margin:8px; }
     #addRequestAmountModal .request-amount-modal-header { padding:10px 12px; }
     #addRequestAmountModal #reqAmountModalTitleId { font-size:14px; }
     #addRequestAmountModal .modal-body { padding:12px; }

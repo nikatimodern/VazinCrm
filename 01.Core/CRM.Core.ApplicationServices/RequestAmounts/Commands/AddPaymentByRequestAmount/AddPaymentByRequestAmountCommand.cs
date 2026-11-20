@@ -30,7 +30,10 @@ public sealed class AddPaymentByRequestAmountCommandHandler(IRequestAmountReposi
             var user = (await actor.GetAsync(ct)).User;
             var validation = await workflow.ValidateRequestAmountsPayment(model, ct);
             if (!validation.IsValid)
+            {
+                await repository.RollbackAsync(CancellationToken.None);
                 return new(400, validation.Message);
+            }
             var isNewPayment = model.Id == Guid.Empty;
             await workflow.AddOrUpdatePayment(model, user, isNewPayment, ct);
             await workflow.SyncRequestAmountsPaymentState(model, user, isNewPayment, ct);

@@ -1,0 +1,90 @@
+#supplyFinancialModal,
+#sendSupplyToExternalSoftwareModal {
+    --supply-financial-border: var(--color-border, #DDE1E8);
+    --supply-financial-surface: var(--color-surface, #FFFFFF);
+    --supply-financial-muted: var(--color-text-muted, #545961);
+    --supply-financial-action: var(--color-primary-action, #00665C);
+    --supply-financial-selected: var(--color-primary-light, #E7F3F0);
+}
+
+.supply-financial-document-group {
+    display: grid;
+    gap: .35rem;
+}
+
+.supply-financial-receipt {
+    display: grid;
+    gap: .4rem;
+    margin-inline-start: clamp(.5rem, 3vw, 1.5rem);
+    padding: .6rem .75rem;
+    border: 1px solid var(--supply-financial-border);
+    border-inline-start: 3px solid var(--supply-financial-action);
+    border-radius: .5rem;
+    background: var(--supply-financial-selected);
+}
+
+.supply-financial-receipt-title {
+    color: var(--supply-financial-action);
+    font-family: IRANSansBold;
+    font-size: 12px;
+}
+
+.supply-financial-receipt .external-pf-actions {
+    justify-self: end;
+}
+
+#supplyFinancialModal .external-pf-toolbar {
+    flex-wrap: wrap;
+    gap: .45rem .75rem;
+}
+
+#supplyFinancialModal .external-pf-send:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+#supplyFinancialModal .supply-financial-missing {
+    --supply-financial-danger: var(--color-danger, #C2185B);
+    border-color: var(--supply-financial-danger);
+    background: var(--color-danger-light, #FCE8F0);
+}
+
+#supplyFinancialModal .supply-financial-missing .external-pf-value,
+#supplyFinancialModal .supply-financial-missing .supply-financial-receipt-title,
+#supplyFinancialModal .supply-financial-missing-message,
+#supplyFinancialModal .supply-financial-remove {
+    color: var(--supply-financial-danger);
+}
+
+#supplyFinancialModal .supply-financial-missing-message {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 12px;
+}
+
+#supplyFinancialModal .supply-financial-remove {
+    border: 1px solid currentColor;
+    background: var(--supply-financial-surface);
+}
+
+.supply-financial-note summary {
+    inline-size: fit-content;
+    color: var(--supply-financial-action);
+    font-size: .82rem;
+    cursor: pointer;
+}
+
+.supply-financial-note[open] textarea {
+    margin-block-start: .35rem;
+}
+
+.external-item-matching > .supply-financial-note {
+    padding: .6rem .8rem;
+    border-radius: .65rem;
+    background: var(--supply-financial-selected);
+}
+
+.supply-financial-note summary:focus-visible {
+    outline: 2px solid var(--supply-financial-action);
+    outline-offset: 2px;
+}

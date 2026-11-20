@@ -328,6 +328,14 @@
 }
 
 
+.sms-contact-name {
+	display: inline-block;
+	max-width: 200px;
+	white-space: normal;
+	overflow-wrap: break-word;
+}
+
+
 .sms-message {
 	/* 	display: inline-block;
 		max-width: 420px;

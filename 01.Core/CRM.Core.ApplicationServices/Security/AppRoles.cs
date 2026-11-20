@@ -18,5 +18,6 @@ public static class AppRoles {
 
     public const string TanKhah = "تنخواه دار";
     public const string Customer = "مشتری";
+    public const string Supplier = "تامین کننده";
     public const string QcExpert = "کارشناس کنترل کیفیت";
 }

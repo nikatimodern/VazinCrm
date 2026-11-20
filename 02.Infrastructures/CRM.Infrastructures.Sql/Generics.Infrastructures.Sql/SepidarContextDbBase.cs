@@ -10,11 +10,13 @@ using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.InventoryDeliveries.Entities;
 using CRM.Core.Domain.Sepidar.Items.Entities;
 using CRM.Core.Domain.Sepidar.Parties.Entities;
+using CRM.Core.Domain.Sepidar.Purchases.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Core.Domain.Sepidar.SaleTypes.Entities;
 using CRM.Core.Domain.Sepidar.Stocks.Entities;
 using CRM.Core.Domain.Sepidar.Units.Entities;
+using CRM.Core.Domain.Sepidar.Users.Entities;
 using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,9 +30,14 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<SepidarConfiguration> SepidarConfigurations { get; set; }
     public DbSet<Invoice> vwInvoice { get; set; }
     public DbSet<SalesInvoiceRecord> SalesInvoices { get; set; }
+    public DbSet<InvoiceBrokerRecord> InvoiceBrokers { get; set; }
     public DbSet<SalesInvoiceItemRecord> SalesInvoiceItems { get; set; }
     public DbSet<InventoryDeliveryRecord> InventoryDeliveries { get; set; }
     public DbSet<InventoryDeliveryItemRecord> InventoryDeliveryItems { get; set; }
+    public DbSet<InventoryPurchaseInvoice> InventoryPurchaseInvoices { get; set; }
+    public DbSet<InventoryPurchaseInvoiceItem> InventoryPurchaseInvoiceItems { get; set; }
+    public DbSet<InventoryReceipt> InventoryReceipts { get; set; }
+    public DbSet<InventoryReceiptItem> InventoryReceiptItems { get; set; }
     public DbSet<InvoiceItem> vwInvoiceItem { get; set; }
     public DbSet<PaymentHeader> PaymentHeaders { get; set; }
     public DbSet<FiscalYear> FiscalYears { get; set; }
@@ -49,6 +56,7 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<QuotationItem> QuotationItems { get; set; }
     public DbSet<Item> Items { get; set; }
     public DbSet<Party> Parties { get; set; }
+    public DbSet<SepidarUser> SepidarUsers { get; set; }
     public DbSet<PartyAddress> PartyAddresses { get; set; }
     public DbSet<SaleType> SaleTypes { get; set; }
     public DbSet<Stock> Stocks { get; set; }
@@ -65,6 +73,11 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<Invoice>().ToView("vwInvoice", "SLS").Ignore(f => f.DateTXT);
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
         modelBuilder.Entity<SalesInvoiceRecord>().ToTable("Invoice", "SLS");
+        modelBuilder.Entity<InvoiceBrokerRecord>().ToTable("InvoiceBroker", "SLS");
+        // Match Sepidar's monetary function inputs/outputs rather than EF's default decimal(18,2).
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.Commission).HasPrecision(19, 4);
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.Rate).HasPrecision(26, 16);
+        modelBuilder.Entity<InvoiceBrokerRecord>().Property(x => x.CommissionInBaseCurrency).HasPrecision(19, 4);
         modelBuilder.Entity<SalesInvoiceItemRecord>().ToTable("InvoiceItem", "SLS");
         modelBuilder.Entity<ExtraData>().ToTable("ExtraData", "FMK");
         modelBuilder.Entity<SepidarConfiguration>().ToTable("Configuration", "FMK");
@@ -89,6 +102,7 @@ public abstract class SepidarContextDbBase : DbContext {
         modelBuilder.Entity<QuotationItem>().ToTable("QuotationItem", "SLS");
         modelBuilder.Entity<Item>().ToTable("Item", "INV");
         modelBuilder.Entity<Party>().ToTable("Party", "GNR");
+        modelBuilder.Entity<SepidarUser>().ToTable("User", "FMK");
         modelBuilder.Entity<PartyAddress>().ToTable("PartyAddress", "GNR");
         modelBuilder.Entity<SaleType>().ToTable("SaleType", "SLS");
         modelBuilder.Entity<Stock>().ToTable("Stock", "INV");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -30,7 +30,11 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Services.SepidarServices;
 
-public class SepidarService(SepidarContextDbBase sepidarContext) {
+public partial class SepidarService(SepidarContextDbBase sepidarContext) {
+    internal Task<bool> IsActiveUserAsync(int id, CancellationToken ct) =>
+        sepidarContext.SepidarUsers.AsNoTracking()
+            .AnyAsync(x => x.UserID == id && !x.IsDeleted && x.Status == true, ct);
+
     public async Task<Invoice> GetInvoiceAsync(int? invoiceId)
     {
         return await sepidarContext.vwInvoice
@@ -91,12 +95,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public string GetNoteInvoice(int? refId)
+    public async Task<string> GetNoteInvoiceAsync(int invoiceId, CancellationToken ct)
     {
-        var note = sepidarContext.ExtraData
-            .Where(f => f.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && f.EntityRef == refId)
-            .FirstOrDefault().Note;
-        return note;
+        return await sepidarContext.ExtraData
+            .AsNoTracking()
+            .Where(x => x.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsInvoice" && x.EntityRef == invoiceId)
+            .Select(x => x.Note)
+            .FirstOrDefaultAsync(ct) ?? string.Empty;
     }
 
 
@@ -104,7 +109,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
 
     public async Task<(string entityName, string entityId)?> SendCashToSepidar(Cash cash, string tafsiliCode, int costCenterId,
-        string tafsiliCash)
+        string tafsiliCash, int creator, CancellationToken ct)
     {
         var dl = await GetDlByCodeAsync(tafsiliCode);
         var tafsiliId = dl.DLId;
@@ -114,10 +119,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         switch (dl.Type)
         {
             case 4: // حساب بانكي
-                return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId, sepidarCashId);
+                return await AddPaymentHeaderAsync(cash, tafsiliId, costCenterId, sepidarCashId, creator, ct);
 
             case 2: // طرف مقابل
-                return await AddVoucherAsync2(cash, tafsiliId, costCenterId);
+                return await AddVoucherAsync2(cash, tafsiliId, costCenterId, creator, ct);
 
             default:
                 return null;
@@ -310,17 +315,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         // If it is absent or invalid, use the Sepidar configuration setting.
         // Never silently fall back to a hard-coded Moein code.
         if (saleType?.PartSalesSLRef is int accountId and > 0 &&
-            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive && !x.HasTracking, ct))
+            await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
         {
             return accountId;
         }
 
-        var configuredAccountId = await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
-        if (await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == configuredAccountId && x.HasTracking, ct))
-            throw new InvalidOperationException(
-                "حساب فروش کالا در تنظیم «SalesPartSalesSL» نیاز به شماره پیگیری دارد و برای سند فروش قابل استفاده نیست.");
-
-        return configuredAccountId;
+        return await GetConfiguredAccountIdAsync("SalesPartSalesSL", ct);
     }
 
     private async Task<int> GetAccountIdByMoeinCodeAsync(string moeinCode, CancellationToken cancellationToken = default)
@@ -486,7 +486,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId, int sepidarCashId,
+    private async Task<(string, string)> AddPaymentHeaderAsync(Cash cash, int tafsiliId, int costCenterId, int sepidarCashId, int creator,
         CancellationToken ct = default)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
@@ -524,9 +524,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 ItemType = 4, // فعلا
                 State = 2, // فعلا
                 CreatorForm = "0", // فعلا
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
                 Version = 1,
                 Rate = 1,
@@ -556,7 +556,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // The payment document is always saved; its accounting voucher is optional.
             if (await GetRequiredSepidarBooleanSettingAsync("PaymentAutoVoucher", ct))
             {
-                var voucher = await AddVoucherAsync(cash, paymentHeader, ct);
+                var voucher = await AddVoucherAsync(cash, paymentHeader, creator, ct);
                 paymentHeader.Voucher = voucher;
                 paymentHeader.Version = 2;
                 await sepidarContext.SaveChangesAsync(ct);
@@ -629,14 +629,29 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     //--------------------------------------------------------- VOUCHER ---------------------------------------------------------
-    private async Task<int> GetNextVoucherNumberAsync(int fiscalYearId, CancellationToken ct = default)
+    private sealed class VoucherNumbers
     {
-        var lastNumber = await sepidarContext.Vouchers
-            .AsNoTracking()
-            .Where(x => x.FiscalYearRef == fiscalYearId)
-            .MaxAsync(x => (int?)x.Number, ct) ?? 0;
+        public int Number { get; set; }
+        public int ReferenceNumber { get; set; }
+    }
 
-        return lastNumber + 1;
+    private async Task<(int Number, int ReferenceNumber)> GetNextVoucherNumbersAsync(int fiscalYearId, CancellationToken ct)
+    {
+        if (sepidarContext.Database.CurrentTransaction is null)
+            throw new InvalidOperationException("ثبت سند حسابداری در سپیدار آغاز نشد و شماره‌ای به سند اختصاص پیدا نکرد.");
+
+        // Keep the fiscal-year range locked until the voucher insert commits.
+        var numbers = await sepidarContext.Database.SqlQuery<VoucherNumbers>($"""
+            SELECT COALESCE(MAX(Number), 0) + 1 AS Number,
+                   COALESCE(MAX(ReferenceNumber), 0) + 1 AS ReferenceNumber
+            FROM ACC.Voucher WITH (UPDLOCK, HOLDLOCK)
+            WHERE FiscalYearRef = {fiscalYearId}
+            """).SingleAsync(ct);
+
+        if (numbers is null)
+            throw new InvalidOperationException("شماره سند و شماره عطف در سپیدار مشخص نشد. سند حسابداری ثبت نشد.");
+
+        return (numbers.Number, numbers.ReferenceNumber);
     }
 
     private async Task<int> GetNextVoucherDailyNumberAsync(DateTime date, int fiscalYearId, CancellationToken ct = default)
@@ -654,7 +669,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         "SG.Accounting.VoucherManagement.Common, " +
         "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId, CancellationToken ct = default)
+    private async Task<(string, string)> AddVoucherAsync2(Cash cash, int tafsiliId, int costCenterId, int creator, CancellationToken ct = default)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -666,23 +681,23 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             CheckFiscalYearWithCRM(cash.CostDate, currentFinancialYear);
             var fiscalYearId = currentFinancialYear.FiscalYearId;
 
-            var voucherNumber = await GetNextVoucherNumberAsync(fiscalYearId, ct);
+            var voucherNumbers = await GetNextVoucherNumbersAsync(fiscalYearId, ct);
             var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, fiscalYearId, ct);
 
             var voucher = new Voucher {
                 VoucherId = voucherId,
-                Number = voucherNumber,
+                Number = voucherNumbers.Number,
                 Date = cash.CostDateMiladi,
-                ReferenceNumber = voucherNumber,
+                ReferenceNumber = voucherNumbers.ReferenceNumber,
                 State = 1,
                 Type = 1,
                 FiscalYearRef = fiscalYearId,
                 Description = cash.CostDescription,
                 Description_En = cash.CostDescription,
                 Version = 1,
-                Creator = 1,
+                Creator = creator,
                 CreationDate = DateTime.Now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = DateTime.Now,
                 DailyNumber = dailyNumber,
                 IssuerSystem = 3,
@@ -866,16 +881,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    private async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, CancellationToken ct = default)
+    private async Task<Voucher> AddVoucherAsync(Cash cash, PaymentHeader paymentHeader, int creator, CancellationToken ct = default)
     {
-        // شماره سند
-        var voucherNumber = await GetNextVoucherNumberAsync(paymentHeader.FiscalYearRef, ct);
+        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucherNumbers = await GetNextVoucherNumbersAsync(paymentHeader.FiscalYearRef, ct);
 
         // شماره روزانه
         var dailyNumber = await GetNextVoucherDailyNumberAsync(cash.CostDateMiladi, paymentHeader.FiscalYearRef, ct);
-
-        // PaymentHeaderId
-        var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
 
         // ساخت Voucher
 
@@ -888,11 +900,11 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
         var voucher = new Voucher {
             VoucherId = voucherId,
-            Number = voucherNumber,
+            Number = voucherNumbers.Number,
 
             Date = cash.CostDateMiladi,
 
-            ReferenceNumber = voucherNumber, // هنوز قطعی نکرده‌ایم همیشه برابر Number باشد
+            ReferenceNumber = voucherNumbers.ReferenceNumber,
 
             SecondaryNumber = null,
 
@@ -905,9 +917,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             Description_En = description,
 
             Version = 1,
-            Creator = 1,
+            Creator = creator,
             CreationDate = now,
-            LastModifier = 1,
+            LastModifier = creator,
             LastModificationDate = now,
 
             DailyNumber = dailyNumber,
@@ -1195,6 +1207,115 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
     }
 
+    public async Task<List<SepidarBrokerOptionDto>> GetSepidarBrokersAsync(CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.IsBroker && x.Dl.IsActive)
+            .OrderBy(x => x.Name).ThenBy(x => x.LastName)
+            .Select(x => new SepidarBrokerOptionDto {
+                PartyId = x.PartyId,
+                FullName = (x.Name + " " + x.LastName).Trim(),
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
+                CommissionRate = x.CommissionRate
+            })
+            .ToListAsync(ct);
+    }
+
+    // The expert mapping can point to any Party; only invoice export requires
+    // IsBroker. Returning null distinguishes a missing Party from IsBroker=false.
+    public async Task<bool?> GetSepidarPartyIsBrokerAsync(
+        int partyId, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == partyId)
+            .Select(x => (bool?)x.IsBroker)
+            .SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<SepidarBrokerOptionDto?> GetSepidarBrokerByIdAsync(
+        int id, CancellationToken ct = default)
+    {
+        return await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == id && x.IsBroker && x.Dl.IsActive)
+            .Select(x => new SepidarBrokerOptionDto {
+                PartyId = x.PartyId,
+                FullName = (x.Name + " " + x.LastName).Trim(),
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
+                CommissionRate = x.CommissionRate
+            })
+            .SingleOrDefaultAsync(ct);
+    }
+
+    // The same calculation is used for both preview and final insert.
+    // Sepidar stores a percentage on Party and a currency exchange rate on InvoiceBroker.
+    private async Task<SepidarInvoiceBrokerPreviewDto> CalculateInvoiceBrokerAsync(
+        int brokerPartyId, decimal price, decimal discount, decimal currencyRate, CancellationToken ct)
+    {
+        var broker = await sepidarContext.Parties.AsNoTracking()
+            .Where(x => x.PartyId == brokerPartyId && x.IsBroker && x.Dl.IsActive)
+            .Select(x => new SepidarBrokerOptionDto {
+                PartyId = x.PartyId,
+                FullName = (x.Name + " " + x.LastName).Trim(),
+                DlCode = x.Dl.Code,
+                DlRef = x.DLRef,
+                CommissionRate = x.CommissionRate
+            })
+            .SingleOrDefaultAsync(ct);
+
+        if (broker is null || broker.DlRef <= 0)
+            throw new InvalidOperationException("واسط انتخاب‌شده یا تفصیلی فعال او در سپیدار پیدا نشد.");
+
+        if (broker.CommissionRate < 0 || broker.CommissionRate > 100)
+            throw new InvalidOperationException("نرخ پورسانت واسط باید بین صفر تا صد درصد باشد.");
+
+        if (currencyRate <= 0 || price - discount <= 0)
+            throw new InvalidOperationException("مبلغ فروش یا نرخ تبدیل ارز برای محاسبه پورسانت معتبر نیست.");
+
+        // Use Sepidar's system currency precision. SQL Server ROUND rounds 0.5 away from zero.
+        var precision = await sepidarContext.Database.SqlQueryRaw<int>(
+                "SELECT CAST(GNR.fnGetSystemCurrencyPrecisionCount() AS int) AS [Value]")
+            .SingleAsync(ct);
+        if (precision is < 0 or > 4)
+            throw new InvalidOperationException("دقت ارز پایه در تنظیمات سپیدار معتبر نیست.");
+
+        var commission = Math.Round((price - discount) * broker.CommissionRate / 100m,
+            precision, MidpointRounding.AwayFromZero);
+        var inBaseCurrency = await sepidarContext.Database.SqlQuery<decimal>(
+                $"SELECT GNR.fnCalcAmountInBaseCurrency({commission}, {currencyRate}) AS [Value]")
+            .SingleAsync(ct);
+
+        return new SepidarInvoiceBrokerPreviewDto {
+            PartyId = broker.PartyId,
+            FullName = broker.FullName,
+            DlCode = broker.DlCode,
+            DlRef = broker.DlRef,
+            CommissionRate = broker.CommissionRate,
+            Commission = commission,
+            CurrencyRate = currencyRate,
+            CommissionInBaseCurrency = inBaseCurrency
+        };
+    }
+
+    public async Task<SepidarInvoiceBrokerPreviewDto?> GetInvoiceBrokerPreviewAsync(
+        int? brokerPartyId, SepidarInvoiceExportPreview preview, CancellationToken ct = default)
+    {
+        if (!brokerPartyId.HasValue)
+            return null;
+
+        decimal? rate = preview.QuotationId == 0 ? 1m : await sepidarContext.Quotations.AsNoTracking()
+            .Where(x => x.QuotationId == preview.QuotationId)
+            .Select(x => (decimal?)x.Rate)
+            .SingleOrDefaultAsync(ct);
+
+        if (!rate.HasValue)
+            throw new InvalidOperationException("پیش‌فاکتور مالی برای محاسبه نرخ ارز واسط پیدا نشد.");
+
+        return await CalculateInvoiceBrokerAsync(
+            brokerPartyId.Value, preview.Price, preview.Discount, rate.Value, ct);
+    }
+
     public async Task<SepidarPartyDto> GetSepidarCustomerByIdAsync(int id, CancellationToken ct = default)
     {
         return await sepidarContext.Parties
@@ -1308,7 +1429,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     public async Task<(string entityName, string entityId)?> SendPreFactorToSepidar(PreFactor preFactor, int externalCustomerId, int saleTypeId,
-        List<ExternalPreFactorItemMapping> itemMappings, CancellationToken ct = default)
+        List<ExternalPreFactorItemMapping> itemMappings, int creator, CancellationToken ct = default)
     {
         // Customer validation
         var customer = await GetSepidarCustomerByIdAsync(externalCustomerId, ct);
@@ -1349,7 +1470,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         foreach (var item in preFactor?.PreFactorItems ?? [])
         {
             if (!mappingByItemId.TryGetValue(item.Id, out var mapping))
-                throw new InvalidOperationException($"نگاشت کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
+                throw new InvalidOperationException($"کالای متناظر در سپیدار برای «{item.Product}» انتخاب نشده است.");
 
             if (mapping.ExternalItemId <= 0)
                 throw new InvalidOperationException($"کالای سپیدار برای کالای ({item.Product}) مشخص نشده است.");
@@ -1371,7 +1492,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             SaleTypeRef = saleTypeId
         };
 
-        var quotationId = await AddQuotationAsync(request, ct);
+        var quotationId = await AddQuotationAsync(request, creator, ct);
 
         return (nameof(Quotation), quotationId.ToString());
     }
@@ -1387,7 +1508,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"شماره پیش‌فاکتور {serialNumber} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task<int> AddQuotationAsync(SepidarQuotationRequest request, CancellationToken ct = default)
+    private async Task<int> AddQuotationAsync(SepidarQuotationRequest request, int creator, CancellationToken ct = default)
     {
         if (request.Items == null || request.Items.Count == 0)
             throw new InvalidOperationException("پیش‌فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1442,9 +1563,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Rate = 1,
                 Version = 1,
 
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
 
                 Closed = false,
@@ -1598,6 +1719,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.InvoiceId == id),
 
+            nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryPurchaseInvoice) =>
+                await sepidarContext.InventoryPurchaseInvoices.AnyAsync(x => x.InventoryPurchaseInvoiceID == id && x.Type == 1),
+
+            nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryReceipt) =>
+                await sepidarContext.InventoryReceipts.AnyAsync(x => x.InventoryReceiptID == id && !x.IsReturn),
+
             _ => null
         };
     }
@@ -1605,7 +1732,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     //--------------------------------------------------------- Item ---------------------------------------------------------
 
-    public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, CancellationToken ct = default)
+    public async Task SendItemToSepidar(ExternalSoftwareAddItemRequest request, int creator, CancellationToken ct = default)
     {
         // unit validation
         var unit = await GetSepidarUnitByIdAsync(request.ItemUnit, ct);
@@ -1625,7 +1752,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (validStockIds.Count != selectedStockIds.Count)
             throw new InvalidOperationException("یک یا چند انبار انتخاب‌شده در نرم‌افزار مالی پیدا نشد.");
 
-        await AddItemAsync(request, ct);
+        if (request.DefaultStockRef is int defaultStockRef && !validStockIds.Contains(defaultStockRef))
+            throw new InvalidOperationException("انبار پیش‌فرض باید یکی از انبارهای انتخاب‌شده برای کالا باشد.");
+
+        await AddItemAsync(request, creator, ct);
     }
 
     private async Task CheckItemCodeAsync(string code, CancellationToken ct = default)
@@ -1639,7 +1769,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException($"کد محصول {code} قبلاً در نرم‌افزار مالی ثبت شده است.");
     }
 
-    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, CancellationToken ct)
+    private async Task AddItemAsync(ExternalSoftwareAddItemRequest request, int creator, CancellationToken ct)
     {
         await using var trans = await sepidarContext.Database.BeginTransactionAsync(ct);
 
@@ -1656,10 +1786,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Title = request.ItemTitle,
                 Title_En = request.ItemTitle,
                 UnitRef = request.ItemUnit,
-                DefaultStockRef = null, // فعلا
-                Creator = 1,
+                DefaultStockRef = request.DefaultStockRef,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
                 Version = 0,
                 IsActive = true,
@@ -1729,17 +1859,20 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     public async Task<SepidarInvoiceExportPreview> CompleteInvoiceExportPreviewAsync(SepidarInvoiceExportPreview preview,
         CancellationToken ct = default)
     {
-        var quotation = await GetQuotationAsync(preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد.");
+        var quotation = preview.QuotationId > 0
+            ? (await GetQuotationAsync(preview.QuotationId, ct)
+                ?? throw new InvalidOperationException("پیش‌فاکتور مقصد برای پیش‌نمایش پیدا نشد."))
+            : null;
 
-        var customer = await GetSepidarCustomerByIdAsync(quotation.CustomerPartyRef, ct)
-                       ?? throw new InvalidOperationException("مشتری پیش‌فاکتور مقصد پیدا نشد.");
+        var customerId = quotation?.CustomerPartyRef ?? preview.CustomerPartyRef;
+        var customer = await GetSepidarCustomerByIdAsync(customerId, ct)
+                       ?? throw new InvalidOperationException("مشتری مقصد در سپیدار پیدا نشد.");
         preview.CustomerName = string.IsNullOrWhiteSpace(customer.DlCode)
             ? customer.FullName
             : $"{customer.DlCode} - {customer.FullName}";
 
         var saleType = (await GetSaleTypes(ct))
-                       .SingleOrDefault(x => x.SaleTypeId == quotation.SaleTypeRef)
+                       .SingleOrDefault(x => x.SaleTypeId == (quotation?.SaleTypeRef ?? preview.SaleTypeRef))
                        ?? throw new InvalidOperationException("نوع فروش پیش‌فاکتور مقصد پیدا نشد.");
         preview.SaleTypeTitle = $"{saleType.Number} - {saleType.Title}";
 
@@ -1773,8 +1906,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
 
-    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int? requestedInvoiceNumber = null,
-        CancellationToken ct = default)
+    public async Task<int> AddInvoiceAsync(Factor factor, SepidarInvoiceExportPreview preview, int creator, int? requestedInvoiceNumber = null,
+        CancellationToken ct = default, int? brokerPartyId = null)
     {
         if (preview?.Items == null || preview.Items.Count == 0)
             throw new InvalidOperationException("فاکتور باید حداقل یک ردیف کالا داشته باشد.");
@@ -1782,17 +1915,28 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (!factor.DateMiladi.HasValue)
             throw new InvalidOperationException("تاریخ فاکتور CRM معتبر نیست.");
 
-        var quotation = await sepidarContext.Quotations.AsNoTracking().SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
-                        ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد.");
-
-        if (quotation.FiscalYearRef != preview.FiscalYearRef)
+        var quotation = preview.QuotationId > 0
+            ? (await sepidarContext.Quotations.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.QuotationId == preview.QuotationId, ct)
+                    ?? throw new InvalidOperationException("پیش‌فاکتور مربوط در سپیدار پیدا نشد."))
+            : null;
+        if (quotation != null && quotation.FiscalYearRef != preview.FiscalYearRef)
             throw new InvalidOperationException("سال مالی پیش‌فاکتور سپیدار تغییر کرده است.");
+
+        // Resolve the Sepidar customer in both invoice modes. A quotation may
+        // have null customer names/address, so fallback data must never be null.
+        var customerPartyId = quotation?.CustomerPartyRef ?? preview.CustomerPartyRef;
+        var customer = await GetSepidarCustomerByIdAsync(customerPartyId, ct)
+            ?? throw new InvalidOperationException("مشتری فاکتور در سپیدار پیدا نشد.");
+        if (quotation == null && !await sepidarContext.SaleTypes.AsNoTracking()
+                .AnyAsync(x => x.SaleTypeId == preview.SaleTypeRef, ct))
+            throw new InvalidOperationException("نوع فروش انتخاب‌شده در سپیدار معتبر نیست.");
 
         var invoiceDate = factor.DateMiladi.Value;
         var fiscalYear = await sepidarContext.FiscalYears.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.FiscalYearId == quotation.FiscalYearRef, ct);
+            .SingleOrDefaultAsync(x => x.FiscalYearId == preview.FiscalYearRef, ct);
         if (fiscalYear == null || invoiceDate.Date < fiscalYear.StartDate.Date || invoiceDate.Date > fiscalYear.EndDate.Date)
-            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی پیش‌فاکتور سپیدار است.");
+            throw new InvalidOperationException($"تاریخ فاکتور CRM ({factor.Date}) خارج از سال مالی مقصد است.");
 
         await using var transaction = await sepidarContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         try
@@ -1811,17 +1955,17 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
             var invoice = new SalesInvoiceRecord {
                 InvoiceId = invoiceId,
-                QuotationRef = quotation.QuotationId,
-                CustomerPartyRef = quotation.CustomerPartyRef,
-                CustomerRealName = quotation.CustomerRealName,
-                CustomerRealName_En = quotation.CustomerRealName_En,
-                SaleTypeRef = quotation.SaleTypeRef,
-                PartyAddressRef = quotation.PartyAddressRef,
+                QuotationRef = quotation?.QuotationId,
+                CustomerPartyRef = customer.Id,
+                CustomerRealName = quotation?.CustomerRealName ?? customer.FullName,
+                CustomerRealName_En = quotation?.CustomerRealName_En ?? customer.FullName,
+                SaleTypeRef = quotation?.SaleTypeRef ?? preview.SaleTypeRef,
+                PartyAddressRef = quotation?.PartyAddressRef ?? customer.PartyMainAddressRef,
                 Number = invoiceNumber,
                 Date = invoiceDate,
-                CurrencyRef = quotation.CurrencyRef,
+                CurrencyRef = quotation?.CurrencyRef ?? 1,
                 SLRef = await GetConfiguredAccountIdAsync("SalesReceivableSL", ct), // حسابهاي دريافتني تجاري
-                DeliveryLocationRef = quotation.DeliveryLocationRef,
+                DeliveryLocationRef = quotation?.DeliveryLocationRef ?? 1,
                 State = 1, // ثبت: 1 | ابطال شده: 2
                 Price = preview.Price,
                 PriceInBaseCurrency = preview.Price,
@@ -1834,13 +1978,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 Duty = 0,
                 DutyInBaseCurrency = 0,
                 NetPriceInBaseCurrency = preview.NetPrice,
-                Rate = quotation.Rate,
+                Rate = quotation?.Rate ?? 1m,
                 Version = 1,
-                Creator = 1,
+                Creator = creator,
                 CreationDate = now,
-                LastModifier = 1,
+                LastModifier = creator,
                 LastModificationDate = now,
-                FiscalYearRef = quotation.FiscalYearRef,
+                FiscalYearRef = quotation?.FiscalYearRef ?? preview.FiscalYearRef,
                 VoucherRef = null, // Set after posting the sales accounting voucher.
                 BaseOnInventoryDelivery = false,
                 OrderRef = null,
@@ -1857,7 +2001,10 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 SignatureRef = null
             };
 
-            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, quotation.Rate, ct);
+            invoice.InvoiceItems = await GenerateInvoiceItemsAsync(invoiceId, preview.Items, invoice.Rate, ct);
+            var broker = brokerPartyId.HasValue
+                ? await CalculateInvoiceBrokerAsync(brokerPartyId.Value, invoice.Price, invoice.Discount, invoice.Rate, ct)
+                : null;
             var stockCodes = await GetInventoryStockCodesAsync(invoice.InvoiceItems, ct);
             var itemCodes = await GetInventoryItemCodesAsync(invoice.InvoiceItems, ct);
 
@@ -1871,10 +2018,25 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
             // The quotation item tracks the cumulative quantity already invoiced.
             // Both this update and the invoice/delivery inserts share one SQL transaction.
-            await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور
+            if (quotation != null)
+                await UpdateQuotationUsedQuantitiesAsync(quotation.QuotationId, invoice.InvoiceItems, ct); // فقط صدور بر پایه پیش‌فاکتور
 
+            // Insert the invoice first: InvoiceBroker.InvoiceRef is a foreign key to SLS.Invoice.
+            // Both SaveChanges calls remain inside the same serializable SQL transaction.
             sepidarContext.SalesInvoices.Add(invoice);
             await sepidarContext.SaveChangesAsync(ct);
+            if (broker != null)
+            {
+                sepidarContext.InvoiceBrokers.Add(new InvoiceBrokerRecord {
+                    BrokerID = await GetNextIdAsync("SLS.InvoiceBroker", ct: ct),
+                    InvoiceRef = invoiceId,
+                    PartyRef = broker.PartyId,
+                    Commission = broker.Commission,
+                    Rate = broker.CurrencyRate,
+                    CommissionInBaseCurrency = broker.CommissionInBaseCurrency
+                });
+                await sepidarContext.SaveChangesAsync(ct);
+            }
 
             // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
             if (issueInventoryDelivery)
@@ -1892,7 +2054,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             // The sales voucher is optional; all enabled documents share the invoice SQL transaction.
             if (issueSalesVoucher)
             {
-                var voucher = await AddSalesInvoiceVoucherAsync(invoice, ct); // سند حسابداری فروش
+                var voucher = await AddSalesInvoiceVoucherAsync(invoice, broker, ct); // سند حسابداری فروش
                 sepidarContext.Vouchers.Add(voucher);
                 await sepidarContext.SaveChangesAsync(ct);
 
@@ -1917,7 +2079,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         "SG.Sales.InvoiceManagement.Common, " +
         "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
-    private async Task<Voucher> AddSalesInvoiceVoucherAsync(SalesInvoiceRecord invoice, CancellationToken ct)
+    private async Task<Voucher> AddSalesInvoiceVoucherAsync(
+        SalesInvoiceRecord invoice, SepidarInvoiceBrokerPreviewDto? broker, CancellationToken ct)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("سند حسابداری فروش باید داخل تراکنش فاکتور ثبت شود.");
@@ -1925,9 +2088,8 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (invoice.VoucherRef.HasValue)
             throw new InvalidOperationException("برای این فاکتور قبلاً سند حسابداری ثبت شده است.");
 
-        // Standard domestic invoice: one receivable debit, sales credit, optional VAT credit.
-        // Special postings (such as account 843/924 in some native Sepidar vouchers)
-        // need a confirmed business rule and must not be inferred from the invoice total.
+        // Standard domestic invoice: receivable debit, sales credit, optional VAT credit.
+        // When configured, commission adds expense debit and broker payable credit.
         if (invoice.Addition != 0 || invoice.Duty != 0)
             throw new InvalidOperationException("ثبت سند حسابداری فاکتور با اضافات یا عوارض نیاز به تنظیم حساب‌های مربوطه دارد.");
 
@@ -1953,16 +2115,26 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             ? await GetConfiguredAccountIdAsync("TaxPayableSL", ct)
             : null;
 
+        var issueCommissionVoucher = broker is { CommissionInBaseCurrency: > 0m }
+            && await GetRequiredSepidarBooleanSettingAsync("IssueAccVoucherWithCommision", ct);
+        int? commissionCostAccountId = issueCommissionVoucher
+            ? await GetConfiguredAccountIdAsync("SalesCommisionCostSL", ct)
+            : null;
+        int? commissionPayableAccountId = issueCommissionVoucher
+            ? await GetConfiguredAccountIdAsync("SalesCommiosionPayableSL", ct)
+            : null;
+
         var accountIds = new[] { receivableAccountId, salesAccountId }
             .Concat(taxAccountId.HasValue ? new[] { taxAccountId.Value } : Array.Empty<int>())
+            .Concat(commissionCostAccountId.HasValue ? new[] { commissionCostAccountId.Value, commissionPayableAccountId!.Value } : Array.Empty<int>())
             .ToArray();
         var accountStates = await sepidarContext.Accounts.AsNoTracking()
             .Where(x => accountIds.Contains(x.AccountId))
-            .Select(x => new { x.AccountId, x.IsActive, x.HasTracking })
+            .Select(x => new { x.AccountId, x.IsActive })
             .ToListAsync(ct);
 
-        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive || x.HasTracking))
-            throw new InvalidOperationException("یکی از حساب‌های معین فروش، دریافتنی یا مالیات سپیدار غیرفعال است یا نیاز به شماره پیگیری دارد.");
+        if (accountStates.Count != accountIds.Length || accountStates.Any(x => !x.IsActive))
+            throw new InvalidOperationException("یکی از حساب‌های معین مورد نیاز برای سند فروش در سپیدار پیدا نشد یا غیرفعال است.");
 
         int? taxDlRef = taxAccountId.HasValue
             ? await GetConfiguredDlIdAsync("ValueAddedTaxDL", ct)
@@ -1971,13 +2143,13 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         var baseDescription =
             $"بابت فاکتور شماره {invoice.Number} تاریخ {BaseServices.GetDatePersian(invoice.Date)} نوع فروش {saleType?.Title ?? "نامشخص"}";
         var now = DateTime.Now;
-        var voucherNumber = await GetNextVoucherNumberAsync(invoice.FiscalYearRef, ct);
         var voucherId = await GetNextIdAsync("ACC.Voucher", ct: ct);
+        var voucherNumbers = await GetNextVoucherNumbersAsync(invoice.FiscalYearRef, ct);
         var voucher = new Voucher {
             VoucherId = voucherId,
-            Number = voucherNumber,
+            Number = voucherNumbers.Number,
             Date = invoice.Date,
-            ReferenceNumber = voucherNumber,
+            ReferenceNumber = voucherNumbers.ReferenceNumber,
             SecondaryNumber = null,
             State = 1,
             Type = 2,
@@ -2001,7 +2173,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         salesDescription = salesDescription[..Math.Min(salesDescription.Length, 250)];
 
         var items = new List<VoucherItem>();
-        var rowCount = taxAccountId.HasValue ? 3 : 2;
+        var rowCount = (taxAccountId.HasValue ? 3 : 2) + (issueCommissionVoucher ? 2 : 0);
         var lastVoucherItemId = await GetNextIdAsync("ACC.VoucherItem", rowCount, ct);
         var firstVoucherItemId = lastVoucherItemId - rowCount + 1;
 
@@ -2028,13 +2200,22 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 TrackingDate = null,
                 IssuerEntityName = SalesInvoiceIssuerEntityName,
                 IssuerEntityRef = invoice.InvoiceId,
-                Description = description,
-                Description_En = description,
+                Description = description[..Math.Min(description.Length, 250)],
+                Description_En = description[..Math.Min(description.Length, 250)],
                 Version = 1
             });
         }
 
         AddRow(receivableAccountId, customerDlRef, netAmount, 0m, customerDescription);
+        if (issueCommissionVoucher)
+        {
+            var costDlRef = await GetVoucherItemDlRefAsync(commissionCostAccountId!.Value, broker!.DlRef, ct);
+            if (!costDlRef.HasValue)
+                throw new InvalidOperationException("حساب هزینه پورسانت باید تفصیلی واسط داشته باشد.");
+
+            AddRow(commissionCostAccountId.Value, costDlRef, broker.CommissionInBaseCurrency, 0m,
+                customerDescription);
+        }
         var salesDlRef = await GetVoucherItemDlRefAsync(salesAccountId, customer.DLRef, ct);
         AddRow(salesAccountId, salesDlRef, 0m, saleAmount, salesDescription);
 
@@ -2044,6 +2225,16 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             if (!vatDlRef.HasValue)
                 throw new InvalidOperationException("حساب مالیات فروش باید تفصیلی اداره مالیاتی داشته باشد.");
             AddRow(taxAccountId.Value, vatDlRef, 0m, taxAmount, salesDescription);
+        }
+
+        if (issueCommissionVoucher)
+        {
+            var payableDlRef = await GetVoucherItemDlRefAsync(commissionPayableAccountId!.Value, broker!.DlRef, ct);
+            if (!payableDlRef.HasValue)
+                throw new InvalidOperationException("حساب پورسانت پرداختنی باید تفصیلی واسط داشته باشد.");
+
+            AddRow(commissionPayableAccountId.Value, payableDlRef, 0m, broker.CommissionInBaseCurrency,
+                salesDescription);
         }
 
         if (items.Sum(x => x.Debit ?? 0m) != items.Sum(x => x.Credit ?? 0m))
@@ -2058,10 +2249,15 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("به‌روزرسانی مقدار مصرف‌شده پیش‌فاکتور باید داخل تراکنش باشد.");
 
-        if (invoiceItems.Count == 0 || invoiceItems.Any(x => !x.QuotationItemRef.HasValue || x.Quantity <= 0))
-            throw new InvalidOperationException("ردیف‌های فاکتور باید مقدار معتبر و ردیف پیش‌فاکتور مرتبط داشته باشند.");
+        if (invoiceItems.Count == 0 || invoiceItems.Any(x => x.Quantity <= 0))
+            throw new InvalidOperationException("مقدار ردیف‌های فاکتور معتبر نیست.");
 
-        var quantities = invoiceItems
+        // The user can replace a quoted item/stock on the new invoice. Such lines
+        // have no QuotationItemRef and must not increase the source row's UsedQuantity.
+        var linkedItems = invoiceItems.Where(x => x.QuotationItemRef.HasValue).ToList();
+        if (linkedItems.Count == 0) return;
+
+        var quantities = linkedItems
             .GroupBy(x => x.QuotationItemRef!.Value)
             .ToDictionary(x => x.Key, x => x.Sum(item => item.Quantity));
         var quotationItemIds = quantities.Keys.ToArray();
@@ -2074,7 +2270,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
             throw new InvalidOperationException("بعضی از ردیف‌های فاکتور به پیش‌فاکتور سپیدار انتخاب‌شده تعلق ندارند.");
 
         var quotationItemsById = quotationItems.ToDictionary(x => x.QuotationItemID);
-        foreach (var invoiceItem in invoiceItems)
+        foreach (var invoiceItem in linkedItems)
         {
             var quotationItem = quotationItemsById[invoiceItem.QuotationItemRef!.Value];
             if (quotationItem.ItemRef != invoiceItem.ItemRef || quotationItem.StockRef != invoiceItem.StockRef)
@@ -2134,6 +2330,17 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
         return await IsInvoiceNumberAvailableForFiscalYearAsync(
             fiscalYearRef.Value, requestedInvoiceNumber, ct);
+    }
+
+    public async Task<bool> IsDirectInvoiceNumberAvailableAsync(
+        DateTime invoiceDate, int number, CancellationToken ct = default)
+    {
+        if (number <= 0) throw new InvalidOperationException("شماره فاکتور معتبر نیست.");
+        var yearId = await sepidarContext.FiscalYears.AsNoTracking()
+            .Where(x => invoiceDate.Date >= x.StartDate.Date && invoiceDate.Date <= x.EndDate.Date)
+            .Select(x => (int?)x.FiscalYearId).SingleOrDefaultAsync(ct)
+            ?? throw new InvalidOperationException("سال مالی تاریخ فاکتور در سپیدار پیدا نشد.");
+        return await IsInvoiceNumberAvailableForFiscalYearAsync(yearId, number, ct);
     }
 
     private async Task<bool> IsInvoiceNumberAvailableForFiscalYearAsync(
@@ -2211,6 +2418,9 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     private static DataTable CreateInventorySummaryTable(IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId)
+        => CreateInventorySummaryTable(invoiceItems.Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)), fiscalYearId);
+
+    private static DataTable CreateInventorySummaryTable(IEnumerable<InventoryStockKey> keys, int fiscalYearId)
     {
         var table = new DataTable();
         table.Columns.Add("StockID", typeof(int));
@@ -2219,8 +2429,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         table.Columns.Add("FiscalYearID", typeof(int));
         table.Columns.Add("FeedFromClosingOperation", typeof(bool));
 
-        foreach (var key in invoiceItems
-                     .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
+        foreach (var key in keys
                      .Distinct()
                      .OrderBy(x => x.StockRef).ThenBy(x => x.ItemRef).ThenBy(x => x.TracingRef))
         {
@@ -2268,12 +2477,12 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
 
     private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
         IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId, CancellationToken ct)
-    {
-        var keys = invoiceItems
-            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef))
-            .Distinct()
-            .ToArray();
+        => await ReadInventoryStockBalancesAsync(invoiceItems
+            .Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)).Distinct().ToArray(), fiscalYearId, ct);
 
+    private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
+        InventoryStockKey[] keys, int fiscalYearId, CancellationToken ct)
+    {
         var stockRefs = keys.Select(x => x.StockRef).Distinct().ToArray();
         var itemRefs = keys.Select(x => x.ItemRef).Distinct().ToArray();
 
@@ -2489,7 +2698,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
         for (var index = 0; index < itemCount; index++)
         {
             var item = items[index];
-            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId <= 0)
+            if (item.ItemRef <= 0 || item.StockRef <= 0 || item.Quantity <= 0 || item.QuotationItemId < 0)
                 throw new InvalidOperationException($"ردیف {item.RowId}: کالا، انبار یا تعداد فاکتور سپیدار نامعتبر است.");
 
             invoiceItems.Add(new SalesInvoiceItemRecord {
@@ -2519,7 +2728,7 @@ public class SepidarService(SepidarContextDbBase sepidarContext) {
                 DutyInBaseCurrency = 0,
                 NetPriceInBaseCurrency = item.NetPrice,
                 Rate = rate,
-                QuotationItemRef = item.QuotationItemId,
+                QuotationItemRef = item.QuotationItemId > 0 ? item.QuotationItemId : null,
                 Description = null,
                 Description_En = null,
                 DiscountInvoiceItemRef = null,

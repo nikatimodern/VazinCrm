@@ -235,6 +235,198 @@ const distributeItemDiscount = (items, totalDiscount) => {
 };
 
 
+function createExternalItemMatching() {
+    const content = document.createElement("div");
+    content.className = "external-item-matching";
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "external-item-match-toolbar";
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "link-green text-decoration-none";
+    add.textContent = "افزودن کالای جدید";
+    toolbar.append(add);
+
+    const list = document.createElement("div");
+    list.className = "external-item-match-list";
+    content.append(toolbar, list);
+    return { content, toolbar, add, list };
+}
+
+function appendExternalItemMatchRow(list, title, quantity, unit, quantityLabel) {
+    const row = document.createElement("div");
+    row.className = "external-item-match-row";
+    const source = document.createElement("div");
+    source.className = "external-item-match-source";
+    const name = document.createElement("strong");
+    name.textContent = title ?? "—";
+    source.append(name);
+    if (quantity != null) {
+        const amount = document.createElement("small");
+        amount.textContent = [quantityLabel, Number(quantity).toLocaleString("fa-IR"), unit].filter(Boolean).join(" ");
+        source.append(amount);
+    }
+    const target = document.createElement("div");
+    target.className = "external-item-match-target";
+    row.append(source, target);
+    list.append(row);
+    return target;
+}
+
+async function openSepidarItemCreation({ softwareId, softwareTitle, afterCreate, canOpen = () => true }) {
+    const modal = document.getElementById("addItemInSepidarModal");
+    if (!modal || !softwareId || modal.dataset.active === "true") return;
+    modal.dataset.active = "true";
+
+    const form = modal.querySelector("form");
+    const unit = form.elements.namedItem("itemUnit");
+    const stockInput = modal.querySelector("#sepidarStockId");
+    const defaultStock = form.elements.namedItem("defaultStockRef");
+    const defaultStockField = modal.querySelector("[data-sepidar-default-stock]");
+    const submit = form.querySelector('button[type="submit"]');
+    const data = { externalSoftwareIds: [softwareId] };
+    const lifecycle = new AbortController();
+    const { signal } = lifecycle;
+    let stockIds = [], saving = false;
+
+    const cleanup = () => {
+        lifecycle.abort();
+        unit.tomselect?.destroy();
+        unit.replaceChildren(new Option("انتخاب کنید", ""));
+        defaultStock.replaceChildren(new Option("بدون انبار پیش‌فرض", ""));
+        defaultStockField.hidden = true;
+        form.reset();
+        delete modal.dataset.active;
+    };
+    const read = action => sendApiRequest({
+        url: "/Factor/" + action, method: "POST", data,
+        successMsg: null, showLoading: false,
+    });
+    let units, lastCode;
+    try {
+        [units, lastCode] = await Promise.all([read("PrepareExternalUnits"), read("GetLastSepidarItemCode")]);
+        if (!units || !canOpen()) {
+            cleanup();
+            return;
+        }
+
+        modal.querySelector("#addSepidarItemTitle").textContent = softwareTitle
+            ? "افزودن کالای جدید در " + softwareTitle : "افزودن کالای جدید";
+        modal.querySelector("#lastSepidarItemCode").textContent = lastCode ? "کد آخرین کالا: " + lastCode : "";
+        new TomSelect(unit, {
+            options: units, placeholder: "جستجو و انتخاب واحد", maxItems: 1, selectOnTab: true,
+        });
+    } catch (error) {
+        cleanup();
+        throw error;
+    }
+
+    modal.querySelector("[data-sepidar-item-stocks]").addEventListener("click", () => modalSelector.open({
+        title: "انتخاب انبار", selectedIds: stockIds, size: "sm", showSearch: false,
+        load: () => read("GetAllSepidarStocksPartial"),
+        onSubmit: ({ ids, numbers, map }) => {
+            const previousDefault = defaultStock.value;
+            const stockTitles = new Map([...modalSelector.container.querySelectorAll("[data-stock-title]")]
+                .map(input => [input.value, input.dataset.stockTitle]));
+            stockIds = ids;
+            stockInput.value = numbers.join(", ");
+            defaultStock.replaceChildren(new Option("بدون انبار پیش‌فرض", ""));
+            for (const id of ids) {
+                const code = map.get(id) ?? id;
+                const title = stockTitles.get(id);
+                defaultStock.append(new Option(title ? code + " - " + title : code, id));
+            }
+            defaultStock.value = ids.includes(previousDefault) ? previousDefault : "";
+            defaultStockField.hidden = ids.length === 0;
+        },
+    }), { signal });
+
+    modal.addEventListener("hide.bs.modal", event => {
+        if (saving) event.preventDefault();
+    }, { signal });
+    modal.addEventListener("hidden.bs.modal", () => {
+        cleanup();
+        modalSelector.reset();
+    }, { once: true, signal });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (saving) return;
+        saving = true;
+        submit.disabled = true;
+        let saved;
+        try {
+            if (!await mySer.CheckValidForm(form.id)) return;
+            if (!stockIds.length) return toastifyError("حداقل یک انبار باید انتخاب شود.");
+
+            const model = mySer.convertFormToJSON(form.id);
+            const token = form.elements.namedItem("__RequestVerificationToken").value;
+            delete model.__RequestVerificationToken;
+            saved = await sendApiRequest({
+                url: "/Factor/SendItemToExternalSoftware", method: "POST", returnFullResponse: true,
+                headers: { RequestVerificationToken: token },
+                data: { ...model, stockIds: stockIds.map(Number), externalSoftwareId: softwareId,
+                    defaultStockRef: defaultStock.value ? Number(defaultStock.value) : null },
+                successMsg: "ثبت کالا با موفقیت انجام شد",
+            });
+        } finally {
+            saving = false;
+            submit.disabled = false;
+        }
+        if (saved) {
+            modal.addEventListener("hidden.bs.modal", () => {
+                if (canOpen()) afterCreate();
+            }, { once: true });
+            ModalToggle(modal, "hide");
+        }
+    }, { signal });
+
+    ModalToggle(modal, "show");
+}
+
+function renderExternalFinancialStage(modal, container, { destination, position, title, subtitle, icon, step, content, large = false }) {
+    modal.querySelector(".external-mapping-title").textContent = destination ?? "نرم‌افزار مقصد";
+    modal.querySelector(".external-mapping-subtitle").textContent = position;
+    modal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
+    container.innerHTML = `
+        <div class="external-mapping-card">
+            <div class="external-mapping-stage-info">
+                <div class="external-mapping-stage-icon">${icon}</div>
+                <div class="external-mapping-stage-content">
+                    <div class="external-mapping-stage-title">${escapeHtml(title)}</div>
+                    <div class="external-mapping-stage-subtitle">${escapeHtml(subtitle)}</div>
+                </div>
+                <span class="external-mapping-step">${escapeHtml(step)}</span>
+            </div>
+            ${typeof content === "string" ? content : ""}
+        </div>`;
+    if (content instanceof Node) container.firstElementChild.append(content);
+}
+
+function renderExternalFinancialPreview({ fields, columns, rows, totals }) {
+    return `<div class="external-prefactor-preview">
+        <div class="ex-preview-summary">${fields.map(({ label, value, wide, accent }) => `
+            <div class="ex-preview-field${wide ? " ex-preview-customer" : ""}">
+                <span class="ex-preview-label">${escapeHtml(label)}:</span>
+                <strong${accent ? ' class="ex-preview-software"' : ""}>${escapeHtml(value ?? "—")}</strong>
+            </div>`).join("")}</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
+                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
+                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+        </div>
+        <div class="external-mapping-entity mt-3">${totals.map(([label, value], index) => {
+            const last = index === totals.length - 1;
+            return `${last ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
+                ${last ? `<strong>${escapeHtml(label)}</strong>` : `<span>${escapeHtml(label)}</span>`}
+                <strong>${renderMoneyHtml(value)}</strong>
+            </div>`;
+        }).join("")}</div>
+    </div>`;
+}
+
 const calculateInvoiceTotals = (
     {
         items,
@@ -364,7 +556,7 @@ const calculateInvoiceTotals = (
 
 
 const calculateItemTax = (amount, taxPercent) => {
-    return Math.round(amount * taxPercent / 100);
+    return Math.floor(amount * taxPercent / 100); // تقریب رو به پایین
 };
 
 const generateInvoiceItemDom = (data, { type = "edit-delete", onDelete, onUpdate, onSelect, fieldRules = {} } = {}) => {

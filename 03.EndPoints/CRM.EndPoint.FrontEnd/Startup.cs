@@ -184,6 +184,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<PreFactorService>();
             services.AddScoped<ExternalMappingService>();
+            services.AddScoped<ExternalTransferOptionsService>();
             services.AddSingleton<ExcelExportService>();
 
             services.AddScoped<ISmsIrService, SmsIrService>();
@@ -192,6 +193,7 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<Sepidar1InvoiceExportRepository>();
             services.AddScoped<Sepidar2InvoiceExportRepository>();
+            services.AddScoped<SepidarUserResolver>();
             services.AddTransient<Sepidar1Service>();
             services.AddTransient<Sepidar2Service>();
 

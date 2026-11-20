@@ -135,6 +135,7 @@ function initSmsReportsTable() {
         columns: [
             { data: "farazId", render: value => `<span class="sms-id">${value ?? "-"}</span>` },
             { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>`, responsivePriority: 1 },
+            { data: "receivedFullName", render: value => `<span class="sms-contact-name">${escapeHtml(value?.trim() || "-")}</span>`, responsivePriority: 2 },
             {
                 data: "messageText",
                 // className: "wrap-text-minw",
@@ -142,8 +143,8 @@ function initSmsReportsTable() {
             },
             { data: "number", render: value => `<span class="sms-line">${value ?? "-"}</span>` },
             { data: "typeTxt" },
-            { data: "sendDateTimeTxt", render: renderDateTimeHtml, responsivePriority: 2 },
-            { data: "deliveryState", render: renderSmsStatus, responsivePriority: 3 },
+            { data: "sendDateTimeTxt", render: renderDateTimeHtml, responsivePriority: 3 },
+            { data: "deliveryState", render: renderSmsStatus, responsivePriority: 4 },
         ],
         
         language: languageDatatable,
@@ -180,9 +181,10 @@ function initSmsReceivesTable() {
         },
         columns: [
             { data: "farazId", render: value => `<span class="sms-id">${value ?? "-"}</span>` },
-            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
+            { data: "mobile", render: value => `<span class="sms-mobile">${value ?? "-"}</span>`, responsivePriority: 1 },
+            { data: "senderFullName", render: value => `<span class="sms-contact-name">${escapeHtml(value?.trim() || "-")}</span>`, responsivePriority: 2 },
             { data: "messageText", render: value => `<span class="sms-message">${escapeHtml(value ?? "-")}</span>` },
-            { data: "receivedDateTimeTxt", render: renderDateTimeHtml },
+            { data: "receivedDateTimeTxt", render: renderDateTimeHtml, responsivePriority: 3 },
             { data: "number", render: value => `<span class="sms-mobile">${value ?? "-"}</span>` },
         ],
         language: languageDatatable,

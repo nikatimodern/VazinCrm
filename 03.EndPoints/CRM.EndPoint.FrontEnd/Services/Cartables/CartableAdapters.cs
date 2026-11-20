@@ -42,7 +42,7 @@ public sealed class CartablePresentation(IViewRenderService views) : ICartablePr
     public async Task<object> SupplyAsync(CartableSupplyResult data, CancellationToken ct) => new
     {
         count = data.Data.PreFactors.Count,
-        html = await views.RenderToStringAsync("GetPreFactorTaminExpert", new TaminViewModel { PreFactors = data.Data.PreFactors, Setting = data.Setting, UserId = data.UserId, IsAdmin = data.IsAdmin }),
+        html = await views.RenderToStringAsync("GetPreFactorTaminExpert", new TaminViewModel { PreFactors = data.Data.PreFactors, Setting = data.Setting, UserId = data.UserId, IsAdmin = data.IsAdmin, OrderNumbers = data.Data.OrderNumbers }),
         filterCounts = data.Data.FilterCounts
     };
     public async Task<object> FinancialAsync(CartableFinancialData data, CancellationToken ct) => new

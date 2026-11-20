@@ -1,0 +1,113 @@
+.external-item-matching,
+.external-item-match-list {
+    display: grid;
+    gap: .4rem;
+}
+
+.external-item-match-row {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    align-items: start;
+    gap: .35rem .75rem;
+    padding: .45rem .65rem;
+    border: 1px solid var(--color-border, #DDE1E8);
+    border-radius: .55rem;
+}
+
+.external-item-match-source,
+.external-item-match-target {
+    display: grid;
+    gap: .15rem;
+    min-inline-size: 0;
+}
+
+.external-item-match-source {
+    align-self: center;
+    font-size: .91rem;
+    overflow-wrap: anywhere;
+}
+
+.external-item-match-source small,
+.external-item-match-target .form-label {
+    color: var(--color-text-muted, #545961);
+    font-size: .82rem;
+}
+
+.external-item-match-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    font-size: .85rem;
+}
+
+@media (max-width: 575px) {
+    .external-item-match-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Sales invoice export: quotation-based or standalone source choice. */
+#sendFactorToExternalSoftwareModal .factor-export-source-options {
+    display:grid;
+    gap:9px;
+    margin-top:12px;
+}
+#sendFactorToExternalSoftwareModal .factor-export-source {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px;
+    border:1px solid var(--bs-border-color, #dce3e7);
+    border-radius:9px;
+    background:var(--bs-body-bg, #fff);
+    cursor:pointer;
+    transition:border-color .15s ease;
+}
+#sendFactorToExternalSoftwareModal .factor-export-source:has(input:checked) {
+    border-color:var(--color8, #00786f);
+    background:color-mix(in srgb, var(--color8, #00786f) 5%, white);
+}
+#sendFactorToExternalSoftwareModal .factor-export-source:has(input:disabled) {
+    opacity:.6;
+    cursor:not-allowed;
+}
+#sendFactorToExternalSoftwareModal .factor-export-source input {
+    flex:0 0 auto;
+    width:16px;
+    height:16px;
+    accent-color:var(--color8, #00786f);
+}
+#sendFactorToExternalSoftwareModal .factor-export-source > span {
+    display:grid;
+    gap:3px;
+    min-width:0;
+}
+#sendFactorToExternalSoftwareModal .factor-export-source strong { font-size:13px; }
+#sendFactorToExternalSoftwareModal .factor-export-source small {
+    font-size:11px;
+    line-height:1.7;
+    color:var(--map-muted, #66757a);
+}
+#sendFactorToExternalSoftwareModal #backExternalFactorStepBtn[hidden] { display:none!important; }
+
+/* Item-specific warehouse selection lives directly below each mapped item. */
+.external-item-match-target .external-item-match-stock-label {
+    margin-block-start: .15rem;
+    margin-block-end: 0;
+}
+.external-item-match-target .form-label {
+    line-height: 1.35;
+}
+.external-item-match-target .ts-wrapper .ts-control {
+    min-height: 26px;
+    padding-block: 4px;
+    padding-inline: 8px;
+}
+@media (max-width: 575px) {
+    .external-item-match-row {
+        padding: .55rem .65rem;
+    }
+}
+.external-item-match-target .ts-wrapper.disabled {
+    opacity: .65;
+    cursor: not-allowed;
+}

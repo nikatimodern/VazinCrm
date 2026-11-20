@@ -29,6 +29,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
+
 namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
 {
     public sealed partial class ExternalMappingService
@@ -38,10 +40,11 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             public MappingConflictException(string message) : base(message) { }
         }
 
-        private static readonly Guid Sepidar1SoftwareId =
-            Guid.Parse("2f3d8024-6c2c-491f-c921-08df26b00138");
-        private static readonly Guid Sepidar2SoftwareId =
-            Guid.Parse("d6c3e8a7-1435-47d5-0489-08df26c5e2ca");
+        private const string ExternalUserEntityName = "User";
+
+
+        public bool SupportsMapping(Guid softwareId) =>
+            softwareId == Sepidar1SoftwareId || softwareId == Sepidar2SoftwareId;
 
         private readonly CRMContextDb db;
         private readonly Sepidar1ContextDb sdb;

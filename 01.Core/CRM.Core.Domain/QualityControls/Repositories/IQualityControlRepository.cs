@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.QualityControls.Models;
@@ -9,10 +8,29 @@ namespace CRM.Core.Domain.QualityControls.Repositories;
 
 public interface IQualityControlRepository
 {
-    Task<QualityControlSaveResult> MarkNoResponseAsync(MarkQualityControlNoResponseRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
-    Task<QualityControlSaveResult> DeleteAsync(DeleteQualityControlRequest request, QualityControlAccess access, CancellationToken cancellationToken);
-    Task<QualityControlListResult> GetDealsAsync(QualityControlListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
-    Task<IReadOnlyList<QualityControlQuestionDto>> GetQuestionsAsync(CancellationToken cancellationToken);
-    Task<QualityControlForm?> GetFormAsync(Guid dealId, QualityControlAccess access, CancellationToken cancellationToken);
-    Task<QualityControlSaveResult> SaveAsync(SaveQualityControlRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
+    Task<QualityControlCustomerListResult> GetCustomersAsync(
+        QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<QualityControlCustomerForm?> GetCustomerFormAsync(
+        Guid customerId, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<QualityControlCustomerNotesPage?> GetCustomerNotesAsync(
+        Guid customerId, int start, int length, QualityControlAccess access, CancellationToken cancellationToken);
+    Task<AddQualityControlCustomerNoteResult> AddCustomerNoteAsync(
+        AddQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken);
+    Task<QualityControlCustomerNoteChangeResult> UpdateCustomerNoteAsync(
+        UpdateQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken);
+    Task<QualityControlCustomerNoteChangeResult> DeleteCustomerNoteAsync(
+        DeleteQualityControlCustomerNoteRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken);
+    Task<SaveQualityControlItemsResult> SaveItemsAsync(
+        SaveQualityControlItemsRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
+    Task<SetQualityControlCustomerContactResult> SetCustomerContactStatusAsync(
+        SetQualityControlCustomerContactRequest request, QualityControlAccess access, string persianNow, CancellationToken cancellationToken);
+    Task<QualityControlContactHistoryPage?> GetContactHistoryAsync(
+        Guid customerId, bool includeDeleted, int start, int length,
+        QualityControlAccess access, bool canManage, CancellationToken cancellationToken);
+    Task<ChangeQualityControlContactHistoryResult> ChangeContactHistoryDeletionAsync(
+        ChangeQualityControlContactHistoryRequest request, QualityControlAccess access,
+        string persianNow, CancellationToken cancellationToken);
 }

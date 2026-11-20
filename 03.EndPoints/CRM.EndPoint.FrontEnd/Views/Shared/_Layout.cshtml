@@ -60,11 +60,15 @@
     <link rel="stylesheet" href="~/lib/select2/css/select2.min.css?release=7.5.6" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/CropperJs/cropper.min.css?release=7.5.6" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatablesB.min.css?release=7.5.6" asp-append-version="true" />
+    @* <link rel="stylesheet" href="~/lib/jQuery-Datatable/datatables.min.css?release=7.5.6" asp-append-version="true" /> *@
     <link rel="stylesheet" href="~/lib/Awesomplete/Awesomplete.css?release=7.5.6" asp-append-version="true" />
-    <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css?release=7.5.6" asp-append-version="true" />
+    @* <link rel="stylesheet" href="~/lib/TomSelect/tom-select.min.css?release=7.5.6" asp-append-version="true" /> *@
+    <link rel="stylesheet" href="~/lib/TomSelect/tom-select-2-7.min.css?release=7.5.6" asp-append-version="true" />
 
 
     <link rel="stylesheet" href="~/css/site.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/externalItemMatching.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/externalFinancialHistory.css?release=7.0.4" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/pageSkeleton.css?release=7.5.6" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/table.css?release=7.5.6" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layoutResponsive.css?release=7.5.6" asp-append-version="true" />
@@ -148,6 +152,7 @@
 <partial name="~/Views/PreFactor/Modals/_ExternalSoftwarePreFactorsModal.cshtml" />
 <partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
+<partial name="~/Views/Accountancy/Modals/_AddBankAccountModal.cshtml" />
 <partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />
 
 
@@ -280,11 +285,14 @@
 <script src="~/lib/select2/js/select2.full.min.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/lib/CropperJs/cropper.min.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/lib/jQuery-Datatable/datatablesB.min.js?release=7.5.6" asp-append-version="true"></script>
+@* <script src="~/lib/jQuery-Datatable/datatables.min.js?release=7.5.6" asp-append-version="true"></script> *@
 <script src="~/lib/viewerJs/js/viewer.min.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/lib/Signalr/signalr.min.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/lib/Sortable/Sortable.min.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/lib/Awesomplete/awesomplete.min.js?release=7.5.6" asp-append-version="true"></script>
-<script src="~/lib/TomSelect/tom-select.complete.min.js?release=7.5.6" asp-append-version="true"></script>
+@* <script src="~/lib/TomSelect/tom-select.complete.min.js?release=7.5.6" asp-append-version="true"></script> *@
+<script src="~/lib/TomSelect/tom-select-2-7.complete.min.js?release=7.5.6" asp-append-version="true"></script>
+<script src="~/js/tomSelectOverflow.js?release=7.0.4" asp-append-version="true"></script>
 
 <script src="~/js/TaskSignalR.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/pwa.js?release=7.5.6" asp-append-version="true"></script>
@@ -292,14 +300,17 @@
 <script src="~/js/pageSkeleton.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/File.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/PublicFunction.js?release=7.5.6" asp-append-version="true"></script>
+<script src="~/js/externalFinancialWizard.js?release=7.0.4" asp-append-version="true"></script>
+<script src="~/js/externalFinancialHistory.js?release=7.0.4" asp-append-version="true"></script>
 <script src="~/js/DateValidate.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/preFactor.js?release=7.5.6" asp-append-version="true"></script>
+<script src="~/js/preFactorExternalSoftware.js?release=7.0.4" asp-append-version="true"></script>
 <script src="~/js/factor.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/accountancy.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/report.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/order.js?release=7.5.6" asp-append-version="true"></script>
 <script src="~/js/Layout.js?release=7.5.6" defer asp-append-version="true"></script>
-<script src="~/js/factorExternalSoftware.js?release=7.5.6" asp-append-version="true"></script>
+<script src="~/js/factorExternalSoftware.js?release=7.5.7" asp-append-version="true"></script>
 <script>
     const basePath = '@Url.Action("", "")';
     var baseUrl = basePath === "/" ? basePath : `${basePath}/`;

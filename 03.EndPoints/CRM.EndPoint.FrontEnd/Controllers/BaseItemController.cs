@@ -94,7 +94,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsTotal = 0;
+                int recordsTotal = await db.Products.CountAsync();
                 var dataF = db.Products.AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
@@ -131,9 +131,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                recordsTotal = dataF.Count();
-                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
-                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                // DataTables sends -1 to request all matching rows.
+                var recordsFiltered = await dataF.CountAsync();
+                var data = pageSize == -1
+                    ? await dataF.ToListAsync()
+                    : await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                var jsonData = new { draw, recordsFiltered, recordsTotal, data };
                 return Ok(jsonData);
             }
             catch
@@ -154,7 +157,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsTotal = 0;
+                int recordsTotal = await db.BaseItems.CountAsync(f => f.TypeCode == BaseItemEnum.طریقه_آشنایی);
                 var dataF = db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.طریقه_آشنایی).AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
@@ -191,9 +194,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                recordsTotal = dataF.Count();
-                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
-                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                // DataTables sends -1 to request all matching rows.
+                var recordsFiltered = await dataF.CountAsync();
+                var data = pageSize == -1
+                    ? await dataF.ToListAsync()
+                    : await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                var jsonData = new { draw, recordsFiltered, recordsTotal, data };
                 return Ok(jsonData);
             }
             catch
@@ -214,7 +220,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsTotal = 0;
+                int recordsTotal = await db.BaseItems.CountAsync(f => f.TypeCode == BaseItemEnum.صنف);
                 var dataF = db.BaseItems.Where(f => f.TypeCode == BaseItemEnum.صنف).AsQueryable();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
@@ -251,9 +257,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                recordsTotal = dataF.Count();
-                var data = await dataF.Skip(skip).Take(pageSize).ToListAsync();
-                var jsonData = new { draw, recordsFiltered = recordsTotal, recordsTotal, data };
+                // DataTables sends -1 to request all matching rows.
+                var recordsFiltered = await dataF.CountAsync();
+                var data = pageSize == -1
+                    ? await dataF.ToListAsync()
+                    : await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                var jsonData = new { draw, recordsFiltered, recordsTotal, data };
                 return Ok(jsonData);
             }
             catch

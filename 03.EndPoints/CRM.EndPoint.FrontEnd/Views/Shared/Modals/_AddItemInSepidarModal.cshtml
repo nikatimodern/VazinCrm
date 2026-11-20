@@ -1,12 +1,13 @@
 <!-- Modal addItemInSepidar -->
-<div class="modal fade" id="addItemInSepidarModal" tabindex="-1" role="dialog" data-bs-focus="false">
+<div class="modal fade" id="addItemInSepidarModal" tabindex="-1" role="dialog" aria-labelledby="addSepidarItemTitle" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content col-12 p-2">
-            <div class="text-center text-white rounded py-1 fbold" style="background-color: #04857c">افزودن محصول در سپیدار</div>
+            <div id="addSepidarItemTitle" class="text-center text-white rounded py-1 fbold" style="background-color: #04857c">افزودن کالای جدید</div>
             <div class="modal-body pb-2">
-                <form id="addItemInSepidarForm" class="d-flex flex-column gap-2">
+                <form id="addItemInSepidarForm" class="d-flex flex-column gap-2" novalidate>
+                    @Html.AntiForgeryToken()
                     <div>
-                        <label for="sepidarItemTitleId">محصول:</label>
+                        <label for="sepidarItemTitleId">کالا</label>
                         <input id="sepidarItemTitleId" class="form-control" name="itemTitle" type="text" required />
                     </div>
                     <div id="sepidarItemCodeWrapper">
@@ -30,12 +31,18 @@
                         <label for="sepidarStockId">انبار: </label>
                         <div class="input-group">
                             <input id="sepidarStockId" type="text" class="form-control direction-ltr" placeholder="انبار.." disabled>
-                            <button class="btn btn-sm btn-secondary" type="button" onclick="showAddStocksModal()">انتخاب</button>
+                            <button class="btn btn-sm btn-secondary" type="button" data-sepidar-item-stocks>انتخاب</button>
                         </div>
+                    </div>
+                    <div data-sepidar-default-stock hidden>
+                        <label for="sepidarDefaultStockId">انبار پیش‌فرض</label>
+                        <select id="sepidarDefaultStockId" name="defaultStockRef" class="form-select form-select-sm">
+                            <option value="">بدون انبار پیش‌فرض</option>
+                        </select>
                     </div>
                     <div class="d-flex justify-content-center gap-1 mt-3">
                         <button type="button" class="buttonCancel2" style="padding-block: 4px" data-bs-dismiss="modal">انصراف</button>
-                        <button type="button" class="buttonGreen0" style="padding-block: 4px" onclick="submitItemInSepidar()">ثبت</button>
+                        <button type="submit" class="buttonGreen0" style="padding-block: 4px">ثبت</button>
                     </div>
                 </form>
             </div>

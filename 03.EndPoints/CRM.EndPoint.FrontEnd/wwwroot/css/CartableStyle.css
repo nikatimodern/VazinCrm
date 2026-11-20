@@ -1300,6 +1300,25 @@
 #cartableWorkspace #FinancialExpertInvoiceContentId .paymentTable .buttonBlue2:hover {
     background: #E8DAFC;
 }
+/* Supply pre-factor voucher numbers: compact, wrapping chips for one-to-many order heads. */
+.supply-card__order-numbers {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    direction: rtl;
+}
+.supply-card__order-number {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border: 1px solid var(--pf-border);
+    border-radius: 5px;
+    background: var(--pf-card-background);
+    color: var(--pf-operation-accent);
+    font: 11px/1.8 IRANSansMedium;
+    white-space: nowrap;
+}
 /* Supply workflow and remaining cartable tables. */
 .supply-card__steps { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .supply-card__steps .completedTrack { display:flex; align-items:center; justify-content:center; font-size:14px; }

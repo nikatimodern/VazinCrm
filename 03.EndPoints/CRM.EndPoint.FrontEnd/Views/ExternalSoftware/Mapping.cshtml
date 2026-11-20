@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "مدیریت تطبیق اطلاعات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/legacyMappingReport.css?release=7.0.29" asp-append-version="true" />
+}
+
+<section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl"
+         data-software-id="@ViewData["SoftwareId"]" data-software-title="@ViewData["SoftwareTitle"]">
+    @Html.AntiForgeryToken()
+
+    <header class="lmr-page-heading">
+        <h1>مدیریت تطبیق اطلاعات <span class="lmr-title-divider">/</span> <strong id="lmrSoftwareTitle">@ViewData["SoftwareTitle"]</strong></h1>
+        <a class="lmr-btn lmr-back-link text-decoration-none" asp-controller="ExternalSoftware" asp-action="Index">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            بازگشت به نرم‌افزارها
+        </a>
+    </header>
+
+    <nav id="lmrMainTabs" class="lmr-main-tabs" role="tablist" aria-label="بخش‌های تطبیق اطلاعات">
+        <button type="button" id="lmrSavedTab" role="tab" data-main-tab="saved" aria-controls="lmrSavedPanel" aria-selected="true" class="is-active">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> ارتباط‌های ثبت‌شده
+        </button>
+        <button type="button" id="lmrProposalTab" role="tab" data-main-tab="proposal" aria-controls="lmrProposalPanel" aria-selected="false">
+            <i class="fas fa-search" aria-hidden="true"></i> بررسی و تطبیق اطلاعات
+        </button>
+    </nav>
+
+    <section id="lmrSavedPanel" role="tabpanel" aria-labelledby="lmrSavedTab" class="lmr-section lmr-saved-section">
+        <header class="lmr-section-head">
+            <div class="lmr-section-name">
+                <div class="lmr-section-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+                <div>
+                    <h2 id="lmrSavedTitle">ارتباط‌های ثبت‌شده</h2>
+                    <p>اطلاعات ذخیره‌شده در CRM</p>
+                </div>
+                <span id="lmrSavedCount" class="lmr-count">—</span>
+            </div>
+            <div class="lmr-section-actions">
+                <button id="lmrRefreshSaved" type="button" class="lmr-btn lmr-btn-soft">
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i> تازه‌سازی
+                </button>
+                <button id="lmrManualOpenSaved" type="button" class="lmr-btn lmr-btn-primary">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت ارتباط
+                </button>
+            </div>
+        </header>
+
+        <div class="lmr-filterbar">
+            <label class="lmr-field lmr-search"><span>جستجو</span>
+                <input id="lmrSavedSearch" type="search" placeholder="نام کاربر یا مشتری، کد و شماره سند" autocomplete="off" />
+            </label>
+            <label class="lmr-field"><span>نوع ارتباط</span>
+                <select class="form-select" id="lmrSavedType"><option value="">همه انواع</option></select>
+            </label>
+            <label class="lmr-field lmr-size"><span>تعداد</span>
+                <select class="form-select" id="lmrSavedSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
+            </label>
+        </div>
+        <div id="lmrSavedFeedback" class="lmr-feedback" role="status" aria-live="polite"></div>
+        <div id="lmrSavedRecords" class="lmr-record-list" role="list"></div>
+        <footer class="lmr-footer">
+            <span id="lmrSavedPageInfo">—</span>
+            <nav id="lmrSavedPagination" class="lmr-pagination" aria-label="صفحه‌بندی ارتباط‌های ثبت‌شده"></nav>
+        </footer>
+    </section>
+
+    <section id="lmrProposalPanel" role="tabpanel" aria-labelledby="lmrProposalTab" class="lmr-section lmr-proposal-section" hidden>
+        <header class="lmr-section-head">
+            <div class="lmr-section-name">
+                <div class="lmr-section-icon"><i class="fas fa-search" aria-hidden="true"></i></div>
+                <div>
+                    <h2 id="lmrProposalTitle">بررسی و تطبیق اطلاعات</h2>
+                    <p>پیشنهادهای محاسبه‌شده، بدون ذخیره‌سازی خودکار</p>
+                </div>
+            </div>
+            <div class="lmr-section-actions">
+                <button id="lmrCompute" type="button" class="lmr-btn lmr-btn-soft">
+                    <i class="fas fa-calculator" aria-hidden="true"></i>
+                    <span id="lmrComputeLabel">محاسبه پیشنهادها</span>
+                </button>
+                <button id="lmrManualOpen" type="button" class="lmr-btn lmr-btn-primary">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> ثبت ارتباط
+                </button>
+            </div>
+        </header>
+
+        <div id="lmrProposalStats" class="lmr-proposal-stats" hidden>
+            <span>آماده: <strong id="lmrPendingCount">۰</strong></span>
+            <span>تعارض مشتری: <strong id="lmrCustomerConflicts">۰</strong></span>
+            <span>متوقف یا مبهم: <strong id="lmrBlockedCount">۰</strong></span>
+            <span>بدون معادل: <strong id="lmrUnmatchedCount">۰</strong></span>
+        </div>
+
+        <div id="lmrProposalStatusTabs" class="lmr-tabs" role="group" aria-label="وضعیت پیشنهادهای تطبیق">
+            <button type="button" data-status="pending" class="is-active">آماده ثبت</button>
+            <button type="button" data-status="customerConflict">تعارض مشتری</button>
+            <button type="button" data-status="ambiguous">تطبیق مبهم</button>
+            <button type="button" data-status="blocked">موارد متوقف</button>
+            <button type="button" data-status="notMatched">بدون معادل</button>
+        </div>
+
+        <div class="lmr-filterbar">
+            <label class="lmr-field lmr-search"><span>جستجو</span>
+                <input id="lmrProposalSearch" type="search" placeholder="نام کاربر، مشتری یا شماره سند" autocomplete="off" />
+            </label>
+            <label class="lmr-field"><span>نوع ارتباط</span>
+                <select class="form-select" id="lmrProposalType"><option value="">همه انواع</option></select>
+            </label>
+            <label id="lmrProposalReasonBox" class="lmr-field lmr-reason" hidden><span>علت</span>
+                <select class="form-select" id="lmrProposalReason"><option value="">همه علت‌ها</option></select>
+            </label>
+            <label class="lmr-field lmr-size"><span>تعداد</span>
+                <select class="form-select" id="lmrProposalSize"><option value="10" selected>۱۰</option><option value="20">۲۰</option><option value="40">۴۰</option><option value="0">همه</option></select>
+            </label>
+        </div>
+
+        <div class="lmr-selection-bar" id="lmrSelectionActions" hidden>
+            <label><input id="lmrSelectPage" type="checkbox" /> انتخاب همه موارد نمایش‌داده‌شده</label>
+            <span id="lmrSelectedCount">۰ انتخاب</span>
+            <button id="lmrSaveSelected" type="button" class="lmr-btn lmr-btn-primary" disabled>ثبت انتخاب‌شده‌ها</button>
+        </div>
+
+        <div id="lmrProposalFeedback" class="lmr-feedback" role="status" aria-live="polite"></div>
+        <div id="lmrProposalRecords" class="lmr-record-list" role="list"></div>
+        <footer class="lmr-footer">
+            <span id="lmrProposalPageInfo">—</span>
+            <nav id="lmrProposalPagination" class="lmr-pagination" aria-label="صفحه‌بندی پیشنهادها"></nav>
+        </footer>
+    </section>
+
+    <div id="lmrManualModal" class="modal fade lmr-manual-modal" tabindex="-1"
+         aria-labelledby="lmrManualTitle" aria-describedby="lmrManualDescription">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" dir="rtl">
+            <header class="modal-header lmr-manual-header">
+                <div>
+                    <h2 id="lmrManualTitle"><i class="fas fa-link" aria-hidden="true"></i> <span id="lmrManualTitleText">ثبت ارتباط</span></h2>
+                    <p id="lmrManualDescription">رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.</p>
+                </div>
+                <button id="lmrManualClose" type="button" class="btn-close" aria-label="بستن"></button>
+            </header>
+            <div class="modal-body lmr-manual-body">
+                <div class="lmr-manual-fields">
+                    <label class="lmr-manual-field">
+                        <span>نوع ارتباط</span>
+                        <select class="form-select" id="lmrManualType" required><option value="">نوع ارتباط را انتخاب کنید</option></select>
+                    </label>
+                    <label class="lmr-manual-field" id="lmrManualTargetKindBox" hidden>
+                        <span>نوع معادل مالی</span>
+                        <select class="form-select" id="lmrManualTargetKind">
+                            <option value="PaymentHeader">اعلامیه پرداخت</option>
+                            <option value="Voucher">سند حسابداری</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="lmr-manual-pair">
+                    <div class="lmr-manual-side">
+                        <div class="lmr-manual-entity-heading">
+                            <h3>رکورد CRM</h3>
+                            <small id="lmrManualCrmEntity"></small>
+                        </div>
+                        <label class="lmr-manual-field">
+                            <span>جستجو و انتخاب رکورد CRM</span>
+                            <select id="lmrManualCrmSelect" required aria-label="جستجو و انتخاب رکورد CRM"></select>
+                        </label>
+                    </div>
+                    <div class="lmr-manual-side">
+                        <div class="lmr-manual-entity-heading">
+                            <h3 id="lmrManualExternalTitle">معادل نرم‌افزار مالی</h3>
+                            <small id="lmrManualExternalEntity"></small>
+                        </div>
+                        <label class="lmr-manual-field">
+                            <span>جستجو و انتخاب معادل مالی</span>
+                            <select id="lmrManualExternalSelect" required aria-label="جستجو و انتخاب معادل نرم‌افزار مالی"></select>
+                        </label>
+                    </div>
+                </div>
+                <p class="lmr-manual-help">در هر طرف با نام، شماره یا کد تفصیلی جستجو کنید. حداکثر ۴۰ نتیجه از سرور نمایش داده می‌شود؛ ثبت فقط ارتباط میان دو رکورد را در CRM ذخیره می‌کند.</p>
+                <div id="lmrManualFeedback" class="lmr-manual-feedback" role="status" aria-live="polite"></div>
+            </div>
+            <footer class="modal-footer lmr-manual-footer">
+                <button id="lmrManualCancel" type="button" class="lmr-btn">انصراف</button>
+                <button id="lmrManualConfirm" type="button" class="lmr-btn lmr-btn-primary" disabled>
+                    <i class="fas fa-check" aria-hidden="true"></i> <span id="lmrManualConfirmText">ثبت ارتباط</span>
+                </button>
+            </footer>
+        </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/legacyMappingReport.js?release=7.0.28" asp-append-version="true"></script>
+}

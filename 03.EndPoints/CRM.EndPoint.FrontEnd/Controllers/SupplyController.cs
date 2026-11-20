@@ -46,7 +46,7 @@ using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public class SupplyController(ICqrsDispatcher requests) : Controller
+public partial class SupplyController(ICqrsDispatcher requests) : Controller
 {
     private const string SalesAllocationRoles = "مدیر تامین,کارشناس تامین,مدیر ارشد,مدیر اجرایی,مدیر عامل,مدیر مالی,کارشناس مالی,مدیر فروش,کارشناس فروش";
     public class SupplyFactorAllocationRequest : CRM.Core.Domain.Supplies.Models.SupplyFactorAllocationRequest
@@ -304,7 +304,7 @@ public class SupplyController(ICqrsDispatcher requests) : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> ProccessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
+    public async Task<IActionResult> ProcessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
     private IActionResult Map(SupplyResult result, string viewName = null)
     {
         if (result.Kind == SupplyResultKind.Unauthorized)

@@ -125,12 +125,14 @@
                         </button>
                     }
 
-                    <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
-                            onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
-                        <span class="pf-accepted-card__action-icon" aria-hidden="true">
-                            <i class="fa fa-link"></i>
-                        </span>
-                    </button>
+                    @if (User.IsAdmin() || User.IsFinancial() || User.IsInRole("مدیر عامل")) {
+                        <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
+                                onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                            <span class="pf-accepted-card__action-icon" aria-hidden="true">
+                                <i class="fa fa-link"></i>
+                            </span>
+                        </button>
+                    }
 
                     <button type="button" class="flex-center" aria-label="نمایش فاکتور" data-title-right="نمایش فاکتور" style="color:var(--DarkColor);" onclick="ShowPreviewFactor('@item.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="fa fa-eye"></i>
