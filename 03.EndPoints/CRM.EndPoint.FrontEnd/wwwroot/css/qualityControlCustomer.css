@@ -1892,3 +1892,341 @@
 #qualityControlCustomerPage #qcCustomerNoteCancelEdit[hidden] {
     display: none;
 }
+
+
+/* QC customer review: a compact row-based item table and focused discrepancy dialog. */
+#qualityControlCustomerPage .qc-client-modal .modal-body {
+    background: #F8F9FB;
+    padding: 12px 14px;
+}
+#qualityControlCustomerPage .qc-client-modal .modal-dialog {
+    --bs-modal-width: min(1380px, calc(100vw - 38px));
+}
+#qualityControlCustomerPage .qc-client-review-toolbar {
+    display: grid;
+    gap: 9px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+#qualityControlCustomerPage .qc-client-review-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+#qualityControlCustomerPage .qc-client-review-overview {
+    display: grid;
+    gap: 1px;
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-review-overview strong {
+    color: var(--qc-primary);
+    font-size: 14px;
+}
+#qualityControlCustomerPage .qc-client-review-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 280px;
+    min-width: 190px;
+    font-size: 12px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-review-progress strong { color: var(--qc-action); }
+#qualityControlCustomerPage .qc-client-review-progress-track {
+    height: 7px;
+    min-width: 60px;
+    flex: 1 1 auto;
+    border-radius: 20px;
+    background: var(--qc-border);
+    overflow: hidden;
+}
+#qualityControlCustomerPage .qc-client-review-progress-track span {
+    display: block;
+    height: 100%;
+    background: var(--qc-action);
+    border-radius: inherit;
+    transition: width .2s;
+}
+#qualityControlCustomerPage .qc-client-summary-tags .qc-client-summary-ok {
+    background: var(--qc-primary-light);
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-review-filterbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 9px;
+    border-top: 1px solid var(--qc-border);
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-item-filters {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+#qualityControlCustomerPage .qc-client-item-filter {
+    border: 1px solid transparent;
+    background: #F0F1F7;
+    color: var(--qc-muted);
+    border-radius: 18px;
+    min-height: 32px;
+    padding: 4px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+    transition: background-color .15s, border-color .15s;
+}
+#qualityControlCustomerPage .qc-client-item-filter.is-active {
+    background: var(--qc-primary);
+    border-color: var(--qc-primary);
+    color: #fff;
+}
+#qualityControlCustomerPage .qc-client-item-filter:focus-visible,
+#qualityControlCustomerPage .qc-client-table-sort:focus-visible,
+#qualityControlCustomerPage .qc-client-issue-close:focus-visible {
+    outline: 2px solid var(--qc-action);
+    outline-offset: 2px;
+}
+#qualityControlCustomerPage .qc-client-item-search {
+    border: 0;
+    border-inline-start: 1px solid var(--qc-border);
+    border-top: 0;
+    padding: 0 0 0 10px;
+    margin: 0;
+}
+#qualityControlCustomerPage .qc-client-item-search[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-review-content { display: block; min-width: 0; }
+#qualityControlCustomerPage .qc-client-review-table-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    background: #fff;
+    border: 1px solid var(--qc-border);
+    border-radius: 9px;
+    scrollbar-width: thin;
+}
+#qualityControlCustomerPage .qc-client-review-table {
+    border-collapse: separate;
+    border-spacing: 0 3px;
+    width: 100%;
+    min-width: 1090px;
+    direction: rtl;
+    font-size: 11px;
+}
+#qualityControlCustomerPage .qc-client-review-table th {
+    background: #DFEFE9;
+    color: #163D38;
+    padding: 10px 8px;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-review-table td {
+    padding: 8px 7px;
+    vertical-align: middle;
+    background: #F8F9FB;
+    line-height: 1.6;
+}
+#qualityControlCustomerPage .qc-client-review-table tbody tr.qc-client-row-complete td {
+    background: #E9F6EF;
+}
+#qualityControlCustomerPage .qc-client-review-table tbody tr.qc-client-row-discrepancy td {
+    background: #FCECF2;
+}
+#qualityControlCustomerPage .qc-client-review-table tbody tr[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-review-table th:first-child,
+#qualityControlCustomerPage .qc-client-review-table td:first-child {
+    border-start-start-radius: 7px;
+    border-end-start-radius: 7px;
+}
+#qualityControlCustomerPage .qc-client-review-table th:last-child,
+#qualityControlCustomerPage .qc-client-review-table td:last-child {
+    border-start-end-radius: 7px;
+    border-end-end-radius: 7px;
+}
+#qualityControlCustomerPage .qc-client-review-index { color: var(--qc-muted); text-align: center; }
+#qualityControlCustomerPage .qc-client-review-code { white-space: nowrap; font-weight: 700; }
+#qualityControlCustomerPage .qc-client-review-code small,
+#qualityControlCustomerPage .qc-client-review-product small {
+    display: block;
+    font-weight: 400;
+    font-size: 10px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-review-product { min-width: 200px; }
+#qualityControlCustomerPage .qc-client-review-product strong { color: #212529; font-weight: 700; }
+#qualityControlCustomerPage .qc-client-review-quantity { white-space: nowrap; }
+#qualityControlCustomerPage .qc-client-review-actions { white-space: nowrap; }
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button {
+    min-height: 28px;
+    padding: 3px 7px;
+    margin-inline-end: 4px;
+    font-size: 11px;
+    border: 1px solid var(--qc-action);
+    color: var(--qc-action);
+    background: transparent;
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button[data-qc-set-status="2"] {
+    border-color: var(--qc-danger);
+    color: var(--qc-danger);
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-ok-selected {
+    background: var(--qc-primary-light);
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-issue-selected {
+    background: var(--qc-danger-light);
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button:hover:not(:disabled) {
+    background: var(--qc-primary-light);
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button[data-qc-set-status="2"]:hover:not(:disabled) {
+    background: var(--qc-danger-light);
+}
+#qualityControlCustomerPage .qc-client-review-actions .qc-client-button:disabled { opacity: .5; }
+#qualityControlCustomerPage .qc-client-review-status {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 7px;
+    background: #F0F1F7;
+    color: var(--qc-muted);
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-review-status.qc-client-complete {
+    background: #DDF3E7;
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-review-status.qc-client-discrepancy {
+    background: var(--qc-danger-light);
+    color: var(--qc-danger);
+}
+#qualityControlCustomerPage .qc-client-review-state .qc-client-retry {
+    display: block;
+    margin-top: 3px;
+    font-size: 10px;
+}
+#qualityControlCustomerPage .qc-client-review-state .qc-client-retry[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-table-sort {
+    font: inherit;
+    font-weight: inherit;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+}
+#qualityControlCustomerPage .qc-client-table-sort i { font-size: 10px; opacity: .7; }
+#qualityControlCustomerPage .qc-client-issue-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    background: rgba(16, 25, 30, .56);
+}
+#qualityControlCustomerPage .qc-client-issue-overlay[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-issue-panel {
+    background: #fff;
+    border-radius: 12px;
+    width: min(860px, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 15px 36px rgba(0, 0, 0, .16);
+}
+#qualityControlCustomerPage .qc-client-issue-panel form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+#qualityControlCustomerPage .qc-client-issue-header,
+#qualityControlCustomerPage .qc-client-issue-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    flex: 0 0 auto;
+}
+#qualityControlCustomerPage .qc-client-issue-header { border-bottom: 1px solid var(--qc-border); }
+#qualityControlCustomerPage .qc-client-issue-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-issue-header p {
+    margin: 3px 0 0;
+    color: var(--qc-muted);
+    font-size: 12px;
+}
+#qualityControlCustomerPage .qc-client-issue-close {
+    border: 0;
+    background: transparent;
+    color: var(--qc-muted);
+    font-size: 16px;
+    padding: 4px 7px;
+    cursor: pointer;
+}
+#qualityControlCustomerPage .qc-client-issue-body {
+    overflow-y: auto;
+    padding: 12px 14px;
+    min-height: 0;
+}
+#qualityControlCustomerPage .qc-client-issue-body .qc-client-questions {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+#qualityControlCustomerPage .qc-client-issue-feedback {
+    padding-inline: 14px;
+    font-size: 12px;
+    color: var(--qc-danger);
+}
+#qualityControlCustomerPage .qc-client-issue-feedback:empty { display: none; }
+#qualityControlCustomerPage .qc-client-issue-footer {
+    justify-content: flex-end;
+    border-top: 1px solid var(--qc-border);
+}
+#qualityControlCustomerPage .qc-client-issue-footer .qc-client-button {
+    min-height: 32px;
+    padding: 4px 12px;
+}
+@media (max-width: 991px) {
+    #qualityControlCustomerPage .qc-client-review-filterbar { flex-wrap: wrap; }
+    #qualityControlCustomerPage .qc-client-item-filters { flex: 1 1 100%; }
+    #qualityControlCustomerPage .qc-client-item-search {
+        flex: 1 1 100%;
+        border-inline-start: 0;
+        border-top: 1px solid var(--qc-border);
+        padding: 8px 0 0;
+    }
+}
+@media (max-width: 767px) {
+    #qualityControlCustomerPage .qc-client-review-toolbar { padding: 8px; }
+    #qualityControlCustomerPage .qc-client-review-summary { align-items: flex-start; }
+    #qualityControlCustomerPage .qc-client-review-progress { flex: 1 1 100%; }
+    #qualityControlCustomerPage .qc-client-item-filter {
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+    }
+    #qualityControlCustomerPage .qc-client-review-actions .qc-client-button {
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+    }
+    #qualityControlCustomerPage .qc-client-issue-overlay { padding: 8px; }
+    #qualityControlCustomerPage .qc-client-issue-header,
+    #qualityControlCustomerPage .qc-client-issue-body,
+    #qualityControlCustomerPage .qc-client-issue-footer { padding: 8px 10px; }
+    #qualityControlCustomerPage .qc-client-issue-footer .qc-client-button {
+        min-height: 23px;
+        padding: 1px 5px;
+        font-size: 11px;
+    }
+}

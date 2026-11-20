@@ -256,17 +256,23 @@
                         <div id="qcCustomerFormFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
                         <div id="qcCustomerReviewToolbar" class="qc-client-review-toolbar" hidden>
                             <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
-                            <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
-                                <label for="qcInvoiceItemSearch" class="visually-hidden">جستجو در اقلام فاکتورها</label>
-                                <div class="qc-client-item-search-field">
-                                    <i class="fa fa-search" aria-hidden="true"></i>
-                                    <input id="qcInvoiceItemSearch" type="search" class="form-control"
-                                           placeholder="جستجو در اقلام فاکتورها (نام کالا، مقدار، تأمین‌کننده...)" autocomplete="off" />
+                            <div class="qc-client-review-filterbar">
+                                <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
+                                    <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="all" aria-pressed="true">همه <span data-qc-filter-count="all">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="0" aria-pressed="false">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="1" aria-pressed="false">بدون مغایرت <span data-qc-filter-count="1">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="2" aria-pressed="false">دارای مغایرت <span data-qc-filter-count="2">۰</span></button>
                                 </div>
-                                <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
-                                    پاک کردن
-                                </button>
-                                <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                                <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
+                                    <label for="qcInvoiceItemSearch" class="visually-hidden">جستجو در اقلام فاکتورها</label>
+                                    <div class="qc-client-item-search-field">
+                                        <i class="fa fa-search" aria-hidden="true"></i>
+                                        <input id="qcInvoiceItemSearch" type="search" class="form-control"
+                                               placeholder="جستجوی کالا، سفارش، فاکتور یا تأمین‌کننده..." autocomplete="off" />
+                                    </div>
+                                    <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>پاک کردن</button>
+                                    <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                                </div>
                             </div>
                         </div>
                         <div id="qcInvoiceItemSearchEmpty" class="qc-client-search-empty" role="status" hidden>
@@ -282,6 +288,29 @@
                         ثبت کلی اقلام بررسی‌نشده بدون مغایرت
                     </button>
                     <button type="button" class="qc-client-button qc-client-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+                <div id="qcItemDiscrepancyDialog" class="qc-client-issue-overlay" role="dialog"
+                     aria-modal="true" aria-labelledby="qcIssueTitle" tabindex="-1" hidden>
+                    <div class="qc-client-issue-panel">
+                        <form id="qcIssueForm" novalidate>
+                            <div class="qc-client-issue-header">
+                                <div>
+                                    <h3 id="qcIssueTitle">ثبت مغایرت قلم</h3>
+                                    <p id="qcIssueSubtitle"></p>
+                                </div>
+                                <button type="button" class="qc-client-issue-close" data-qc-issue-close
+                                        aria-label="بستن فرم مغایرت"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            </div>
+                            <div id="qcIssueQuestions" class="qc-client-issue-body"></div>
+                            <div id="qcIssueFeedback" class="qc-client-issue-feedback" role="alert" aria-live="polite"></div>
+                            <div class="qc-client-issue-footer">
+                                <button type="button" class="qc-client-button qc-client-secondary" data-qc-issue-close>انصراف</button>
+                                <button type="submit" id="qcIssueSave" class="qc-client-button qc-client-primary">
+                                    <i class="fa fa-save" aria-hidden="true"></i> ثبت مغایرت
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
