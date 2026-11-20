@@ -1184,11 +1184,6 @@
     padding-inline-start: 34px;
     font-size: 12px;
 }
-#qualityControlCustomerPage .qc-client-item-search .qc-client-button {
-    min-height: 32px;
-    padding: 4px 9px;
-    white-space: nowrap;
-}
 #qualityControlCustomerPage .qc-client-search-count {
     font-size: 11px;
     color: var(--qc-muted);
@@ -1225,11 +1220,6 @@
     #qualityControlCustomerPage .qc-client-review-summary { flex-wrap: wrap; gap: 6px; }
     #qualityControlCustomerPage .qc-client-item-search { flex-wrap: wrap; gap: 6px; }
     #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 160px; }
-    #qualityControlCustomerPage .qc-client-item-search .qc-client-button {
-        min-height: 23px;
-        padding: 1px 5px;
-        font-size: 11px;
-    }
 }
 #qualityControlCustomerPage .qc-client-search-empty {
     padding: 15px;
@@ -2173,11 +2163,6 @@
     background: transparent;
 }
 #qualityControlCustomerPage .qc-client-item-search input:focus { box-shadow: none; }
-#qualityControlCustomerPage .qc-client-item-search .qc-client-button {
-    min-height: 32px;
-    padding: 4px 9px;
-    white-space: nowrap;
-}
 #qualityControlCustomerPage .qc-client-search-count {
     color: var(--qc-muted);
     font-size: 11px;
@@ -2471,11 +2456,6 @@
         flex-wrap: wrap;
     }
     #qualityControlCustomerPage .qc-client-item-search-field { flex: 1 1 155px; }
-    #qualityControlCustomerPage .qc-client-item-search .qc-client-button {
-        min-height: 23px;
-        padding: 1px 5px;
-        font-size: 11px;
-    }
     #qualityControlCustomerPage .qc-client-review-actions .qc-client-button {
         min-height: 23px;
         padding: 1px 5px;

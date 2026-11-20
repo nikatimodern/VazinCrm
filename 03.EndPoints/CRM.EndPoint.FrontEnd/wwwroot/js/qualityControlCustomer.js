@@ -58,7 +58,6 @@
         const content = page.querySelector("#qcCustomerReviewContent");
         const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
         const itemSearch = page.querySelector("#qcInvoiceItemSearch");
-        const itemSearchClear = page.querySelector("#qcInvoiceItemSearchClear");
         const itemSearchCount = page.querySelector("#qcInvoiceItemSearchCount");
         const itemSearchEmpty = page.querySelector("#qcInvoiceItemSearchEmpty");
         const itemStatusFilters = page.querySelector("#qcInvoiceItemStatusFilters");
@@ -237,7 +236,6 @@
             itemSearchCount.textContent = faNumber.format(matches) + " از "
                 + faNumber.format(flatten().length) + " قلم";
             itemSearchEmpty.hidden = matches !== 0;
-            itemSearchClear.disabled = !itemSearch.value;
             itemStatusFilters.querySelectorAll("[data-qc-item-filter]").forEach(button => {
                 const selected = button.dataset.qcItemFilter === itemStatusFilter;
                 button.classList.toggle("is-active", selected);
@@ -956,7 +954,6 @@
             itemSearchBar.hidden = true;
             itemSearchEmpty.hidden = true;
             itemSearchCount.textContent = "";
-            itemSearchClear.disabled = true;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت مشتری";
             page.querySelector("#qcCustomerModalSubtitle").textContent = "";
             formFeedback.textContent = "در حال دریافت فاکتورها و اقلام سفارش‌های تحویل‌شده…";
@@ -1295,12 +1292,6 @@
 
         form.addEventListener("submit", event => event.preventDefault());
         itemSearch.addEventListener("input", filterInvoiceItems);
-        itemSearchClear.addEventListener("click", () => {
-            itemSearch.value = "";
-            filterInvoiceItems();
-            itemSearch.focus();
-        });
-
         page.querySelector("#qcCustomerSearchForm").addEventListener("submit", event => {
             event.preventDefault();
             clearReviewFocus();
