@@ -260,8 +260,8 @@
                                 <div class="qc-client-filter-controls">
                                     <span class="qc-client-filter-label">وضعیت کنترل کیفیت:</span>
                                     <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
-                                    <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="all" aria-pressed="true">همه <span data-qc-filter-count="all">۰</span></button>
-                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="0" aria-pressed="false">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="all" aria-pressed="false">همه <span data-qc-filter-count="all">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="0" aria-pressed="true">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="1" aria-pressed="false">بدون مغایرت <span data-qc-filter-count="1">۰</span></button>
                                     <button type="button" class="qc-client-item-filter" data-qc-item-filter="2" aria-pressed="false">دارای مغایرت <span data-qc-filter-count="2">۰</span></button>
                                     </div>
@@ -281,13 +281,24 @@
                             قلمی مطابق جستجو پیدا نشد.
                         </div>
                         <div id="qcCustomerReviewContent" class="qc-client-review-content"></div>
+                        <div id="qcInvoiceItemPaging" class="qc-client-review-paging" hidden>
+                            <label for="qcInvoiceItemPageSize">تعداد در صفحه
+                                <select id="qcInvoiceItemPageSize" class="form-select" aria-label="تعداد اقلام هر صفحه">
+                                    <option value="5" selected>۵</option><option value="10">۱۰</option>
+                                    <option value="25">۲۵</option><option value="50">۵۰</option>
+                                    <option value="0">همه</option>
+                                </select>
+                            </label>
+                            <span id="qcInvoiceItemPagingCount" class="qc-client-review-paging-count" aria-live="polite"></span>
+                            <nav id="qcInvoiceItemPages" class="qc-client-review-pages" aria-label="صفحه‌بندی اقلام"></nav>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer qc-client-footer">
                     <span id="qcCustomerSaveHint" class="qc-client-save-hint"></span>
                     <button type="button" id="qcCustomerSaveAll" class="qc-client-button qc-client-primary" disabled>
                         <i class="fa fa-save" aria-hidden="true"></i>
-                        ثبت کلی اقلام بررسی‌نشده بدون مغایرت
+                        ثبت اقلام بررسی‌نشده این صفحه بدون مغایرت
                     </button>
                     <button type="button" class="qc-client-button qc-client-secondary" data-bs-dismiss="modal">بستن</button>
                 </div>

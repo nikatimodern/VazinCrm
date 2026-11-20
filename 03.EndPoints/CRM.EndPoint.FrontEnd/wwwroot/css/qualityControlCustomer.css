@@ -2467,3 +2467,63 @@
         font-size: 11px;
     }
 }
+
+
+/* Server-side pagination: stays fixed below the independently scrolling item table. */
+#qualityControlCustomerPage .qc-client-review-paging {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    padding: 5px 2px 0;
+    font-size: 12px;
+    color: var(--qc-muted);
+}
+#qualityControlCustomerPage .qc-client-review-paging[hidden] { display: none; }
+#qualityControlCustomerPage .qc-client-review-paging label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+}
+#qualityControlCustomerPage .qc-client-review-paging select {
+    width: auto;
+    min-width: 72px;
+    height: 30px;
+    min-height: 30px;
+    padding-block: 3px;
+    font-size: 12px;
+}
+#qualityControlCustomerPage .qc-client-review-pages {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+#qualityControlCustomerPage .qc-client-review-pages button {
+    border: 1px solid var(--qc-border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--qc-primary);
+    min-width: 28px;
+    min-height: 28px;
+    padding: 3px 7px;
+    font-size: 11px;
+    font-weight: 700;
+}
+#qualityControlCustomerPage .qc-client-review-pages button.is-active {
+    background: var(--qc-primary);
+    border-color: var(--qc-primary);
+    color: #fff;
+}
+#qualityControlCustomerPage .qc-client-review-pages button:disabled { opacity: .45; cursor: not-allowed; }
+#qualityControlCustomerPage .qc-client-review-content.is-refreshing { opacity: .65; pointer-events: none; }
+@media (max-width: 767px) {
+    #qualityControlCustomerPage .qc-client-review-paging select { min-height: 25px; height: 25px; }
+    #qualityControlCustomerPage .qc-client-review-pages button { min-height: 25px; }
+}

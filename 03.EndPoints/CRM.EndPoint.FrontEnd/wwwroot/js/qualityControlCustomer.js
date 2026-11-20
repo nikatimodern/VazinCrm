@@ -61,6 +61,10 @@
         const itemSearchCount = page.querySelector("#qcInvoiceItemSearchCount");
         const itemSearchEmpty = page.querySelector("#qcInvoiceItemSearchEmpty");
         const itemStatusFilters = page.querySelector("#qcInvoiceItemStatusFilters");
+        const itemPageSize = page.querySelector("#qcInvoiceItemPageSize");
+        const itemPaging = page.querySelector("#qcInvoiceItemPaging");
+        const itemPages = page.querySelector("#qcInvoiceItemPages");
+        const itemPagingCount = page.querySelector("#qcInvoiceItemPagingCount");
         const issueOverlay = page.querySelector("#qcItemDiscrepancyDialog");
         const issueForm = page.querySelector("#qcIssueForm");
         const issueQuestions = page.querySelector("#qcIssueQuestions");
@@ -205,13 +209,13 @@
             }, Math.max(1000, midnight.getTime() - now.getTime() + 1500));
         }
         let review = null;
-        let itemStatusFilter = "all", itemSortField = "", itemSortDirection = 1;
+        let itemStatusFilter = "0", itemSortField = "order", itemSortDirection = -1;
+        let itemPageStart = 0, itemPageLoading = false, itemSearchTimer = null;
         let issueItemId = null, issueReturnFocus = null;
         const drafts = new Map();
         const savingItems = new Set();
         const noteTimers = new Map();
-        const flatten = () => review?.orders.flatMap(order =>
-            order.invoices.flatMap(invoice => invoice.items)) ?? [];
+        const flatten = () => review?.data?.map(row => row.item) ?? [];
         const stateOf = item => drafts.get(item.factorItemId);
 
         const normalizeSearch = text => String(text ?? "").normalize("NFKC")
@@ -221,26 +225,104 @@
             .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
             .toLocaleLowerCase("fa-IR").replace(/\s+/g, " ").trim();
 
+        // Server returns page data, filtered totals and sort order. Never filter visible DOM rows.
         function filterInvoiceItems() {
             if (!review) return;
-            const query = normalizeSearch(itemSearch.value);
-            let matches = 0;
-            content.querySelectorAll("[data-qc-item]").forEach(row => {
-                const draft = drafts.get(row.dataset.qcItem);
-                const statusMatches = itemStatusFilter === "all"
-                    || String(draft?.status ?? 0) === itemStatusFilter;
-                const visible = statusMatches && (!query || row.dataset.qcSearch?.includes(query));
-                row.hidden = !visible;
-                if (visible) matches++;
-            });
-            itemSearchCount.textContent = faNumber.format(matches) + " از "
-                + faNumber.format(flatten().length) + " قلم";
-            itemSearchEmpty.hidden = matches !== 0;
+            itemSearchCount.textContent = faNumber.format(review.filteredItems) + " از "
+                + faNumber.format(review.totalItems) + " قلم";
+            itemSearchEmpty.hidden = review.filteredItems !== 0;
             itemStatusFilters.querySelectorAll("[data-qc-item-filter]").forEach(button => {
                 const selected = button.dataset.qcItemFilter === itemStatusFilter;
                 button.classList.toggle("is-active", selected);
                 button.setAttribute("aria-pressed", String(selected));
             });
+        }
+
+        function reviewParams(customerId) {
+            return {
+                customerId, start: itemPageStart, length: Number(itemPageSize.value),
+                status: itemStatusFilter === "all" ? "" : itemStatusFilter,
+                search: itemSearch.value.trim(), sort: itemSortField,
+                descending: itemSortDirection < 0,
+            };
+        }
+
+        function applyReviewPage(result) {
+            review = result;
+            itemPageStart = result.start;
+            drafts.clear();
+            flatten().forEach(item => {
+                const status = Number(item.status) || 0;
+                drafts.set(item.factorItemId, {
+                    status, revision: 0, failed: false,
+                    description: item.description || "",
+                    rowVersion: item.rowVersion || null,
+                    saved: Boolean(item.rowVersion) && status !== 0,
+                    answers: Object.fromEntries((item.answers || []).map(answer =>
+                        [answer.id, answer.answer])),
+                });
+            });
+            renderReview();
+            itemPaging.hidden = false;
+            updateReviewPager();
+        }
+
+        async function loadReviewPage(reset = false) {
+            if (!review || !isActive() || hasUnsavedWork() || issueItemId) return;
+            if (reset) itemPageStart = 0;
+            formController?.abort();
+            const controller = formController = new AbortController();
+            const generation = formGeneration, customerId = review.customerId;
+            itemPageLoading = true;
+            content.classList.add("is-refreshing");
+            content.setAttribute("aria-busy", "true");
+            refreshReviewState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/GetCustomerForm", params: reviewParams(customerId),
+                    signal: controller.signal, showLoading: false,
+                });
+                if (!isActive() || controller.signal.aborted || generation !== formGeneration
+                    || review?.customerId !== customerId) return;
+                if (!result?.customerId) throw new Error("Invalid response");
+                applyReviewPage(result);
+                const viewport = content.querySelector(".qc-client-review-table-wrap");
+                if (viewport) viewport.scrollTop = 0;
+                formFeedback.textContent = "";
+            } catch (error) {
+                if (isActive() && !controller.signal.aborted && generation === formGeneration)
+                    formFeedback.textContent = "دریافت اقلام ناموفق بود؛ دوباره تلاش کنید.";
+            } finally {
+                if (generation === formGeneration && !controller.signal.aborted && isActive()) {
+                    itemPageLoading = false;
+                    content.classList.remove("is-refreshing");
+                    content.removeAttribute("aria-busy");
+                    refreshReviewState();
+                }
+            }
+        }
+
+        function updateReviewPager() {
+            if (!review) return;
+            const length = Number(itemPageSize.value), totalRows = review.filteredItems;
+            const pages = length ? Math.ceil(totalRows / length) : (totalRows ? 1 : 0);
+            const current = length ? Math.floor(review.start / length) + 1 : 1;
+            const first = totalRows ? review.start + 1 : 0;
+            const last = length ? Math.min(review.start + length, totalRows) : totalRows;
+            itemPagingCount.textContent = faNumber.format(first) + " تا "
+                + faNumber.format(last) + " از " + faNumber.format(totalRows) + " قلم";
+            if (length === 0 || pages <= 1) { itemPages.replaceChildren(); return; }
+            const button = (label, target, disabled, active = false) =>
+                '<button type="button" data-qc-item-page="' + target
+                + '"' + (disabled ? " disabled" : "")
+                + (active ? ' aria-current="page" class="is-active"' : "") + '>'
+                + label + '</button>';
+            let html = button("قبلی", current - 1, current === 1);
+            const from = Math.max(1, Math.min(current - 2, pages - 4));
+            for (let i = from; i <= Math.min(pages, from + 4); i++)
+                html += button(faNumber.format(i), i, false, i === current);
+            html += button("بعدی", current + 1, current >= pages);
+            itemPages.innerHTML = html;
         }
 
         function isValid(item) {
@@ -943,9 +1025,14 @@
             issueItemId = null;
             issueReturnFocus = null;
             issueOverlay.hidden = true;
-            itemStatusFilter = "all";
-            itemSortField = "";
-            itemSortDirection = 1;
+            itemStatusFilter = "0";
+            itemSortField = "order";
+            itemSortDirection = -1;
+            itemPageStart = 0;
+            itemPageSize.value = "5";
+            itemPageLoading = false;
+            clearTimeout(itemSearchTimer);
+            itemPaging.hidden = true;
             saveAllButton.disabled = true;
             reviewToolbar.hidden = true;
             summary.replaceChildren();
@@ -959,15 +1046,15 @@
             formFeedback.textContent = "در حال دریافت فاکتورها و اقلام سفارش‌های تحویل‌شده…";
             ModalToggle(modal, "show");
             const result = await sendApiRequest({
-                url: "/QualityControl/GetCustomerForm", params: { customerId },
+                url: "/QualityControl/GetCustomerForm", params: reviewParams(customerId),
                 signal: controller.signal, showLoading: false,
             });
             if (!isActive() || controller.signal.aborted || generation !== formGeneration) return;
-            if (!result?.orders?.length) {
+            if (!result?.customerId) {
                 formFeedback.textContent = "دریافت فاکتورهای مشتری ناموفق بود. پنجره را ببندید و دوباره تلاش کنید.";
                 return;
             }
-            review = result;
+            applyReviewPage(result);
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت: " + (review.customerName || "مشتری");
             const customerDetails = [
                 '<span class="qc-client-customer-meta">کد مشتری: <strong>'
@@ -980,19 +1067,6 @@
                 customerDetails.push('<span class="qc-client-customer-meta"><i class="fa fa-phone" aria-hidden="true"></i> موبایل: <strong dir="ltr">'
                     + escape(review.mobile.trim()) + '</strong></span>');
             page.querySelector("#qcCustomerModalSubtitle").innerHTML = customerDetails.join("");
-            flatten().forEach(item => {
-                const status = Number(item.status) || 0;
-                drafts.set(item.factorItemId, {
-                    status,
-                    revision: 0,
-                    failed: false,
-                    description: item.description || "",
-                    rowVersion: item.rowVersion || null,
-                    saved: Boolean(item.rowVersion) && status !== 0,
-                    answers: Object.fromEntries((item.answers || []).map(answer =>
-                        [answer.id, answer.answer])),
-                });
-            });
             formFeedback.textContent = "";
             reviewToolbar.hidden = false;
             itemSearchBar.hidden = false;
@@ -1023,8 +1097,11 @@
         }
 
         function reviewRows() {
-            return review.orders.flatMap(order => order.invoices.flatMap(invoice =>
-                invoice.items.map(item => ({ item, order, invoice }))));
+            return review.data.map(row => ({
+                item: row.item,
+                order: { serialNumber: row.orderSerialNumber },
+                invoice: { serialNumber: row.invoiceSerialNumber, date: row.invoiceDate },
+            }));
         }
 
         function renderReviewRow(entry, index) {
@@ -1041,7 +1118,7 @@
             return '<tr class="qc-client-review-row qc-client-row-' + statusClass
                 + '" data-qc-item="' + escape(item.factorItemId)
                 + '" data-qc-search="' + escape(normalizeSearch(searchText)) + '">'
-                + '<td class="qc-client-review-index">' + faNumber.format(index + 1) + '</td>'
+                + '<td class="qc-client-review-index">' + faNumber.format(review.start + index + 1) + '</td>'
                 + '<td class="qc-client-review-code">' + escape(order.serialNumber || "—") + '</td>'
                 + '<td class="qc-client-review-code">' + escape(invoice.serialNumber || "—")
                 + (invoice.date ? '<small>' + escape(invoice.date) + '</small>' : "") + '</td>'
@@ -1077,27 +1154,25 @@
                 top: previousTableViewport?.scrollTop ?? 0,
                 left: previousTableViewport?.scrollLeft ?? 0,
             };
-            const entries = reviewRows().map((entry, index) => ({ ...entry, originalIndex: index }));
-            if (itemSortField) {
-                entries.sort((a, b) => {
-                    const first = String(a[itemSortField].serialNumber ?? "");
-                    const second = String(b[itemSortField].serialNumber ?? "");
-                    const compared = first.localeCompare(second, "fa-IR", { numeric: true });
-                    return compared ? compared * itemSortDirection : a.originalIndex - b.originalIndex;
-                });
-            }
+            const entries = reviewRows();
             const sortHeading = (field, label) =>
                 '<button type="button" class="qc-client-table-sort" data-qc-item-sort="'
                 + field + '" aria-label="مرتب‌سازی بر اساس ' + label + '">'
-                + label + ' <i class="fa fa-sort" aria-hidden="true"></i></button>';
+                + label + ' <i class="fa '
+                + (itemSortField === field
+                    ? (itemSortDirection < 0 ? 'fa-sort-down' : 'fa-sort-up') : 'fa-sort')
+                + '" aria-hidden="true"></i></button>';
             content.innerHTML = '<div class="qc-client-review-table-wrap" role="region"'
                 + ' aria-label="جدول اقلام کنترل کیفیت" tabindex="0">'
                 + '<table class="qc-client-review-table"><thead><tr>'
-                + '<th scope="col">ردیف</th><th scope="col">' + sortHeading("order", "شماره سفارش")
+                + '<th scope="col">' + sortHeading("row", "ردیف")
+                + '</th><th scope="col">' + sortHeading("order", "شماره سفارش")
                 + '</th><th scope="col">' + sortHeading("invoice", "شماره فاکتور")
-                + '</th><th scope="col">نام کالا / مشخصات</th>'
-                + '<th scope="col">مقدار</th><th scope="col">تأمین‌کننده</th>'
-                + '<th scope="col">کارشناس تأمین</th><th scope="col">وضعیت کنترل کیفیت</th>'
+                + '</th><th scope="col">' + sortHeading("product", "نام کالا / مشخصات")
+                + '</th><th scope="col">' + sortHeading("quantity", "مقدار")
+                + '</th><th scope="col">' + sortHeading("supplier", "تأمین‌کننده")
+                + '</th><th scope="col">' + sortHeading("expert", "کارشناس تأمین")
+                + '</th><th scope="col">' + sortHeading("status", "وضعیت کنترل کیفیت")
                 + '<th scope="col">عملیات</th></tr></thead><tbody>'
                 + entries.map((entry, index) => renderReviewRow(entry, index)).join("")
                 + '</tbody></table></div>';
@@ -1112,17 +1187,18 @@
         function refreshReviewState() {
             if (!review) { saveAllButton.disabled = true; return; }
             const items = flatten();
-            const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
-            const pending = items.filter(item => stateOf(item).status === 0).length;
-            const withoutIssues = items.filter(item => stateOf(item).status === 1).length;
-            const issues = items.filter(item => stateOf(item).status === 2).length;
-            const progress = items.length ? Math.round(100 * reviewed / items.length) : 0;
+            const reviewed = review.reviewedItems;
+            const pending = review.pendingItems;
+            const withoutIssues = review.noDiscrepancyItems;
+            const issues = review.discrepancyItems;
+            const progress = review.totalItems ? Math.round(100 * reviewed / review.totalItems) : 0;
+            const pendingOnPage = items.filter(item => stateOf(item)?.status === 0).length;
             summary.innerHTML = '<div class="qc-client-review-overview">'
                 + '<span class="qc-client-review-overview-icon" aria-hidden="true"><i class="fa fa-box-open"></i></span>'
                 + '<div class="qc-client-review-overview-text"><strong>'
-                + faNumber.format(items.length) + ' قلم ثبت‌شده</strong><small>'
-                + faNumber.format(review.orders.length) + ' سفارش · '
-                + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
+                + faNumber.format(review.totalItems) + ' قلم ثبت‌شده</strong><small>'
+                + faNumber.format(review.ordersCount) + ' سفارش · '
+                + faNumber.format(review.invoicesCount)
                 + ' فاکتور</small></div></div>'
                 + '<div class="qc-client-summary-tags">'
                 + '<span>' + faNumber.format(reviewed) + ' بررسی‌شده</span>'
@@ -1133,15 +1209,15 @@
                 + ' aria-label="پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'
                 + progress + '"><span style="width:' + progress + '%"></span></div>'
                 + '<strong>' + faNumber.format(progress) + '٪</strong></div>';
-            const counts = { all: items.length, 0: pending, 1: withoutIssues, 2: issues };
+            const counts = { all: review.totalItems, 0: pending, 1: withoutIssues, 2: issues };
             itemStatusFilters.querySelectorAll("[data-qc-filter-count]").forEach(element => {
                 element.textContent = faNumber.format(counts[element.dataset.qcFilterCount] ?? 0);
             });
             const busy = hasUnsavedWork();
-            saveAllButton.disabled = busy || pending === 0 || Boolean(issueItemId);
+            saveAllButton.disabled = busy || itemPageLoading || pendingOnPage === 0 || Boolean(issueItemId);
             saveHint.textContent = busy ? "در حال ثبت خودکار اطلاعات…"
-                : pending ? "ثبت کلی فقط اقلام بررسی‌نشده را بدون مغایرت ثبت می‌کند."
-                    : "تمام اقلام وضعیت مشخصی دارند.";
+                : pendingOnPage ? "ثبت گروهی فقط اقلام بررسی‌نشده صفحه فعلی را ثبت می‌کند."
+                    : "در این صفحه قلم بررسی‌نشده‌ای وجود ندارد.";
             content.querySelectorAll("[data-qc-item]").forEach(row => {
                 const id = row.dataset.qcItem, draft = drafts.get(id);
                 if (!draft) return;
@@ -1162,17 +1238,18 @@
                     button.classList.toggle("qc-client-issue-selected", selected && draft.status === 2);
                     button.classList.toggle("qc-client-secondary", !selected);
                     button.setAttribute("aria-pressed", String(selected));
-                    button.disabled = busy || Boolean(issueItemId);
+                    button.disabled = busy || itemPageLoading || Boolean(issueItemId);
                 });
                 const retry = row.querySelector("[data-qc-retry]");
                 if (retry) {
                     retry.hidden = !draft.failed;
-                    retry.disabled = busy || Boolean(issueItemId);
+                    retry.disabled = busy || itemPageLoading || Boolean(issueItemId);
                 }
             });
             modal.querySelectorAll("[data-bs-dismiss]").forEach(button =>
                 button.disabled = busy || Boolean(issueItemId));
             filterInvoiceItems();
+            updateReviewPager();
         }
 
         function makePayload(item) {
@@ -1240,7 +1317,10 @@
                     if (succeeded && !flatten().some(item => stateOf(item).failed))
                         formFeedback.textContent = "";
                     refreshReviewState();
-                    if (succeeded) reviewHasSavedChanges = true;
+                    if (succeeded) {
+                        reviewHasSavedChanges = true;
+                        await loadReviewPage();
+                    }
                 }
             }
         }
@@ -1280,18 +1360,30 @@
                 });
                 formFeedback.textContent = "";
                 reviewHasSavedChanges = true;
-                renderReview();
             } catch (error) {
                 if (generation === formGeneration && isActive())
                     formFeedback.textContent = "خطا در ارتباط با سرور هنگام ثبت گروهی.";
             } finally {
                 saving = false;
-                if (generation === formGeneration && isActive()) refreshReviewState();
+                if (generation === formGeneration && isActive()) {
+                    refreshReviewState();
+                    if (reviewHasSavedChanges) await loadReviewPage();
+                }
             }
         }
 
         form.addEventListener("submit", event => event.preventDefault());
-        itemSearch.addEventListener("input", filterInvoiceItems);
+        itemSearch.addEventListener("input", () => {
+            clearTimeout(itemSearchTimer);
+            itemSearchTimer = setTimeout(() => { void loadReviewPage(true); }, 300);
+        });
+        itemPageSize.addEventListener("change", () => { void loadReviewPage(true); });
+        itemPages.addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-item-page]");
+            if (!button || button.disabled || itemPageLoading || hasUnsavedWork()) return;
+            itemPageStart = (Number(button.dataset.qcItemPage) - 1) * Number(itemPageSize.value);
+            void loadReviewPage();
+        });
         page.querySelector("#qcCustomerSearchForm").addEventListener("submit", event => {
             event.preventDefault();
             clearReviewFocus();
@@ -1492,8 +1584,9 @@
         itemStatusFilters.addEventListener("click", event => {
             const button = event.target.closest("[data-qc-item-filter]");
             if (!button || !review) return;
+            if (hasUnsavedWork() || itemPageLoading) return;
             itemStatusFilter = button.dataset.qcItemFilter;
-            filterInvoiceItems();
+            void loadReviewPage(true);
         });
 
         function closeIssueDialog() {
@@ -1584,13 +1677,14 @@
         });
 
         content.addEventListener("click", event => {
-            if (saving || !review || issueItemId) return;
+            if (saving || itemPageLoading || !review || issueItemId) return;
             const sortButton = event.target.closest("[data-qc-item-sort]");
             if (sortButton) {
                 const selectedField = sortButton.dataset.qcItemSort;
+                if (hasUnsavedWork() || itemPageLoading) return;
                 if (selectedField === itemSortField) itemSortDirection *= -1;
                 else { itemSortField = selectedField; itemSortDirection = 1; }
-                renderReview();
+                void loadReviewPage(true);
                 return;
             }
             const setButton = event.target.closest("[data-qc-set-status]");
@@ -1638,21 +1732,16 @@
                 return;
             }
             formController?.abort();
+            clearTimeout(itemSearchTimer);
             formGeneration++;
         });
         modal.addEventListener("hidden.bs.modal", () => {
             const editedCustomerId = reviewHasSavedChanges ? String(review?.customerId || "").toLowerCase() : null;
             // Derive the displayed counts from confirmed saves, before clearing modal state.
-            const items = editedCustomerId ? flatten() : [];
-            const reviewed = items.filter(item => {
-                const draft = stateOf(item);
-                return draft?.saved && draft.status !== 0;
-            }).length;
-            const discrepancy = items.filter(item => {
-                const draft = stateOf(item);
-                return draft?.saved && draft.status === 2;
-            }).length;
-            const complete = items.length > 0 && reviewed === items.length;
+            const itemCount = review?.totalItems ?? 0;
+            const reviewed = review?.reviewedItems ?? 0;
+            const discrepancy = review?.discrepancyItems ?? 0;
+            const complete = itemCount > 0 && reviewed === itemCount;
             reviewHasSavedChanges = false;
             issueItemId = null;
             issueReturnFocus = null;
@@ -1666,6 +1755,9 @@
             itemSearch.value = "";
             itemSearchBar.hidden = true;
             itemSearchEmpty.hidden = true;
+            itemPaging.hidden = true;
+            itemPages.replaceChildren();
+            itemPageLoading = false;
             formFeedback.textContent = "";
 
             if (!editedCustomerId || !isActive()) return;
@@ -1684,7 +1776,7 @@
                     reviewGroup.classList.toggle("qc-client-review-complete", complete);
                     reviewGroup.classList.toggle("qc-client-review-pending", !complete);
                     const summary = reviewGroup.querySelector(".qc-client-count-reviewed");
-                    if (summary) summary.innerHTML = reviewSummaryMarkup(reviewed, items.length, discrepancy);
+                    if (summary) summary.innerHTML = reviewSummaryMarkup(reviewed, itemCount, discrepancy);
                 }
                 card.dataset.qcComplete = String(complete);
                 const button = card.querySelector("[data-qc-customer]");
@@ -1730,6 +1822,7 @@
             clearInterval(noResponseCooldownTimer);
             listController?.abort();
             formController?.abort();
+            clearTimeout(itemSearchTimer);
             historyController?.abort();
             customerNotesController?.abort();
         }, { once: true });
