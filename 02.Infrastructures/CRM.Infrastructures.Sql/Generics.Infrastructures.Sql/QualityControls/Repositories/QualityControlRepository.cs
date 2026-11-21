@@ -74,11 +74,11 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 .Any(review => review.FactorItemId == item.ItemId && review.Status == QualityControlOutcome.HasDiscrepancy))
         });
         var summaryRows = await (
-            from group in allGrouped
-            join customer in db.Customers.AsNoTracking() on group.CustomerId equals customer.Id
+            from summaryGroup in allGrouped
+            join customer in db.Customers.AsNoTracking() on summaryGroup.CustomerId equals customer.Id
             where !customer.IsDeleted
-            select new { group.CustomerId, customer.Mobile,
-                group.TotalItems, group.ReviewedItems, group.DiscrepancyItems }
+            select new { summaryGroup.CustomerId, customer.Mobile,
+                summaryGroup.TotalItems, summaryGroup.ReviewedItems, summaryGroup.DiscrepancyItems }
         ).ToListAsync(cancellationToken);
 
         // Date filter changes only the queue and its per-customer order/invoice counts.
