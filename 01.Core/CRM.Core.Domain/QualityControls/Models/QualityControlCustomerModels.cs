@@ -9,6 +9,12 @@ public sealed class QualityControlCustomerListRequest
     public int Start { get; set; }
     public int Length { get; set; } = 10;
     public string? Search { get; set; }
+    // Dates typed in the shared filter modal are in the Jalali calendar (YYYY/MM/DD).
+    public string? FromDate { get; set; }
+    public string? ToDate { get; set; }
+    // Gregorian boundaries are validated and populated by the controller.
+    public DateTime? FromGregorian { get; set; }
+    public DateTime? ToGregorianExclusive { get; set; }
     // Sort by actionable workload by default, before applying pagination.
     public string Sort { get; set; } = "pending";
     // null: all; 0: pending excluding contact-blocked customers; 1: fully reviewed;

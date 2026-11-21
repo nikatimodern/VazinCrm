@@ -73,6 +73,8 @@
         const saveAllButton = page.querySelector("#qcCustomerSaveAll");
         const saveHint = page.querySelector("#qcCustomerSaveHint");
         const searchInput = page.querySelector("#qcCustomerSearch");
+        const dateFilterButton = page.querySelector("#qcCustomerDateFilterButton");
+        const dateFilterChips = page.querySelector("#qcCustomerDateFilterChips");
         const statusFilter = page.querySelector("#qcCustomerStatus");
         const sortControl = page.querySelector("#qcCustomerSort");
         const cardButtons = [...page.querySelectorAll("[data-qc-card-status]")];
@@ -132,6 +134,25 @@
             enableMomentumScrollScope(content, { signal: pageSignal });
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
+        // Reuse Layout.js FilterModal and its built-in Persian date range chips.
+        window.qcCustomerDateFilterConfig = { filterVar: null };
+        const selectedDates = () => {
+            const f = window.qcCustomerDateFilterConfig?.filterVar;
+            return f?.DateFilterChk ? {
+                fromDate: String(f.fromDate || "").trim(),
+                toDate: String(f.toDate || "").trim(),
+            } : { fromDate: "", toDate: "" };
+        };
+        window.qcCustomerDateFilterChanged = async () => {
+            if (!isActive()) return;
+            clearReviewFocus();
+            await loadCustomers(true);
+        };
+        dateFilterButton?.addEventListener("click", () => {
+            if (typeof ShowFilterPopup !== "function") return;
+            // The common modal is shared with Deal/Index; QC exposes its date section only.
+            ShowFilterPopup(dateFilterButton, ["cusFilterItem", "selFilterItem"]);
+        });
         let lastCheckedCustomerId = null; // Badge stays until another successfully saved review.
         let lastReviewedHighlightTimer = null;
         let reviewHasSavedChanges = false;
@@ -433,6 +454,7 @@
                         start, length: Number(pageSize.value), search,
                         status: statusFilter.value,
                         sort: sortControl.value,
+                        ...selectedDates(),
                     },
                     signal: controller.signal,
                     showLoading: false,
@@ -1416,6 +1438,9 @@
             statusFilter.value = "";
             sortControl.value = "pending";
             pageSize.value = "5";
+            // Clearing all queue filters also removes the shared date chip.
+            window.qcCustomerDateFilterConfig.filterVar = null;
+            dateFilterChips.replaceChildren();
             loadCustomers(true);
         });
         page.querySelector(".qc-client-overview").addEventListener("click", event => {
@@ -1893,6 +1918,8 @@
             clearTimeout(itemSearchTimer);
             historyController?.abort();
             customerNotesController?.abort();
+            delete window.qcCustomerDateFilterChanged;
+            delete window.qcCustomerDateFilterConfig;
         }, { once: true });
         window.addEventListener("pagehide", () => {
             clearReviewFocus();

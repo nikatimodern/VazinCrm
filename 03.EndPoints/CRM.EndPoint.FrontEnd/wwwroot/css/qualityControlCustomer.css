@@ -2572,3 +2572,65 @@
     color: var(--qc-danger) !important;
     opacity: 1;
 }
+
+
+/* Keep the customer search compact; use the common shared filter and result chips. */
+#qualityControlCustomerPage .qc-client-search-filters {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1 1 370px;
+    min-width: 210px;
+}
+#qualityControlCustomerPage .qc-client-search-filters .qc-client-search {
+    flex: 0 1 290px;
+    max-width: 325px;
+    min-width: 155px;
+}
+#qualityControlCustomerPage .qc-client-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+#qualityControlCustomerPage .qc-client-date-filter-toggle {
+    display: inline-flex;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--qc-border);
+    border-radius: 7px;
+    background: #fff;
+    color: #3b4750;
+    cursor: pointer;
+}
+#qualityControlCustomerPage .qc-client-date-filter-toggle:hover,
+#qualityControlCustomerPage .qc-client-date-filter-toggle:focus-visible {
+    background: var(--qc-primary-light);
+    color: var(--qc-primary);
+    border-color: var(--qc-primary);
+}
+#qualityControlCustomerPage .qc-client-date-filter-chips {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#qualityControlCustomerPage .qc-client-date-filter-chips:empty { display: none; }
+#qualityControlCustomerPage .qc-client-date-filter-chips .ContentFilterItem {
+    margin-bottom: 0;
+    white-space: nowrap;
+    font-size: 11px;
+}
+@media (max-width: 900px) {
+    #qualityControlCustomerPage .qc-client-search-filters {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+    #qualityControlCustomerPage .qc-client-search-filters .qc-client-search {
+        flex: 1 1 220px;
+        max-width: 360px;
+    }
+}

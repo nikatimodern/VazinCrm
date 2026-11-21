@@ -60,9 +60,35 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
-            select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id, DealId = deal.Id, FactorId = factor.Id };
+            select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id,
+                DealId = deal.Id, FactorId = factor.Id, DealCreatedAt = deal.CreateDate };
 
-        var grouped = eligible.GroupBy(item => item.CustomerId).Select(group => new
+        // Global dashboard stats never depend on the selected date range.
+        var allGrouped = eligible.GroupBy(item => item.CustomerId).Select(group => new
+        {
+            CustomerId = group.Key,
+            TotalItems = group.Count(),
+            ReviewedItems = group.Count(item => db.QualityControlItemReviews
+                .Any(review => review.FactorItemId == item.ItemId && review.Status != QualityControlOutcome.NotReviewed)),
+            DiscrepancyItems = group.Count(item => db.QualityControlItemReviews
+                .Any(review => review.FactorItemId == item.ItemId && review.Status == QualityControlOutcome.HasDiscrepancy))
+        });
+        var summaryRows = await (
+            from group in allGrouped
+            join customer in db.Customers.AsNoTracking() on group.CustomerId equals customer.Id
+            where !customer.IsDeleted
+            select new { group.CustomerId, customer.Mobile,
+                group.TotalItems, group.ReviewedItems, group.DiscrepancyItems }
+        ).ToListAsync(cancellationToken);
+
+        // Date filter changes only the queue and its per-customer order/invoice counts.
+        var visible = eligible;
+        if (request.FromGregorian.HasValue)
+            visible = visible.Where(item => item.DealCreatedAt >= request.FromGregorian.Value);
+        if (request.ToGregorianExclusive.HasValue)
+            visible = visible.Where(item => item.DealCreatedAt < request.ToGregorianExclusive.Value);
+
+        var grouped = visible.GroupBy(item => item.CustomerId).Select(group => new
         {
             CustomerId = group.Key,
             Orders = group.Select(item => item.DealId).Distinct().Count(),
@@ -86,7 +112,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 // Only projected into SQL when the "latest" sort is selected.
                 // Include QC item edits and changes to the customer's contact status.
                 LastReviewModified = (
-                    from invoiceItem in eligible
+                    from invoiceItem in visible
                     join review in db.QualityControlItemReviews.AsNoTracking()
                         on invoiceItem.ItemId equals review.FactorItemId
                     where invoiceItem.CustomerId == groupedItem.CustomerId
@@ -96,12 +122,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     .Where(contact => contact.CustomerId == groupedItem.CustomerId)
                     .Max(contact => contact.ModifyDate)
             };
-        // Summary is global for the eligible QC queue: it is not affected by search,
-        // selected status or pagination. Read one grouped row per customer, not every item.
-        var summaryRows = await customers.Select(row => new
-        {
-            row.CustomerId, row.Mobile, row.TotalItems, row.ReviewedItems, row.DiscrepancyItems
-        }).ToListAsync(cancellationToken);
+        // Summary rows have already been read from all eligible orders above,
+        // independently of date, status, search and pagination.
         var total = summaryRows.Count;
         var customerIds = summaryRows.Select(row => row.CustomerId).ToArray();
         var contacts = await db.QualityControlCustomerContacts.AsNoTracking()

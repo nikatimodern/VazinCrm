@@ -111,6 +111,7 @@
     </div>
 
     <div class="qc-client-toolbar">
+        <div class="qc-client-search-filters">
         <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
             <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
             <div class="qc-client-search-group">
@@ -120,6 +121,19 @@
                         title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
             </div>
         </form>
+        <div class="qc-client-date-filter">
+            <button type="button" id="qcCustomerDateFilterButton" class="btnFilter qc-client-date-filter-toggle"
+                    data-filterVarConfig="qcCustomerDateFilterConfig"
+                    data-filterCallBack="qcCustomerDateFilterChanged"
+                    data-filterContentId="qcCustomerDateFilterChips"
+                    data-filterInpSearchId="qcCustomerSearch"
+                    aria-label="فیلتر تاریخ سفارش‌ها" title="فیلتر تاریخ سفارش‌ها">
+                <i class="fa fa-filter" aria-hidden="true"></i>
+            </button>
+            <div id="qcCustomerDateFilterChips" class="ContentFilter qc-client-date-filter-chips"
+                 aria-live="polite"></div>
+        </div>
+        </div>
         <div class="qc-client-filter">
             <label for="qcCustomerStatus">وضعیت بررسی</label>
             <select id="qcCustomerStatus" class="form-select">

@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
@@ -32,9 +34,41 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     {
         if (!ModelState.IsValid || request.Start < 0 || request.Length is < 1 or > 100
             || (request.Status.HasValue && request.Status is not (0 or 1 or 2 or 3 or 4 or 5))
-            || request.Sort is not ("pending" or "discrepancy" or "reviewed" or "invoices" or "orders" or "name" or "code"))
-            return BadRequest(new { message = "فیلتر یا صفحه‌بندی معتبر نیست." });
+            || request.Sort is not ("pending" or "discrepancy" or "reviewed" or "latest" or "invoices" or "orders" or "name" or "code")
+            || !TryPersianDate(request.FromDate, out var from)
+            || !TryPersianDate(request.ToDate, out var to)
+            || (from.HasValue && to.HasValue && from > to))
+            return BadRequest(new { message = "فیلتر یا بازه تاریخ سفارش معتبر نیست." });
+
+        request.FromGregorian = from;
+        request.ToGregorianExclusive = to?.AddDays(1);
         return Ok(await requests.QueryAsync(new GetQualityControlCustomersQuery(request), ct));
+    }
+
+    private static bool TryPersianDate(string? raw, out DateTime? parsed)
+    {
+        parsed = null;
+        if (string.IsNullOrWhiteSpace(raw)) return true;
+        var ascii = new string(raw.Trim().Select(ch =>
+            ch is >= '۰' and <= '۹' ? (char)('0' + ch - '۰')
+                : ch is >= '٠' and <= '٩' ? (char)('0' + ch - '٠') : ch).ToArray());
+        var parts = ascii.Split('/');
+        if (parts.Length != 3 || parts[0].Length != 4 || parts[1].Length != 2
+            || parts[2].Length != 2
+            || !int.TryParse(parts[0], out var year)
+            || !int.TryParse(parts[1], out var month)
+            || !int.TryParse(parts[2], out var day)
+            || year is < 1300 or > 1600)
+            return false;
+        try
+        {
+            parsed = new PersianCalendar().ToDateTime(year, month, day, 0, 0, 0, 0);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
     }
 
     [HttpGet]
