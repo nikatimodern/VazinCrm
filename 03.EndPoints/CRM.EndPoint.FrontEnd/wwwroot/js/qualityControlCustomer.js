@@ -75,6 +75,7 @@
         const searchInput = page.querySelector("#qcCustomerSearch");
         const dateFilterButton = page.querySelector("#qcCustomerDateFilterButton");
         const dateFilterChips = page.querySelector("#qcCustomerDateFilterChips");
+        const dateFilterCount = page.querySelector("#qcCustomerDateFilterCount");
         const statusFilter = page.querySelector("#qcCustomerStatus");
         const sortControl = page.querySelector("#qcCustomerSort");
         const cardButtons = [...page.querySelectorAll("[data-qc-card-status]")];
@@ -143,9 +144,17 @@
                 toDate: String(f.toDate || "").trim(),
             } : { fromDate: "", toDate: "" };
         };
+        function refreshDateFilterCount(count) {
+            const dates = selectedDates();
+            const hasDateFilter = Boolean(dates.fromDate || dates.toDate);
+            dateFilterCount.hidden = !hasDateFilter;
+            dateFilterCount.textContent = hasDateFilter
+                ? faNumber.format(Math.max(0, Number(count) || 0)) + " مشتری" : "";
+        }
         window.qcCustomerDateFilterChanged = async () => {
             if (!isActive()) return;
             clearReviewFocus();
+            dateFilterCount.hidden = true;
             await loadCustomers(true);
         };
         dateFilterButton?.addEventListener("click", () => {
@@ -501,6 +510,7 @@
                         faNumber.format(checkedItems) + " از " + faNumber.format(allItems) + " قلم");
                 }
                 total = Number(result.filtered ?? 0);
+                refreshDateFilterCount(total);
                 if (summaryOnly) {
                     queueCount.textContent = faNumber.format(total) + " مشتری";
                     renderPager();
@@ -1441,6 +1451,7 @@
             // Clearing all queue filters also removes the shared date chip.
             window.qcCustomerDateFilterConfig.filterVar = null;
             dateFilterChips.replaceChildren();
+            refreshDateFilterCount(0);
             loadCustomers(true);
         });
         page.querySelector(".qc-client-overview").addEventListener("click", event => {
@@ -1453,6 +1464,7 @@
             searchInput.value = "";
             window.qcCustomerDateFilterConfig.filterVar = null;
             dateFilterChips.replaceChildren();
+            refreshDateFilterCount(0);
             statusFilter.value = button.dataset.qcCardStatus;
             loadCustomers(true);
         });
