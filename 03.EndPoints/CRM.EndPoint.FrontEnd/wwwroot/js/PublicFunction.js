@@ -243,12 +243,18 @@ function createExternalItemMatching() {
     toolbar.className = "external-item-match-toolbar";
     const add = document.createElement("button");
     add.type = "button";
-    add.className = "link-green text-decoration-none";
-    add.textContent = "افزودن کالای جدید";
+    add.className = "external-item-match-add";
+    add.title = "باز کردن فرم ثبت کالای جدید در نرم‌افزار مقصد";
+    const addIcon = document.createElement("i");
+    addIcon.className = "fas fa-plus";
+    addIcon.setAttribute("aria-hidden", "true");
+    const addLabel = document.createElement("span");
+    addLabel.textContent = "افزودن کالای جدید";
+    add.append(addIcon, addLabel);
 
     const refresh = document.createElement("button");
     refresh.type = "button";
-    refresh.className = "external-item-match-refresh link-green text-decoration-none";
+    refresh.className = "external-item-match-refresh";
     refresh.title = "دریافت دوباره فهرست کالاها از نرم‌افزار مقصد";
     const refreshIcon = document.createElement("i");
     refreshIcon.className = "fas fa-sync-alt";
