@@ -38,8 +38,8 @@
     align-items: center;
     justify-content: flex-end;
     flex-wrap: wrap;
-    gap: .75rem;
-    font-size: .85rem;
+    gap: .4rem;
+    font-size: .8rem;
 }
 
 /* A filled action creates a new item; a neutral outlined action only reloads data. */
@@ -47,12 +47,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .4rem;
-    min-height: 30px;
-    padding: 4px 10px;
+    gap: .28rem;
+    min-height: 26px;
+    padding: 2px 7px;
     border: 1px solid transparent;
-    border-radius: 6px;
-    font: 500 12px/1.5 IRANSansMedium, IRANSans, sans-serif;
+    border-radius: 5px;
+    font: 500 11px/1.5 IRANSansMedium, IRANSans, sans-serif;
     white-space: nowrap;
     cursor: pointer;
     transition: background-color .15s ease, border-color .15s ease, color .15s ease;
