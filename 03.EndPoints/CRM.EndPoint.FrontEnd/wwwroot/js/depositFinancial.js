@@ -175,21 +175,31 @@ async function openDepositFinancial(id) {
         const total = source.type === 1 ? 5 : source.type === 2 ? 4 : 3;
         return "مرحله " + number.toLocaleString("fa-IR") + " از " + total.toLocaleString("fa-IR");
     }
+    function creditAccountField(caption) {
+        return select("customerAccount", caption, source.options.creditAccounts, "id",
+            account => account.code + " - " + account.title);
+    }
     function partyStage() {
+        const note = source.type === 4;
         const body = ExternalFinancialWizard.crmCustomer(source.customerName)
-            + select("customerId", "مشتری معادل در نرم‌افزار مالی", source.options.customers);
-        stage("تطبیق مشتری", "معادل مشتری را در نرم‌افزار مقصد مشخص کنید", step(1),
+            + select("customerId", note ? "مشتری بستانکار در نرم‌افزار مالی" : "مشتری معادل در نرم‌افزار مالی",
+                source.options.customers)
+            + (note ? creditAccountField("معین بستانکار") : "");
+        const keys = note ? ["customerId", "customerAccount"] : ["customerId"];
+        stage(note ? "بستانکار تهاتر" : "تطبیق مشتری",
+            note ? "مشتری بستانکار و معین او را مشخص کنید" : "معادل مشتری را در نرم‌افزار مقصد مشخص کنید", step(1),
             '<i class="fas fa-users" aria-hidden="true"></i>', body, "تأیید و ادامه", async () => {
-                capture(["customerId"]);
+                capture(keys);
                 if (!draft.customerId) return toastifyError("مشتری معادل را انتخاب کنید.");
+                if (note && !draft.customerAccount) return toastifyError("معین بستانکار را انتخاب کنید.");
                 const saved = await api("SaveCustomerMapping", draft);
                 if (!saved || signal.aborted) return;
                 draft.customerId = saved.id;
                 if (source.type === 1) bankStage();
                 else if (source.type === 2) cashStage();
-                else detailsStage();
+                else debtorStage();
             }, null);
-        enhance("customerId");
+        enhance(...keys);
     }
     function bankStage() {
         const body = '<div class="external-mapping-entity"><span class="external-mapping-label">حساب بانکی در CRM</span> <strong>'
@@ -224,28 +234,46 @@ async function openDepositFinancial(id) {
             + '" maxlength="' + max + '" autocomplete="off" class="' + (date ? "sdate ex-preview-invoice-number" : "form-control form-control-sm")
             + '"' + (date ? ' dir="ltr" data-datepicker-change' : '') + '></div>';
     }
+    function debtorStage() {
+        const keys = ["vendorId", "description"];
+        const body = '<div class="d-grid gap-2">'
+            + '<div class="external-mapping-entity"><span class="external-mapping-label">بابت بدهی به</span> <strong>'
+            + escapeHtml(source.beneficiary || "—") + '</strong></div>'
+            + select("vendorId", "تأمین‌کننده بدهکار در نرم‌افزار مالی", source.options.vendors, "id",
+                item => [item.code, item.title].filter(Boolean).join(" - "))
+            + (source.toName ? '<div class="external-mapping-entity"><span class="external-mapping-label">واریز به نام</span> <strong>'
+                + escapeHtml(source.toName) + '</strong></div>' : "")
+            + '<details' + (draft.description ? " open" : "") + '><summary>شرح سند (اختیاری)</summary>'
+            + input("description", "شرح سند", 250) + '</details></div>';
+        stage("بدهکار تهاتر", "تأمین‌کننده بدهکار را در نرم‌افزار مقصد مشخص کنید", step(2),
+            '<i class="fas fa-user-tag" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
+                capture(keys);
+                if (!draft.vendorId) return toastifyError("تأمین‌کننده بدهکار را انتخاب کنید.");
+                const preview = await api("Preview", draft);
+                if (preview) previewStage(preview);
+            }, () => {
+                capture(keys);
+                partyStage();
+            });
+        enhance("vendorId");
+    }
     function detailsStage() {
-        const note = source.type === 4, cheque = source.type === 2;
-        const selects = ["customerAccount", ...(note ? ["vendorId"] : cheque ? ["bankId"] : [])];
-        const detailKeys = note ? [] : cheque ? ["dueText", "reference", "accountNo"] : ["reference"];
+        const cheque = source.type === 2;
+        const selects = ["customerAccount", ...(cheque ? ["bankId"] : [])];
+        const detailKeys = cheque ? ["dueText", "reference", "accountNo"] : ["reference"];
         const optionalKeys = cheque ? ["sayad", "secondNumber", "chequeOwner", "branchCode", "branchTitle"] : [];
         const required = [...selects, ...detailKeys];
         const fields = [...required, ...optionalKeys, "description"];
         const body = '<div class="d-grid gap-2">'
-            + select("customerAccount", note ? "معین بستانکار" : "معین دریافت", source.options.creditAccounts, "id", account => account.code + " - " + account.title)
-            + (note ? '<div class="external-mapping-entity"><span class="external-mapping-label">بابت بدهی به</span> <strong>'
-                + escapeHtml(source.beneficiary || "—") + '</strong></div>'
-                + select("vendorId", "تأمین‌کننده بدهکار", source.options.vendors, "id",
-                    item => [item.code, item.title].filter(Boolean).join(" - ")) : "")
-            + (note && source.toName ? '<div class="external-mapping-entity">واریز به نام ' + escapeHtml(source.toName) + '</div>' : "")
+            + creditAccountField("معین دریافت")
             + (cheque ? input("dueText", "سررسید چک", 10, true) : "")
             + (cheque ? select("bankId", "بانک صادرکننده", source.options.banks)
                 + input("sayad", "شناسه صیادی (اختیاری)", 16) + input("accountNo", "شماره حساب صادرکننده", 50)
                 + input("secondNumber", "شماره دوم چک", 50) + input("chequeOwner", "صاحب چک", 250)
                 + input("branchCode", "کد شعبه", 250) + input("branchTitle", "نام شعبه", 250) : "")
-            + (!note ? input("reference", cheque ? "شماره چک" : "شماره پیگیری حواله", cheque ? 50 : 100) : "")
+            + input("reference", cheque ? "شماره چک" : "شماره پیگیری حواله", cheque ? 50 : 100)
             + input("description", "شرح سند (اختیاری)", 250) + '</div>';
-        stage("اطلاعات " + label(source.type), "اطلاعات لازم برای ثبت را تکمیل کنید", step(note ? 2 : cheque ? 3 : 4),
+        stage("اطلاعات " + label(source.type), "اطلاعات لازم برای ثبت را تکمیل کنید", step(cheque ? 3 : 4),
             '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
                 capture(fields);
                 if (required.some(key => !draft[key]))
@@ -254,8 +282,7 @@ async function openDepositFinancial(id) {
                 if (preview) previewStage(preview);
             }, () => {
                 capture(fields);
-                if (note) partyStage();
-                else cashStage();
+                cashStage();
             });
         enhance(...selects);
     }
@@ -323,7 +350,8 @@ async function openDepositFinancial(id) {
                 else close();
             }, () => {
                 draft.dateText = date.value.trim();
-                detailsStage();
+                if (note) debtorStage();
+                else detailsStage();
             }, true);
     }
     function close() {
