@@ -1446,10 +1446,13 @@
         page.querySelector(".qc-client-overview").addEventListener("click", event => {
             const button = event.target.closest("[data-qc-card-status]");
             if (!button) return;
-            // The overview totals are global; reset search to show every customer in the selected group.
+            // Overview cards are global: clicking "view" also clears the date-range list filter
+            // so the displayed customer list matches the unfiltered KPI totals.
             clearReviewFocus();
             search = "";
             searchInput.value = "";
+            window.qcCustomerDateFilterConfig.filterVar = null;
+            dateFilterChips.replaceChildren();
             statusFilter.value = button.dataset.qcCardStatus;
             loadCustomers(true);
         });
