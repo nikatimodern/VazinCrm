@@ -17,137 +17,144 @@
 </head>
 <body dir="rtl" class="A5 landscape">
 
-<section class="sheet d-flex" style="border-radius:12px">
+    <section class="sheet d-flex" style="border-radius:12px">
 
-    <article class="d-flex flex-column flex-grow-1 m-2"
-             style="border: 2px solid gray; border-radius:8px; padding: 10px">
+        <article class="d-flex flex-column flex-grow-1 m-2"
+                 style="border: 2px solid gray; border-radius:8px; padding: 10px">
 
-        <div class="d-flex align-items-center justify-content-between fbold p-2">
-            <p style="font-size:24px">دستور تولید</p>
-            <div class="d-flex flex-column align-items-center justify-content-center">
-                <img style="width:20%" src="@Model.Logo" />
-                <span style="font-size: 18px">
+            <div class="d-flex align-items-center justify-content-between fbold p-2">
+                <p style="font-size:24px">دستور تولید</p>
+                <div class="d-flex flex-column align-items-center justify-content-center">
+                    <img style="width:20%" src="@Model.Logo" />
+                    <span style="font-size: 18px">
                         @(isOfficial ? Model.Company.CompanyName : Model.Company.CompanyBrandName)
                     </span>
+                </div>
+                <div class="d-flex  gap-2" style="flex-direction:column; font-size:16px">
+                    <div>
+                        <span>شماره:</span>
+                        <span style="color:red">@Model.OrderHead.OrderNumber _ @Model.OfficialType</span>
+                    </div>
+                    <div>
+                        <span>پیش فاکتور:</span>
+                        <span style="color:red"> @Model.PreFactorSerialNumber</span>
+                    </div>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-2" style="font-size:16px">
-                <span>شماره:</span>
-                <span style="color:red">@Model.OrderHead.OrderNumber _ @Model.OfficialType</span>
+
+            <hr class="my-2" />
+
+            <div class="d-flex align-items-center justify-content-between py-2 px-3"
+                 style="border:1px solid gray;border-radius:5px;font-size: 14px">
+                <p>
+                    <span class="text-muted">کارشناس فروش:</span>
+                    <span class="fbold">@Model.SalesExpert</span>
+                </p>
+                <p>
+                    <span class="text-muted">کارشناس تامین:</span>
+                    <span class="fbold">@Model.OrderHead.UserTaminTxt</span>
+                </p>
+                <p>
+                    <span class="text-muted">تلفن:</span>
+                    <span class="fbold">@Model.OrderHead.Tel</span>
+                </p>
+                <p>
+                    <span class="text-muted">تاریخ:</span>
+                    <span class="fbold">@Model.OrderHead.OrderDate</span>
+                </p>
             </div>
-        </div>
 
-        <hr class="my-2" />
-
-        <div class="d-flex align-items-center justify-content-between py-2 px-3"
-             style="border:1px solid gray;border-radius:5px;font-size: 14px">
-            <p>
-                <span class="text-muted">کارشناس فروش:</span>
-                <span class="fbold">@Model.SalesExpert</span>
-            </p>
-            <p>
-                <span class="text-muted">کارشناس تامین:</span>
-                <span class="fbold">@Model.OrderHead.UserTaminTxt</span>
-            </p>
-            <p>
-                <span class="text-muted">تلفن:</span>
-                <span class="fbold">@Model.OrderHead.Tel</span>
-            </p>
-            <p>
-                <span class="text-muted">تاریخ:</span>
-                <span class="fbold">@Model.OrderHead.OrderDate</span>
-            </p>
-        </div>
-
-        <div class="w-100 my-2">
-            <table class="table table-bordered table-hover table-striped m-0 w-100">
-                <thead>
-                <tr>
-                    <th>ردیف</th>
-                    <th>نوع جنس</th>
-                    <th>شرح کالا</th>
-                    <th>ابعاد</th>
-                    <th>نوع دسته</th>
-                    <th>کاست</th>
-                    <th>رنگ زمینه</th>
-                    <th>رنگ چاپ</th>
-                    <th>تعداد رنگ</th>
-                    <th>نام طرح</th>
-                    <th>مقدار</th>
-                    <th>ضخامت</th>
-                </tr>
-                </thead>
-                <tbody>
-                @{
-                    var i = 0;
-                    foreach (var item in Model.OrderHead.Orders) {
-                        i++;
+            <div class="w-100 my-2">
+                <table class="table table-bordered table-hover table-striped m-0 w-100">
+                    <thead>
                         <tr>
-                            <td>@i</td>
-                            <td>@item.ProductSmallName</td>
-                            <td>@item.Product</td>
-                            <td>@item.Dimensions</td>
-                            <td>@item.CategoryType</td>
-                            <td>@item.Caset</td>
-                            <td>@item.BackgroundColor</td>
-                            <td>@item.PrintColor</td>
-                            <td>@item.CountColor</td>
-                            <td>@item.DesignName</td>
-                            <td>@item.Weight @item.UnitTxt</td>
-                            <td>@item.Thickness</td>
+                            <th>ردیف</th>
+                            <th>نوع جنس</th>
+                            <th>شرح کالا</th>
+                            <th>ابعاد</th>
+                            <th>نوع دسته</th>
+                            <th>کاست</th>
+                            <th>رنگ زمینه</th>
+                            <th>رنگ چاپ</th>
+                            <th>تعداد رنگ</th>
+                            <th>نام طرح</th>
+                            <th>مقدار</th>
+                            <th>ضخامت</th>
                         </tr>
-                    }
-                }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @{
+                            var i = 0;
+                            foreach (var item in Model.OrderHead.Orders)
+                            {
+                                i++;
+                                <tr>
+                                    <td>@i</td>
+                                    <td>@item.ProductSmallName</td>
+                                    <td>@item.Product</td>
+                                    <td>@item.Dimensions</td>
+                                    <td>@item.CategoryType</td>
+                                    <td>@item.Caset</td>
+                                    <td>@item.BackgroundColor</td>
+                                    <td>@item.PrintColor</td>
+                                    <td>@item.CountColor</td>
+                                    <td>@item.DesignName</td>
+                                    <td>@item.Weight @item.UnitTxt</td>
+                                    <td>@item.Thickness</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <hr class="my-2" />
+
+            <div style="display:flex;flex-direction:column;width:100%">
+                <label style="font-size:14px;">توضیحات:</label>
+                <textarea class="mt-1 fbold" style="min-height: 100px; border:none;resize:none" disabled>@Model.OrderHead.Description</textarea>
+            </div>
+
+        </article>
+    </section>
+
+    <!-- نوار دکمه‌ها -->
+    <div class="d-flex flex-column align-items-center justify-content-center w-100"
+         style="position:fixed;top:80%;" id="previewPrintBtns">
+
+        <div class="btn-group fbold">
+            <button class="btn buttonCancel" style="width:100px" onclick="window.close()">
+                انصراف
+            </button>
+
+            <button class="btn buttonCancel" style="width:100px" onclick="window.print()">
+                چاپ
+            </button>
+
+            <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage(this)">
+                <span class="flex-shrink-0">دانلود تصویر</span>
+                <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+            </button>
+
+            <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this)">
+                <span>دانلود PDF</span>
+                <div class="spinner-border spinner-border-sm d-none ms-2"></div>
+            </button>
         </div>
-
-        <hr class="my-2" />
-
-        <div style="display:flex;flex-direction:column;width:100%">
-            <label style="font-size:14px;">توضیحات:</label>
-            <textarea class="mt-1 fbold" style="min-height: 100px; border:none;resize:none" disabled>@Model.OrderHead.Description</textarea>
-        </div>
-
-    </article>
-</section>
-
-<!-- نوار دکمه‌ها -->
-<div class="d-flex flex-column align-items-center justify-content-center w-100"
-     style="position:fixed;top:80%;" id="previewPrintBtns">
-
-    <div class="btn-group fbold">
-        <button class="btn buttonCancel" style="width:100px" onclick="window.close()">
-            انصراف
-        </button>
-
-        <button class="btn buttonCancel" style="width:100px" onclick="window.print()">
-            چاپ
-        </button>
-
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadImage(this)">
-            <span class="flex-shrink-0">دانلود تصویر</span>
-            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
-        </button>
-
-        <button class="btn buttonCancel fbold" style="width: 130px" onclick="downloadPDF(this)">
-            <span>دانلود PDF</span>
-            <div class="spinner-border spinner-border-sm d-none ms-2"></div>
-        </button>
     </div>
-</div>
 
-<script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js?release=7.5.6" asp-append-version="true"></script>
-<script src="~/js/File.js?release=7.5.6" asp-append-version="true"></script>
+    <script src="~/lib/Bootstrap/bootstrap5.3.bundle.min.js?release=7.5.6" asp-append-version="true"></script>
+    <script src="~/js/File.js?release=7.5.6" asp-append-version="true"></script>
 
-<script>
-    async function downloadImage(btn) {
-        await downloadFile(btn, `/Order/DownloadOrderImage/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).png`);
-    }
+    <script>
+            async function downloadImage(btn) {
+                await downloadFile(btn, `/Order/DownloadOrderImage/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).png`);
+            }
 
-    async function downloadPDF(btn) {
-        await downloadFile(btn, `/Order/DownloadOrderPdf/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).pdf`);
-    }
-</script>
+            async function downloadPDF(btn) {
+                await downloadFile(btn, `/Order/DownloadOrderPdf/@(Model.OrderHead.Id)`, `دستورتولید-@(Model.OrderHead.OrderNumber).pdf`);
+            }
+    </script>
 
 </body>
 </html>
