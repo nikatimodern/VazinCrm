@@ -347,7 +347,7 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
     if (!reload && state.preFactor?.items?.length && state.software?.sepidarItems?.length) {
         state.step = "items";
         exSoftwarePreFactorRenderItems();
-        return;
+        return true;
     }
     
     const result = await sendApiRequest({
@@ -363,7 +363,7 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
     
     if (!result?.preFactor.items?.length) {
         toastifyError("ردیفی برای تطبیق کالا پیدا نشد.");
-        return;
+        return false;
     }
     
     
@@ -378,13 +378,16 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
     state.step = "items";
     
     exSoftwarePreFactorRenderItems();
+    return true;
 }
 
 
 function exSoftwarePreFactorRenderItems() {
     const state = externalSoftwareProcess;
     const software = state.software;
-    const { content, add, list } = createExternalItemMatching();
+    const { content, add, refresh, list } = createExternalItemMatching();
+    refresh.addEventListener("click", () =>
+        refreshExternalItemMatching(refresh, () => exSoftwarePreFactorLoadItems(true)));
     const rows = [];
     state.stockPending = new Set();
     software.stockCache ??= new Map();

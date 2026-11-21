@@ -35,8 +35,22 @@
 
 .external-item-match-toolbar {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: .75rem;
     font-size: .85rem;
+}
+
+.external-item-match-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.external-item-match-toolbar button:disabled {
+    opacity: .6;
+    pointer-events: none;
 }
 
 @media (max-width: 575px) {

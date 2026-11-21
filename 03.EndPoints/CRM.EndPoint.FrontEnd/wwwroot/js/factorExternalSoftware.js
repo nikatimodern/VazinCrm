@@ -696,16 +696,17 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     async function loadItems(state, refresh = false) {
         if (refresh || !state.items || !state.sepidarItems) {
             const data = await query("PrepareExternalFactorItems", state.request);
-            if (!data?.items?.length || !get(state)) return;
+            if (!data?.items?.length || !get(state)) return false;
             state.items = data.items;
             state.sepidarItems = data.sepidarItems || [];
         }
         renderItems(state);
+        return true;
     }
     async function loadQuotationItems(state, refresh = false) {
         if (refresh || !state.quotation?.sourceItems) {
             const data = await query("PrepareExternalFactorQuotationItems", state.request);
-            if (!data?.items?.length || !get(state)) return;
+            if (!data?.items?.length || !get(state)) return false;
             const previous = state.quotation;
             const selections = previous?.items ?? {};
             for (const item of data.items) {
@@ -723,6 +724,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             };
         }
         renderItems(state);
+        return true;
     }
 
     function renderItems(state) {
@@ -732,7 +734,9 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         const externalItems = quotationBased ? source?.sepidarItems : state.sepidarItems;
         if (!source || !items?.length || !externalItems) return;
 
-        const { content, add, list } = createExternalItemMatching();
+        const { content, add, refresh, list } = createExternalItemMatching();
+        refresh.addEventListener("click", () => refreshExternalItemMatching(refresh, () =>
+            quotationBased ? loadQuotationItems(state, true) : loadItems(state, true)));
         const rows = [];
         source.stockPending = new Set();
         source.stockCache ??= new Map();
