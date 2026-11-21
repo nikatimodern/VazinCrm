@@ -172,7 +172,7 @@ async function openDepositFinancial(id) {
         }
     }
     function step(number) {
-        const total = source.type === 1 ? 5 : source.type === 2 ? 4 : 3;
+        const total = source.type === 4 ? 3 : 5;
         return "مرحله " + number.toLocaleString("fa-IR") + " از " + total.toLocaleString("fa-IR");
     }
     function creditAccountField(caption) {
@@ -181,17 +181,18 @@ async function openDepositFinancial(id) {
     }
     function partyStage() {
         const note = source.type === 4;
+        const needsAccount = source.type !== 1;
         const body = ExternalFinancialWizard.crmCustomer(source.customerName)
             + select("customerId", note ? "مشتری بستانکار در نرم‌افزار مالی" : "مشتری معادل در نرم‌افزار مالی",
                 source.options.customers)
-            + (note ? creditAccountField("معین بستانکار") : "");
-        const keys = note ? ["customerId", "customerAccount"] : ["customerId"];
+            + (needsAccount ? creditAccountField(note ? "معین بستانکار" : "معین دریافت") : "");
+        const keys = needsAccount ? ["customerId", "customerAccount"] : ["customerId"];
         stage(note ? "بستانکار تهاتر" : "تطبیق مشتری",
-            note ? "مشتری بستانکار و معین او را مشخص کنید" : "معادل مشتری را در نرم‌افزار مقصد مشخص کنید", step(1),
+            needsAccount ? "معادل مشتری و حساب معین را مشخص کنید" : "معادل مشتری را در نرم‌افزار مقصد مشخص کنید", step(1),
             '<i class="fas fa-users" aria-hidden="true"></i>', body, "تأیید و ادامه", async () => {
                 capture(keys);
                 if (!draft.customerId) return toastifyError("مشتری معادل را انتخاب کنید.");
-                if (note && !draft.customerAccount) return toastifyError("معین بستانکار را انتخاب کنید.");
+                if (needsAccount && !draft.customerAccount) return toastifyError("حساب معین را انتخاب کنید.");
                 const saved = await api("SaveCustomerMapping", draft);
                 if (!saved || signal.aborted) return;
                 draft.customerId = saved.id;
@@ -224,8 +225,13 @@ async function openDepositFinancial(id) {
             "تأیید و ادامه", () => {
                 capture(["cashId"]);
                 if (!draft.cashId) return toastifyError("صندوق را انتخاب کنید.");
-                detailsStage();
-            }, source.type === 1 ? bankStage : partyStage);
+                if (source.type === 2) chequeStage();
+                else detailsStage();
+            }, () => {
+                capture(["cashId"]);
+                if (source.type === 1) bankStage();
+                else partyStage();
+            });
         enhance("cashId");
     }
     function input(key, caption, max, date = false) {
@@ -257,23 +263,55 @@ async function openDepositFinancial(id) {
             });
         enhance("vendorId");
     }
+    function chequeStage() {
+        const fields = ["reference", "dueText", "sayad"];
+        const body = '<div class="d-grid gap-2">'
+            + input("reference", "شماره چک", 50)
+            + input("dueText", "سررسید چک", 10, true)
+            + input("sayad", "شناسه صیادی (اختیاری)", 16) + '</div>';
+        stage("مشخصات چک", "شماره و سررسید چک را وارد کنید", step(3),
+            '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "تأیید و ادامه", () => {
+                capture(fields);
+                if (!draft.reference || !draft.dueText) return toastifyError("شماره و سررسید چک را وارد کنید.");
+                if (draft.sayad && !/^[0-9]{16}$/.test(toEnglishDigits(draft.sayad)))
+                    return toastifyError("شناسه صیادی باید ۱۶ رقم باشد.");
+                chequeIssuerStage();
+            }, () => {
+                capture(fields);
+                cashStage();
+            });
+    }
+    function chequeIssuerStage() {
+        const optionalFields = ["secondNumber", "chequeOwner", "branchCode", "branchTitle", "description"];
+        const fields = ["bankId", "accountNo", ...optionalFields];
+        const body = '<div class="d-grid gap-2">'
+            + select("bankId", "بانک صادرکننده", source.options.banks)
+            + input("accountNo", "شماره حساب صادرکننده", 50)
+            + '<details' + (optionalFields.some(key => draft[key]) ? " open" : "") + '>'
+            + '<summary>اطلاعات تکمیلی (اختیاری)</summary><div class="d-grid gap-2 mt-2">'
+            + input("secondNumber", "شماره دوم چک", 50) + input("chequeOwner", "صاحب چک", 250)
+            + input("branchCode", "کد شعبه", 250) + input("branchTitle", "نام شعبه", 250)
+            + input("description", "شرح سند", 250) + '</div></details></div>';
+        stage("حساب صادرکننده چک", "بانک و شماره حساب صادرکننده را مشخص کنید", step(4),
+            '<i class="fas fa-university" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
+                capture(fields);
+                if (!draft.bankId || !draft.accountNo) return toastifyError("بانک و شماره حساب صادرکننده را وارد کنید.");
+                const preview = await api("Preview", draft);
+                if (preview) previewStage(preview);
+            }, () => {
+                capture(fields);
+                chequeStage();
+            });
+        enhance("bankId");
+    }
     function detailsStage() {
-        const cheque = source.type === 2;
-        const selects = ["customerAccount", ...(cheque ? ["bankId"] : [])];
-        const detailKeys = cheque ? ["dueText", "reference", "accountNo"] : ["reference"];
-        const optionalKeys = cheque ? ["sayad", "secondNumber", "chequeOwner", "branchCode", "branchTitle"] : [];
-        const required = [...selects, ...detailKeys];
-        const fields = [...required, ...optionalKeys, "description"];
+        const required = ["customerAccount", "reference"];
+        const fields = [...required, "description"];
         const body = '<div class="d-grid gap-2">'
             + creditAccountField("معین دریافت")
-            + (cheque ? input("dueText", "سررسید چک", 10, true) : "")
-            + (cheque ? select("bankId", "بانک صادرکننده", source.options.banks)
-                + input("sayad", "شناسه صیادی (اختیاری)", 16) + input("accountNo", "شماره حساب صادرکننده", 50)
-                + input("secondNumber", "شماره دوم چک", 50) + input("chequeOwner", "صاحب چک", 250)
-                + input("branchCode", "کد شعبه", 250) + input("branchTitle", "نام شعبه", 250) : "")
-            + input("reference", cheque ? "شماره چک" : "شماره پیگیری حواله", cheque ? 50 : 100)
+            + input("reference", "شماره پیگیری حواله", 100)
             + input("description", "شرح سند (اختیاری)", 250) + '</div>';
-        stage("اطلاعات " + label(source.type), "اطلاعات لازم برای ثبت را تکمیل کنید", step(cheque ? 3 : 4),
+        stage("اطلاعات " + label(source.type), "اطلاعات لازم برای ثبت را تکمیل کنید", step(4),
             '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
                 capture(fields);
                 if (required.some(key => !draft[key]))
@@ -284,7 +322,7 @@ async function openDepositFinancial(id) {
                 capture(fields);
                 cashStage();
             });
-        enhance(...selects);
+        enhance("customerAccount");
     }
     function previewStage(preview) {
         draft.previewToken = preview.previewToken;
@@ -337,7 +375,7 @@ async function openDepositFinancial(id) {
         date.maxLength = 10;
         date.value = draft.dateText || preview.dateText;
         dateField.replaceChildren(dateLabel, date);
-        stage("بررسی نهایی " + label(source.type), "اطلاعات سند را پیش از ثبت بررسی کنید", step(note ? 3 : cheque ? 4 : 5),
+        stage("بررسی نهایی " + label(source.type), "اطلاعات سند را پیش از ثبت بررسی کنید", step(note ? 3 : 5),
             '<i class="fas fa-clipboard-check" aria-hidden="true"></i>', body, "تأیید و ثبت در نرم‌افزار", async () => {
                 const value = toEnglishDigits(date.value.trim());
                 if (!/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(value))
@@ -351,6 +389,7 @@ async function openDepositFinancial(id) {
             }, () => {
                 draft.dateText = date.value.trim();
                 if (note) debtorStage();
+                else if (cheque) chequeIssuerStage();
                 else detailsStage();
             }, true);
     }
