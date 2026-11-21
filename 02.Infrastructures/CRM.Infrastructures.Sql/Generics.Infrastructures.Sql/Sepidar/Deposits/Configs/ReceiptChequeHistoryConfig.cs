@@ -15,5 +15,11 @@ internal sealed class ReceiptChequeHistoryConfig : IEntityTypeConfiguration<Rece
 
         builder.HasOne<ReceiptCheque>().WithMany()
             .HasForeignKey(x => x.ReceiptChequeRef).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne<ReceiptChequeHistory>().WithMany()
+            .HasForeignKey(x => x.ReceiptChequeHistoryRef).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne<ReceiptChequeBankingItem>().WithMany()
+            .HasForeignKey(x => x.ReceiptChequeBankingItemRef).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne<PaymentChequeOther>().WithMany()
+            .HasForeignKey(x => x.PaymentChequeOtherRef).OnDelete(DeleteBehavior.NoAction);
     }
 }

@@ -1,4 +1,4 @@
-namespace CRM.Core.Domain.ASettings.Enums;
+namespace CRM.Core.Domain.ExternalSoftwares.Enums;
 
 public enum ExternalMappingTypeEnum {
     تنخواه = 0,

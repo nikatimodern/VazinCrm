@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Accountancies.Repositories;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Framework;
@@ -15,12 +15,14 @@ using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 namespace CRM.EndPoint.FrontEnd.Services.Accountancies;
 
-public sealed record DepositTransferRequest(Guid Id, Guid SoftwareId, int CustomerId, int VendorId, int BankAccountId,
-    int CashId, int BankId, string? DateText, string? DueText, string? Reference, string? Sayad, string? AccountNo,
-    string? Description, string? PreviewToken, string? CustomerAccount,
-    string? SecondNumber, string? ChequeOwner, string? BranchCode, string? BranchTitle);
+public sealed record DepositTransferRequest(Guid Id, Guid SoftwareId, int CustomerId, int BankAccountId,
+    int CashId, int BankId, string? DueText, string? Reference, string? Sayad, string? AccountNo,
+    string? Description, string? PreviewToken, int CreditAccountId,
+    string? SecondNumber, string? ChequeOwner, string? BranchCode, string? BranchTitle,
+    string? NoteDescription, int DebitAccountId, SepidarService.DepositPartyType DebitType,
+    SepidarService.DepositPartyType CreditType, int DebitDetailId, int CreditDetailId, string? ChequeAmount = null);
 
-public sealed class DepositFinancialService(IDepositFinancialRepository repository, Sepidar1Service first,
+public sealed partial class DepositFinancialService(IDepositFinancialRepository repository, Sepidar1Service first,
     Sepidar2Service second, SepidarUserResolver users)
 {
     private const ExternalMappingTypeEnum DepositType = ExternalMappingTypeEnum.واریزی;
@@ -32,10 +34,13 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
         var entries = await Task.WhenAll((await repository.GetDestinationsAsync(ct))
             .Where(x => x.Id == Sepidar1SoftwareId || x.Id == Sepidar2SoftwareId).Select(async software => {
                 var mapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id);
-                var document = mapping == null ? null : await FindAsync(Destination(software.Id), mapping, ct);
+                var service = Destination(software.Id);
+                var document = mapping == null ? null : await FindAsync(service, mapping, ct);
+                var cheque = document != null && source.PayType == PayTypeEnum.چکی
+                    ? await GetChequeHistoryAsync(service, source, ReadId(mapping!), ct) : null;
                 return new { software.Id, software.Title, Document = document,
                     DateText = BaseServices.GetDatePersian(document?.Date), Missing = mapping != null && document == null && !mapping.HasPendingExternalId(),
-                    Pending = mapping?.HasPendingExternalId() == true };
+                    Pending = mapping?.HasPendingExternalId() == true, Cheque = cheque };
             }));
         return new { PayType = (int)source.PayType, source.CustomerName, Entries = entries };
     }
@@ -48,9 +53,10 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
             .Where(x => x.ExternalSoftwareId == request.SoftwareId).ToArray();
         int MappedId(ExternalMappingTypeEnum type) => int.TryParse(
             maps.SingleOrDefault(x => x.MapType == type)?.ExEntityId, out var result) ? result : 0;
-        return new { Type = (int)source.PayType, source.CustomerName, source.Beneficiary, source.ToName,
-            source.BankAccountTxt, Amount = source.credit, DateText = BaseServices.GetDatePersian(SourceDate(source)),
-            DueText = BaseServices.GetDatePersian(source.VosolDateM),
+        return new { Type = (int)source.PayType, source.CustomerName, source.Beneficiary,
+            source.BankAccountTxt, Amount = source.credit,
+            NeedsOriginalChequeAmount = source.PayType == PayTypeEnum.چکی && source.Vosoled,
+            DueText = source.PayType == PayTypeEnum.چکی && !source.Vosoled ? BaseServices.GetDatePersian(source.VosolDateM) : null,
             CustomerId = MappedId(ExternalMappingTypeEnum.مشتری), BankAccountId = MappedId(ExternalMappingTypeEnum.حساب_بانکی),
             Options = await service.GetDepositOptionsAsync((int)source.PayType, ct) };
     }
@@ -60,25 +66,29 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
         var source = await SourceAsync(request.Id, ct);
         var draft = await PrepareDraftAsync(source, request, validateFiscalYear: false, ct);
         return new { draft.Amount, DateText = BaseServices.GetDatePersian(draft.Date),
+            CrmCollectedAmount = source.PayType == PayTypeEnum.چکی && source.Vosoled ? source.credit : null,
             DueText = BaseServices.GetDatePersian(draft.Due),
-            draft.Customer, draft.DebitTitle, draft.CreditTitle, draft.AutoVoucher,
+            draft.CreditDetailTitle, draft.DebitTitle, draft.DebitAccountTitle, draft.CreditTitle, draft.AutoVoucher,
             PreviewToken = GetPreviewToken(draft) };
     }
 
     public async Task<int> SaveCustomerMappingAsync(DepositTransferRequest request, string actorId, CancellationToken ct)
     {
         var source = await SourceAsync(request.Id, ct);
-        await Destination(request.SoftwareId).GetDepositCustomerAsync(request.CustomerId, ct);
+        var customerId = GetMappedCustomerChoice(source, request)
+            ?? throw new SepidarTransferValidationException("برای این نوع بستانکار نیازی به تطبیق مشتری نیست.");
+        await Destination(request.SoftwareId).GetDepositCustomerAsync(customerId, ct);
         await SaveChoiceAsync(source, source.CustomerId!.Value, request.SoftwareId, ExternalMappingTypeEnum.مشتری,
-            "Customer", "Party", request.CustomerId, actorId, ct);
-        return request.CustomerId;
+            "Customer", "Party", customerId, actorId, ct);
+        return customerId;
     }
 
     public async Task<int> SaveBankMappingAsync(DepositTransferRequest request, string actorId, CancellationToken ct)
     {
         var source = await SourceAsync(request.Id, ct);
-        if (source.PayType != PayTypeEnum.نقدی || source.BankAccountId is not Guid bankId || bankId == Guid.Empty)
-            throw new InvalidOperationException("ابتدا حساب بانکی این واریزی را در CRM مشخص کنید.");
+        if ((source.PayType != PayTypeEnum.نقدی && !UsesBankCollection(source))
+            || source.BankAccountId is not Guid bankId || bankId == Guid.Empty)
+            throw new SepidarTransferValidationException("ابتدا حساب بانکی این واریزی را در CRM مشخص کنید.");
         await Destination(request.SoftwareId).ValidateDepositBankAccountAsync(request.BankAccountId, ct);
         await SaveChoiceAsync(source, bankId, request.SoftwareId, ExternalMappingTypeEnum.حساب_بانکی,
             nameof(BankAccount), "BankAccount", request.BankAccountId, actorId, ct);
@@ -118,16 +128,16 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
                 return existing;
             }
             if (!mapping.HasPendingExternalId())
-                throw new InvalidOperationException("سند مقصد پیدا نشد. ابتدا سابقه قبلی را بررسی کنید.");
+                throw new SepidarTransferValidationException("سند مقصد پیدا نشد. ابتدا سابقه قبلی را بررسی کنید.");
         }
         bool Matches(ExternalMappingTypeEnum type, int value) => maps.Any(x => x.MapType == type
             && x.ExEntityId == value.ToString(CultureInfo.InvariantCulture));
-        if (!Matches(ExternalMappingTypeEnum.مشتری, request.CustomerId)
+        if ((GetMappedCustomerChoice(source, request) is int customerId && !Matches(ExternalMappingTypeEnum.مشتری, customerId))
             || (source.PayType == PayTypeEnum.نقدی && !Matches(ExternalMappingTypeEnum.حساب_بانکی, request.BankAccountId)))
-            throw new InvalidOperationException("تطبیق مشتری یا حساب بانکی تغییر کرده است. به مرحله تطبیق برگردید.");
+            throw new SepidarTransferValidationException("تطبیق مشتری یا حساب بانکی تغییر کرده است. به مرحله تطبیق برگردید.");
         var draft = await PrepareDraftAsync(source, request, validateFiscalYear: true, ct);
         if (GetPreviewToken(draft) != request.PreviewToken)
-            throw new InvalidOperationException("اطلاعات یا تنظیمات مقصد تغییر کرده است. پیش‌نمایش را دوباره بررسی کنید.");
+            throw new SepidarTransferValidationException("اطلاعات یا تنظیمات مقصد تغییر کرده است. پیش‌نمایش را دوباره بررسی کنید.");
         var creator = await users.GetCurrentExternalUserIdAsync(request.SoftwareId, service, ct);
         if (mapping == null)
         {
@@ -151,9 +161,9 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
         await using var guard = await repository.LockAsync(id, ct);
         var mapping = (await repository.GetMappingsAsync(id, null, null, ct))
             .SingleOrDefault(x => x.ExternalSoftwareId == softwareId)
-            ?? throw new InvalidOperationException("سابقه واریزی پیدا نشد.");
+            ?? throw new SepidarTransferValidationException("سابقه واریزی پیدا نشد.");
         if (await FindAsync(Destination(softwareId), mapping, ct) != null)
-            throw new InvalidOperationException("سند در سپیدار وجود دارد و سابقه قابل حذف نیست.");
+            throw new SepidarTransferValidationException("سند در سپیدار وجود دارد و سابقه قابل حذف نیست.");
         await repository.DeleteMappingAsync(mapping, ct);
     }
 
@@ -164,25 +174,44 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
     }
 
     private static string GetPreviewToken(SepidarService.DepositDraft draft) =>
-        SepidarService.GetPurchasePreviewToken(draft with { Date = default, Year = 0 });
+        SepidarService.GetPurchasePreviewToken(draft with
+        {
+            Year = 0,
+            Input = draft.Input with { NoteDescription = null }
+        });
+
+    private static int? GetMappedCustomerChoice(Accountancy source, DepositTransferRequest request)
+    {
+        if (source.PayType != PayTypeEnum.تهاتری)
+            return request.CustomerId;
+        return request.CreditType == SepidarService.DepositPartyType.Customer && request.CreditDetailId > 0
+            ? request.CreditDetailId : null;
+    }
 
     private Task<SepidarService.DepositDraft> PrepareDraftAsync(Accountancy source, DepositTransferRequest request,
         bool validateFiscalYear, CancellationToken ct)
     {
-        if (source.PayType == PayTypeEnum.چکی && (source.Vosoled || source.AccountancyTransfer != null))
-            throw new InvalidOperationException("در این گردش فقط دریافت اولیه چک ثبت می‌شود.");
+        var note = source.PayType == PayTypeEnum.تهاتری;
         if (request.Description?.Length > 250)
-            throw new InvalidOperationException("شرح سند حداکثر ۲۵۰ کاراکتر است.");
-        var input = new SepidarService.DepositInput((int)source.PayType, request.CustomerId, request.VendorId,
+            throw new SepidarTransferValidationException(note ? "شرح قلم حداکثر ۲۵۰ کاراکتر است." : "شرح سند حداکثر ۲۵۰ کاراکتر است.");
+        if (note && request.NoteDescription?.Length > 4000)
+            throw new SepidarTransferValidationException("شرح اعلامیه حداکثر ۴۰۰۰ کاراکتر است.");
+        var input = new SepidarService.DepositInput((int)source.PayType, request.CustomerId,
             request.BankAccountId, request.CashId, request.BankId, Normalize(request.Reference), Normalize(request.Sayad),
-            Normalize(request.AccountNo), request.Description?.Trim(), request.CustomerAccount,
+            Normalize(request.AccountNo), request.Description?.Trim(),
             Normalize(request.SecondNumber), request.ChequeOwner?.Trim(), Normalize(request.BranchCode),
-            request.BranchTitle?.Trim());
-        var defaultDate = SourceDate(source) ?? source.CreateDate;
-        var date = validateFiscalYear ? ParseDate(request.DateText, defaultDate) : defaultDate.Date;
+            request.BranchTitle?.Trim(), note ? request.NoteDescription?.Trim() : null,
+            new(request.DebitType, request.DebitAccountId, request.DebitDetailId),
+            new(request.CreditType, request.CreditAccountId, request.CreditDetailId));
+        var date = (SourceDate(source) ?? source.CreateDate).Date;
         DateTime? due = source.PayType == PayTypeEnum.چکی
-            ? ParseDate(request.DueText, source.VosolDateM) : null;
-        return Destination(request.SoftwareId).PrepareDepositAsync(input, source.credit!.Value, date, due, validateFiscalYear, ct);
+            ? ParseDate(request.DueText, source.Vosoled ? null : source.VosolDateM) : null;
+        var amount = source.credit!.Value;
+        if (source.PayType == PayTypeEnum.چکی && source.Vosoled
+            && (!decimal.TryParse(Normalize(request.ChequeAmount), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out amount)
+                || amount <= 0 || amount > 999999999999999.9999m || decimal.Round(amount, 4) != amount))
+            throw new SepidarTransferValidationException("مبلغ اولیه چک را به ریال وارد کنید.");
+        return Destination(request.SoftwareId).PrepareDepositAsync(input, amount, date, due, validateFiscalYear, ct);
     }
 
     private async Task<Accountancy> SourceAsync(Guid id, CancellationToken ct)
@@ -190,11 +219,11 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
         var source = await repository.GetDepositAsync(id, ct);
         if (source == null || source.AccType != AcEnum.واریزی || source.Status != AccStatusEnum.تایید_شده
             || source.PayType is not (PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری))
-            throw new InvalidOperationException("فقط واریزی نقدی، چکی یا تهاتری تأییدشده قابل انتقال است.");
+            throw new SepidarTransferValidationException("فقط واریزی نقدی، چکی یا تهاتری تأییدشده قابل انتقال است.");
         if (source.CurrencyType != CurrencyTypeEnum.ریال || !(source.credit > 0)
             || source.credit > 999999999999999.9999m || decimal.Round(source.credit.Value, 4) != source.credit
             || source.CustomerId == null)
-            throw new InvalidOperationException("واریزی باید مبلغ مثبت ریالی و مشتری مشخص داشته باشد.");
+            throw new SepidarTransferValidationException("واریزی باید مبلغ مثبت ریالی و مشتری مشخص داشته باشد.");
         return source;
     }
 
@@ -203,7 +232,7 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
 
     private static string Normalize(string? value) => TextService.ToEnglishNumber(value?.Trim() ?? "");
 
-    private static DateTime ParseDate(string? value, DateTime? fallback)
+    private static DateTime ParseDate(string? value, DateTime? fallback, string field = "تاریخ سررسید چک")
     {
         if (value == null && fallback.HasValue) return fallback.Value.Date;
         var text = Normalize(value);
@@ -214,16 +243,16 @@ public sealed class DepositFinancialService(IDepositFinancialRepository reposito
             try { return new PersianCalendar().ToDateTime(year, month, day, 0, 0, 0, 0); }
             catch (ArgumentOutOfRangeException) { }
         }
-        throw new InvalidOperationException("تاریخ پرداخت یا سررسید را به صورت سال/ماه/روز وارد کنید.");
+        throw new SepidarTransferValidationException($"{field} را به صورت سال/ماه/روز وارد کنید.");
     }
 
     private static int ReadId(ExternalMapping mapping) => int.TryParse(mapping.ExEntityId.AsSpan(
         mapping.HasPendingExternalId() ? ExternalMapping.PendingIdPrefix.Length : 0), out var id) && id > 0
-        ? id : throw new InvalidOperationException("شناسه سند مقصد معتبر نیست.");
+        ? id : throw new SepidarTransferValidationException("شناسه سند مقصد معتبر نیست.");
 
     private static Task<SepidarService.DepositDocument?> FindAsync(SepidarService service, ExternalMapping mapping, CancellationToken ct) =>
         service.FindDepositDocumentAsync(mapping.ExEntityName == "DebitCreditNote", ReadId(mapping), ct);
 
     private SepidarService Destination(Guid id) => id == Sepidar1SoftwareId ? first : id == Sepidar2SoftwareId ? second
-        : throw new InvalidOperationException("نرم‌افزار مالی انتخاب‌شده پشتیبانی نمی‌شود.");
+        : throw new SepidarTransferValidationException("نرم‌افزار مالی انتخاب‌شده پشتیبانی نمی‌شود.");
 }

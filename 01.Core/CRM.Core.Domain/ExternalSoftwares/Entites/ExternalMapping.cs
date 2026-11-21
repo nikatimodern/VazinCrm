@@ -1,5 +1,5 @@
 using System;
-using CRM.Core.Domain.ASettings.Enums;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Framework;
 
 namespace CRM.Core.Domain.ExternalSoftwares.Entites;

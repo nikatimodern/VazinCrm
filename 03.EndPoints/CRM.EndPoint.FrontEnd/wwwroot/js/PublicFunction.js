@@ -433,20 +433,24 @@ function renderExternalFinancialStage(modal, container, { destination, position,
     if (content instanceof Node) container.firstElementChild.append(content);
 }
 
-function renderExternalFinancialPreview({ fields, columns, rows, totals }) {
+function renderExternalFinancialPreviewTable(columns, rows) {
+    return `<div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
+                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
+                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+        </div>`;
+}
+
+function renderExternalFinancialPreview({ fields, columns, rows, totals, detailsHtml }) {
     return `<div class="external-prefactor-preview">
         <div class="ex-preview-summary">${fields.map(({ label, value, wide, accent }) => `
             <div class="ex-preview-field${wide ? " ex-preview-customer" : ""}">
                 <span class="ex-preview-label">${escapeHtml(label)}:</span>
                 <strong${accent ? ' class="ex-preview-software"' : ""}>${escapeHtml(value ?? "—")}</strong>
             </div>`).join("")}</div>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
-                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
-                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
-                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
-            </table>
-        </div>
+        ${detailsHtml ?? renderExternalFinancialPreviewTable(columns, rows)}
         <div class="external-mapping-entity mt-3">${totals.map(([label, value], index) => {
             const last = index === totals.length - 1;
             return `${last && totals.length > 1 ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">

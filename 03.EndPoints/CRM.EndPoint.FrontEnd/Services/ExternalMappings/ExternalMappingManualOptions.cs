@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Infrastructures.Sql;
 using CRM.EndPoint.FrontEnd.Services;
 using Generics.Infrastructures.Sql;

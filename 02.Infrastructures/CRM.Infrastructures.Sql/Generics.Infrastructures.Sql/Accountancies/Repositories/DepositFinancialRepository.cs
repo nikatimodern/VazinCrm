@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Repositories;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Accountancies.Repositories;
@@ -23,7 +23,8 @@ public sealed class DepositFinancialRepository(CRMContextDb db) : IDepositFinanc
     public Task<List<ExternalMapping>> GetMappingsAsync(Guid id, Guid? customerId, Guid? bankId, CancellationToken ct) =>
         db.ExternalMappings.AsNoTracking().Where(x =>
             (x.EntityId == id && x.MapType == ExternalMappingTypeEnum.واریزی && x.EntityName == nameof(Accountancy))
-            || (x.EntityId == customerId && x.MapType == ExternalMappingTypeEnum.مشتری && x.EntityName == "Customer")
+            || (x.EntityId == customerId && (x.MapType == ExternalMappingTypeEnum.مشتری
+                || x.MapType == ExternalMappingTypeEnum.تامین_کننده) && x.EntityName == "Customer")
             || (x.EntityId == bankId && x.MapType == ExternalMappingTypeEnum.حساب_بانکی && x.EntityName == nameof(BankAccount)))
             .ToListAsync(ct);
 

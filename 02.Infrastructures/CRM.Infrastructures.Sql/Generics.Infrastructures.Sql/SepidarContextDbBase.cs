@@ -49,6 +49,9 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<ReceiptDraft> ReceiptDrafts { get; set; }
     public DbSet<ReceiptCheque> ReceiptCheques { get; set; }
     public DbSet<ReceiptChequeHistory> ReceiptChequeHistory { get; set; }
+    public DbSet<ReceiptChequeBanking> ReceiptChequeBankings { get; set; }
+    public DbSet<ReceiptChequeBankingItem> ReceiptChequeBankingItems { get; set; }
+    public DbSet<PaymentChequeOther> PaymentChequeOthers { get; set; }
     public DbSet<DebitCreditNote> DebitCreditNotes { get; set; }
     public DbSet<DebitCreditNoteItem> DebitCreditNoteItems { get; set; }
     public DbSet<PaymentDraft> PaymentDrafts { get; set; }

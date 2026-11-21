@@ -826,14 +826,25 @@ async function acceptFinancial(pfId) {
     });
 }
 
-async function acceptAccountancy(id, status, description = null) {
+async function acceptAccountancy(id, status, description = null, offerFinancialTransfer = false) {
     const result = await sendApiRequest({
         url: `/Accountancy/AcceptAccountancy`,
         method: "POST",
         data: { id, description },
         params: { status },
         successMsg: status === 2 ? "تایید شد" : status === 3 ? "رد شد" : null,
-        onSuccess: refreshInvoiceSuccess,
+        onSuccess: async () => {
+            await refreshInvoiceSuccess();
+            if (status !== 2 || !offerFinancialTransfer || !document.getElementById("depositFinancialHistory")) return;
+
+            const confirmed = await confirmAlert({
+                title: "واریزی در نرم‌افزار مالی هم ثبت شود؟",
+                icon: "question",
+                confirmText: "باز کردن ارتباط مالی",
+                cancelText: "بعداً"
+            });
+            if (confirmed) await openDepositFinancial(id);
+        },
     });
     
     return result !== null;

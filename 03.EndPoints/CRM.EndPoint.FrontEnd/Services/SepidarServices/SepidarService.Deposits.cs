@@ -14,16 +14,24 @@ namespace CRM.EndPoint.FrontEnd.Services.SepidarServices;
 public partial class SepidarService
 {
     public sealed record DepositOption(int Id, string Title);
-    private sealed record DepositAccountOption(string Id, int AccountId, string Code, string Title);
-    private static readonly (string Id, string Setting)[] DepositCreditSettings =
-        [("receivable", "SalesReceivableSL"), ("advance", "AdvanceReceivedSL")];
+    private sealed class DepositAccountOption
+    {
+        public int Id { get; init; }
+        public required string Code { get; init; }
+        public required string Title { get; init; }
+        public bool HasDl { get; init; }
+        public string Label => $"{Code} - {TextService.NormalizePersianText(Title)}";
+    }
+    public enum DepositPartyType { Supplier = 1, Customer = 2, Other = 3 }
+    public sealed record DepositNoteSide(DepositPartyType Type, int AccountId, int DetailId);
     public sealed record DepositDocument(int Number, DateTime Date);
-    public sealed record DepositInput(int Type, int CustomerId, int VendorId, int BankAccountId,
+    public sealed record DepositInput(int Type, int CustomerId, int BankAccountId,
         int CashId, int BankId, string Reference, string Sayad, string AccountNo, string Description,
-        string? CustomerAccount, string SecondNumber, string? ChequeOwner, string BranchCode, string? BranchTitle);
+        string SecondNumber, string? ChequeOwner, string BranchCode, string? BranchTitle,
+        string? NoteDescription, DepositNoteSide DebitSide, DepositNoteSide CreditSide);
     public sealed record DepositDraft(DepositInput Input, decimal Amount, DateTime Date,
-        DateTime? Due, int Year, int Currency, int CustomerDl, int CreditAccount, int DebitAccount,
-        int DebitDl, bool AutoVoucher, string Customer, string DebitTitle, string CreditTitle);
+        DateTime? Due, int Year, int Currency, int? CreditDl, int CreditAccount, int DebitAccount,
+        int? DebitDl, bool AutoVoucher, string? CreditDetailTitle, string? DebitTitle, string CreditTitle, string? DebitAccountTitle);
 
     private const string ReceiptIssuer = "SG.ReceiptAndPayment.ReceiptManagement.Common.DsReceipt, SG.ReceiptAndPayment.ReceiptManagement.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
     private const string NoteIssuer = "SG.General.DebitCreditNoteManagement.Common.DsDebitCreditNote, SG.General.DebitCreditNoteManagement.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
@@ -48,7 +56,11 @@ public partial class SepidarService
     {
         var customers = await sepidarContext.Parties.AsNoTracking().Where(p => p.IsCustomer && p.Dl != null && p.Dl.IsActive)
             .OrderBy(p => p.Name).Select(p => new DepositOption(p.PartyId, p.Dl.Code + " - " + p.Dl.Title)).ToListAsync(ct);
-        var vendors = type == 4 ? await GetPurchaseVendorsAsync(null, ct) : [];
+        var vendors = type == 4 ? await sepidarContext.Parties.AsNoTracking()
+            .Where(p => p.IsVendor && p.Dl != null && p.Dl.IsActive)
+            .OrderBy(p => p.Dl.Code).Select(p => new DepositOption(p.PartyId, p.Dl.Code + " - " + p.Dl.Title)).ToListAsync(ct) : [];
+        var otherDetails = type == 4 ? await sepidarContext.DLs.AsNoTracking().Where(dl => dl.IsActive)
+            .OrderBy(dl => dl.Code).Select(dl => new DepositOption(dl.DLId, dl.Code + " - " + dl.Title)).ToListAsync(ct) : [];
         var bankCurrency = type == 1 ? await GetDepositCurrencyAsync(ct) : 0;
         var accounts = type == 1 ? await sepidarContext.SepidarBankAccounts.AsNoTracking()
             .Where(x => x.CurrencyRef == bankCurrency)
@@ -73,12 +85,16 @@ public partial class SepidarService
             select new DepositOption(cashBox.CashId, dl.Code + " - " + cashBox.Title)).ToListAsync(ct) : [];
         var banks = type == 2 ? await sepidarContext.SepidarBanks.AsNoTracking()
             .OrderBy(x => x.Title).Select(x => new DepositOption(x.BankId, x.Title)).ToListAsync(ct) : [];
-        var creditAccounts = new List<DepositAccountOption>(DepositCreditSettings.Length);
-        foreach (var (id, setting) in DepositCreditSettings)
-            creditAccounts.Add(await GetDepositCreditAccountAsync(id, setting, ct));
+        var subsidiaryAccounts = await DepositAccounts().OrderBy(x => x.Code).ThenBy(x => x.Id).ToListAsync(ct);
         return new {
             Customers = customers.Select(NormalizeOption),
-            Vendors = vendors.Select(x => x with { Title = TextService.NormalizePersianText(x.Title) }),
+            Vendors = vendors.Select(NormalizeOption),
+            OtherDetails = otherDetails.Select(NormalizeOption),
+            PartyTypes = type == 4 ? new DepositOption[] {
+                new((int)DepositPartyType.Supplier, "تأمین‌کننده"),
+                new((int)DepositPartyType.Customer, "مشتری"),
+                new((int)DepositPartyType.Other, "سایر")
+            } : [],
             Accounts = accounts.Select(x => new {
                 x.Value, x.AccountNumber, x.CartNumber, x.ShebaNumber, x.DlCode,
                 AccountName = TextService.NormalizePersianText(x.AccountName),
@@ -88,32 +104,62 @@ public partial class SepidarService
             }),
             Cash = cash.Select(NormalizeOption),
             Banks = banks.Select(NormalizeOption),
-            CreditAccounts = creditAccounts.Select(x => x with { Title = TextService.NormalizePersianText(x.Title) })
+            SubsidiaryAccounts = subsidiaryAccounts.Select(x => new { x.Id, Title = x.Label, x.HasDl })
         };
 
         static DepositOption NormalizeOption(DepositOption option) =>
             option with { Title = TextService.NormalizePersianText(option.Title) };
     }
 
-    private async Task<DepositAccountOption> GetDepositCreditAccountAsync(string id, string setting, CancellationToken ct)
+    private IQueryable<DepositAccountOption> DepositAccounts()
     {
-        var accountId = await GetConfiguredAccountIdAsync(setting, ct);
         var accounts = sepidarContext.Accounts.AsNoTracking();
-        return await (from subsidiary in accounts
+        return from subsidiary in accounts
             join general in accounts on subsidiary.ParentAccountRef equals (int?)general.AccountId
             join accountGroup in accounts on general.ParentAccountRef equals (int?)accountGroup.AccountId
-            where subsidiary.AccountId == accountId
-            select new DepositAccountOption(id, subsidiary.AccountId,
-                accountGroup.Code.Trim() + general.Code.Trim() + subsidiary.Code.Trim(), subsidiary.Title))
-            .SingleOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("کد کامل معین دریافت در سپیدار پیدا نشد.");
+            where subsidiary.Type == 3 && subsidiary.IsActive
+            select new DepositAccountOption
+            {
+                Id = subsidiary.AccountId,
+                Code = accountGroup.Code.Trim() + general.Code.Trim() + subsidiary.Code.Trim(),
+                Title = subsidiary.Title,
+                HasDl = subsidiary.HasDL
+            };
+    }
+
+    private async Task<DepositAccountOption> GetDepositAccountAsync(int id, string side, CancellationToken ct) =>
+        await DepositAccounts().SingleOrDefaultAsync(x => x.Id == id, ct)
+        ?? throw new SepidarTransferValidationException($"حساب معین معتبر برای {side} انتخاب کنید.");
+
+    private async Task<DepositOption?> GetDepositNoteDetailAsync(DepositNoteSide side, DepositAccountOption account,
+        string sideTitle, CancellationToken ct)
+    {
+        if (!Enum.IsDefined(side.Type))
+            throw new SepidarTransferValidationException($"نوع {sideTitle} را انتخاب کنید.");
+        if (!account.HasDl)
+        {
+            if (side.DetailId != 0)
+                throw new SepidarTransferValidationException($"معین {sideTitle} حساب تفصیلی ندارد.");
+            return null;
+        }
+
+        var details = side.Type == DepositPartyType.Other
+            ? sepidarContext.DLs.AsNoTracking().Where(x => x.DLId == side.DetailId && x.IsActive)
+                .Select(x => new DepositOption(x.DLId, x.Code + " - " + x.Title))
+            : sepidarContext.Parties.AsNoTracking()
+                .Where(x => x.PartyId == side.DetailId && x.Dl != null && x.Dl.IsActive
+                    && (side.Type == DepositPartyType.Customer ? x.IsCustomer : x.IsVendor))
+                .Select(x => new DepositOption(x.DLRef, x.Dl.Code + " - " + x.Dl.Title));
+        var detail = await details.SingleOrDefaultAsync(ct)
+            ?? throw new SepidarTransferValidationException($"کد تفصیلی معتبر برای {sideTitle} انتخاب کنید.");
+        return detail with { Title = TextService.NormalizePersianText(detail.Title) };
     }
 
     internal async Task<DepositOption> GetDepositCustomerAsync(int partyId, CancellationToken ct) =>
         await sepidarContext.Parties.AsNoTracking()
             .Where(x => x.PartyId == partyId && x.IsCustomer && x.Dl != null && x.Dl.IsActive)
             .Select(x => new DepositOption(x.DLRef, x.Dl.Title)).SingleOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("مشتری معتبر در سپیدار انتخاب کنید.");
+            ?? throw new SepidarTransferValidationException("مشتری معتبر در سپیدار انتخاب کنید.");
 
     internal async Task ValidateDepositBankAccountAsync(int bankId, CancellationToken ct) =>
         _ = await GetDepositBankAccountAsync(bankId, await GetDepositCurrencyAsync(ct), ct);
@@ -122,7 +168,7 @@ public partial class SepidarService
         await sepidarContext.SepidarBankAccounts.AsNoTracking()
             .Where(x => x.BankAccountId == bankId && x.CurrencyRef == currency)
             .Select(x => new DepositOption(x.DlRef, x.AccountNo + " - " + x.ClearFormatName)).SingleOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("حساب بانکی ریالی مقصد را انتخاب کنید.");
+            ?? throw new SepidarTransferValidationException("حساب بانکی ریالی مقصد را انتخاب کنید.");
 
     private Task<int> GetDepositCurrencyAsync(CancellationToken ct) =>
         sepidarContext.Currencies.AsNoTracking().Where(x => x.Title.Trim() == "ریال" || x.Title.Trim() == "ريال")
@@ -133,54 +179,49 @@ public partial class SepidarService
     {
         var note = input.Type == 4;
         var cheque = input.Type == 2;
+        if (!note && string.IsNullOrWhiteSpace(input.Description))
+            throw new SepidarTransferValidationException("شرح رسید دریافت را وارد کنید.");
+
         var year = validateFiscalYear ? await GetFiscalYearIdAsync(date, ct) : 0;
         var currency = await GetDepositCurrencyAsync(ct);
-        var customer = await GetDepositCustomerAsync(input.CustomerId, ct);
-        var (creditChoice, creditSetting) = DepositCreditSettings.SingleOrDefault(option => option.Id == input.CustomerAccount);
-        if (creditSetting == null)
-            throw new InvalidOperationException("معین سمت مشتری را انتخاب کنید.");
-        var credit = await GetDepositCreditAccountAsync(creditChoice, creditSetting, ct);
-        int debitDl;
-        string debitTitle;
+        var credit = await GetDepositAccountAsync(input.CreditSide.AccountId, note ? "بستانکار" : "رسید دریافت", ct);
+        var autoVoucher = await GetRequiredSepidarBooleanSettingAsync(note ? "DebitCreditNoteAutomaticVoucher" : "ReceiptAutoVoucher", ct);
         if (note)
         {
-            var vendor = await sepidarContext.Parties.AsNoTracking()
-                .Where(x => x.PartyId == input.VendorId && x.IsVendor && x.Dl != null && x.Dl.IsActive)
-                .Select(x => new DepositOption(x.DLRef, x.Dl.Title)).SingleOrDefaultAsync(ct)
-                ?? throw new InvalidOperationException("تأمین‌کننده بدهکار را انتخاب کنید.");
-            (debitDl, debitTitle) = (vendor.Id, vendor.Title);
+            var debitAccount = await GetDepositAccountAsync(input.DebitSide.AccountId, "بدهکار", ct);
+            var debitDetail = await GetDepositNoteDetailAsync(input.DebitSide, debitAccount, "بدهکار", ct);
+            var creditDetail = await GetDepositNoteDetailAsync(input.CreditSide, credit, "بستانکار", ct);
+            return new DepositDraft(input, amount, date.Date, null, year, currency, creditDetail?.Id, credit.Id, debitAccount.Id,
+                debitDetail?.Id, autoVoucher, creditDetail?.Title, debitDetail?.Title, credit.Label, debitAccount.Label);
+        }
+        var customer = await GetDepositCustomerAsync(input.CustomerId, ct);
+        if (!await sepidarContext.SepidarCash.AsNoTracking()
+            .AnyAsync(x => x.CashId == input.CashId && x.CurrencyRef == currency, ct))
+            throw new SepidarTransferValidationException("صندوق ریالی معتبر در سپیدار انتخاب کنید.");
+        DepositOption debitDetailForReceipt;
+        if (cheque)
+        {
+            if (!due.HasValue || string.IsNullOrWhiteSpace(input.Reference)
+                || input.Reference.Length > 50 || string.IsNullOrWhiteSpace(input.AccountNo) || input.AccountNo.Length > 50
+                || input.SecondNumber.Length > 50 || input.ChequeOwner?.Length > 250
+                || input.BranchCode.Length > 250 || input.BranchTitle?.Length > 250
+                || !await sepidarContext.SepidarBanks.AnyAsync(x => x.BankId == input.BankId, ct))
+                throw new SepidarTransferValidationException("شماره چک، بانک، حساب صادرکننده و سررسید را وارد کنید و طول اطلاعات تکمیلی را بررسی کنید.");
+            if (input.Sayad.Length > 0 && (input.Sayad.Length != 16 || !input.Sayad.All(ch => ch is >= '0' and <= '9')))
+                throw new SepidarTransferValidationException("شناسه صیادی باید ۱۶ رقم باشد.");
+            if (input.Sayad.Length > 0 && await sepidarContext.ReceiptCheques.AsNoTracking().AnyAsync(x => x.SayadCode == input.Sayad, ct))
+                throw new SepidarTransferValidationException("چک با این شناسه صیادی قبلاً در سپیدار ثبت شده است.");
+            debitDetailForReceipt = customer;
         }
         else
         {
-            if (!await sepidarContext.SepidarCash.AsNoTracking()
-                .AnyAsync(x => x.CashId == input.CashId && x.CurrencyRef == currency, ct))
-                throw new InvalidOperationException("صندوق ریالی معتبر در سپیدار انتخاب کنید.");
-            if (cheque)
-            {
-                if (!due.HasValue || string.IsNullOrWhiteSpace(input.Reference)
-                    || input.Reference.Length > 50 || string.IsNullOrWhiteSpace(input.AccountNo) || input.AccountNo.Length > 50
-                    || input.SecondNumber.Length > 50 || input.ChequeOwner?.Length > 250
-                    || input.BranchCode.Length > 250 || input.BranchTitle?.Length > 250
-                    || !await sepidarContext.SepidarBanks.AnyAsync(x => x.BankId == input.BankId, ct))
-                    throw new InvalidOperationException("شماره چک، بانک، حساب صادرکننده و سررسید را وارد کنید و طول اطلاعات تکمیلی را بررسی کنید.");
-                if (input.Sayad.Length > 0 && (input.Sayad.Length != 16 || !input.Sayad.All(ch => ch is >= '0' and <= '9')))
-                    throw new InvalidOperationException("شناسه صیادی باید ۱۶ رقم باشد.");
-                if (input.Sayad.Length > 0 && await sepidarContext.ReceiptCheques.AsNoTracking().AnyAsync(x => x.SayadCode == input.Sayad, ct))
-                    throw new InvalidOperationException("چک با این شناسه صیادی قبلاً در سپیدار ثبت شده است.");
-                (debitDl, debitTitle) = (customer.Id, customer.Title);
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(input.Reference) || input.Reference.Length > 100)
-                    throw new InvalidOperationException("شماره پیگیری حواله را وارد کنید.");
-                var bank = await GetDepositBankAccountAsync(input.BankAccountId, currency, ct);
-                (debitDl, debitTitle) = (bank.Id, bank.Title);
-            }
+            if (string.IsNullOrWhiteSpace(input.Reference) || input.Reference.Length > 100)
+                throw new SepidarTransferValidationException("شماره پیگیری حواله را وارد کنید.");
+            debitDetailForReceipt = await GetDepositBankAccountAsync(input.BankAccountId, currency, ct);
         }
-        var debit = await GetConfiguredAccountIdAsync(note ? "InventoryPayableSL" : cheque ? "CashDocAccount" : "BankAmountAccount", ct);
-        var autoVoucher = await GetRequiredSepidarBooleanSettingAsync(note ? "DebitCreditNoteAutomaticVoucher" : "ReceiptAutoVoucher", ct);
-        return new DepositDraft(input, amount, date.Date, due?.Date, year, currency, customer.Id, credit.AccountId, debit,
-            debitDl, autoVoucher, customer.Title, debitTitle, credit.Code + " - " + credit.Title);
+        var debit = await GetConfiguredAccountIdAsync(cheque ? "CashDocAccount" : "BankAmountAccount", ct);
+        return new DepositDraft(input, amount, date.Date, due?.Date, year, currency, customer.Id, credit.Id, debit,
+            debitDetailForReceipt.Id, autoVoucher, customer.Title, debitDetailForReceipt.Title, credit.Label, null);
     }
 
     public async Task<DepositDocument> AddDepositAsync(int id, int creator, DepositDraft draft, CancellationToken ct)
@@ -194,10 +235,10 @@ public partial class SepidarService
         if (existing != null) return existing;
         if (cheque && input.Sayad.Length > 0 && await sepidarContext.Database.SqlQuery<int>(
             $"SELECT ReceiptChequeId AS [Value] FROM RPA.ReceiptCheque WITH (UPDLOCK,HOLDLOCK) WHERE SayadCode={input.Sayad}").AnyAsync(ct))
-            throw new InvalidOperationException("چک با این شناسه صیادی قبلاً در سپیدار ثبت شده است.");
+            throw new SepidarTransferValidationException("چک با این شناسه صیادی قبلاً در سپیدار ثبت شده است.");
         if (input.Type == 1 && await sepidarContext.Database.SqlQuery<int>(
             $"SELECT ReceiptDraftId AS [Value] FROM RPA.ReceiptDraft WITH (UPDLOCK,HOLDLOCK) WHERE BankAccountRef={input.BankAccountId} AND Number={input.Reference} AND Date={draft.Date} AND Amount={draft.Amount}").AnyAsync(ct))
-            throw new InvalidOperationException("حواله با همین شماره پیگیری، حساب، تاریخ و مبلغ قبلاً در سپیدار ثبت شده است.");
+            throw new SepidarTransferValidationException("حواله با همین شماره پیگیری، حساب، تاریخ و مبلغ قبلاً در سپیدار ثبت شده است.");
 
         var year = draft.Year;
         var latest = await (note
@@ -210,14 +251,14 @@ public partial class SepidarService
             $"SELECT Method,StartValue,FinishValue,ApplyProperty1,ApplyProperty2,ApplyProperty3,ApplyPorperty4 FROM FMK.NumberedEntity WHERE EntityFullName={numberedEntity}")
             .SingleOrDefaultAsync(ct);
         if (numbering == null || numbering.Method != 2 || !numbering.ApplyProperty1)
-            throw new InvalidOperationException("روش شماره‌گذاری سند در سپیدار برای این گردش پشتیبانی نمی‌شود.");
+            throw new SepidarTransferValidationException("روش شماره‌گذاری سند در سپیدار برای این گردش پشتیبانی نمی‌شود.");
         var next = Math.Max((long)latest.GetValueOrDefault() + 1, numbering.StartValue); //فعلا
         if (next < 1 || next > int.MaxValue || next > numbering.FinishValue)
-            throw new InvalidOperationException("شماره بعدی سند خارج از محدوده تنظیم‌شده در سپیدار است.");
+            throw new SepidarTransferValidationException("شماره بعدی سند خارج از محدوده تنظیم‌شده در سپیدار است.");
         var number = (int)next;
         var autoVoucher = await GetRequiredSepidarBooleanSettingAsync(note ? "DebitCreditNoteAutomaticVoucher" : "ReceiptAutoVoucher", ct);
         if (autoVoucher != draft.AutoVoucher)
-            throw new InvalidOperationException("تنظیم صدور سند حسابداری تغییر کرده است. پیش‌نمایش را دوباره بررسی کنید.");
+            throw new SepidarTransferValidationException("تنظیم صدور سند حسابداری تغییر کرده است. پیش‌نمایش را دوباره بررسی کنید.");
         int? voucher = autoVoucher ? await AddDepositVoucherAsync(id, number, creator, draft, ct) : null;
         if (note)
             await AddDebitCreditNoteAsync(id, number, creator, draft, voucher, ct);
@@ -232,7 +273,8 @@ public partial class SepidarService
         int? voucher, CancellationToken ct)
     {
         var now = DateTime.Now;
-        var description = draft.Input.Description ?? "";
+        var noteDescription = draft.Input.NoteDescription ?? "";
+        var itemDescription = draft.Input.Description ?? "";
         var note = new DebitCreditNote
         {
             DebitCreditNoteID = id,
@@ -249,8 +291,8 @@ public partial class SepidarService
             FiscalYearRef = draft.Year,
             SumAmount = draft.Amount,
             SumAmountInBaseCurrency = draft.Amount,
-            Description = description,
-            Description_En = description
+            Description = noteDescription,
+            Description_En = noteDescription
         };
         var item = new DebitCreditNoteItem
         {
@@ -260,14 +302,14 @@ public partial class SepidarService
             DebitSLRef = draft.DebitAccount,
             CreditSLRef = draft.CreditAccount,
             DebitDLRef = draft.DebitDl,
-            CreditDLRef = draft.CustomerDl,
-            DebitType = 1,
-            CreditType = 2,
+            CreditDLRef = draft.CreditDl,
+            DebitType = (int)draft.Input.DebitSide.Type,
+            CreditType = (int)draft.Input.CreditSide.Type,
             Amount = draft.Amount,
             Rate = 1,
             AmountInBaseCurrency = draft.Amount,
-            Description = description,
-            Description_En = description,
+            Description = itemDescription,
+            Description_En = itemDescription,
             Version = 1
         };
         sepidarContext.DebitCreditNotes.Add(note);
@@ -286,7 +328,7 @@ public partial class SepidarService
             ReceiptHeaderId = id,
             Type = 1,
             AccountSlRef = draft.CreditAccount,
-            DlRef = draft.CustomerDl,
+            DlRef = draft.CreditDl!.Value,
             Number = number,
             Date = draft.Date,
             CurrencyRef = draft.Currency,
@@ -395,8 +437,7 @@ public partial class SepidarService
         var dateText = BaseServices.GetDatePersian(draft.Date);
         var text = note ? $"بابت اعلامیه بدهکار/بستانکار شماره {number} تاریخ {dateText}"
             : $"بابت دریافت طی رسید دریافت شماره {number} تاریخ {dateText}";
-        var lineText = string.IsNullOrWhiteSpace(draft.Input.Description) ? text : $"{text} [{draft.Input.Description}]";
-        lineText = lineText[..Math.Min(lineText.Length, 250)];
+        var (debitText, creditText) = await GetDepositVoucherItemDescriptionsAsync(draft, number, dateText, ct);
         var now = DateTime.Now;
         sepidarContext.Vouchers.Add(new Voucher {
             VoucherId = id, Number = numbers.Number, ReferenceNumber = numbers.ReferenceNumber, Date = draft.Date,
@@ -406,18 +447,47 @@ public partial class SepidarService
             Description = text, Description_En = text
         });
         var lastItem = await GetLockedNextPurchaseIdAsync("ACC.VoucherItem", 2, ct);
-        var debitDl = await GetVoucherItemDlRefAsync(draft.DebitAccount, draft.DebitDl, ct);
-        var creditDl = await GetVoucherItemDlRefAsync(draft.CreditAccount, draft.CustomerDl, ct);
+        var debitDl = note ? draft.DebitDl : await GetVoucherItemDlRefAsync(draft.DebitAccount, draft.DebitDl!.Value, ct);
+        var creditDl = note ? draft.CreditDl : await GetVoucherItemDlRefAsync(draft.CreditAccount, draft.CreditDl!.Value, ct);
         sepidarContext.VoucherItems.AddRange(
-            Line(lastItem - 1, 1, draft.DebitAccount, debitDl, draft.Amount, 0),
-            Line(lastItem, 2, draft.CreditAccount, creditDl, 0, draft.Amount));
+            Line(lastItem - 1, 1, draft.DebitAccount, debitDl, draft.Amount, 0, debitText),
+            Line(lastItem, 2, draft.CreditAccount, creditDl, 0, draft.Amount, creditText));
         await sepidarContext.SaveChangesAsync(ct);
         return id;
 
-        VoucherItem Line(int itemId, int row, int account, int? dl, decimal debit, decimal credit) => new() {
+        VoucherItem Line(int itemId, int row, int account, int? dl, decimal debit, decimal credit, string description) => new() {
             VoucherItemId = itemId, VoucherRef = id, RowNumber = row, AccountSLRef = account, DLRef = dl,
             Debit = debit, Credit = credit, IssuerEntityName = note ? NoteIssuer : ReceiptIssuer,
-            IssuerEntityRef = sourceId, Description = lineText, Description_En = lineText, Version = 1
+            IssuerEntityRef = sourceId, Description = description, Description_En = description, Version = 1
         };
+    }
+
+    private async Task<(string Debit, string Credit)> GetDepositVoucherItemDescriptionsAsync(
+        DepositDraft draft, int number, string dateText, CancellationToken ct)
+    {
+        var input = draft.Input;
+        var memo = EmptyToNull(input.Description)?.Trim();
+        const int maxLength = 250;
+        if (input.Type == 4)
+        {
+            var noteText = $"بابت اعلاميه بدهكار /بستانكار شماره {number} تاريخ {dateText}";
+            var description = memo == null ? noteText : $"{noteText} [{memo[..Math.Min(memo.Length, maxLength - noteText.Length - 3)]}]";
+            return (description, description);
+        }
+
+        var memoSuffix = memo == null ? "" : $" بابت {memo}";
+        if (input.Type == 2)
+        {
+            var chequeText = $"دريافت چك شماره {input.Reference} تاريخ {BaseServices.GetDatePersian(draft.Due)}";
+            return (Limit($"{chequeText} از {draft.CreditDetailTitle}{memoSuffix}"), Limit(chequeText + memoSuffix));
+        }
+
+        var bankTitle = await sepidarContext.DLs.AsNoTracking()
+            .Where(x => x.DLId == draft.DebitDl).Select(x => x.Title).SingleAsync(ct);
+        var transferText = $"واريز طي حواله شماره {input.Reference} تاريخ {dateText}";
+        return (Limit($"{transferText} توسط {draft.CreditDetailTitle}{memoSuffix}"),
+            Limit($"{transferText} به حساب بانكي {bankTitle}{memoSuffix}"));
+
+        static string Limit(string description) => description[..Math.Min(description.Length, maxLength)];
     }
 }

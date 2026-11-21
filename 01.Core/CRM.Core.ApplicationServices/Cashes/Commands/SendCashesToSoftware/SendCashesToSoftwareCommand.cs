@@ -1,4 +1,3 @@
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;

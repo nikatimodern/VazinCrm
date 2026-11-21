@@ -8699,7 +8699,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	font-family: IRANSansMedium;
 }
 
-
 .external-item-mapping-row {
 	padding-bottom: 18px;
 	margin-bottom: 18px;
@@ -8848,6 +8847,48 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 .ex-preview-software i {
 	font-size: 12px;
+}
+
+.deposit-note-preview .external-prefactor-preview > .ex-preview-summary > .ex-preview-field {
+	border-bottom: 0;
+}
+
+.deposit-note-sides {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.deposit-note-sides .table {
+	table-layout: fixed;
+}
+
+.deposit-note-sides .table thead th:first-child {
+	width: 30%;
+}
+
+.deposit-note-sides .table :is(th, td) {
+	overflow-wrap: anywhere;
+}
+
+#depositFinancialWizard .external-prefactor-preview :is(strong, th, .fbold) {
+	font-family: 'IRANSansBold';
+	font-synthesis: none;
+}
+
+@media (max-width: 576px) {
+	.deposit-note-sides .table thead th:first-child {
+		width: 42%;
+	}
+
+	.deposit-note-preview .external-prefactor-preview > .ex-preview-summary {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.deposit-note-preview .external-prefactor-preview > .ex-preview-summary > .ex-preview-field {
+		flex-direction: column;
+		align-items: flex-start;
+	}
 }
 
 

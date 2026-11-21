@@ -3,14 +3,16 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.Services.Accountancies;
+using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Route("DepositFinancial/[action]")]
 [Authorize(Roles = "مدیر مالی,کارشناس مالی,مدیر ارشد,مدیر عامل")]
-public sealed class DepositFinancialController(DepositFinancialService service) : Controller
+public sealed class DepositFinancialController(DepositFinancialService service, ILogger<DepositFinancialController> logger) : Controller
 {
     [HttpGet]
     public Task<IActionResult> History(Guid id, CancellationToken ct) =>
@@ -42,6 +44,19 @@ public sealed class DepositFinancialController(DepositFinancialService service) 
             RespondAsync(async () => await service.SubmitAsync(request, User.FindFirstValue(ClaimTypes.NameIdentifier), ct));
 
     [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> PrepareChequeOperation([FromBody] DepositChequeOperationRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.PrepareChequeOperationAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> PreviewChequeOperation([FromBody] DepositChequeOperationRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.PreviewChequeOperationAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> SubmitChequeOperation([FromBody] DepositChequeOperationRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() :
+            RespondAsync(async () => await service.SubmitChequeOperationAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> DeleteMissing([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() : RespondAsync(async () => {
             await service.DeleteMissingAsync(request.Id, request.SoftwareId, ct);
@@ -55,6 +70,14 @@ public sealed class DepositFinancialController(DepositFinancialService service) 
     {
         if (!ModelState.IsValid) return BadRequest("اطلاعات ارسال واریزی معتبر نیست.");
         try { return Ok(await action()); }
-        catch (InvalidOperationException exception) { return BadRequest(exception.Message); }
+        catch (SepidarTransferValidationException exception) { return BadRequest(exception.Message); }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            logger.LogError("Deposit financial operation {Action} failed ({TraceId}). {ExceptionType}\n{StackTrace}",
+                ControllerContext.ActionDescriptor?.ActionName, HttpContext.TraceIdentifier,
+                exception.GetType().FullName, exception.StackTrace);
+            return StatusCode(500, "انجام عملیات ارتباط مالی ممکن نشد. دوباره تلاش کنید.");
+        }
     }
 }

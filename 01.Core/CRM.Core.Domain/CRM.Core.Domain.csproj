@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ASettings\Enums\" />
     <Folder Include="BaseAdmin\Enum\" />
   </ItemGroup>
 

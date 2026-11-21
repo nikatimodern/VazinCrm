@@ -80,7 +80,8 @@ async function openSupplyFinancial(sourceId) {
         return field(parent, text, control);
     };
     const optionalDescription = (parent, label, value, max) => {
-        const details = make("details", null, "supply-financial-note");
+        const details = make("details", null, "external-financial-note" +
+            (parent.classList.contains("external-item-matching") ? " external-financial-note-panel" : ""));
         details.open = Boolean(value?.trim());
         details.append(make("summary", details.open ? "ویرایش " + label : "افزودن " + label));
         const control = descriptionField(details, label, value, max);

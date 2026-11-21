@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Customers.Entities;

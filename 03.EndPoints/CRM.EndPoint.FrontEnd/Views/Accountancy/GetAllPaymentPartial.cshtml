@@ -5,6 +5,9 @@
 
 @if (Model.Items.Any()) {
     var fromCartableFinancial = Model.PassType is 55 or 56;
+    var canAccessDepositFinancial = Model.PassType == 55 && !Model.ReadOnly && !Model.IsCustomer &&
+        (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
+         User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"));
     <table id="@($"allPaymentTable{Model.PassType}")" class="paymentTable table table-striped table-bordered table-hover no-footer nowrap">
         <thead>
         <tr>
@@ -24,6 +27,8 @@
         </thead>
         <tbody>
         @foreach (var item in Model.Items.OrderByDescending(f => f.CreateDate)) {
+            var canTransferDepositFinancial = canAccessDepositFinancial && item.AccType == AcEnum.واریزی &&
+                (item.PayType is PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری);
             var isCreator = item.UserCreatorID == Model.UserId;
             var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
 
@@ -98,10 +103,7 @@
                                     <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                                 }
 
-                                @if (Model.PassType == 55 && (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
-                                    User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی")) &&
-                                    item.AccType == AcEnum.واریزی && item.Status == AccStatusEnum.تایید_شده &&
-                                    (item.PayType is PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری))
+                                @if (canTransferDepositFinancial && item.Status == AccStatusEnum.تایید_شده)
                                 {
                                     <button type="button" class="inline-flex-center" title="ارتباط مالی" aria-label="ارتباط مالی"
                                             onclick="openDepositFinancial('@item.Id')">
@@ -151,7 +153,8 @@
                                 case AccStatusEnum.در_دست_تایید:
                                     if (canApproveOrReject) {
                                         <button class="buttonCancel3 btn-accept" style="min-width: 28px" onclick="showModalNotAccept('@item.Id', 0)">رد</button>
-                                        <button class="buttonGreen2 btn-accept" onclick="acceptAccountancy('@item.Id', @((int)AccStatusEnum.تایید_شده))">تایید</button>
+                                        <button class="buttonGreen2 btn-accept"
+                                                onclick="acceptAccountancy('@item.Id', @((int)AccStatusEnum.تایید_شده), null, @(canTransferDepositFinancial ? "true" : "false"))">تایید</button>
                                     } else {
                                         <span class="fbold" style="color: @statusColor">@item.StatusTxt</span>
                                     }

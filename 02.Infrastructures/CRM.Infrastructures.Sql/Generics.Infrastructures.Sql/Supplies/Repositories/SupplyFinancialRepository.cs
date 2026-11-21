@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;

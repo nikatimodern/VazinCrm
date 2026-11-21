@@ -66,25 +66,3 @@
     border: 1px solid currentColor;
     background: var(--supply-financial-surface);
 }
-
-.supply-financial-note summary {
-    inline-size: fit-content;
-    color: var(--supply-financial-action);
-    font-size: .82rem;
-    cursor: pointer;
-}
-
-.supply-financial-note[open] textarea {
-    margin-block-start: .35rem;
-}
-
-.external-item-matching > .supply-financial-note {
-    padding: .6rem .8rem;
-    border-radius: .65rem;
-    background: var(--supply-financial-selected);
-}
-
-.supply-financial-note summary:focus-visible {
-    outline: 2px solid var(--supply-financial-action);
-    outline-offset: 2px;
-}

@@ -202,3 +202,39 @@
     opacity: .6;
     cursor: not-allowed;
 }
+#depositFinancialHistory .external-pf-toolbar {
+    flex-wrap: wrap;
+    gap: .45rem .75rem;
+}
+
+#depositFinancialHistory .deposit-cheque-history {
+    display: grid;
+    gap: .35rem;
+}
+
+#depositFinancialHistory .deposit-cheque-history-entry {
+    display: grid;
+    gap: .4rem;
+    margin-inline-start: clamp(.5rem, 3vw, 1.5rem);
+    padding: .6rem .75rem;
+    border: 1px solid var(--color-border, #DDE1E8);
+    border-inline-start: 3px solid var(--color-primary-action, #00665C);
+    border-radius: .5rem;
+    background: var(--color-primary-light, #E7F3F0);
+}
+
+#depositFinancialHistory .deposit-cheque-history-title {
+    color: var(--color-primary-action, #00665C);
+    font-family: 'IRANSansBold';
+    font-size: 12px;
+}
+
+#depositFinancialHistory .deposit-cheque-history-detail {
+    grid-column: 1 / -1;
+    align-items: baseline;
+}
+
+#depositFinancialHistory .deposit-cheque-history-detail .external-pf-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

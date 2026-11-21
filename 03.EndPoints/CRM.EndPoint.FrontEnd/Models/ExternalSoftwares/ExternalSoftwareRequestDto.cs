@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using CRM.Core.Domain.ASettings.Enums;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 
 namespace CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 
