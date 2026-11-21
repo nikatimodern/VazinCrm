@@ -9,6 +9,12 @@ public sealed class QualityControlCustomerListRequest
     public int Start { get; set; }
     public int Length { get; set; } = 10;
     public string? Search { get; set; }
+    // Dates typed in the shared filter modal are in the Jalali calendar (YYYY/MM/DD).
+    public string? FromDate { get; set; }
+    public string? ToDate { get; set; }
+    // Gregorian boundaries are validated and populated by the controller.
+    public DateTime? FromGregorian { get; set; }
+    public DateTime? ToGregorianExclusive { get; set; }
     // Sort by actionable workload by default, before applying pagination.
     public string Sort { get; set; } = "pending";
     // null: all; 0: pending excluding contact-blocked customers; 1: fully reviewed;
@@ -30,12 +36,17 @@ public sealed record QualityControlCustomerRow(
     int NoResponseCooldownSeconds, int ContactHistoryCount)
 {
     public bool HasNotes { get; init; }
+    public bool HasNoResponse { get; init; }
+    public bool IsInvalidNumber { get; init; }
+    public bool HasContactHistory { get; init; }
 }
 
 public sealed class SetQualityControlCustomerContactRequest
 {
     public Guid CustomerId { get; set; }
     public QualityControlCustomerContactStatus Status { get; set; }
+    // Confirm phone correction without toggling an invalid marker back on.
+    public bool ConfirmCorrectedNumber { get; set; }
 }
 
 public sealed record SetQualityControlCustomerContactResult(
@@ -85,9 +96,38 @@ public sealed record QualityControlCustomerInvoice(Guid Id, int SerialNumber, st
 public sealed record QualityControlCustomerOrder(Guid Id, int SerialNumber, string? Title,
     IReadOnlyList<QualityControlCustomerInvoice> Invoices);
 
+public sealed class QualityControlItemPageRequest
+{
+    public int Start { get; set; }
+    // 0 returns all matching records. Otherwise pagination runs in the database.
+    public int Length { get; set; } = 5;
+    public string? Search { get; set; }
+    // null = all; 0 = pending; 1 = without discrepancy; 2 = with discrepancy.
+    public int? Status { get; set; } = 0;
+    public string Sort { get; set; } = "order";
+    public bool Descending { get; set; } = true;
+}
+
+public sealed record QualityControlCustomerItemRow(
+    int OrderSerialNumber, int InvoiceSerialNumber, string? InvoiceDate, QualityControlInvoiceItem Item);
+
 public sealed record QualityControlCustomerForm(Guid CustomerId, string? CustomerName, int CustomerCode,
     string? Mobile, string? AgentName, IReadOnlyList<QualityControlCustomerOrder> Orders,
-    IReadOnlyList<QualityControlQuestionDto> Questions);
+    IReadOnlyList<QualityControlQuestionDto> Questions)
+{
+    public IReadOnlyList<QualityControlCustomerItemRow> Data { get; init; }
+        = Array.Empty<QualityControlCustomerItemRow>();
+    public int Start { get; init; }
+    public int Length { get; init; } = 5;
+    public int FilteredItems { get; init; }
+    public int TotalItems { get; init; }
+    public int ReviewedItems { get; init; }
+    public int DiscrepancyItems { get; init; }
+    public int NoDiscrepancyItems { get; init; }
+    public int PendingItems => TotalItems - ReviewedItems;
+    public int OrdersCount { get; init; }
+    public int InvoicesCount { get; init; }
+}
 
 // Separate customer-level history; individual invoice items retain their own review descriptions.
 public enum QualityControlCustomerNoteSource : byte

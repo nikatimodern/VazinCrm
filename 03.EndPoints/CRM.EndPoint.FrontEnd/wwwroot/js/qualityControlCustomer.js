@@ -53,17 +53,28 @@
         const customerNoteSaveLabel = page.querySelector("#qcCustomerNoteSaveLabel");
         const customerNoteLabel = page.querySelector("#qcCustomerNoteLabel");
         const customerNoteFeedback = page.querySelector("#qcCustomerNoteFeedback");
+        const reviewToolbar = page.querySelector("#qcCustomerReviewToolbar");
         const summary = page.querySelector("#qcCustomerReviewSummary");
         const content = page.querySelector("#qcCustomerReviewContent");
         const itemSearchBar = page.querySelector("#qcInvoiceItemSearchBar");
         const itemSearch = page.querySelector("#qcInvoiceItemSearch");
-        const itemSearchClear = page.querySelector("#qcInvoiceItemSearchClear");
         const itemSearchCount = page.querySelector("#qcInvoiceItemSearchCount");
-        const itemSearchEmpty = page.querySelector("#qcInvoiceItemSearchEmpty");
-        const scroll = page.querySelector("#qcCustomerReviewScroll");
+        const itemStatusFilters = page.querySelector("#qcInvoiceItemStatusFilters");
+        const itemPageSize = page.querySelector("#qcInvoiceItemPageSize");
+        const itemPaging = page.querySelector("#qcInvoiceItemPaging");
+        const itemPages = page.querySelector("#qcInvoiceItemPages");
+        const itemPagingCount = page.querySelector("#qcInvoiceItemPagingCount");
+        const issueOverlay = page.querySelector("#qcItemDiscrepancyDialog");
+        const issueForm = page.querySelector("#qcIssueForm");
+        const issueQuestions = page.querySelector("#qcIssueQuestions");
+        const issueTitle = page.querySelector("#qcIssueTitle");
+        const issueSubtitle = page.querySelector("#qcIssueSubtitle");
+        const issueFeedback = page.querySelector("#qcIssueFeedback");
         const saveAllButton = page.querySelector("#qcCustomerSaveAll");
         const saveHint = page.querySelector("#qcCustomerSaveHint");
         const searchInput = page.querySelector("#qcCustomerSearch");
+        const dateFilterButton = page.querySelector("#qcCustomerDateFilterButton");
+        const dateFilterChips = page.querySelector("#qcCustomerDateFilterChips");
         const statusFilter = page.querySelector("#qcCustomerStatus");
         const sortControl = page.querySelector("#qcCustomerSort");
         const cardButtons = [...page.querySelectorAll("[data-qc-card-status]")];
@@ -119,8 +130,29 @@
         }
         if (typeof enableMomentumScroll === "function")
             enableMomentumScroll(queue, { signal: pageSignal });
+        if (typeof enableMomentumScrollScope === "function")
+            enableMomentumScrollScope(content, { signal: pageSignal });
 
         let start = 0, total = 0, search = "", loading = false, saving = false, contactBusy = false;
+        // Reuse Layout.js FilterModal and its built-in Persian date range chips.
+        window.qcCustomerDateFilterConfig = { filterVar: null };
+        const selectedDates = () => {
+            const f = window.qcCustomerDateFilterConfig?.filterVar;
+            return f?.DateFilterChk ? {
+                fromDate: String(f.fromDate || "").trim(),
+                toDate: String(f.toDate || "").trim(),
+            } : { fromDate: "", toDate: "" };
+        };
+        window.qcCustomerDateFilterChanged = async () => {
+            if (!isActive()) return;
+            clearReviewFocus();
+            await loadCustomers(true);
+        };
+        dateFilterButton?.addEventListener("click", () => {
+            if (typeof ShowFilterPopup !== "function") return;
+            // The common modal is shared with Deal/Index; QC exposes its date section only.
+            ShowFilterPopup(dateFilterButton, ["cusFilterItem", "selFilterItem"]);
+        });
         let lastCheckedCustomerId = null; // Badge stays until another successfully saved review.
         let lastReviewedHighlightTimer = null;
         let reviewHasSavedChanges = false;
@@ -197,11 +229,13 @@
             }, Math.max(1000, midnight.getTime() - now.getTime() + 1500));
         }
         let review = null;
+        let itemStatusFilter = "0", itemSortField = "order", itemSortDirection = -1;
+        let itemPageStart = 0, itemPageLoading = false, itemSearchTimer = null;
+        let issueItemId = null, issueReturnFocus = null;
         const drafts = new Map();
         const savingItems = new Set();
         const noteTimers = new Map();
-        const flatten = () => review?.orders.flatMap(order =>
-            order.invoices.flatMap(invoice => invoice.items)) ?? [];
+        const flatten = () => review?.data?.map(row => row.item) ?? [];
         const stateOf = item => drafts.get(item.factorItemId);
 
         const normalizeSearch = text => String(text ?? "").normalize("NFKC")
@@ -211,31 +245,106 @@
             .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660))
             .toLocaleLowerCase("fa-IR").replace(/\s+/g, " ").trim();
 
+        // Server returns page data, filtered totals and sort order. Never filter visible DOM rows.
         function filterInvoiceItems() {
             if (!review) return;
-            const query = normalizeSearch(itemSearch.value);
-            const orders = content.querySelectorAll(".qc-client-order");
-            let matches = 0;
-            orders.forEach(order => {
-                let orderMatches = 0;
-                order.querySelectorAll(".qc-client-invoice").forEach(invoice => {
-                    let invoiceMatches = 0;
-                    invoice.querySelectorAll(".qc-client-item").forEach(item => {
-                        const itemText = normalizeSearch(item.querySelector(".qc-client-item-meta")?.textContent);
-                        const visible = !query || itemText.includes(query);
-                        item.hidden = !visible;
-                        if (visible) invoiceMatches++;
-                    });
-                    invoice.hidden = invoiceMatches === 0;
-                    orderMatches += invoiceMatches;
-                });
-                order.hidden = orderMatches === 0;
-                matches += orderMatches;
+            itemSearchCount.textContent = faNumber.format(review.filteredItems) + " از "
+                + faNumber.format(review.totalItems) + " قلم";
+            itemStatusFilters.querySelectorAll("[data-qc-item-filter]").forEach(button => {
+                const selected = button.dataset.qcItemFilter === itemStatusFilter;
+                button.classList.toggle("is-active", selected);
+                button.setAttribute("aria-pressed", String(selected));
             });
-            itemSearchCount.textContent = faNumber.format(matches) + " از "
-                + faNumber.format(flatten().length) + " قلم";
-            itemSearchEmpty.hidden = !query || matches !== 0;
-            itemSearchClear.disabled = !itemSearch.value;
+        }
+
+        function reviewParams(customerId) {
+            return {
+                customerId, start: itemPageStart, length: Number(itemPageSize.value),
+                status: itemStatusFilter === "all" ? "" : itemStatusFilter,
+                search: itemSearch.value.trim()
+                    .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 0x06F0))
+                    .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 0x0660)),
+                sort: itemSortField,
+                descending: itemSortDirection < 0,
+            };
+        }
+
+        function applyReviewPage(result) {
+            review = result;
+            itemPageStart = result.start;
+            drafts.clear();
+            flatten().forEach(item => {
+                const status = Number(item.status) || 0;
+                drafts.set(item.factorItemId, {
+                    status, revision: 0, failed: false,
+                    description: item.description || "",
+                    rowVersion: item.rowVersion || null,
+                    saved: Boolean(item.rowVersion) && status !== 0,
+                    answers: Object.fromEntries((item.answers || []).map(answer =>
+                        [answer.id, answer.answer])),
+                });
+            });
+            renderReview();
+            itemPaging.hidden = false;
+            updateReviewPager();
+        }
+
+        async function loadReviewPage(reset = false) {
+            if (!review || !isActive() || hasUnsavedWork() || issueItemId) return;
+            if (reset) itemPageStart = 0;
+            formController?.abort();
+            const controller = formController = new AbortController();
+            const generation = formGeneration, customerId = review.customerId;
+            itemPageLoading = true;
+            content.classList.add("is-refreshing");
+            content.setAttribute("aria-busy", "true");
+            refreshReviewState();
+            try {
+                const result = await sendApiRequest({
+                    url: "/QualityControl/GetCustomerForm", params: reviewParams(customerId),
+                    signal: controller.signal, showLoading: false,
+                });
+                if (!isActive() || controller.signal.aborted || generation !== formGeneration
+                    || review?.customerId !== customerId) return;
+                if (!result?.customerId) throw new Error("Invalid response");
+                applyReviewPage(result);
+                const viewport = content.querySelector(".qc-client-review-table-wrap");
+                if (viewport) viewport.scrollTop = 0;
+                formFeedback.textContent = "";
+            } catch (error) {
+                if (isActive() && !controller.signal.aborted && generation === formGeneration)
+                    formFeedback.textContent = "دریافت اقلام ناموفق بود؛ دوباره تلاش کنید.";
+            } finally {
+                if (generation === formGeneration && !controller.signal.aborted && isActive()) {
+                    itemPageLoading = false;
+                    content.classList.remove("is-refreshing");
+                    content.removeAttribute("aria-busy");
+                    refreshReviewState();
+                }
+            }
+        }
+
+        function updateReviewPager() {
+            if (!review) return;
+            const length = Number(itemPageSize.value), totalRows = review.filteredItems;
+            const pages = length ? Math.ceil(totalRows / length) : (totalRows ? 1 : 0);
+            const current = length ? Math.floor(review.start / length) + 1 : 1;
+            const first = totalRows ? review.start + 1 : 0;
+            const last = length ? Math.min(review.start + length, totalRows) : totalRows;
+            itemPagingCount.textContent = faNumber.format(first) + " تا "
+                + faNumber.format(last) + " از " + faNumber.format(totalRows) + " قلم";
+            if (length === 0 || pages <= 1) { itemPages.replaceChildren(); return; }
+            const button = (label, target, disabled, active = false) =>
+                '<button type="button" data-qc-item-page="' + target
+                + '"' + (disabled ? " disabled" : "")
+                + (active ? ' aria-current="page" class="is-active"' : "") + '>'
+                + label + '</button>';
+            let html = button("قبلی", current - 1, current === 1);
+            const from = Math.max(1, Math.min(current - 2, pages - 4));
+            for (let i = from; i <= Math.min(pages, from + 4); i++)
+                html += button(faNumber.format(i), i, false, i === current);
+            html += button("بعدی", current + 1, current >= pages);
+            itemPages.innerHTML = html;
         }
 
         function isValid(item) {
@@ -345,6 +454,7 @@
                         start, length: Number(pageSize.value), search,
                         status: statusFilter.value,
                         sort: sortControl.value,
+                        ...selectedDates(),
                     },
                     signal: controller.signal,
                     showLoading: false,
@@ -405,6 +515,10 @@
                     const contactStatus = Number(row.contactStatus) || 0;
                     const noResponseAttempts = Math.max(0, Number(row.noResponseAttempts) || 0);
                     const contactHistoryCount = Math.max(0, Number(row.contactHistoryCount) || 0);
+                    const hasNoResponse = row.hasNoResponse === true
+                        || noResponseAttempts > 0 || contactStatus === 1;
+                    const hasInvalidNumber = row.isInvalidNumber === true || contactStatus === 2;
+                    const hasContactHistory = row.hasContactHistory === true || contactHistoryCount > 0;
                     const complete = pending === 0;
                     const cooldownSeconds = Math.min(60, Math.max(0, Number(row.noResponseCooldownSeconds) || 0));
                     // Sorting is only applied on explicit list loads, never after a QC save.
@@ -412,7 +526,8 @@
                     return '<article role="listitem" class="qc-client-card'
                         + (lastCheckedCustomerId === String(row.customerId).toLowerCase()
                             ? ' qc-client-last-checked' : '')
-                        + '" data-qc-complete="' + complete + '">'
+                        + '" data-qc-complete="' + complete
+                        + '" data-qc-invalid-number="' + hasInvalidNumber + '">'
                         + '<div class="qc-client-profile"><div class="qc-client-name-line"><strong>'
                         + escape(row.customerName || "مشتری بدون نام") + '</strong></div>'
                         + '<small>کد مشتری: ' + faCodeNumber.format(row.customerCode) + ' · ' + escape(row.mobile || "بدون شماره") + '</small>'
@@ -431,32 +546,37 @@
                         + '<span class="qc-client-call-group" role="group" aria-label="پیگیری تماس مشتری">'
                         + '<span class="qc-client-no-answer-action">'
                         + '<button type="button" class="qc-client-button qc-client-contact-no-answer'
-                        + (contactStatus === 1 ? ' is-selected' : '')
+                        + (hasNoResponse ? ' is-selected has-value' : '')
                         + (noResponseAttempts > 0 ? ' has-count' : '') + '"'
                         + (complete ? ' disabled' : '')
                         + ' title="عدم پاسخ" aria-label="عدم پاسخ"'
                         + ' data-qc-contact="1" data-qc-contact-customer="' + escape(row.customerId)
                         + '" data-qc-cooldown-until="' + (Date.now() + cooldownSeconds * 1000)
                         + '" data-qc-no-answer-count="' + noResponseAttempts + '">'
-                        + '<i class="fa fa-phone-slash" aria-hidden="true"></i>'
+                        + '<i class="fa fa-phone-slash" aria-hidden="true"'
+                        + (hasNoResponse ? ' style="color:var(--qc-secondary) !important"' : '') + '></i>'
                         + contactCountBadge(noResponseAttempts) + '</button>'
                         + '<span class="qc-client-no-answer-progress" data-qc-no-answer-progress hidden aria-hidden="true">'
                         + '<span class="qc-client-no-answer-progress-fill" data-qc-no-answer-progress-fill></span></span></span>'
                         + '<button type="button" class="qc-client-button qc-client-history-open'
+                        + (hasContactHistory ? ' has-value' : '')
                         + (contactHistoryCount > 0 ? ' has-count' : '')
                         + '" data-qc-history="' + escape(row.customerId) + '"'
                         + ' title="تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه"'
                         + ' aria-label="مشاهده تاریخچه تماس؛ ' + faNumber.format(contactHistoryCount) + ' سابقه">'
-                        + '<i class="fa fa-history" aria-hidden="true"></i>'
+                        + '<i class="fa fa-history" aria-hidden="true"'
+                        + (hasContactHistory ? ' style="color:var(--qc-primary) !important"' : '') + '></i>'
                         + contactCountBadge(contactHistoryCount) + '</button>'
                         + '<button type="button" class="qc-client-button qc-client-contact-invalid'
-                        + (contactStatus === 2 ? ' is-selected' : '') + '" aria-pressed="' + (contactStatus === 2)
+                        + (hasInvalidNumber ? ' is-selected has-value' : '') + '" aria-pressed="' + hasInvalidNumber
                         + '" title="' + (complete ? 'شماره نامعتبر؛ تمام اقلام بررسی شده‌اند'
-                            : contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
-                        + ' aria-label="' + (contactStatus === 2 ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                            : hasInvalidNumber ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
+                        + ' aria-label="' + (hasInvalidNumber ? 'شماره نامعتبر (ثبت شده)' : 'شماره نامعتبر') + '"'
                         + (complete ? ' disabled' : '')
                         + ' data-qc-contact="2" data-qc-contact-customer="' + escape(row.customerId)
-                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></button></span>'
+                        + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"'
+                        + (hasInvalidNumber ? ' style="color:var(--qc-danger) !important"' : '')
+                        + '></i></button></span>'
                         + '<button type="button" class="qc-client-button qc-client-notes-button'
                         + (row.hasNotes ? ' has-notes' : '') + '" data-qc-customer-notes="' + escape(row.customerId)
                         + '" title="توضیحات مشتری" aria-label="نمایش و ثبت توضیحات مشتری">'
@@ -935,48 +1055,52 @@
             drafts.clear();
             review = null;
             reviewHasSavedChanges = false;
+            issueItemId = null;
+            issueReturnFocus = null;
+            issueOverlay.hidden = true;
+            itemStatusFilter = "0";
+            itemSortField = "order";
+            itemSortDirection = -1;
+            itemPageStart = 0;
+            itemPageSize.value = "5";
+            itemPageLoading = false;
+            clearTimeout(itemSearchTimer);
+            itemPaging.hidden = true;
             saveAllButton.disabled = true;
+            reviewToolbar.hidden = true;
             summary.replaceChildren();
             content.replaceChildren();
             itemSearch.value = "";
             itemSearchBar.hidden = true;
-            itemSearchEmpty.hidden = true;
             itemSearchCount.textContent = "";
-            itemSearchClear.disabled = true;
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت مشتری";
             page.querySelector("#qcCustomerModalSubtitle").textContent = "";
             formFeedback.textContent = "در حال دریافت فاکتورها و اقلام سفارش‌های تحویل‌شده…";
             ModalToggle(modal, "show");
             const result = await sendApiRequest({
-                url: "/QualityControl/GetCustomerForm", params: { customerId },
+                url: "/QualityControl/GetCustomerForm", params: reviewParams(customerId),
                 signal: controller.signal, showLoading: false,
             });
             if (!isActive() || controller.signal.aborted || generation !== formGeneration) return;
-            if (!result?.orders?.length) {
+            if (!result?.customerId) {
                 formFeedback.textContent = "دریافت فاکتورهای مشتری ناموفق بود. پنجره را ببندید و دوباره تلاش کنید.";
                 return;
             }
-            review = result;
+            applyReviewPage(result);
             page.querySelector("#qcCustomerModalTitle").textContent = "کنترل کیفیت: " + (review.customerName || "مشتری");
-            const customerDetails = ["کد مشتری: " + faCodeNumber.format(review.customerCode)];
+            const customerDetails = [
+                '<span class="qc-client-customer-meta">کد مشتری: <strong>'
+                + escape(faCodeNumber.format(review.customerCode)) + '</strong></span>',
+            ];
             if (review.agentName?.trim() && review.agentName.trim() !== review.customerName?.trim())
-                customerDetails.push("نماینده: " + review.agentName.trim());
-            if (review.mobile?.trim()) customerDetails.push("موبایل: " + review.mobile.trim());
-            page.querySelector("#qcCustomerModalSubtitle").textContent = customerDetails.join(" | ");
-            flatten().forEach(item => {
-                const status = Number(item.status) || 0;
-                drafts.set(item.factorItemId, {
-                    status,
-                    revision: 0,
-                    failed: false,
-                    description: item.description || "",
-                    rowVersion: item.rowVersion || null,
-                    saved: Boolean(item.rowVersion) && status !== 0,
-                    answers: Object.fromEntries((item.answers || []).map(answer =>
-                        [answer.id, answer.answer])),
-                });
-            });
+                customerDetails.push('<span class="qc-client-customer-meta">نماینده: <strong>'
+                    + escape(review.agentName.trim()) + '</strong></span>');
+            if (review.mobile?.trim())
+                customerDetails.push('<span class="qc-client-customer-meta"><i class="fa fa-phone" aria-hidden="true"></i> موبایل: <strong dir="ltr">'
+                    + escape(review.mobile.trim()) + '</strong></span>');
+            page.querySelector("#qcCustomerModalSubtitle").innerHTML = customerDetails.join("");
             formFeedback.textContent = "";
+            reviewToolbar.hidden = false;
             itemSearchBar.hidden = false;
             renderReview();
         }
@@ -1004,109 +1128,163 @@
                 + ' placeholder="توضیحات مشتری درباره این قلم...">' + escape(draft.description) + '</textarea></div>';
         }
 
-        function renderItem(item) {
+        function reviewRows() {
+            return review.data.map(row => ({
+                item: row.item,
+                order: { serialNumber: row.orderSerialNumber },
+                invoice: { serialNumber: row.invoiceSerialNumber, date: row.invoiceDate },
+            }));
+        }
+
+        function renderReviewRow(entry, index) {
+            const { item, order, invoice } = entry;
             const draft = stateOf(item);
-            const isProblem = draft.status === 2;
-            const badge = draft.status === 0 ? "بررسی‌نشده" : isProblem ? "دارای مغایرت" : "بدون مغایرت";
-            const badgeClass = draft.status === 0 ? "pending" : isProblem ? "discrepancy" : "complete";
+            const statusClass = draft.status === 2 ? "discrepancy"
+                : draft.status === 1 ? "complete" : "pending";
             const product = item.productSmallName || item.product || "قلم بدون عنوان";
             const description = item.product && item.product !== product ? item.product : "";
-            return '<article class="qc-client-item" data-qc-item="' + escape(item.factorItemId) + '">'
-                + '<div class="qc-client-item-top">'
-                + '<div class="qc-client-item-meta">'
-                + '<strong>' + escape(product) + '</strong>'
-                + (description ? '<span class="qc-client-item-spec qc-client-item-value">' + escape(description) + '</span>' : "")
-                + '<span>مقدار: <span class="qc-client-item-value">' + escape(item.weightCount || "—") + ' ' + escape(item.unitTxt || "") + '</span></span>'
-                + '<span class="qc-client-party' + (item.supplierNames?.trim() ? '' : ' qc-client-party-unset')
-                + '">تأمین‌کننده: <span class="qc-client-item-value">' + escape(item.supplierNames?.trim() || "ثبت نشده") + '</span></span>'
-                + '<span class="qc-client-party' + (item.supplyExpert?.trim() ? '' : ' qc-client-party-unset')
-                + '">کارشناس تأمین: <span class="qc-client-item-value">' + escape(item.supplyExpert?.trim() || "ثبت نشده") + '</span></span>'
-                + '</div>'
-                + '<div class="qc-client-item-controls">'
-                + '<div class="qc-client-item-actions">'
-                + '<button type="button" class="qc-client-button ' + (draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
-                + '" data-qc-set-status="1" data-qc-item-id="' + escape(item.factorItemId) + '">بدون مغایرت</button>'
-                + '<button type="button" class="qc-client-button ' + (isProblem ? "qc-client-issue-selected" : "qc-client-secondary")
-                + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId) + '">دارای مغایرت</button>'
-                + '</div>'
-                + '<span class="qc-client-badge qc-client-' + badgeClass + '">' + badge
-                + (draft.saved ? ' · ثبت‌شده' : "") + '</span>'
-                + '<button type="button" class="qc-client-button qc-client-retry" data-qc-retry="' + escape(item.factorItemId)
-                + '"' + (draft.failed ? "" : " hidden") + '>تلاش مجدد</button>'
-                + '</div></div>'
-                + (isProblem ? questionMarkup(item, draft) : "")
-                + '</article>';
+            const searchText = [
+                order.serialNumber, invoice.serialNumber, product, description,
+                item.weightCount, item.unitTxt, item.supplierNames, item.supplyExpert,
+            ].join(" ");
+            return '<tr class="qc-client-review-row qc-client-row-' + statusClass
+                + '" data-qc-item="' + escape(item.factorItemId)
+                + '" data-qc-search="' + escape(normalizeSearch(searchText)) + '">'
+                + '<td class="qc-client-review-index">' + faNumber.format(review.start + index + 1) + '</td>'
+                + '<td class="qc-client-review-code">' + escape(order.serialNumber || "—") + '</td>'
+                + '<td class="qc-client-review-code">' + escape(invoice.serialNumber || "—")
+                + (invoice.date ? '<small>' + escape(invoice.date) + '</small>' : "") + '</td>'
+                + '<td class="qc-client-review-product"><strong>' + escape(product) + '</strong>'
+                + (description ? '<small title="' + escape(description) + '">' + escape(description) + '</small>' : "")
+                + '</td>'
+                + '<td class="qc-client-review-quantity">' + escape(item.weightCount || "—")
+                + ' ' + escape(item.unitTxt || "") + '</td>'
+                + '<td>' + escape(item.supplierNames?.trim() || "ثبت نشده") + '</td>'
+                + '<td>' + escape(item.supplyExpert?.trim() || "ثبت نشده") + '</td>'
+                + '<td class="qc-client-review-state"><span class="qc-client-review-status qc-client-'
+                + statusClass + '">' + (draft.status === 2 ? "دارای مغایرت"
+                    : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده")
+                + '</span><button type="button" class="qc-client-button qc-client-retry" data-qc-retry="'
+                + escape(item.factorItemId) + '"' + (draft.failed ? "" : " hidden")
+                + '>تلاش مجدد</button></td>'
+                + '<td class="qc-client-review-actions">'
+                + '<button type="button" class="qc-client-button '
+                + (draft.saved && !draft.failed && draft.status === 1 ? "qc-client-ok-selected" : "qc-client-secondary")
+                + '" data-qc-set-status="1" data-qc-item-id="' + escape(item.factorItemId)
+                + '" aria-pressed="' + (draft.saved && !draft.failed && draft.status === 1) + '"><i class="fa fa-check-circle" aria-hidden="true"></i> بدون مغایرت</button>'
+                + '<button type="button" class="qc-client-button '
+                + (draft.saved && !draft.failed && draft.status === 2 ? "qc-client-issue-selected" : "qc-client-secondary")
+                + '" data-qc-set-status="2" data-qc-item-id="' + escape(item.factorItemId)
+                + '" aria-pressed="' + (draft.saved && !draft.failed && draft.status === 2) + '"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> دارای مغایرت</button>'
+                + '</td></tr>';
         }
 
         function renderReview() {
             if (!review) return;
-            const scrollPosition = scroll.scrollTop;
-            content.innerHTML = review.orders.map(order => '<section class="qc-client-order">'
-                + '<div class="qc-client-order-header"><h3>سفارش شماره ' + escape(order.serialNumber)
-                + '</h3><small>' + escape(order.title || "") + '</small></div>'
-                + order.invoices.map(invoice => '<section class="qc-client-invoice">'
-                    + '<h4>فاکتور فروش شماره ' + escape(invoice.serialNumber)
-                    + (invoice.date ? '<small> · ' + escape(invoice.date) + '</small>' : "") + '</h4>'
-                    + invoice.items.map(renderItem).join("")
-                    + '</section>').join("")
-                + '<div class="qc-client-order-footer"><button type="button" class="qc-client-button qc-client-outline"'
-                + ' data-qc-mark-rest="' + escape(order.id) + '"'
-                + (order.invoices.flatMap(invoice => invoice.items)
-                    .every(item => stateOf(item).status !== 0) ? " disabled" : "") + '>'
-                + 'ثبت بقیه اقلام این سفارش بدون مغایرت</button></div></section>').join("");
+            const previousTableViewport = content.querySelector(".qc-client-review-table-wrap");
+            const scrollPosition = {
+                top: previousTableViewport?.scrollTop ?? 0,
+                left: previousTableViewport?.scrollLeft ?? 0,
+            };
+            const entries = reviewRows();
+            const sortHeading = (field, label) =>
+                '<button type="button" class="qc-client-table-sort" data-qc-item-sort="'
+                + field + '" aria-label="مرتب‌سازی بر اساس ' + label + '">'
+                + label + ' <i class="fa '
+                + (itemSortField === field
+                    ? (itemSortDirection < 0 ? 'fa-sort-down' : 'fa-sort-up') : 'fa-sort')
+                + '" aria-hidden="true"></i></button>';
+            const isEmpty = entries.length === 0;
+            content.innerHTML = '<div class="qc-client-review-table-wrap" role="region"'
+                + ' aria-label="جدول اقلام کنترل کیفیت" tabindex="0">'
+                + '<table class="qc-client-review-table' + (isEmpty ? ' is-empty' : '') + '"><thead><tr>'
+                + '<th scope="col">' + sortHeading("row", "ردیف")
+                + '</th><th scope="col">' + sortHeading("order", "شماره سفارش")
+                + '</th><th scope="col">' + sortHeading("invoice", "شماره فاکتور")
+                + '</th><th scope="col">' + sortHeading("product", "نام کالا / مشخصات")
+                + '</th><th scope="col">' + sortHeading("quantity", "مقدار")
+                + '</th><th scope="col">' + sortHeading("supplier", "تأمین‌کننده")
+                + '</th><th scope="col">' + sortHeading("expert", "کارشناس تأمین")
+                + '</th><th scope="col">' + sortHeading("status", "وضعیت کنترل کیفیت")
+                + '<th scope="col">عملیات</th></tr></thead><tbody>'
+                + (isEmpty
+                    ? '<tr class="qc-client-empty-row"><td colspan="9" role="status">قلمی مطابق جستجو یا فیلتر انتخاب‌شده پیدا نشد.</td></tr>'
+                    : entries.map((entry, index) => renderReviewRow(entry, index)).join(""))
+                + '</tbody></table></div>';
             refreshReviewState();
-            filterInvoiceItems();
-            scroll.scrollTop = scrollPosition;
+            const tableViewport = content.querySelector(".qc-client-review-table-wrap");
+            if (tableViewport) {
+                tableViewport.scrollTop = scrollPosition.top;
+                tableViewport.scrollLeft = scrollPosition.left;
+            }
         }
 
         function refreshReviewState() {
             if (!review) { saveAllButton.disabled = true; return; }
             const items = flatten();
-            const itemsById = new Map(items.map(item => [item.factorItemId, item]));
-            const reviewed = items.filter(item => stateOf(item).saved && stateOf(item).status !== 0).length;
-            const pending = items.filter(item => stateOf(item).status === 0).length;
-            const issues = items.filter(item => stateOf(item).status === 2).length;
-            summary.innerHTML = '<div><strong>' + faNumber.format(reviewed) + ' از '
-                + faNumber.format(items.length) + ' قلم ثبت‌شده</strong>'
-                + '<small>' + faNumber.format(review.orders.length) + ' سفارش · '
-                + faNumber.format(review.orders.reduce((sum, order) => sum + order.invoices.length, 0))
-                + ' فاکتور</small></div><div class="qc-client-summary-tags">'
-                + '<span>' + faNumber.format(pending) + ' بررسی‌نشده</span>'
-                + '<span>' + faNumber.format(issues) + ' دارای مغایرت</span></div>';
-
+            const reviewed = review.reviewedItems;
+            const pending = review.pendingItems;
+            const withoutIssues = review.noDiscrepancyItems;
+            const issues = review.discrepancyItems;
+            const progress = review.totalItems ? Math.round(100 * reviewed / review.totalItems) : 0;
+            const pendingOnPage = items.filter(item => stateOf(item)?.status === 0).length;
+            summary.innerHTML = '<div class="qc-client-review-overview">'
+                + '<span class="qc-client-review-overview-icon" aria-hidden="true"><i class="fa fa-box-open"></i></span>'
+                + '<div class="qc-client-review-overview-text"><strong>'
+                + faNumber.format(review.totalItems) + ' قلم ثبت‌شده</strong><small>'
+                + faNumber.format(review.ordersCount) + ' سفارش · '
+                + faNumber.format(review.invoicesCount)
+                + ' فاکتور</small></div></div>'
+                + '<div class="qc-client-summary-tags">'
+                + '<span>' + faNumber.format(reviewed) + ' بررسی‌شده</span>'
+                + '<span class="qc-client-summary-ok">' + faNumber.format(withoutIssues) + ' بدون مغایرت</span>'
+                + '<span class="qc-client-summary-issues">' + faNumber.format(issues) + ' دارای مغایرت</span></div>'
+                + '<div class="qc-client-review-progress"><span>پیشرفت بررسی اقلام</span>'
+                + '<div class="qc-client-review-progress-track" role="progressbar"'
+                + ' aria-label="پیشرفت بررسی اقلام" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'
+                + progress + '"><span style="width:' + progress + '%"></span></div>'
+                + '<strong>' + faNumber.format(progress) + '٪</strong></div>';
+            const counts = { all: review.totalItems, 0: pending, 1: withoutIssues, 2: issues };
+            itemStatusFilters.querySelectorAll("[data-qc-filter-count]").forEach(element => {
+                element.textContent = faNumber.format(counts[element.dataset.qcFilterCount] ?? 0);
+            });
             const busy = hasUnsavedWork();
-            saveAllButton.disabled = busy || pending === 0;
+            saveAllButton.disabled = busy || itemPageLoading || pendingOnPage === 0 || Boolean(issueItemId);
             saveHint.textContent = busy ? "در حال ثبت خودکار اطلاعات…"
-                : pending ? "ثبت کلی فقط اقلام بررسی‌نشده را بدون مغایرت ثبت می‌کند."
-                    : "تمام اقلام وضعیت مشخصی دارند.";
+                : pendingOnPage ? "ثبت گروهی فقط اقلام بررسی‌نشده صفحه فعلی را ثبت می‌کند."
+                    : "در این صفحه قلم بررسی‌نشده‌ای وجود ندارد.";
             content.querySelectorAll("[data-qc-item]").forEach(row => {
-                const draft = drafts.get(row.dataset.qcItem);
+                const id = row.dataset.qcItem, draft = drafts.get(id);
                 if (!draft) return;
-                const badge = row.querySelector(".qc-client-item-top .qc-client-badge");
-                const text = draft.status === 2 ? "دارای مغایرت"
-                    : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده";
-                const color = draft.status === 2 ? "discrepancy"
-                    : draft.status === 1 ? "complete" : "pending";
+                const state = draft.status === 2 ? "discrepancy" : draft.status === 1 ? "complete" : "pending";
+                row.classList.remove("qc-client-row-discrepancy", "qc-client-row-complete", "qc-client-row-pending");
+                row.classList.add("qc-client-row-" + state);
+                const badge = row.querySelector(".qc-client-review-status");
                 if (badge) {
-                    badge.className = "qc-client-badge qc-client-" + color;
-                    badge.textContent = text + (savingItems.has(row.dataset.qcItem) ? " · در حال ثبت"
-                        : draft.failed ? " · خطای ثبت"
-                            : draft.saved ? " · ثبت‌شده"
-                                : draft.status === 2 && !isValid(itemsById.get(row.dataset.qcItem))
-                                    ? " · تکمیل سؤال‌ها" : "");
+                    badge.className = "qc-client-review-status qc-client-" + state;
+                    badge.textContent = (draft.status === 2 ? "دارای مغایرت" : draft.status === 1 ? "بدون مغایرت" : "بررسی‌نشده")
+                        + (savingItems.has(id) ? " · در حال ثبت"
+                            : draft.failed ? " · خطای ثبت" : draft.saved ? " · ثبت‌شده" : "");
                 }
+                row.querySelectorAll("[data-qc-set-status]").forEach(button => {
+                    const selected = draft.saved && !draft.failed && !savingItems.has(id)
+                        && Number(button.dataset.qcSetStatus) === draft.status;
+                    button.classList.toggle("qc-client-ok-selected", selected && draft.status === 1);
+                    button.classList.toggle("qc-client-issue-selected", selected && draft.status === 2);
+                    button.classList.toggle("qc-client-secondary", !selected);
+                    button.setAttribute("aria-pressed", String(selected));
+                    button.disabled = busy || itemPageLoading || Boolean(issueItemId);
+                });
                 const retry = row.querySelector("[data-qc-retry]");
                 if (retry) {
                     retry.hidden = !draft.failed;
-                    retry.disabled = busy;
+                    retry.disabled = busy || itemPageLoading || Boolean(issueItemId);
                 }
             });
-            content.querySelectorAll("[data-qc-mark-rest]").forEach(button => {
-                const order = review.orders.find(row => row.id === button.dataset.qcMarkRest);
-                button.disabled = busy || !order || order.invoices.flatMap(invoice => invoice.items)
-                    .every(item => stateOf(item).status !== 0);
-            });
-            modal.querySelectorAll("[data-bs-dismiss]").forEach(button => button.disabled = busy);
+            modal.querySelectorAll("[data-bs-dismiss]").forEach(button =>
+                button.disabled = busy || Boolean(issueItemId));
+            filterInvoiceItems();
+            updateReviewPager();
         }
 
         function makePayload(item) {
@@ -1174,7 +1352,10 @@
                     if (succeeded && !flatten().some(item => stateOf(item).failed))
                         formFeedback.textContent = "";
                     refreshReviewState();
-                    if (succeeded) reviewHasSavedChanges = true;
+                    if (succeeded) {
+                        reviewHasSavedChanges = true;
+                        await loadReviewPage();
+                    }
                 }
             }
         }
@@ -1214,24 +1395,30 @@
                 });
                 formFeedback.textContent = "";
                 reviewHasSavedChanges = true;
-                renderReview();
             } catch (error) {
                 if (generation === formGeneration && isActive())
                     formFeedback.textContent = "خطا در ارتباط با سرور هنگام ثبت گروهی.";
             } finally {
                 saving = false;
-                if (generation === formGeneration && isActive()) refreshReviewState();
+                if (generation === formGeneration && isActive()) {
+                    refreshReviewState();
+                    if (reviewHasSavedChanges) await loadReviewPage();
+                }
             }
         }
 
         form.addEventListener("submit", event => event.preventDefault());
-        itemSearch.addEventListener("input", filterInvoiceItems);
-        itemSearchClear.addEventListener("click", () => {
-            itemSearch.value = "";
-            filterInvoiceItems();
-            itemSearch.focus();
+        itemSearch.addEventListener("input", () => {
+            clearTimeout(itemSearchTimer);
+            itemSearchTimer = setTimeout(() => { void loadReviewPage(true); }, 300);
         });
-
+        itemPageSize.addEventListener("change", () => { void loadReviewPage(true); });
+        itemPages.addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-item-page]");
+            if (!button || button.disabled || itemPageLoading || hasUnsavedWork()) return;
+            itemPageStart = (Number(button.dataset.qcItemPage) - 1) * Number(itemPageSize.value);
+            void loadReviewPage();
+        });
         page.querySelector("#qcCustomerSearchForm").addEventListener("submit", event => {
             event.preventDefault();
             clearReviewFocus();
@@ -1251,15 +1438,21 @@
             statusFilter.value = "";
             sortControl.value = "pending";
             pageSize.value = "5";
+            // Clearing all queue filters also removes the shared date chip.
+            window.qcCustomerDateFilterConfig.filterVar = null;
+            dateFilterChips.replaceChildren();
             loadCustomers(true);
         });
         page.querySelector(".qc-client-overview").addEventListener("click", event => {
             const button = event.target.closest("[data-qc-card-status]");
             if (!button) return;
-            // The overview totals are global; reset search to show every customer in the selected group.
+            // Overview cards are global: clicking "view" also clears the date-range list filter
+            // so the displayed customer list matches the unfiltered KPI totals.
             clearReviewFocus();
             search = "";
             searchInput.value = "";
+            window.qcCustomerDateFilterConfig.filterVar = null;
+            dateFilterChips.replaceChildren();
             statusFilter.value = button.dataset.qcCardStatus;
             loadCustomers(true);
         });
@@ -1342,7 +1535,62 @@
                 return;
             }
             const button = event.target.closest("[data-qc-customer]");
-            if (button && !loading && !contactBusy) openCustomer(button.dataset.qcCustomer);
+            if (!button || loading || contactBusy || !isActive()) return;
+
+            const customerId = button.dataset.qcCustomer;
+            const card = button.closest(".qc-client-card");
+            if (card?.dataset.qcInvalidNumber !== "true") {
+                void openCustomer(customerId);
+                return;
+            }
+
+            contactBusy = true;
+            try {
+                const confirmed = await confirmAlert({
+                    title: "شماره تماس نیاز به اصلاح دارد",
+                    text: "شماره این مشتری قبلاً نامعتبر ثبت شده است. آیا اصلاح شماره انجام شده است؟",
+                    icon: "warning",
+                    confirmText: "بله، اصلاح شده است",
+                    cancelText: "خیر، هنوز اصلاح نشده",
+                    confirmButtonColor: "#00695c",
+                });
+                if (!confirmed || !isActive()) return;
+
+                queueFeedback.textContent = "";
+                const result = await sendApiRequest({
+                    url: "/QualityControl/SetCustomerContactStatus",
+                    method: "POST",
+                    headers: { RequestVerificationToken: token.value },
+                    data: { customerId, status: 2, confirmCorrectedNumber: true },
+                    showLoading: false,
+                });
+                if (!isActive()) return;
+                if (Number(result?.status) !== 0) {
+                    queueFeedback.textContent = "تأیید اصلاح شماره ثبت نشد؛ فهرست را تازه کنید.";
+                    await loadCustomers();
+                    return;
+                }
+
+                // Update the card immediately before refreshing the server-backed queue.
+                card.dataset.qcInvalidNumber = "false";
+                const invalidButton = card.querySelector('[data-qc-contact="2"]');
+                if (invalidButton) {
+                    invalidButton.classList.remove("is-selected", "has-value");
+                    invalidButton.setAttribute("aria-pressed", "false");
+                    invalidButton.title = "شماره نامعتبر";
+                    invalidButton.setAttribute("aria-label", "شماره نامعتبر");
+                }
+                await loadCustomers();
+                if (isActive()) await openCustomer(customerId);
+            } catch (error) {
+                if (isActive()) {
+                    queueFeedback.textContent = "تأیید اصلاح شماره انجام نشد؛ دوباره تلاش کنید.";
+                    await loadCustomers();
+                }
+            } finally {
+                contactBusy = false;
+                if (isActive()) refreshNoResponseCooldowns();
+            }
         });
         historyShowDeleted.addEventListener("change", () => {
             historyStart = 0;
@@ -1429,23 +1677,131 @@
             historyEntries.replaceChildren();
             historyFeedback.textContent = "";
         });
+        itemStatusFilters.addEventListener("click", event => {
+            const button = event.target.closest("[data-qc-item-filter]");
+            if (!button || !review) return;
+            if (hasUnsavedWork() || itemPageLoading) return;
+            itemStatusFilter = button.dataset.qcItemFilter;
+            void loadReviewPage(true);
+        });
+
+        function closeIssueDialog() {
+            if (!issueItemId) return;
+            issueOverlay.hidden = true;
+            issueItemId = null;
+            issueFeedback.textContent = "";
+            issueQuestions.replaceChildren();
+            const returnFocus = issueReturnFocus;
+            issueReturnFocus = null;
+            if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+            refreshReviewState();
+        }
+
+        function openIssueDialog(id, button) {
+            if (!review || !isActive() || hasUnsavedWork() || issueItemId) return;
+            const item = flatten().find(row => row.factorItemId === id);
+            const draft = item && stateOf(item);
+            if (!draft || !review.questions?.length) {
+                formFeedback.textContent = "سؤال‌های کنترل کیفیت این قلم در دسترس نیست.";
+                return;
+            }
+            issueItemId = id;
+            issueReturnFocus = button;
+            issueTitle.textContent = draft.status === 2 ? "ویرایش مغایرت قلم" : "ثبت مغایرت قلم";
+            issueSubtitle.textContent = item.productSmallName || item.product || "قلم بدون عنوان";
+            issueQuestions.innerHTML = questionMarkup(item, draft);
+            issueFeedback.textContent = "";
+            issueOverlay.hidden = false;
+            refreshReviewState();
+            issueOverlay.querySelector('input[type="radio"]')?.focus({ preventScroll: true });
+        }
+
+        issueOverlay.addEventListener("click", event => {
+            if (event.target === issueOverlay || event.target.closest("[data-qc-issue-close]"))
+                closeIssueDialog();
+        });
+        // Keep Escape and focus inside the nested discrepancy dialog instead
+        // of allowing Bootstrap to dismiss the customer review underneath.
+        modal.addEventListener("keydown", event => {
+            if (!issueItemId || event.key !== "Escape") return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closeIssueDialog();
+        }, true);
+        issueOverlay.addEventListener("keydown", event => {
+            if (event.key !== "Tab") return;
+            const controls = [...issueOverlay.querySelectorAll("button:not([disabled]), input:not([disabled]), textarea:not([disabled])")]
+                .filter(element => element.getClientRects().length > 0);
+            if (!controls.length) return;
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+
+        issueForm.addEventListener("submit", event => {
+            event.preventDefault();
+            if (!review || !issueItemId || hasUnsavedWork()) return;
+            const id = issueItemId;
+            const item = flatten().find(row => row.factorItemId === id);
+            const draft = item && stateOf(item);
+            if (!draft) return;
+            const answers = Object.fromEntries([...issueQuestions.querySelectorAll("[data-qc-answer]:checked")]
+                .map(input => [input.dataset.qcQuestion, Number(input.value)]));
+            if (!review.questions.every(question => answers[question.id] === 0 || answers[question.id] === 1)
+                || !review.questions.some(question => answers[question.id] === 1)) {
+                issueFeedback.textContent = "به همه سؤال‌ها پاسخ دهید و حداقل یک مورد مغایرت را مشخص کنید.";
+                return;
+            }
+            const description = issueQuestions.querySelector("[data-qc-note]")?.value || "";
+            draft.status = 2;
+            draft.answers = answers;
+            draft.description = description;
+            draft.saved = false;
+            draft.failed = false;
+            draft.revision++;
+            clearNoteTimer(id);
+            closeIssueDialog();
+            renderReview();
+            [...content.querySelectorAll('[data-qc-set-status="2"]')]
+                .find(button => button.dataset.qcItemId === id)?.focus({ preventScroll: true });
+            void persistItem(id);
+        });
+
         content.addEventListener("click", event => {
-            if (saving || !review) return;
+            if (saving || itemPageLoading || !review || issueItemId) return;
+            const sortButton = event.target.closest("[data-qc-item-sort]");
+            if (sortButton) {
+                const selectedField = sortButton.dataset.qcItemSort;
+                if (hasUnsavedWork() || itemPageLoading) return;
+                if (selectedField === itemSortField) itemSortDirection *= -1;
+                else { itemSortField = selectedField; itemSortDirection = 1; }
+                void loadReviewPage(true);
+                return;
+            }
             const setButton = event.target.closest("[data-qc-set-status]");
-            if (setButton) {
+            if (setButton && !setButton.disabled) {
                 const id = setButton.dataset.qcItemId;
                 const draft = drafts.get(id);
-                if (!draft) return;
+                if (!draft || savingItems.has(id)) return;
                 const selected = Number(setButton.dataset.qcSetStatus);
-                // Clicking the selected answer again returns the item to unchecked.
-                draft.status = draft.status === selected ? 0 : selected;
+                if (selected === 2) {
+                    openIssueDialog(id, setButton);
+                    return;
+                }
+                // Clicking an already selected "without discrepancy" clears the review.
+                draft.status = draft.status === 1 ? 0 : 1;
                 draft.saved = false;
                 draft.failed = false;
                 draft.revision++;
                 clearNoteTimer(id);
                 if (draft.status === 1) draft.answers = {};
                 renderReview();
-                persistItem(id);
+                void persistItem(id);
                 return;
             }
             const retry = event.target.closest("[data-qc-retry]");
@@ -1453,79 +1809,50 @@
                 const draft = drafts.get(retry.dataset.qcRetry);
                 if (draft) {
                     draft.failed = false;
-                    persistItem(retry.dataset.qcRetry);
+                    void persistItem(retry.dataset.qcRetry);
                 }
-                return;
-            }
-            const markRest = event.target.closest("[data-qc-mark-rest]");
-            if (markRest && !markRest.disabled) {
-                const order = review.orders.find(order => order.id === markRest.dataset.qcMarkRest);
-                if (order) saveRemaining(order.invoices.flatMap(invoice => invoice.items));
             }
         });
-        content.addEventListener("change", event => {
-            const radio = event.target.closest("[data-qc-answer]");
-            if (!radio || !review) return;
-            const draft = drafts.get(radio.dataset.qcAnswer);
-            if (!draft) return;
-            draft.answers[radio.dataset.qcQuestion] = Number(radio.value);
-            draft.saved = false;
-            draft.failed = false;
-            draft.revision++;
-            clearNoteTimer(radio.dataset.qcAnswer);
-            refreshReviewState();
-            if (draft.status === 2) persistItem(radio.dataset.qcAnswer);
-        });
-        content.addEventListener("input", event => {
-            const note = event.target.closest("[data-qc-note]");
-            if (!note || !review) return;
-            const draft = drafts.get(note.dataset.qcNote);
-            if (!draft) return;
-            draft.description = note.value;
-            draft.saved = false;
-            draft.failed = false;
-            draft.revision++;
-            clearNoteTimer(note.dataset.qcNote);
-            if (draft.status === 2 && isValid(flatten().find(item => item.factorItemId === note.dataset.qcNote))) {
-                noteTimers.set(note.dataset.qcNote, setTimeout(() => {
-                    noteTimers.delete(note.dataset.qcNote);
-                    persistItem(note.dataset.qcNote);
-                }, 650));
-            }
-            refreshReviewState();
-        });
+
         saveAllButton.addEventListener("click", () => {
             if (!saveAllButton.disabled) saveRemaining(flatten());
         });
         modal.addEventListener("hide.bs.modal", event => {
+            if (issueItemId) {
+                event.preventDefault();
+                closeIssueDialog();
+                return;
+            }
             if (hasUnsavedWork()) {
                 event.preventDefault();
                 return;
             }
             formController?.abort();
+            clearTimeout(itemSearchTimer);
             formGeneration++;
         });
         modal.addEventListener("hidden.bs.modal", () => {
             const editedCustomerId = reviewHasSavedChanges ? String(review?.customerId || "").toLowerCase() : null;
             // Derive the displayed counts from confirmed saves, before clearing modal state.
-            const items = editedCustomerId ? flatten() : [];
-            const reviewed = items.filter(item => {
-                const draft = stateOf(item);
-                return draft?.saved && draft.status !== 0;
-            }).length;
-            const discrepancy = items.filter(item => {
-                const draft = stateOf(item);
-                return draft?.saved && draft.status === 2;
-            }).length;
-            const complete = items.length > 0 && reviewed === items.length;
+            const itemCount = review?.totalItems ?? 0;
+            const reviewed = review?.reviewedItems ?? 0;
+            const discrepancy = review?.discrepancyItems ?? 0;
+            const complete = itemCount > 0 && reviewed === itemCount;
             reviewHasSavedChanges = false;
+            issueItemId = null;
+            issueReturnFocus = null;
+            issueOverlay.hidden = true;
+            issueQuestions.replaceChildren();
             review = null;
             drafts.clear();
             content.replaceChildren();
             summary.replaceChildren();
+            reviewToolbar.hidden = true;
             itemSearch.value = "";
             itemSearchBar.hidden = true;
-            itemSearchEmpty.hidden = true;
+            itemPaging.hidden = true;
+            itemPages.replaceChildren();
+            itemPageLoading = false;
             formFeedback.textContent = "";
 
             if (!editedCustomerId || !isActive()) return;
@@ -1544,16 +1871,17 @@
                     reviewGroup.classList.toggle("qc-client-review-complete", complete);
                     reviewGroup.classList.toggle("qc-client-review-pending", !complete);
                     const summary = reviewGroup.querySelector(".qc-client-count-reviewed");
-                    if (summary) summary.innerHTML = reviewSummaryMarkup(reviewed, items.length, discrepancy);
+                    if (summary) summary.innerHTML = reviewSummaryMarkup(reviewed, itemCount, discrepancy);
                 }
                 card.dataset.qcComplete = String(complete);
                 const button = card.querySelector("[data-qc-customer]");
                 if (button) button.innerHTML = complete
                     ? '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش'
                     : '<i class="fa fa-check-circle" aria-hidden="true"></i> کنترل کیفیت';
+                // Reviewing an item does not reset the customer's recorded contact state.
+                // Only the dedicated contact-status endpoint may change these indicators.
                 card.querySelectorAll("[data-qc-contact]").forEach(button => {
                     button.disabled = complete;
-                    if (reviewed > 0) button.classList.remove("is-selected");
                 });
                 card.classList.add("qc-client-last-checked");
                 // Restart the green fade when this same customer is reviewed again.
@@ -1590,8 +1918,11 @@
             clearInterval(noResponseCooldownTimer);
             listController?.abort();
             formController?.abort();
+            clearTimeout(itemSearchTimer);
             historyController?.abort();
             customerNotesController?.abort();
+            delete window.qcCustomerDateFilterChanged;
+            delete window.qcCustomerDateFilterConfig;
         }, { once: true });
         window.addEventListener("pagehide", () => {
             clearReviewFocus();

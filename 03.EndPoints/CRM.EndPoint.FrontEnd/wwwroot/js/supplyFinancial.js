@@ -112,10 +112,11 @@ async function openSupplyFinancial(sourceId) {
     const loadItemStage = async (data, source, software, refresh = false) => {
         if (refresh || !source.itemOptions) {
             const rows = await request("FinancialOptions", { externalSoftwareId: software.id, items: true }, "GET");
-            if (!rows || signal.aborted || !isModalOpen(wizard)) return;
+            if (!rows || signal.aborted || !isModalOpen(wizard)) return false;
             source.itemOptions = rows.map(searchableOption);
         }
         documentStage(data, source, software);
+        return true;
     };
 
     const missingHistory = (software, entry, receipt) => {
@@ -317,7 +318,7 @@ async function openSupplyFinancial(sourceId) {
 
     const documentStage = (data, source, software) => {
         const { receipt } = data;
-        const { content, toolbar, add, list } = createExternalItemMatching();
+        const { content, toolbar, add, refresh, list } = createExternalItemMatching();
         if (receipt) toolbar.remove();
         const rows = source.items.map(row => {
             const previous = data.items?.find(x => x.supplyFactorItemId === row.id);
@@ -339,6 +340,13 @@ async function openSupplyFinancial(sourceId) {
                 }));
             }
         };
+        if (!receipt) refresh.addEventListener("click", () => {
+            if (busy || !content.isConnected) return;
+            return refreshExternalItemMatching(refresh, () => {
+                captureDraft();
+                return loadItemStage(data, source, software, true);
+            });
+        });
         if (!receipt) add.addEventListener("click", () => openSepidarItemCreation({
             softwareId: software.id,
             softwareTitle: software.title,

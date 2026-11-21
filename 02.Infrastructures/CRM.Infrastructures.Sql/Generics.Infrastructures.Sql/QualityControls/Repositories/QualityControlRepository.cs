@@ -60,9 +60,35 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
-            select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id, DealId = deal.Id, FactorId = factor.Id };
+            select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, ItemId = item.Id,
+                DealId = deal.Id, FactorId = factor.Id, DealCreatedAt = deal.CreateDate };
 
-        var grouped = eligible.GroupBy(item => item.CustomerId).Select(group => new
+        // Global dashboard stats never depend on the selected date range.
+        var allGrouped = eligible.GroupBy(item => item.CustomerId).Select(group => new
+        {
+            CustomerId = group.Key,
+            TotalItems = group.Count(),
+            ReviewedItems = group.Count(item => db.QualityControlItemReviews
+                .Any(review => review.FactorItemId == item.ItemId && review.Status != QualityControlOutcome.NotReviewed)),
+            DiscrepancyItems = group.Count(item => db.QualityControlItemReviews
+                .Any(review => review.FactorItemId == item.ItemId && review.Status == QualityControlOutcome.HasDiscrepancy))
+        });
+        var summaryRows = await (
+            from summaryGroup in allGrouped
+            join customer in db.Customers.AsNoTracking() on summaryGroup.CustomerId equals customer.Id
+            where !customer.IsDeleted
+            select new { summaryGroup.CustomerId, customer.Mobile,
+                summaryGroup.TotalItems, summaryGroup.ReviewedItems, summaryGroup.DiscrepancyItems }
+        ).ToListAsync(cancellationToken);
+
+        // Date filter changes only the queue and its per-customer order/invoice counts.
+        var visible = eligible;
+        if (request.FromGregorian.HasValue)
+            visible = visible.Where(item => item.DealCreatedAt >= request.FromGregorian.Value);
+        if (request.ToGregorianExclusive.HasValue)
+            visible = visible.Where(item => item.DealCreatedAt < request.ToGregorianExclusive.Value);
+
+        var grouped = visible.GroupBy(item => item.CustomerId).Select(group => new
         {
             CustomerId = group.Key,
             Orders = group.Select(item => item.DealId).Distinct().Count(),
@@ -86,7 +112,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                 // Only projected into SQL when the "latest" sort is selected.
                 // Include QC item edits and changes to the customer's contact status.
                 LastReviewModified = (
-                    from invoiceItem in eligible
+                    from invoiceItem in visible
                     join review in db.QualityControlItemReviews.AsNoTracking()
                         on invoiceItem.ItemId equals review.FactorItemId
                     where invoiceItem.CustomerId == groupedItem.CustomerId
@@ -96,12 +122,8 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                     .Where(contact => contact.CustomerId == groupedItem.CustomerId)
                     .Max(contact => contact.ModifyDate)
             };
-        // Summary is global for the eligible QC queue: it is not affected by search,
-        // selected status or pagination. Read one grouped row per customer, not every item.
-        var summaryRows = await customers.Select(row => new
-        {
-            row.CustomerId, row.Mobile, row.TotalItems, row.ReviewedItems, row.DiscrepancyItems
-        }).ToListAsync(cancellationToken);
+        // Summary rows have already been read from all eligible orders above,
+        // independently of date, status, search and pagination.
         var total = summaryRows.Count;
         var customerIds = summaryRows.Select(row => row.CustomerId).ToArray();
         var contacts = await db.QualityControlCustomerContacts.AsNoTracking()
@@ -255,7 +277,14 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             recentAttempts.TryGetValue(row.CustomerId, out var lastAttempt)
                 ? CooldownRemaining(lastAttempt, now) : 0,
             historyCounts.GetValueOrDefault(row.CustomerId))
-            { HasNotes = customersWithNotes.Contains(row.CustomerId) }).ToList();
+            {
+                HasNotes = customersWithNotes.Contains(row.CustomerId),
+                HasNoResponse = contacts.TryGetValue(row.CustomerId, out var savedContact)
+                    && savedContact.NoResponseAttempts > 0,
+                IsInvalidNumber = contactStatuses.GetValueOrDefault(row.CustomerId)
+                    == QualityControlCustomerContactStatus.InvalidNumber,
+                HasContactHistory = historyCounts.GetValueOrDefault(row.CustomerId) > 0
+            }).ToList();
         return new(total, filtered, data, summary);
     }
 
@@ -265,7 +294,9 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     {
         if (request.CustomerId == Guid.Empty ||
             request.Status is not (QualityControlCustomerContactStatus.NoResponse
-                or QualityControlCustomerContactStatus.InvalidNumber))
+                or QualityControlCustomerContactStatus.InvalidNumber)
+            || (request.ConfirmCorrectedNumber
+                && request.Status != QualityControlCustomerContactStatus.InvalidNumber))
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
         // Use the same eligibility/role scope as the customer QC queue.
@@ -316,11 +347,20 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         var currentStatus = contact?.IsDeleted == false
             ? CurrentContactStatus(contact, mobile, now.Date, 1)
             : QualityControlCustomerContactStatus.None;
+        // A stale confirmation must never turn an invalid marker back on.
+        if (request.ConfirmCorrectedNumber
+            && (contact == null || contact.IsDeleted
+                || contact.Status != QualityControlCustomerContactStatus.InvalidNumber))
+            return new(409, "وضعیت شماره تماس تغییر کرده است. فهرست مشتریان را تازه کنید.",
+                currentStatus);
+
         // Every no-response click is a separate contact attempt, even on the same day.
         // Only the invalid-number flag can be toggled off by clicking it again.
-        var nextStatus = request.Status == QualityControlCustomerContactStatus.NoResponse
-            ? QualityControlCustomerContactStatus.NoResponse
-            : currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
+        var nextStatus = request.ConfirmCorrectedNumber
+            ? QualityControlCustomerContactStatus.None
+            : request.Status == QualityControlCustomerContactStatus.NoResponse
+                ? QualityControlCustomerContactStatus.NoResponse
+                : currentStatus == request.Status ? QualityControlCustomerContactStatus.None : request.Status;
         if (contact == null)
         {
             contact = new QualityControlCustomerContact
@@ -356,8 +396,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             Status = nextStatus,
             AttemptCount = nextStatus == QualityControlCustomerContactStatus.NoResponse ? 1 : 0,
             MobileAtAttempt = (mobile ?? "").Trim(),
-            Description = nextStatus == QualityControlCustomerContactStatus.None
-                ? "لغو وضعیت تماس ثبت‌شده" : null
+            Description = request.ConfirmCorrectedNumber
+                ? "تأیید اصلاح شماره نامعتبر پیش از کنترل کیفیت"
+                : nextStatus == QualityControlCustomerContactStatus.None
+                    ? "لغو وضعیت تماس ثبت‌شده" : null
         };
         Stamp(history, access, now, persianNow, true);
         db.QualityControlContactHistories.Add(history);
@@ -379,12 +421,140 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         {
             QualityControlCustomerContactStatus.NoResponse => "عدم پاسخ ثبت شد؛ مشتری فردا دوباره در صف بررسی قرار می‌گیرد.",
             QualityControlCustomerContactStatus.InvalidNumber => "شماره نامعتبر مشتری ثبت شد.",
-            _ => "وضعیت تماس مشتری پاک شد."
+            _ => request.ConfirmCorrectedNumber
+                ? "اصلاح شماره تأیید شد و وضعیت شماره نامعتبر پاک شد."
+                : "وضعیت تماس مشتری پاک شد."
         }, nextStatus);
     }
 
+    // Filter, sort and paginate in SQL; enrich supplier and review details for the selected page only.
     public async Task<QualityControlCustomerForm?> GetCustomerFormAsync(
-        Guid customerId, QualityControlAccess access, CancellationToken cancellationToken)
+        Guid customerId, QualityControlItemPageRequest request, QualityControlAccess access,
+        CancellationToken cancellationToken)
+    {
+        var eligible =
+            from item in db.FactorItems.AsNoTracking()
+            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
+            join saved in db.QualityControlItemReviews.AsNoTracking()
+                on item.Id equals saved.FactorItemId into itemReviews
+            from saved in itemReviews.DefaultIfEmpty()
+            where (factor.CustomerId ?? deal.CustomerId) == customerId
+                && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
+                && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
+                && factor.status == FactorStatus.تایید_شده && !factor.Returned
+            select new
+            {
+                Item = item, Factor = factor, Deal = deal,
+                ReviewStatus = saved == null ? 0 : (int)saved.Status
+            };
+
+        var totals = await eligible.GroupBy(item => 1).Select(group => new
+        {
+            Total = group.Count(),
+            Reviewed = group.Count(item => item.ReviewStatus != 0),
+            Discrepancies = group.Count(item => item.ReviewStatus == 2),
+            Orders = group.Select(item => item.Deal.Id).Distinct().Count(),
+            Invoices = group.Select(item => item.Factor.Id).Distinct().Count()
+        }).FirstOrDefaultAsync(cancellationToken);
+        if (totals == null || totals.Total == 0) return null;
+
+        var filtered = eligible;
+        if (request.Status.HasValue)
+        {
+            var status = request.Status.Value;
+            filtered = filtered.Where(item => item.ReviewStatus == status);
+        }
+
+        var search = request.Search?.Trim();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = "%" + search.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+            var isSerial = int.TryParse(search, out var serial);
+            filtered = filtered.Where(row =>
+                (isSerial && (row.Deal.SerialNumber == serial || row.Factor.SerialNumber == serial))
+                || (row.Item.ProductSmallName != null && EF.Functions.Like(row.Item.ProductSmallName, pattern))
+                || (row.Item.Product != null && EF.Functions.Like(row.Item.Product, pattern))
+                || (row.Item.WeightCount != null && EF.Functions.Like(row.Item.WeightCount, pattern))
+                || (row.Item.SupplierName != null && EF.Functions.Like(row.Item.SupplierName, pattern))
+                || (row.Factor.UserTaminTxt != null && EF.Functions.Like(row.Factor.UserTaminTxt, pattern))
+                || db.PreFactors.AsNoTracking().Any(preFactor =>
+                    preFactor.Id == row.Factor.PfactorID
+                    && preFactor.UserTaminTxt != null && EF.Functions.Like(preFactor.UserTaminTxt, pattern))
+                || (row.Item.PfItemId.HasValue && db.Supplies.AsNoTracking().Any(supply =>
+                    supply.PfItemId == row.Item.PfItemId && !supply.IsDeleted
+                    && supply.SupplierTxt != null && EF.Functions.Like(supply.SupplierTxt, pattern))));
+        }
+        var filteredCount = await filtered.CountAsync(cancellationToken);
+        var ordered = request.Sort switch
+        {
+            "invoice" => request.Descending
+                ? filtered.OrderByDescending(row => row.Factor.SerialNumber)
+                : filtered.OrderBy(row => row.Factor.SerialNumber),
+            "product" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.ProductSmallName ?? row.Item.Product)
+                : filtered.OrderBy(row => row.Item.ProductSmallName ?? row.Item.Product),
+            "quantity" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.WeightCount)
+                : filtered.OrderBy(row => row.Item.WeightCount),
+            "supplier" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.SupplierName)
+                : filtered.OrderBy(row => row.Item.SupplierName),
+            "expert" => request.Descending
+                ? filtered.OrderByDescending(row => row.Factor.UserTaminTxt)
+                : filtered.OrderBy(row => row.Factor.UserTaminTxt),
+            "status" => request.Descending
+                ? filtered.OrderByDescending(row => row.ReviewStatus)
+                : filtered.OrderBy(row => row.ReviewStatus),
+            "row" => request.Descending
+                ? filtered.OrderByDescending(row => row.Item.Row)
+                : filtered.OrderBy(row => row.Item.Row),
+            _ => request.Descending
+                ? filtered.OrderByDescending(row => row.Deal.SerialNumber)
+                : filtered.OrderBy(row => row.Deal.SerialNumber)
+        };
+        var selectedQuery = ordered.ThenByDescending(row => row.Factor.SerialNumber)
+            .ThenBy(row => row.Item.Row).ThenBy(row => row.Item.Id)
+            .Select(row => row.Item.Id);
+
+        var start = request.Length == 0 || filteredCount == 0 ? 0
+            : Math.Min(request.Start, (filteredCount - 1) / request.Length * request.Length);
+        var idsQuery = selectedQuery.Skip(start);
+        if (request.Length > 0) idsQuery = idsQuery.Take(request.Length);
+        var selectedIds = await idsQuery.ToArrayAsync(cancellationToken);
+
+        var form = selectedIds.Length == 0
+            ? null
+            : await GetCustomerFormSubsetAsync(customerId, selectedIds, access, cancellationToken);
+        if (form == null)
+        {
+            var customer = await db.Customers.AsNoTracking()
+                .Where(item => item.Id == customerId && !item.IsDeleted)
+                .Select(item => new { item.Id, item.CompanyName, item.AgentName, item.CustomerCode, item.Mobile })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (customer == null) return null;
+            form = new QualityControlCustomerForm(customer.Id,
+                !string.IsNullOrWhiteSpace(customer.CompanyName) ? customer.CompanyName : customer.AgentName,
+                customer.CustomerCode, customer.Mobile, customer.AgentName,
+                Array.Empty<QualityControlCustomerOrder>(), await GetQuestionsAsync(cancellationToken));
+        }
+
+        return form with
+        {
+            Start = start,
+            Length = request.Length,
+            FilteredItems = filteredCount,
+            TotalItems = totals.Total,
+            ReviewedItems = totals.Reviewed,
+            DiscrepancyItems = totals.Discrepancies,
+            NoDiscrepancyItems = totals.Reviewed - totals.Discrepancies,
+            OrdersCount = totals.Orders,
+            InvoicesCount = totals.Invoices
+        };
+    }
+
+    private async Task<QualityControlCustomerForm?> GetCustomerFormSubsetAsync(
+        Guid customerId, Guid[] selectedIds, QualityControlAccess access, CancellationToken cancellationToken)
     {
         var customer = await db.Customers.AsNoTracking().Where(item => item.Id == customerId && !item.IsDeleted)
             .Select(item => new { item.Id, item.CompanyName, item.AgentName, item.CustomerCode, item.Mobile })
@@ -397,6 +567,7 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == customerId
+                && selectedIds.Contains(item.Id)
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                 && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                 && factor.status == FactorStatus.تایید_شده && !factor.Returned
@@ -511,9 +682,16 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
                                 item.Product, item.WeightCount, item.UnitTxt, supplierNames, supplyExpert,
                                 status, review?.Description, review?.RowVersion, savedQuestions);
                         }).ToList())).ToList())).ToList();
-        return new(customer.Id, !string.IsNullOrWhiteSpace(customer.CompanyName)
-            ? customer.CompanyName : customer.AgentName, customer.CustomerCode, customer.Mobile,
-            customer.AgentName, orders, questions);
+        var rowsById = orders.SelectMany(order => order.Invoices.SelectMany(invoice =>
+                invoice.Items.Select(item => new QualityControlCustomerItemRow(
+                    order.SerialNumber, invoice.SerialNumber, invoice.Date, item))))
+            .ToDictionary(row => row.Item.FactorItemId);
+        return new QualityControlCustomerForm(customer.Id,
+            !string.IsNullOrWhiteSpace(customer.CompanyName) ? customer.CompanyName : customer.AgentName,
+            customer.CustomerCode, customer.Mobile, customer.AgentName, orders, questions)
+        {
+            Data = selectedIds.Where(rowsById.ContainsKey).Select(id => rowsById[id]).ToList()
+        };
     }
 
     public async Task<SaveQualityControlItemsResult> SaveItemsAsync(
