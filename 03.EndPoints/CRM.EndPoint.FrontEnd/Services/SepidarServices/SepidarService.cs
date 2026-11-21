@@ -1719,6 +1719,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.InvoiceId == id),
 
+            "ReceiptHeader" => await FindDepositDocumentAsync(false, id, default) != null,
+            "DebitCreditNote" => await FindDepositDocumentAsync(true, id, default) != null,
+            "BankAccount" => await sepidarContext.SepidarBankAccounts.AnyAsync(x => x.BankAccountId == id),
             nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryPurchaseInvoice) =>
                 await sepidarContext.InventoryPurchaseInvoices.AnyAsync(x => x.InventoryPurchaseInvoiceID == id && x.Type == 1),
 

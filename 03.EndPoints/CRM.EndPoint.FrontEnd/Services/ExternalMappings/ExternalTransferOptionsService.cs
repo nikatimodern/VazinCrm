@@ -53,6 +53,8 @@ public sealed class ExternalTransferOptionsService(
                 new(nameof(Cash), CleanupMissingCashDocuments: true),
             [ExternalMappingTypeEnum.پیش_فاکتور] = new(nameof(PreFactor), AllowedRoles: FinancialRoles),
             [ExternalMappingTypeEnum.فاکتور] = new(nameof(Factor), AllowedRoles: FinancialRoles),
+            [ExternalMappingTypeEnum.واریزی] = new(nameof(CRM.Core.Domain.Accountancies.Entities.Accountancy),
+                AllowedRoles: FinancialRoles, SupportedDestinationsOnly: true),
             [ExternalMappingTypeEnum.فاکتور_خرید] = new(nameof(SupplyFactor),
                 AllowedRoles: FinancialRoles,
                 SupportedDestinationsOnly: true),

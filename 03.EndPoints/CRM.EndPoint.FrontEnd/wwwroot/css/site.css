@@ -7159,6 +7159,12 @@ table tr.payment-vosoled > td {
 	white-space: nowrap;
 }
 
+#depositFinancialWizard .bank-option .title,
+#depositFinancialWizard .bank-option .details {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
 
 /* badge */
 .bank-badge {
@@ -8793,7 +8799,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	overflow-wrap: anywhere;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number {
 	box-sizing: border-box;
 	width: 86px;
 	min-width: 0;
@@ -8810,12 +8816,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	box-shadow: none;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number::placeholder {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number::placeholder {
 	color: #788781;
 	opacity: 1;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number:focus {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number:focus {
 	border-color: #04857c;
 	box-shadow: 0 0 0 1px rgba(4, 133, 124, .12);
 }

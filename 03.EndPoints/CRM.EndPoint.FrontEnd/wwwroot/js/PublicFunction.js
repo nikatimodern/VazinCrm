@@ -419,7 +419,7 @@ function renderExternalFinancialPreview({ fields, columns, rows, totals }) {
         </div>
         <div class="external-mapping-entity mt-3">${totals.map(([label, value], index) => {
             const last = index === totals.length - 1;
-            return `${last ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
+            return `${last && totals.length > 1 ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
                 ${last ? `<strong>${escapeHtml(label)}</strong>` : `<span>${escapeHtml(label)}</span>`}
                 <strong>${renderMoneyHtml(value)}</strong>
             </div>`;

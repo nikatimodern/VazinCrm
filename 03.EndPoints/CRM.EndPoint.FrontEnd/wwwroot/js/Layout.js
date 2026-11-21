@@ -1947,6 +1947,9 @@ const buildBankAccountUi = (item) => {
         
         details: [
             item.bankName ? `بانک: ${item.bankName}` : null,
+            item.accountOwner && item.accountOwner !== item.accountName ? `صاحب حساب: ${item.accountOwner}` : null,
+            item.branchName ? `شعبه: ${item.branchName}` : null,
+            item.dlCode ? `تفصیلی: ${item.dlCode}` : null,
             item.accountNumber ? `حساب: ${item.accountNumber}` : null,
             item.cartNumber ? `کارت: ${item.cartNumber}` : null,
             item.shebaNumber ? `شبا: ${item.shebaNumber}` : null,
@@ -1961,7 +1964,7 @@ const buildBankAccountUi = (item) => {
 };
 
 
-const createSupplierTomSelect = (element, items, selectedId = null) => {
+const createSupplierTomSelect = (element, items, selectedId = null, { showOfficial = true } = {}) => {
     
     if (element.tomselect) {
         element.tomselect.destroy();
@@ -1980,14 +1983,17 @@ const createSupplierTomSelect = (element, items, selectedId = null) => {
                 officialText: ui.officialText,
                 isOfficial: ui.isOfficial,
                 
-                search: `
+                search: normalizePersianText(`
                     ${ui.title}
                     ${ui.details}
-                    ${ui.officialText}
-                `,
+                    ${showOfficial ? ui.officialText : ""}
+                `),
             };
         }),
         searchField: ["search"],
+        score(query) {
+            return this.getScoreFunction(normalizePersianText(query));
+        },
         //labelField: ["title"],
         placeholder: "جستجو و انتخاب حساب مقصد",
         
@@ -2003,9 +2009,9 @@ const createSupplierTomSelect = (element, items, selectedId = null) => {
                             ${escape(data.title)}
                         </div>
 
-                        <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                        ${showOfficial ? `<div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
                             ${escape(data.officialText)}
-                        </div>
+                        </div>` : ""}
                     </div>
 
                     ${data.details ? `<div class="details">${escape(data.details)}</div>` : ""}
@@ -2018,9 +2024,9 @@ const createSupplierTomSelect = (element, items, selectedId = null) => {
                         ${escape(data.text)}
                     </div>
 
-                    <div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
+                    ${showOfficial ? `<div class="bank-badge ${!data.isOfficial ? "unofficial" : ""}">
                         ${escape(data.officialText)}
-                    </div>
+                    </div>` : ""}
                 </div>
             `,
         },
@@ -2029,6 +2035,7 @@ const createSupplierTomSelect = (element, items, selectedId = null) => {
     if (selectedId != null) {
         element.tomselect.setValue(String(selectedId), true);
     }
+    return element.tomselect;
 };
 
 

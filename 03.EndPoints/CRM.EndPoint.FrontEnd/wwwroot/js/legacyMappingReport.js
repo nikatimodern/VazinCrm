@@ -510,7 +510,7 @@
                     ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
                         (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
                     : "") +
-                (row.status === "saved" && row.mappingId
+                (row.status === "saved" && row.mappingId && manualEntityTypes[Number(row.mapType)]
                     ? '<span class="lmr-saved-actions">' +
                         '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
@@ -1447,7 +1447,7 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.forEach(item =>
+            state.types.filter(item => manualEntityTypes[Number(item.value)]).forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
             manualType.value = isEdit ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.

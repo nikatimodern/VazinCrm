@@ -98,6 +98,17 @@
                                     <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                                 }
 
+                                @if (Model.PassType == 55 && (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
+                                    User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی")) &&
+                                    item.AccType == AcEnum.واریزی && item.Status == AccStatusEnum.تایید_شده &&
+                                    (item.PayType is PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری))
+                                {
+                                    <button type="button" class="inline-flex-center" title="ارتباط مالی" aria-label="ارتباط مالی"
+                                            onclick="openDepositFinancial('@item.Id')">
+                                        <i class="fas fa-link" aria-hidden="true"></i>
+                                    </button>
+                                }
+
                                 @if (canVosol) {
                                     var isTransfered = (item.AccountancyTransfer != null).ToString().ToLower();
                                     <button class="buttonBlue2" style="padding: 2px 6px !important" onclick="ShowVosolInvoiceModal('@item.Id', '@item.pfid', @((int)item.PayType), @isTransfered)">

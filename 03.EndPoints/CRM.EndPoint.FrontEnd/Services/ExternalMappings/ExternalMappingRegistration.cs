@@ -240,6 +240,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (mapping.HasPendingExternalId())
                 throw new MappingConflictException("ثبت این ارتباط هنوز نهایی نشده است.");
 
+            if (mapping.MapType == ExternalMappingTypeEnum.واریزی)
+                throw new MappingConflictException("سابقه انتقال واریزی را از ارتباط مالی همان واریزی مدیریت کنید.");
+
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))
             {
