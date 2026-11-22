@@ -1270,9 +1270,11 @@
                 const item = text("div", null, "ac-user-permission-item");
                 item.dataset.userPermissionId = permission.id;
                 const title = text("div", null, "ac-user-permission-title");
-                const kind = permission.key.toLowerCase();
+                // Permission keys may be stored as "Create" or "Customer.Create".
+                // Use the final segment so every CRUD icon is shown correctly.
+                const kind = String(permission.key || "").split(".").pop().trim().toLowerCase();
                 const iconName = kind === "view" ? "fa-eye" :
-                    kind === "create" ? "fa-plus-circle" :
+                    kind === "create" ? "fa-plus" :
                     kind === "edit" ? "fa-pen" :
                     kind === "delete" ? "fa-trash-alt" : "fa-key";
                 title.append(text("i", null, "fas " + iconName),
