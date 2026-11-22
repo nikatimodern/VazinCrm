@@ -149,10 +149,14 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             foreach (var item in current)
             {
                 if (requested.Remove(item.AccessPermissionId, out var desired))
+                {
                     item.IsAllowed = desired.IsAllowed;
                     item.Scope = desired.Scope;
+                }
                 else
+                {
                     db.AccessUserPermissions.Remove(item);
+                }
             }
             foreach (var pair in requested)
                 db.AccessUserPermissions.Add(new AccessUserPermission
