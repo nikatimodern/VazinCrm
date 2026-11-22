@@ -448,3 +448,61 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 .erp-settings-favorite-button { width:34px; flex:0 0 34px; border:1px solid #d8e8e3; border-radius:8px; background:#eff8f5; color:#718b85; display:grid; place-items:center; cursor:pointer; }
 .erp-settings-favorite-button:hover, .erp-settings-favorite-button.is-favorite { color:#098472; background:#e0f5ed; border-color:#9fd9c7; }
 .erp-settings-favorite-button svg { width:17px; height:17px; }
+
+/* RTL sidebar alignment: use the right edge for every navigation item.
+   Keep the mobile bottom bar centered and the favorites star on the left. */
+#desktopNavbar,
+#mobileDrawerNavbar,
+#desktopFixedActions,
+#mobileDrawerFixedActions {
+    direction: rtl;
+    text-align: right;
+}
+#desktopNavbar > .menu-list,
+#mobileDrawerNavbar > .menu-list {
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .has-submenu,
+#mobileDrawerNavbar .has-submenu,
+#desktopNavbar .menu-entry,
+#mobileDrawerNavbar .menu-entry,
+#desktopNavbar .menu-favorites-panel,
+#mobileDrawerNavbar .menu-favorites-panel {
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .menu-item,
+#mobileDrawerNavbar .menu-item,
+#desktopFixedActions .menu-item,
+#mobileDrawerFixedActions .menu-item {
+    direction: rtl;
+    display: flex;
+    justify-content: flex-start;
+    text-align: right;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .menu-item > .menu-icon-frame,
+#mobileDrawerNavbar .menu-item > .menu-icon-frame,
+#desktopFixedActions .menu-item > .menu-icon-frame,
+#mobileDrawerFixedActions .menu-item > .menu-icon-frame {
+    flex: 0 0 auto;
+}
+#desktopNavbar .menu-item > .menu-item-title,
+#mobileDrawerNavbar .menu-item > .menu-item-title,
+#desktopFixedActions .menu-item > .menu-item-title,
+#mobileDrawerFixedActions .menu-item > .menu-item-title {
+    direction: rtl;
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#desktopNavbar .menu-item-title > span:first-child,
+#mobileDrawerNavbar .menu-item-title > span:first-child,
+#desktopFixedActions .menu-item-title > span:first-child,
+#mobileDrawerFixedActions .menu-item-title > span:first-child {
+    text-align: right;
+}
