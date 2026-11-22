@@ -13,9 +13,17 @@ public sealed class AccessCatalogConflictException : Exception
 }
 
 
-public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed);
+public static class AccessScopes
+{
+    public const byte None = 0;
+    public const byte Own = 1;
+    public const byte All = 2;
+    public static bool IsGrant(byte scope) => scope is Own or All;
+}
+public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.All);
+public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId, byte Scope = AccessScopes.All);
+public sealed record AccessRoleGrantDraft(Guid AccessPermissionId, byte Scope);
 public sealed record AccessUserState(string UserId, IReadOnlyList<string> RoleIds, IReadOnlyList<AccessUserOverride> Overrides);
-public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId);
 public sealed record AccessUserWriteResult(bool Success, bool NotFound = false, string? Error = null);
 
 public interface IAccessCatalogRepository
@@ -32,8 +40,10 @@ public interface IAccessCatalogRepository
     Task<AccessUserWriteResult> ReplaceUserAccessAsync(
         string userId, IReadOnlyCollection<string> roleIds, IReadOnlyCollection<AccessUserOverride> overrides,
         IReadOnlyCollection<Guid> activePermissionIds, CancellationToken ct);
-    Task<IReadOnlyList<Guid>> GetRolePermissionIdsAsync(string roleId, CancellationToken ct);
-    Task ReplaceActiveRolePermissionsAsync(string roleId, IReadOnlyCollection<Guid> activePermissionIds, IReadOnlyCollection<Guid> chosenIds, CancellationToken ct);
+    Task<IReadOnlyList<AccessRoleGrant>> GetRolePermissionGrantsAsync(string roleId, CancellationToken ct);
+    Task ReplaceActiveRolePermissionsAsync(string roleId, IReadOnlyCollection<Guid> activePermissionIds,
+        IReadOnlyCollection<AccessRoleGrantDraft> chosen, CancellationToken ct);
+    Task<bool> HasOwnScopeAssignmentsAsync(Guid permissionId, CancellationToken ct);
     void Add(AccessEntity entity);
     void Add(AccessPermission permission);
     void Remove(AccessEntity entity);

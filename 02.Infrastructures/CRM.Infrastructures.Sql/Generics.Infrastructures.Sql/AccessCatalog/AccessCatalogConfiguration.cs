@@ -1,4 +1,5 @@
 using CRM.Core.Domain.AccessCatalog.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +33,7 @@ public sealed class AccessPermissionConfiguration : IEntityTypeConfiguration<Acc
         permission.Property(x => x.Key).IsRequired().HasMaxLength(64);
         permission.Property(x => x.Title).IsRequired().HasMaxLength(150);
         permission.Property(x => x.Description).HasMaxLength(1000);
+        permission.Property(x => x.SupportsScope).HasDefaultValue(false);
         permission.HasIndex(x => new { x.AccessEntityId, x.Key }).IsUnique();
     }
 }
@@ -43,6 +45,7 @@ public sealed class AccessRolePermissionConfiguration : IEntityTypeConfiguration
         entity.ToTable("AccessRolePermissions");
         entity.HasKey(x => new { x.RoleId, x.AccessPermissionId });
         entity.Property(x => x.RoleId).IsRequired().HasMaxLength(450);
+        entity.Property(x => x.Scope).HasColumnType("tinyint").HasDefaultValue(AccessScopes.All);
         entity.HasIndex(x => x.AccessPermissionId);
         entity.HasOne(x => x.AccessPermission).WithMany()
             .HasForeignKey(x => x.AccessPermissionId).OnDelete(DeleteBehavior.Restrict);
@@ -58,6 +61,7 @@ public sealed class AccessUserPermissionConfiguration : IEntityTypeConfiguration
         entity.ToTable("AccessUserPermissions");
         entity.HasKey(x => new { x.UserId, x.AccessPermissionId });
         entity.Property(x => x.UserId).IsRequired().HasMaxLength(450);
+        entity.Property(x => x.Scope).HasColumnType("tinyint").HasDefaultValue(AccessScopes.All);
         entity.HasIndex(x => x.AccessPermissionId);
         entity.HasOne(x => x.AccessPermission).WithMany()
             .HasForeignKey(x => x.AccessPermissionId).OnDelete(DeleteBehavior.Restrict);

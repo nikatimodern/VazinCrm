@@ -62,6 +62,7 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
                     b.Property<string>("Description").HasMaxLength(1000).HasColumnType("nvarchar(1000)");
                     b.Property<bool>("IsActive").HasColumnType("bit");
+                    b.Property<bool>("SupportsScope").HasColumnType("bit").HasDefaultValue(false);
                     b.Property<string>("Key").IsRequired().HasMaxLength(64).HasColumnType("nvarchar(64)");
                     b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
                     b.HasKey("Id");
@@ -73,6 +74,7 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                 {
                     b.Property<string>("RoleId").HasMaxLength(450).HasColumnType("nvarchar(450)");
                     b.Property<Guid>("AccessPermissionId").HasColumnType("uniqueidentifier");
+                    b.Property<byte>("Scope").HasColumnType("tinyint").HasDefaultValue((byte)2);
                     b.HasKey("RoleId", "AccessPermissionId");
                     b.HasIndex("AccessPermissionId");
                     b.ToTable("AccessRolePermissions");
@@ -83,6 +85,7 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.Property<string>("UserId").HasMaxLength(450).HasColumnType("nvarchar(450)");
                     b.Property<Guid>("AccessPermissionId").HasColumnType("uniqueidentifier");
                     b.Property<bool>("IsAllowed").HasColumnType("bit");
+                    b.Property<byte>("Scope").HasColumnType("tinyint").HasDefaultValue((byte)2);
                     b.HasKey("UserId", "AccessPermissionId");
                     b.HasIndex("AccessPermissionId");
                     b.ToTable("AccessUserPermissions");

@@ -39,15 +39,19 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
         await db.AccessRolePermissions.AnyAsync(x => x.AccessPermissionId == permissionId, ct) ||
         await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId, ct);
 
-    public async Task<IReadOnlyList<Guid>> GetRolePermissionIdsAsync(string roleId, CancellationToken ct) =>
+    public async Task<IReadOnlyList<AccessRoleGrant>> GetRolePermissionGrantsAsync(string roleId, CancellationToken ct) =>
         await db.AccessRolePermissions.AsNoTracking()
             .Where(x => x.RoleId == roleId)
-            .Select(x => x.AccessPermissionId).ToArrayAsync(ct);
+            .Select(x => new AccessRoleGrant(x.RoleId, x.AccessPermissionId, x.Scope)).ToArrayAsync(ct);
+
+    public async Task<bool> HasOwnScopeAssignmentsAsync(Guid permissionId, CancellationToken ct) =>
+        await db.AccessRolePermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.Scope == AccessScopes.Own, ct) ||
+        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.IsAllowed && x.Scope == AccessScopes.Own, ct);
 
     // Update only active permissions. Disabled permissions retain their historical associations
     // but are not editable/grantable from this screen.
     public async Task ReplaceActiveRolePermissionsAsync(string roleId, IReadOnlyCollection<Guid> activePermissionIds,
-        IReadOnlyCollection<Guid> chosenIds, CancellationToken ct)
+        IReadOnlyCollection<AccessRoleGrantDraft> chosen, CancellationToken ct)
     {
         // UserContextDb enables SQL Server retry; a manual transaction must run inside its execution strategy.
         var strategy = db.Database.CreateExecutionStrategy();
@@ -57,14 +61,22 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             db.ChangeTracker.Clear();
             await using var transaction = await db.Database.BeginTransactionAsync(ct);
             var active = activePermissionIds.ToArray();
-            var desired = chosenIds.ToHashSet();
+            var desired = chosen.ToDictionary(x => x.AccessPermissionId, x => x.Scope);
             var existing = await db.AccessRolePermissions
                 .Where(x => x.RoleId == roleId && active.Contains(x.AccessPermissionId))
                 .ToListAsync(ct);
             var present = existing.Select(x => x.AccessPermissionId).ToHashSet();
-            db.AccessRolePermissions.RemoveRange(existing.Where(x => !desired.Contains(x.AccessPermissionId)));
-            foreach (var id in desired.Where(id => !present.Contains(id)))
-                db.AccessRolePermissions.Add(new AccessRolePermission { RoleId = roleId, AccessPermissionId = id });
+            foreach (var existingGrant in existing)
+            {
+                if (desired.TryGetValue(existingGrant.AccessPermissionId, out var scope))
+                    existingGrant.Scope = scope;
+                else db.AccessRolePermissions.Remove(existingGrant);
+            }
+            foreach (var item in chosen.Where(x => !present.Contains(x.AccessPermissionId)))
+                db.AccessRolePermissions.Add(new AccessRolePermission
+                {
+                    RoleId = roleId, AccessPermissionId = item.AccessPermissionId, Scope = item.Scope
+                });
             try { await db.SaveChangesAsync(ct); }
             catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number is 2601 or 2627 or 547)
             {
@@ -83,14 +95,14 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             .Where(x => x.UserId == userId).Select(x => x.RoleId).ToArrayAsync(ct);
         var overrides = await db.AccessUserPermissions.AsNoTracking()
             .Where(x => x.UserId == userId)
-            .Select(x => new AccessUserOverride(x.AccessPermissionId, x.IsAllowed)).ToArrayAsync(ct);
+            .Select(x => new AccessUserOverride(x.AccessPermissionId, x.IsAllowed, x.Scope)).ToArrayAsync(ct);
         return new AccessUserState(userId, roles, overrides);
     }
 
     public async Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct) =>
         await db.AccessRolePermissions.AsNoTracking()
             .Where(x => x.AccessPermission.IsActive && x.AccessPermission.AccessEntity.IsActive)
-            .Select(x => new AccessRoleGrant(x.RoleId, x.AccessPermissionId))
+            .Select(x => new AccessRoleGrant(x.RoleId, x.AccessPermissionId, x.Scope))
             .ToArrayAsync(ct);
 
     public async Task<AccessUserWriteResult> ReplaceUserAccessAsync(
@@ -138,13 +150,15 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             {
                 if (requested.Remove(item.AccessPermissionId, out var desired))
                     item.IsAllowed = desired.IsAllowed;
+                    item.Scope = desired.Scope;
                 else
                     db.AccessUserPermissions.Remove(item);
             }
             foreach (var pair in requested)
                 db.AccessUserPermissions.Add(new AccessUserPermission
                 {
-                    UserId = userId, AccessPermissionId = pair.Key, IsAllowed = pair.Value.IsAllowed
+                    UserId = userId, AccessPermissionId = pair.Key, IsAllowed = pair.Value.IsAllowed,
+                    Scope = pair.Value.Scope
                 });
 
             try

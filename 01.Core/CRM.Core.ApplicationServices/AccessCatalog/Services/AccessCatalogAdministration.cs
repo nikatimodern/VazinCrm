@@ -7,13 +7,13 @@ using CRM.Core.ApplicationServices.Security;
 namespace CRM.Core.ApplicationServices.AccessCatalog.Services;
 
 public sealed record AccessEntityDraft(string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive);
-public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive);
+public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive, bool SupportsScope);
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
-public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive);
+public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive, bool SupportsScope);
 public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null, string? UserId = null);
-public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title);
+public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title, bool SupportsScope);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
-public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds);
+public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds, AccessRoleGrantDraft[]? Scopes);
 public sealed record AccessRoleDraft(string? RoleId, string? Name, string? ExpectedName);
 public sealed record AccessRoleDeleteDraft(string? RoleId, string? ExpectedName,
     string? Revision, RoleRemovalChoice[]? Decisions);
@@ -184,6 +184,11 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var overrideIds = draft.Overrides.Select(x => x.AccessPermissionId).ToArray();
         if (overrideIds.Distinct().Count() != overrideIds.Length || overrideIds.Any(id => !permissionIds.Contains(id)))
             return new(400, "یک یا چند دسترسی اختصاصی تکراری یا نامعتبر است.");
+        var scopedPermissions = (await repository.ListAsync(ct)).SelectMany(e => e.Permissions)
+            .Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
+        if (draft.Overrides.Any(x => !AccessScopes.IsGrant(x.Scope) ||
+             (x.IsAllowed && x.Scope == AccessScopes.Own && !scopedPermissions.Contains(x.AccessPermissionId))))
+            return new(400, "محدوده اختصاصی برای یک یا چند مجوز معتبر نیست.");
 
         // An administrator must not accidentally remove their own Admin role.
         if (string.Equals(draft.UserId, actorId, StringComparison.Ordinal))
@@ -214,15 +219,15 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         (await repository.ListAsync(ct)).Where(e => e.IsActive).OrderBy(e => e.Title)
             .Select(e => new RoleAccessEntityInfo(e.Id, e.Key, e.Title,
                 e.Permissions.Where(p => p.IsActive).OrderBy(p => p.Title)
-                    .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title))
+                    .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title, p.SupportsScope))
                     .ToArray())).ToArray();
 
-    public async Task<IReadOnlyList<Guid>?> RolePermissionsAsync(string roleId, CancellationToken ct)
+    public async Task<IReadOnlyList<AccessRoleGrant>?> RolePermissionsAsync(string roleId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(roleId) ||
             !(await adminUsers.GetRolesAsync(ct)).Any(r => r.Id == roleId))
             return null;
-        return await repository.GetRolePermissionIdsAsync(roleId, ct);
+        return await repository.GetRolePermissionGrantsAsync(roleId, ct);
     }
 
     public async Task<AccessCatalogResult> SaveRolePermissionsAsync(RolePermissionsSaveDraft? draft, CancellationToken ct)
@@ -238,9 +243,19 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var requested = draft.PermissionIds.ToHashSet();
         if (requested.Count != draft.PermissionIds.Length || requested.Any(id => !activeIds.Contains(id)))
             return new(400, "یک یا چند دسترسی تکراری، غیرفعال یا نامعتبر است.");
+        // Legacy callers omit Scopes; their selected grants remain unrestricted.
+        var choices = draft.Scopes ?? requested.Select(id => new AccessRoleGrantDraft(id, AccessScopes.All)).ToArray();
+        if (choices.Length != requested.Count ||
+            choices.Select(x => x.AccessPermissionId).Distinct().Count() != choices.Length ||
+            choices.Any(x => !requested.Contains(x.AccessPermissionId) || !AccessScopes.IsGrant(x.Scope)))
+            return new(400, "محدوده مجوزهای نقش معتبر نیست.");
+        var supportsScope = (await repository.ListAsync(ct)).SelectMany(e => e.Permissions)
+            .Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
+        if (choices.Any(x => x.Scope == AccessScopes.Own && !supportsScope.Contains(x.AccessPermissionId)))
+            return new(400, "برای این دسترسی امکان محدودکردن به اطلاعات خود وجود ندارد.");
         try
         {
-            await repository.ReplaceActiveRolePermissionsAsync(draft.RoleId, activeIds.ToArray(), requested.ToArray(), ct);
+            await repository.ReplaceActiveRolePermissionsAsync(draft.RoleId, activeIds.ToArray(), choices, ct);
             return new(200);
         }
         catch (AccessCatalogConflictException)
@@ -259,7 +274,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     {
         var entity = (await repository.ListAsync(ct)).FirstOrDefault(x => x.Id == entityId);
         return entity is null ? null : entity.Permissions.OrderBy(x => x.Title)
-            .Select(x => new AccessPermissionInfo(x.Id, entity.Id, x.Key, entity.Key + "." + x.Key, x.Title, x.Description, x.IsActive)).ToArray();
+            .Select(x => new AccessPermissionInfo(x.Id, entity.Id, x.Key, entity.Key + "." + x.Key, x.Title, x.Description, x.IsActive, x.SupportsScope)).ToArray();
     }
 
     public async Task<AccessCatalogResult> SaveEntityAsync(Guid? id, AccessEntityDraft? draft, CancellationToken ct)
@@ -295,10 +310,10 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
                 ModelFullName = draft.ModelFullName,
                 Permissions =
                 [
-                    new AccessPermission { Key = "View", Title = "مشاهده", IsActive = true },
+                    new AccessPermission { Key = "View", Title = "مشاهده", IsActive = true, SupportsScope = true },
                     new AccessPermission { Key = "Create", Title = "ایجاد", IsActive = true },
-                    new AccessPermission { Key = "Edit", Title = "ویرایش", IsActive = true },
-                    new AccessPermission { Key = "Delete", Title = "حذف", IsActive = true }
+                    new AccessPermission { Key = "Edit", Title = "ویرایش", IsActive = true, SupportsScope = true },
+                    new AccessPermission { Key = "Delete", Title = "حذف", IsActive = true, SupportsScope = true }
                 ]
             };
             repository.Add(entity);
@@ -338,7 +353,11 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         }
         permission.Title = draft.Title.Trim();
         permission.Description = string.IsNullOrWhiteSpace(draft.Description) ? null : draft.Description.Trim();
+        if (permission.SupportsScope && !draft.SupportsScope &&
+            await repository.HasOwnScopeAssignmentsAsync(permission.Id))
+            return new(409, "ابتدا مجوزهای «فقط خود» این دسترسی را به «همه» تغییر دهید.");
         permission.IsActive = draft.IsActive;
+        permission.SupportsScope = draft.SupportsScope;
         try { await repository.SaveAsync(ct); }
         catch (AccessCatalogConflictException) { return new(409, "این دسترسی قبلاً ثبت شده است."); }
         return new(200, Id: permission.Id);

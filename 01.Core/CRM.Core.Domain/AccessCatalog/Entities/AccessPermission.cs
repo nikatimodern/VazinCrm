@@ -12,5 +12,7 @@ public sealed class AccessPermission
     public string Title { get; set; } = "";
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
+    // Own/All is optional, enabled only when the module has a reviewed ownership rule.
+    public bool SupportsScope { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }

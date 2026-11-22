@@ -9,5 +9,7 @@ public sealed class AccessUserPermission
     public string UserId { get; set; } = "";
     public Guid AccessPermissionId { get; set; }
     public bool IsAllowed { get; set; }
+    // Only meaningful for explicit allow; deny always wins.
+    public byte Scope { get; set; } = AccessScopes.All;
     public AccessPermission AccessPermission { get; set; } = null!;
 }
