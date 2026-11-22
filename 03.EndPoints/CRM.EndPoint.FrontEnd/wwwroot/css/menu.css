@@ -374,3 +374,60 @@ html #mobileDrawerNavbar .has-submenu::before {
 		transform: none !important;
 	}
 }
+
+
+/* ERP navigation: keep project teal and mint palette, without category-specific colors. */
+#desktopSidebar, #mobileDrawer { display:flex; flex-direction:column; }
+#desktopSidebar { height:100dvh; }
+#desktopNavbar, #mobileDrawerNavbar { flex:1 1 auto; min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+#desktopSidebar .menuHeader, #mobileDrawer .menuHeader,
+#desktopSidebar .menuFooter, .menu-fixed-actions { flex-shrink:0; }
+.menu-fixed-actions { padding:5px 9px 6px; border-top:1px solid rgba(168,240,221,.15); }
+.menu-fixed-actions .menu-item { width:100%; }
+.menu-header-actions { display:flex; gap:4px; align-items:center; }
+.menuHeader { position:relative; }
+.menu-search-toggle { display:inline-flex; justify-content:center; align-items:center; width:32px; height:32px; border:0; border-radius:8px; background:transparent; color:#d3f7eb; cursor:pointer; }
+.menu-search-toggle:hover, .menu-search-toggle[aria-expanded=true] { background:rgba(169,240,221,.15); color:#bcf5e5; }
+.menu-search-panel { position:absolute; z-index:1050; right:9px; top:calc(100% + 4px); width:min(280px, calc(100vw - 24px)); max-height: min(410px, 65vh); overflow-y:auto; padding:9px; border-radius:12px; border:1px solid rgba(169,240,221,.35); background:#06534e; color:#e9fff9; box-shadow:0 14px 32px rgba(0,0,0,.28); }
+.menu-search-panel[hidden] { display:none !important; }
+.menu-search-field { display:flex; align-items:center; background:rgba(255,255,255,.95); border-radius:8px; color:#143e39; padding-inline:7px; }
+.menu-search-field input { min-width:0; width:100%; border:0; padding:8px 6px; background:transparent; color:#143e39; outline:none; font:inherit; }
+.menu-search-field button { background:none; color:#245e55; border:0; font-size:22px; cursor:pointer; }
+.menu-search-results { max-height:320px; overflow:auto; padding-top:6px; }
+.menu-search-result { display:block; text-decoration:none; color:#ecfff9; padding:7px 9px; border-radius:7px; font-size:13px; }
+.menu-search-result:hover, .menu-search-result:focus-visible { background:rgba(164,232,217,.17); color:#fff; }
+.menu-search-result small { display:block; font-size:11px; color:#b1dbd2; margin-top:1px; }
+.menu-search-empty { font-size:12px; padding:12px 8px; color:#d0e7e3; }
+html.sidebar-collapsed #desktopSidebar .menu-search-panel { right:48px; }
+.menu-nav .menu-entry { position:relative; display:flex; align-items:center; min-width:0; }
+.menu-nav .menu-entry > .menu-item { width:100%; padding-left:30px; }
+.menu-nav .menu-favorite-toggle { border:0; background:transparent; position:absolute; left:4px; top:50%; transform:translateY(-50%); width:26px; height:28px; padding:5px; display:grid; place-items:center; color:#d0e7e3; cursor:pointer; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .15s,color .15s; }
+.menu-nav .menu-entry:hover .menu-favorite-toggle, .menu-nav .menu-entry:focus-within .menu-favorite-toggle, .menu-nav .menu-favorite-toggle.is-favorite { opacity:1; pointer-events:auto; }
+.menu-nav .menu-favorite-toggle:hover, .menu-nav .menu-favorite-toggle.is-favorite { color:#b7f4ce; }
+.menu-nav .menu-favorite-toggle svg { width:15px; height:15px; }
+.menu-favorites-panel { padding:6px 4px 8px; border-bottom:1px solid rgba(169,240,221,.13); }
+.menu-favorites-title { display:flex; align-items:center; gap:7px; padding:5px 10px; color:#bcf5e5; font-family:IRANSansBold; font-size:12px; }
+.menu-favorites-list { list-style:none; padding:0; margin:0; }
+.menu-favorite-row { display:flex; align-items:center; min-width:0; padding-right:2px; border-radius:7px; }
+.menu-favorite-row > .menu-entry { flex:1; min-width:0; }
+.menu-favorite-row .menu-item { min-height:31px !important; }
+.menu-favorite-row .menu-item-title { font-size:12px !important; }
+.menu-favorite-grip { color:#b6d9d0; cursor:grab; flex-shrink:0; padding:4px 2px; }
+.menu-favorite-grip:active { cursor:grabbing; }
+.menu-favorite-overflow { display:none; }
+.menu-favorites-panel.is-expanded .menu-favorite-overflow { display:flex; }
+.menu-favorites-more { color:#bcf5e5; font-size:11px; background:transparent; border:0; padding:5px 15px; cursor:pointer; }
+.menu-nav .submenu-toggle.active-ancestor { color:#bcf5e5; }
+html.sidebar-collapsed #desktopNavbar .menu-favorites-title span,
+html.sidebar-collapsed #desktopNavbar .menu-favorite-row .menu-item-title,
+html.sidebar-collapsed #desktopNavbar .menu-favorites-more { display:none; }
+html.sidebar-collapsed #desktopNavbar .menu-favorite-row .menu-favorite-toggle { display:none; }
+html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
+@media (hover:none), (pointer:coarse) {
+    .menu-nav .menu-favorite-toggle { opacity:1; pointer-events:auto; }
+}
+@media (max-width:767.98px) {
+    #mobileDrawer { height:100dvh; max-height:100dvh; }
+    #mobileDrawerNavbar { padding-bottom:12px; }
+    .menu-search-panel { right:6px; width:min(320px, calc(100vw - 24px)); }
+}

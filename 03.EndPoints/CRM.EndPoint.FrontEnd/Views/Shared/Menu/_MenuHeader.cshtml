@@ -2,20 +2,30 @@
 @{
     var isMobile = Model;
 }
-
 <div class="menuHeader">
     <a asp-controller="Dashboard" asp-action="Index" class="flex-center gap-2 text-white">
         <img class="logoCompany-icon" src="~/Img/logo-vazinplast1.png" alt="">
         <img class="logoCompany-text" src="~/Img/logo-vazinplast2.png" alt="">
     </a>
-
-    @if (isMobile) {
-        <button id="closeMobileDrawer" onclick="toggleMobileDrawer(false)">
-            <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+    <div class="menu-header-actions">
+        <button type="button" class="menu-search-toggle" data-menu-search-toggle aria-label="جستجوی صفحات" title="جستجوی صفحات" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
         </button>
-    } else {
-        <button id="collapseMenuIcon" onclick="toggleMenu()">
-            <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#fff"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5" /></svg>
-        </button>
-    }
+        @if (isMobile) {
+            <button id="closeMobileDrawer" onclick="toggleMobileDrawer(false)" aria-label="بستن منو">
+                <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+            </button>
+        } else {
+            <button id="collapseMenuIcon" onclick="toggleMenu()" aria-label="جمع کردن منو">
+                <svg style="width:20px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5"/></svg>
+            </button>
+        }
+    </div>
+    <div class="menu-search-panel" data-menu-search-panel hidden>
+        <div class="menu-search-field">
+            <input type="search" data-menu-search-input placeholder="جستجوی نام صفحه..." autocomplete="off" aria-label="جستجوی صفحات مجاز"/>
+            <button type="button" data-menu-search-close aria-label="بستن جستجو">×</button>
+        </div>
+        <div class="menu-search-results" data-menu-search-results aria-live="polite"></div>
+    </div>
 </div>
