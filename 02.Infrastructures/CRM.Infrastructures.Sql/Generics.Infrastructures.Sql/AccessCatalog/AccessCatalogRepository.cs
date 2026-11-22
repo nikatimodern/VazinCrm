@@ -185,15 +185,15 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             // Only active permission overrides are editable; retain inactive historical overrides.
             var active = activePermissionIds.ToHashSet();
             var requested = overrides.ToDictionary(x => x.AccessPermissionId);
-            var selected = overrides.Where(x => x.IsAllowed && x.Scope == AccessScopes.SelectedUsers)
+            var selectedMembers = overrides.Where(x => x.IsAllowed && x.Scope == AccessScopes.SelectedUsers)
                 .SelectMany(x => (x.SelectedUserIds ?? []).Select(id =>
                     (PermissionId: x.AccessPermissionId, TargetUserId: id))).ToHashSet();
             var links = await db.AccessUserScopeMembers.Where(x => x.UserId == userId &&
                 active.Contains(x.AccessPermissionId)).ToListAsync(ct);
             var existing = links.Select(x => (PermissionId: x.AccessPermissionId, TargetUserId: x.TargetUserId)).ToHashSet();
             db.AccessUserScopeMembers.RemoveRange(links.Where(x =>
-                !selected.Contains((x.AccessPermissionId, x.TargetUserId))));
-            foreach (var member in selected.Except(existing))
+                !selectedMembers.Contains((x.AccessPermissionId, x.TargetUserId))));
+            foreach (var member in selectedMembers.Except(existing))
                 db.AccessUserScopeMembers.Add(new AccessUserScopeMember
                 {
                     UserId = userId, AccessPermissionId = member.PermissionId, TargetUserId = member.TargetUserId
