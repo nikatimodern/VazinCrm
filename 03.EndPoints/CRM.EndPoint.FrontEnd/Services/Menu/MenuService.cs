@@ -602,7 +602,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         {
             foreach (var item in nodes)
             {
-                if (!item.ShowInDesktop) continue;
+                // Settings links are hidden from the sidebar but remain searchable/starable.
+                if (!item.ShowInDesktop && item.Id != "extraSettings") continue;
                 if (!string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
                 {
                     item.FavoriteTargetId = item.Id;
@@ -739,6 +740,30 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             AppRoles.FinancialAdmin, AppRoles.FinancialExpert
         ];
         settings.DisplayOrder = 70;
+        MenuItem SettingLink(string id, string title, string url, params string[] allowedRoles) =>
+            new MenuItem
+            {
+                Id = id, Title = title, Url = url,
+                Roles = allowedRoles.ToList()
+            };
+        var extraSettings = new MenuItem
+        {
+            Id = "extraSettings", Title = "تنظیمات", DisplayOrder = 80,
+            IconHtml = MenuIcons.Settings,
+            ShowInDesktop = false, ShowInMobile = false,
+            SubItems = [
+                SettingLink("settingsVersions", "مدیریت تغییرات نسخه‌ها", "/ReleaseNotesAdmin/Index", AppRoles.Admin),
+                SettingLink("settingsUsers", "کاربران", "/Admin/Index", AppRoles.Admin),
+                SettingLink("settingsCompany", "اطلاعات پایه شرکت", "/BaseItem/Index",
+                    AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin, AppRoles.FinancialAdmin),
+                SettingLink("settingsFinance", "اطلاعات پایه مالی", "/BaseItem/Financial",
+                    AppRoles.Admin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin),
+                SettingLink("settingsMain", "تنظیمات پایه", "/Asetting/Index", AppRoles.Admin),
+                SettingLink("settingsBin", "سطل زباله", "/Asetting/RecycleBin", AppRoles.Admin),
+                SettingLink("settingsSms", "مدیریت پیامک", "/Sms/Index", AppRoles.Admin),
+                SettingLink("settingsExternal", "مدیریت ارتباطات", "/ExternalSoftware/Index", AppRoles.Admin)
+            ]
+        };
         // Keep the existing mobile bottom bar shortcuts. The new categorized
         // pages remain reachable from the mobile "More" drawer as well.
         return
@@ -749,7 +774,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             cartable,
             MobileShortcut("reportMobile", workReport, "گزارش کار", "/Report/Index", 5),
             categoryDaily, categorySales, categorySupply, categoryProduction,
-            categoryFinance, categoryReports, settings, overdue, warnings, version
+            categoryFinance, categoryReports, settings, extraSettings, overdue, warnings, version
         ];
     }
 
