@@ -1188,6 +1188,10 @@
             checkbox.disabled = !userReady || userSaving;
         for (const label of root.querySelectorAll(".ac-user-role-choice"))
             label.classList.toggle("is-selected", userRoleIds.has(label.querySelector("[data-user-role-id]").dataset.userRoleId));
+        for (const picker of scopePickers.values()) {
+            if (!userReady || userSaving) picker.disable();
+            else picker.enable();
+        }
         syncUserPermissionRows();
     }
 
@@ -1327,7 +1331,6 @@
         });
         picker.addOptions([...initial.values()]);
         picker.setValue([...initial.keys()], true);
-        picker.disable = picker.disable.bind(picker);
         if (userSaving) picker.disable();
         scopePickers.set(permissionId, picker);
     }
