@@ -354,7 +354,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         permission.Title = draft.Title.Trim();
         permission.Description = string.IsNullOrWhiteSpace(draft.Description) ? null : draft.Description.Trim();
         if (permission.SupportsScope && !draft.SupportsScope.Value &&
-            await repository.HasOwnScopeAssignmentsAsync(permission.Id))
+            await repository.HasOwnScopeAssignmentsAsync(permission.Id, ct))
             return new(409, "ابتدا مجوزهای «فقط خود» این دسترسی را به «همه» تغییر دهید.");
         permission.IsActive = draft.IsActive;
         permission.SupportsScope = draft.SupportsScope.Value;
