@@ -580,3 +580,335 @@
 .ac-scope-option { display: flex; gap: 10px; align-items: center; justify-content: space-between; direction: rtl; }
 .ac-scope-option strong { font-size: 12px; font-weight: 650; }
 .ac-scope-option small { color: #647973; direction: ltr; }
+
+/* Three-column user access editor: users (right), permissions (centre), assigned roles (left).
+   Only the permission editor uses purple. The surrounding ERP UI remains green. */
+#accessCatalog #acUsersPanel .ac-user-layout {
+    display: grid;
+    grid-template-columns: minmax(190px, .82fr) minmax(0, 2.05fr) minmax(188px, .76fr);
+    grid-template-areas: "users access roles";
+    align-items: stretch;
+    gap: 10px;
+}
+#accessCatalog #acUsersPanel .ac-user-list-panel { grid-area: users; }
+#accessCatalog #acUsersPanel .ac-user-access-panel { grid-area: access; }
+#accessCatalog #acUsersPanel .ac-user-roles-panel { grid-area: roles; }
+#accessCatalog #acUsersPanel .ac-user-list-panel,
+#accessCatalog #acUsersPanel .ac-user-roles-panel { min-height: 480px; }
+
+/* Title and one horizontally aligned row of all four actions. */
+#accessCatalog #acUsersPanel .ac-user-access-panel > .ac-panel-heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px 11px;
+}
+#accessCatalog #acUsersPanel .ac-user-access-panel > .ac-panel-heading > div:first-child {
+    flex: 1 1 100%;
+}
+#accessCatalog #acUsersPanel .ac-user-access-panel .ac-user-action-buttons {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    flex: 1 1 100%;
+    gap: 6px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 2px 0 3px;
+}
+#accessCatalog #acUsersPanel .ac-user-action-buttons .ac-btn {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    padding: 5px 8px;
+    min-height: 31px;
+}
+#accessCatalog #acUsersPanel .ac-btn-purple {
+    color: #fff;
+    background: #6d28bd;
+    border-color: #6d28bd;
+}
+#accessCatalog #acUsersPanel .ac-btn-purple:hover:not(:disabled) {
+    background: #581c99;
+    border-color: #581c99;
+}
+#accessCatalog #acUsersPanel .ac-btn-outline-purple {
+    color: #6d28bd;
+    background: #fff;
+    border-color: #c4a4ec;
+}
+#accessCatalog #acUsersPanel .ac-btn-outline-purple:hover:not(:disabled) {
+    background: #f4edfc;
+}
+#accessCatalog #acUsersPanel .ac-user-action-buttons [data-action="save-user"] {
+    background: var(--ac-primary);
+    border-color: var(--ac-primary);
+    color: #fff;
+}
+#accessCatalog #acUsersPanel .ac-user-action-buttons [data-action="save-user"]:hover:not(:disabled) {
+    background: var(--ac-primary-dark);
+}
+/* Keep reset/navigation semantics: a temporary change until Save is clicked. */
+#accessCatalog #acUsersPanel .ac-user-access-summary {
+    margin: 8px 11px 2px;
+    display: flex;
+    gap: 7px 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 7px 9px;
+    background: #ecf7f2;
+    border: 1px solid #d0eadd;
+    border-radius: 8px;
+    color: #245d48;
+    font-size: 10px;
+    line-height: 1.6;
+}
+#accessCatalog #acUsersPanel .ac-user-summary-description {
+    flex: 1 1 240px;
+}
+#accessCatalog #acUsersPanel .ac-user-summary-description i { margin-inline-end: 4px; }
+#accessCatalog #acUsersPanel .ac-user-summary-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+#accessCatalog #acUsersPanel .ac-user-summary-pills > span {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    padding: 3px 6px;
+    background: #fff;
+    border: 1px solid #cfe7d9;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+#accessCatalog #acUsersPanel .ac-user-summary-pills i { color: var(--ac-primary); }
+
+/* Left column: one multiple-role select instead of an independent roles directory. */
+#accessCatalog #acUsersPanel .ac-user-roles-panel .ac-panel-heading i {
+    color: var(--ac-primary);
+    margin-inline-end: 4px;
+}
+#accessCatalog #acUsersPanel .ac-user-roles-panel .ac-count {
+    background: var(--ac-primary-light);
+    color: var(--ac-primary-dark);
+}
+#accessCatalog #acUsersPanel .ac-user-role-section {
+    border: 0;
+    padding: 12px;
+}
+#accessCatalog #acUsersPanel .ac-user-role-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 650;
+    margin-bottom: 8px;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list {
+    display: block;
+    min-width: 0;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--ac-border);
+    border-radius: 8px;
+    font-size: 11px;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-wrapper {
+    display: block;
+    width: 100%;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control {
+    min-height: 42px;
+    padding: 6px 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-content: flex-start;
+    border-color: #b8d9d0;
+    height: auto;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control .item {
+    border-radius: 6px;
+    padding: 3px 5px;
+    border: 1px solid #c4e4d7;
+    background: #e5f5ee;
+    color: #165943;
+    font-size: 10.5px;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control input {
+    min-width: 65px;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-dropdown .active {
+    background: var(--ac-primary-light);
+}
+#accessCatalog #acUsersPanel .ac-user-role-section > p {
+    line-height: 1.8;
+    margin-top: 10px;
+}
+
+/* Only the permissions grid is purple; preserve user and role green theme. */
+#accessCatalog #acUsersPanel .ac-user-permission-groups {
+    max-height: 68vh;
+    padding: 10px;
+    overflow-y: auto;
+    background: transparent;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group {
+    border-color: #e4d5fa;
+    margin-bottom: 11px;
+    border-radius: 10px;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group-header {
+    background: #faf6ff;
+    border-bottom: 1px solid #e8d9fb;
+    padding: 8px 10px;
+    color: #6020a4;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group-count {
+    color: #6d28bd;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 9px;
+    padding: 9px;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-item,
+#accessCatalog #acUsersPanel .ac-user-permission-item.has-selected-users {
+    grid-column: auto;
+    padding: 0 0 8px;
+    border: 1px solid #dfcaf7;
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    background: #fff;
+    overflow: visible;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-item.is-custom {
+    border-color: #ad7cdf;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-title {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 8px;
+    background: #f2e6ff;
+    color: #631aab;
+    border-radius: 8px 8px 0 0;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-title i {
+    font-size: 13px;
+    width: 16px;
+    text-align: center;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-title strong {
+    font-size: 12px;
+    white-space: nowrap;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-title small {
+    margin-inline-start: auto;
+    overflow-wrap: anywhere;
+    font-size: 9px;
+    color: #6d28bd;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px;
+}
+#accessCatalog #acUsersPanel .ac-user-override-select {
+    flex: 1 1 110px;
+    width: 100%;
+    max-width: 100%;
+    border-color: #d9c3f5;
+    min-height: 34px;
+    font-size: 11px;
+}
+#accessCatalog #acUsersPanel .ac-user-effective {
+    color: #6628a3;
+    flex: 1 1 100%;
+    font-size: 10px;
+    line-height: 1.4;
+}
+#accessCatalog #acUsersPanel .ac-user-effective.is-allowed {
+    color: #6424a9;
+}
+#accessCatalog #acUsersPanel .ac-user-effective.is-denied {
+    color: #7d49ae;
+}
+#accessCatalog #acUsersPanel .ac-user-sources {
+    padding: 0 8px;
+    color: #88729e;
+    font-size: 9px;
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel {
+    margin: 1px 7px 0;
+    padding: 8px;
+    border: 1px solid #e7d6fa;
+    border-radius: 7px;
+    background: #faf6ff;
+    min-width: 0;
+}
+#accessCatalog #acUsersPanel .ac-scope-users-label {
+    color: #6d28bd;
+    font-weight: 650;
+    font-size: 10.5px;
+}
+#accessCatalog #acUsersPanel .ac-scope-users-hint {
+    color: #856ca0;
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control {
+    border-color: #d9c3f5;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    height: auto;
+    max-height: none;
+    min-height: 38px;
+    overflow: visible;
+    gap: 4px;
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control .item {
+    color: #6223a7;
+    background: #f0e3ff;
+    border-color: #e0c7fc;
+    font-size: 10px;
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control input {
+    min-width: 65px;
+}
+#accessCatalog #acUsersPanel .ac-user-only-overrides input {
+    accent-color: var(--ac-secondary);
+}
+
+/* Responsive layout: two columns on small desktops, one on mobile. */
+@media (max-width: 1150px) {
+    #accessCatalog #acUsersPanel .ac-user-layout {
+        grid-template-columns: minmax(185px, .8fr) minmax(0, 1.6fr);
+        grid-template-areas: "users access" "roles access";
+    }
+}
+@media (max-width: 860px) {
+    #accessCatalog #acUsersPanel .ac-user-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "users" "roles" "access";
+    }
+    #accessCatalog #acUsersPanel .ac-user-list-panel,
+    #accessCatalog #acUsersPanel .ac-user-roles-panel {
+        min-height: 0;
+    }
+    #accessCatalog #acUsersPanel .ac-users-list { max-height: 28vh; }
+    #accessCatalog #acUsersPanel .ac-user-permission-groups { max-height: none; }
+}
+@media (max-width: 530px) {
+    #accessCatalog #acUsersPanel .ac-user-permission-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
