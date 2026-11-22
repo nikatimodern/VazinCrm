@@ -69,3 +69,17 @@ public sealed class AccessUserPermissionConfiguration : IEntityTypeConfiguration
             .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public sealed class AccessUserScopeMemberConfiguration : IEntityTypeConfiguration<AccessUserScopeMember>
+{
+    public void Configure(EntityTypeBuilder<AccessUserScopeMember> entity)
+    {
+        entity.ToTable("AccessUserScopeMembers");
+        entity.HasKey(x => new { x.UserId, x.AccessPermissionId, x.TargetUserId });
+        entity.Property(x => x.UserId).HasMaxLength(450).IsRequired();
+        entity.Property(x => x.TargetUserId).HasMaxLength(450).IsRequired();
+        entity.HasIndex(x => x.TargetUserId);
+        entity.HasOne(x => x.AccessUserPermission).WithMany()
+            .HasForeignKey(x => new { x.UserId, x.AccessPermissionId }).OnDelete(DeleteBehavior.Cascade);
+    }
+}

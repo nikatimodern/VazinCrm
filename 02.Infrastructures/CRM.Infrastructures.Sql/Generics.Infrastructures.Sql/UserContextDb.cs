@@ -16,6 +16,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<AccessRolePermission> AccessRolePermissions { get; set; }
         public DbSet<AccessUserPermission> AccessUserPermissions { get; set; }
+        public DbSet<AccessUserScopeMember> AccessUserScopeMembers { get; set; }
         public DbSet<AccessHistoryEntry> AccessHistoryEntries { get; set; }
 
 
@@ -32,6 +33,7 @@ namespace Generics.Infrastructures.Sql {
             modelBuilder.ApplyConfiguration(new AccessPermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessRolePermissionConfiguration());
             modelBuilder.ApplyConfiguration(new AccessUserPermissionConfiguration());
+            modelBuilder.ApplyConfiguration(new AccessUserScopeMemberConfiguration());
             modelBuilder.Entity<AccessHistoryEntry>(entity => {
                 entity.ToTable("AccessHistoryEntries");
                 entity.HasKey(x => x.Id);

@@ -91,6 +91,16 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.ToTable("AccessUserPermissions");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessUserScopeMember", b =>
+                {
+                    b.Property<string>("UserId").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("AccessPermissionId").HasColumnType("uniqueidentifier");
+                    b.Property<string>("TargetUserId").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.HasKey("UserId", "AccessPermissionId", "TargetUserId");
+                    b.HasIndex("TargetUserId");
+                    b.ToTable("AccessUserScopeMembers");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.AppUser", b =>
                 {
                     b.Property<string>("Id")
@@ -462,6 +472,16 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                     b.Navigation("AccessPermission");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.AccessCatalog.Entities.AccessUserScopeMember", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.AccessCatalog.Entities.AccessUserPermission", "AccessUserPermission")
+                        .WithMany()
+                        .HasForeignKey("UserId", "AccessPermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                    b.Navigation("AccessUserPermission");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

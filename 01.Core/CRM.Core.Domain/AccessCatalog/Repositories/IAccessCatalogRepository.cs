@@ -13,7 +13,9 @@ public sealed class AccessCatalogConflictException : Exception
 }
 
 
-public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.None);
+public sealed record AccessScopeUser(string Id, string Name, string UserName);
+public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.None,
+    string[]? SelectedUserIds = null, AccessScopeUser[]? SelectedUsers = null);
 public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId, byte Scope = AccessScopes.All);
 public sealed record AccessRoleGrantDraft(Guid AccessPermissionId, byte Scope);
 public sealed record AccessUserState(string UserId, IReadOnlyList<string> RoleIds, IReadOnlyList<AccessUserOverride> Overrides);
@@ -30,6 +32,8 @@ public interface IAccessCatalogRepository
     Task<bool> PermissionHasRoleAssignmentsAsync(Guid permissionId, CancellationToken ct);
     Task<AccessUserState?> UserAccessAsync(string userId, CancellationToken ct);
     Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct);
+    Task<IReadOnlyList<AccessScopeUser>> SearchScopeUsersAsync(string search, CancellationToken ct);
+    Task<bool> ValidateScopeUsersAsync(string ownerUserId, IReadOnlyCollection<string> ids, CancellationToken ct);
     Task<AccessUserWriteResult> ReplaceUserAccessAsync(
         string userId, IReadOnlyCollection<string> roleIds, IReadOnlyCollection<AccessUserOverride> overrides,
         IReadOnlyCollection<Guid> activePermissionIds, CancellationToken ct);
