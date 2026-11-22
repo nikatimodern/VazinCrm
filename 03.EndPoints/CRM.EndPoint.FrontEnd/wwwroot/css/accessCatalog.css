@@ -815,40 +815,59 @@
 #accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group-count {
     color: #6d28bd;
 }
+/* Each permission occupies one full row. Colors alternate green / purple
+   without changing the green users/roles columns or global ERP controls. */
 #accessCatalog #acUsersPanel .ac-user-permission-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    gap: 9px;
-    padding: 9px;
+    gap: 10px;
+    padding: 10px;
 }
 #accessCatalog #acUsersPanel .ac-user-permission-item,
 #accessCatalog #acUsersPanel .ac-user-permission-item.has-selected-users {
-    grid-column: auto;
-    padding: 0 0 8px;
-    border: 1px solid #dfcaf7;
-    border-radius: 9px;
+    --ac-perm-accent: #166e56;
+    --ac-perm-border: #b9dfd2;
+    --ac-perm-header: #e7f6ee;
+    --ac-perm-soft: #f4fbf7;
+    --ac-perm-faint: #557c6e;
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 0 0 10px;
+    border: 1px solid var(--ac-perm-border);
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 9px;
     min-width: 0;
     background: #fff;
     overflow: visible;
 }
+#accessCatalog #acUsersPanel .ac-user-permission-item:nth-child(even) {
+    --ac-perm-accent: #6d28bd;
+    --ac-perm-border: #dbc3f7;
+    --ac-perm-header: #f0e5fd;
+    --ac-perm-soft: #faf6ff;
+    --ac-perm-faint: #87719d;
+}
 #accessCatalog #acUsersPanel .ac-user-permission-item.is-custom {
-    border-color: #ad7cdf;
+    border-color: var(--ac-perm-accent);
 }
 #accessCatalog #acUsersPanel .ac-user-permission-title {
-    flex-wrap: nowrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-start;
-    gap: 5px;
-    padding: 8px;
-    background: #f2e6ff;
-    color: #631aab;
-    border-radius: 8px 8px 0 0;
+    gap: 7px;
+    padding: 9px 12px;
+    background: var(--ac-perm-header);
+    color: var(--ac-perm-accent);
+    border-radius: 9px 9px 0 0;
 }
 #accessCatalog #acUsersPanel .ac-user-permission-title i {
-    font-size: 13px;
-    width: 16px;
+    font-size: 14px;
+    width: 18px;
+    flex: 0 0 18px;
     text-align: center;
 }
 #accessCatalog #acUsersPanel .ac-user-permission-title strong {
@@ -857,77 +876,136 @@
 }
 #accessCatalog #acUsersPanel .ac-user-permission-title small {
     margin-inline-start: auto;
+    direction: ltr;
+    font-size: 10px;
+    color: var(--ac-perm-faint);
     overflow-wrap: anywhere;
-    font-size: 9px;
-    color: #6d28bd;
+    text-align: left;
 }
 #accessCatalog #acUsersPanel .ac-user-permission-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 5px;
-    padding: 0 8px;
+    gap: 8px 14px;
+    padding: 0 12px;
 }
 #accessCatalog #acUsersPanel .ac-user-override-select {
-    flex: 1 1 110px;
-    width: 100%;
+    flex: 1 1 190px;
+    min-width: min(190px, 100%);
     max-width: 100%;
-    border-color: #d9c3f5;
-    min-height: 34px;
-    font-size: 11px;
+    min-height: 37px;
+    border: 1px solid var(--ac-perm-border);
+    border-radius: 7px;
+    font-size: 12px;
 }
-#accessCatalog #acUsersPanel .ac-user-effective {
-    color: #6628a3;
-    flex: 1 1 100%;
-    font-size: 10px;
-    line-height: 1.4;
-}
-#accessCatalog #acUsersPanel .ac-user-effective.is-allowed {
-    color: #6424a9;
-}
+#accessCatalog #acUsersPanel .ac-user-effective,
+#accessCatalog #acUsersPanel .ac-user-effective.is-allowed,
 #accessCatalog #acUsersPanel .ac-user-effective.is-denied {
-    color: #7d49ae;
+    flex: 1 1 180px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--ac-perm-accent);
 }
 #accessCatalog #acUsersPanel .ac-user-sources {
-    padding: 0 8px;
-    color: #88729e;
-    font-size: 9px;
+    display: block;
+    padding: 0 12px;
+    color: var(--ac-perm-faint);
+    font-size: 10px;
+    line-height: 1.7;
 }
 #accessCatalog #acUsersPanel .ac-selected-users-panel {
-    margin: 1px 7px 0;
-    padding: 8px;
-    border: 1px solid #e7d6fa;
-    border-radius: 7px;
-    background: #faf6ff;
+    margin: 0 12px;
+    padding: 12px;
     min-width: 0;
+    border: 1px solid var(--ac-perm-border);
+    border-radius: 9px;
+    background: var(--ac-perm-soft);
 }
 #accessCatalog #acUsersPanel .ac-scope-users-label {
-    color: #6d28bd;
+    display: block;
+    color: var(--ac-perm-accent);
+    font-size: 11.5px;
     font-weight: 650;
-    font-size: 10.5px;
+    line-height: 1.7;
+    margin: 0 0 10px;
 }
 #accessCatalog #acUsersPanel .ac-scope-users-hint {
-    color: #856ca0;
+    display: block;
+    margin-top: 9px;
+    font-size: 10.5px;
+    line-height: 1.8;
+    color: var(--ac-perm-faint);
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-wrapper {
+    display: block;
+    width: 100%;
+    min-width: 0;
 }
 #accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control {
-    border-color: #d9c3f5;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    height: auto;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    justify-items: stretch;
+    min-height: 43px;
+    height: auto !important;
     max-height: none;
-    min-height: 38px;
     overflow: visible;
-    gap: 4px;
+    gap: 7px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid var(--ac-perm-border);
+    border-radius: 8px;
+    box-shadow: none;
 }
-#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control .item {
-    color: #6223a7;
-    background: #f0e3ff;
-    border-color: #e0c7fc;
-    font-size: 10px;
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control > .item {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 34px;
+    margin: 0 !important;
+    padding: 6px 9px;
+    border: 1px solid var(--ac-perm-border);
+    border-radius: 7px;
+    background: var(--ac-perm-header);
+    color: var(--ac-perm-accent);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.7;
+    text-align: right;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
 }
-#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control input {
-    min-width: 65px;
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control > .item .remove {
+    flex: 0 0 auto;
+    margin-inline-start: auto;
+    padding: 2px 7px !important;
+    color: var(--ac-perm-accent);
+    border-inline-start: 1px solid var(--ac-perm-border);
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control > input {
+    display: block !important;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 30px;
+    margin: 0 !important;
+    padding: 4px 6px !important;
+    font-size: 11px;
+    text-align: right;
+}
+#accessCatalog #acUsersPanel .ac-selected-users-panel .ts-wrapper.focus .ts-control {
+    border-color: var(--ac-perm-accent);
+}
+@media (max-width: 650px) {
+    #accessCatalog #acUsersPanel .ac-selected-users-panel .ts-control {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 #accessCatalog #acUsersPanel .ac-user-only-overrides input {
     accent-color: var(--ac-secondary);
@@ -952,8 +1030,4 @@
     #accessCatalog #acUsersPanel .ac-users-list { max-height: 28vh; }
     #accessCatalog #acUsersPanel .ac-user-permission-groups { max-height: none; }
 }
-@media (max-width: 530px) {
-    #accessCatalog #acUsersPanel .ac-user-permission-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
+
