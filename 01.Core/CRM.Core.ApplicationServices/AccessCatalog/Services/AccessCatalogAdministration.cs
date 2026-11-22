@@ -7,7 +7,7 @@ using CRM.Core.ApplicationServices.Security;
 namespace CRM.Core.ApplicationServices.AccessCatalog.Services;
 
 public sealed record AccessEntityDraft(string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive);
-public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive, bool SupportsScope);
+public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive, bool? SupportsScope);
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive, bool SupportsScope);
 public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null, string? UserId = null);
@@ -329,8 +329,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
 
     public async Task<AccessCatalogResult> SavePermissionAsync(Guid? id, AccessPermissionDraft? draft, CancellationToken ct)
     {
-        if (draft is null || !Valid(draft.Key, draft.Title, draft.Description))
-            return new(400, "مشخصات دسترسی معتبر نیست.");
+        if (draft is null || !Valid(draft.Key, draft.Title, draft.Description) || draft.SupportsScope is null)
+            return new(400, "مشخصات دسترسی معتبر نیست؛ صفحه را به‌روزرسانی کنید.");
 
         var parent = await repository.FindEntityAsync(draft.AccessEntityId, ct);
         if (parent is null) return new(404, "انتیتی مربوط پیدا نشد.");
@@ -353,11 +353,11 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         }
         permission.Title = draft.Title.Trim();
         permission.Description = string.IsNullOrWhiteSpace(draft.Description) ? null : draft.Description.Trim();
-        if (permission.SupportsScope && !draft.SupportsScope &&
+        if (permission.SupportsScope && !draft.SupportsScope.Value &&
             await repository.HasOwnScopeAssignmentsAsync(permission.Id))
             return new(409, "ابتدا مجوزهای «فقط خود» این دسترسی را به «همه» تغییر دهید.");
         permission.IsActive = draft.IsActive;
-        permission.SupportsScope = draft.SupportsScope;
+        permission.SupportsScope = draft.SupportsScope.Value;
         try { await repository.SaveAsync(ct); }
         catch (AccessCatalogConflictException) { return new(409, "این دسترسی قبلاً ثبت شده است."); }
         return new(200, Id: permission.Id);
