@@ -111,13 +111,35 @@ public sealed partial class AccessHistoryService
             .Any(x => !permissionIds.Contains(x.PermissionId)))
             return "برخی مجوزهای اختصاصی دیگر معتبر نیستند.";
         var canScope = permissions.Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
+        var customerEntityIds = target.Where(x => x.Kind == "entity")
+            .Select(x => Parse<EntityState>(x.Data))
+            .Where(x => x.Key == "Customer").Select(x => x.Id).ToHashSet();
+        var selectedCapable = permissions.Where(p =>
+            p.SupportsScope && customerEntityIds.Contains(p.AccessEntityId)).Select(p => p.Id).ToHashSet();
+        var targetOverrides = target.Where(x => x.Kind == "override")
+            .Select(x => Parse<UserOverrideState>(x.Data)).ToArray();
         if (target.Where(x => x.Kind == "rolegrant").Select(x => Parse<RolePermissionState>(x.Data))
             .Any(x => !AccessScopes.IsGrant(x.Scope) ||
                       (x.Scope == AccessScopes.Own && !canScope.Contains(x.PermissionId))) ||
-            target.Where(x => x.Kind == "override").Select(x => Parse<UserOverrideState>(x.Data))
-            .Any(x => !AccessScopes.IsGrant(x.Scope) ||
-                      (x.IsAllowed && x.Scope == AccessScopes.Own && !canScope.Contains(x.PermissionId))))
+            targetOverrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||
+                (x.IsAllowed && x.Scope != AccessScopes.All && !canScope.Contains(x.PermissionId)) ||
+                (x.Scope == AccessScopes.SelectedUsers &&
+                    (!x.IsAllowed || !selectedCapable.Contains(x.PermissionId))) ||
+                (x.Scope != AccessScopes.SelectedUsers && (x.SelectedUserIds?.Length ?? 0) > 0)))
             return "نسخه انتخاب‌شده شامل محدوده دسترسی نامعتبر است.";
+        var selectedOverrides = targetOverrides.Where(x => x.Scope == AccessScopes.SelectedUsers).ToArray();
+        foreach (var item in selectedOverrides)
+        {
+            var ids = item.SelectedUserIds ?? [];
+            if (ids.Length is < 1 or > 100 || ids.Distinct().Count() != ids.Length ||
+                ids.Any(id => id == item.UserId || !Guid.TryParse(id, out _)))
+                return "کاربران انتخاب‌شده در این نسخه معتبر نیستند.";
+        }
+        var targetIds = selectedOverrides.SelectMany(x => x.SelectedUserIds ?? []).Distinct().ToArray();
+        if (targetIds.Length != 0 &&
+            await db.Users.AsNoTracking().CountAsync(x => targetIds.Contains(x.Id) &&
+                x.IsEmployee && !x.OrganAdmin, ct) != targetIds.Length)
+            return "برخی کاربران انتخابی این نسخه دیگر معتبر نیستند.";
 
         var removedRoleIds = current.Where(x => x.Kind == "role")
             .Select(x => Parse<RoleState>(x.Data).Id).Except(roleIds).ToArray();
@@ -249,6 +271,24 @@ public sealed partial class AccessHistoryService
                     Scope = item.Scope
                 });
         }
+        await db.SaveChangesAsync(ct);
+
+        // Selected owners are part of the same restore transaction and snapshot.
+        // Updating links after overrides guarantees their composite parent FK exists.
+        var desiredLinks = overrides.Where(x => x.Scope == AccessScopes.SelectedUsers && x.IsAllowed)
+            .SelectMany(x => (x.SelectedUserIds ?? []).Select(id =>
+                (x.UserId, x.PermissionId, TargetUserId: id))).ToHashSet();
+        var existingLinks = await db.AccessUserScopeMembers.ToListAsync(ct);
+        var existingKeys = existingLinks
+            .Select(x => (x.UserId, PermissionId: x.AccessPermissionId, x.TargetUserId)).ToHashSet();
+        db.AccessUserScopeMembers.RemoveRange(existingLinks.Where(x =>
+            !desiredLinks.Contains((x.UserId, x.AccessPermissionId, x.TargetUserId))));
+        foreach (var link in desiredLinks.Except(existingKeys))
+            db.AccessUserScopeMembers.Add(new AccessUserScopeMember
+            {
+                UserId = link.UserId, AccessPermissionId = link.PermissionId,
+                TargetUserId = link.TargetUserId
+            });
         await db.SaveChangesAsync(ct);
     }
 }

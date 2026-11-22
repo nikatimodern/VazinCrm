@@ -34,7 +34,7 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
         string? Description, bool IsActive, bool SupportsScope = false);
     private sealed record RolePermissionState(string RoleId, Guid PermissionId, byte Scope = AccessScopes.All);
     private sealed record UserRoleState(string UserId, string RoleId);
-    private sealed record UserOverrideState(string UserId, Guid PermissionId, bool IsAllowed, byte Scope = AccessScopes.All);
+    private sealed record UserOverrideState(string UserId, Guid PermissionId, bool IsAllowed, byte Scope = AccessScopes.All, string[]? SelectedUserIds = null);
     private sealed record StateItem(string Key, string Kind, string Data);
     private sealed record StateDiff(string Key, StateItem? Before, StateItem? After);
     private sealed record RestorePlan(List<StateItem> Target, int Conflicts);
@@ -48,7 +48,11 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
         {
             "permission" => item with { Data = Serialize(Parse<PermissionState>(item.Data)) },
             "rolegrant" => item with { Data = Serialize(Parse<RolePermissionState>(item.Data)) },
-            "override" => item with { Data = Serialize(Parse<UserOverrideState>(item.Data)) },
+            "override" => item with { Data = Serialize(Parse<UserOverrideState>(item.Data) with
+            {
+                SelectedUserIds = (Parse<UserOverrideState>(item.Data).SelectedUserIds ?? [])
+                    .OrderBy(x => x, StringComparer.Ordinal).ToArray()
+            }) },
             _ => item
         }).ToList();
     private static string ToJson(IEnumerable<StateItem> state) =>
@@ -70,8 +74,15 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
             .Select(x => new RolePermissionState(x.RoleId, x.AccessPermissionId, x.Scope)).ToListAsync(ct);
         var userRoles = await db.UserRoles.AsNoTracking()
             .Select(x => new UserRoleState(x.UserId, x.RoleId)).ToListAsync(ct);
+        var selected = await db.AccessUserScopeMembers.AsNoTracking()
+            .Select(x => new { x.UserId, x.AccessPermissionId, x.TargetUserId }).ToListAsync(ct);
+        var selectedByOverride = selected.GroupBy(x => (x.UserId, x.AccessPermissionId))
+            .ToDictionary(g => g.Key, g => g.Select(x => x.TargetUserId)
+                .OrderBy(id => id, StringComparer.Ordinal).ToArray());
         var overrides = await db.AccessUserPermissions.AsNoTracking()
             .Select(x => new UserOverrideState(x.UserId, x.AccessPermissionId, x.IsAllowed, x.Scope)).ToListAsync(ct);
+        overrides = overrides.Select(x => x with
+            { SelectedUserIds = selectedByOverride.GetValueOrDefault((x.UserId, x.PermissionId)) ?? [] }).ToList();
         var items = new List<StateItem>(roles.Count + entities.Count + permissions.Count +
                                         rolePermissions.Count + userRoles.Count + overrides.Count);
         items.AddRange(roles.Select(x => new StateItem("role|" + x.Id, "role", Serialize(x))));
@@ -249,7 +260,11 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
                 "membership" => "تخصیص داده شده",
                 "override" => !Parse<UserOverrideState>(item.Data).IsAllowed ? "محدودیت اختصاصی" :
                     Parse<UserOverrideState>(item.Data).Scope == AccessScopes.Own ?
-                    "اجازه اختصاصی (فقط خود)" : "اجازه اختصاصی (همه)",
+                    "اجازه اختصاصی (فقط خود)" :
+                    Parse<UserOverrideState>(item.Data).Scope == AccessScopes.SelectedUsers ?
+                    "اجازه اختصاصی (خود + " +
+                    (Parse<UserOverrideState>(item.Data).SelectedUserIds?.Length ?? 0) +
+                    " کاربر انتخابی)" : "اجازه اختصاصی (همه)",
                 _ => "ثبت‌شده"
             };
         }
