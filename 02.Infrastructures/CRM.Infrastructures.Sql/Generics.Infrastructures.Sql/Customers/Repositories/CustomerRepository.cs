@@ -42,7 +42,7 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken ct, Guid[]? allowedOwnerIds = null) =>
         db.Customers.AsNoTracking().Where(c =>
             ((int)c.RoleType == 2 || (int)c.RoleType == 3) &&
-            (!allowedOwnerIds != null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))))
+            (allowedOwnerIds == null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))))
         .Select(c => new CustomerSupplier(c.Id, c.CompanyName, c.AgentName, c.CustomerCode)).ToListAsync(ct);
     public async Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
@@ -118,7 +118,7 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
             (filter.Ascending ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate));
         return new(filter.Draw, count, count, await query.Skip(filter.Skip).Take(filter.Take).ToListAsync(ct));
     }
-    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct, Guid[]? allowedOwnerIds = null) => db.Customers.AsNoTracking().Where(c => !allowedOwnerIds != null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))).Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode, c.CompanyName, c.AgentName)).ToListAsync(ct);
+    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct, Guid[]? allowedOwnerIds = null) => db.Customers.AsNoTracking().Where(c => allowedOwnerIds == null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))).Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode, c.CompanyName, c.AgentName)).ToListAsync(ct);
     public Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
         var query = db.Customers.AsNoTracking().AsQueryable();

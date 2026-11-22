@@ -7,15 +7,17 @@
     bool isEnforced = ViewBag.ScopeEnforced == true;
     byte editScope = ViewBag.EditScope is byte e ? e : (byte)0;
     byte deleteScope = ViewBag.DeleteScope is byte d ? d : (byte)0;
-    Guid actorId = ViewBag.ActorGuid is Guid id ? id : Guid.Empty;
+    var editOwnerIds = (ViewBag.EditOwnerIds as Guid[] ?? Array.Empty<Guid>()).ToHashSet();
+    var deleteOwnerIds = (ViewBag.DeleteOwnerIds as Guid[] ?? Array.Empty<Guid>()).ToHashSet();
 }
 
 @if (Model.Any()) {
     foreach (var item in Model) {
         var displayName = item.Sex == 1 ? $"آقای {item.AgentName}" : item.Sex == 0 ? $"خانم {item.AgentName}" : item.AgentName;
-        bool own = actorId != Guid.Empty && item.UserCustomers?.Any(x => x.UserId == actorId) == true;
-        bool allowEdit = !isEnforced || editScope == 2 || (editScope == 1 && own);
-        bool allowDelete = !isEnforced || deleteScope == 2 || (deleteScope == 1 && own);
+        bool allowEdit = !isEnforced || editScope == 2 ||
+            (editScope is 1 or 3 && item.UserCustomers?.Any(x => editOwnerIds.Contains(x.UserId)) == true);
+        bool allowDelete = !isEnforced || deleteScope == 2 ||
+            (deleteScope is 1 or 3 && item.UserCustomers?.Any(x => deleteOwnerIds.Contains(x.UserId)) == true);
         <article class="customer-person-card @(item.Juridical == 1 ? "customer-person-card--legal" : "")">
             <header class="customer-person-card__header">
                 <span class="customer-person-card__avatar" aria-hidden="true"><i class="fa fa-user"></i></span>
