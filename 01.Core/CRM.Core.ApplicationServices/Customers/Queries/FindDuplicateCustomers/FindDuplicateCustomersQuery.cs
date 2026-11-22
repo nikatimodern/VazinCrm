@@ -11,11 +11,11 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.FindDuplicateCustomers;
 
-public sealed record FindDuplicateCustomersQuery(Customer Model, Guid? OnlyAssignedUserId = null) : IQuery<List<Customer>>;
+public sealed record FindDuplicateCustomersQuery(Customer Model, Guid[]? AllowedOwnerIds = null) : IQuery<List<Customer>>;
 public sealed class FindDuplicateCustomersQueryHandler(ICustomerRepository repository) : IQueryHandler<FindDuplicateCustomersQuery, List<Customer>>
 {
     public async Task<List<Customer>> HandleAsync(FindDuplicateCustomersQuery request, CancellationToken ct)
     {
-        return await repository.GetDuplicatesAsync(request.Model, ct, request.OnlyAssignedUserId);
+        return await repository.GetDuplicatesAsync(request.Model, ct, request.AllowedOwnerIds);
     }
 }

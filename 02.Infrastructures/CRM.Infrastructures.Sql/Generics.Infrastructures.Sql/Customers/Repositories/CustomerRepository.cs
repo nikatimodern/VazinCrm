@@ -28,40 +28,40 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
         return query.FirstOrDefaultAsync(c => c.Id == id, ct);
     }
     public Task<Customer?> GetByMobileAsync(string mobile, CancellationToken ct) => db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Mobile == mobile, ct);
-    public Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken ct, Guid? onlyAssignedUserId = null)
+    public Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
         var query = db.Customers.AsNoTracking().AsQueryable();
-        if (onlyAssignedUserId.HasValue)
-            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value));
+        if (allowedOwnerIds != null)
+            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId)));
         if (roleType is 1 or 2)
             query = query.Where(c => (int)c.RoleType == roleType || (int)c.RoleType == 3);
 
         return query.Where(c => EF.Functions.Like(c.AgentName, "%" + search + "%") || EF.Functions.Like(c.CompanyName, "%" + search + "%") || EF.Functions.Like(c.CustomerCode.ToString(), "%" + search + "%"))
             .Select(c => new CustomerOption(c.Id, c.CompanyName + " " + c.AgentName + " کد مشتری: " + c.CustomerCode)).Take(20).ToListAsync(ct);
     }
-    public Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken ct, Guid? onlyAssignedUserId = null) =>
+    public Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken ct, Guid[]? allowedOwnerIds = null) =>
         db.Customers.AsNoTracking().Where(c =>
             ((int)c.RoleType == 2 || (int)c.RoleType == 3) &&
-            (!onlyAssignedUserId.HasValue || db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value)))
+            (!allowedOwnerIds != null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))))
         .Select(c => new CustomerSupplier(c.Id, c.CompanyName, c.AgentName, c.CustomerCode)).ToListAsync(ct);
-    public async Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken ct, Guid? onlyAssignedUserId = null)
+    public async Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
         var model = await GetAsync(id, false, false, ct); if (model == null) return [];
         var query = db.Customers.AsNoTracking();
         query = model.Juridical == 1 ? query.Where(c => c.Id != id && ((c.ShenaseMeli == model.ShenaseMeli && model.ShenaseMeli != null) ||
             (c.EghtesadiCode == model.EghtesadiCode && model.EghtesadiCode != null) || (c.NumberRegister == model.NumberRegister && model.NumberRegister != null))) :
             query.Where(c => EF.Functions.Like(c.AgentName, "%" + model.AgentName + "%") || (c.Mobile == model.Mobile && model.Mobile != null && c.Id != id));
-        if (onlyAssignedUserId.HasValue)
-            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value));
+        if (allowedOwnerIds != null)
+            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId)));
         return await query.ToListAsync(ct);
     }
-    public Task<List<Customer>> GetDuplicatesAsync(Customer model, CancellationToken ct, Guid? onlyAssignedUserId = null)
+    public Task<List<Customer>> GetDuplicatesAsync(Customer model, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
         var query = db.Customers.AsNoTracking();
         query = model.Juridical == 1 ? query.Where(c => c.AgentName == model.AgentName || c.CompanyName == model.CompanyName || c.ShenaseMeli == model.ShenaseMeli || c.EghtesadiCode == model.EghtesadiCode || c.NumberRegister == model.NumberRegister) :
             query.Where(c => EF.Functions.Like(c.AgentName, "%" + model.AgentName + "%") || c.Mobile == model.Mobile);
-        if (onlyAssignedUserId.HasValue)
-            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value));
+        if (allowedOwnerIds != null)
+            query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId)));
         return query.ToListAsync(ct);
     }
     public Task<bool> HasLegalDuplicateAsync(Customer model, CancellationToken ct) => db.Customers.AnyAsync(c =>
@@ -82,7 +82,17 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public async Task<List<Customer>> GetListAsync(CustomerListFilter filter, string userId, bool readAll, CancellationToken ct)
     {
         var query = db.Customers.AsNoTracking().Include(c => c.UserCustomers).AsQueryable();
-        if (!readAll) { if (!Guid.TryParse(userId, out var id)) return []; query = query.Where(c => db.UserCustomers.Any(u => u.CustomerId == c.Id && u.UserId == id)); }
+        if (filter.AllowedOwnerIds is not null)
+        {
+            var owners = filter.AllowedOwnerIds;
+            query = query.Where(c => db.UserCustomers.Any(u =>
+                u.CustomerId == c.Id && owners.Contains(u.UserId)));
+        }
+        else if (!readAll)
+        {
+            if (!Guid.TryParse(userId, out var id)) return [];
+            query = query.Where(c => db.UserCustomers.Any(u => u.CustomerId == c.Id && u.UserId == id));
+        }
         if (filter.RoleType == 1) query = query.Where(c => (int)c.RoleType == 1 || (int)c.RoleType == 3);
         if (filter.RoleType == 2) query = query.Where(c => (int)c.RoleType == 2 || (int)c.RoleType == 3);
         if (filter.Juridical != -1) query = query.Where(c => c.Juridical == filter.Juridical);
@@ -101,18 +111,18 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public async Task<CustomerTableResult> GetTableAsync(CustomerTableRequest filter, CancellationToken ct)
     {
         var query = db.Customers.AsNoTracking().Where(c => c.Juridical == filter.Juridical);
-        if (filter.OnlyAssignedUserId.HasValue) query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == filter.OnlyAssignedUserId.Value));
+        if (filter.AllowedOwnerIds is not null) query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && filter.AllowedOwnerIds.Contains(link.UserId)));
         if (!string.IsNullOrEmpty(filter.Search)) query = query.Where(c => c.AgentName.Contains(filter.Search));
         var count = await query.CountAsync(ct);
         query = filter.SortColumn == "AgentName" ? (filter.Ascending ? query.OrderBy(c => c.AgentName) : query.OrderByDescending(c => c.AgentName)) :
             (filter.Ascending ? query.OrderBy(c => c.CreateDate) : query.OrderByDescending(c => c.CreateDate));
         return new(filter.Draw, count, count, await query.Skip(filter.Skip).Take(filter.Take).ToListAsync(ct));
     }
-    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct, Guid? onlyAssignedUserId = null) => db.Customers.AsNoTracking().Where(c => !onlyAssignedUserId.HasValue || db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value)).Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode, c.CompanyName, c.AgentName)).ToListAsync(ct);
-    public Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken ct, Guid? onlyAssignedUserId = null)
+    public Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken ct, Guid[]? allowedOwnerIds = null) => db.Customers.AsNoTracking().Where(c => !allowedOwnerIds != null || db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId))).Select(c => new CustomerSummary(c.Id, c.Mobile, c.Tel, (int)c.RoleType, (c.CompanyName + " " + c.AgentName).Trim(), c.CustomerCode, c.CompanyName, c.AgentName)).ToListAsync(ct);
+    public Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken ct, Guid[]? allowedOwnerIds = null)
     {
         var query = db.Customers.AsNoTracking().AsQueryable();
-        if (onlyAssignedUserId.HasValue) query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && link.UserId == onlyAssignedUserId.Value));
+        if (allowedOwnerIds != null) query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && allowedOwnerIds!.Contains(link.UserId)));
         if (string.IsNullOrWhiteSpace(search)) query = query.OrderByDescending(c => c.ModifyDate).Take(50);
         else query = query.Where(c => keywords.Any(k => c.NormalizedCompanyName.Contains(k) || c.NormalizedAgentName.Contains(k) || c.Tel.Contains(search) || c.Mobile.Contains(search)) || c.CustomerCode.ToString() == search)
             .OrderByDescending(c => (c.NormalizedCompanyName == search ? 100 : 0) + (c.NormalizedAgentName == search ? 100 : 0) + (c.NormalizedCompanyName.StartsWith(search) ? 50 : 0) + (c.NormalizedAgentName.StartsWith(search) ? 50 : 0) + keywords.Count(k => c.NormalizedAgentName.Contains(k) || c.NormalizedCompanyName.Contains(k)) * 10).ThenByDescending(c => c.ModifyDate);

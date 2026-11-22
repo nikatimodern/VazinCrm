@@ -11,11 +11,11 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerSuppliers;
 
-public sealed record GetCustomerSuppliersQuery(Guid? OnlyAssignedUserId = null) : IQuery<List<CustomerSupplier>>;
+public sealed record GetCustomerSuppliersQuery(Guid[]? AllowedOwnerIds = null) : IQuery<List<CustomerSupplier>>;
 public sealed class GetCustomerSuppliersQueryHandler(ICustomerRepository repository) : IQueryHandler<GetCustomerSuppliersQuery, List<CustomerSupplier>>
 {
     public async Task<List<CustomerSupplier>> HandleAsync(GetCustomerSuppliersQuery request, CancellationToken ct)
     {
-        return await repository.GetSuppliersAsync(ct, request.OnlyAssignedUserId);
+        return await repository.GetSuppliersAsync(ct, request.AllowedOwnerIds);
     }
 }
