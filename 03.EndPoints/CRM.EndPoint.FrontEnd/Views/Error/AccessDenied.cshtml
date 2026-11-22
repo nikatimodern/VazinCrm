@@ -1,0 +1,32 @@
+@{
+    Layout = User.Identity?.IsAuthenticated == true
+        ? (User.IsCustomer() ? "_CustomerLayout" : "_Layout")
+        : null;
+    ViewData["Title"] = "عدم دسترسی";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/accessDenied.css" asp-append-version="true" />
+}
+
+<section class="erp-access-denied" dir="rtl" role="alert" aria-labelledby="erpAccessDeniedTitle">
+    <div class="erp-access-denied__symbol" aria-hidden="true">
+        <i class="fas fa-shield-alt"></i>
+        <span class="erp-access-denied__lock"><i class="fas fa-lock"></i></span>
+    </div>
+    <h1 id="erpAccessDeniedTitle">شما به این بخش دسترسی ندارید</h1>
+    <p>برای دسترسی به این بخش، با مدیر سیستم تماس بگیرید.</p>
+    <div class="erp-access-denied__actions">
+        <button type="button" class="erp-access-denied__secondary"
+                onclick="if (history.length > 1) history.back(); else location.assign('/Home/Index');">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            بازگشت
+        </button>
+        @if (!User.IsCustomer()) {
+            <a href="@Url.Action("Index", "Home")" class="erp-access-denied__primary">
+                <i class="fas fa-home" aria-hidden="true"></i>
+                داشبورد
+            </a>
+        }
+    </div>
+</section>

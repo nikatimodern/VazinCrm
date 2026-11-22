@@ -289,10 +289,17 @@ namespace CRM.EndPoint.FrontEnd {
             } else
             {
                 app.UseExceptionHandler("/Error/500"); // فقط برای exceptionهای واقعی (500+)
-                app.UseStatusCodePagesWithReExecute("/Error/{0}"); // برای status code ها مثل 404 / 401 / 403
 
                 app.UseHsts();
             }
+
+            // Browser navigation receives an ERP error page with the original HTTP status.
+            // JSON/AJAX errors remain plain 403/404 so API callers can handle them.
+            // Status-code pages are also enabled in Development (previously Production only).
+            app.UseWhen(
+                context => context.Request.Headers.Accept.ToString()
+                    .Contains("text/html", StringComparison.OrdinalIgnoreCase),
+                branch => branch.UseStatusCodePagesWithReExecute("/Error/{0}"));
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

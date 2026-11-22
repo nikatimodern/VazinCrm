@@ -16,6 +16,8 @@ public class ErrorController : Controller {
 
         ViewBag.OriginalPath = reExecuteFeature?.OriginalPath;
 
-        return View();
+        // Render an actionable access-denied message inside the ERP layout,
+        // while preserving the HTTP 403 response (including direct /Error/403).
+        return statusCode == 403 ? View("AccessDenied") : View();
     }
 }
