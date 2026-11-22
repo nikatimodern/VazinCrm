@@ -28,6 +28,7 @@
     const roleGroups = root.querySelector("[data-role-groups]");
     let roles = [], roleCatalog = [], currentRoleId = null, activeTab = "catalog";
     let roleChosen = new Set(), roleOriginal = new Set();
+    let roleScopes = new Map(), roleOriginalScopes = new Map();
     let roleReady = false, roleSaving = false, roleMutating = false, roleEditId = null;
     let roleLoadGeneration = 0, roleSelectionGeneration = 0, roleDeleteGeneration = 0;
     let roleDeletePreview = null, roleDeleteChoices = new Map();
@@ -272,6 +273,8 @@
         field(permissionForm, "title").value = permission?.title || "";
         field(permissionForm, "description").value = permission?.description || "";
         field(permissionForm, "isActive").checked = permission ? permission.isActive : true;
+        field(permissionForm, "supportsScope").checked = permission ? permission.supportsScope :
+            ["View", "Edit", "Delete"].includes(field(permissionForm, "key").value.trim());
         updateKeyPreview();
         ModalToggle(permissionModal, "show");
     }
@@ -314,7 +317,8 @@
                 key: field(permissionForm, "key").value.trim(),
                 title: field(permissionForm, "title").value.trim(),
                 description: field(permissionForm, "description").value.trim(),
-                isActive: field(permissionForm, "isActive").checked
+                isActive: field(permissionForm, "isActive").checked,
+                supportsScope: field(permissionForm, "supportsScope").checked
             }, permissionEditId);
             if (response?.success) {
                 ModalToggle(permissionModal, "hide");
@@ -348,7 +352,8 @@
     // This tab only stores role assignments; enforcing them is intentionally a separate phase.
     const currentRole = () => roles.find(x => x.id === currentRoleId);
     const roleDirty = () => roleChosen.size !== roleOriginal.size ||
-        [...roleChosen].some(id => !roleOriginal.has(id));
+        [...roleChosen].some(id => !roleOriginal.has(id) ||
+            (roleScopes.get(id) ?? 2) !== (roleOriginalScopes.get(id) ?? 2));
 
     function renderRoles() {
         const query = root.querySelector("[data-role-search]").value.trim().toLocaleLowerCase();
@@ -389,6 +394,8 @@
             button.disabled = roleSaving || roleMutating;
         for (const input of roleGroups.querySelectorAll("[data-role-permission-id], [data-role-entity-toggle]"))
             input.disabled = !roleReady || roleSaving || roleMutating;
+        for (const select of roleGroups.querySelectorAll("[data-role-scope-id]"))
+            select.disabled = !roleReady || roleSaving || roleMutating || !roleChosen.has(select.dataset.roleScopeId);
         root.querySelector("[data-role-subtitle]").textContent = !currentRole() ? "برای شروع یک نقش انتخاب کنید." :
             !roleReady ? "در حال دریافت مجوزها..." :
             roleDirty() ? "تغییرات ذخیره‌نشده" : "همه تغییرات ذخیره شده‌اند.";
@@ -454,6 +461,15 @@
                 const description = text("span");
                 description.append(text("strong", permission.title), text("small", permission.key));
                 label.append(input, description);
+                if (permission.supportsScope) {
+                    const select = document.createElement("select");
+                    select.className = "ac-role-scope-select";
+                    select.dataset.roleScopeId = permission.id;
+                    select.setAttribute("aria-label", "محدوده " + permission.title);
+                    select.append(new Option("فقط اطلاعات خود", "1"), new Option("همه اطلاعات", "2"));
+                    select.value = String(roleScopes.get(permission.id) ?? 2);
+                    label.append(select);
+                }
                 grid.append(label);
             }
             section.append(header, grid);
@@ -469,6 +485,8 @@
         roleReady = false;
         roleChosen = new Set();
         roleOriginal = new Set();
+        roleScopes = new Map();
+        roleOriginalScopes = new Map();
         showError("role", "");
         renderRoles();
         renderRolePermissions();
@@ -483,8 +501,14 @@
             return;
         }
         const permitted = new Set(roleCatalog.flatMap(x => x.permissions.map(p => p.id)));
-        roleChosen = new Set(ids.filter(id => permitted.has(id)));
+        const grants = ids.map(x => typeof x === "string" ?
+            ({ accessPermissionId: x, scope: 2 }) : x);
+        roleChosen = new Set(grants.filter(x => permitted.has(x.accessPermissionId))
+            .map(x => x.accessPermissionId));
+        roleScopes = new Map(grants.filter(x => roleChosen.has(x.accessPermissionId))
+            .map(x => [x.accessPermissionId, x.scope === 1 ? 1 : 2]));
         roleOriginal = new Set(roleChosen);
+        roleOriginalScopes = new Map(roleScopes);
         roleReady = true;
         renderRolePermissions();
     }
@@ -506,6 +530,8 @@
         roleReady = false;
         roleChosen = new Set();
         roleOriginal = new Set();
+        roleScopes = new Map();
+        roleOriginalScopes = new Map();
         currentRoleId = null;
         root.querySelector("[data-role-title]").textContent = "دسترسی‌های نقش";
         showEmpty(rolesList, "در حال دریافت نقش‌ها...", "fa-spinner");
@@ -570,14 +596,24 @@
             return;
         }
         if (input.dataset.rolePermissionId) {
-            if (input.checked) roleChosen.add(input.dataset.rolePermissionId);
-            else roleChosen.delete(input.dataset.rolePermissionId);
+            if (input.checked) {
+                roleChosen.add(input.dataset.rolePermissionId);
+                roleScopes.set(input.dataset.rolePermissionId, 2);
+            } else {
+                roleChosen.delete(input.dataset.rolePermissionId);
+                roleScopes.delete(input.dataset.rolePermissionId);
+            }
         } else if (input.dataset.roleEntityToggle) {
             const entity = roleCatalog.find(x => x.id === input.dataset.roleEntityToggle);
             if (!entity) return;
             for (const permission of entity.permissions) {
-                if (input.checked) roleChosen.add(permission.id);
-                else roleChosen.delete(permission.id);
+                if (input.checked) {
+                    roleChosen.add(permission.id);
+                    if (!roleScopes.has(permission.id)) roleScopes.set(permission.id, 2);
+                } else {
+                    roleChosen.delete(permission.id);
+                    roleScopes.delete(permission.id);
+                }
             }
             for (const checkbox of roleGroups.querySelectorAll("[data-role-permission-id]")) {
                 if (entity.permissions.some(p => p.id === checkbox.dataset.rolePermissionId))
@@ -595,12 +631,16 @@
             syncRoleState();
             showError("role", "");
             const result = await post("SaveRolePermissions", {
-                roleId, permissionIds: [...roleChosen]
+                roleId, permissionIds: [...roleChosen],
+                scopes: [...roleChosen].map(accessPermissionId => ({
+                    accessPermissionId, scope: roleScopes.get(accessPermissionId) ?? 2
+                }))
             });
             if (signal.aborted || currentRoleId !== roleId) return;
             if (result?.success) {
                 roleOriginal = new Set(roleChosen);
-                toastifySuccess("دسترسی‌های نقش ذخیره شدند.");
+                roleOriginalScopes = new Map(roleScopes);
+                toastifySuccess("دسترسی‌ها و محدوده نقش ذخیره شدند.");
             } else if (!root.querySelector("[data-role-error]").textContent) {
                 showError("role", "ذخیره دسترسی‌های نقش انجام نشد.");
             }
@@ -1011,15 +1051,20 @@
         [...userOverrides].some(([id, allowed]) => userOriginalOverrides.get(id) !== allowed);
 
     function effectivePermission(permissionId) {
+        const grants = userGrantSources.get(permissionId);
         const fromRoles = userAvailableRoles.filter(role =>
-            userRoleIds.has(role.id) && userGrantSources.get(permissionId)?.has(role.id));
+            userRoleIds.has(role.id) && grants?.has(role.id));
+        const roleScope = fromRoles.reduce((highest, role) =>
+            Math.max(highest, grants.get(role.id)), 0);
         const custom = userOverrides.get(permissionId);
+        const scope = custom === undefined ? roleScope : custom;
+        const scopeLabel = scope === 1 ? "فقط اطلاعات خود" : "همه اطلاعات";
         return {
-            allowed: custom === undefined ? fromRoles.length > 0 : custom,
-            state: custom === false ? "محدودیت اختصاصی" :
-                   custom === true ? "اجازه اختصاصی" :
-                   fromRoles.length ? "مجاز از نقش" : "بدون دسترسی",
-            sources: fromRoles.map(role => role.name),
+            allowed: scope > 0, scope,
+            state: custom === 0 ? "محدودیت اختصاصی" :
+                   custom !== undefined ? "اجازه اختصاصی — " + scopeLabel :
+                   roleScope ? "از نقش‌ها — " + scopeLabel : "بدون دسترسی",
+            sources: fromRoles.map(role => role.name + (grants.get(role.id) === 1 ? " (فقط خود)" : " (همه)")),
             isCustom: custom !== undefined
         };
     }
@@ -1168,11 +1213,14 @@
                 select.className = "ac-user-override-select";
                 select.dataset.userOverrideId = permission.id;
                 select.setAttribute("aria-label", "وضعیت اختصاصی " + permission.title + " در " + entity.title);
-                select.append(new Option("از نقش‌ها", "inherit"),
-                    new Option("اجازه اختصاصی", "allow"),
+                select.append(new Option("از نقش‌ها", "inherit"));
+                if (permission.supportsScope) select.append(new Option("اجازه اختصاصی — فقط خود", "own"));
+                select.append(new Option(permission.supportsScope ?
+                    "اجازه اختصاصی — همه" : "اجازه اختصاصی", "allow"),
                     new Option("محدودیت اختصاصی", "deny"));
                 const override = userOverrides.get(permission.id);
-                select.value = override === undefined ? "inherit" : override ? "allow" : "deny";
+                select.value = override === undefined ? "inherit" :
+                    override === 0 ? "deny" : override === 1 ? "own" : "allow";
                 const effective = text("span", null, "ac-user-effective");
                 effective.dataset.userEffective = permission.id;
                 controls.append(select, effective);
@@ -1218,7 +1266,7 @@
         const active = new Set(userCatalog.flatMap(x => x.permissions.map(p => p.id)));
         userRoleIds = new Set(result.roleIds.filter(id => available.has(id)));
         userOverrides = new Map(result.overrides.filter(x => active.has(x.accessPermissionId))
-            .map(x => [x.accessPermissionId, x.isAllowed]));
+            .map(x => [x.accessPermissionId, !x.isAllowed ? 0 : x.scope === 1 ? 1 : 2]));
         userOriginalRoles = new Set(userRoleIds);
         userOriginalOverrides = new Map(userOverrides);
         userReady = true;
@@ -1292,8 +1340,8 @@
         userGrantSources = new Map();
         for (const grant of grants) {
             if (!userGrantSources.has(grant.accessPermissionId))
-                userGrantSources.set(grant.accessPermissionId, new Set());
-            userGrantSources.get(grant.accessPermissionId).add(grant.roleId);
+                userGrantSources.set(grant.accessPermissionId, new Map());
+            userGrantSources.get(grant.accessPermissionId).set(grant.roleId, grant.scope === 1 ? 1 : 2);
         }
         await loadUsersPage(userPage);
     }
@@ -1328,7 +1376,7 @@
     function setUserOverride(id, value) {
         if (!userReady || userSaving) return;
         if (value === "inherit") userOverrides.delete(id);
-        else userOverrides.set(id, value === "allow");
+        else userOverrides.set(id, value === "deny" ? 0 : value === "own" ? 1 : 2);
         if (root.querySelector("[data-user-only-overrides]").checked)
             renderUserPermissions();
         else
@@ -1344,8 +1392,8 @@
             showError("user", "");
             const result = await post("SaveUserAccess", {
                 userId, roleIds: [...userRoleIds],
-                overrides: [...userOverrides].map(([accessPermissionId, isAllowed]) =>
-                    ({ accessPermissionId, isAllowed }))
+                overrides: [...userOverrides].map(([accessPermissionId, scope]) =>
+                    ({ accessPermissionId, isAllowed: scope > 0, scope: scope || 2 }))
             });
             if (signal.aborted || currentUserId !== userId) return;
             if (result?.success) {
@@ -1418,6 +1466,7 @@
         else if (action === "save-role") void saveRolePermissions();
         else if (action === "reset-role") {
             roleChosen = new Set(roleOriginal);
+            roleScopes = new Map(roleOriginalScopes);
             renderRolePermissions();
         }
         else if (action === "new-entity") openEntityEditor();
@@ -1428,6 +1477,7 @@
             openPermissionEditor();
             field(permissionForm, "key").value = target.dataset.key;
             field(permissionForm, "title").value = target.dataset.title;
+            field(permissionForm, "supportsScope").checked = ["View", "Edit", "Delete"].includes(target.dataset.key);
             updateKeyPreview();
         }
         else if (action === "edit-permission") openPermissionEditor(permissions.find(x => x.id === target.dataset.id));
@@ -1493,6 +1543,12 @@
     root.addEventListener("change", event => {
         if (event.target.matches("[data-role-permission-id], [data-role-entity-toggle]"))
             editRolePermission(event.target);
+        if (event.target.matches("[data-role-scope-id]")) {
+            const id = event.target.dataset.roleScopeId;
+            if (!roleReady || roleSaving || roleMutating || !roleChosen.has(id)) return;
+            roleScopes.set(id, Number(event.target.value));
+            syncRoleState();
+        }
         if (event.target.matches("[data-user-role-id]")) {
             if (!userReady || userSaving) return;
             const roleId = event.target.dataset.userRoleId;

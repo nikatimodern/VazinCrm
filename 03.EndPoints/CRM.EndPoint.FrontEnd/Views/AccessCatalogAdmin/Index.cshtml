@@ -113,7 +113,7 @@
                 </div>
                 <p class="ac-role-notice">
                     <i class="fas fa-info-circle" aria-hidden="true"></i>
-                    این تنظیمات فعلاً فقط ثبت و نگهداری می‌شوند؛ اعمال مجوز روی عملیات برنامه در مرحله بعد انجام می‌شود.
+                    برای دسترسی‌های دارای محدوده، «فقط خود» و «همه» مستقل از هم تنظیم می‌شوند. اعمال محدودیت واقعی روی ماژول‌ها مرحله‌ای است.
                 </p>
                 <p class="ac-error ac-role-error" data-role-error role="alert" hidden></p>
                 <div class="ac-role-groups" data-role-groups aria-live="polite">
@@ -205,7 +205,7 @@
                 <p class="ac-role-notice">
                     <i class="fas fa-info-circle" aria-hidden="true"></i>
                     مجوزهای نقش‌ها پویا هستند. «محدودیت اختصاصی» بر همه نقش‌ها اولویت دارد و
-                    «اجازه اختصاصی» دسترسی مستقلی ایجاد می‌کند. اعمال واقعی مجوزها روی عملیات برنامه در مرحله بعد است.
+                    «اجازه اختصاصی» با محدوده انتخابی، جایگزین مجوز نقش‌ها می‌شود. اعمال واقعی روی ماژول‌ها مرحله‌ای است.
                 </p>
                 <div class="ac-user-tools">
                     <button class="ac-btn ac-btn-muted" type="button" data-action="user-clear-overrides" disabled>
@@ -523,6 +523,9 @@
                             <textarea name="description" maxlength="1000" rows="2"></textarea>
                         </label>
                         <label class="ac-check"><input type="checkbox" name="isActive" checked /> فعال</label>
+                        <label class="ac-check"><input type="checkbox" name="supportsScope" />
+                            امکان تعیین محدوده «فقط خود / همه» برای این دسترسی</label>
+                        <p class="ac-form-context">محدوده «فقط خود» فقط پس از اتصال قواعد مالکیت به ماژول، در عملیات برنامه اعمال می‌شود.</p>
                     </div>
                     <p class="ac-error" data-permission-error role="alert" hidden></p>
                 </div>
