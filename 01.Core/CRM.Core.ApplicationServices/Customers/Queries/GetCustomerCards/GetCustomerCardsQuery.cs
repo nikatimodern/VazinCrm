@@ -11,12 +11,12 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerCards;
 
-public sealed record GetCustomerCardsQuery(int Skip, int Take, int RoleType, int Juridical) : IQuery<CustomerListResult>;
+public sealed record GetCustomerCardsQuery(int Skip, int Take, int RoleType, int Juridical, bool? ReadAllOverride = null) : IQuery<CustomerListResult>;
 public sealed class GetCustomerCardsQueryHandler(ICustomerRepository repository, CustomerAccess access) : IQueryHandler<GetCustomerCardsQuery, CustomerListResult>
 {
     public async Task<CustomerListResult> HandleAsync(GetCustomerCardsQuery request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
-        return new(await repository.GetListAsync(new(request.Skip, request.Take, request.RoleType, request.Juridical), identity.User.Id, identity.CanManage, ct), identity.CanManage);
+        return new(await repository.GetListAsync(new(request.Skip, request.Take, request.RoleType, request.Juridical), identity.User.Id, request.ReadAllOverride ?? identity.CanManage, ct), identity.CanManage);
     }
 }

@@ -11,11 +11,11 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetRelatedCustomers;
 
-public sealed record GetRelatedCustomersQuery(Guid Id) : IQuery<List<Customer>>;
+public sealed record GetRelatedCustomersQuery(Guid Id, Guid? OnlyAssignedUserId = null) : IQuery<List<Customer>>;
 public sealed class GetRelatedCustomersQueryHandler(ICustomerRepository repository) : IQueryHandler<GetRelatedCustomersQuery, List<Customer>>
 {
     public async Task<List<Customer>> HandleAsync(GetRelatedCustomersQuery request, CancellationToken ct)
     {
-        return await repository.GetRelatedAsync(request.Id, ct);
+        return await repository.GetRelatedAsync(request.Id, ct, request.OnlyAssignedUserId);
     }
 }

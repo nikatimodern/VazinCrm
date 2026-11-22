@@ -11,12 +11,12 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerPhonebook;
 
-public sealed record GetCustomerPhonebookQuery(string? Search) : IQuery<List<CustomerPhone>>;
+public sealed record GetCustomerPhonebookQuery(string? Search, Guid? OnlyAssignedUserId = null) : IQuery<List<CustomerPhone>>;
 public sealed class GetCustomerPhonebookQueryHandler(ICustomerRepository repository, ICustomerEffects effects) : IQueryHandler<GetCustomerPhonebookQuery, List<CustomerPhone>>
 {
     public async Task<List<CustomerPhone>> HandleAsync(GetCustomerPhonebookQuery request, CancellationToken ct)
     {
         var search = effects.Normalize(request.Search);
-        return await repository.GetPhonebookAsync(search, CustomerSearch.Words(search), ct);
+        return await repository.GetPhonebookAsync(search, CustomerSearch.Words(search), ct, request.OnlyAssignedUserId);
     }
 }

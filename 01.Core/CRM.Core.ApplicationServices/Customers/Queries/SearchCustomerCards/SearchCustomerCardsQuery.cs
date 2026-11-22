@@ -11,7 +11,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.SearchCustomerCards;
 
-public sealed record SearchCustomerCardsQuery(string? Search, int RoleType, int Juridical) : IQuery<CustomerListResult>;
+public sealed record SearchCustomerCardsQuery(string? Search, int RoleType, int Juridical, bool? ReadAllOverride = null) : IQuery<CustomerListResult>;
 public sealed class SearchCustomerCardsQueryHandler(ICustomerRepository repository, CustomerAccess access, ICustomerEffects effects) : IQueryHandler<SearchCustomerCardsQuery, CustomerListResult>
 {
     public async Task<CustomerListResult> HandleAsync(SearchCustomerCardsQuery request, CancellationToken ct)
@@ -19,6 +19,6 @@ public sealed class SearchCustomerCardsQueryHandler(ICustomerRepository reposito
         var identity = await access.GetAsync(ct);
         var search = effects.Normalize(request.Search);
         var words = CustomerSearch.Words(search);
-        return new(await repository.GetListAsync(new(0, 0, request.RoleType, request.Juridical, search, words), identity.User.Id, identity.CanManage, ct), identity.CanManage);
+        return new(await repository.GetListAsync(new(0, 0, request.RoleType, request.Juridical, search, words), identity.User.Id, request.ReadAllOverride ?? identity.CanManage, ct), identity.CanManage);
     }
 }
