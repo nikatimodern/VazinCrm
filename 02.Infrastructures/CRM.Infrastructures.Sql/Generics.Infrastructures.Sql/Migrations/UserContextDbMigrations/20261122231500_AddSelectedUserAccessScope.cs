@@ -18,7 +18,7 @@ public partial class AddSelectedUserAccessScope : Migration
             UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
             AccessPermissionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
             TargetUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
-        }, table =>
+        }, constraints: table =>
         {
             table.PrimaryKey("PK_AccessUserScopeMembers", x => new { x.UserId, x.AccessPermissionId, x.TargetUserId });
             table.ForeignKey("FK_AccessUserScopeMembers_AccessUserPermissions_UserId_AccessPermissionId",
