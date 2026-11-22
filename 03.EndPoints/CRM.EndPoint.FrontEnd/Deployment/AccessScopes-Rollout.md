@@ -13,6 +13,8 @@ Scope values: **0 = effective deny**, **1 = own/assigned**, **2 = all**.
 Stored grants use only 1 or 2; explicit user deny remains `IsAllowed=false`.
 
 **Existing role grants and user allows are migrated to All (2), not Own (1).**
+New write requests must include each scope explicitly. Old cached browser clients that omit
+scopes are rejected instead of silently elevating an Own grant to All; refresh the page.
 Previously configured overrides and roles are preserved; no Identity role
 or user membership table is reset.
 

@@ -13,7 +13,7 @@ public sealed class AccessCatalogConflictException : Exception
 }
 
 
-public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.All);
+public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.None);
 public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId, byte Scope = AccessScopes.All);
 public sealed record AccessRoleGrantDraft(Guid AccessPermissionId, byte Scope);
 public sealed record AccessUserState(string UserId, IReadOnlyList<string> RoleIds, IReadOnlyList<AccessUserOverride> Overrides);

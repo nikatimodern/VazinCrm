@@ -233,7 +233,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     public async Task<AccessCatalogResult> SaveRolePermissionsAsync(RolePermissionsSaveDraft? draft, CancellationToken ct)
     {
         if (draft is null || string.IsNullOrWhiteSpace(draft.RoleId) || draft.RoleId.Length > 450 ||
-            draft.PermissionIds is null || draft.PermissionIds.Length > 5000)
+            draft.PermissionIds is null || draft.PermissionIds.Length > 5000 || draft.Scopes is null)
             return new(400, "اطلاعات نقش یا مجوزها معتبر نیست.");
         if (!(await adminUsers.GetRolesAsync(ct)).Any(r => r.Id == draft.RoleId))
             return new(404, "نقش موردنظر پیدا نشد.");
@@ -243,8 +243,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var requested = draft.PermissionIds.ToHashSet();
         if (requested.Count != draft.PermissionIds.Length || requested.Any(id => !activeIds.Contains(id)))
             return new(400, "یک یا چند دسترسی تکراری، غیرفعال یا نامعتبر است.");
-        // Legacy callers omit Scopes; their selected grants remain unrestricted.
-        var choices = draft.Scopes ?? requested.Select(id => new AccessRoleGrantDraft(id, AccessScopes.All)).ToArray();
+        // Never accept stale clients without explicit scopes: that could escalate Own to All.
+        var choices = draft.Scopes;
         if (choices.Length != requested.Count ||
             choices.Select(x => x.AccessPermissionId).Distinct().Count() != choices.Length ||
             choices.Any(x => !requested.Contains(x.AccessPermissionId) || !AccessScopes.IsGrant(x.Scope)))
