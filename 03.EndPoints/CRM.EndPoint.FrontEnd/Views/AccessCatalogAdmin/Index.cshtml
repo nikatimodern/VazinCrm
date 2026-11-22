@@ -126,8 +126,8 @@
     </div>
 
     <div id="acUsersPanel" class="ac-users-panel" role="tabpanel" aria-labelledby="acUsersTab" hidden>
-        <div class="ac-layout ac-role-layout">
-            <aside class="ac-panel" aria-label="کاربران">
+        <div class="ac-layout ac-role-layout ac-user-layout">
+            <aside class="ac-panel ac-user-list-panel" aria-label="کاربران">
                 <div class="ac-panel-heading">
                     <h2>کاربران <span class="ac-count" data-users-count>۰</span></h2>
                     <div class="ac-toolbar-actions">
@@ -163,32 +163,29 @@
                     <button class="ac-btn ac-btn-muted" type="button" data-action="user-next" disabled>بعدی</button>
                 </div>
             </aside>
-            <section class="ac-panel" aria-label="نقش‌ها و دسترسی‌های کاربر">
+            <section class="ac-panel ac-user-access-panel" aria-label="مجوزهای کاربر">
                 <div class="ac-panel-heading ac-role-detail-heading">
                     <div>
                         <h2 data-user-title>دسترسی‌های کاربر</h2>
                         <p data-user-position>برای شروع یک کاربر را انتخاب کنید.</p>
                         <p data-user-subtitle></p>
                     </div>
-                    <div class="ac-toolbar-actions">
+                    <div class="ac-toolbar-actions ac-user-action-buttons">
                         <button class="ac-btn ac-btn-muted" type="button" data-action="edit-user" disabled>
                             <i class="fas fa-pen" aria-hidden="true"></i> ویرایش کاربر
                         </button>
-                        <button class="ac-btn ac-btn-muted" type="button" data-action="reset-user" disabled>بازگرداندن تغییرات</button>
+                        <button class="ac-btn ac-btn-outline-purple" type="button" data-action="reset-user"
+                                title="لغو تغییرات ذخیره‌نشده و بازگشت به آخرین وضعیت ذخیره‌شده" disabled>
+                            <i class="fas fa-undo-alt" aria-hidden="true"></i> بازگردانی
+                        </button>
+                        <button class="ac-btn ac-btn-purple" type="button" data-action="user-clear-overrides"
+                                title="حذف استثناهای اختصاصی و استفاده از مجوزهای نقش‌ها" disabled>
+                            <i class="fas fa-history" aria-hidden="true"></i> بازگردانی به نقش‌ها
+                        </button>
                         <button class="ac-btn ac-btn-primary" type="button" data-action="save-user" disabled>
-                            <i class="fas fa-save" aria-hidden="true"></i> ذخیره دسترسی‌های کاربر
+                            <i class="fas fa-save" aria-hidden="true"></i> ذخیره دسترسی‌ها
                         </button>
                     </div>
-                </div>
-                <div class="ac-user-role-section">
-                    <div class="ac-user-role-header">
-                        <strong>نقش‌های کاربر</strong>
-                        <span data-user-roles-count>۰ نقش</span>
-                    </div>
-                    <div class="ac-user-role-list" data-user-roles>
-                        <p class="ac-muted">نقش‌ها پس از انتخاب کاربر نمایش داده می‌شوند.</p>
-                    </div>
-                    <p>سمت کاری کاربر مستقل از نقش‌هاست و در این صفحه تغییر نمی‌کند.</p>
                 </div>
                 <div class="ac-role-tools">
                     <label class="ac-search ac-role-search">
@@ -202,16 +199,16 @@
                     </label>
                     <span class="ac-selected-count" data-user-effective-count>۰ مجوز مؤثر</span>
                 </div>
-                <p class="ac-role-notice">
-                    <i class="fas fa-info-circle" aria-hidden="true"></i>
-                    مجوزهای نقش‌ها پویا هستند. «محدودیت اختصاصی» بر همه نقش‌ها اولویت دارد و
-                    «اجازه اختصاصی» با محدوده انتخابی، جایگزین مجوز نقش‌ها می‌شود.
-                    در «کاربران انتخابی»، اطلاعات خود کاربر و کاربران مشخص‌شده قابل دسترسی خواهند بود. اعمال واقعی روی ماژول‌ها مرحله‌ای است.
-                </p>
-                <div class="ac-user-tools">
-                    <button class="ac-btn ac-btn-muted" type="button" data-action="user-clear-overrides" disabled>
-                        بازگرداندن همه مجوزها به نقش‌ها
-                    </button>
+                <div class="ac-user-access-summary" role="note" aria-label="خلاصه نحوه اعمال دسترسی">
+                    <span class="ac-user-summary-description">
+                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                        مجوزها از نقش‌ها محاسبه می‌شوند و استثناهای اختصاصی اولویت دارند.
+                    </span>
+                    <span class="ac-user-summary-pills">
+                        <span><i class="fas fa-user-tag" aria-hidden="true"></i> <span data-user-summary-roles>۰ نقش</span></span>
+                        <span><i class="fas fa-key" aria-hidden="true"></i> <span data-user-summary-overrides>۰ استثنا</span></span>
+                        <span><i class="fas fa-users" aria-hidden="true"></i> <span data-user-summary-selected>۰ مجوز انتخابی</span></span>
+                    </span>
                 </div>
                 <p class="ac-error ac-role-error" data-user-error role="alert" hidden></p>
                 <div class="ac-role-groups ac-user-permission-groups" data-user-permissions aria-live="polite">
@@ -220,6 +217,19 @@
                     </div>
                 </div>
             </section>
+            <aside class="ac-panel ac-user-roles-panel" aria-label="نقش‌های کاربر انتخاب‌شده">
+                <div class="ac-panel-heading">
+                    <h2><i class="fas fa-layer-group" aria-hidden="true"></i> نقش‌های کاربر</h2>
+                    <span class="ac-count" data-user-roles-count>۰ نقش</span>
+                </div>
+                <div class="ac-user-role-section">
+                    <label class="ac-user-role-label" for="acUserRoleSelect">نقش‌های اختصاص‌یافته</label>
+                    <div class="ac-user-role-list" data-user-roles>
+                        <p class="ac-muted">برای انتخاب نقش‌ها یک کاربر انتخاب کنید.</p>
+                    </div>
+                    <p>تغییر نقش‌ها پس از ذخیره دسترسی‌ها اعمال می‌شود.</p>
+                </div>
+            </aside>
         </div>
     </div>
 
