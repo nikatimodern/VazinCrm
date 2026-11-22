@@ -135,14 +135,10 @@ namespace CRM.Infrastructures.Sql {
             base.OnModelCreating(modelBuilder);
             // Access security tables belong to the Identity database, not to CRMContextDb.
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly, type =>
-                
-                type != typeof(AccessEntityConfiguration) &&
-                type != typeof(AccessPermissionConfiguration) &&
-                type != typeof(AccessRolePermissionConfiguration) &&
-                type != typeof(AccessUserPermissionConfiguration) &&
-                type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace
-
-                );
+                // All AccessCatalog mappings belong to UserContextDb (Identity database).
+                // Exclude the namespace so future mappings cannot leak into CRMContextDb.
+                type.Namespace != typeof(AccessEntityConfiguration).Namespace &&
+                type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace);
             
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
