@@ -13,4 +13,7 @@ public interface IAccessScopeService
 {
     Task<byte> GetEffectiveScopeAsync(string userId, string permissionKey, CancellationToken ct);
     Task<bool> CanAccessCustomerAsync(string userId, string permissionKey, Guid customerId, CancellationToken ct);
+    // null means All, an empty array means None; otherwise database queries must
+    // restrict rows to objects assigned to one of these Identity user IDs.
+    Task<Guid[]?> GetAllowedCustomerOwnerIdsAsync(string userId, string permissionKey, CancellationToken ct);
 }

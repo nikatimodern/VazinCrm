@@ -43,8 +43,9 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         if (custom is not null)
         {
             if (!custom.IsAllowed) return AccessScopes.None;
-            return AccessScopes.IsGrant(custom.Scope) &&
-                   (custom.Scope != AccessScopes.Own || permission.SupportsScope)
+            return AccessScopes.IsOverrideGrant(custom.Scope) &&
+                   (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
+                   (custom.Scope != AccessScopes.SelectedUsers || entityKey == "Customer")
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -61,15 +62,35 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         return valid.DefaultIfEmpty(AccessScopes.None).Max();
     }
 
+    public async Task<Guid[]?> GetAllowedCustomerOwnerIdsAsync(
+        string userId, string permissionKey, CancellationToken ct)
+    {
+        if (!permissionKey.StartsWith("Customer.", StringComparison.Ordinal)) return [];
+        var scope = await GetEffectiveScopeAsync(userId, permissionKey, ct);
+        if (scope == AccessScopes.All) return null;
+        if (scope == AccessScopes.None || !Guid.TryParse(userId, out var ownId)) return [];
+        if (scope == AccessScopes.Own) return [ownId];
+
+        // Only a *user-specific* SelectedUsers override can reach this branch.
+        var key = permissionKey["Customer.".Length..];
+        var selected = await (from link in users.AccessUserScopeMembers.AsNoTracking()
+            join perm in users.AccessPermissions.AsNoTracking() on link.AccessPermissionId equals perm.Id
+            join target in users.Users.AsNoTracking() on link.TargetUserId equals target.Id
+            where link.UserId == userId && perm.Key == key && perm.AccessEntity.Key == "Customer" &&
+                  target.IsEmployee && !target.OrganAdmin
+            select link.TargetUserId).ToArrayAsync(ct);
+        return selected.Select(id => Guid.TryParse(id, out var guid) ? guid : Guid.Empty)
+            .Where(id => id != Guid.Empty).Append(ownId).Distinct().ToArray();
+    }
+
     public async Task<bool> CanAccessCustomerAsync(
         string userId, string permissionKey, Guid customerId, CancellationToken ct)
     {
         if (customerId == Guid.Empty || !permissionKey.StartsWith("Customer.", StringComparison.Ordinal)) return false;
-        var scope = await GetEffectiveScopeAsync(userId, permissionKey, ct);
-        if (scope == AccessScopes.All) return true;
-        // UserCustomers.UserId is a Guid, while Identity's Id is string.
-        return scope == AccessScopes.Own && Guid.TryParse(userId, out var id) &&
-               await crm.UserCustomers.AsNoTracking()
-                   .AnyAsync(x => x.UserId == id && x.CustomerId == customerId, ct);
+        var allowed = await GetAllowedCustomerOwnerIdsAsync(userId, permissionKey, ct);
+        if (allowed is null) return true;
+        if (allowed.Length == 0) return false;
+        return await crm.UserCustomers.AsNoTracking().AnyAsync(link =>
+            link.CustomerId == customerId && allowed.Contains(link.UserId), ct);
     }
 }
