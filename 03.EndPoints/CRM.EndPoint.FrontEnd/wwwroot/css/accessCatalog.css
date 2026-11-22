@@ -720,26 +720,71 @@
     display: block;
     width: 100%;
 }
+/* Selected roles use one full-width row per role; never squeeze multiple
+   long Persian labels into tiny horizontal TomSelect chips. */
 #accessCatalog #acUsersPanel .ac-user-role-list .ts-control {
     min-height: 42px;
-    padding: 6px 7px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    align-content: flex-start;
+    height: auto !important;
+    padding: 7px;
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap !important;
+    gap: 6px;
     border-color: #b8d9d0;
-    height: auto;
+    box-shadow: none;
+    overflow: visible;
 }
-#accessCatalog #acUsersPanel .ac-user-role-list .ts-control .item {
-    border-radius: 6px;
-    padding: 3px 5px;
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control > .item {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0 !important;
+    border-radius: 7px;
     border: 1px solid #c4e4d7;
+    padding: 7px 8px;
     background: #e5f5ee;
     color: #165943;
-    font-size: 10.5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.8;
+    white-space: normal !important;
+    text-align: right;
+    overflow-wrap: anywhere;
 }
-#accessCatalog #acUsersPanel .ac-user-role-list .ts-control input {
-    min-width: 65px;
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control > .item .remove {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 2px 7px !important;
+    margin-inline-start: auto;
+    margin-inline-end: 0;
+    border-inline-start: 1px solid #b8d9d0;
+    color: #16624d;
+    line-height: 1.4;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-control > input {
+    display: block !important;
+    order: 99;
+    flex: 0 0 auto !important;
+    align-self: stretch;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 5px 3px !important;
+    line-height: 1.8;
+    font-size: 11.5px;
+    text-align: right;
+}
+#accessCatalog #acUsersPanel .ac-user-role-list .ts-wrapper.focus .ts-control {
+    border-color: var(--ac-primary);
+    box-shadow: 0 0 0 2px var(--ac-primary-light);
 }
 #accessCatalog #acUsersPanel .ac-user-role-list .ts-dropdown .active {
     background: var(--ac-primary-light);
