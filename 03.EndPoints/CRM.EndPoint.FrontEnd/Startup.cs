@@ -149,6 +149,8 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddHttpContextAccessor();
             services.AddScoped<CRM.Core.Domain.AccessCatalog.Repositories.IAccessHistoryService,
                 CRM.Infrastructures.Sql.AccessCatalog.AccessHistoryService>();
+            services.AddScoped<CRM.Core.Domain.AccessCatalog.Repositories.IAccessScopeService,
+                CRM.Infrastructures.Sql.AccessCatalog.AccessScopeService>();
 //            services.AddScoped<SepidarService>();
             services.AddSignalR();
             services.AddTransient<ChatHub>();
