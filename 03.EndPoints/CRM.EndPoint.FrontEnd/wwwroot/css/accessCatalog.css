@@ -815,6 +815,51 @@
 #accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group-count {
     color: #6d28bd;
 }
+/* Click the entity title to expand/collapse its permissions. Keyboard accessible. */
+#accessCatalog #acUsersPanel .ac-user-entity-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 2px 4px;
+    margin: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: right;
+    cursor: pointer;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle:hover {
+    background: #f0e5fd;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle:focus-visible {
+    outline: 2px solid #7a35c5;
+    outline-offset: 2px;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle strong {
+    font-size: 13px;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle small {
+    font-size: 10px;
+    color: #87719d;
+    font-weight: 400;
+    direction: ltr;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle > i {
+    font-size: 11px;
+    transition: transform .16s ease;
+}
+#accessCatalog #acUsersPanel .ac-user-entity-toggle[aria-expanded="false"] > i {
+    transform: rotate(-90deg);
+}
+#accessCatalog #acUsersPanel .ac-user-permission-groups .ac-role-group.is-collapsed > .ac-role-group-header {
+    border-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+    #accessCatalog #acUsersPanel .ac-user-entity-toggle > i { transition: none; }
+}
 /* Each permission occupies one full row. Colors alternate green / purple
    without changing the green users/roles columns or global ERP controls. */
 #accessCatalog #acUsersPanel .ac-user-permission-grid {
