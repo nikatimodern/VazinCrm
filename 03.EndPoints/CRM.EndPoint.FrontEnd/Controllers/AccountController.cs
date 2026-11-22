@@ -9,6 +9,10 @@ using CRM.EndPoint.FrontEnd.Models.Customer;
 using CRM.EndPoint.FrontEnd.Models.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Identity;
+using CRM.Core.Domain.AppUsers.Entities;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Core.ApplicationServices.Accounts.Queries.GetLoginPage;
 using CRM.Core.ApplicationServices.Accounts.Queries.GetOtpLoginPage;
 using CRM.Core.ApplicationServices.Accounts.Queries.GetAccountHome;
@@ -28,7 +32,7 @@ using CRM.Core.ApplicationServices.Accounts.Commands.ToggleAccountLockout;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class AccountController(ICqrsDispatcher requests) : Controller
+public class AccountController(ICqrsDispatcher requests, IHubContext<TaskHub> hub, UserManager<AppUser> users) : Controller
 {
     [AllowAnonymous]
     public async Task<IActionResult> Login(string returnUrl, bool accesDenid, CancellationToken cancellationToken)
@@ -147,11 +151,28 @@ public class AccountController(ICqrsDispatcher requests) : Controller
         var notified = await requests.CommandAsync(new HandleAccountAccessDeniedCommand(showNotifyOnly), cancellationToken);
         return notified ? Ok() : RedirectToAction("Login", "Account", new { returnUrl = ReturnUrl, accesDenid = true });
     }
+    [Authorize(Roles = "مدیر ارشد")]
     public async Task<IActionResult> ToggleUserLockout(string userId, CancellationToken cancellationToken)
     {
         var result = await requests.CommandAsync(new ToggleAccountLockoutCommand(userId), cancellationToken);
         if (result is null) return NotFound("رکوردی یافت نشد!");
-        return result.Succeeded ? Ok() : BadRequest(result.Errors);
+        if (!result.Succeeded) return BadRequest(result.Errors);
+
+        var target = await users.FindByIdAsync(userId);
+        if (target?.LockoutEnd > DateTimeOffset.UtcNow)
+        {
+            // The server invalidates the session immediately. The deadline is
+            // supplied by the server solely for the non-dismissible 3s notice.
+            var serverUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            await hub.Clients.User(userId).SendAsync("AccountDeactivated",
+                new { serverUtcMs, deadlineUtcMs = serverUtcMs + 3000 }, cancellationToken);
+        }
+        else
+        {
+            await hub.Clients.User(userId).SendAsync("MenuAccessChanged",
+                new { reason = "account" }, cancellationToken);
+        }
+        return Ok();
     }
     private string ResolveUrl(AccountRedirect redirect) => redirect?.Url ?? Url.Action(redirect.Action, redirect.Controller);
 }

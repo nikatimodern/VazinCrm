@@ -11,6 +11,8 @@ using CRM.EndPoint.FrontEnd.Models.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Newtonsoft.Json;
 using CRM.Core.ApplicationServices.Administration.Queries.GetAdminPage;
 using CRM.Core.ApplicationServices.Administration.Queries.GetAdminUsers;
@@ -25,7 +27,7 @@ using CRM.Core.ApplicationServices.Administration.Commands.UpdateAdminUserRoles;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Roles = "مدیر ارشد")]
-public class AdminController(ICqrsDispatcher dispatcher) : Controller
+public class AdminController(ICqrsDispatcher dispatcher, IHubContext<TaskHub> hub, UserManager<AppUser> users) : Controller
 {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
@@ -94,12 +96,25 @@ public class AdminController(ICqrsDispatcher dispatcher) : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> DelUserRol(string id, string role, CancellationToken ct) => Map(await dispatcher.CommandAsync(new RemoveAdminUserRoleCommand(id, role), ct));
+    public async Task<IActionResult> DelUserRol(string id, string role, CancellationToken ct)
+    {
+        var result = await dispatcher.CommandAsync(new RemoveAdminUserRoleCommand(id, role), ct);
+        if (result.Status == 200)
+            await hub.Clients.User(id).SendAsync("MenuAccessChanged", new { reason = "roles" }, ct);
+        return Map(result);
+    }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateUserRoles(string userName, List<string> roleNames, CancellationToken ct)
     {
         var result = await dispatcher.CommandAsync(new UpdateAdminUserRolesCommand(userName, roleNames), ct);
-        return result.Status == 200 ? Json(new { success = true, roles = result.Roles }) : Map(result);
+        if (result.Status == 200)
+        {
+            var target = await users.FindByNameAsync(userName);
+            if (target != null)
+                await hub.Clients.User(target.Id).SendAsync("MenuAccessChanged", new { reason = "roles" }, ct);
+            return Json(new { success = true, roles = result.Roles });
+        }
+        return Map(result);
     }
 
     public async Task<IActionResult> GetUserRoles(string userName, CancellationToken ct)

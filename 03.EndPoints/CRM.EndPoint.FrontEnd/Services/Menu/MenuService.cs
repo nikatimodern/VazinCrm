@@ -21,10 +21,17 @@ namespace CRM.EndPoint.FrontEnd.Services.Menu;
 public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     public async Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user)
     {
-        var roles = user.Claims
-            .Where(x => x.Type == ClaimTypes.Role)
-            .Select(x => x.Value)
-            .ToHashSet();
+        // Read current roles from Identity, not the potentially stale cookie.
+        // This makes the menu snapshot authoritative immediately after role edits.
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var identityDb = serviceProvider.GetRequiredService<UserContextDb>();
+        var roles = string.IsNullOrWhiteSpace(userId)
+            ? user.Claims.Where(x => x.Type == ClaimTypes.Role).Select(x => x.Value).ToHashSet()
+            : (await (from assignment in identityDb.UserRoles.AsNoTracking()
+                join role in identityDb.Roles.AsNoTracking() on assignment.RoleId equals role.Id
+                where assignment.UserId == userId
+                select role.Name).ToListAsync())
+                .Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!).ToHashSet();
 
         var menus = OrganizeMenus(BuildMenus(user));
 

@@ -15,6 +15,7 @@ public sealed class ToggleAccountLockoutCommandHandler(IAccountUserRepository us
     {
         var user = await users.FindByIdAsync(request.UserId, cancellationToken);
         if (user is null) return null;
+        user.LockoutEnabled = true;
         user.LockoutEnd = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow ? null : DateTime.UtcNow.AddYears(300);
         return await users.UpdateLockoutAsync(user, cancellationToken);
     }
