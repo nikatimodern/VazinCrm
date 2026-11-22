@@ -35,8 +35,12 @@ The evaluator `IAccessScopeService` is registered with scoped lifetime:
   checks `UserCustomers` for Own and allows directly for All.
 - Inactive, unregistered, invalid and unsupported policies **fail closed**.
 
-**Important: these new policies are NOT YET enforced automatically by controllers,
-queries, menus or mutations.** Existing legacy role/policy checks remain in effect.
+**Current AccLevel status:** The CustomerController (ERP **اشخاص**) and its
+CQRS commands now support scoped enforcement behind the opt-in
+`AccessCatalog:EnforceCustomerPermissions` flag. With the flag disabled,
+the old role restrictions remain. Other ERP modules and menus are **not**
+automatically protected by these permissions. See
+`CustomerAccess-Scoped-Enforcement.md` for details.
 Do not claim a user's effective scope in the administration screen is already a
 server-side authorization boundary. Migrate one module at a time, and make sure
 every read/search/export/detail/mutation path is guarded before enabling it.
