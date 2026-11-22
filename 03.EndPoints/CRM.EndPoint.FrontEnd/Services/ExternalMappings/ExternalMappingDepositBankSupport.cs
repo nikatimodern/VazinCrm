@@ -55,7 +55,7 @@ public sealed partial class ExternalMappingService
         var source = await EligibleDeposits(db.Accountancies.AsNoTracking())
             .SingleOrDefaultAsync(x => x.Id == sourceId, ct)
             ?? throw new ArgumentException("فقط واریزی ریالی نقدی، چکی یا تهاتری تأییدشده قابل تطبیق است.");
-        if (source.PayType == PayTypeEnum.تهاتری != (entity == nameof(DebitCreditNote)))
+        if ((source.PayType == PayTypeEnum.تهاتری) != (entity == nameof(DebitCreditNote)))
             throw new ArgumentException("نوع سند مقصد با نوع واریزی سازگار نیست.");
         var currency = await MappingRialCurrencyAsync(context, ct);
         var customerMaps = existing.Where(x => x.MapType == ExternalMappingTypeEnum.مشتری &&
@@ -206,6 +206,8 @@ public sealed partial class ExternalMappingService
     private async Task<(string[] Receipts, string[] Notes, string[] Banks)> FindFinancialMappingSearchAsync(
         SepidarContextDbBase context, string search, int number, bool isNumber, HashSet<Guid> matched, CancellationToken ct)
     {
+        search = TextService.NormalizePersianText(TextService.ToEnglishNumber(search));
+        isNumber = int.TryParse(search, out number);
         var hasAmount = decimal.TryParse(search, out var amount);
         matched.UnionWith(await db.Accountancies.AsNoTracking()
             .Where(x => x.AccType == AcEnum.واریزی && ((x.CustomerName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)

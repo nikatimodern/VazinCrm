@@ -836,6 +836,8 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             nameof(Invoice) => "شماره فاکتور",
             nameof(PaymentHeader) => "شماره اعلامیه پرداخت",
             nameof(Voucher) => "شماره سند",
+            nameof(ReceiptHeader) or nameof(DebitCreditNote) => "شماره سند",
+            "BankAccount" => "شماره حساب",
             _ => "شماره"
         };
 

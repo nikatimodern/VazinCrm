@@ -61,9 +61,11 @@ public sealed partial class ExternalMappingService
             .Select(x => new { x.Id, x.BankAccountType, x.AccountNumber, x.ShebaNumber, x.CartNumber, x.BankName }).ToListAsync(ct);
         var crmBanks = crmBankRows.Where(x => x.BankAccountType == BankAccountTypeEnum.شرکت || usedBankIds.Contains(x.Id)).ToList();
 
-        // Existing cash receipt mappings provide explicit bank evidence, without guessing
-        // from a receipt header's DL (that DL belongs to the customer, not the bank).
-        var linkedCash = deposits.Where(x => x.Type == PayTypeEnum.نقدی && x.BankId.HasValue && depositMaps[x.Id].Count() == 1)
+        // Existing receipt mappings expose the bank through the draft or the cheque
+        // banking operations, not through the customer DL on the receipt header.
+        var linkedCash = deposits.Where(x => (x.Type == PayTypeEnum.نقدی
+                || x.Type == PayTypeEnum.چکی && x.Collected && !x.Transferred)
+            && x.BankId.HasValue && depositMaps[x.Id].Count() == 1)
             .Select(x => new { Source = x, Map = depositMaps[x.Id].Single() })
             .Where(x => x.Map.ExEntityName == nameof(ReceiptHeader) && int.TryParse(x.Map.ExEntityId, out _))
             .ToList();
@@ -77,7 +79,25 @@ public sealed partial class ExternalMappingService
                     && receipt.CurrencyRef == currency && draft.BankAccountRef.HasValue
                 select new { receipt.ReceiptHeaderId, BankId = draft.BankAccountRef.Value }).ToListAsync(ct);
             foreach (var group in rows.GroupBy(x => x.ReceiptHeaderId))
-                bankEvidence[group.Key] = group.Select(x => x.BankId).Distinct().ToList();
+                if (group.Count() == 1) bankEvidence[group.Key] = [group.Single().BankId];
+
+            var operations = await (from cheque in context.ReceiptCheques.AsNoTracking()
+                join receipt in context.ReceiptHeaders.AsNoTracking() on cheque.ReceiptHeaderRef equals receipt.ReceiptHeaderId
+                join item in context.ReceiptChequeBankingItems.AsNoTracking() on cheque.ReceiptChequeId equals item.ReceiptChequeRef
+                join operation in context.ReceiptChequeBankings.AsNoTracking() on item.ReceiptChequeBankingRef equals operation.ReceiptChequeBankingId
+                where batch.Contains(receipt.ReceiptHeaderId) && receipt.Type == 1 && receipt.ItemType == 4
+                    && receipt.CurrencyRef == currency && !cheque.IsGuarantee && cheque.Type == 1
+                    && ((cheque.State == 4 && operation.Type == 2 && item.State == 4)
+                        || (cheque.State == 2 && operation.Type == 1 && item.State == 2))
+                select new { receipt.ReceiptHeaderId, cheque.ReceiptChequeId, operation.Date,
+                    item.ReceiptChequeBankingItemId, BankId = item.BankAccountRef ?? operation.BankAccountRef }).ToListAsync(ct);
+            foreach (var group in operations.GroupBy(x => x.ReceiptHeaderId))
+            {
+                if (group.Select(x => x.ReceiptChequeId).Distinct().Count() != 1) continue;
+                var latest = group.OrderByDescending(x => x.Date)
+                    .ThenByDescending(x => x.ReceiptChequeBankingItemId).First();
+                if (latest.BankId.HasValue) bankEvidence[group.Key] = [latest.BankId.Value];
+            }
         }
         var evidenceByBank = linkedCash.Where(x => bankEvidence.ContainsKey(int.Parse(x.Map.ExEntityId)))
             .ToLookup(x => x.Source.BankId.Value, x => (ReceiptId: int.Parse(x.Map.ExEntityId), x.Source.Id));
@@ -97,9 +117,84 @@ public sealed partial class ExternalMappingService
             var evidence = evidenceByBank[bank.Id].ToArray();
             bankCandidates[bank.Id] = matches.Concat(evidence.SelectMany(x => bankEvidence[x.ReceiptId]))
                 .Where(validBankIds.Contains).Distinct().OrderBy(x => x).ToArray();
-            bankNotes[bank.Id] = evidence.Select(x => $"حساب مقصد از حواله رسید دریافت سپیدار با شناسه {x.ReceiptId} به‌دست آمده است.")
+            bankNotes[bank.Id] = evidence.Select(x => $"حساب مقصد از حواله یا گردش بانکی چک رسید دریافت سپیدار با شناسه {x.ReceiptId} به‌دست آمده است.")
                 .Distinct().ToArray();
         }
+        var customerMaps = mappings.Where(x => x.MapType == ExternalMappingTypeEnum.مشتری && x.EntityName == "Customer")
+            .GroupBy(x => x.EntityId).Where(g => g.Count() == 1 && g.Single().ExEntityName == "Party")
+            .Select(g => g.Single()).Where(x => int.TryParse(x.ExEntityId, out _)).ToList();
+        var partyIds = customerMaps.Select(x => int.Parse(x.ExEntityId)).Distinct().ToArray();
+        var partyDls = new Dictionary<int, int>();
+        foreach (var batch in partyIds.Chunk(350))
+        {
+            var rows = await context.Parties.AsNoTracking().Where(x => batch.Contains(x.PartyId)
+                    && x.IsCustomer && x.Dl != null && x.Dl.IsActive)
+                .Select(x => new { x.PartyId, x.DLRef }).ToListAsync(ct);
+            foreach (var x in rows) partyDls[x.PartyId] = x.DLRef;
+        }
+        var customerDls = customerMaps.Where(x => partyDls.ContainsKey(int.Parse(x.ExEntityId)))
+            .ToDictionary(x => x.EntityId, x => partyDls[int.Parse(x.ExEntityId)]);
+        var usedTargets = mappings.Where(x => x.MapType == ExternalMappingTypeEnum.واریزی)
+            .Select(x => (x.ExEntityName, x.ExEntityId)).ToHashSet();
+        var unsaved = deposits.Where(x => !depositMaps[x.Id].Any()).ToList();
+        var eligible = unsaved.Where(x => customerDls.ContainsKey(x.CustomerId)
+            && !(x.Type == PayTypeEnum.چکی && x.Collected && x.Transferred)).ToList();
+
+        // Query only relevant receipt dates, customer DLs and amounts; then require the
+        // corresponding single receipt item or note item, not merely a matching header.
+        var receiptMatches = new List<ReceiptMatch>();
+        var noteMatches = new List<NoteMatch>();
+        var dls = customerDls.Values.Distinct().ToArray();
+        foreach (var batch in eligible.Select(x => x.Date.Date).Distinct().Chunk(200))
+        {
+            if (dls.Length > 0)
+                receiptMatches.AddRange(await context.ReceiptHeaders.AsNoTracking()
+                    .Where(x => x.CurrencyRef == currency && x.Type == 1 && (x.ItemType == 4 || x.ItemType == 8)
+                        && batch.Contains(x.Date.Date) && dls.Contains(x.DlRef))
+                    .Select(x => new ReceiptMatch(x.ReceiptHeaderId, x.DlRef, x.ItemType, x.Date, x.TotalAmount)).ToListAsync(ct));
+            noteMatches.AddRange(await context.DebitCreditNotes.AsNoTracking()
+                .Where(x => x.CurrencyRef == currency && batch.Contains(x.Date.Date))
+                .Select(x => new NoteMatch(x.DebitCreditNoteID, x.Date, x.SumAmount)).ToListAsync(ct));
+        }
+        var receiptsByKey = receiptMatches.ToLookup(x => (x.Dl, x.ItemType, x.Date.Date, x.Amount));
+        var notesByKey = noteMatches.ToLookup(x => (x.Date.Date, x.Amount));
+        var draftRows = new Dictionary<int, List<(int? Bank, decimal? Amount, DateTime? Date)>>();
+        var chequeRows = new Dictionary<int, List<(int Id, int State, bool Guarantee, int Type, decimal Amount, DateTime? Due)>>();
+        foreach (var batch in receiptMatches.Select(x => x.Id).Distinct().Chunk(350))
+        {
+            var drafts = await context.ReceiptDrafts.AsNoTracking().Where(x => batch.Contains(x.ReceiptHeaderRef))
+                .Select(x => new { x.ReceiptHeaderRef, x.BankAccountRef, x.Amount, x.Date }).ToListAsync(ct);
+            foreach (var g in drafts.GroupBy(x => x.ReceiptHeaderRef))
+                draftRows[g.Key] = g.Select(x => (x.BankAccountRef, x.Amount, x.Date)).ToList();
+            var cheques = await context.ReceiptCheques.AsNoTracking().Where(x => batch.Contains(x.ReceiptHeaderRef))
+                .Select(x => new { x.ReceiptHeaderRef, x.ReceiptChequeId, x.State, x.IsGuarantee, x.Type, x.Amount, x.Date }).ToListAsync(ct);
+            foreach (var g in cheques.GroupBy(x => x.ReceiptHeaderRef))
+                chequeRows[g.Key] = g.Select(x => (x.ReceiptChequeId, x.State, x.IsGuarantee, x.Type, x.Amount, x.Date)).ToList();
+        }
+        // A unique cash receipt (customer, receipt day, amount and a single draft)
+        // can also supply bank evidence before either link has been registered.
+        var inferredBanks = eligible.Where(x => x.Type == PayTypeEnum.نقدی && x.BankId.HasValue)
+            .Select(source => new { Source = source, Receipts = receiptsByKey[
+                (customerDls[source.CustomerId], 8, source.Date.Date, source.Amount)]
+                .Where(x => !usedTargets.Contains((nameof(ReceiptHeader), x.Id.ToString()))
+                    && draftRows.TryGetValue(x.Id, out var rows) && rows.Count == 1
+                    && rows[0].Amount == source.Amount && rows[0].Date?.Date == source.Date.Date
+                    && rows[0].Bank.HasValue && validBankIds.Contains(rows[0].Bank.Value))
+                .Select(x => x.Id).Distinct().ToArray() }).ToList();
+        var sharedCashReceipts = inferredBanks.SelectMany(x => x.Receipts)
+            .GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
+        foreach (var match in inferredBanks.Where(x => x.Receipts.Length == 1 && !sharedCashReceipts.Contains(x.Receipts[0])))
+        {
+            var sourceId = match.Source.BankId.Value;
+            if (!bankCandidates.TryGetValue(sourceId, out var candidates)) continue;
+            var receiptId = match.Receipts[0];
+            var bankId = draftRows[receiptId][0].Bank.Value;
+            bankCandidates[sourceId] = candidates.Append(bankId).Distinct().OrderBy(x => x).ToArray();
+            bankNotes[sourceId] = bankNotes[sourceId].Append(
+                $"معادل احتمالی از فاکتور واریزی و حواله رسید دریافت سپیدار با شناسه {receiptId} به‌دست آمده؛ ثبت نیازمند بررسی است.")
+                .Distinct().ToArray();
+        }
+
         var contestedBanks = bankCandidates.SelectMany(x => x.Value.Select(id => (Source: x.Key, Target: id)))
             .Where(x => !bankMaps[x.Source].Any()).GroupBy(x => x.Target)
             .Where(g => g.Select(x => x.Source).Distinct().Count() > 1).Select(g => g.Key).ToHashSet();
@@ -128,57 +223,6 @@ public sealed partial class ExternalMappingService
                 status == "blocked" ? candidates : options, bankNotes[sourceId]));
         }
 
-        var customerMaps = mappings.Where(x => x.MapType == ExternalMappingTypeEnum.مشتری && x.EntityName == "Customer")
-            .GroupBy(x => x.EntityId).Where(g => g.Count() == 1 && g.Single().ExEntityName == "Party")
-            .Select(g => g.Single()).Where(x => int.TryParse(x.ExEntityId, out _)).ToList();
-        var partyIds = customerMaps.Select(x => int.Parse(x.ExEntityId)).Distinct().ToArray();
-        var partyDls = new Dictionary<int, int>();
-        foreach (var batch in partyIds.Chunk(350))
-        {
-            var rows = await context.Parties.AsNoTracking().Where(x => batch.Contains(x.PartyId)
-                    && x.IsCustomer && x.Dl != null && x.Dl.IsActive)
-                .Select(x => new { x.PartyId, x.DLRef }).ToListAsync(ct);
-            foreach (var x in rows) partyDls[x.PartyId] = x.DLRef;
-        }
-        var customerDls = customerMaps.Where(x => partyDls.ContainsKey(int.Parse(x.ExEntityId)))
-            .ToDictionary(x => x.EntityId, x => partyDls[int.Parse(x.ExEntityId)]);
-        var usedTargets = mappings.Where(x => x.MapType == ExternalMappingTypeEnum.واریزی)
-            .Select(x => (x.ExEntityName, x.ExEntityId)).ToHashSet();
-        var unsaved = deposits.Where(x => !depositMaps[x.Id].Any()).ToList();
-        var eligible = unsaved.Where(x => customerDls.ContainsKey(x.CustomerId)
-            && !(x.Type == PayTypeEnum.چکی && x.Collected)).ToList();
-
-        // Query only relevant receipt dates, customer DLs and amounts; then require the
-        // corresponding single receipt item or note item, not merely a matching header.
-        var receiptMatches = new List<ReceiptMatch>();
-        var noteMatches = new List<NoteMatch>();
-        var dls = customerDls.Values.Distinct().ToArray();
-        foreach (var batch in eligible.Select(x => x.Date.Date).Distinct().Chunk(200))
-        {
-            if (dls.Length > 0)
-                receiptMatches.AddRange(await context.ReceiptHeaders.AsNoTracking()
-                    .Where(x => x.CurrencyRef == currency && x.Type == 1 && (x.ItemType == 4 || x.ItemType == 8)
-                        && batch.Contains(x.Date.Date) && dls.Contains(x.DlRef))
-                    .Select(x => new ReceiptMatch(x.ReceiptHeaderId, x.DlRef, x.ItemType, x.Date, x.TotalAmount)).ToListAsync(ct));
-            noteMatches.AddRange(await context.DebitCreditNotes.AsNoTracking()
-                .Where(x => x.CurrencyRef == currency && batch.Contains(x.Date.Date))
-                .Select(x => new NoteMatch(x.DebitCreditNoteID, x.Date, x.SumAmount)).ToListAsync(ct));
-        }
-        var receiptsByKey = receiptMatches.ToLookup(x => (x.Dl, x.ItemType, x.Date.Date, x.Amount));
-        var notesByKey = noteMatches.ToLookup(x => (x.Date.Date, x.Amount));
-        var draftRows = new Dictionary<int, List<(int? Bank, decimal? Amount, DateTime? Date)>>();
-        var chequeRows = new Dictionary<int, List<(bool Guarantee, int Type, decimal Amount, DateTime? Due)>>();
-        foreach (var batch in receiptMatches.Select(x => x.Id).Distinct().Chunk(350))
-        {
-            var drafts = await context.ReceiptDrafts.AsNoTracking().Where(x => batch.Contains(x.ReceiptHeaderRef))
-                .Select(x => new { x.ReceiptHeaderRef, x.BankAccountRef, x.Amount, x.Date }).ToListAsync(ct);
-            foreach (var g in drafts.GroupBy(x => x.ReceiptHeaderRef))
-                draftRows[g.Key] = g.Select(x => (x.BankAccountRef, x.Amount, x.Date)).ToList();
-            var cheques = await context.ReceiptCheques.AsNoTracking().Where(x => batch.Contains(x.ReceiptHeaderRef))
-                .Select(x => new { x.ReceiptHeaderRef, x.IsGuarantee, x.Type, x.Amount, x.Date }).ToListAsync(ct);
-            foreach (var g in cheques.GroupBy(x => x.ReceiptHeaderRef))
-                chequeRows[g.Key] = g.Select(x => (x.IsGuarantee, x.Type, x.Amount, x.Date)).ToList();
-        }
         var noteRows = new Dictionary<int, List<(int? CreditType, int? Dl, decimal Amount)>>();
         foreach (var batch in noteMatches.Select(x => x.Id).Distinct().Chunk(350))
         {
@@ -187,29 +231,70 @@ public sealed partial class ExternalMappingService
             foreach (var g in items.GroupBy(x => x.DebitCreditNoteRef))
                 noteRows[g.Key] = g.Select(x => (x.CreditType, x.CreditDLRef, x.Amount)).ToList();
         }
+        var collections = new Dictionary<int, List<(DateTime Date, int? Bank)>>();
+        if (eligible.Any(x => x.Type == PayTypeEnum.چکی && x.Collected))
+        {
+            foreach (var batch in chequeRows.Values.Where(x => x.Count == 1 && x[0].State == 4)
+                         .Select(x => x[0].Id).Distinct().Chunk(350))
+            {
+                var operations = await (from item in context.ReceiptChequeBankingItems.AsNoTracking()
+                    join operation in context.ReceiptChequeBankings.AsNoTracking() on item.ReceiptChequeBankingRef equals operation.ReceiptChequeBankingId
+                    where batch.Contains(item.ReceiptChequeRef) && operation.Type == 2 && item.State == 4
+                    select new { item.ReceiptChequeRef, operation.Date,
+                        Bank = item.BankAccountRef ?? operation.BankAccountRef }).ToListAsync(ct);
+                foreach (var group in operations.GroupBy(x => x.ReceiptChequeRef))
+                    collections[group.Key] = group.Select(x => (x.Date, x.Bank)).Distinct().ToList();
+            }
+        }
         var candidateRows = new List<(DepositMatchSource Source, string Entity, string Reason, int[] Ids)>();
         foreach (var source in unsaved)
         {
             var entity = source.Type == PayTypeEnum.تهاتری ? nameof(DebitCreditNote) : nameof(ReceiptHeader);
             var reason = "DepositNoMatch";
             int[] ids = [];
-            if (source.Type == PayTypeEnum.چکی && source.Collected) reason = "DepositCollectedCheque";
+            if (source.Type == PayTypeEnum.چکی && source.Collected && source.Transferred) reason = "DepositCollectedCheque";
             else if (!customerDls.TryGetValue(source.CustomerId, out var dl)) reason = "DepositNeedCustomer";
             else if (source.Type == PayTypeEnum.تهاتری)
                 ids = notesByKey[(source.Date.Date, source.Amount)].Where(x =>
                     noteRows.TryGetValue(x.Id, out var rows) && rows.Count == 1 && rows[0].CreditType == 2
                     && rows[0].Dl == dl && rows[0].Amount == source.Amount).Select(x => x.Id).Distinct().ToArray();
             else if (source.Type == PayTypeEnum.چکی)
-                ids = receiptsByKey[(dl, 4, source.Date.Date, source.Amount)].Where(x =>
-                    source.Due.HasValue && chequeRows.TryGetValue(x.Id, out var rows) && rows.Count == 1
-                    && !rows[0].Guarantee && rows[0].Type == 1 && rows[0].Amount == source.Amount
-                    && rows[0].Due?.Date == source.Due.Value.Date).Select(x => x.Id).Distinct().ToArray();
+            {
+                if (!source.Collected)
+                    ids = receiptsByKey[(dl, 4, source.Date.Date, source.Amount)].Where(x =>
+                        source.Due.HasValue && chequeRows.TryGetValue(x.Id, out var rows) && rows.Count == 1
+                        && !rows[0].Guarantee && rows[0].Type == 1 && rows[0].Amount == source.Amount
+                        && rows[0].Due?.Date == source.Due.Value.Date).Select(x => x.Id).Distinct().ToArray();
+                else
+                {
+                    // For collected cheques the CRM due date is now the collection date.
+                    // An exact original amount alone is not enough; require the actual
+                    // collection operation and the mapped bank, or leave it for manual review.
+                    var saved = source.BankId.HasValue ? bankMaps[source.BankId.Value].ToArray() : [];
+                    if (saved.Length != 1 || saved[0].ExEntityName != "BankAccount"
+                        || !int.TryParse(saved[0].ExEntityId, out var bankId) || !validBankIds.Contains(bankId))
+                        reason = "DepositNeedBank";
+                    else
+                    {
+                        ids = receiptsByKey[(dl, 4, source.Date.Date, source.Amount)].Where(x =>
+                            source.Due.HasValue && chequeRows.TryGetValue(x.Id, out var rows) && rows.Count == 1
+                            && rows[0].State == 4 && !rows[0].Guarantee && rows[0].Type == 1 && rows[0].Amount == source.Amount
+                            && collections.TryGetValue(rows[0].Id, out var operations) && operations.Count == 1
+                            && operations[0].Bank == bankId && operations[0].Date.Date == source.Due.Value.Date)
+                            .Select(x => x.Id).Distinct().ToArray();
+                        if (ids.Length == 0) reason = "DepositCollectedCheque";
+                    }
+                }
+            }
             else
             {
                 var saved = source.BankId.HasValue ? bankMaps[source.BankId.Value].ToArray() : [];
                 if (saved.Length != 1 || saved[0].ExEntityName != "BankAccount"
                     || !int.TryParse(saved[0].ExEntityId, out var bankId) || !validBankIds.Contains(bankId))
+                {
                     reason = "DepositNeedBank";
+                    ids = inferredBanks.FirstOrDefault(x => x.Source.Id == source.Id)?.Receipts ?? [];
+                }
                 else
                     ids = receiptsByKey[(dl, 8, source.Date.Date, source.Amount)].Where(x =>
                         draftRows.TryGetValue(x.Id, out var rows) && rows.Count == 1
