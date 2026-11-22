@@ -31,10 +31,10 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
     private sealed record EntityState(Guid Id, string Key, string Title, string? Description,
         string DbContextName, string ModelFullName, bool IsActive);
     private sealed record PermissionState(Guid Id, Guid AccessEntityId, string Key, string Title,
-        string? Description, bool IsActive);
-    private sealed record RolePermissionState(string RoleId, Guid PermissionId);
+        string? Description, bool IsActive, bool SupportsScope = false);
+    private sealed record RolePermissionState(string RoleId, Guid PermissionId, byte Scope = AccessScopes.All);
     private sealed record UserRoleState(string UserId, string RoleId);
-    private sealed record UserOverrideState(string UserId, Guid PermissionId, bool IsAllowed);
+    private sealed record UserOverrideState(string UserId, Guid PermissionId, bool IsAllowed, byte Scope = AccessScopes.All);
     private sealed record StateItem(string Key, string Kind, string Data);
     private sealed record StateDiff(string Key, StateItem? Before, StateItem? After);
     private sealed record RestorePlan(List<StateItem> Target, int Conflicts);
@@ -42,7 +42,15 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value);
     private static T Parse<T>(string data) where T : class => JsonSerializer.Deserialize<T>(data)
         ?? throw new InvalidOperationException("نسخه ذخیره‌شده ناقص است.");
-    private static List<StateItem> FromJson(string json) => Parse<List<StateItem>>(json);
+    // Upgrade old snapshot payloads in memory. Before Scope existed all grants meant All.
+    private static List<StateItem> FromJson(string json) => Parse<List<StateItem>>(json)
+        .Select(item => item.Kind switch
+        {
+            "permission" => item with { Data = Serialize(Parse<PermissionState>(item.Data)) },
+            "rolegrant" => item with { Data = Serialize(Parse<RolePermissionState>(item.Data)) },
+            "override" => item with { Data = Serialize(Parse<UserOverrideState>(item.Data)) },
+            _ => item
+        }).ToList();
     private static string ToJson(IEnumerable<StateItem> state) =>
         Serialize(state.OrderBy(x => x.Key, StringComparer.Ordinal).ToArray());
     private static string Revision(IEnumerable<StateItem> state) =>
@@ -57,13 +65,13 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
                 x.DbContextName, x.ModelFullName, x.IsActive)).ToListAsync(ct);
         var permissions = await db.AccessPermissions.AsNoTracking()
             .Select(x => new PermissionState(x.Id, x.AccessEntityId, x.Key, x.Title,
-                x.Description, x.IsActive)).ToListAsync(ct);
+                x.Description, x.IsActive, x.SupportsScope)).ToListAsync(ct);
         var rolePermissions = await db.AccessRolePermissions.AsNoTracking()
-            .Select(x => new RolePermissionState(x.RoleId, x.AccessPermissionId)).ToListAsync(ct);
+            .Select(x => new RolePermissionState(x.RoleId, x.AccessPermissionId, x.Scope)).ToListAsync(ct);
         var userRoles = await db.UserRoles.AsNoTracking()
             .Select(x => new UserRoleState(x.UserId, x.RoleId)).ToListAsync(ct);
         var overrides = await db.AccessUserPermissions.AsNoTracking()
-            .Select(x => new UserOverrideState(x.UserId, x.AccessPermissionId, x.IsAllowed)).ToListAsync(ct);
+            .Select(x => new UserOverrideState(x.UserId, x.AccessPermissionId, x.IsAllowed, x.Scope)).ToListAsync(ct);
         var items = new List<StateItem>(roles.Count + entities.Count + permissions.Count +
                                         rolePermissions.Count + userRoles.Count + overrides.Count);
         items.AddRange(roles.Select(x => new StateItem("role|" + x.Id, "role", Serialize(x))));
@@ -236,9 +244,12 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
                 "role" => Parse<RoleState>(item.Data).Name,
                 "entity" => FormatEntity(Parse<EntityState>(item.Data)),
                 "permission" => FormatPermission(Parse<PermissionState>(item.Data)),
-                "rolegrant" or "membership" => "تخصیص داده شده",
-                "override" => Parse<UserOverrideState>(item.Data).IsAllowed ?
-                    "اجازه اختصاصی" : "محدودیت اختصاصی",
+                "rolegrant" => Parse<RolePermissionState>(item.Data).Scope == AccessScopes.Own ?
+                    "مجاز برای اطلاعات خود" : "مجاز برای همه اطلاعات",
+                "membership" => "تخصیص داده شده",
+                "override" => !Parse<UserOverrideState>(item.Data).IsAllowed ? "محدودیت اختصاصی" :
+                    Parse<UserOverrideState>(item.Data).Scope == AccessScopes.Own ?
+                    "اجازه اختصاصی (فقط خود)" : "اجازه اختصاصی (همه)",
                 _ => "ثبت‌شده"
             };
         }
@@ -251,6 +262,7 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
         (string.IsNullOrWhiteSpace(x.Description) ? "" : " — " + x.Description);
     private static string FormatPermission(PermissionState x) =>
         x.Title + " (" + x.Key + ") — " + (x.IsActive ? "فعال" : "غیرفعال") +
+        (x.SupportsScope ? " — دارای محدوده" : " — بدون محدوده") +
         (string.IsNullOrWhiteSpace(x.Description) ? "" : " — " + x.Description);
 
     public async Task<AccessHistoryDetail?> DetailAsync(Guid id, CancellationToken ct)

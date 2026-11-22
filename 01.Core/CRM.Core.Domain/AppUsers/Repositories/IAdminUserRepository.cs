@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.AccessCatalog.Entities;
 
 namespace CRM.Core.Domain.AppUsers.Repositories;
 public sealed record AdminRole(string Id, string Name);
 public sealed record AdminRoleWriteResult(int Status, string? Message = null, string? RoleId = null);
-public sealed record RoleRemovalPermission(Guid Id, string Key, string Title);
+public sealed record RoleRemovalPermission(Guid Id, string Key, string Title, byte Scope = AccessScopes.All);
 public sealed record RoleRemovalUser(string Id, string Name, string UserName, IReadOnlyList<RoleRemovalPermission> Permissions);
 public sealed record RoleRemovalPreview(string RoleId, string RoleName, string Revision, int AssignedUserCount,
     int AffectedPermissionCount, IReadOnlyList<RoleRemovalUser> Users);

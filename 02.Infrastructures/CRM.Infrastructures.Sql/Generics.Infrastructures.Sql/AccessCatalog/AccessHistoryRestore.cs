@@ -110,6 +110,14 @@ public sealed partial class AccessHistoryService
         if (target.Where(x => x.Kind == "override").Select(x => Parse<UserOverrideState>(x.Data))
             .Any(x => !permissionIds.Contains(x.PermissionId)))
             return "برخی مجوزهای اختصاصی دیگر معتبر نیستند.";
+        var canScope = permissions.Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
+        if (target.Where(x => x.Kind == "rolegrant").Select(x => Parse<RolePermissionState>(x.Data))
+            .Any(x => !AccessScopes.IsGrant(x.Scope) ||
+                      (x.Scope == AccessScopes.Own && !canScope.Contains(x.PermissionId))) ||
+            target.Where(x => x.Kind == "override").Select(x => Parse<UserOverrideState>(x.Data))
+            .Any(x => !AccessScopes.IsGrant(x.Scope) ||
+                      (x.IsAllowed && x.Scope == AccessScopes.Own && !canScope.Contains(x.PermissionId))))
+            return "نسخه انتخاب‌شده شامل محدوده دسترسی نامعتبر است.";
 
         var removedRoleIds = current.Where(x => x.Kind == "role")
             .Select(x => Parse<RoleState>(x.Data).Id).Except(roleIds).ToArray();
@@ -202,15 +210,23 @@ public sealed partial class AccessHistoryService
             p.Title = item.Title;
             p.Description = item.Description;
             p.IsActive = item.IsActive;
+            p.SupportsScope = item.SupportsScope;
         }
         await db.SaveChangesAsync(ct);
 
-        var currentGrantKeys = currentGrants.Select(x => (x.RoleId, x.AccessPermissionId)).ToHashSet();
-        foreach (var item in grants.Where(x => !currentGrantKeys.Contains((x.RoleId, x.PermissionId))))
-            db.AccessRolePermissions.Add(new AccessRolePermission
-            {
-                RoleId = item.RoleId, AccessPermissionId = item.PermissionId
-            });
+        var currentGrantMap = currentGrants
+            .Where(x => desiredGrantKeys.Contains((x.RoleId, x.AccessPermissionId)))
+            .ToDictionary(x => (x.RoleId, x.AccessPermissionId));
+        foreach (var item in grants)
+        {
+            if (currentGrantMap.TryGetValue((item.RoleId, item.PermissionId), out var existing))
+                existing.Scope = item.Scope;
+            else
+                db.AccessRolePermissions.Add(new AccessRolePermission
+                {
+                    RoleId = item.RoleId, AccessPermissionId = item.PermissionId, Scope = item.Scope
+                });
+        }
 
         var currentMemberKeys = currentMembers.Select(x => (x.UserId, x.RoleId)).ToHashSet();
         foreach (var item in members.Where(x => !currentMemberKeys.Contains((x.UserId, x.RoleId))))
@@ -222,11 +238,15 @@ public sealed partial class AccessHistoryService
         foreach (var item in overrides)
         {
             if (currentOverrideMap.TryGetValue((item.UserId, item.PermissionId), out var existing))
+            {
                 existing.IsAllowed = item.IsAllowed;
+                existing.Scope = item.Scope;
+            }
             else
                 db.AccessUserPermissions.Add(new AccessUserPermission
                 {
-                    UserId = item.UserId, AccessPermissionId = item.PermissionId, IsAllowed = item.IsAllowed
+                    UserId = item.UserId, AccessPermissionId = item.PermissionId, IsAllowed = item.IsAllowed,
+                    Scope = item.Scope
                 });
         }
         await db.SaveChangesAsync(ct);

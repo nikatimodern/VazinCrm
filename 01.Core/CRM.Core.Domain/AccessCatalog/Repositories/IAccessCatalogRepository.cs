@@ -13,13 +13,6 @@ public sealed class AccessCatalogConflictException : Exception
 }
 
 
-public static class AccessScopes
-{
-    public const byte None = 0;
-    public const byte Own = 1;
-    public const byte All = 2;
-    public static bool IsGrant(byte scope) => scope is Own or All;
-}
 public sealed record AccessUserOverride(Guid AccessPermissionId, bool IsAllowed, byte Scope = AccessScopes.All);
 public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId, byte Scope = AccessScopes.All);
 public sealed record AccessRoleGrantDraft(Guid AccessPermissionId, byte Scope);

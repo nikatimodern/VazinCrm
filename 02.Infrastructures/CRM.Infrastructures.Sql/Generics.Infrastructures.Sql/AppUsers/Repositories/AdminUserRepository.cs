@@ -239,14 +239,14 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
             .Where(x => participatingRoleIds.Contains(x.RoleId))
             .Select(x => new
             {
-                x.RoleId, x.AccessPermissionId,
+                x.RoleId, x.AccessPermissionId, x.Scope,
                 x.AccessPermission.Key, x.AccessPermission.Title,
                 EntityKey = x.AccessPermission.AccessEntity.Key,
                 IsActive = x.AccessPermission.IsActive && x.AccessPermission.AccessEntity.IsActive
             }).ToListAsync(ct);
         var overrides = await db.AccessUserPermissions.AsNoTracking()
             .Where(x => userIds.Contains(x.UserId))
-            .Select(x => new { x.UserId, x.AccessPermissionId, x.IsAllowed }).ToListAsync(ct);
+            .Select(x => new { x.UserId, x.AccessPermissionId, x.IsAllowed, x.Scope }).ToListAsync(ct);
 
         // Snapshot changes to memberships, grants, overrides, and active permission state.
         // The DELETE request must submit this same revision; it is rechecked in a serializable transaction.
@@ -261,18 +261,21 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
             .Select(x => $"M|{x.UserId}|{x.RoleId}"));
         snapshot.AddRange(grants.OrderBy(x => x.RoleId, StringComparer.Ordinal)
             .ThenBy(x => x.AccessPermissionId).Select(x =>
-                $"G|{x.RoleId}|{x.AccessPermissionId}|{x.Key}|{x.Title}|{x.EntityKey}|{x.IsActive}"));
+                $"G|{x.RoleId}|{x.AccessPermissionId}|{x.Key}|{x.Title}|{x.EntityKey}|{x.IsActive}|{x.Scope}"));
         snapshot.AddRange(overrides.OrderBy(x => x.UserId, StringComparer.Ordinal)
             .ThenBy(x => x.AccessPermissionId)
-            .Select(x => $"O|{x.UserId}|{x.AccessPermissionId}|{x.IsAllowed}"));
+            .Select(x => $"O|{x.UserId}|{x.AccessPermissionId}|{x.IsAllowed}|{x.Scope}"));
         var revision = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", snapshot))));
 
         var targetGrants = grants.Where(x => x.RoleId == roleId && x.IsActive).ToList();
         var allActiveByRole = grants.Where(x => x.IsActive).ToLookup(x => x.RoleId);
-        var otherSource = new HashSet<(string, Guid)>();
+        var otherSource = new Dictionary<(string, Guid), byte>();
         foreach (var membership in memberships.Where(x => x.RoleId != roleId))
             foreach (var grant in allActiveByRole[membership.RoleId])
-                otherSource.Add((membership.UserId, grant.AccessPermissionId));
+            {
+                var key = (membership.UserId, grant.AccessPermissionId);
+                otherSource[key] = Math.Max(otherSource.GetValueOrDefault(key), grant.Scope);
+            }
 
         var customOverrides = overrides.Select(x => (x.UserId, x.AccessPermissionId)).ToHashSet();
         var affected = members.OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
@@ -282,11 +285,11 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
                 var name = string.Join(" ", new[] { user.FirstName, user.LastName }
                     .Where(part => !string.IsNullOrWhiteSpace(part)));
                 var lost = targetGrants.Where(grant =>
-                        !otherSource.Contains((user.Id, grant.AccessPermissionId)) &&
+                        otherSource.GetValueOrDefault((user.Id, grant.AccessPermissionId)) < grant.Scope &&
                         !customOverrides.Contains((user.Id, grant.AccessPermissionId)))
                     .OrderBy(x => x.EntityKey).ThenBy(x => x.Key)
                     .Select(x => new RoleRemovalPermission(x.AccessPermissionId,
-                        x.EntityKey + "." + x.Key, x.Title)).ToArray();
+                        x.EntityKey + "." + x.Key, x.Title, x.Scope)).ToArray();
                 return new RoleRemovalUser(user.Id, string.IsNullOrWhiteSpace(name) ? user.UserName ?? user.Id : name,
                     user.UserName ?? "", lost);
             }).ToArray();
@@ -321,11 +324,15 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
                 if (choices.Count != actual.Count || !actual.SetEquals(expected))
                     return new RoleRemovalResult(409, "برای تک‌تک مجوزهای وابسته باید تصمیم معتبر ثبت شود.");
 
-                // Existing user overrides (allow or deny) are never overwritten.
+                // Preserve scope: an Own grant must never turn into All.
+                var affectedScopes = preview.Users.SelectMany(u => u.Permissions
+                    .Select(p => new { UserId = u.Id, PermissionId = p.Id, p.Scope }))
+                    .ToDictionary(x => (x.UserId, x.PermissionId), x => x.Scope);
                 foreach (var choice in choices.Where(x => x.Keep))
                     db.AccessUserPermissions.Add(new AccessUserPermission
                     {
-                        UserId = choice.UserId, AccessPermissionId = choice.PermissionId, IsAllowed = true
+                        UserId = choice.UserId, AccessPermissionId = choice.PermissionId,
+                        IsAllowed = true, Scope = affectedScopes[(choice.UserId, choice.PermissionId)]
                     });
 
                 var userRoles = await db.UserRoles.Where(x => x.RoleId == roleId).ToListAsync(ct);
