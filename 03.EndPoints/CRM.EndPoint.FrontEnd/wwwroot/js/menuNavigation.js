@@ -2,12 +2,12 @@
 (() => {
     "use strict";
     const navIds = ["desktopNavbar", "mobileDrawerNavbar"];
-    const replaceIds = ["desktopNavbar", "desktopFixedActions", "mobileNavbar", "mobileDrawerNavbar", "mobileDrawerFixedActions"];
+    const replaceIds = ["desktopNavbar", "desktopFixedActions", "mobileNavbar", "mobileDrawerNavbar", "mobileDrawerFixedActions", "menuSupplementalLinks"];
     const user = window.userContext?.id || "anonymous";
     const groupKey = id => "vazin:menu-groups:" + user + ":" + id;
     const normalizeText = s => (s || "").toLocaleLowerCase("fa")
         .replace(/[يى]/g, "ی").replace(/ك/g, "ک")
-        .replace(/[\u200c\u200f\u200e]/g, " ").trim();
+        .replace(/[\u200c\u200f\u200e]/g, " ").replace(/[أإآ]/g, "ا").trim();
     const getGroups = id => {
         try {
             const stored = JSON.parse(localStorage.getItem(groupKey(id)) || "[]");
@@ -61,6 +61,10 @@
                 parent = parent.parentElement?.closest("[data-menu-group]");
             }
         });
+        const inSettings = Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
+            .some(link => matches(new URL(link.href), current));
+        if (inSettings) document.querySelectorAll(".menu-item[onclick*='showModalSetting']")
+            .forEach(button => button.classList.add("active-ancestor"));
     }
     const antiforgery = () => document.querySelector('#menuFavoritesAntiforgery input[name="__RequestVerificationToken"]')?.value;
     async function send(path, body) {
@@ -95,6 +99,7 @@
             restoreGroups();
             highlight();
             initSortable();
+            syncSettingsFavorites();
             for (const panel of document.querySelectorAll("[data-menu-search-panel]:not([hidden])")) renderSearch(panel);
         })().finally(() => { refreshing = null; });
         return refreshing;
@@ -106,7 +111,7 @@
         if (!nav) return [];
         const links = [...nav.querySelectorAll(".menu-link[href]"), ...(footer?.querySelectorAll(".menu-link[href]") || [])];
         const seen = new Set();
-        return links.filter(link => !link.closest("[data-menu-favorites]")).map(link => {
+        const canonical = links.filter(link => !link.closest("[data-menu-favorites]")).map(link => {
             const path = [];
             let group = link.closest("[data-menu-group]");
             while (group) {
@@ -115,7 +120,10 @@
             }
             const title = link.querySelector(".menu-item-title > span")?.textContent?.trim() || link.textContent.trim();
             return { title, route: path.filter(Boolean).join(" ← "), href: link.href };
-        }).filter(item => {
+        });
+        const extras = Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
+            .map(link => ({ title: link.dataset.menuExtraTitle, route: "تنظیمات", href: link.href }));
+        return canonical.concat(extras).filter(item => {
             if (seen.has(item.href)) return false;
             seen.add(item.href); return true;
         });
@@ -162,6 +170,33 @@
             renderSearch(panel);
             panel.querySelector("[data-menu-search-input]")?.focus();
         }
+    }
+    function syncSettingsFavorites() {
+        const catalog = new Map(Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
+            .map(link => [new URL(link.href).pathname.toLowerCase(), link]));
+        document.querySelectorAll("#BaseSetting a[href]").forEach(link => {
+            const meta = catalog.get(new URL(link.href).pathname.toLowerCase());
+            if (!meta) return;
+            let star = link.parentElement?.querySelector(":scope > .erp-settings-favorite-button");
+            if (!star) {
+                const wrapper = document.createElement("div");
+                wrapper.className = "erp-settings-favorite-row";
+                link.replaceWith(wrapper);
+                wrapper.append(link);
+                star = document.createElement("button");
+                star.type = "button";
+                star.className = "erp-settings-favorite-button";
+                star.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+                wrapper.append(star);
+            }
+            star.dataset.menuFavorite = meta.dataset.menuExtraLink;
+            const selected = meta.dataset.menuExtraFavorite === "true";
+            star.classList.toggle("is-favorite", selected);
+            star.setAttribute("aria-pressed", String(selected));
+            star.setAttribute("aria-label", selected ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها");
+            star.title = star.getAttribute("aria-label");
+            star.querySelector("svg")?.setAttribute("fill", selected ? "currentColor" : "none");
+        });
     }
     function initSortable() {
         if (!window.Sortable) return;
@@ -240,4 +275,5 @@
     restoreGroups();
     highlight();
     initSortable();
+    syncSettingsFavorites();
 })();

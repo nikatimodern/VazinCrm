@@ -442,3 +442,9 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 /* Keep fixed alerts/version from stretching because .menu-nav is flex-grow:1 globally. */
 #desktopFixedActions, #mobileDrawerFixedActions { flex:0 0 auto; justify-content:flex-start; gap:2px; width:100%; }
 #desktopNavbar, #mobileDrawerNavbar { justify-content:flex-start; }
+
+.erp-settings-favorite-row { display:flex; align-items:stretch; gap:5px; }
+.erp-settings-favorite-row > a { flex:1; min-width:0; }
+.erp-settings-favorite-button { width:34px; flex:0 0 34px; border:1px solid #d8e8e3; border-radius:8px; background:#eff8f5; color:#718b85; display:grid; place-items:center; cursor:pointer; }
+.erp-settings-favorite-button:hover, .erp-settings-favorite-button.is-favorite { color:#098472; background:#e0f5ed; border-color:#9fd9c7; }
+.erp-settings-favorite-button svg { width:17px; height:17px; }
