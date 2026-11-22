@@ -173,7 +173,11 @@ public sealed class CustomerController(
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> CheckCus(Customer model, CancellationToken cancellationToken)
     {
-        if (model is null || await ScopeAsync("View", cancellationToken) == AccessScopes.None) return Forbid();
+        if (model is null) return BadRequest();
+        if (await ScopeAsync("View", cancellationToken) == AccessScopes.None ||
+            (Enforce && await ScopeAsync("Create", cancellationToken) == AccessScopes.None &&
+                        await ScopeAsync("Edit", cancellationToken) == AccessScopes.None))
+            return Forbid();
         var exists = await requests.QueryAsync(new CheckCustomerRegistrationQuery(model), cancellationToken);
         return exists.HasValue ? Ok(new { Status = exists.Value ? 500 : 200, error = exists.Value ? "مشتری قبلا در سیستم ثبت شده است" : "" }) : Ok();
     }
@@ -182,7 +186,9 @@ public sealed class CustomerController(
     {
         if (model == null) return BadRequest();
         var scope = await ScopeAsync("View", cancellationToken);
-        if (scope == AccessScopes.None) return Forbid();
+        if (scope == AccessScopes.None ||
+            (Enforce && await ScopeAsync("Create", cancellationToken) == AccessScopes.None &&
+                        await ScopeAsync("Edit", cancellationToken) == AccessScopes.None)) return Forbid();
         var data = await requests.QueryAsync(new FindDuplicateCustomersQuery(model, OwnFilter(scope)), cancellationToken);
         return data.Count == 0 ? Ok(null) : PartialView("DuplicatePartial", data);
     }
@@ -232,7 +238,7 @@ public sealed class CustomerController(
     [NonAction]
     public async Task<string> GetUsersRel(IList<UserCustomer> userCustomers, CancellationToken cancellationToken) =>
         await requests.QueryAsync(new GetCustomerUserNamesQuery(userCustomers.Select(u => u.UserId).ToList()), cancellationToken);
-    [HttpPost, CustomerLegacyAuthorize(CustomerLegacyMode.Admin)]
+    [HttpPost, Authorize(Roles = "مدیر ارشد")]
     public async Task<IActionResult> NormalizeAllCustomers(CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
@@ -270,7 +276,7 @@ public sealed class CustomerController(
     {
         if (await ScopeAsync("View", cancellationToken) == AccessScopes.None) return Forbid();
         var person = await requests.QueryAsync(new GetCustomerByMobileQuery(mobile), cancellationToken);
-        if (person is null) return NotFound();
+        if (person is null) return Enforce ? NotFound() : Ok(null);
         return await CanAccessAsync("View", person.Id, cancellationToken) ? Ok(person) : Forbid();
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpGet]
@@ -312,21 +318,21 @@ public sealed class CustomerController(
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested) { return BadRequest(); }
     }
-    [CustomerLegacyAuthorize(CustomerLegacyMode.Admin), HttpGet]
+    // PreFactor expert reassignment remains admin-only until dedicated PreFactor permissions are mapped.
+    [Authorize(Roles = "مدیر ارشد"), HttpGet]
     public async Task<IActionResult> GetUsersForPreFactor(Guid cusId, Guid pfId, CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         if (!await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
         if (Enforce)
         {
-            var prefactor = await customers.GetPreFactorAsync(pfId, cancellationToken);
-            if (prefactor?.CustomerId.HasValue != true ||
-                (cusId != Guid.Empty && prefactor.CustomerId.Value != cusId)) return Forbid();
+            var personId = (await customers.GetPreFactorAsync(pfId, cancellationToken))?.CustomerId;
+            if (!personId.HasValue || (cusId != Guid.Empty && personId.Value != cusId)) return Forbid();
         }
         var result = await requests.QueryAsync(new GetPreFactorUsersQuery(cusId, pfId), cancellationToken);
         return result == null ? NotFound("رکوردی یافت نشد!") : Ok(result);
     }
-    [CustomerLegacyAuthorize(CustomerLegacyMode.Admin), HttpGet]
+    [Authorize(Roles = "مدیر ارشد"), HttpGet]
     public async Task<IActionResult> ChangeUsersPreFactor(Guid pfId, Guid userId, Guid taminUserId, CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
