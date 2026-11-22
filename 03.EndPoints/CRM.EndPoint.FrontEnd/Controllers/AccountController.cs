@@ -151,7 +151,7 @@ public class AccountController(ICqrsDispatcher requests, IHubContext<TaskHub> hu
         var notified = await requests.CommandAsync(new HandleAccountAccessDeniedCommand(showNotifyOnly), cancellationToken);
         return notified ? Ok() : RedirectToAction("Login", "Account", new { returnUrl = ReturnUrl, accesDenid = true });
     }
-    [Authorize(Roles = "مدیر ارشد")]
+    [Authorize(Roles = "مدیر ارشد"), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleUserLockout(string userId, CancellationToken cancellationToken)
     {
         var result = await requests.CommandAsync(new ToggleAccountLockoutCommand(userId), cancellationToken);

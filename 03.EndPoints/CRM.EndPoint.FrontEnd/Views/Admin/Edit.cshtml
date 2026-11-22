@@ -129,7 +129,10 @@
             const userId = '@Model.Id';
             try {
                 FLshowLoading();
-                const res = await axios(`/Account/ToggleUserLockout?userId=${userId}`);
+                const token = document.querySelector('form[method="post"] input[name="__RequestVerificationToken"]')?.value;
+                if (!token) throw new Error("Anti-forgery token missing");
+                const body = new URLSearchParams({ userId, __RequestVerificationToken: token });
+                const res = await axios.post("/Account/ToggleUserLockout", body);
                 if (res.status === 200) {
                     window.location.reload();
                     FLshowLoading(false);
