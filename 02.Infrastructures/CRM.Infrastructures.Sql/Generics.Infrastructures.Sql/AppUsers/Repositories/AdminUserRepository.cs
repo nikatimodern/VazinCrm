@@ -274,7 +274,7 @@ public sealed class AdminUserRepository(UserContextDb db, UserManager<AppUser> u
             foreach (var grant in allActiveByRole[membership.RoleId])
             {
                 var key = (membership.UserId, grant.AccessPermissionId);
-                otherSource[key] = Math.Max(otherSource.GetValueOrDefault(key), grant.Scope);
+                otherSource[key] = (byte)Math.Max((int)otherSource.GetValueOrDefault(key), (int)grant.Scope);
             }
 
         var customOverrides = overrides.Select(x => (x.UserId, x.AccessPermissionId)).ToHashSet();

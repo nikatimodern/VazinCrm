@@ -64,7 +64,7 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
     public async Task<bool> CanAccessCustomerAsync(
         string userId, string permissionKey, Guid customerId, CancellationToken ct)
     {
-        if (customerId == Guid.Empty) return false;
+        if (customerId == Guid.Empty || !permissionKey.StartsWith("Customer.", StringComparison.Ordinal)) return false;
         var scope = await GetEffectiveScopeAsync(userId, permissionKey, ct);
         if (scope == AccessScopes.All) return true;
         // UserCustomers.UserId is a Guid, while Identity's Id is string.

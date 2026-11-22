@@ -394,8 +394,10 @@
             button.disabled = roleSaving || roleMutating;
         for (const input of roleGroups.querySelectorAll("[data-role-permission-id], [data-role-entity-toggle]"))
             input.disabled = !roleReady || roleSaving || roleMutating;
-        for (const select of roleGroups.querySelectorAll("[data-role-scope-id]"))
+        for (const select of roleGroups.querySelectorAll("[data-role-scope-id]")) {
+            select.value = String(roleScopes.get(select.dataset.roleScopeId) ?? 2);
             select.disabled = !roleReady || roleSaving || roleMutating || !roleChosen.has(select.dataset.roleScopeId);
+        }
         root.querySelector("[data-role-subtitle]").textContent = !currentRole() ? "برای شروع یک نقش انتخاب کنید." :
             !roleReady ? "در حال دریافت مجوزها..." :
             roleDirty() ? "تغییرات ذخیره‌نشده" : "همه تغییرات ذخیره شده‌اند.";
