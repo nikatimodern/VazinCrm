@@ -42,6 +42,7 @@
     let userOverrides = new Map(), userOriginalOverrides = new Map();
     let userSelectedUsers = new Map(), userOriginalSelectedUsers = new Map();
     const scopePickers = new Map();
+    const collapsedUserEntities = new Set();
     let userRolePicker = null;
     let userReady = false, userSaving = false, userLoading = false;
     let userTabGeneration = 0, userPageGeneration = 0, userSelectionGeneration = 0, userSearchTimer = null;
@@ -1260,12 +1261,24 @@
             const section = text("section", null, "ac-role-group");
             section.dataset.userEntity = entity.id;
             const header = text("div", null, "ac-role-group-header");
-            const name = text("span", null, "ac-role-group-all");
-            name.append(text("strong", entity.title), text("small", entity.key));
+            const name = text("button", null, "ac-user-entity-toggle");
+            name.type = "button";
+            name.dataset.action = "toggle-user-entity";
+            name.dataset.userEntityId = entity.id;
+            name.setAttribute("aria-label", "باز و بسته کردن مجوزهای " + entity.title);
+            const chevron = text("i", null, "fas fa-chevron-down");
+            chevron.setAttribute("aria-hidden", "true");
+            name.append(text("strong", entity.title), text("small", entity.key), chevron);
             const count = text("span", null, "ac-role-group-count");
             count.dataset.userEntityCount = entity.id;
             header.append(name, count);
             const grid = text("div", null, "ac-user-permission-grid");
+            grid.id = "ac-user-entity-permissions-" + entity.id;
+            const isCollapsed = collapsedUserEntities.has(entity.id);
+            grid.hidden = isCollapsed;
+            name.setAttribute("aria-expanded", String(!isCollapsed));
+            name.setAttribute("aria-controls", grid.id);
+            section.classList.toggle("is-collapsed", isCollapsed);
             for (const permission of visible) {
                 const item = text("div", null, "ac-user-permission-item");
                 item.dataset.userPermissionId = permission.id;
@@ -1387,6 +1400,7 @@
     async function selectUser(userId) {
         if (!userPageItems.some(x => x.id === userId)) return;
         const generation = ++userSelectionGeneration;
+        if (currentUserId !== userId) collapsedUserEntities.clear();
         currentUserId = userId;
         userReady = false;
         userRoleIds = new Set();
@@ -1603,6 +1617,19 @@
         }
         if (target.disabled) return;
         const action = target.dataset.action;
+        if (action === "toggle-user-entity") {
+            const section = target.closest("[data-user-entity]");
+            const grid = section?.querySelector(".ac-user-permission-grid");
+            if (!grid) return;
+            const entityId = target.dataset.userEntityId;
+            const isCollapsed = !grid.hidden;
+            grid.hidden = isCollapsed;
+            target.setAttribute("aria-expanded", String(!isCollapsed));
+            section.classList.toggle("is-collapsed", isCollapsed);
+            if (isCollapsed) collapsedUserEntities.add(entityId);
+            else collapsedUserEntities.delete(entityId);
+            return;
+        }
         if (action === "new-user") void openUserProfileEditor();
         else if (action === "edit-user") void openUserProfileEditor(currentUserId);
         else if (action === "reload-users") void reloadUsers();
