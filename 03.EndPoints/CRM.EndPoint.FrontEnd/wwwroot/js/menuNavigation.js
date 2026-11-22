@@ -96,6 +96,11 @@
                 const updated = doc.getElementById(id);
                 if (previous && updated) previous.replaceWith(updated);
             }
+            // Layout.js binds the original bottom-bar "More" button once.
+            // A server-driven menu refresh replaces that button, so bind only
+            // the new instance while keeping the first-load handler untouched.
+            document.getElementById("mobileMoreMenuBtn")?.addEventListener("click", () =>
+                window.toggleMobileDrawer?.(true));
             restoreGroups();
             highlight();
             initSortable();
