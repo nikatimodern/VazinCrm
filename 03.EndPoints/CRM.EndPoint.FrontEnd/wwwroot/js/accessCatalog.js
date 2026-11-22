@@ -1277,8 +1277,12 @@
                     kind === "create" ? "fa-plus" :
                     kind === "edit" ? "fa-pen" :
                     kind === "delete" ? "fa-trash-alt" : "fa-key";
+                const rawPermissionKey = String(permission.key || "");
+                const fullPermissionKey = rawPermissionKey.toLowerCase().startsWith(
+                    String(entity.key).toLowerCase() + ".")
+                    ? rawPermissionKey : entity.key + "." + rawPermissionKey;
                 title.append(text("i", null, "fas " + iconName),
-                    text("strong", permission.title), text("small", entity.key + "." + permission.key));
+                    text("strong", permission.title), text("small", fullPermissionKey));
                 const controls = text("div", null, "ac-user-permission-row");
                 const select = document.createElement("select");
                 select.className = "ac-user-override-select";
