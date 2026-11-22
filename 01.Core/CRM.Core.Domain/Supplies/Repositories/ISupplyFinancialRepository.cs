@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 
 namespace CRM.Core.Domain.Supplies.Repositories;

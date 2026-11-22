@@ -4,9 +4,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Sepidar.Payments.Entites;
@@ -53,6 +53,8 @@ public sealed class ExternalTransferOptionsService(
                 new(nameof(Cash), CleanupMissingCashDocuments: true),
             [ExternalMappingTypeEnum.پیش_فاکتور] = new(nameof(PreFactor), AllowedRoles: FinancialRoles),
             [ExternalMappingTypeEnum.فاکتور] = new(nameof(Factor), AllowedRoles: FinancialRoles),
+            [ExternalMappingTypeEnum.واریزی] = new(nameof(CRM.Core.Domain.Accountancies.Entities.Accountancy),
+                AllowedRoles: FinancialRoles, SupportedDestinationsOnly: true),
             [ExternalMappingTypeEnum.فاکتور_خرید] = new(nameof(SupplyFactor),
                 AllowedRoles: FinancialRoles,
                 SupportedDestinationsOnly: true),

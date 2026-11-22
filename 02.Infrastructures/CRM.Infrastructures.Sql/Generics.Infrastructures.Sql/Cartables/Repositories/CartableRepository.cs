@@ -11,12 +11,12 @@ using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Querying;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Supplies.Enums;
 using CRM.Infrastructures.Sql.Accountancies.QueryExtensions;
 using CRM.Infrastructures.Sql.Querying;
 using Microsoft.EntityFrameworkCore;
 using CRM.Core.Domain.Factors.Enum;
-using CRM.Core.Domain.ASettings.Enums;
 
 namespace CRM.Infrastructures.Sql.Cartables.Repositories;
 public sealed class CartableRepository(CRMContextDb db) : ICartableRepository

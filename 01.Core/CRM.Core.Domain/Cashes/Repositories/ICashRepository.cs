@@ -10,7 +10,6 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Querying;
 
 namespace CRM.Core.Domain.Cashes.Repositories;

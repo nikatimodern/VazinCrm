@@ -164,3 +164,24 @@
     opacity: .65;
     cursor: not-allowed;
 }
+.external-financial-note summary {
+    inline-size: fit-content;
+    color: var(--color-primary-action, #00665C);
+    font-size: .82rem;
+    cursor: pointer;
+}
+
+.external-financial-note[open] textarea {
+    margin-block-start: .35rem;
+}
+
+.external-financial-note-panel {
+    padding: .6rem .8rem;
+    border-radius: .65rem;
+    background: var(--color-primary-light, #E7F3F0);
+}
+
+.external-financial-note summary:focus-visible {
+    outline: 2px solid var(--color-primary-action, #00665C);
+    outline-offset: 2px;
+}

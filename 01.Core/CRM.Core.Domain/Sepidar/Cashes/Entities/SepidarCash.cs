@@ -7,6 +7,7 @@ namespace CRM.Core.Domain.Sepidar.Cashes.Entities;
 public class SepidarCash {
     [Key]
     public int CashId { get; set; }
+    public int CurrencyRef { get; set; }
     public int DlRef { get; set; }
     public string Title { get; set; }
 }

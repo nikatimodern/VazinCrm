@@ -122,6 +122,16 @@
             SupplyReceiptNotFound:["رسید انبار یافت نشد","برای فاکتور خرید متناظر، رسید انبار غیرمرجوعی وجود ندارد."],
             SupplyReceiptAlreadyMapped:["رسید انبار قبلاً ارتباط داده شده","رسید مرتبط با این فاکتور خرید به فاکتور تأمین دیگری متصل است."],
             SupplyReceiptAmbiguous:["چند رسید مرتبط وجود دارد","چند رسید به این فاکتور خرید متصل هستند؛ رسید درست را انتخاب کنید."],
+            DepositNeedCustomer:["ارتباط مشتری ثبت نشده","ابتدا مشتری متناظر را ثبت و پیشنهادها را دوباره محاسبه کنید."],
+            DepositNeedBank:["ارتباط حساب بانکی ثبت نشده","ابتدا حساب بانکی متناظر را ثبت و پیشنهادها را دوباره محاسبه کنید."],
+            DepositCollectedCheque:["گردش یا مبلغ اولیه چک نیازمند بررسی است","تطبیق قطعی چک وصول‌شده از مبلغ، تاریخ و گردش بانکی ممکن نشد؛ سند درست را دستی انتخاب کنید."],
+            DepositNoMatch:["سند واریزی متناظر پیدا نشد","نوع، تاریخ، مبلغ، مشتری و اطلاعات بانکی سند را بررسی کنید."],
+            DepositAmbiguous:["چند سند واریزی مطابق","معادل قطعی نیست؛ سند صحیح را انتخاب کنید."],
+            DepositUsed:["سند قبلاً ارتباط داده شده","این سند در نرم‌افزار مقصد به واریزی دیگری متصل است یا چند واریزی برای آن پیشنهاد شده‌اند."],
+            BankNoMatch:["حساب بانکی متناظر پیدا نشد","شماره حساب، شبا، کارت یا بانک را بررسی کنید."],
+            BankAmbiguous:["چند حساب بانکی احتمالی","اطلاعات یا شواهد واریزی به چند حساب اشاره می‌کنند؛ حساب درست را بررسی کنید."],
+            BankUsed:["حساب بانکی قبلاً ارتباط داده شده","این حساب مقصد برای یک حساب دیگر CRM استفاده شده یا چند حساب CRM به آن اشاره دارند."],
+            BankEvidenceConflict:["مغایرت ارتباط حساب بانکی","ارتباط ثبت‌شده با اطلاعات رسیدهای مرتبط سازگار نیست؛ سابقه را بررسی کنید."],
             ReadyForReview:["آماده ثبت",""],
             AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
         };
@@ -161,7 +171,7 @@
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one CRM customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5,6,7,8,9,10].includes(Number(row.mapType)) &&
+                [2,3,5,6,7,8,9,10,11,12].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -227,7 +237,7 @@
                 return !!state.crmTargets.get(row.key) &&
                     row.crmCandidates.some(item => item.id === state.crmTargets.get(row.key))
                     && !!row.sepidar?.customer;
-            const key = state.softwareId+":"+row.mapType+":"+value;
+            const key = state.softwareId+":"+row.mapType+":"+row.targetEntity+":"+value;
             if (state.preview.has(key)) return true;
             return row.status === "pending" && row.options?.length === 1 &&
                 String(row.sepidar?.id) === value &&
@@ -239,7 +249,7 @@
             const value = targetValue(row);
             if (row.status === "saved" || row.status === "pending" && !value) return row.sepidar;
             if (!value) return {title:"معادل انتخاب نشده",number:"",customer:"",id:""};
-            const preview = state.preview.get(state.softwareId+":"+row.mapType+":"+value);
+            const preview = state.preview.get(state.softwareId+":"+row.mapType+":"+row.targetEntity+":"+value);
             if (preview) return preview;
             if (String(row.sepidar?.id) === value) return row.sepidar;
             const option = row.options?.find(x => String(x.id) === value);
@@ -261,6 +271,8 @@
                 case 8: return crm ? "شماره فاکتور تأمین" : "شماره فاکتور خرید";
                 case 9: return crm ? "شماره فاکتور تأمین" : "شماره رسید انبار";
                 case 10: return "نام کاربری";
+                case 11: return crm ? "نوع واریزی" : "شماره سند";
+                case 12: return "شماره حساب";
                 default: return "شماره";
             }
         }
@@ -268,6 +280,8 @@
         function sideDisplayName(row, side, crm) {
             if (!side) return "معادل مشخص نیست";
             const name = show(side.customer || side.title);
+            if (!crm && Number(row.mapType) === 11)
+                return side.title && side.customer ? side.title + " | " + name : name;
             return !crm && [2, 3].includes(Number(row.mapType)) && side.customer
                 ? "مشتری: " + name : name;
         }
@@ -510,7 +524,7 @@
                     ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
                         (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
                     : "") +
-                (row.status === "saved" && row.mappingId
+                (row.status === "saved" && row.mappingId && manualEntityTypes[Number(row.mapType)]
                     ? '<span class="lmr-saved-actions">' +
                         '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
@@ -603,7 +617,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5, 6, 7, 8, 9, 10]);
+                : new Set([2, 3, 5, 6, 7, 8, 9, 10, 11, 12]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -898,7 +912,7 @@
         function payload(row) {
             if (!canMap(row) || !verifiedTarget(row)) return null;
             return { entityId: selectedCrm(row).id, mapType: Number(row.mapType),
-                exEntityId: targetValue(row) };
+                exEntityId: targetValue(row), exEntityName: row.targetEntity || null };
         }
 
         async function save(items) {
@@ -916,9 +930,8 @@
 
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
-            const ordered = [
-                ...[5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9].flatMap(type => items.filter(x => x.mapType === type))
-            ];
+            const saveOrder = [5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9, 12, 11];
+            const ordered = saveOrder.flatMap(type => items.filter(x => x.mapType === type));
             if (ordered.length !== items.length) {
                 mappingFailure("دسته‌بندی ثبت ارتباط", new Error("Selected map types are not supported"),
                     "نوع یکی از ارتباط‌های انتخاب‌شده پشتیبانی نمی‌شود.");
@@ -945,7 +958,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9]) {
+                for (const groupType of saveOrder) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -1026,12 +1039,12 @@
 
         async function preview(row, id) {
             if (!validId(id)) return;
-            const key = state.softwareId + ":" + row.mapType + ":" + id;
+            const key = state.softwareId + ":" + row.mapType + ":" + row.targetEntity + ":" + id;
             if (state.preview.has(key)) return;
             const softwareId = state.softwareId;
             const result = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingTargetDetails",
-                params: { softwareId, mapType: row.mapType, targetId: Number(id) },
+                params: { softwareId, mapType: row.mapType, targetId: Number(id), targetEntity: row.targetEntity },
                 showLoading: false, showError: false, timeout: 30000
             }, "بررسی معادل انتخاب‌شده", "اطلاعات معادل انتخاب‌شده دریافت نشد.");
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
@@ -1071,7 +1084,7 @@
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
             if (event.target.closest("[data-open-manual]")) {
-                openManualMapping(Number(row.mapType));
+                openManualMapping({ mapType: row.mapType, exEntityName: row.targetEntity });
                 return;
             }
             if (event.target.closest("[data-map-one]")) {
@@ -1209,7 +1222,9 @@
             7: { crm: ["Customer", "تأمین‌کنندگان CRM"], external: ["Party", "تأمین‌کنندگان نرم‌افزار مالی"] },
             8: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryPurchaseInvoice", "فاکتورهای خرید"] },
             9: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryReceipt", "رسیدهای انبار"] },
-            10: { crm: ["AppUser", "کاربران CRM"], external: ["User", "کاربران نرم‌افزار مالی"] }
+            10: { crm: ["AppUser", "کاربران CRM"], external: ["User", "کاربران نرم‌افزار مالی"] },
+            11: { crm: ["Accountancy", "واریزی‌های CRM"], external: ["ReceiptHeader", "رسید دریافت"] },
+            12: { crm: ["BankAccount", "حساب‌های بانکی CRM"], external: ["BankAccount", "حساب‌های بانکی نرم‌افزار مالی"] }
         };
 
         async function editSavedMapping(row) {
@@ -1237,12 +1252,24 @@
             }
         }
 
+        function syncManualTargetKinds(preferred = "") {
+            const type = Number(manualType.value);
+            const select = get("lmrManualTargetKind");
+            const choices = manualType.value !== "" && type === 0
+                ? [["PaymentHeader", "اعلامیه پرداخت"], ["Voucher", "سند حسابداری"]]
+                : type === 11
+                    ? [["ReceiptHeader", "رسید دریافت (نقدی و چکی)"], ["DebitCreditNote", "اعلامیه بدهکار بستانکار (تهاتری)"]]
+                    : [];
+            select.replaceChildren(...choices.map(([value, title]) => new Option(title, value)));
+            if (choices.some(([value]) => value === preferred)) select.value = preferred;
+            get("lmrManualTargetKindBox").hidden = choices.length === 0;
+        }
+
         function manualTypeDetails() {
             const type = manualType.value === "" ? null : Number(manualType.value);
-            get("lmrManualTargetKindBox").hidden = type !== 0;
             return {
                 mapType: type,
-                targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
+                targetEntity: type === 0 || type === 11 ? get("lmrManualTargetKind").value : ""
             };
         }
 
@@ -1251,7 +1278,9 @@
             const item = manualEntityTypes[type.mapType]?.[side];
             if (!item) return null;
             if (side === "external" && type.targetEntity === "Voucher")
-                return ["Voucher", "Voucher"];
+                return ["Voucher", "سند حسابداری"];
+            if (side === "external" && type.targetEntity === "DebitCreditNote")
+                return ["DebitCreditNote", "اعلامیه بدهکار بستانکار"];
             return item;
         }
 
@@ -1447,13 +1476,12 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.forEach(item =>
+            state.types.filter(item => manualEntityTypes[Number(item.value)]).forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
-            manualType.value = isEdit ? String(editing.mapType) : "";
+            manualType.value = editing?.mapType != null ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.
             manualType.disabled = isEdit;
-            get("lmrManualTargetKind").value =
-                isEdit && editing.exEntityName === "Voucher" ? "Voucher" : "PaymentHeader";
+            syncManualTargetKinds(editing?.exEntityName);
             get("lmrManualTitleText").textContent =
                 isEdit ? "ویرایش ارتباط" : "ثبت ارتباط";
             get("lmrManualConfirmText").textContent =
@@ -1494,9 +1522,12 @@
             }
             manualReturnFocus = null;
         });
-        manualType.addEventListener("change", () => resetManualOptions());
+        manualType.addEventListener("change", () => {
+            syncManualTargetKinds();
+            resetManualOptions();
+        });
         get("lmrManualTargetKind").addEventListener("change", () =>
-            resetManualOptions({ preserveCrm: true }));
+            resetManualOptions({ preserveCrm: Number(manualType.value) === 0 }));
 
         get("lmrManualConfirm").addEventListener("click", async () => {
             if (state.processing || !state.manualOpen ||

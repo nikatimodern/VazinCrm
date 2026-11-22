@@ -1,4 +1,4 @@
-namespace CRM.Core.Domain.ASettings.Enums;
+namespace CRM.Core.Domain.ExternalSoftwares.Enums;
 
 public enum ExternalMappingTypeEnum {
     تنخواه = 0,
@@ -11,4 +11,6 @@ public enum ExternalMappingTypeEnum {
     فاکتور_خرید = 8,
     رسید_انبار = 9,
     کاربران = 10,
+    واریزی = 11,
+    حساب_بانکی = 12,
 }

@@ -133,7 +133,8 @@ namespace CRM.Infrastructures.Sql {
             //GetEnumerableOfType();
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly,
-                type => type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace);
+                type => type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace
+                    && type.Namespace != typeof(Sepidar.Deposits.Configs.ReceiptHeaderConfig).Namespace);
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
 

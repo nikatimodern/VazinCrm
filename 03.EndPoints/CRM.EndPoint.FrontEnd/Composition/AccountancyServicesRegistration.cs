@@ -40,6 +40,9 @@ public static class AccountancyServicesRegistration
         services.AddScoped<IQueryHandler<GetAccountancyDetailsQuery, AccountancyDetails>, GetAccountancyDetailsQueryHandler>();
         services.AddScoped<IQueryHandler<GetAccountancyTransferQuery, AccountancyTransfer?>, GetAccountancyTransferQueryHandler>();
         services.AddScoped<IQueryHandler<GetInvoiceTotalsQuery, PaymentTotalsData?>, GetInvoiceTotalsQueryHandler>();
+        services.AddScoped<CRM.Core.Domain.Accountancies.Repositories.IDepositFinancialRepository,
+            CRM.Infrastructures.Sql.Accountancies.Repositories.DepositFinancialRepository>();
+        services.AddScoped<CRM.EndPoint.FrontEnd.Services.Accountancies.DepositFinancialService>();
         services.AddScoped<IQueryHandler<GetAccountancyCartableQuery, object>, GetAccountancyCartableQueryHandler>();
         services.AddScoped<IQueryHandler<GetAccountancyPaymentsQuery, object>, GetAccountancyPaymentsQueryHandler>();
         services.AddScoped<IQueryHandler<GetCustomerWalletQuery, List<Accountancy>>, GetCustomerWalletQueryHandler>();

@@ -1,4 +1,5 @@
 using System;
+using CRM.Core.Domain.Accountancies.Repositories;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlTypes;
@@ -9,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Customers.Entities;
@@ -51,19 +51,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
         private readonly Sepidar2ContextDb s2Db;
         private readonly UserManager<AppUser> userManager;
         private readonly ILogger<ExternalMappingService> _logger;
+        private readonly IDepositFinancialRepository depositRepository;
 
         public ExternalMappingService(
             CRMContextDb db,
             Sepidar1ContextDb sdb,
             Sepidar2ContextDb s2Db,
             UserManager<AppUser> userManager,
-            ILogger<ExternalMappingService> logger)
+            ILogger<ExternalMappingService> logger, IDepositFinancialRepository depositRepository)
         {
             this.db = db;
             this.sdb = sdb;
             this.s2Db = s2Db;
             this.userManager = userManager;
             _logger = logger;
+            this.depositRepository = depositRepository;
         }
     }
 }

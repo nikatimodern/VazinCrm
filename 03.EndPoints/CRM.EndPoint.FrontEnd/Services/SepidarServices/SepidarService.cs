@@ -182,7 +182,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
         if (fiscalYear == null)
         {
-            throw new Exception($"سال مالی برای تاریخ {date:yyyy-MM-dd} در سپیدار پیدا نشد.");
+            throw new SepidarTransferValidationException($"سال مالی برای تاریخ {date:yyyy-MM-dd} در سپیدار پیدا نشد.");
         }
 
         return fiscalYear.FiscalYearId;
@@ -231,10 +231,10 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
 
         if (values.Count != 1)
-            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+            throw new SepidarTransferValidationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
 
         if (!int.TryParse(values[0]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0)
-            throw new InvalidOperationException($"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
+            throw new SepidarTransferValidationException($"شناسه تنظیم «{key}» در سپیدار خالی، صفر یا نامعتبر است.");
 
         return id;
     }
@@ -247,7 +247,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             .ToListAsync(ct);
 
         if (values.Count != 1)
-            throw new InvalidOperationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
+            throw new SepidarTransferValidationException($"تنظیم «{key}» در سپیدار پیدا نشد یا بیش از یک بار تعریف شده است.");
 
         var value = values[0]?.Trim();
         if (bool.TryParse(value, out var result))
@@ -259,14 +259,14 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         if (value == "0")
             return false;
 
-        throw new InvalidOperationException($"مقدار تنظیم «{key}» در سپیدار باید True/False یا 1/0 باشد.");
+        throw new SepidarTransferValidationException($"مقدار تنظیم «{key}» در سپیدار باید True/False یا 1/0 باشد.");
     }
 
     private async Task<int> GetConfiguredAccountIdAsync(string key, CancellationToken ct)
     {
         var accountId = await GetRequiredSepidarSettingIdAsync(key, ct);
         if (!await sepidarContext.Accounts.AsNoTracking().AnyAsync(x => x.AccountId == accountId && x.IsActive, ct))
-            throw new InvalidOperationException($"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
+            throw new SepidarTransferValidationException($"حساب معین معرفی‌شده در تنظیم «{key}» (شناسه {accountId}) در سپیدار پیدا نشد یا غیرفعال است.");
 
         return accountId;
     }
@@ -951,7 +951,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             .SingleOrDefaultAsync(cancellationToken);
 
         if (account == null)
-            throw new InvalidOperationException($"حساب {accountSlRef} در سپیدار پیدا نشد.");
+            throw new SepidarTransferValidationException($"حساب {accountSlRef} در سپیدار پیدا نشد.");
 
         return account.HasDL ? dlRef : null;
     }
@@ -1719,6 +1719,9 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 .AsNoTracking()
                 .AnyAsync(x => x.InvoiceId == id),
 
+            "ReceiptHeader" => await FindDepositDocumentAsync(false, id, default) != null,
+            "DebitCreditNote" => await FindDepositDocumentAsync(true, id, default) != null,
+            "BankAccount" => await sepidarContext.SepidarBankAccounts.AnyAsync(x => x.BankAccountId == id),
             nameof(CRM.Core.Domain.Sepidar.Purchases.Entities.InventoryPurchaseInvoice) =>
                 await sepidarContext.InventoryPurchaseInvoices.AnyAsync(x => x.InventoryPurchaseInvoiceID == id && x.Type == 1),
 
