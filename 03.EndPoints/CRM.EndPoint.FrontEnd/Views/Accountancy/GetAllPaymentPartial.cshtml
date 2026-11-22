@@ -5,9 +5,9 @@
 
 @if (Model.Items.Any()) {
     var fromCartableFinancial = Model.PassType is 55 or 56;
-    var canAccessDepositFinancial = Model.PassType == 55 && !Model.ReadOnly && !Model.IsCustomer &&
-        (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
-         User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"));
+    var canAccessDepositFinancial = //        Model.PassType == 55 &&
+        !Model.ReadOnly && !Model.IsCustomer &&
+        (User.IsAdmin() || User.IsManagingDirector() || User.IsFinancial());
     <table id="@($"allPaymentTable{Model.PassType}")" class="paymentTable table table-striped table-bordered table-hover no-footer nowrap">
         <thead>
         <tr>
@@ -28,14 +28,14 @@
         <tbody>
         @foreach (var item in Model.Items.OrderByDescending(f => f.CreateDate)) {
             var canTransferDepositFinancial = canAccessDepositFinancial && item.AccType == AcEnum.واریزی &&
-                (item.PayType is PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری);
+                                              (item.PayType is PayTypeEnum.نقدی or PayTypeEnum.چکی or PayTypeEnum.تهاتری);
             var isCreator = item.UserCreatorID == Model.UserId;
             var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
 
             var canManage = !Model.ReadOnly && !isDealClosed && (isCreator || Model.IsCreatorParent || Model.IsAdmin || Model.IsSalesAdmin);
             // Settlement permissions are independent of order completion; editing remains locked.
             var canViewActions = !Model.ReadOnly && (canManage || Model.IsAdmin || Model.IsFinancial
-                || (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری));
+                                                     || (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری));
             var canEdit = !Model.ReadOnly && (((Model.IsAdmin || Model.IsFinancial) && isCreator)
                                               || (canManage && item.Status is AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده));
             var canVosol = !Model.ReadOnly && item.Status == AccStatusEnum.تایید_شده &&
@@ -87,6 +87,13 @@
                             </button>
                         } else if (canViewActions) {
                             <span class="inline-flex-center gap-2">
+                                @if (canTransferDepositFinancial && item.Status == AccStatusEnum.تایید_شده) {
+                                    <button type="button" class="inline-flex-center" data-title-right="ارتباط مالی" aria-label="ارتباط مالی"
+                                            onclick="openDepositFinancial('@item.Id')">
+                                        <i class="fas fa-link" aria-hidden="true"></i>
+                                    </button>
+                                }
+                                
                                 @if (canEdit) {
                                     <button class="inline-flex-center" data-title-right="حذف" style="color:var(--DarkColor)" onclick="delPayment('@item.Id')">
                                         <i class="fa fa-trash"></i>
@@ -103,13 +110,6 @@
                                     <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
                                 }
 
-                                @if (canTransferDepositFinancial && item.Status == AccStatusEnum.تایید_شده)
-                                {
-                                    <button type="button" class="inline-flex-center" title="ارتباط مالی" aria-label="ارتباط مالی"
-                                            onclick="openDepositFinancial('@item.Id')">
-                                        <i class="fas fa-link" aria-hidden="true"></i>
-                                    </button>
-                                }
 
                                 @if (canVosol) {
                                     var isTransfered = (item.AccountancyTransfer != null).ToString().ToLower();
@@ -123,6 +123,8 @@
                                         انتقال
                                     </button>
                                 }
+
+
                             </span>
                         } else {
                             <button class="buttonGray" onclick="showPayment('@item.Id')">مشاهده</button>
