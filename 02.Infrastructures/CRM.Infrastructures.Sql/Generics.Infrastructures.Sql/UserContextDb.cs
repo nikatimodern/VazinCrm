@@ -10,6 +10,7 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<BaseAdmin> BaseAdmins { get; set; }
         public DbSet<OtpMobileState> OtpMobileStates { get; set; }
         public DbSet<PasswordLockoutState> PasswordLockoutStates { get; set; }
+        public DbSet<MenuFavorite> MenuFavorites { get; set; }
 
 
         protected void OnModelCreating(ModelBuilder modelBuilder) {
@@ -21,6 +22,10 @@ namespace Generics.Infrastructures.Sql {
                 .HasForeignKey<AppUser>(f => f.PositionId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+
+            modelBuilder.Entity<MenuFavorite>().HasKey(f => new { f.UserId, f.MenuId });
+            modelBuilder.Entity<MenuFavorite>().Property(f => f.UserId).HasMaxLength(450);
+            modelBuilder.Entity<MenuFavorite>().Property(f => f.MenuId).HasMaxLength(100);
 
             modelBuilder.Entity<BaseAdmin>().HasKey(f => f.Id);
             modelBuilder.Entity<BaseAdmin>().HasQueryFilter(f => f.IsDeleted == false);
