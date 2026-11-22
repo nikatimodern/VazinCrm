@@ -294,6 +294,7 @@ public sealed class CustomerController(
     [HttpGet]
     public async Task<IActionResult> GetAllPreFactorPartial(Guid? customerId, Guid? dealId, bool showDeleted = false, CancellationToken cancellationToken = default)
     {
+        Guid? requiredCustomerId = null;
         if (Enforce)
         {
             if (!customerId.HasValue && !dealId.HasValue) return BadRequest();
@@ -301,10 +302,11 @@ public sealed class CustomerController(
             var personId = dealId.HasValue ? await customers.GetDealCustomerIdAsync(dealId.Value, cancellationToken) : customerId;
             if (!personId.HasValue || (customerId.HasValue && customerId != personId) ||
                 !await CanAccessAsync("View", personId.Value, cancellationToken)) return Forbid();
+            requiredCustomerId = personId;
         }
         try
         {
-            var result = await requests.QueryAsync(new GetCustomerPreFactorsQuery(customerId, dealId, showDeleted), cancellationToken);
+            var result = await requests.QueryAsync(new GetCustomerPreFactorsQuery(customerId, dealId, showDeleted, requiredCustomerId), cancellationToken);
             return Ok(new { count = result.Count, html = result.Html });
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested) { return BadRequest(); }
@@ -313,6 +315,12 @@ public sealed class CustomerController(
     public async Task<IActionResult> GetUsersForPreFactor(Guid cusId, Guid pfId, CancellationToken cancellationToken)
     {
         if (!await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
+        if (Enforce)
+        {
+            var prefactor = await customers.GetPreFactorAsync(pfId, cancellationToken);
+            if (prefactor?.CustomerId.HasValue != true ||
+                (cusId != Guid.Empty && prefactor.CustomerId.Value != cusId)) return Forbid();
+        }
         var result = await requests.QueryAsync(new GetPreFactorUsersQuery(cusId, pfId), cancellationToken);
         return result == null ? NotFound("رکوردی یافت نشد!") : Ok(result);
     }

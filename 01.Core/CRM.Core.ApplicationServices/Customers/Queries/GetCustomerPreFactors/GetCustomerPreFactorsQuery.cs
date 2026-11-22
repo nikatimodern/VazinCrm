@@ -11,7 +11,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerPreFactors;
 
-public sealed record GetCustomerPreFactorsQuery(Guid? CustomerId, Guid? DealId, bool ShowDeleted) : IQuery<CustomerHtmlResult>;
+public sealed record GetCustomerPreFactorsQuery(Guid? CustomerId, Guid? DealId, bool ShowDeleted, Guid? RequiredCustomerId = null) : IQuery<CustomerHtmlResult>;
 public sealed class GetCustomerPreFactorsQueryHandler(ICustomerRepository repository, CustomerAccess access, IAccountUserRepository users, ICustomerExternalRepository external, ICustomerPresentation presentation) : IQueryHandler<GetCustomerPreFactorsQuery, CustomerHtmlResult>
 {
     public async Task<CustomerHtmlResult> HandleAsync(GetCustomerPreFactorsQuery request, CancellationToken ct)
@@ -19,7 +19,7 @@ public sealed class GetCustomerPreFactorsQueryHandler(ICustomerRepository reposi
         if (!request.CustomerId.HasValue && !request.DealId.HasValue) return new(200);
         var identity = await access.GetAsync(ct);
         var setting = await repository.GetSettingsAsync(ct);
-        var data = await repository.GetPreFactorsAsync(request.CustomerId, request.DealId, request.ShowDeleted && !identity.IsCustomer, ct);
+        var data = await repository.GetPreFactorsAsync(request.CustomerId, request.DealId, request.ShowDeleted && !identity.IsCustomer, ct, request.RequiredCustomerId);
         if (setting?.Sepidar == true)
         {
             var counts = await external.GetInvoiceCountsAsync(data, ct);

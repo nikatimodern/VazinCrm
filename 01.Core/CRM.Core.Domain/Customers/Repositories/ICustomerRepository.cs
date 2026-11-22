@@ -46,7 +46,7 @@ public interface ICustomerRepository
     Task SaveChangesAsync(CancellationToken cancellationToken);
     Task BeginWriteAsync(CancellationToken cancellationToken);
     Task CommitAsync(CancellationToken cancellationToken);
-    Task<List<PreFactor>> GetPreFactorsAsync(Guid? customerId, Guid? dealId, bool includeDeleted, CancellationToken cancellationToken);
+    Task<List<PreFactor>> GetPreFactorsAsync(Guid? customerId, Guid? dealId, bool includeDeleted, CancellationToken cancellationToken, Guid? requiredCustomerId = null);
     Task<PreFactor?> GetPreFactorAsync(Guid id, CancellationToken cancellationToken);
     Task<Guid?> GetDealCustomerIdAsync(Guid dealId, CancellationToken cancellationToken);
     Task ChangePreFactorUsersAsync(Guid pfId, AppUser? salesUser, AppUser? supplyUser, CancellationToken cancellationToken);

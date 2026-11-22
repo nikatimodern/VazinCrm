@@ -153,12 +153,13 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public async Task BeginWriteAsync(CancellationToken ct) { transaction = await db.Database.BeginTransactionAsync(ct); }
     public async Task CommitAsync(CancellationToken ct) { if (transaction != null) await transaction.CommitAsync(ct); }
     public async ValueTask DisposeAsync() { if (transaction != null) await transaction.DisposeAsync(); }
-    public async Task<List<PreFactor>> GetPreFactorsAsync(Guid? customerId, Guid? dealId, bool includeDeleted, CancellationToken ct)
+    public async Task<List<PreFactor>> GetPreFactorsAsync(Guid? customerId, Guid? dealId, bool includeDeleted, CancellationToken ct, Guid? requiredCustomerId = null)
     {
         if (!customerId.HasValue && !dealId.HasValue) return [];
         IQueryable<PreFactor> query = db.PreFactors.AsNoTracking().Include(p => p.Deal).Include(p => p.CustomerEntity);
         if (includeDeleted) query = query.IgnoreQueryFilters();
         query = dealId.HasValue ? query.Where(p => p.DealId == dealId) : query.Where(p => p.CustomerId == customerId);
+        if (requiredCustomerId.HasValue) query = query.Where(p => p.CustomerId == requiredCustomerId.Value);
         var data = await query.OrderByDescending(p => p.DateMiladi).ThenByDescending(p => p.CreateDate).ToListAsync(ct);
         var ids = data.Select(p => p.Id).ToArray();
         var amounts = await db.Accountancies.AsNoTracking().ForPreFactor().NotVosoled().Where(a => a.pfid.HasValue && ids.Contains(a.pfid.Value)).GroupBy(a => a.pfid)
