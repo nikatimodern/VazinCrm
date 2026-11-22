@@ -9,6 +9,7 @@ using CRM.Core.Domain.Deals;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
 using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
@@ -40,6 +41,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         }
 
         await SetBadgeCountsAsync(filteredMenus);
+        await AttachFavoritesAsync(filteredMenus, user);
 
         return filteredMenus;
     }
@@ -577,6 +579,61 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
     // Keep page definitions and role assignments in BuildMenus. Only their
     // navigation hierarchy changes here; no endpoint or permission is expanded.
+    private async Task AttachFavoritesAsync(List<MenuItem> menus, ClaimsPrincipal user)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return;
+
+        var favorites = await serviceProvider.GetRequiredService<UserContextDb>().MenuFavorites
+            .AsNoTracking()
+            .Where(f => f.UserId == userId)
+            .OrderBy(f => f.SortOrder).ThenBy(f => f.MenuId)
+            .ToListAsync();
+
+        var links = new Dictionary<string, (MenuItem Item, string Icon)>(StringComparer.Ordinal);
+        void Collect(IEnumerable<MenuItem> nodes, string parentIcon = "")
+        {
+            foreach (var item in nodes)
+            {
+                if (!item.ShowInDesktop) continue;
+                if (!string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
+                {
+                    item.FavoriteTargetId = item.Id;
+                    links[item.Id] = (item, string.IsNullOrEmpty(item.IconHtml) ? parentIcon : item.IconHtml);
+                }
+                Collect(item.SubItems, string.IsNullOrEmpty(item.IconHtml) ? parentIcon : item.IconHtml);
+            }
+        }
+        Collect(menus);
+        var favoriteIds = favorites.Select(f => f.MenuId).ToHashSet(StringComparer.Ordinal);
+        foreach (var entry in links.Values) entry.Item.IsFavorite = favoriteIds.Contains(entry.Item.Id);
+
+        var visible = favorites.Where(f => links.ContainsKey(f.MenuId))
+            .Select(f =>
+            {
+                var (source, icon) = links[f.MenuId];
+                return new MenuItem
+                {
+                    Id = "favorite-" + source.Id,
+                    FavoriteTargetId = source.Id,
+                    Title = source.Title,
+                    Url = source.Url,
+                    IconHtml = icon,
+                    IsFavorite = true,
+                    DisplayOrder = f.SortOrder
+                };
+            }).ToList();
+        if (visible.Count == 0) return;
+
+        menus.Add(new MenuItem
+        {
+            Id = "favorites", Title = "علاقه‌مندی‌ها",
+            IconHtml = MenuIcons.Tasks, DisplayOrder = 6,
+            IsFavoritesGroup = true, SubItems = visible
+        });
+        menus.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
+    }
+
     private static List<MenuItem> OrganizeMenus(List<MenuItem> definitions)
     {
         var source = definitions.ToList();

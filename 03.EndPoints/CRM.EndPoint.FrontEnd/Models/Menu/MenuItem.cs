@@ -18,6 +18,10 @@ public class MenuItem {
     public bool ShowInDesktop { get; set; } = true;
     public bool ShowInMobile { get; init; } = true;
 
+    public string FavoriteTargetId { get; set; }
+    public bool IsFavorite { get; set; }
+    public bool IsFavoritesGroup { get; init; }
+
     public string OnClick { get; init; }
     public string ElementId { get; init; }
     public string ClassName { get; init; }
