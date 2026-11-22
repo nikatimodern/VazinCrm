@@ -114,7 +114,9 @@
         const nav = document.getElementById(mobile ? "mobileDrawerNavbar" : "desktopNavbar");
         const footer = document.getElementById(mobile ? "mobileDrawerFixedActions" : "desktopFixedActions");
         if (!nav) return [];
-        const links = [...nav.querySelectorAll(".menu-link[href]"), ...(footer?.querySelectorAll(".menu-link[href]") || [])];
+        const shortcuts = mobile ? document.querySelectorAll("#mobileNavbar .menu-link[href]") : [];
+        const links = [...nav.querySelectorAll(".menu-link[href]"),
+            ...(footer?.querySelectorAll(".menu-link[href]") || []), ...shortcuts];
         const seen = new Set();
         const canonical = links.filter(link => !link.closest("[data-menu-favorites]")).map(link => {
             const path = [];
@@ -124,7 +126,9 @@
                 group = group.parentElement?.closest("[data-menu-group]");
             }
             const title = link.querySelector(".menu-item-title > span")?.textContent?.trim() || link.textContent.trim();
-            return { title, route: path.filter(Boolean).join(" ← "), href: link.href };
+            const route = path.filter(Boolean).join(" ← ")
+                || (link.closest("#mobileNavbar") ? "دسترسی سریع" : "");
+            return { title, route, href: link.href };
         });
         const extras = Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
             .map(link => ({ title: link.dataset.menuExtraTitle, route: "تنظیمات", href: link.href }));
