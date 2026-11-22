@@ -1503,7 +1503,7 @@
             syncUserState();
             showError("user", "");
             const result = await post("SaveUserAccess", {
-                userId, roleIds: [...userRoleIds],
+                userId, roleIds: [...userRoleIds], scopeEditorVersion: 2,
                 overrides: [...userOverrides].map(([accessPermissionId, scope]) =>
                     ({ accessPermissionId, isAllowed: scope > 0, scope: scope || 2,
                         selectedUserIds: scope === 3 ?

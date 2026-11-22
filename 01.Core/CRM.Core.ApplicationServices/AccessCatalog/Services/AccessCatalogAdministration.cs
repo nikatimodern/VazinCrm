@@ -24,7 +24,7 @@ public sealed record AccessUserProfileDraft(
 public sealed record ManagedRoleInfo(string Id, string Name);
 public sealed record AccessUserListItem(string Id, string Name, string UserName, string Position, IReadOnlyList<string> Roles, bool IsEmployee, bool IsCustomer, bool IsSupplier);
 public sealed record AccessUsersPage(int Total, int Page, int TotalPages, IReadOnlyList<AccessUserListItem> Items);
-public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides);
+public sealed record AccessUserSaveDraft(string UserId, string[]? RoleIds, AccessUserOverride[]? Overrides, int? ScopeEditorVersion = null);
 
 public sealed class AccessCatalogAdministration(IAccessCatalogRepository repository, IAccessModelCatalog models, IAdminUserRepository adminUsers)
 {
@@ -173,8 +173,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     {
         if (draft is null || string.IsNullOrWhiteSpace(draft.UserId) || draft.UserId.Length > 450 ||
             draft.RoleIds is null || draft.RoleIds.Length > 100 || draft.Overrides is null ||
-            draft.Overrides.Length > 5000)
-            return new(400, "اطلاعات کاربر، نقش‌ها یا مجوزها معتبر نیست.");
+            draft.Overrides.Length > 5000 || draft.ScopeEditorVersion != 2)
+            return new(400, "اطلاعات کاربر یا نسخه صفحه معتبر نیست؛ صفحه مدیریت دسترسی را تازه‌سازی کنید.");
         var roleIds = draft.RoleIds.ToHashSet(StringComparer.Ordinal);
         if (roleIds.Count != draft.RoleIds.Length || roleIds.Any(x => string.IsNullOrWhiteSpace(x)))
             return new(400, "نقش‌های تکراری یا نامعتبر ارسال شده است.");

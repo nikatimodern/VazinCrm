@@ -111,7 +111,12 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public async Task<CustomerTableResult> GetTableAsync(CustomerTableRequest filter, CancellationToken ct)
     {
         var query = db.Customers.AsNoTracking().Where(c => c.Juridical == filter.Juridical);
-        if (filter.AllowedOwnerIds is not null) query = query.Where(c => db.UserCustomers.Any(link => link.CustomerId == c.Id && filter.AllowedOwnerIds.Contains(link.UserId)));
+        if (filter.AllowedOwnerIds is not null)
+        {
+            var owners = filter.AllowedOwnerIds;
+            query = query.Where(c => db.UserCustomers.Any(link =>
+                link.CustomerId == c.Id && owners.Contains(link.UserId)));
+        }
         if (!string.IsNullOrEmpty(filter.Search)) query = query.Where(c => c.AgentName.Contains(filter.Search));
         var count = await query.CountAsync(ct);
         query = filter.SortColumn == "AgentName" ? (filter.Ascending ? query.OrderBy(c => c.AgentName) : query.OrderByDescending(c => c.AgentName)) :
