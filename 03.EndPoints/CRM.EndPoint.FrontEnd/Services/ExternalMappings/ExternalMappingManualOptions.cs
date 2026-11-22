@@ -1,4 +1,7 @@
 using System;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.PreFactors.Enum;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -29,13 +32,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 ExternalMappingTypeEnum.فاکتور_خرید => ("SupplyFactor", "InventoryPurchaseInvoice"),
                 ExternalMappingTypeEnum.رسید_انبار => ("SupplyFactor", "InventoryReceipt"),
                 ExternalMappingTypeEnum.کاربران => ("AppUser", ExternalUserEntityName),
+                ExternalMappingTypeEnum.واریزی => (nameof(Accountancy), "ReceiptHeader"),
+                ExternalMappingTypeEnum.حساب_بانکی => (nameof(BankAccount), "BankAccount"),
                 _ => throw new ArgumentException("نوع ارتباط پشتیبانی نمی‌شود.")
             };
             var source = string.IsNullOrWhiteSpace(sourceEntity) ? defaultPair.Item1 : sourceEntity.Trim();
             var target = string.IsNullOrWhiteSpace(targetEntity) ? defaultPair.Item2 : targetEntity.Trim();
             var sourceValid = source == defaultPair.Item1;
             var targetValid = target == defaultPair.Item2 ||
-                type == ExternalMappingTypeEnum.تنخواه && target == "Voucher";
+                type == ExternalMappingTypeEnum.تنخواه && target == "Voucher" ||
+                type == ExternalMappingTypeEnum.واریزی && target == "DebitCreditNote";
             if (!sourceValid || !targetValid)
                 throw new ArgumentException("نوع رکورد CRM یا معادل انتخاب‌شده با نوع ارتباط سازگار نیست.");
             return (source, target);
@@ -72,6 +78,40 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             {
                 switch (names.Source)
                 {
+                    case nameof(Accountancy):
+                    {
+                        var query = EligibleDeposits(db.Accountancies.AsNoTracking());
+                        query = names.Target == "DebitCreditNote"
+                            ? query.Where(x => x.PayType == PayTypeEnum.تهاتری)
+                            : query.Where(x => x.PayType != PayTypeEnum.تهاتری);
+                        var hasAmount = decimal.TryParse(search, out var amount);
+                        var rows = await query.Where(x => x.Id == guid
+                                || (x.CustomerName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || (x.dateSh ?? "").Contains(search) || (x.ReciveDate ?? "").Contains(search)
+                                || (x.VosolDate ?? "").Contains(search)
+                                || (number > 0 && (x.CustomerCode == number || x.pfSerialNumber == number || x.fSerialNumber == number))
+                                || (hasAmount && x.credit == amount))
+                            .OrderByDescending(x => x.CreateDate)
+                            .Select(x => new { x.Id, x.CustomerName, x.credit, x.PayTypeTxt, x.dateSh, x.ReciveDate, x.VosolDate, x.PayType })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.PayType == PayTypeEnum.چکی ? x.ReciveDate : x.VosolDate ?? x.dateSh,
+                                $"{x.CustomerName} | {x.PayTypeTxt} | {x.credit:N0} ریال"), detail = "" }) };
+                    }
+                    case nameof(BankAccount):
+                    {
+                        var rows = await db.BankAccounts.AsNoTracking()
+                            .Where(x => !x.IsDeleted && x.Active && (x.Id == guid
+                                || (x.AccountName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || (x.BankName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || (x.AccountNumber ?? "").Contains(search) || (x.ShebaNumber ?? "").Contains(search)
+                                || (x.CartNumber ?? "").Contains(search)))
+                            .OrderBy(x => x.BankName).ThenBy(x => x.AccountNumber)
+                            .Select(x => new { x.Id, x.AccountNumber, x.AccountName, x.BankName })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.AccountNumber, $"{x.BankName} | {x.AccountName}"), detail = "" }) };
+                    }
                     case "SupplyFactor":
                     {
                         var rows = await db.SupplyFactors.AsNoTracking()
@@ -182,6 +222,57 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     ? (SepidarContextDbBase)sdb : (SepidarContextDbBase)s2Db;
                 switch (names.Target)
                 {
+                    case "ReceiptHeader":
+                    {
+                        var currency = await MappingRialCurrencyAsync(targetDb, ct);
+                        var hasAmount = decimal.TryParse(search, out var amount);
+                        var rows = await targetDb.ReceiptHeaders.AsNoTracking()
+                            .Where(x => x.Type == 1 && (x.ItemType == 4 || x.ItemType == 8) && x.CurrencyRef == currency
+                                && ((number > 0 && (x.ReceiptHeaderId == number || x.Number == number))
+                                    || (hasAmount && x.TotalAmount == amount)
+                                    || (x.Description ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                    || targetDb.DLs.Any(d => d.DLId == x.DlRef &&
+                                        (d.Title ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search))))
+                            .OrderByDescending(x => x.Date).ThenByDescending(x => x.Number)
+                            .Select(x => new { Id = x.ReceiptHeaderId, x.Number, x.Date, x.TotalAmount,
+                                Name = targetDb.DLs.Where(d => d.DLId == x.DlRef).Select(d => d.Title).FirstOrDefault() })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.Number.ToString(), $"{x.Name} | {FormatLegacyPersianDate(x.Date)} | {x.TotalAmount:N0} ریال"), detail = "" }) };
+                    }
+                    case "DebitCreditNote":
+                    {
+                        var currency = await MappingRialCurrencyAsync(targetDb, ct);
+                        var hasAmount = decimal.TryParse(search, out var amount);
+                        var rows = await targetDb.DebitCreditNotes.AsNoTracking()
+                            .Where(x => x.CurrencyRef == currency &&
+                                ((number > 0 && (x.DebitCreditNoteID == number || x.Number == number))
+                                || (hasAmount && x.SumAmount == amount)
+                                || (x.Description ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)))
+                            .OrderByDescending(x => x.Date).ThenByDescending(x => x.Number)
+                            .Select(x => new { Id = x.DebitCreditNoteID, x.Number, x.Date, x.SumAmount, x.Description })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.Id.ToString(),
+                            title = FormatManualOption(x.Number.ToString(), $"{FormatLegacyPersianDate(x.Date)} | {x.SumAmount:N0} ریال | {x.Description}"), detail = "" }) };
+                    }
+                    case "BankAccount":
+                    {
+                        var currency = await MappingRialCurrencyAsync(targetDb, ct);
+                        var rows = await targetDb.SepidarBankAccounts.AsNoTracking()
+                            .Where(x => x.CurrencyRef == currency && ((number > 0 && x.BankAccountId == number)
+                                || x.AccountNo.Contains(search) || (x.ShebaNumber ?? "").Contains(search)
+                                || (x.CreditCardNumber ?? "").Contains(search)
+                                || (x.Owner ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || (x.Dl.Title ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || (x.SepidarBankBranch.SepidarBank.Title ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
+                                || x.Dl.Code.Contains(search)))
+                            .OrderBy(x => x.AccountNo)
+                            .Select(x => new { x.BankAccountId, x.AccountNo, Name = x.Dl.Title,
+                                Bank = x.SepidarBankBranch.SepidarBank.Title })
+                            .Take(size).ToListAsync(ct);
+                        return new { options = rows.Select(x => new { id = x.BankAccountId.ToString(),
+                            title = FormatManualOption(x.AccountNo, $"{x.Bank} | {x.Name}"), detail = "" }) };
+                    }
                     case "InventoryPurchaseInvoice":
                     {
                         var rows = await targetDb.InventoryPurchaseInvoices.AsNoTracking()

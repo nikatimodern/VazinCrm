@@ -1,4 +1,6 @@
 using System;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Sepidar.Deposits.Entities;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlTypes;
@@ -55,7 +57,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             string Details, string[] Sources,
             MappingReportSide Crm, MappingReportSide Sepidar, int MapType,
             List<MappingReportTargetOption> Options, Guid? MappingId,
-            string CreatedAt = null, string CreatedBy = null);
+            string CreatedAt = null, string CreatedBy = null, string TargetEntity = null);
 
         private sealed record MappingReportTargetOption(
             int Id, string Title, string Description,
@@ -271,6 +273,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             entries.AddRange(await BuildUserExpertSuggestionsAsync(softwareId, ct));
             entries.AddRange(await BuildExternalUserSuggestionsAsync(softwareId, ct));
             entries.AddRange(await BuildSupplyFactorSuggestionsAsync(softwareId, ct));
+            entries.AddRange(await BuildDepositAndBankSuggestionsAsync(softwareId, sepidar, ct));
             var reportRows = await EnrichMappingEntriesAsync(entries, softwareId, ct);
             var saved = await db.ExternalMappings.AsNoTracking()
                 .Where(x => x.ExternalSoftwareId == softwareId
@@ -281,7 +284,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         || x.MapType == ExternalMappingTypeEnum.کاربران
                         || x.MapType == ExternalMappingTypeEnum.تامین_کننده
                         || x.MapType == ExternalMappingTypeEnum.فاکتور_خرید
-                        || x.MapType == ExternalMappingTypeEnum.رسید_انبار))
+                        || x.MapType == ExternalMappingTypeEnum.رسید_انبار
+                        || x.MapType == ExternalMappingTypeEnum.واریزی
+                        || x.MapType == ExternalMappingTypeEnum.حساب_بانکی))
                 .CountAsync(ct);
 
             return new
@@ -294,7 +299,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     pendingDocuments = plan.PendingDocuments.Count +
                         reportRows.Count(x => x.Status == "pending"
                             && (x.MapType == (int)ExternalMappingTypeEnum.فاکتور_خرید
-                                || x.MapType == (int)ExternalMappingTypeEnum.رسید_انبار)),
+                                || x.MapType == (int)ExternalMappingTypeEnum.رسید_انبار
+                                || x.MapType == (int)ExternalMappingTypeEnum.واریزی
+                                || x.MapType == (int)ExternalMappingTypeEnum.حساب_بانکی)),
                     pendingUsers = reportRows.Count(x => x.Status == "pending"
                         && (x.MapType == (int)ExternalMappingTypeEnum.کارشناسان
                             || x.MapType == (int)ExternalMappingTypeEnum.کاربران)),
@@ -407,6 +414,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             || x.Dl.Code.Contains(search))
                         .Select(x => x.PartyId).Take(500).ToListAsync(ct))
                         .Select(x => x.ToString()).ToArray();
+                var financialTargets = await FindFinancialMappingSearchAsync(targetDb, search, number, isNumber, matchedIds, ct);
+                var receiptIds = financialTargets.Receipts;
+                var noteIds = financialTargets.Notes;
+                var bankIds = financialTargets.Banks;
                 var ids = matchedIds.ToArray();
                 query = query.Where(x => x.ExEntityId.Contains(search)
                     || x.EntityId.ToString().Contains(search)
@@ -414,7 +425,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     || (x.ExEntityName == nameof(Party) && partyIds.Contains(x.ExEntityId))
                     || (x.MapType == ExternalMappingTypeEnum.کاربران
                         && x.ExEntityName == ExternalUserEntityName
-                        && externalUserIds.Contains(x.ExEntityId)));
+                        && externalUserIds.Contains(x.ExEntityId))
+                    || (x.MapType == ExternalMappingTypeEnum.واریزی &&
+                        ((x.ExEntityName == "ReceiptHeader" && receiptIds.Contains(x.ExEntityId))
+                         || (x.ExEntityName == "DebitCreditNote" && noteIds.Contains(x.ExEntityId))))
+                    || (x.MapType == ExternalMappingTypeEnum.حساب_بانکی && x.ExEntityName == "BankAccount"
+                        && bankIds.Contains(x.ExEntityId)));
             }
 
             var total = await query.CountAsync(ct);
@@ -512,6 +528,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.EntityId).Distinct().ToArray();
 
             var crmSides = new Dictionary<(string, Guid), MappingReportSide>();
+            await LoadCrmDepositBankSidesAsync(entries, crmSides, ct);
             var documentCustomers = new Dictionary<(string, Guid), Guid>();
             foreach (var batch in entries.Where(x => x.Kind == nameof(SupplyFactor))
                 .Select(x => x.EntityId).Distinct().Chunk(350))
@@ -668,6 +685,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.Title).FirstOrDefaultAsync(ct) ?? "نرم‌افزار خارجی";
             await LoadSepidarSalesSidesAsync(entries, context, softwareTitle, sides, ct);
             await LoadSepidarFinanceSidesAsync(entries, context, sides, ct);
+            await LoadSepidarDepositBankSidesAsync(entries, context, sides, ct);
             foreach (var batch in ExternalTargetBatches(entries, ExternalUserEntityName))
             {
                 var users = await context.SepidarUsers.AsNoTracking()
@@ -857,6 +875,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             nameof(Party) => "شخص",
                             nameof(InventoryPurchaseInvoice) => "فاکتور خرید",
                             nameof(InventoryReceipt) => "رسید انبار",
+                            nameof(ReceiptHeader) => "رسید دریافت",
+                            nameof(DebitCreditNote) => "اعلامیه بدهکار بستانکار",
+                            "BankAccount" => "حساب بانکی",
                             ExternalUserEntityName => "کاربر",
                             nameof(DL) => "حساب تفصیلی",
                             _ => "معادل"
@@ -877,7 +898,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 return new MappingReportRow(entry.Key, entry.Kind, entry.Status,
                     entry.Reason, entry.Details, entry.Sources, crm, sepidar,
                     entry.MapType, options, entry.MappingId,
-                    entry.CreatedAt, entry.CreatedBy);
+                    entry.CreatedAt, entry.CreatedBy, entry.TargetEntity);
             }).ToList();
         }
     }

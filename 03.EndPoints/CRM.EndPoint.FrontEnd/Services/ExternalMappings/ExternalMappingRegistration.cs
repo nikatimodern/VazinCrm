@@ -1,4 +1,7 @@
 using System;
+using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.Sepidar.Deposits.Entities;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlTypes;
@@ -138,6 +141,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 nameof(Voucher)
                     => await sepidar.Vouchers.AsNoTracking()
                         .AnyAsync(x => x.VoucherId == targetId, ct),
+                "BankAccount" => await BankMappingTargetExistsAsync(sepidar, targetId, ct),
+                nameof(ReceiptHeader) or nameof(DebitCreditNote) =>
+                    await DepositMappingTargetExistsAsync(sepidar, target, targetId, ct),
                 nameof(InventoryPurchaseInvoice)
                     => await sepidar.InventoryPurchaseInvoices.AsNoTracking()
                         .AnyAsync(x => x.InventoryPurchaseInvoiceID == targetId && x.Type == 1, ct),
@@ -229,6 +235,12 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (softwareId == Guid.Empty || mappingId == Guid.Empty)
                 throw new ArgumentException("شناسه نرم‌افزار یا ارتباط معتبر نیست.");
 
+            var financialSource = await db.ExternalMappings.AsNoTracking()
+                .Where(x => x.Id == mappingId && x.ExternalSoftwareId == softwareId
+                    && (x.MapType == ExternalMappingTypeEnum.واریزی || x.MapType == ExternalMappingTypeEnum.حساب_بانکی))
+                .Select(x => (Guid?)x.EntityId).SingleOrDefaultAsync(ct);
+            await using var locks = await AcquireMappingLocksAsync(
+                financialSource.HasValue ? new[] { financialSource.Value } : Array.Empty<Guid>(), ct);
             await using var transaction = await db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, ct);
 
@@ -240,8 +252,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             if (mapping.HasPendingExternalId())
                 throw new MappingConflictException("ثبت این ارتباط هنوز نهایی نشده است.");
 
+            if (mapping.MapType is ExternalMappingTypeEnum.واریزی or ExternalMappingTypeEnum.حساب_بانکی
+                && financialSource != mapping.EntityId)
+                throw new MappingConflictException("ارتباط تغییر کرده است؛ فهرست را تازه‌سازی کنید.");
             if (mapping.MapType == ExternalMappingTypeEnum.واریزی)
-                throw new MappingConflictException("سابقه انتقال واریزی را از ارتباط مالی همان واریزی مدیریت کنید.");
+            {
+                var context = softwareId == Sepidar1SoftwareId ? (SepidarContextDbBase)sdb
+                    : softwareId == Sepidar2SoftwareId ? s2Db : null;
+                if (context == null || !int.TryParse(mapping.ExEntityId, out var id)
+                    || mapping.ExEntityName is not (nameof(ReceiptHeader) or nameof(DebitCreditNote)))
+                    throw new MappingConflictException("اطلاعات ارتباط واریزی معتبر نیست.");
+                // Same rule as the deposit transfer history: never allow duplicate export
+                // by unlinking a live receipt/note.
+                if (await DepositDocumentExistsAsync(context, mapping.ExEntityName, id, ct))
+                    throw new MappingConflictException("سند واریزی در سپیدار وجود دارد؛ فقط سابقه سند حذف‌شده قابل حذف است.");
+            }
 
             if (mapping.MapType == ExternalMappingTypeEnum.مشتری
                 && mapping.EntityName == nameof(Customer))
@@ -354,6 +379,10 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
             var targetDb = request.ExternalSoftwareId == Sepidar1SoftwareId
                 ? (SepidarContextDbBase)sdb : s2Db;
 
+            var lockIds = request.Items.Where(x => x.MapType is ExternalMappingTypeEnum.واریزی or ExternalMappingTypeEnum.حساب_بانکی)
+                .Select(x => x.EntityId).ToList();
+            if (edit != null && lockIds.Count > 0) lockIds.Add(edit.OriginalEntityId);
+            await using var locks = await AcquireMappingLocksAsync(lockIds, ct);
             await using var transaction = await db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable, ct);
 
@@ -456,7 +485,22 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         }
                     }
 
-                    if (item.MapType == ExternalMappingTypeEnum.مشتری)
+                    if (item.MapType == ExternalMappingTypeEnum.حساب_بانکی)
+                    {
+                        if (!await db.BankAccounts.AsNoTracking().AnyAsync(x => x.Id == item.EntityId && !x.IsDeleted && x.Active, ct)
+                            || !await BankMappingTargetExistsAsync(targetDb, targetId, ct))
+                            throw new ArgumentException("حساب بانکی فعال CRM یا حساب ریالی سپیدار معتبر نیست.");
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.واریزی)
+                    {
+                        if (edited != null && edited.EntityId != item.EntityId
+                            && int.TryParse(edited.ExEntityId, out var oldId)
+                            && await DepositDocumentExistsAsync(targetDb, edited.ExEntityName, oldId, ct))
+                            throw new MappingConflictException("برای واریزی قبلی سند موجود است؛ تغییر مبدا می‌تواند باعث ثبت مجدد شود.");
+                        await ValidateDepositMappingAsync(targetDb, item.EntityId, externalName, targetId,
+                            existing, ct);
+                    }
+                    else if (item.MapType == ExternalMappingTypeEnum.مشتری)
                     {
                         if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
                             throw new ArgumentException("مشتری انتخاب‌شده در CRM یافت نشد.");
