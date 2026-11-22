@@ -806,6 +806,8 @@
                     line.dataset.deleteChoicePermission = permission.id;
                     const desc = text("span", null, "ac-role-delete-perm-text");
                     desc.append(text("strong", permission.title), text("small", permission.key));
+                    if (permission.scope === 1)
+                        desc.append(text("small", "محدوده این نقش: فقط اطلاعات خود"));
                     const actions = text("div", null, "ac-role-delete-choice-actions");
                     actions.setAttribute("role", "group");
                     actions.setAttribute("aria-label", "تعیین تکلیف " + permission.title + " برای " + user.name);
@@ -1060,13 +1062,16 @@
             Math.max(highest, grants.get(role.id)), 0);
         const custom = userOverrides.get(permissionId);
         const scope = custom === undefined ? roleScope : custom;
+        const scoped = userCatalog.some(e => e.permissions.some(p =>
+            p.id === permissionId && p.supportsScope));
         const scopeLabel = scope === 1 ? "فقط اطلاعات خود" : "همه اطلاعات";
         return {
             allowed: scope > 0, scope,
             state: custom === 0 ? "محدودیت اختصاصی" :
-                   custom !== undefined ? "اجازه اختصاصی — " + scopeLabel :
-                   roleScope ? "از نقش‌ها — " + scopeLabel : "بدون دسترسی",
-            sources: fromRoles.map(role => role.name + (grants.get(role.id) === 1 ? " (فقط خود)" : " (همه)")),
+                   custom !== undefined ? "اجازه اختصاصی" + (scoped ? " — " + scopeLabel : "") :
+                   roleScope ? "مجاز از نقش‌ها" + (scoped ? " — " + scopeLabel : "") : "بدون دسترسی",
+            sources: fromRoles.map(role => role.name +
+                (scoped ? grants.get(role.id) === 1 ? " (فقط خود)" : " (همه)" : "")),
             isCustom: custom !== undefined
         };
     }
