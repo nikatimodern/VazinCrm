@@ -151,19 +151,19 @@ public sealed class CustomerController(
         ViewBag.CustomerId = id;
         return View(data);
     }
-    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AbortCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("Delete", id, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new DeleteCustomerCommand(id), cancellationToken), cancellationToken);
     }
-    [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AcceptCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AcceptCustomerCommand(id), cancellationToken), cancellationToken);
     }
-    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddToMyCustomer(Guid id, CancellationToken cancellationToken)
     {
         // Self-assignment must not be a route around Own-only access.

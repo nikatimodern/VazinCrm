@@ -142,10 +142,16 @@ function getAllCustomers() {
 window.addEventListener("pagehide", () => customerListRequest?.abort());
 
 
+const personRequestHeaders = () => ({
+    RequestVerificationToken: document.querySelector('input[name="__RequestVerificationToken"]')?.value || ""
+});
+
 const addToMyCustomer = async (id) => {
     await sendApiRequest({
         url: `/Customer/AddToMyCustomer`,
+        method: "POST",
         params: { id },
+        headers: personRequestHeaders(),
         onSuccess: async (res) => {
             if (res.data === 0) {
                 toastifyError("در لیست مشتریان موجود است");
@@ -347,7 +353,9 @@ const submitFormCustomerBase = async () => {
 const abortCustomer = (id) => {
     sendApiRequest({
         url: "/Customer/AbortCustomer",
+        method: "POST",
         params: { id },
+        headers: personRequestHeaders(),
         successMsg: "مشتری حذف شد",
         onSuccess: getAllCustomers,
     });
@@ -357,7 +365,9 @@ const abortCustomer = (id) => {
 const acceptCustomer = (id) => {
     sendApiRequest({
         url: "/Customer/AcceptCustomer",
+        method: "POST",
         params: { id },
+        headers: personRequestHeaders(),
         successMsg: "تایید شد",
         onSuccess: getAllCustomers,
     });
