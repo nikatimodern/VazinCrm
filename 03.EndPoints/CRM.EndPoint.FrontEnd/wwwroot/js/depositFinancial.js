@@ -3,6 +3,8 @@ async function openDepositFinancial(id) {
     if (!history || history.dataset.active) return;
     history.dataset.active = "true";
     const records = document.getElementById("depositFinancialRecords");
+    const historyCard = ExternalFinancialHistory;
+    const historyUi = new historyCard({ modal: history, list: records });
     const send = document.getElementById("sendDepositFinancial");
     const wizard = new ExternalFinancialWizard({
         modal: "depositFinancialWizard", container: "depositFinancialBody",
@@ -50,62 +52,60 @@ async function openDepositFinancial(id) {
         send.querySelector("[data-financial-history-send-label]").textContent =
             cheque ? "ارسال رسید دریافت به نرم‌افزار مالی" : "ارسال به نرم‌افزار مالی";
         const rows = result.entries.filter(row => row.document || row.missing || row.pending);
-        for (const row of rows) {
-            const card = ExternalFinancialHistory.card([
-                ["نرم‌افزار", row.title, true], ["تاریخ ثبت", row.dateText],
-                ["شماره " + label(result.payType), row.document?.number], ["مشتری", result.customerName]
-            ], [], row.missing ? "external-pf-missing" : "");
-            if (row.missing)
-                card.querySelector(".external-pf-info").append(
-                    make("p", "سند در نرم‌افزار مقصد پیدا نشد.", "external-pf-missing-message"));
-            if (row.missing || row.pending) {
-                const button = make("button", row.pending ? "ادامه ثبت" : "حذف سابقه",
-                    "external-pf-action " + (row.missing ? "external-pf-remove" : "external-pf-view"));
-                button.type = "button";
-                button.onclick = async () => {
-                    if (busy || choosing || isModalOpen(wizard.modal)) return;
-                    if (row.pending) {
-                        destinations = [row];
-                        index = 0;
-                        if (row.document) {
-                            busy = true;
-                            try {
-                                if (await api("Submit", { id, softwareId: row.id }, "POST", true)) await refresh();
-                            } finally { busy = false; }
-                        } else {
-                            choosing = true;
-                            try { await prepare(true); }
-                            finally { choosing = false; }
-                        }
-                        return;
-                    }
-                    busy = true;
-                    try {
-                        const answer = await Swal.fire({
-                            target: history, title: "حذف سابقه ارسال", icon: "warning", showCancelButton: true,
-                            confirmButtonText: "حذف سابقه", cancelButtonText: "انصراف", focusCancel: true
-                        });
-                        if (answer.isConfirmed && (await api("DeleteMissing", { id, softwareId: row.id }))?.deleted)
-                            await refresh();
-                    } finally { busy = false; }
+        historyUi.render(rows, {
+            emptyText: "این واریزی هنوز در نرم‌افزار مالی ثبت نشده است.",
+            card: row => {
+                const card = {
+                    title: row.title, missing: row.missing, related: row.cheque ? chequeHistory(row) : null,
+                    fields: [["شماره " + label(result.payType), row.document?.number],
+                        ["مشتری", result.customerName], ["تاریخ ثبت", row.dateText]],
+                    status: row.missing ? "سند در نرم‌افزار مقصد پیدا نشد." : row.cheque?.message,
                 };
-                card.append(ExternalFinancialHistory.actions([button]));
-            }
-            if (row.cheque) appendChequeHistory(card, row);
-            else records.append(card);
-        }
-        if (!rows.length) records.append(make("div", "این واریزی هنوز در نرم‌افزار مالی ثبت نشده است.", "external-pf-empty"));
+                if (row.missing || row.pending) {
+                    const button = historyCard.action(row.pending ? "ادامه ثبت" : "حذف سابقه", { danger: !row.pending });
+                    button.onclick = async () => {
+                        if (busy || choosing || isModalOpen(wizard.modal)) return;
+                        if (row.pending) {
+                            destinations = [row];
+                            index = 0;
+                            if (row.document) {
+                                busy = true;
+                                try {
+                                    if (await api("Submit", { id, softwareId: row.id }, "POST", true)) await refresh();
+                                } finally { busy = false; }
+                            } else {
+                                choosing = true;
+                                try { await prepare(true); }
+                                finally { choosing = false; }
+                            }
+                            return;
+                        }
+                        busy = true;
+                        try {
+                            const answer = await Swal.fire({
+                                target: history, title: "حذف سابقه ارسال", icon: "warning", showCancelButton: true,
+                                confirmButtonText: "حذف سابقه", cancelButtonText: "انصراف", focusCancel: true
+                            });
+                            if (answer.isConfirmed && (await api("DeleteMissing", { id, softwareId: row.id }))?.deleted)
+                                await refresh();
+                        } finally { busy = false; }
+                    };
+                    if (row.pending) card.action = button;
+                    else card.operations = [button];
+                }
+                return card;
+            },
+        });
         send.disabled = !result.entries.length;
         send.onclick = () => choose(result.entries);
     }
 
-    function appendChequeHistory(card, row) {
-        const group = make("div", null, "deposit-cheque-history");
-        group.append(card);
+    function chequeHistory(row) {
+        const entries = [];
+        let nextAction;
         const actionId = row.cheque.nextAction;
         if (actionId && !row.pending) {
-            const button = make("button", "ثبت " + chequeActionTitle[actionId], "external-pf-action external-pf-view");
-            button.type = "button";
+            const button = historyCard.action("ثبت " + chequeActionTitle[actionId]);
             button.onclick = async () => {
                 if (choosing || busy || isModalOpen(wizard.modal)) return;
                 choosing = true;
@@ -113,26 +113,22 @@ async function openDepositFinancial(id) {
                 try { await prepareChequeOperation(row, actionId); }
                 finally { choosing = false; button.disabled = false; }
             };
-            card.append(ExternalFinancialHistory.actions([button]));
+            nextAction = button;
         }
-        if (row.cheque.message)
-            card.querySelector(".external-pf-info").append(make("p", row.cheque.message, "external-pf-missing-message"));
         for (const [title, entry, dateLabel, detailLabel, detail] of [
             ["واگذاری به بانک", row.cheque.assignment, "تاریخ واگذاری", "حساب بانکی", row.cheque.assignment?.bankAccount],
             ["وصول چک", row.cheque.collection, "تاریخ وصول", "حساب بانکی", row.cheque.collection?.bankAccount],
             ["اعلامیه پرداخت · خرج کردن چک", row.cheque.payment, "تاریخ اعلامیه", "طرف مقابل", row.cheque.payment?.payee]
         ]) {
             if (!entry) continue;
-            const panel = make("div", null, "deposit-cheque-history-entry");
             const fields = [["شماره", entry.number], [dateLabel, entry.dateText]];
             if (entry.amount != null) fields.push(["مبلغ چک", entry.amount.toLocaleString() + " ریال"]);
             fields.push([detailLabel, detail]);
-            const info = ExternalFinancialHistory.fields(fields);
-            info.lastElementChild.classList.add("deposit-cheque-history-detail");
-            panel.append(make("div", title, "deposit-cheque-history-title"), info);
-            group.append(panel);
+            entries.push(historyCard.relatedItem({ title, fields }));
         }
-        records.append(group);
+        return entries.length || nextAction
+            ? { title: "عملیات مرتبط چک", entries, action: nextAction, open: true }
+            : null;
     }
 
     async function choose(entries) {
@@ -724,9 +720,8 @@ async function openDepositFinancial(id) {
         send.onclick = null;
         delete history.dataset.active;
     }, { once: true });
-    enableMomentumScrollScope(history, { signal });
     enableMomentumScrollScope(wizard.modal, { signal });
     records.replaceChildren();
-    ModalToggle(history, "show");
+    historyUi.show();
     await refresh();
 }

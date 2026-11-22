@@ -33,40 +33,33 @@ async function loadFactorExternalSoftwares(factorId) {
 }
 
 function renderExternalSoftwareFactors(items = []) {
-    getFactorFinancialHistory().render(items, {
+    const history = getFactorFinancialHistory();
+    const sourceId = externalFactorHistory.factorId;
+    const ui = ExternalFinancialHistory;
+    history.render(items, {
         emptyText: "این فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
-        cardClass: item => item.isMissing ? "external-pf-missing" : "",
-        statusMessage: item => item.isMissing
-            ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
-        fields: item => [
-            ["نرم‌افزار", item.externalSoftwareTitle, true],
-            ["تاریخ ثبت", item.creationDate],
-            ["شماره فاکتور", item.externalFactorNumber],
-            ["مشتری", item.customerName],
-        ],
-        actions: item => {
-            if (item.isMissing) {
-                if (!item.mappingId || !item.canDeleteMissing) return [];
-                return [ExternalFinancialHistory.missingMappingAction({
-                    modal: document.getElementById("externalSoftwareFactorsModal"),
-                    sourceId: externalFactorHistory.factorId,
+        card: item => ({
+            title: item.externalSoftwareTitle,
+            missing: item.isMissing,
+            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
+            fields: [
+                ["شماره فاکتور", item.externalFactorNumber],
+                ["مشتری", item.customerName],
+                ["تاریخ ثبت", item.creationDate],
+            ],
+            view: !item.isMissing && item.viewUrl
+                ? ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" }) : null,
+            operations: item.isMissing && item.mappingId && item.canDeleteMissing
+                ? [ui.missingMappingAction({
+                    modal: history.modal,
+                    sourceId,
                     softwareId: item.externalSoftwareId,
                     mappingId: item.mappingId,
                     softwareTitle: item.externalSoftwareTitle,
                     url: "/Factor/DeleteMissingExternalFactorMapping",
-                    onDeleted: () => loadFactorExternalSoftwares(externalFactorHistory.factorId),
-                })];
-            }
-            if (!item.viewUrl) return [];
-            const link = document.createElement("a");
-            link.className = "external-pf-action external-pf-view";
-            link.href = item.viewUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.setAttribute("aria-label", "مشاهده فاکتور ثبت شده");
-            link.innerHTML = '<i class="fa fa-eye" aria-hidden="true"></i> مشاهده';
-            return [link];
-        },
+                    onDeleted: () => loadFactorExternalSoftwares(sourceId),
+                })] : [],
+        }),
     });
 }
 

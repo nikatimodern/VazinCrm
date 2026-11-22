@@ -1192,11 +1192,11 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             .SingleOrDefaultAsync(ct);
     }
 
-    public async Task<List<SepidarPartyDto>> GetSepidarCustomersAsync(CancellationToken ct = default)
+    public async Task<List<SepidarPartyDto>> GetSepidarCustomersAsync(CancellationToken ct = default, bool activeOnly = false)
     {
         return await sepidarContext.Parties
             .AsNoTracking()
-            .Where(x => x.IsCustomer)
+            .Where(x => x.IsCustomer && (!activeOnly || x.Dl.IsActive))
             .OrderBy(x => x.Name)
             .Select(x => new SepidarPartyDto {
                 Id = x.PartyId,

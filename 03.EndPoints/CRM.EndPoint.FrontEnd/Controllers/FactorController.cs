@@ -14,6 +14,7 @@ using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.Domain.PreFactors.Repositories;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Services;
@@ -4298,12 +4299,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         [ValidateAntiForgeryToken]
         public Task<IActionResult> DeleteMissingExternalPreFactorMapping(
-            [FromBody] DeleteMissingExternalFinancialMappingRequest request, CancellationToken ct) =>
-            DeleteMissingFinancialMappingAsync(request, ExternalMappingTypeEnum.پیش_فاکتور, nameof(PreFactor), ct);
+            [FromBody] DeleteMissingExternalFinancialMappingRequest request,
+            [FromServices] IPreFactorDestinationRepository destinationRepository,
+            CancellationToken ct) =>
+            DeleteMissingFinancialMappingAsync(request, ExternalMappingTypeEnum.پیش_فاکتور, nameof(PreFactor), ct, destinationRepository);
 
         private async Task<IActionResult> DeleteMissingFinancialMappingAsync(
             DeleteMissingExternalFinancialMappingRequest request, ExternalMappingTypeEnum mapType,
-            string entityName, CancellationToken ct)
+            string entityName, CancellationToken ct,
+            IPreFactorDestinationRepository destinationRepository = null)
         {
             if (request == null || request.SourceId == Guid.Empty ||
                 request.ExternalSoftwareId == Guid.Empty || request.MappingId == Guid.Empty)
@@ -4333,6 +4337,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (stillExists)
                     return Conflict("این سند هنوز در نرم‌افزار مالی وجود دارد و سابقه آن قابل حذف نیست.");
             }
+
+            if (destinationRepository != null && await destinationRepository.CompleteInterruptedDeletionAsync(
+                    new(request.SourceId, request.ExternalSoftwareId, request.MappingId), ct))
+                return Ok(new { deleted = true });
 
             db.ExternalMappings.Remove(mapping);
             await db.SaveChangesAsync(ct);
@@ -4370,6 +4378,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     .ToListAsync();
 
                 var result = new List<ExternalSoftwarePreFactorDto>();
+                var canMaintain = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
+                    User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی");
 
                 foreach (var mapping in mappings)
                 {
@@ -4383,8 +4393,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     result.Add(new ExternalSoftwarePreFactorDto {
                         MappingId = mapping.MappingId,
                         IsMissing = externalPreFactor == null,
-                        CanDeleteMissing = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
-                            User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
+                        CanDeleteMissing = canMaintain,
+                        CanMaintainDestination = canMaintain && mapping.ExEntityName == nameof(Quotation),
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
                         PreFactorNumber = preFactor.SerialNumber.ToString(),

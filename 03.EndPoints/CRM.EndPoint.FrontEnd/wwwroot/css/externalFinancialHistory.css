@@ -1,240 +1,232 @@
-/* Shared financial-export history for quotations, sales invoices and supply invoices. */
-/* -------------------------------------------------- */
-
-
-.external-pf-toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 12px;
-	color: #344b48;
-	font-size: 13px;
-	font-family: IRANSansBold;
-}
-
-
-.external-pf-send {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 7px 10px;
-	color: #fff;
-	background: #05665e;
-	border: 0;
-	border-radius: 6px;
-	font-size: 12px;
-	white-space: nowrap;
-}
-
-
-.external-pf-send:hover {
-	color: #fff;
-	background: #034f49;
-}
-
-
-.external-pf-list {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-
-.external-pf-card {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	min-height: 88px;
-	padding: 10px 14px;
-	background: #fff;
-	border: 1px solid #e0e9e7;
-	border-right: 3px solid #078078;
-	border-radius: 8px;
-}
-
-
-.external-pf-info {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(130px, 1fr));
-	gap: 7px 20px;
-	flex: 1;
-	min-width: 0;
-}
-
-
-.external-pf-field {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	min-width: 0;
-	font-size: 12px;
-}
-
-
-.external-pf-label {
-	flex-shrink: 0;
-	color: #8a9693;
-}
-
-
-.external-pf-value {
-	overflow: hidden;
-	color: #263e3b;
-	font-family: IRANSansBold;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-
-.external-pf-software {
-	color: #05665e;
-	font-family: IRANSansBold;
-}
-
-
-.external-pf-actions {
-	display: flex;
-	flex-shrink: 0;
-	flex-direction: column;
-	gap: 5px;
-}
-
-
-.external-pf-action {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 5px;
-	min-width: 88px;
-	padding: 5px 9px;
-	border: 1px solid #dce6e4;
-	border-radius: 5px;
-	font-size: 11px;
-	font-family: IRANSansBold;
-	white-space: nowrap;
-	cursor: pointer;
-}
-
-
-.external-pf-view {
-	color: #05665e;
-	background: #fff;
-}
-
-
-.external-pf-invoices {
-	color: #fff;
-	background: #05665e;
-	border-color: #05665e;
-}
-
-
-.external-pf-view:hover {
-	background: #edf8f5;
-}
-
-
-.external-pf-invoices:hover {
-	background: #034f49;
-}
-
-
-.external-pf-empty {
-	padding: 25px 12px;
-	color: #84918e;
-	text-align: center;
-	font-size: 12px;
-	border: 1px dashed #d5e1de;
-	border-radius: 8px;
-}
-
-
-@media (max-width: 576px) {
-	.external-pf-card {
-		gap: 8px;
-		padding: 9px;
-	}
-	
-	.external-pf-info {
-		grid-template-columns: 1fr;
-		gap: 6px;
-	}
-	
-	.external-pf-action {
-		min-width: 75px;
-		padding: 5px;
-	}
-}
-
-/* Mappings whose document is no longer present in the destination software. */
-.external-pf-card.external-pf-missing {
-    border-color: var(--color-danger, #C2185B);
-    border-right-color: var(--color-danger, #C2185B);
-    background: var(--color-danger-light, #FCE8F0);
-}
-
-.external-pf-missing .external-pf-value:not(.external-pf-software),
-.external-pf-missing .external-pf-missing-message {
-    color: var(--color-danger, #C2185B);
-}
-
-.external-pf-missing-message {
-    grid-column: 1 / -1;
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.65;
-    color: var(--color-danger, #C2185B);
-}
-
-.external-pf-remove {
-    color: var(--color-danger, #C2185B);
-    border-color: currentColor;
-    background: var(--color-surface, #fff);
-}
-
-.external-pf-remove:hover:not(:disabled) {
-    background: var(--color-danger-light, #FCE8F0);
-}
-
-.external-pf-remove:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-}
-#depositFinancialHistory .external-pf-toolbar {
+/* Shared financial document cards and related records. */
+.external-pf-toolbar,
+.external-pf-card-header,
+.external-pf-related-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: .45rem .75rem;
 }
 
-#depositFinancialHistory .deposit-cheque-history {
-    display: grid;
-    gap: .35rem;
+.external-pf-toolbar {
+    margin-block-end: .85rem;
+    color: var(--color-text, #212529);
+    font-size: 13px;
+    font-family: IRANSansBold;
 }
 
-#depositFinancialHistory .deposit-cheque-history-entry {
+.external-pf-send,
+.external-pf-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    border: 1px solid var(--color-border, #DDE1E8);
+    border-radius: .4rem;
+    font-family: IRANSansBold;
+}
+
+.external-pf-send {
+    padding: 6px 9px;
+    color: #fff;
+    background: var(--color-primary-action, #00665C);
+    border-color: transparent;
+    font-size: 12px;
+}
+
+.external-pf-send:hover:not(:disabled) {
+    background: var(--color-primary, #004944);
+}
+
+.external-pf-list,
+.external-pf-card,
+.external-pf-related,
+.external-pf-related-panel,
+.external-pf-related-item {
     display: grid;
-    gap: .4rem;
-    margin-inline-start: clamp(.5rem, 3vw, 1.5rem);
-    padding: .6rem .75rem;
+    gap: .55rem;
+    min-inline-size: 0;
+}
+
+.external-pf-card {
+    padding: .7rem;
+    background: var(--color-surface, #fff);
     border: 1px solid var(--color-border, #DDE1E8);
     border-inline-start: 3px solid var(--color-primary-action, #00665C);
+    border-radius: .6rem;
+}
+
+.external-pf-software {
+    color: var(--color-primary-action, #00665C);
+    font-family: IRANSansBold;
+    overflow-wrap: anywhere;
+}
+
+.external-pf-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: .4rem .85rem;
+}
+
+.external-pf-field {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .1rem .35rem;
+    min-inline-size: 0;
+    font-size: 12px;
+}
+
+.external-pf-label {
+    color: var(--color-text-muted, #545961);
+}
+
+.external-pf-value {
+    color: var(--color-text, #212529);
+    font-family: IRANSansBold;
+    overflow-wrap: anywhere;
+}
+
+.external-pf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-inline-start: auto;
+}
+
+.external-pf-action {
+    padding: 4px 8px;
+    background: var(--color-surface, #fff);
+    color: var(--color-primary-action, #00665C);
+    font-size: 11px;
+    text-decoration: none;
+}
+
+.external-pf-action:hover:not(:disabled) {
+    background: var(--color-primary-light, #E7F3F0);
+    color: var(--color-primary-action, #00665C);
+}
+
+.external-pf-action:disabled,
+.external-pf-send:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.external-pf-operations-toggle {
+    min-inline-size: 2.2rem;
+    min-block-size: 2rem;
+    font-family: IRANSans;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.external-pf-menu {
+    position: fixed;
+    inset: auto;
+    inline-size: 10rem;
+    margin: 0;
+    padding: .25rem;
+    border: 1px solid var(--color-border, #DDE1E8);
+    border-radius: .45rem;
+    background: var(--color-surface, #fff);
+    box-shadow: 0 3px 12px #21252924;
+}
+
+.external-pf-menu:popover-open {
+    display: grid;
+    gap: .2rem;
+}
+
+.external-pf-menu .external-pf-action {
+    justify-content: flex-start;
+    border-color: transparent;
+}
+
+.external-pf-related {
+    padding: .4rem .55rem;
     border-radius: .5rem;
     background: var(--color-primary-light, #E7F3F0);
 }
 
-#depositFinancialHistory .deposit-cheque-history-title {
-    color: var(--color-primary-action, #00665C);
-    font-family: 'IRANSansBold';
+.external-pf-related-caption,
+.external-pf-related-title {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--color-primary, #004944);
     font-size: 12px;
+    font-family: IRANSansBold;
 }
 
-#depositFinancialHistory .deposit-cheque-history-detail {
-    grid-column: 1 / -1;
-    align-items: baseline;
+button.external-pf-related-caption {
+    padding: 3px 2px;
+    border: 0;
+    background: transparent;
+    text-align: start;
 }
 
-#depositFinancialHistory .deposit-cheque-history-detail .external-pf-value {
-    white-space: normal;
-    overflow-wrap: anywhere;
+.external-pf-related-caption[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.external-pf-related-panel[hidden] {
+    display: none;
+}
+
+.external-pf-related-panel > .external-pf-action {
+    justify-self: start;
+}
+
+.external-pf-related-item {
+    padding: .45rem .6rem;
+    border: 1px solid var(--color-border, #DDE1E8);
+    border-radius: .45rem;
+    background: var(--color-surface, #fff);
+}
+
+.external-pf-related-message,
+.external-pf-missing-message {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.external-pf-related-message {
+    color: var(--color-text-muted, #545961);
+}
+
+.external-pf-empty {
+    padding: 1rem;
+    color: var(--color-text-muted, #545961);
+    text-align: center;
+    font-size: 12px;
+    border: 1px dashed var(--color-border, #DDE1E8);
+    border-radius: .6rem;
+}
+
+.external-pf-missing {
+    border-color: var(--color-danger, #C2185B);
+    background: var(--color-danger-light, #FCE8F0);
+}
+
+.external-pf-missing-message,
+.external-pf-missing .external-pf-value,
+.external-pf-missing .external-pf-related-title,
+.external-pf-remove {
+    color: var(--color-danger, #C2185B);
+}
+
+.external-pf-card.external-pf-missing .external-pf-related-item:not(.external-pf-missing) :is(.external-pf-value, .external-pf-related-title) {
+    color: var(--color-text, #212529);
+}
+
+.external-pf-remove:hover:not(:disabled) {
+    color: var(--color-danger, #C2185B);
+    background: var(--color-danger-light, #FCE8F0);
+}
+
+#preFactorDestinationEditModal .external-mapping-step:empty {
+    display: none;
 }

@@ -8,6 +8,8 @@ using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
+using CRM.Core.Domain.PreFactors.Repositories;
+using CRM.Infrastructures.Sql.PreFactors.Repositories;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -192,6 +194,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Sepidar1InvoiceExportRepository>();
             services.AddScoped<Sepidar2InvoiceExportRepository>();
             services.AddScoped<SepidarUserResolver>();
+            services.AddScoped<IPreFactorDestinationRepository, PreFactorDestinationRepository>();
             services.AddTransient<Sepidar1Service>();
             services.AddTransient<Sepidar2Service>();
 

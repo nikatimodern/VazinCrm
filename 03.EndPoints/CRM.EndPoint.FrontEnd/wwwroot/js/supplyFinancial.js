@@ -17,6 +17,7 @@ async function openSupplyFinancial(sourceId) {
     const historyUi = new ExternalFinancialHistory({
         modal: historyModal, list: historyList,
     });
+    const historyCard = ExternalFinancialHistory;
     const wizardUi = new ExternalFinancialWizard({
         modal: wizard, container: stageContainer, back, confirm,
     });
@@ -121,8 +122,7 @@ async function openSupplyFinancial(sourceId) {
     };
 
     const missingHistory = (software, entry, receipt) => {
-        const remove = make("button", "حذف سابقه", "external-pf-action supply-financial-remove");
-        remove.type = "button";
+        const remove = historyCard.action("حذف سابقه", { danger: true });
         remove.addEventListener("click", async () => {
             remove.disabled = true;
             try {
@@ -147,7 +147,7 @@ async function openSupplyFinancial(sourceId) {
                 remove.disabled = false;
             }
         }, { signal });
-        return ExternalFinancialHistory.actions([remove]);
+        return remove;
     };
     const loadHistory = async () => {
         const current = ++version;
@@ -161,64 +161,53 @@ async function openSupplyFinancial(sourceId) {
         }
         historyModal.querySelector(".modal-title").textContent = "مدیریت ارسال فاکتور تأمین " + (result.serialNumber ?? "");
         const records = result.softwares.filter(row => row.purchase || row.receipt);
-        for (const row of records) {
-            const { purchase, receipt } = row;
-            const invoice = purchase?.document;
-            const group = make("div", null, "supply-financial-document-group");
-            const card = make("div", null, "external-pf-card" + (!invoice ? " supply-financial-missing" : ""));
-            const info = ExternalFinancialHistory.fields([
-                ["نرم‌افزار", row.title, true], ["تاریخ ثبت", purchase?.dateText],
-                ["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle],
-            ]);
-            if (!invoice)
-                info.append(make("p", purchase ? "فاکتور خرید در نرم‌افزار مقصد پیدا نشد." :
-                    "سابقه فاکتور خرید برای این مقصد موجود نیست.", "supply-financial-missing-message"));
-            card.append(info);
-            if (purchase && !invoice && purchase.mappingId)
-                card.append(missingHistory(row, purchase, false));
-            if (invoice && !receipt) {
-                const register = make("button", "ثبت رسید انبار", "external-pf-action external-pf-view");
-                register.type = "button";
-                register.addEventListener("click", async () => {
-                    if (choosing || send.disabled || isModalOpen(wizard)) return;
-                    choosing = true;
-                    register.disabled = true;
-                    try {
-                        destinations = [row];
-                        position = 0;
-                        await prepare(row, true, true, invoice.id);
-                    } finally {
-                        register.disabled = false;
-                        choosing = false;
-                    }
-                }, { signal });
-                card.append(ExternalFinancialHistory.actions([register]));
-            }
-            group.append(card);
-            if (receipt) {
-                const document = receipt.document;
-                const unrelated = !!invoice && !!document && document.basePurchaseId !== invoice.id;
-                const panel = make("div", null, "supply-financial-receipt" +
-                    (!document || unrelated ? " supply-financial-missing" : ""));
-                panel.append(make("div", !document || unrelated ? "رسید انبار" : "رسید انبار ثبت شده",
-                    "supply-financial-receipt-title"));
-                if (document && !unrelated) {
-                    panel.append(ExternalFinancialHistory.fields([
-                        ["شماره رسید", document.number], ["تاریخ ثبت", receipt.dateText],
-                        ["تحویل‌دهنده", document.partyTitle],
-                    ]));
-                } else {
-                    panel.append(make("p", unrelated ? "رسید ثبت‌شده به این فاکتور خرید مربوط نیست." :
-                        "رسید انبار در نرم‌افزار مقصد پیدا نشد.", "supply-financial-missing-message"));
-                    if (!document && receipt.mappingId) panel.append(missingHistory(row, receipt, true));
+        historyUi.render(records, {
+            emptyText: "این فاکتور خرید هنوز در نرم‌افزار مالی ثبت نشده است.",
+            card: row => {
+                const { purchase, receipt } = row;
+                const invoice = purchase?.document;
+                let related;
+                if (invoice && !receipt) {
+                    const register = historyCard.action("ثبت رسید انبار");
+                    register.addEventListener("click", async () => {
+                        if (choosing || send.disabled || isModalOpen(wizard)) return;
+                        choosing = true;
+                        register.disabled = true;
+                        try {
+                            destinations = [row];
+                            position = 0;
+                            await prepare(row, true, true, invoice.id);
+                        } finally {
+                            register.disabled = false;
+                            choosing = false;
+                        }
+                    }, { signal });
+                    related = { title: "رسید انبار", action: register };
                 }
-                group.append(panel);
-            }
-            historyList.append(group);
-        }
-        if (!records.length) {
-            historyList.append(make("div", "این فاکتور خرید هنوز در نرم‌افزار مالی ثبت نشده است.", "external-pf-empty"));
-        }
+                if (receipt) {
+                    const document = receipt.document;
+                    const unrelated = !!invoice && !!document && document.basePurchaseId !== invoice.id;
+                    const missing = !document || unrelated;
+                    const entry = historyCard.relatedItem({
+                        title: missing ? "رسید انبار" : "رسید انبار شماره " + document.number,
+                        missing,
+                        fields: missing ? [] : [["تحویل‌دهنده", document.partyTitle], ["تاریخ ثبت", receipt.dateText]],
+                        status: unrelated ? "رسید ثبت‌شده به این فاکتور خرید مربوط نیست." :
+                            !document ? "رسید انبار در نرم‌افزار مقصد پیدا نشد." : "",
+                        action: !document && receipt.mappingId ? missingHistory(row, receipt, true) : null,
+                    });
+                    related = { title: "رسید انبار", entries: [entry], open: true };
+                }
+                return {
+                    title: row.title, missing: !invoice, related,
+                    fields: [["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle],
+                        ["تاریخ ثبت", purchase?.dateText]],
+                    status: !invoice ? (purchase ? "فاکتور خرید در نرم‌افزار مقصد پیدا نشد." :
+                        "سابقه فاکتور خرید برای این مقصد موجود نیست.") : "",
+                    operations: purchase && !invoice && purchase.mappingId ? [missingHistory(row, purchase, false)] : [],
+                };
+            },
+        });
         send.disabled = result.softwares.length === 0;
         send.onclick = () => choose(result.softwares);
     };
@@ -491,7 +480,6 @@ async function openSupplyFinancial(sourceId) {
         send.onclick = null;
         historyModal.dataset.active = "";
     }, { once: true });
-    enableMomentumScrollScope(historyModal, { signal });
     enableMomentumScrollScope(wizard, { signal });
     historyHeading.textContent = "سوابق فاکتور خرید";
     sendLabel.textContent = "ارسال فاکتور خرید به نرم‌افزار مالی";
