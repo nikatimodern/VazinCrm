@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initChangeRadio("roleTypeChange", (e) => {
         const rType = Number(e.target.value);
         setUrlParams({ roleType: rType !== -1 ? rType : null });
+        window.erpMenu?.highlight();
         getAllCustomers();
     });
     

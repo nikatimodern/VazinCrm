@@ -438,3 +438,7 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 .erp-account-disabled-text { font:13px/2 IRANSans, sans-serif; color:#475569; }
 .erp-forced-logout { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin:18px auto 4px; min-width:190px; border-radius:10px; padding:12px 16px; border:3px solid transparent; color:#0e685f; font:13px IRANSansBold,sans-serif; background:linear-gradient(#e9f7f3,#e9f7f3) padding-box,conic-gradient(#1da48e var(--erp-ring-progress,100%),#d9e3e1 0) border-box; user-select:none; pointer-events:none; }
 .erp-forced-logout strong { font:16px IRANSansBold,sans-serif; }
+
+/* Keep fixed alerts/version from stretching because .menu-nav is flex-grow:1 globally. */
+#desktopFixedActions, #mobileDrawerFixedActions { flex:0 0 auto; justify-content:flex-start; gap:2px; width:100%; }
+#desktopNavbar, #mobileDrawerNavbar { justify-content:flex-start; }

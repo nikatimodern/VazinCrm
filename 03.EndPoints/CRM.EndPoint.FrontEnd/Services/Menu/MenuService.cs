@@ -733,6 +733,11 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var categoryReports = Category("categoryReports", "گزارش‌های مدیریتی", MenuIcons.Reports, 60,
             Child(reports, "profit"), Child(reports, "demand"));
 
+        // Only roles that have at least one action in _SettingModal should see it.
+        settings.Roles = [
+            AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin,
+            AppRoles.FinancialAdmin, AppRoles.FinancialExpert
+        ];
         settings.DisplayOrder = 70;
         // Keep the existing mobile bottom bar shortcuts. The new categorized
         // pages remain reachable from the mobile "More" drawer as well.
