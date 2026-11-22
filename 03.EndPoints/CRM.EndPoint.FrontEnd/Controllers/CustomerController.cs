@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.EndPoint.FrontEnd.Security;
 using Microsoft.Extensions.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,7 +81,7 @@ public sealed class CustomerController(
         return pf?.CustomerId.HasValue == true && await CanAccessAsync("View", pf.CustomerId.Value, ct);
     }
 
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         var viewScope = await ScopeAsync("View", cancellationToken);
@@ -92,35 +93,35 @@ public sealed class CustomerController(
         ViewBag.SubTitle = " فرم ثبت شخص"; ViewBag.Head = "Customer";
         return View(user);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> RemoveUserCustomer([FromBody] UserCustomer model, CancellationToken cancellationToken)
     {
         if (model is null || model.CustomerId == Guid.Empty) return BadRequest();
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new RemoveCustomerExpertCommand(model.CustomerId, model.UserId), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> AddSelsToCustomers([FromBody] SelsCustomerVModel model, CancellationToken cancellationToken)
     {
         if (model is null || model.customerId == Guid.Empty) return BadRequest();
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AssignCustomerExpertsCommand(model.customerId, model.selExperts), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetCustomerOp(string search, int? roleType, CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
         return Ok(await requests.QueryAsync(new SearchCustomerOptionsQuery(search, roleType, OwnFilter(scope)), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetSuppliers(CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
         return Ok(await requests.QueryAsync(new GetCustomerSuppliersQuery(OwnFilter(scope)), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetCustomerRel(Guid Id, CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
@@ -141,7 +142,7 @@ public sealed class CustomerController(
             _ => View(new CustomerPanelVModel { CustomerId = result.Id, CustomerName = result.Name, SelExpertRel = result.SalesExperts })
         };
     }
-    [Authorize(Roles = "مدیر ارشد ,مدیر فروش"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpGet]
     public async Task<IActionResult> CustomerDetail(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("View", id, cancellationToken)) return Forbid();
@@ -150,33 +151,33 @@ public sealed class CustomerController(
         ViewBag.CustomerId = id;
         return View(data);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> AbortCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("Delete", id, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new DeleteCustomerCommand(id), cancellationToken), cancellationToken);
     }
-    [Authorize(Roles = "مدیر ارشد ,مدیر فروش"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpGet]
     public async Task<IActionResult> AcceptCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AcceptCustomerCommand(id), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> AddToMyCustomer(Guid id, CancellationToken cancellationToken)
     {
         // Self-assignment must not be a route around Own-only access.
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AddCustomerToCurrentUserCommand(id), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> CheckCus(Customer model, CancellationToken cancellationToken)
     {
         if (model is null || await ScopeAsync("View", cancellationToken) == AccessScopes.None) return Forbid();
         var exists = await requests.QueryAsync(new CheckCustomerRegistrationQuery(model), cancellationToken);
         return exists.HasValue ? Ok(new { Status = exists.Value ? 500 : 200, error = exists.Value ? "مشتری قبلا در سیستم ثبت شده است" : "" }) : Ok();
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> CheckDuplicate([FromBody] Customer model, CancellationToken cancellationToken)
     {
         if (model == null) return BadRequest();
@@ -185,21 +186,21 @@ public sealed class CustomerController(
         var data = await requests.QueryAsync(new FindDuplicateCustomersQuery(model, OwnFilter(scope)), cancellationToken);
         return data.Count == 0 ? Ok(null) : PartialView("DuplicatePartial", data);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> UpCustomer([FromBody] Customer model, CancellationToken cancellationToken)
     {
         if (model is null || model.Id == Guid.Empty) return BadRequest();
         if (!await CanAccessAsync("Edit", model.Id, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new UpdateCustomerCommand(model), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> AddCustomer([FromBody] Customer model, CancellationToken cancellationToken)
     {
         if (model is null) return BadRequest();
         if (await ScopeAsync("Create", cancellationToken) == AccessScopes.None) return Forbid();
         return await Mutation(requests.CommandAsync(new CreateCustomerCommand(model), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> GetAllCustomerJuridical(CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
@@ -207,7 +208,7 @@ public sealed class CustomerController(
         var request = (await ReadTableAsync(cancellationToken)) with { OnlyAssignedUserId = OwnFilter(scope) };
         return Ok(await requests.QueryAsync(new GetJuridicalCustomerTableQuery(request), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpPost]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> GetAllCustomerNonJuridical(CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
@@ -215,7 +216,7 @@ public sealed class CustomerController(
         var request = (await ReadTableAsync(cancellationToken)) with { OnlyAssignedUserId = OwnFilter(scope) };
         return Ok(await requests.QueryAsync(new GetIndividualCustomerTableQuery(request), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> GetAllCustomerPartial(int skip = 0, int take = 10, int roleType = -1, int juridical = -1, CancellationToken cancellationToken = default)
     {
         var scope = await ScopeAsync("View", cancellationToken);
@@ -231,14 +232,14 @@ public sealed class CustomerController(
     [NonAction]
     public async Task<string> GetUsersRel(IList<UserCustomer> userCustomers, CancellationToken cancellationToken) =>
         await requests.QueryAsync(new GetCustomerUserNamesQuery(userCustomers.Select(u => u.UserId).ToList()), cancellationToken);
-    [HttpPost, Authorize(Roles = "مدیر ارشد")]
+    [HttpPost, CustomerLegacyAuthorize(CustomerLegacyMode.Admin)]
     public async Task<IActionResult> NormalizeAllCustomers(CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         await requests.CommandAsync(new NormalizeCustomersCommand(), cancellationToken);
         return Ok();
     }
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> SearchAllCustomerPartial(string val, int roleType = -1, int juridical = -1, CancellationToken cancellationToken = default)
     {
         var scope = await ScopeAsync("View", cancellationToken);
@@ -251,20 +252,20 @@ public sealed class CustomerController(
         ViewBag.ActorGuid = Guid.TryParse(UserId, out var actorGuid) ? actorGuid : Guid.Empty;
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> GetCustomersList(CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
         return Ok(await requests.QueryAsync(new GetCustomerSummariesQuery(OwnFilter(scope)), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> GetCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("View", id, cancellationToken)) return Forbid();
         return Ok(await requests.QueryAsync(new GetCustomerQuery(id), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly")]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> GetCustomerByMobile(string mobile, CancellationToken cancellationToken)
     {
         if (await ScopeAsync("View", cancellationToken) == AccessScopes.None) return Forbid();
@@ -272,13 +273,13 @@ public sealed class CustomerController(
         if (person is null) return NotFound();
         return await CanAccessAsync("View", person.Id, cancellationToken) ? Ok(person) : Forbid();
     }
-    [Authorize(Roles = "مدیر ارشد ,مدیر فروش"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpGet]
     public async Task<IActionResult> GetCustomerSelRelation(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("View", id, cancellationToken)) return Forbid();
         return Ok(await requests.QueryAsync(new GetCustomerExpertsQuery(id), cancellationToken));
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetSepidarFactors(int pfSerialNumber, int passType = 1, CancellationToken cancellationToken = default)
     {
         // This endpoint looks up invoices by serial number, not a person ID.
@@ -311,9 +312,10 @@ public sealed class CustomerController(
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested) { return BadRequest(); }
     }
-    [Authorize(Roles = "مدیر ارشد"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Admin), HttpGet]
     public async Task<IActionResult> GetUsersForPreFactor(Guid cusId, Guid pfId, CancellationToken cancellationToken)
     {
+        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         if (!await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
         if (Enforce)
         {
@@ -324,13 +326,13 @@ public sealed class CustomerController(
         var result = await requests.QueryAsync(new GetPreFactorUsersQuery(cusId, pfId), cancellationToken);
         return result == null ? NotFound("رکوردی یافت نشد!") : Ok(result);
     }
-    [Authorize(Roles = "مدیر ارشد"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.Admin), HttpGet]
     public async Task<IActionResult> ChangeUsersPreFactor(Guid pfId, Guid userId, Guid taminUserId, CancellationToken cancellationToken)
     {
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new ChangePreFactorUsersCommand(pfId, userId, taminUserId), cancellationToken), cancellationToken);
     }
-    [Authorize(Policy = "NotCustomerOnly"), HttpGet]
+    [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetPhonebook(string search = "", CancellationToken cancellationToken = default)
     {
         var scope = await ScopeAsync("View", cancellationToken);

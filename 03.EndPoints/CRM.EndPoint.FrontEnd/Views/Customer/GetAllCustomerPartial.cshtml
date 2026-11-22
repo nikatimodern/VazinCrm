@@ -49,7 +49,7 @@
                                 <button type="button" aria-label="ویرایش" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button>
                             }
                             <button type="button" aria-label="ثبت گزارش" title="ثبت گزارش" onclick="ShowModalReport(@item.ToCamelJson())"><i class="fa fa-text" aria-hidden="true"></i></button>
-                            @if (canManage) {
+                            @if (canManage || isEnforced) {
                                 <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
                             }
                         </div>
@@ -68,7 +68,7 @@
                             @if (allowDelete) {
                                 <button type="button" class="customer-person-card__reject" aria-label="عدم تأیید" title="عدم تأیید" onclick="abortCustomer('@item.Id')"><i class="fa fa-times" aria-hidden="true"></i></button>
                             }
-                            @if (canManage) {
+                            @if (canManage || isEnforced) {
                                 <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
                             }
                         </div>
