@@ -4,11 +4,18 @@
 @{
     Layout = null;
     bool canManage = ViewBag.AccessAccepte == true;
+    bool isEnforced = ViewBag.ScopeEnforced == true;
+    byte editScope = ViewBag.EditScope is byte e ? e : (byte)0;
+    byte deleteScope = ViewBag.DeleteScope is byte d ? d : (byte)0;
+    Guid actorId = ViewBag.ActorGuid is Guid id ? id : Guid.Empty;
 }
 
 @if (Model.Any()) {
     foreach (var item in Model) {
         var displayName = item.Sex == 1 ? $"آقای {item.AgentName}" : item.Sex == 0 ? $"خانم {item.AgentName}" : item.AgentName;
+        bool own = actorId != Guid.Empty && item.UserCustomers?.Any(x => x.UserId == actorId) == true;
+        bool allowEdit = !isEnforced || editScope == 2 || (editScope == 1 && own);
+        bool allowDelete = !isEnforced || deleteScope == 2 || (deleteScope == 1 && own);
         <article class="customer-person-card @(item.Juridical == 1 ? "customer-person-card--legal" : "")">
             <header class="customer-person-card__header">
                 <span class="customer-person-card__avatar" aria-hidden="true"><i class="fa fa-user"></i></span>
@@ -38,22 +45,32 @@
                     if (item.RoleType != RoleTypeEnum.تامین_کننده) {
                         <a href="/Customer/CustomerProfile?Id=@item.Id" class="customer-person-card__profile"><i class="fa fa-eye" aria-hidden="true"></i><span>مشاهده پروفایل</span></a>
                         <div class="customer-person-card__actions">
-                            <button type="button" aria-label="ویرایش" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                            @if (allowEdit) {
+                                <button type="button" aria-label="ویرایش" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                            }
                             <button type="button" aria-label="ثبت گزارش" title="ثبت گزارش" onclick="ShowModalReport(@item.ToCamelJson())"><i class="fa fa-text" aria-hidden="true"></i></button>
                             @if (canManage) {
                                 <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
                             }
                         </div>
                     } else {
-                        <div class="customer-person-card__actions"><button type="button" aria-label="ویرایش تأمین‌کننده" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button></div>
+                        @if (allowEdit) {
+                            <div class="customer-person-card__actions"><button type="button" aria-label="ویرایش تأمین‌کننده" title="ویرایش" onclick="ShowModalUpCustomer('@item.Id')"><i class="fa fa-pencil" aria-hidden="true"></i></button></div>
+                        }
                     }
                 } else {
                     <span class="customer-person-card__pending">در انتظار تأیید</span>
-                    @if (canManage) {
+                    @if (canManage || (isEnforced && allowDelete)) {
                         <div class="customer-person-card__actions">
-                            <button type="button" aria-label="تأیید" title="تأیید" onclick="acceptCustomer('@item.Id')"><i class="fa fa-check" aria-hidden="true"></i></button>
-                            <button type="button" class="customer-person-card__reject" aria-label="عدم تأیید" title="عدم تأیید" onclick="abortCustomer('@item.Id')"><i class="fa fa-times" aria-hidden="true"></i></button>
-                            <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            @if (canManage) {
+                                <button type="button" aria-label="تأیید" title="تأیید" onclick="acceptCustomer('@item.Id')"><i class="fa fa-check" aria-hidden="true"></i></button>
+                            }
+                            @if (allowDelete) {
+                                <button type="button" class="customer-person-card__reject" aria-label="عدم تأیید" title="عدم تأیید" onclick="abortCustomer('@item.Id')"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            }
+                            @if (canManage) {
+                                <a href="/Customer/CustomerDetail?id=@item.Id" target="_blank" rel="noopener" aria-label="مشاهده جزئیات" title="مشاهده جزئیات"><i class="fa fa-search" aria-hidden="true"></i></a>
+                            }
                         </div>
                     }
                 }

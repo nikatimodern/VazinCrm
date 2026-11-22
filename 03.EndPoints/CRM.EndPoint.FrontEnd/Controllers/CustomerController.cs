@@ -77,7 +77,7 @@ public sealed class CustomerController(
     {
         if (!Enforce) return true;
         var pf = await customers.GetPreFactorAsync(pfId, ct);
-        return pf != null && await CanAccessAsync("View", pf.CustomerId, ct);
+        return pf?.CustomerId.HasValue == true && await CanAccessAsync("View", pf.CustomerId.Value, ct);
     }
 
     [Authorize(Policy = "NotCustomerOnly")]
@@ -87,6 +87,7 @@ public sealed class CustomerController(
         if (viewScope == AccessScopes.None) return Forbid();
         ViewBag.AllowCreate = !Enforce || await ScopeAsync("Create", cancellationToken) != AccessScopes.None;
         ViewBag.AllowEdit = !Enforce || await ScopeAsync("Edit", cancellationToken) != AccessScopes.None;
+        ViewBag.ScopeEnforced = Enforce;
         var user = await requests.QueryAsync(new GetCustomersPageQuery(), cancellationToken);
         ViewBag.SubTitle = " فرم ثبت شخص"; ViewBag.Head = "Customer";
         return View(user);
@@ -221,8 +222,10 @@ public sealed class CustomerController(
         if (scope == AccessScopes.None) return Forbid();
         var result = await requests.QueryAsync(new GetCustomerCardsQuery(skip, take, roleType, juridical, DirectoryReadAll(scope)), cancellationToken);
         ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
-        ViewBag.AllowEdit = !Enforce || await ScopeAsync("Edit", cancellationToken) != AccessScopes.None;
-        ViewBag.AllowDelete = !Enforce || await ScopeAsync("Delete", cancellationToken) != AccessScopes.None;
+        ViewBag.EditScope = await ScopeAsync("Edit", cancellationToken);
+        ViewBag.DeleteScope = await ScopeAsync("Delete", cancellationToken);
+        ViewBag.ScopeEnforced = Enforce;
+        ViewBag.ActorGuid = Guid.TryParse(UserId, out var actorGuid) ? actorGuid : Guid.Empty;
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
     [NonAction]
@@ -242,8 +245,10 @@ public sealed class CustomerController(
         if (scope == AccessScopes.None) return Forbid();
         var result = await requests.QueryAsync(new SearchCustomerCardsQuery(val, roleType, juridical, DirectoryReadAll(scope)), cancellationToken);
         ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
-        ViewBag.AllowEdit = !Enforce || await ScopeAsync("Edit", cancellationToken) != AccessScopes.None;
-        ViewBag.AllowDelete = !Enforce || await ScopeAsync("Delete", cancellationToken) != AccessScopes.None;
+        ViewBag.EditScope = await ScopeAsync("Edit", cancellationToken);
+        ViewBag.DeleteScope = await ScopeAsync("Delete", cancellationToken);
+        ViewBag.ScopeEnforced = Enforce;
+        ViewBag.ActorGuid = Guid.TryParse(UserId, out var actorGuid) ? actorGuid : Guid.Empty;
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
     [Authorize(Policy = "NotCustomerOnly")]

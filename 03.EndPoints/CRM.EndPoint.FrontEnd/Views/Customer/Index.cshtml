@@ -11,7 +11,7 @@
                 <span class="customer-directory__title-icon"><i class="fa fa-users" aria-hidden="true"></i></span>
                 <div><h1>اشخاص</h1><p>مشتریان و تأمین‌کنندگان</p></div>
             </div>
-            @if (Model.NormalizedUserName is "R.SALAMI" or "ADMIN") {
+            @if (ViewBag.ScopeEnforced == true ? ViewBag.AllowCreate == true : Model.NormalizedUserName is "R.SALAMI" or "ADMIN") {
                 <div id="AddCustBtnID">
                     <button type="button" class="customer-directory__new" onclick="showFormCustomer()" id="btnNew">
                         <i class="fa fa-plus" aria-hidden="true"></i>
