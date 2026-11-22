@@ -434,3 +434,7 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 
 .menu-settings-section-title { margin:11px 3px 4px; padding:7px 9px 6px; border-bottom:1px solid #dbeae5; color:#116a60; font:12px IRANSansBold, sans-serif; }
 .menu-settings-section-title:first-child { margin-top:0; }
+
+.erp-account-disabled-text { font:13px/2 IRANSans, sans-serif; color:#475569; }
+.erp-forced-logout { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin:18px auto 4px; min-width:190px; border-radius:10px; padding:12px 16px; border:3px solid transparent; color:#0e685f; font:13px IRANSansBold,sans-serif; background:linear-gradient(#e9f7f3,#e9f7f3) padding-box,conic-gradient(#1da48e var(--erp-ring-progress,100%),#d9e3e1 0) border-box; user-select:none; pointer-events:none; }
+.erp-forced-logout strong { font:16px IRANSansBold,sans-serif; }
