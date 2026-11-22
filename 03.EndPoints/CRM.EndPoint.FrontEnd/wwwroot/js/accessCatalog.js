@@ -42,6 +42,7 @@
     let userOverrides = new Map(), userOriginalOverrides = new Map();
     let userSelectedUsers = new Map(), userOriginalSelectedUsers = new Map();
     const scopePickers = new Map();
+    let userRolePicker = null;
     let userReady = false, userSaving = false, userLoading = false;
     let userTabGeneration = 0, userPageGeneration = 0, userSelectionGeneration = 0, userSearchTimer = null;
     let userProfileSaving = false, userProfileGeneration = 0, userProfileId = null, userProfileStamp = null;
@@ -58,6 +59,8 @@
         modelSelect?.destroy();
         for (const editor of scopePickers.values()) editor.destroy();
         scopePickers.clear();
+        userRolePicker?.destroy();
+        userRolePicker = null;
         if (typeof cleanupScroll === "function") cleanupScroll();
         if (typeof cleanupRoleListScroll === "function") cleanupRoleListScroll();
         if (typeof cleanupRoleGroupsScroll === "function") cleanupRoleGroupsScroll();
@@ -1121,26 +1124,54 @@
     }
 
     function renderUserRoles() {
+        userRolePicker?.destroy();
+        userRolePicker = null;
         const target = root.querySelector("[data-user-roles]");
         target.replaceChildren();
         if (!userReady) {
-            showEmpty(target, currentUserId ? "در حال دریافت نقش‌های کاربر..." : "یک کاربر انتخاب کنید.", "fa-user-tag");
+            showEmpty(target, currentUserId ? "در حال دریافت نقش‌های کاربر..." :
+                "یک کاربر انتخاب کنید.", "fa-user-tag");
             return;
         }
         if (!userAvailableRoles.length) {
             showEmpty(target, "نقشی در سیستم تعریف نشده است.", "fa-user-tag");
             return;
         }
+
+        const select = document.createElement("select");
+        select.id = "acUserRoleSelect";
+        select.multiple = true;
+        select.dataset.userRoleSelect = "1";
+        select.setAttribute("aria-label", "انتخاب نقش‌های کاربر");
         for (const role of userAvailableRoles) {
-            const label = text("label", null, "ac-user-role-choice" + (userRoleIds.has(role.id) ? " is-selected" : ""));
-            const input = document.createElement("input");
-            input.type = "checkbox";
-            input.dataset.userRoleId = role.id;
-            input.checked = userRoleIds.has(role.id);
-            input.disabled = userSaving;
-            label.append(input, text("span", role.name));
-            target.append(label);
+            const option = new Option(role.name, role.id, false, userRoleIds.has(role.id));
+            select.append(option);
         }
+        target.append(select);
+
+        if (typeof TomSelect === "undefined") {
+            select.addEventListener("change", () => {
+                if (!userReady || userSaving) return;
+                userRoleIds = new Set([...select.selectedOptions].map(x => x.value));
+                syncUserState();
+            }, { signal });
+            return;
+        }
+        userRolePicker = new TomSelect(select, {
+            plugins: ["remove_button"],
+            create: false,
+            persist: false,
+            maxItems: null,
+            closeAfterSelect: false,
+            placeholder: "جست‌وجو و انتخاب نقش...",
+            onChange: ids => {
+                if (!userReady || userSaving) return;
+                userRoleIds = new Set(ids);
+                syncUserState();
+            }
+        });
+        userRolePicker.setValue([...userRoleIds], true);
+        if (userSaving) userRolePicker.disable();
     }
 
     function syncUserPermissionRows() {
@@ -1174,6 +1205,10 @@
             !userReady ? "در حال دریافت تنظیمات..." :
             userDirty() ? "تغییرات ذخیره‌نشده" : "تغییرات ذخیره شده‌اند.";
         root.querySelector("[data-user-roles-count]").textContent = userRoleIds.size + " نقش";
+        root.querySelector("[data-user-summary-roles]").textContent = userRoleIds.size + " نقش";
+        root.querySelector("[data-user-summary-overrides]").textContent = userOverrides.size + " استثنا";
+        root.querySelector("[data-user-summary-selected]").textContent =
+            [...userOverrides.values()].filter(scope => scope === 3).length + " مجوز انتخابی";
         const total = userCatalog.reduce((sum, e) =>
             sum + e.permissions.filter(p => effectivePermission(p.id).allowed).length, 0);
         root.querySelector("[data-user-effective-count]").textContent = total + " مجوز مؤثر";
@@ -1184,10 +1219,12 @@
         root.querySelector("[data-action='new-user']").disabled = userSaving || userProfileSaving;
         root.querySelector("[data-action='edit-user']").disabled = !person || userSaving || userProfileSaving;
         userTypeSelect.disabled = userSaving || userLoading || userProfileSaving;
-        for (const checkbox of root.querySelectorAll("[data-user-role-id]"))
-            checkbox.disabled = !userReady || userSaving;
-        for (const label of root.querySelectorAll(".ac-user-role-choice"))
-            label.classList.toggle("is-selected", userRoleIds.has(label.querySelector("[data-user-role-id]").dataset.userRoleId));
+        if (userRolePicker) {
+            if (!userReady || userSaving) userRolePicker.disable();
+            else userRolePicker.enable();
+        }
+        const fallbackRoleSelect = root.querySelector("[data-user-role-select]");
+        if (fallbackRoleSelect) fallbackRoleSelect.disabled = !userReady || userSaving;
         for (const picker of scopePickers.values()) {
             if (!userReady || userSaving) picker.disable();
             else picker.enable();
@@ -1233,7 +1270,13 @@
                 const item = text("div", null, "ac-user-permission-item");
                 item.dataset.userPermissionId = permission.id;
                 const title = text("div", null, "ac-user-permission-title");
-                title.append(text("strong", permission.title), text("small", permission.key));
+                const kind = permission.key.toLowerCase();
+                const iconName = kind === "view" ? "fa-eye" :
+                    kind === "create" ? "fa-plus-circle" :
+                    kind === "edit" ? "fa-pen" :
+                    kind === "delete" ? "fa-trash-alt" : "fa-key";
+                title.append(text("i", null, "fas " + iconName),
+                    text("strong", permission.title), text("small", entity.key + "." + permission.key));
                 const controls = text("div", null, "ac-user-permission-row");
                 const select = document.createElement("select");
                 select.className = "ac-user-override-select";
