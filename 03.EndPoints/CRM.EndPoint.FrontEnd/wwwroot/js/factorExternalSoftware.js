@@ -341,7 +341,7 @@ function renderExternalFactorPreview(data, state) {
                     <thead>
                         <tr>
                             <th>ردیف</th>
-                            <th>محصول CRM</th>
+                            <th>محصول ERP</th>
                             <th>کالای مقصد</th>
                             <th>انبار</th>
                             <th>تعداد</th>
@@ -673,7 +673,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     }
     function renderCustomer(state) {
         const data = state.customerData;
-        stage(state, "customer", "تطبیق مشتری", "مشتری CRM را به شخص متناظر در نرم‌افزار مالی متصل کنید",
+        stage(state, "customer", "تطبیق مشتری", "مشتری ERP را به شخص متناظر در نرم‌افزار مالی متصل کنید",
             '<i class="fas fa-users"></i>', "مرحله ۲ از ۴",
             ExternalFinancialWizard.crmCustomer(data.crmCustomerTitle || "—") +
             ExternalFinancialWizard.selectField({

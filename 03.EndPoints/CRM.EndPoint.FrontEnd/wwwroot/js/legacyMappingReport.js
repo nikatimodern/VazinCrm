@@ -169,7 +169,7 @@
             return row.status !== "saved" && row.status !== "blocked" &&
                 !["PartyAlreadyMappedToAnotherCustomer", "ExistingDuplicateCustomerParty",
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
-                // Duplicate-party conflicts must be resolved by selecting one CRM customer.
+                // Duplicate-party conflicts must be resolved by selecting one ERP customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
                 [2,3,5,6,7,8,9,10,11,12].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
@@ -322,7 +322,7 @@
             const details = [];
             if (number) details.push(escape(sideCodeLabel(row, crm, side)) +
                 ': ' + escape(number));
-            // CRM GUIDs are only internal keys, never displayed in cards.
+            // ERP GUIDs are only internal keys, never displayed in cards.
             if (!crm && validId(side.id))
                 details.push('شناسه: ' + escape(side.id));
             const numberText = details.length
@@ -424,7 +424,7 @@
         }
 
         // Break technical mismatch strings into readable, per-field comparisons.
-        // Example: QuotationId=5: مبلغ ناخالص: CRM=351000000, Sepidar=1900000000/0000
+        // Example: QuotationId=5: مبلغ ناخالص: ERP=351000000, Sepidar=1900000000/0000
         function formatComparisonValue(value) {
             const raw = String(value ?? "").trim();
             // Sepidar's legacy decimal formatting sometimes uses / as separator.

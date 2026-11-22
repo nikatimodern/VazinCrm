@@ -243,7 +243,7 @@ async function openDepositFinancial(id) {
         enhance(...keys);
     }
     function bankStage() {
-        const body = '<div class="external-mapping-entity"><span class="external-mapping-label">حساب بانکی در CRM</span> <strong>'
+        const body = '<div class="external-mapping-entity"><span class="external-mapping-label">حساب بانکی در ERP</span> <strong>'
             + escapeHtml(source.bankAccountTxt || "—") + '</strong></div>'
             + select("bankAccountId", "حساب بانکی معادل در نرم‌افزار مالی", []);
         stage("تطبیق حساب بانکی", "حساب بانکی مقصد این حواله را مشخص کنید", step(2),
@@ -305,7 +305,7 @@ async function openDepositFinancial(id) {
         };
         const account = () => source.options.subsidiaryAccounts.find(item => item.id === draft[accountKey]);
         const sourceParty = isCredit ? ExternalFinancialWizard.crmCustomer(source.customerName)
-            : source.beneficiary ? '<div class="external-mapping-entity"><span class="external-mapping-label">طرف تهاتر در CRM</span>'
+            : source.beneficiary ? '<div class="external-mapping-entity"><span class="external-mapping-label">طرف تهاتر در ERP</span>'
                 + '<strong class="external-mapping-entity-name">' + escapeHtml(source.beneficiary) + '</strong></div>' : "";
         const body = '<div class="d-grid gap-3">' + sourceParty
             + '<div class="d-grid gap-2">'
@@ -376,7 +376,7 @@ async function openDepositFinancial(id) {
             + input("dueText", "سررسید چک", 10, true)
             + input("sayad", "شناسه صیادی (اختیاری)", 16)
             + (source.needsOriginalChequeAmount ? input("chequeAmount", "مبلغ اولیه چک (ریال)", 26)
-                + '<p class="small text-muted mb-0">مبلغ وصول در CRM ' + renderMoneyHtml(source.amount) + ' است.</p>' : "")
+                + '<p class="small text-muted mb-0">مبلغ وصول در ERP ' + renderMoneyHtml(source.amount) + ' است.</p>' : "")
             + '</div>';
         stage("مشخصات چک", "شماره و سررسید چک را وارد کنید", step(3),
             '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "تأیید و ادامه", () => {
@@ -492,7 +492,7 @@ async function openDepositFinancial(id) {
         return renderExternalFinancialPreview({
             fields, columns: ["مشخصات سند", "مقدار"], rows: rows.filter(([, value]) => value),
             totals: preview.crmCollectedAmount == null ? [["مبلغ واریزی", preview.amount]] :
-                [["مبلغ وصول در CRM", preview.crmCollectedAmount], ["مبلغ اولیه رسید دریافت", preview.amount]]
+                [["مبلغ وصول در ERP", preview.crmCollectedAmount], ["مبلغ اولیه رسید دریافت", preview.amount]]
         });
     }
     function previewStage(preview) {
@@ -544,8 +544,8 @@ async function openDepositFinancial(id) {
             if (source.collectedAmount !== source.amount) {
                 const body = renderExternalFinancialPreview({
                     fields: [{ label: "شماره چک", value: source.chequeNumber }],
-                    detailsHtml: '<p class="text-danger mb-0">برای ثبت وصول، اختلاف مبلغ چک با مبلغ وصول در CRM را برطرف کنید.</p>',
-                    totals: [["مبلغ چک در سپیدار", source.amount], ["مبلغ وصول در CRM", source.collectedAmount]]
+                    detailsHtml: '<p class="text-danger mb-0">برای ثبت وصول، اختلاف مبلغ چک با مبلغ وصول در ERP را برطرف کنید.</p>',
+                    totals: [["مبلغ چک در سپیدار", source.amount], ["مبلغ وصول در ERP", source.collectedAmount]]
                 });
                 stage("اختلاف مبلغ چک", "", "", '<i class="fas fa-exclamation-circle" aria-hidden="true"></i>',
                     body, "بستن", close, null, true);
@@ -560,7 +560,7 @@ async function openDepositFinancial(id) {
 
     function chequeAssignmentStage() {
         const body = '<div class="d-grid gap-2">'
-            + (source.bankAccountTxt ? '<div class="external-mapping-entity"><span class="external-mapping-label">حساب بانکی در CRM</span>'
+            + (source.bankAccountTxt ? '<div class="external-mapping-entity"><span class="external-mapping-label">حساب بانکی در ERP</span>'
                 + '<strong>' + escapeHtml(source.bankAccountTxt) + '</strong></div>' : "")
             + select("bankAccountId", "حساب بانکی مقصد", []) + '</div>';
         stage("واگذاری به بانک", "حساب بانکی مقصد را مشخص کنید", "مرحله ۱ از ۲",
@@ -583,7 +583,7 @@ async function openDepositFinancial(id) {
         const unsupported = "ثبت خرج کردن چک برای این نوع اعلامیه در این گردش پشتیبانی نمی‌شود.";
         const beneficiary = [source.beneficiary, source.payeeName].filter(Boolean).join(" / ");
         const body = '<div class="d-grid gap-2">'
-            + (beneficiary ? '<div class="external-mapping-entity"><span class="external-mapping-label">طرف انتقال در CRM</span>'
+            + (beneficiary ? '<div class="external-mapping-entity"><span class="external-mapping-label">طرف انتقال در ERP</span>'
                 + '<strong>' + escapeHtml(beneficiary) + '</strong></div>' : "")
             + select("paymentType", "نوع اعلامیه پرداخت", source.options.paymentTypes)
             + select("payeeId", "طرف مقابل در نرم‌افزار مالی", getPayees())
@@ -663,7 +663,7 @@ async function openDepositFinancial(id) {
         if (payment) rows.push(["صندوق", source.options.cash.find(item => item.id === draft.cashId)?.title]);
         if (draft.description) rows.push(["شرح", draft.description]);
         const totals = [["مبلغ چک", preview.amount]];
-        if (preview.collectedAmount != null) totals.unshift(["مبلغ وصول در CRM", preview.collectedAmount]);
+        if (preview.collectedAmount != null) totals.unshift(["مبلغ وصول در ERP", preview.collectedAmount]);
         const body = make("div");
         body.innerHTML = renderExternalFinancialPreview({ fields, columns: ["مشخصات عملیات", "مقدار"], rows, totals })
             + voucherFootnote(preview.autoVoucher);

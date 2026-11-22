@@ -129,7 +129,7 @@ async function openSupplyFinancial(sourceId) {
                 const result = await Swal.fire({
                     target: historyModal,
                     title: "حذف سابقه ارسال",
-                    text: "ارتباط این سند با " + software.title + " از CRM حذف شود؟",
+                    text: "ارتباط این سند با " + software.title + " از ERP حذف شود؟",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonText: "حذف سابقه",
@@ -281,9 +281,9 @@ async function openSupplyFinancial(sourceId) {
 
     const vendorStage = (data, source, software) => {
         const content = make("div", null, "d-flex flex-column gap-3");
-        content.append(fields("تأمین‌کننده در CRM", source.supplierTxt));
+        content.append(fields("تأمین‌کننده در ERP", source.supplierTxt));
         const select = field(content, "تأمین‌کننده معادل در نرم‌افزار مالی", make("select", null, "show-dropdown-arrow"));
-        stage({ software, title: "تطبیق تأمین‌کننده", subtitle: "اتصال تأمین‌کننده CRM به نرم‌افزار مالی",
+        stage({ software, title: "تطبیق تأمین‌کننده", subtitle: "اتصال تأمین‌کننده ERP به نرم‌افزار مالی",
             icon: "fa-users", step: "مرحله ۱ از ۳", content,
             backAction: () => ModalToggle(wizard, "hide"), enabled: () => !!select.value,
             confirmAction: async () => {
@@ -390,7 +390,7 @@ async function openSupplyFinancial(sourceId) {
         ];
         if (receipt) info.push({ label: "انبار", value: preview.stock });
         if (preview.description) info.push({ label: "توضیحات", value: preview.description, wide: true });
-        const columns = ["ردیف", ...(receipt ? [] : ["محصول CRM"]), "کالای مقصد", "مقدار", "مبلغ کالا",
+        const columns = ["ردیف", ...(receipt ? [] : ["محصول ERP"]), "کالای مقصد", "مقدار", "مبلغ کالا",
             ...(receipt ? [] : ["تخفیف"]), "مالیات", "توضیحات", "مبلغ نهایی"];
         const content = renderExternalFinancialPreview({
             fields: info, columns,

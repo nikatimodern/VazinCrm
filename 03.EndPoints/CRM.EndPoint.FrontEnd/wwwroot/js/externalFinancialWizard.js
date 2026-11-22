@@ -1,5 +1,5 @@
 /**
- * Shared UI shell for CRM -> financial-software transfer wizards.
+ * Shared UI shell for ERP -> financial-software transfer wizards.
  * Feature modules own requests, validation, navigation and persistence.
  */
 class ExternalFinancialWizard {
@@ -36,10 +36,10 @@ class ExternalFinancialWizard {
         </div>`;
     }
 
-    /** The CRM-side customer identity is intentionally identical across sales documents. */
+    /** The ERP-side customer identity is intentionally identical across sales documents. */
     static crmCustomer(name) {
         return `<div class="external-mapping-entity">
-            <span class="external-mapping-label">مشتری در CRM</span>
+            <span class="external-mapping-label">مشتری در ERP</span>
             <span class="external-mapping-entity-name fbold">${escapeHtml(String(name ?? "—"))}</span>
         </div>`;
     }

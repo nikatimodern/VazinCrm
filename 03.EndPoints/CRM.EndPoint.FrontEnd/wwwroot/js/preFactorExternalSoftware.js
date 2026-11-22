@@ -1,4 +1,4 @@
-/** CRM quotation export to external financial software.
+/** ERP quotation export to external financial software.
  *  Shares its UI shell with invoice and purchase exports without changing its API steps.
  */
 
@@ -280,7 +280,7 @@ function exSoftwarePreFactorRenderCustomer() {
     
     exSoftwarePreFactorRenderStep({
         title: "تطبیق مشتری",
-        subtitle: "اتصال مشتری CRM به نرم‌افزار مالی",
+        subtitle: "اتصال مشتری ERP به نرم‌افزار مالی",
         icon: `<i class="fas fa-users"></i>`,
         step: "مرحله ۲ از ۴",
         
@@ -595,7 +595,7 @@ function exSoftwarePreFactorRenderPreview(data) {
                 { label: "مشتری", value: customerTitle, wide: true },
                 { label: "نرم‌افزار مقصد", value: software.externalSoftwareTitle, accent: true },
             ],
-            columns: ["ردیف", "محصول CRM", "کالای مقصد", "انبار", "تعداد", "قیمت واحد", "تخفیف", "مالیات", "مبلغ نهایی"],
+            columns: ["ردیف", "محصول ERP", "کالای مقصد", "انبار", "تعداد", "قیمت واحد", "تخفیف", "مالیات", "مبلغ نهایی"],
             rows: items.map((item, index) => [
                 index + 1, item.productTitle, item.externalItemTitle, item.externalStockTitle,
                 money(item.weightCount), money(item.unitAmount), money(item.discount),

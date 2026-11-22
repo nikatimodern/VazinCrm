@@ -58,7 +58,7 @@ class ExternalFinancialHistory {
                 const confirmation = await Swal.fire({
                     target: modal,
                     title: "حذف سابقه ارسال",
-                    text: "ارتباط این سند با " + softwareTitle + " از CRM حذف شود؟",
+                    text: "ارتباط این سند با " + softwareTitle + " از ERP حذف شود؟",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonText: "حذف سابقه",
