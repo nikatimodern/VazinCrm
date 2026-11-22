@@ -25,7 +25,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             .Select(x => x.Value)
             .ToHashSet();
 
-        var menus = BuildMenus(user);
+        var menus = OrganizeMenus(BuildMenus(user));
 
         var filteredMenus = Filter(menus, roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
@@ -236,7 +236,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 DisplayOrder = 8,
                 SubItems = [
                     new MenuItem {
-                        Id = "orders",
+                        Id = "productionVoucher",
                         Title = "حواله تولید",
                         Url = "/Order/Index",
                     },
@@ -571,6 +571,116 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             }
 
             #endregion
+        ];
+    }
+
+
+    // Keep page definitions and role assignments in BuildMenus. Only their
+    // navigation hierarchy changes here; no endpoint or permission is expanded.
+    private static List<MenuItem> OrganizeMenus(List<MenuItem> definitions)
+    {
+        var source = definitions.ToList();
+
+        MenuItem Take(string id)
+        {
+            var item = source.Single(x => x.Id == id);
+            source.Remove(item);
+            return item;
+        }
+
+        MenuItem Child(MenuItem parent, string id)
+        {
+            var child = parent.SubItems.Single(x => x.Id == id);
+            // Old children without Roles inherited their previous parent.
+            // Flattening the menu must not silently grant additional access.
+            child.Roles = child.Roles.Count == 0
+                ? parent.Roles.ToList()
+                : child.Roles.Intersect(parent.Roles).ToList();
+            return child;
+        }
+
+        MenuItem Category(string id, string title, string icon, int order, params MenuItem[] children)
+        {
+            for (var i = 0; i < children.Length; i++)
+                children[i].DisplayOrder = i + 1;
+            return new MenuItem
+            {
+                Id = id, Title = title, IconHtml = icon, DisplayOrder = order,
+                SubItems = children.ToList()
+            };
+        }
+
+        MenuItem MobileShortcut(string id, MenuItem original, string title, string url, int order) =>
+            new MenuItem
+            {
+                Id = id, Title = title, Url = url, IconHtml = original.IconHtml,
+                Roles = original.Roles.ToList(), DisplayOrder = order,
+                ShowInMobileBottomMenu = true, ShowInDesktop = false
+            };
+
+        var dashboard = Take("dashboard");
+        dashboard.DisplayOrder = 1;
+        var cartable = Take("cartable");
+        cartable.DisplayOrder = 4;
+        var deals = Take("deal");
+        var people = Take("customer");
+        var tasks = Take("carizo");
+        var workReport = Take("report");
+        var accounting = Take("accountancy");
+        var vouchers = Take("orders");
+        var reports = Take("reports");
+        var treasury = Take("treasury");
+        var prices = Take("amount");
+        var cash = Take("cash");
+        var quality = Take("qualityControl");
+        var settings = Take("settings");
+        var overdue = Take("overdueOpenDeals");
+        var warnings = Take("warnings");
+        var version = Take("releaseNotes");
+
+        people.Title = "مشتریان";
+        people.Url = "/Customer/Index?roleType=1";
+        people.ShowInMobileBottomMenu = false;
+        deals.ShowInMobileBottomMenu = false;
+        workReport.ShowInMobileBottomMenu = false;
+
+        var suppliers = new MenuItem
+        {
+            Id = "suppliers", Title = "تأمین‌کنندگان",
+            Url = "/Customer/Index?roleType=2",
+            Roles = people.Roles.ToList()
+        };
+
+        var categoryDaily = Category("categoryDaily", "فعالیت‌های روزانه", MenuIcons.Tasks, 10,
+            tasks, workReport);
+        var categorySales = Category("categorySales", "فروش", MenuIcons.Deals, 20,
+            people, deals);
+        var categorySupply = Category("categorySupply", "تأمین", MenuIcons.Treasury, 30,
+            suppliers, prices, Child(treasury, "supplyFactor"), Child(treasury, "requestAmount"));
+        var categoryProduction = Category("categoryProduction", "تولید، انبار و کیفیت", MenuIcons.Vouchers, 40,
+            Child(vouchers, "productionVoucher"), Child(vouchers, "warehouseVoucher"),
+            Child(treasury, "warehouse"), quality);
+        var checks = Child(treasury, "check");
+        var receivedChecks = Child(checks, "receivedChecks");
+        var issuedChecks = Child(checks, "issuedChecks");
+        var categoryFinance = Category("categoryFinance", "مالی و خزانه‌داری", MenuIcons.Accounting, 50,
+            accounting, receivedChecks, issuedChecks, Child(treasury, "transfer"),
+            Child(cash, "cashier"), Child(cash, "cashIndex"));
+        var categoryReports = Category("categoryReports", "گزارش‌های مدیریتی", MenuIcons.Reports, 60,
+            Child(reports, "profit"), Child(reports, "demand"));
+
+        settings.DisplayOrder = 70;
+        // Keep the existing mobile bottom bar shortcuts. The new categorized
+        // pages remain reachable from the mobile "More" drawer as well.
+        return
+        [
+            dashboard,
+            MobileShortcut("dealMobile", deals, "سفارشات", "/Deal/Index", 2),
+            MobileShortcut("peopleMobile", people, "اشخاص", "/Customer/Index", 3),
+            cartable,
+            MobileShortcut("reportMobile", workReport, "گزارش کار", "/Report/Index", 5),
+            categoryDaily, categorySales, categorySupply, categoryProduction,
+            categoryFinance, categoryReports, settings, overdue, warnings, version
         ];
     }
 
