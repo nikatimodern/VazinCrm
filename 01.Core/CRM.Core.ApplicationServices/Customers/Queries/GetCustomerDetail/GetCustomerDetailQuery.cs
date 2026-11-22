@@ -12,10 +12,16 @@ using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerDetail;
 
 public sealed record GetCustomerDetailQuery(Guid Id) : IQuery<Customer?>;
-public sealed class GetCustomerDetailQueryHandler(ICustomerRepository repository) : IQueryHandler<GetCustomerDetailQuery, Customer?>
+public sealed class GetCustomerDetailQueryHandler(ICustomerRepository repository, CustomerAccess access) : IQueryHandler<GetCustomerDetailQuery, Customer?>
 {
     public async Task<Customer?> HandleAsync(GetCustomerDetailQuery request, CancellationToken ct)
     {
-        return request.Id == Guid.Empty ? null : await repository.GetAsync(request.Id, false, false, ct);
+        if (request.Id == Guid.Empty) return null;
+        if (access.ScopeEnforced)
+        {
+            var identity = await access.GetAsync(ct);
+            if (!await access.CanAccessAsync(identity, "View", request.Id, ct)) return null;
+        }
+        return await repository.GetAsync(request.Id, false, false, ct);
     }
 }

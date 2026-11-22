@@ -12,10 +12,16 @@ using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Queries.GetCustomerByMobile;
 
 public sealed record GetCustomerByMobileQuery(string Mobile) : IQuery<Customer?>;
-public sealed class GetCustomerByMobileQueryHandler(ICustomerRepository repository) : IQueryHandler<GetCustomerByMobileQuery, Customer?>
+public sealed class GetCustomerByMobileQueryHandler(ICustomerRepository repository, CustomerAccess access) : IQueryHandler<GetCustomerByMobileQuery, Customer?>
 {
     public async Task<Customer?> HandleAsync(GetCustomerByMobileQuery request, CancellationToken ct)
     {
-        return await repository.GetByMobileAsync(request.Mobile, ct);
+        var person = await repository.GetByMobileAsync(request.Mobile, ct);
+        if (person is not null && access.ScopeEnforced)
+        {
+            var identity = await access.GetAsync(ct);
+            if (!await access.CanAccessAsync(identity, "View", person.Id, ct)) return null;
+        }
+        return person;
     }
 }

@@ -12,10 +12,15 @@ using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Commands.ChangePreFactorUsers;
 
 public sealed record ChangePreFactorUsersCommand(Guid PreFactorId, Guid SalesUserId, Guid SupplyUserId) : ICommand<CustomerMutationResult>;
-public sealed class ChangePreFactorUsersCommandHandler(ICustomerRepository repository, IAccountUserRepository users) : ICommandHandler<ChangePreFactorUsersCommand, CustomerMutationResult>
+public sealed class ChangePreFactorUsersCommandHandler(ICustomerRepository repository, IAccountUserRepository users, CustomerAccess access) : ICommandHandler<ChangePreFactorUsersCommand, CustomerMutationResult>
 {
     public async Task<CustomerMutationResult> HandleAsync(ChangePreFactorUsersCommand request, CancellationToken ct)
     {
+        if (access.ScopeEnforced)
+        {
+            var identity = await access.GetAsync(ct);
+            if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+        }
         if (await repository.GetPreFactorAsync(request.PreFactorId, ct) == null) return new(404, "رکوردی یافت نشد!");
         var sales = request.SalesUserId == Guid.Empty ? null : await users.FindByIdAsync(request.SalesUserId.ToString(), ct);
         var supply = request.SupplyUserId == Guid.Empty ? null : await users.FindByIdAsync(request.SupplyUserId.ToString(), ct);

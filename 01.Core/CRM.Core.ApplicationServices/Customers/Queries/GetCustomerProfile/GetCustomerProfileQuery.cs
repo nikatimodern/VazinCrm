@@ -20,9 +20,12 @@ public sealed class GetCustomerProfileQueryHandler(ICustomerRepository repositor
         var identity = await access.GetAsync(ct);
         var customer = await repository.GetAsync(request.Id, identity.IsAdmin, true, ct);
         if (customer == null) return new(404);
-        var allowed = identity.CanManage || (identity.IsCustomer
-            ? !customer.IsDeleted && customer.Mobile == identity.User.PhoneNumber
-            : await repository.HasAssignmentAsync(request.Id, Guid.Parse(identity.User.Id), ct));
+        var allowed = access.ScopeEnforced
+            ? await access.CanAccessAsync(identity, "View", request.Id, ct)
+            : identity.CanManage || (identity.IsCustomer
+                ? !customer.IsDeleted && customer.Mobile == identity.User.PhoneNumber
+                : Guid.TryParse(identity.User.Id, out var userId) &&
+                  await repository.HasAssignmentAsync(request.Id, userId, ct));
         if (!allowed) return new(403);
         var name = $"پنل مشتری {customer.CustomerCode} {customer.CompanyName} ({(customer.Sex == 1 ? "جناب آقای" : "سرکار خانم")} {customer.AgentName})";
         return new(200, customer.Id, name, await repository.GetUserNamesAsync(customer.UserCustomers.Select(u => u.UserId).ToList(), ct));

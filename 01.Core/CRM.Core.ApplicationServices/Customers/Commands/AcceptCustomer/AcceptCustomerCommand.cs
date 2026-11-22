@@ -17,7 +17,9 @@ public sealed class AcceptCustomerCommandHandler(ICustomerRepository repository,
     public async Task<CustomerMutationResult> HandleAsync(AcceptCustomerCommand request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
-        if (!identity.CanManage) return new(403);
+        if (access.ScopeEnforced
+            ? !await access.CanAccessAllAsync(identity, "Edit", ct)
+            : !identity.CanManage) return new(403);
         var original = await repository.GetAsync(request.Id, false, false, ct);
         if (original == null) return new(404);
         var customer = await repository.GetAsync(request.Id, false, false, ct);

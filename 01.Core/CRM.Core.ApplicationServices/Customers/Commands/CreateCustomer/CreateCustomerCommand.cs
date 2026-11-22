@@ -16,8 +16,9 @@ public sealed class CreateCustomerCommandHandler(ICustomerRepository repository,
 {
     public async Task<CustomerMutationResult> HandleAsync(CreateCustomerCommand request, CancellationToken ct)
     {
-        await repository.BeginWriteAsync(ct);
         var identity = await access.GetAsync(ct);
+        if (access.ScopeEnforced && await access.GetScopeAsync(identity, "Create", ct) == 0) return new(403);
+        await repository.BeginWriteAsync(ct);
         var settings = await repository.GetSettingsAsync(ct);
         var model = request.Model;
         if (model.Id == Guid.Empty) model.Id = Guid.NewGuid();

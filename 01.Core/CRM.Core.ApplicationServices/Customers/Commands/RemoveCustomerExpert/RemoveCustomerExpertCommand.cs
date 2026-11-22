@@ -12,10 +12,15 @@ using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Commands.RemoveCustomerExpert;
 
 public sealed record RemoveCustomerExpertCommand(Guid CustomerId, Guid UserId) : ICommand<CustomerMutationResult>;
-public sealed class RemoveCustomerExpertCommandHandler(ICustomerRepository repository) : ICommandHandler<RemoveCustomerExpertCommand, CustomerMutationResult>
+public sealed class RemoveCustomerExpertCommandHandler(ICustomerRepository repository, CustomerAccess access) : ICommandHandler<RemoveCustomerExpertCommand, CustomerMutationResult>
 {
     public async Task<CustomerMutationResult> HandleAsync(RemoveCustomerExpertCommand request, CancellationToken ct)
     {
+        if (access.ScopeEnforced)
+        {
+            var identity = await access.GetAsync(ct);
+            if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+        }
         await repository.RemoveAssignmentAsync(request.CustomerId, request.UserId, ct);
         await repository.SaveChangesAsync(ct);
         return new(200);

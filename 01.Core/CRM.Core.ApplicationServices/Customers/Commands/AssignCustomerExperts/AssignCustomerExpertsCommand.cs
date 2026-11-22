@@ -12,10 +12,15 @@ using CRM.Framework;
 namespace CRM.Core.ApplicationServices.Customers.Commands.AssignCustomerExperts;
 
 public sealed record AssignCustomerExpertsCommand(Guid CustomerId, List<Guid> UserIds) : ICommand<CustomerMutationResult>;
-public sealed class AssignCustomerExpertsCommandHandler(ICustomerRepository repository) : ICommandHandler<AssignCustomerExpertsCommand, CustomerMutationResult>
+public sealed class AssignCustomerExpertsCommandHandler(ICustomerRepository repository, CustomerAccess access) : ICommandHandler<AssignCustomerExpertsCommand, CustomerMutationResult>
 {
     public async Task<CustomerMutationResult> HandleAsync(AssignCustomerExpertsCommand request, CancellationToken ct)
     {
+        if (access.ScopeEnforced)
+        {
+            var identity = await access.GetAsync(ct);
+            if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+        }
         await repository.AddAssignmentsAsync(request.CustomerId, request.UserIds, ct);
         await repository.SaveChangesAsync(ct);
         return new(200);

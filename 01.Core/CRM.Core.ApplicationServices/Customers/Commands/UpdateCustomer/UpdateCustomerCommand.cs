@@ -17,6 +17,8 @@ public sealed class UpdateCustomerCommandHandler(ICustomerRepository repository,
     public async Task<CustomerMutationResult> HandleAsync(UpdateCustomerCommand request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
+        if (request.Model == null || request.Model.Id == Guid.Empty) return new(400);
+        if (!await access.CanAccessAsync(identity, "Edit", request.Model.Id, ct)) return new(403);
         var original = await repository.GetAsync(request.Model.Id, false, false, ct);
         if (original == null) return new(404);
         var model = request.Model;

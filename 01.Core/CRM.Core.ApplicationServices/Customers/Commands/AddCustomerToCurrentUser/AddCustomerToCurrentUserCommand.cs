@@ -17,6 +17,7 @@ public sealed class AddCustomerToCurrentUserCommandHandler(ICustomerRepository r
     public async Task<CustomerMutationResult> HandleAsync(AddCustomerToCurrentUserCommand request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
+        if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
         var customer = await repository.GetAsync(request.Id, false, false, ct);
         if (customer == null) return new(404);
         var userId = Guid.Parse(identity.User.Id);

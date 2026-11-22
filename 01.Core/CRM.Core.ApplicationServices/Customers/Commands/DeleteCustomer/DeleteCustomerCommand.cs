@@ -17,6 +17,7 @@ public sealed class DeleteCustomerCommandHandler(ICustomerRepository repository,
     public async Task<CustomerMutationResult> HandleAsync(DeleteCustomerCommand request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
+        if (!await access.CanAccessAsync(identity, "Delete", request.Id, ct)) return new(403);
         var customer = await repository.GetAsync(request.Id, false, false, ct);
         if (customer == null) return new(404);
         await effects.AuditAsync(customer, null, LogActionEnum.حذف, identity.User, ct);
