@@ -40,6 +40,8 @@
     let userType = userTypeSelect.value;
     let currentUserId = null, userRoleIds = new Set(), userOriginalRoles = new Set();
     let userOverrides = new Map(), userOriginalOverrides = new Map();
+    let userSelectedUsers = new Map(), userOriginalSelectedUsers = new Map();
+    const scopePickers = new Map();
     let userReady = false, userSaving = false, userLoading = false;
     let userTabGeneration = 0, userPageGeneration = 0, userSelectionGeneration = 0, userSearchTimer = null;
     let userProfileSaving = false, userProfileGeneration = 0, userProfileId = null, userProfileStamp = null;
@@ -54,6 +56,8 @@
         lifetime.abort();
         requestGeneration++;
         modelSelect?.destroy();
+        for (const editor of scopePickers.values()) editor.destroy();
+        scopePickers.clear();
         if (typeof cleanupScroll === "function") cleanupScroll();
         if (typeof cleanupRoleListScroll === "function") cleanupRoleListScroll();
         if (typeof cleanupRoleGroupsScroll === "function") cleanupRoleGroupsScroll();
@@ -1048,11 +1052,17 @@
     // User permissions are NOT copied from roles. Effective access is computed from
     // current role memberships + the live role grants, then overridden per user.
     const selectedUser = () => userPageItems.find(x => x.id === currentUserId);
+    const copySelectedUsers = (source) => new Map([...source].map(([id, members]) =>
+        [id, new Map(members)]));
     const userDirty = () =>
         userRoleIds.size !== userOriginalRoles.size ||
         [...userRoleIds].some(id => !userOriginalRoles.has(id)) ||
         userOverrides.size !== userOriginalOverrides.size ||
-        [...userOverrides].some(([id, allowed]) => userOriginalOverrides.get(id) !== allowed);
+        [...userOverrides].some(([id, scope]) => userOriginalOverrides.get(id) !== scope) ||
+        [...userOverrides].some(([id, scope]) => scope === 3 &&
+            (userSelectedUsers.get(id)?.size !== userOriginalSelectedUsers.get(id)?.size ||
+             [...(userSelectedUsers.get(id)?.keys() ?? [])].some(userId =>
+                !userOriginalSelectedUsers.get(id)?.has(userId))));
 
     function effectivePermission(permissionId) {
         const grants = userGrantSources.get(permissionId);
@@ -1064,7 +1074,9 @@
         const scope = custom === undefined ? roleScope : custom;
         const scoped = userCatalog.some(e => e.permissions.some(p =>
             p.id === permissionId && p.supportsScope));
-        const scopeLabel = scope === 1 ? "فقط اطلاعات خود" : "همه اطلاعات";
+        const scopeLabel = scope === 1 ? "فقط اطلاعات خود" :
+            scope === 3 ? "خودم + " + (userSelectedUsers.get(permissionId)?.size ?? 0) +
+                " کاربر انتخابی" : "همه اطلاعات";
         return {
             allowed: scope > 0, scope,
             state: custom === 0 ? "محدودیت اختصاصی" :
@@ -1180,6 +1192,8 @@
     }
 
     function renderUserPermissions() {
+        for (const editor of scopePickers.values()) editor.destroy();
+        scopePickers.clear();
         userPermissions.replaceChildren();
         if (!currentUserId) {
             showEmpty(userPermissions, "یک کاربر را از فهرست انتخاب کنید.", "fa-user-shield");
@@ -1194,6 +1208,7 @@
         const term = root.querySelector("[data-user-permission-search]").value.trim().toLocaleLowerCase();
         const onlyCustom = root.querySelector("[data-user-only-overrides]").checked;
         let shown = 0;
+        const pendingPickers = [];
         for (const entity of userCatalog) {
             const wholeEntity = [entity.title, entity.key].some(x => x.toLocaleLowerCase().includes(term));
             const visible = entity.permissions.filter(permission =>
@@ -1222,18 +1237,35 @@
                 select.setAttribute("aria-label", "وضعیت اختصاصی " + permission.title + " در " + entity.title);
                 select.append(new Option("از نقش‌ها", "inherit"));
                 if (permission.supportsScope) select.append(new Option("اجازه اختصاصی — فقط خود", "own"));
+                if (permission.supportsSelectedUsers)
+                    select.append(new Option("کاربران انتخابی", "selected"));
                 select.append(new Option(permission.supportsScope ?
                     "اجازه اختصاصی — همه" : "اجازه اختصاصی", "allow"),
                     new Option("محدودیت اختصاصی", "deny"));
                 const override = userOverrides.get(permission.id);
                 select.value = override === undefined ? "inherit" :
-                    override === 0 ? "deny" : override === 1 ? "own" : "allow";
+                    override === 0 ? "deny" : override === 1 ? "own" :
+                    override === 3 ? "selected" : "allow";
                 const effective = text("span", null, "ac-user-effective");
                 effective.dataset.userEffective = permission.id;
                 controls.append(select, effective);
                 const sources = text("small", null, "ac-user-sources");
                 sources.dataset.userSources = permission.id;
                 item.append(title, controls, sources);
+                if (override === 3 && permission.supportsSelectedUsers) {
+                    item.classList.add("has-selected-users");
+                    const panel = text("div", null, "ac-selected-users-panel");
+                    panel.append(text("label", "کاربران انتخابی برای " + permission.title, "ac-scope-users-label"));
+                    const selector = document.createElement("select");
+                    selector.multiple = true;
+                    selector.dataset.scopePickerId = permission.id;
+                    selector.setAttribute("aria-label", "جست‌وجو و انتخاب کاربران مجاز");
+                    panel.append(selector, text("small",
+                        "اطلاعات مرتبط با خود کاربر نیز همیشه در این محدوده قرار دارند.",
+                        "ac-scope-users-hint"));
+                    item.append(panel);
+                    pendingPickers.push([permission.id, selector]);
+                }
                 grid.append(item);
             }
             section.append(header, grid);
@@ -1244,7 +1276,60 @@
                 onlyCustom && !userOverrides.size ? "برای این کاربر هنوز دسترسی اختصاصی تعریف نشده است." :
                 "مجوز مطابق فیلتر پیدا نشد.", "fa-key");
         }
+        for (const [permissionId, selector] of pendingPickers)
+            attachScopePicker(permissionId, selector);
         syncUserState();
+    }
+
+    function attachScopePicker(permissionId, element) {
+        if (typeof TomSelect === "undefined") return;
+        const initial = userSelectedUsers.get(permissionId) ?? new Map();
+        const ownerId = currentUserId;
+        const picker = new TomSelect(element, {
+            plugins: ["remove_button"],
+            maxItems: 100,
+            valueField: "id",
+            labelField: "name",
+            searchField: ["name", "userName"],
+            create: false,
+            persist: false,
+            dropdownParent: "body",
+            placeholder: "جست‌وجو و انتخاب کاربر...",
+            shouldLoad: query => query.trim().length >= 2,
+            load: async (query, callback) => {
+                try {
+                    const result = await sendApiRequest({
+                        url: "/AccessCatalogAdmin/ScopeUsers",
+                        params: { search: query.trim() },
+                        showLoading: false, showError: false
+                    });
+                    callback(Array.isArray(result) && currentUserId === ownerId ?
+                        result.filter(x => x.id !== ownerId) : []);
+                } catch {
+                    callback([]);
+                }
+            },
+            render: {
+                option: (data, escape) => '<div class="ac-scope-option"><strong>' +
+                    escape(data.name) + '</strong><small>' + escape(data.userName) + '</small></div>'
+            },
+            onChange: values => {
+                if (!userReady || userSaving || currentUserId !== ownerId) return;
+                const members = new Map();
+                for (const id of values) {
+                    if (id === ownerId) continue;
+                    const data = picker.options[id] ?? initial.get(id);
+                    if (data) members.set(id, { id, name: data.name, userName: data.userName });
+                }
+                userSelectedUsers.set(permissionId, members);
+                syncUserState();
+            }
+        });
+        picker.addOptions([...initial.values()]);
+        picker.setValue([...initial.keys()], true);
+        picker.disable = picker.disable.bind(picker);
+        if (userSaving) picker.disable();
+        scopePickers.set(permissionId, picker);
     }
 
     async function selectUser(userId) {
@@ -1254,6 +1339,8 @@
         userReady = false;
         userRoleIds = new Set();
         userOverrides = new Map();
+        userSelectedUsers = new Map();
+        userOriginalSelectedUsers = new Map();
         userOriginalRoles = new Set();
         userOriginalOverrides = new Map();
         showError("user", "");
@@ -1273,9 +1360,15 @@
         const active = new Set(userCatalog.flatMap(x => x.permissions.map(p => p.id)));
         userRoleIds = new Set(result.roleIds.filter(id => available.has(id)));
         userOverrides = new Map(result.overrides.filter(x => active.has(x.accessPermissionId))
-            .map(x => [x.accessPermissionId, !x.isAllowed ? 0 : x.scope === 1 ? 1 : 2]));
+            .map(x => [x.accessPermissionId, !x.isAllowed ? 0 :
+                x.scope === 1 ? 1 : x.scope === 3 ? 3 : 2]));
+        userSelectedUsers = new Map(result.overrides
+            .filter(x => active.has(x.accessPermissionId) && x.isAllowed && x.scope === 3)
+            .map(x => [x.accessPermissionId,
+                new Map((x.selectedUsers ?? []).map(member => [member.id, member]))]));
         userOriginalRoles = new Set(userRoleIds);
         userOriginalOverrides = new Map(userOverrides);
+        userOriginalSelectedUsers = copySelectedUsers(userSelectedUsers);
         userReady = true;
         renderUserRoles();
         renderUserPermissions();
@@ -1315,6 +1408,8 @@
         else {
             userRoleIds = new Set();
             userOverrides = new Map();
+            userSelectedUsers = new Map();
+            userOriginalSelectedUsers = new Map();
             userOriginalRoles = new Set();
             userOriginalOverrides = new Map();
             renderUserRoles();
@@ -1383,15 +1478,22 @@
     function setUserOverride(id, value) {
         if (!userReady || userSaving) return;
         if (value === "inherit") userOverrides.delete(id);
-        else userOverrides.set(id, value === "deny" ? 0 : value === "own" ? 1 : 2);
-        if (root.querySelector("[data-user-only-overrides]").checked)
-            renderUserPermissions();
-        else
-            syncUserState();
+        else userOverrides.set(id, value === "deny" ? 0 :
+            value === "own" ? 1 : value === "selected" ? 3 : 2);
+        if (value !== "selected") userSelectedUsers.delete(id);
+        else if (!userSelectedUsers.has(id)) userSelectedUsers.set(id, new Map());
+        renderUserPermissions();
     }
 
     async function saveUserAccess() {
         if (userSaving || !userReady || !userDirty() || !currentUserId) return;
+        for (const [id, scope] of userOverrides) {
+            if (scope === 3 && !userSelectedUsers.get(id)?.size) {
+                showError("user", "برای محدوده «کاربران انتخابی» حداقل یک کاربر را انتخاب کنید.");
+                toastifyError("حداقل یک کاربر را انتخاب کنید.");
+                return;
+            }
+        }
         userSaving = true;
         const userId = currentUserId;
         try {
@@ -1400,12 +1502,15 @@
             const result = await post("SaveUserAccess", {
                 userId, roleIds: [...userRoleIds],
                 overrides: [...userOverrides].map(([accessPermissionId, scope]) =>
-                    ({ accessPermissionId, isAllowed: scope > 0, scope: scope || 2 }))
+                    ({ accessPermissionId, isAllowed: scope > 0, scope: scope || 2,
+                        selectedUserIds: scope === 3 ?
+                            [...(userSelectedUsers.get(accessPermissionId)?.keys() ?? [])] : [] }))
             });
             if (signal.aborted || currentUserId !== userId) return;
             if (result?.success) {
                 userOriginalRoles = new Set(userRoleIds);
                 userOriginalOverrides = new Map(userOverrides);
+                userOriginalSelectedUsers = copySelectedUsers(userSelectedUsers);
                 const person = selectedUser();
                 if (person) person.roles = userAvailableRoles.filter(r => userRoleIds.has(r.id)).map(r => r.name);
                 renderUsers();
@@ -1455,11 +1560,13 @@
         else if (action === "reset-user") {
             userRoleIds = new Set(userOriginalRoles);
             userOverrides = new Map(userOriginalOverrides);
+            userSelectedUsers = copySelectedUsers(userOriginalSelectedUsers);
             renderUserRoles();
             renderUserPermissions();
         }
         else if (action === "user-clear-overrides") {
             userOverrides.clear();
+            userSelectedUsers.clear();
             renderUserPermissions();
         }
         else if (action === "reload-roles") {
