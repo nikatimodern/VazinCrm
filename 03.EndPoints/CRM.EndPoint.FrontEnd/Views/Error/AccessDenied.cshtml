@@ -12,17 +12,4 @@
     </div>
     <h1 id="erpAccessDeniedTitle">شما به این بخش دسترسی ندارید</h1>
     <p>برای دسترسی به این بخش، با مدیر سیستم تماس بگیرید.</p>
-    <div class="erp-access-denied__actions">
-        <button type="button" class="erp-access-denied__secondary"
-                onclick="if (history.length > 1) history.back(); else location.assign('/Home/Index');">
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-            بازگشت
-        </button>
-        @if (!User.IsCustomer()) {
-            <a href="@Url.Action("Index", "Home")" class="erp-access-denied__primary">
-                <i class="fas fa-home" aria-hidden="true"></i>
-                داشبورد
-            </a>
-        }
-    </div>
 </section>
