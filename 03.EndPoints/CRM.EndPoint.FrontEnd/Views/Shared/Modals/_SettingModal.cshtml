@@ -10,6 +10,9 @@
             <div class="modal-body">
                 <div class="d-flex flex-column gap-1">
                     @if (User.IsAdmin()) {
+                        <div class="menu-settings-section-title">کاربران و نسخه‌ها</div>
+                    }
+                    @if (User.IsAdmin()) {
                         <a class="buttonGreen-wide" asp-controller="ReleaseNotesAdmin" asp-action="Index">
                             <i class="fa fa-list-alt" aria-hidden="true"></i>
                             مدیریت تغییرات نسخه‌ها
@@ -20,6 +23,9 @@
                             <i class="fa fa-user"></i>
                             کاربران
                         </a>
+                    }
+                    @if (User.IsAdmin() || User.IsTaminAdmin() || User.IsSalesAdmin() || User.IsFinancial()) {
+                        <div class="menu-settings-section-title">اطلاعات پایه</div>
                     }
                     @if (User.IsAdmin() || User.IsTaminAdmin() || User.IsSalesAdmin() || User.IsFinancialAdmin()) {
                         <a class="buttonGreen-wide" asp-controller="BaseItem" asp-action="Index">
@@ -34,6 +40,9 @@
                         </a>
                     }
                     @if (User.IsAdmin()) {
+                        <div class="menu-settings-section-title">تنظیمات سیستم</div>
+                    }
+                    @if (User.IsAdmin()) {
                         <a class="buttonGreen-wide" asp-controller="Asetting" asp-action="Index">
                             <i class="fa fa-cog"></i>
                             تنظیمات پایه
@@ -44,6 +53,9 @@
                             <svg x="0px" y="0px" width="16" height="16" fill="currentColor" viewBox="0 0 48 48"><path d="M20 12.4L5.6 7.59 20 2.45zM43.1 8.99L26.49 14.56 23 13.4 23 2.41zM44.44 11.7L39.9 39.89c-.08.53-.46.98-.97 1.17l-10.94 3.93V17.22L44.44 11.7zM4.25 10.31l20.74 6.91v27.8L9.11 39.79c-.54-.18-.94-.65-1.01-1.22L4.25 10.31zM21.863 28.762l-.025-.077-1.422-2.889-2.543.725 2.007 4.145-2.331-.848-.075-1.191-1.33 2.353 1.68 3.418-.061-1.186 1.785.65c.025.012.05.022.074.031.181.066.343.042.452-.222l1.786-3.013c-.003.004-.007.008-.01.013C22.098 30.259 22.206 29.596 21.863 28.762zM8.92 22.287l.972.947L9.1 24.612c-.099.151-.135.341.08.735l1.99 4.094c.241.675.85 1.597 1.761 2.03l.063.031 2.545.926-.01-3.306-3.889-1.415 1.029-1.802.979.934-1.716-3.454L8.92 22.287zM18.706 25.264l1.325-2.332-.904.249-.992-2.02c-.093-.222-.228-.412-.51-.514-.033-.012-.067-.023-.104-.032l-3.573-1.301c-.018-.008-.036-.015-.052-.021-.037-.014-.068-.023-.09-.031l-.085-.031c-.018-.007-.036-.014-.054-.02-.568-.207-1.227-.216-1.593.269l-.031.049-1.116 1.965 2.756 2.654 1.67-2.705 1.21 2.47-.89.262L18.706 25.264z"></path></svg>
                             سطل زباله
                         </a>
+                    }
+                    @if (User.IsAdmin() || User.IsSalesAdmin()) {
+                        <div class="menu-settings-section-title">ارتباطات</div>
                     }
                     @if (User.IsAdmin() || User.IsSalesAdmin()) {
                         <button class="buttonGreen-wide" onclick="showModalPhonebook()">

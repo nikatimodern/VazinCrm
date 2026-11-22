@@ -431,3 +431,6 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     #mobileDrawerNavbar { padding-bottom:12px; }
     .menu-search-panel { right:6px; width:min(320px, calc(100vw - 24px)); }
 }
+
+.menu-settings-section-title { margin:11px 3px 4px; padding:7px 9px 6px; border-bottom:1px solid #dbeae5; color:#116a60; font:12px IRANSansBold, sans-serif; }
+.menu-settings-section-title:first-child { margin-top:0; }
