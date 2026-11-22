@@ -46,7 +46,7 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
 
     public async Task<bool> HasOwnScopeAssignmentsAsync(Guid permissionId, CancellationToken ct) =>
         await db.AccessRolePermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.Scope == AccessScopes.Own, ct) ||
-        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.IsAllowed && x.Scope == AccessScopes.Own, ct);
+        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.IsAllowed && (x.Scope == AccessScopes.Own || x.Scope == AccessScopes.SelectedUsers), ct);
 
     // Update only active permissions. Disabled permissions retain their historical associations
     // but are not editable/grantable from this screen.
@@ -96,7 +96,48 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
         var overrides = await db.AccessUserPermissions.AsNoTracking()
             .Where(x => x.UserId == userId)
             .Select(x => new AccessUserOverride(x.AccessPermissionId, x.IsAllowed, x.Scope)).ToArrayAsync(ct);
-        return new AccessUserState(userId, roles, overrides);
+        var targets = await db.AccessUserScopeMembers.AsNoTracking().Where(x => x.UserId == userId)
+            .Select(x => new { x.AccessPermissionId, x.TargetUserId }).ToListAsync(ct);
+        var ids = targets.Select(x => x.TargetUserId).Distinct().ToArray();
+        var named = await db.Users.AsNoTracking().Where(x => ids.Contains(x.Id))
+            .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName })
+            .ToDictionaryAsync(x => x.Id,
+                x => new AccessScopeUser(x.Id, ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Trim(),
+                    x.UserName ?? ""), ct);
+        var groups = targets.GroupBy(x => x.AccessPermissionId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.TargetUserId).OrderBy(id => id).ToArray());
+        return new AccessUserState(userId, roles, overrides.Select(x =>
+        {
+            var members = groups.GetValueOrDefault(x.AccessPermissionId) ?? [];
+            return x with { SelectedUserIds = members, SelectedUsers = members.Select(id =>
+                named.GetValueOrDefault(id) ?? new AccessScopeUser(id, id, "")).ToArray() };
+        }).ToArray());
+    }
+
+    public async Task<IReadOnlyList<AccessScopeUser>> SearchScopeUsersAsync(string search, CancellationToken ct)
+    {
+        search = search.Trim();
+        if (search.Length is < 2 or > 100) return [];
+        var like = "%" + search + "%";
+        return await db.Users.AsNoTracking().Where(x => x.IsEmployee && !x.OrganAdmin &&
+                (EF.Functions.Like(x.FirstName, like) || EF.Functions.Like(x.LastName, like) ||
+                 EF.Functions.Like(x.UserName!, like) ||
+                 EF.Functions.Like((x.FirstName ?? "") + " " + (x.LastName ?? ""), like)))
+            .OrderBy(x => x.FirstName).ThenBy(x => x.LastName).ThenBy(x => x.Id)
+            .Select(x => new AccessScopeUser(x.Id, ((x.FirstName ?? "") + " " + (x.LastName ?? "")).Trim(),
+                x.UserName ?? "")).Take(25).ToArrayAsync(ct);
+    }
+
+    public async Task<bool> ValidateScopeUsersAsync(string ownerUserId, IReadOnlyCollection<string> users, CancellationToken ct)
+    {
+        var ids = users.ToArray();
+        if (ids.Length is < 1 or > 100 ||
+            ids.Distinct(StringComparer.Ordinal).Count() != ids.Length ||
+            ids.Any(id => string.IsNullOrWhiteSpace(id) || id.Length > 450 ||
+                          id == ownerUserId || !Guid.TryParse(id, out _)))
+            return false;
+        return await db.Users.AsNoTracking().CountAsync(x => ids.Contains(x.Id) &&
+            x.IsEmployee && !x.OrganAdmin, ct) == ids.Length;
     }
 
     public async Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct) =>
@@ -144,6 +185,19 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             // Only active permission overrides are editable; retain inactive historical overrides.
             var active = activePermissionIds.ToHashSet();
             var requested = overrides.ToDictionary(x => x.AccessPermissionId);
+            var selected = overrides.Where(x => x.IsAllowed && x.Scope == AccessScopes.SelectedUsers)
+                .SelectMany(x => (x.SelectedUserIds ?? []).Select(id =>
+                    (PermissionId: x.AccessPermissionId, TargetUserId: id))).ToHashSet();
+            var links = await db.AccessUserScopeMembers.Where(x => x.UserId == userId &&
+                active.Contains(x.AccessPermissionId)).ToListAsync(ct);
+            var existing = links.Select(x => (PermissionId: x.AccessPermissionId, TargetUserId: x.TargetUserId)).ToHashSet();
+            db.AccessUserScopeMembers.RemoveRange(links.Where(x =>
+                !selected.Contains((x.AccessPermissionId, x.TargetUserId))));
+            foreach (var member in selected.Except(existing))
+                db.AccessUserScopeMembers.Add(new AccessUserScopeMember
+                {
+                    UserId = userId, AccessPermissionId = member.PermissionId, TargetUserId = member.TargetUserId
+                });
             var current = await db.AccessUserPermissions
                 .Where(x => x.UserId == userId && active.Contains(x.AccessPermissionId)).ToListAsync(ct);
             foreach (var item in current)

@@ -11,7 +11,7 @@ public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, stri
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive, bool SupportsScope);
 public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null, string? UserId = null);
-public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title, bool SupportsScope);
+public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title, bool SupportsScope, bool SupportsSelectedUsers);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
 public sealed record RolePermissionsSaveDraft(string RoleId, Guid[]? PermissionIds, AccessRoleGrantDraft[]? Scopes);
 public sealed record AccessRoleDraft(string? RoleId, string? Name, string? ExpectedName);
@@ -166,6 +166,9 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     public Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct) =>
         repository.RoleGrantsAsync(ct);
 
+    public Task<IReadOnlyList<AccessScopeUser>> ScopeUsersAsync(string search, CancellationToken ct) =>
+        repository.SearchScopeUsersAsync(search, ct);
+
     public async Task<AccessCatalogResult> SaveUserAccessAsync(AccessUserSaveDraft? draft, string? actorId, CancellationToken ct)
     {
         if (draft is null || string.IsNullOrWhiteSpace(draft.UserId) || draft.UserId.Length > 450 ||
@@ -186,9 +189,18 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
             return new(400, "یک یا چند دسترسی اختصاصی تکراری یا نامعتبر است.");
         var scopedPermissions = (await repository.ListAsync(ct)).SelectMany(e => e.Permissions)
             .Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
-        if (draft.Overrides.Any(x => !AccessScopes.IsGrant(x.Scope) ||
-             (x.IsAllowed && x.Scope == AccessScopes.Own && !scopedPermissions.Contains(x.AccessPermissionId))))
+        var selectedCapable = (await repository.ListAsync(ct))
+            .Where(e => e.IsActive && e.Key == "Customer")
+            .SelectMany(e => e.Permissions.Where(p => p.IsActive && p.SupportsScope).Select(p => p.Id))
+            .ToHashSet();
+        if (draft.Overrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||
+             (x.IsAllowed && x.Scope != AccessScopes.All && !scopedPermissions.Contains(x.AccessPermissionId)) ||
+             (x.Scope == AccessScopes.SelectedUsers && (!x.IsAllowed || !selectedCapable.Contains(x.AccessPermissionId))) ||
+             (x.Scope != AccessScopes.SelectedUsers && (x.SelectedUserIds?.Length ?? 0) > 0)))
             return new(400, "محدوده اختصاصی برای یک یا چند مجوز معتبر نیست.");
+        foreach (var choice in draft.Overrides.Where(x => x.Scope == AccessScopes.SelectedUsers))
+            if (!await repository.ValidateScopeUsersAsync(draft.UserId, choice.SelectedUserIds ?? [], ct))
+                return new(400, "حداقل یک کاربر معتبر و متفاوت از کاربر فعلی انتخاب کنید.");
 
         // An administrator must not accidentally remove their own Admin role.
         if (string.Equals(draft.UserId, actorId, StringComparison.Ordinal))
@@ -219,7 +231,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         (await repository.ListAsync(ct)).Where(e => e.IsActive).OrderBy(e => e.Title)
             .Select(e => new RoleAccessEntityInfo(e.Id, e.Key, e.Title,
                 e.Permissions.Where(p => p.IsActive).OrderBy(p => p.Title)
-                    .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title, p.SupportsScope))
+                    .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title, p.SupportsScope,
+                        p.SupportsScope && e.Key == "Customer"))
                     .ToArray())).ToArray();
 
     public async Task<IReadOnlyList<AccessRoleGrant>?> RolePermissionsAsync(string roleId, CancellationToken ct)

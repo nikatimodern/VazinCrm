@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 namespace CRM.Core.Domain.AccessCatalog.Entities;
 
 /// <summary>Explicit delegated owners for one user and permission; self is implicit.</summary>

@@ -96,6 +96,11 @@ public sealed class AccessCatalogAdminController(
     public async Task<IActionResult> RoleGrants(CancellationToken ct) =>
         Json(await administration.RoleGrantsAsync(ct));
 
+    [HttpGet]
+    public async Task<IActionResult> ScopeUsers(string? search, CancellationToken ct) =>
+        Json(string.IsNullOrWhiteSpace(search) ? Array.Empty<AccessScopeUser>() :
+             await administration.ScopeUsersAsync(search, ct));
+
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
     public async Task<IActionResult> SaveUserAccess([FromBody] AccessUserSaveDraft draft, CancellationToken ct) =>
         await Recorded("SaveUserAccess", () => administration.SaveUserAccessAsync(draft, User.FindFirstValue(ClaimTypes.NameIdentifier), ct), ct);
