@@ -29,23 +29,9 @@
         return { snapshot: PageDom.snapshot(root), scripts, styles: doc.querySelector("template[data-page-styles]")?.content, title: doc.title };
     }
     function menu(url) {
-        document.querySelectorAll(".menu-item.active-menu,.menu-item.active-ancestor,.menu-item.menu-click-orbit").forEach(item => {
-            item.classList.remove("active-menu", "active-ancestor", "menu-click-orbit");
-            item.removeAttribute("aria-current");
-        });
-        document.querySelectorAll(".menu-item[href]").forEach(item => {
-            if (normalize(new URL(item.href)) !== normalize(url)) return;
-            item.classList.add("active-menu", "menu-click-orbit");
-            item.setAttribute("aria-current", "page");
-            let group = item.closest(".has-submenu");
-            while (group) {
-                group.classList.add("open");
-                const toggle = group.querySelector(":scope > .submenu-toggle");
-                toggle?.classList.add("active-ancestor");
-                toggle?.setAttribute("aria-expanded", "true");
-                group = group.parentElement?.closest(".has-submenu");
-            }
-        });
+        // The sidebar is a persistent shell. Never reload it or open groups
+        // just because page content changed via Virtual DOM.
+        window.erpMenu?.highlight(url);
     }
     function styles(fragment) {
         pageStyles.forEach(element => element.remove());
