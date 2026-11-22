@@ -363,7 +363,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 return (x.MapType, pair.Source, x.EntityId);
             }).Any(x => x.Count() > 1);
             if (repeatedSources)
-                throw new ArgumentException("برای هر رکورد CRM فقط یک معادل انتخاب کنید.");
+                throw new ArgumentException("برای هر رکورد ERP فقط یک معادل انتخاب کنید.");
 
             var hasCustomer = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.مشتری);
             var hasOther = request.Items.Any(x => x.MapType == ExternalMappingTypeEnum.پیش_فاکتور
@@ -417,7 +417,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     return (x.MapType, pair.Target, int.Parse(x.ExEntityId.Trim()));
                 }).Any(x => x.Count() > 1);
                 if (duplicatesInRequest)
-                    throw new ArgumentException("چند رکورد CRM نمی‌توانند به یک معادل خارجی متصل شوند.");
+                    throw new ArgumentException("چند رکورد ERP نمی‌توانند به یک معادل خارجی متصل شوند.");
 
                 var confirmedCustomerMappings = existing
                     .Where(x => x.MapType == ExternalMappingTypeEnum.مشتری
@@ -441,7 +441,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         && x.MapType == item.MapType
                         && x.ExEntityName == externalName
                         && x.ExEntityId == targetId.ToString()))
-                        throw new MappingConflictException($"معادل خارجی شماره {targetId} قبلاً به رکورد CRM دیگری وصل شده است.");
+                        throw new MappingConflictException($"معادل خارجی شماره {targetId} قبلاً به رکورد ERP دیگری وصل شده است.");
 
                     // Do not invalidate downstream documents by changing an existing
                     // customer/quotation relation that those documents still rely on.
@@ -489,7 +489,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     {
                         if (!await db.BankAccounts.AsNoTracking().AnyAsync(x => x.Id == item.EntityId && !x.IsDeleted && x.Active, ct)
                             || !await BankMappingTargetExistsAsync(targetDb, targetId, ct))
-                            throw new ArgumentException("حساب بانکی فعال CRM یا حساب ریالی سپیدار معتبر نیست.");
+                            throw new ArgumentException("حساب بانکی فعال ERP یا حساب ریالی سپیدار معتبر نیست.");
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.واریزی)
                     {
@@ -503,7 +503,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     else if (item.MapType == ExternalMappingTypeEnum.مشتری)
                     {
                         if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
-                            throw new ArgumentException("مشتری انتخاب‌شده در CRM یافت نشد.");
+                            throw new ArgumentException("مشتری انتخاب‌شده در ERP یافت نشد.");
                         if (!await targetDb.Parties.AsNoTracking()
                                 .AnyAsync(x => x.PartyId == targetId && x.IsCustomer, ct))
                             throw new ArgumentException($"مشتری با شناسه {targetId} در نرم‌افزار مقصد معتبر نیست.");
@@ -511,7 +511,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     else if (item.MapType == ExternalMappingTypeEnum.تامین_کننده)
                     {
                         if (!await db.Customers.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
-                            throw new ArgumentException("تأمین‌کننده انتخاب‌شده در CRM یافت نشد.");
+                            throw new ArgumentException("تأمین‌کننده انتخاب‌شده در ERP یافت نشد.");
                         if (!await targetDb.Parties.AsNoTracking()
                                 .AnyAsync(x => x.PartyId == targetId && x.IsVendor && x.Dl != null, ct))
                             throw new ArgumentException("تأمین‌کننده معتبر در نرم‌افزار مقصد پیدا نشد.");
@@ -519,7 +519,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     else if (item.MapType is ExternalMappingTypeEnum.فاکتور_خرید or ExternalMappingTypeEnum.رسید_انبار)
                     {
                         if (!await db.SupplyFactors.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
-                            throw new ArgumentException("فاکتور تأمین انتخاب‌شده در CRM یافت نشد.");
+                            throw new ArgumentException("فاکتور تأمین انتخاب‌شده در ERP یافت نشد.");
 
                         if (item.MapType == ExternalMappingTypeEnum.رسید_انبار)
                         {
@@ -556,18 +556,18 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     {
                         if (!await userManager.Users.AsNoTracking().AnyAsync(x =>
                                 x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
-                            throw new ArgumentException("کارمند انتخاب‌شده در CRM پیدا نشد.");
+                            throw new ArgumentException("کارمند انتخاب‌شده در ERP پیدا نشد.");
                         // An expert mapping only requires a valid Party. Being a broker
                         // is a separate, invoice-specific eligibility requirement.
                         if (!await targetDb.Parties.AsNoTracking().AnyAsync(x =>
                                 x.PartyId == targetId, ct))
-                            throw new ArgumentException("شخص متناظر با کارشناس CRM در نرم‌افزار مالی پیدا نشد.");
+                            throw new ArgumentException("شخص متناظر با کارشناس ERP در نرم‌افزار مالی پیدا نشد.");
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.کاربران)
                     {
                         if (!await userManager.Users.AsNoTracking()
                                 .AnyAsync(x => x.Id == item.EntityId.ToString() && x.IsEmployee, ct))
-                            throw new ArgumentException("کارمند انتخاب‌شده در CRM پیدا نشد.");
+                            throw new ArgumentException("کارمند انتخاب‌شده در ERP پیدا نشد.");
                         if (!await targetDb.SepidarUsers.AsNoTracking()
                                 .AnyAsync(x => x.UserID == targetId && !x.IsDeleted && x.Status == true, ct))
                             throw new ArgumentException("کاربر انتخاب‌شده در نرم‌افزار مقصد پیدا نشد یا حذف شده است.");
@@ -575,14 +575,14 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     else if (item.MapType == ExternalMappingTypeEnum.مرکز_هزینه)
                     {
                         if (!await db.BaseCenterCashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
-                            throw new ArgumentException("مرکز هزینه انتخاب‌شده در CRM پیدا نشد.");
+                            throw new ArgumentException("مرکز هزینه انتخاب‌شده در ERP پیدا نشد.");
                         if (!await targetDb.DLs.AsNoTracking().AnyAsync(x => x.DLId == targetId && x.IsActive, ct))
                             throw new ArgumentException("حساب تفصیلی انتخاب‌شده در نرم‌افزار مالی فعال نیست.");
                     }
                     else if (item.MapType == ExternalMappingTypeEnum.تنخواه)
                     {
                         if (!await db.Cashes.AsNoTracking().AnyAsync(x => x.Id == item.EntityId, ct))
-                            throw new ArgumentException("تنخواه انتخاب‌شده در CRM پیدا نشد.");
+                            throw new ArgumentException("تنخواه انتخاب‌شده در ERP پیدا نشد.");
                         var exists = externalName == nameof(Voucher)
                             ? await targetDb.Vouchers.AsNoTracking().AnyAsync(x => x.VoucherId == targetId, ct)
                             : await targetDb.PaymentHeaders.AsNoTracking()
@@ -600,7 +600,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 .Select(x => new { x.CustomerId, x.Date, x.DateMiladi })
                                 .SingleOrDefaultAsync(ct);
                             if (pf == null || !pf.CustomerId.HasValue)
-                                throw new ArgumentException("پیش‌فاکتور CRM مشتری مشخصی ندارد.");
+                                throw new ArgumentException("پیش‌فاکتور ERP مشتری مشخصی ندارد.");
                             customerId = pf.CustomerId;
                             var external = await targetDb.Quotations.AsNoTracking()
                                 .Where(x => x.QuotationId == targetId)
@@ -610,7 +610,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 throw new ArgumentException($"پیش‌فاکتور با شناسه {targetId} در نرم‌افزار مقصد پیدا نشد.");
                             if (!await HasSameExternalFiscalYearAsync(targetDb, external.FiscalYearRef,
                                     pf.Date, pf.DateMiladi, ct))
-                                throw new ArgumentException("سال مالی پیش‌فاکتور CRM و نرم‌افزار انتخاب‌شده یکسان نیست.");
+                                throw new ArgumentException("سال مالی پیش‌فاکتور ERP و نرم‌افزار انتخاب‌شده یکسان نیست.");
                             partyId = external.CustomerPartyRef;
                         }
                         else
@@ -643,7 +643,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 throw new ArgumentException($"فاکتور با شناسه {targetId} در نرم‌افزار مقصد پیدا نشد.");
                             if (!await HasSameExternalFiscalYearAsync(targetDb, external.FiscalYearRef,
                                     factor.Date, factor.DateMiladi, ct))
-                                throw new ArgumentException("سال مالی فاکتور CRM و نرم‌افزار انتخاب‌شده یکسان نیست.");
+                                throw new ArgumentException("سال مالی فاکتور ERP و نرم‌افزار انتخاب‌شده یکسان نیست.");
                             partyId = external.CustomerPartyRef;
 
                             var crmQuotationMapping = existing.FirstOrDefault(x =>
@@ -651,7 +651,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 && x.EntityId == factor.PfactorID);
                             if (crmQuotationMapping != null
                                 && crmQuotationMapping.ExEntityId != external.QuotationRef?.ToString())
-                                throw new ArgumentException("پیش‌فاکتور مرتبط با فاکتور سپیدار، با ارتباط ثبت‌شده در CRM هم‌خوان نیست.");
+                                throw new ArgumentException("پیش‌فاکتور مرتبط با فاکتور سپیدار، با ارتباط ثبت‌شده در ERP هم‌خوان نیست.");
                         }
 
                         if (!confirmedCustomerMappings.TryGetValue(customerId.Value, out var customerMaps)

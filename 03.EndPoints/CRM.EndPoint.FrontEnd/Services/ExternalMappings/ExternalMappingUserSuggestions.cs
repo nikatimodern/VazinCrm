@@ -80,7 +80,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 var target = status == "pending" ? free[0] : (int?)null;
                 result.Add(new MappingReportEntry(
                     $"user-expert-{id}", "AppUser", id, status, reason,
-                    status == "pending" ? "نام کارشناس CRM و شخص متناظر در نرم‌افزار مالی یکسان است."
+                    status == "pending" ? "نام کارشناس ERP و شخص متناظر در نرم‌افزار مالی یکسان است."
                         : status == "blocked" ? "اشخاص هم‌نام قبلاً به کاربران دیگری متصل شده‌اند."
                         : status == "ambiguous" ? "چند شخص هم‌نام وجود دارد؛ معادل درست کارشناس را انتخاب کنید."
                         : "شخص هم‌نام قطعی پیدا نشد؛ می‌توانید ارتباط کارشناس را دستی ثبت کنید.",

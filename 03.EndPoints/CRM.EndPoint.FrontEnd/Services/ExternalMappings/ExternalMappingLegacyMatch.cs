@@ -211,7 +211,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 .Select(x => x.Id)
                 .ToListAsync(ct);
             if (configuredSoftwareIds.Count == 0)
-                throw new ArgumentException("نرم‌افزار انتخاب‌شده در CRM ثبت نشده است.");
+                throw new ArgumentException("نرم‌افزار انتخاب‌شده در ERP ثبت نشده است.");
 
             readStage = "Sepidar.FMK.FiscalYear";
             var financialYears = await sepidar.FiscalYears.AsNoTracking()
@@ -304,7 +304,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         AddIssue(mapping.EntityName, mapping.EntityId,
                             documents.First(x => x.EntityId == mapping.EntityId).SerialNumber.ToString(),
                             "Ambiguous", "DuplicateProposedTarget",
-                            $"سپیدار: {mapping.ExEntityName} ID={mapping.ExEntityId}، تعداد اسناد متعارض CRM={documents.Count}");
+                            $"سپیدار: {mapping.ExEntityName} ID={mapping.ExEntityId}، تعداد اسناد متعارض ERP={documents.Count}");
                 }
 
                 var duplicateIds = duplicateGroups
@@ -381,16 +381,16 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             if (!fiscalYears.TryGetValue(q.FiscalYearRef, out var fiscalYear))
                                 differences.Add($"سال مالی سپیدار با Ref={q.FiscalYearRef} شناخته نشده");
                             else if (!IsInLegacyFiscalYear(pf.Date, pf.DateMiladi, fiscalYear))
-                                differences.Add($"سال مالی متفاوت: CRM={pf.Date}, Sepidar={fiscalYear.Year}");
+                                differences.Add($"سال مالی متفاوت: ERP={pf.Date}, Sepidar={fiscalYear.Year}");
 
                             if (q.Price != pf.SumTotalAmount)
-                                differences.Add($"مبلغ ناخالص: CRM={pf.SumTotalAmount}, Sepidar={q.Price}");
+                                differences.Add($"مبلغ ناخالص: ERP={pf.SumTotalAmount}, Sepidar={q.Price}");
                             if (q.NetPrice != pf.PaymentAmount)
-                                differences.Add($"مبلغ نهایی: CRM={pf.PaymentAmount}, Sepidar={q.NetPrice}");
+                                differences.Add($"مبلغ نهایی: ERP={pf.PaymentAmount}, Sepidar={q.NetPrice}");
                             if (pf.CustomerId.HasValue
                                 && financialCustomerIds.TryGetValue(pf.CustomerId.Value, out var partyId)
                                 && q.CustomerPartyRef != partyId)
-                                differences.Add($"مشتری: CRM SepidarPartyId={partyId}, Sepidar={q.CustomerPartyRef}");
+                                differences.Add($"مشتری: ERP SepidarPartyId={partyId}, Sepidar={q.CustomerPartyRef}");
 
                             return new { q.Id, Differences = differences };
                         }).ToList();
@@ -531,7 +531,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 : "InvoiceForQuotationNotFound";
                             AddIssue(nameof(Factor), factor.Id, crmNumber,
                                 "NotMatched", reason,
-                                $"CRM PrefactorId={factor.PfactorId}, SepidarId={factor.SepidarId}, QuotationId={quotationId}");
+                                $"ERP PrefactorId={factor.PfactorId}, SepidarId={factor.SepidarId}, QuotationId={quotationId}");
                         }
                         else
                         {
@@ -540,21 +540,21 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 if (!fiscalYears.TryGetValue(invoice.FiscalYearRef, out var fiscalYear))
                                     differences.Add($"سال مالی سپیدار Ref={invoice.FiscalYearRef} ناشناخته");
                                 else if (!IsInLegacyFiscalYear(factor.Date, factor.DateMiladi, fiscalYear))
-                                    differences.Add($"سال مالی: CRM={factor.Date}, Sepidar={fiscalYear.Year}");
+                                    differences.Add($"سال مالی: ERP={factor.Date}, Sepidar={fiscalYear.Year}");
 
                                 if (invoice.NetPrice != factor.PaymentAmount)
-                                    differences.Add($"مبلغ نهایی: CRM={factor.PaymentAmount}, Sepidar={invoice.NetPrice}");
+                                    differences.Add($"مبلغ نهایی: ERP={factor.PaymentAmount}, Sepidar={invoice.NetPrice}");
                                 if (quotationId > 0 && invoice.QuotationRef != quotationId)
                                     differences.Add($"QuotationRef: expected={quotationId}, actual={invoice.QuotationRef}");
                                 if (targetSoftwareId == Sepidar1SoftwareId
                                     && !string.IsNullOrWhiteSpace(factor.SnFinancial)
                                     && (!int.TryParse(factor.SnFinancial, out var number)
                                         || invoice.Number != number))
-                                    differences.Add($"شماره مالی: CRM={factor.SnFinancial}, Sepidar={invoice.Number}");
+                                    differences.Add($"شماره مالی: ERP={factor.SnFinancial}, Sepidar={invoice.Number}");
                                 if (factor.CustomerId.HasValue
                                     && financialCustomerIds.TryGetValue(factor.CustomerId.Value, out var partyId)
                                     && invoice.CustomerPartyRef != partyId)
-                                    differences.Add($"مشتری: CRM SepidarPartyId={partyId}, Sepidar={invoice.CustomerPartyRef}");
+                                    differences.Add($"مشتری: ERP SepidarPartyId={partyId}, Sepidar={invoice.CustomerPartyRef}");
 
                                 return new { invoice.Id, Differences = differences };
                             }).ToList();
@@ -784,7 +784,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         customerConflicts.Add(new LegacyCustomerConflict(
                             customerId, customer.CompanyName, "ExistingDuplicateCustomerParty",
                             new List<int> { duplicatedParty.Key },
-                            duplicatedParty.Select(x => $"CRM CustomerId={x.Key}").Distinct().ToList()));
+                            duplicatedParty.Select(x => $"ERP CustomerId={x.Key}").Distinct().ToList()));
                     }
                 }
 
@@ -805,7 +805,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                             customerCandidates.Where(x => x.SepidarPartyId == candidate.SepidarPartyId)
                                 .Select(x => {
                                     var name = customersById.GetValueOrDefault(x.CustomerId)?.CompanyName ?? "-";
-                                    return $"مشتری CRM: {name} | CustomerId={x.CustomerId} | {x.SourceDocument}";
+                                    return $"مشتری ERP: {name} | CustomerId={x.CustomerId} | {x.SourceDocument}";
                                 }).ToList()));
                         continue;
                     }
@@ -876,7 +876,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                         blockedIds.Add(document.Id);
                         AddIssue(document.EntityName, document.EntityId, crmNumber,
                             "BlockedByCustomer", "DocumentCustomerMissing",
-                            $"مشتری CRM این سند مشخص نیست یا در جدول Customers وجود ندارد. | {document.ExEntityName} ID={document.ExEntityId}");
+                            $"مشتری ERP این سند مشخص نیست یا در جدول Customers وجود ندارد. | {document.ExEntityName} ID={document.ExEntityId}");
                         continue;
                     }
 

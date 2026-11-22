@@ -107,7 +107,7 @@ public sealed partial class ExternalMappingService
             var bankMaps = existing.Where(x => x.MapType == ExternalMappingTypeEnum.حساب_بانکی &&
                 x.EntityId == source.BankAccountId && x.ExEntityName == "BankAccount").ToArray();
             if (bankMaps.Length > 0 && (bankMaps.Length != 1 || bankMaps[0].ExEntityId != rows[0].BankAccountRef.Value.ToString()))
-                throw new MappingConflictException("حساب بانکی رسید با ارتباط ثبت‌شده حساب CRM یکسان نیست.");
+                throw new MappingConflictException("حساب بانکی رسید با ارتباط ثبت‌شده حساب ERP یکسان نیست.");
         }
     }
 
@@ -149,11 +149,11 @@ public sealed partial class ExternalMappingService
         foreach (var batch in entries.Where(x => x.Kind == nameof(Accountancy)).Select(x => x.EntityId).Distinct().Chunk(350))
         {
             var rows = await db.Accountancies.AsNoTracking().Where(x => batch.Contains(x.Id))
-                .Select(x => new { x.Id, x.CustomerName, x.credit, x.PayType, x.PayTypeTxt, x.ReciveDateM, x.VosolDateM,
+                .Select(x => new { x.Id, x.SerialNum, x.CustomerName, x.credit, x.PayType, x.PayTypeTxt, x.ReciveDateM, x.VosolDateM,
                     x.date, x.CreateDate, x.BankAccountTxt, x.CustomerCode }).ToListAsync(ct);
             foreach (var x in rows)
-                sides[(nameof(Accountancy), x.Id)] = new MappingReportSide("واریزی CRM", x.Id.ToString(),
-                    x.PayTypeTxt ?? x.PayType.ToString(), FormatLegacyPersianDate(
+                sides[(nameof(Accountancy), x.Id)] = new MappingReportSide("واریزی ERP", x.Id.ToString(),
+                    $"{x.SerialNum} ({(string.IsNullOrWhiteSpace(x.PayTypeTxt) ? x.PayType.ToString() : x.PayTypeTxt)})", FormatLegacyPersianDate(
                         (x.PayType == PayTypeEnum.چکی ? x.ReciveDateM : x.VosolDateM ?? x.date) ?? x.CreateDate),
                     x.credit, TextService.NormalizePersianText(x.CustomerName ?? ""),
                     string.IsNullOrWhiteSpace(x.BankAccountTxt) ? "" : "حساب: " + x.BankAccountTxt);
@@ -163,7 +163,7 @@ public sealed partial class ExternalMappingService
             var rows = await db.BankAccounts.AsNoTracking().Where(x => batch.Contains(x.Id))
                 .Select(x => new { x.Id, x.AccountName, x.AccountNumber, x.BankName, x.ShebaNumber, x.Active }).ToListAsync(ct);
             foreach (var x in rows)
-                sides[(nameof(BankAccount), x.Id)] = new MappingReportSide("حساب بانکی CRM", x.Id.ToString(),
+                sides[(nameof(BankAccount), x.Id)] = new MappingReportSide("حساب بانکی ERP", x.Id.ToString(),
                     x.AccountNumber ?? "", "", null, TextService.NormalizePersianText($"{x.BankName} | {x.AccountName}"),
                     "شبا: " + (x.ShebaNumber ?? "ثبت نشده") + (x.Active ? "" : " | غیرفعال"));
         }
@@ -213,7 +213,7 @@ public sealed partial class ExternalMappingService
             .Where(x => x.AccType == AcEnum.واریزی && ((x.CustomerName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
                 || (x.BankAccountTxt ?? "").Contains(search) || (x.dateSh ?? "").Contains(search)
                 || (x.ReciveDate ?? "").Contains(search) || (x.VosolDate ?? "").Contains(search)
-                || (hasAmount && x.credit == amount) || (isNumber && x.CustomerCode == number)))
+                || (hasAmount && x.credit == amount) || (isNumber && (x.CustomerCode == number || x.SerialNum == number))))
             .Select(x => x.Id).Take(500).ToListAsync(ct));
         matched.UnionWith(await db.BankAccounts.AsNoTracking()
             .Where(x => (x.AccountNumber ?? "").Contains(search) || (x.ShebaNumber ?? "").Contains(search)

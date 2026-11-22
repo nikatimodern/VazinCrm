@@ -43,7 +43,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 type == ExternalMappingTypeEnum.تنخواه && target == "Voucher" ||
                 type == ExternalMappingTypeEnum.واریزی && target == "DebitCreditNote";
             if (!sourceValid || !targetValid)
-                throw new ArgumentException("نوع رکورد CRM یا معادل انتخاب‌شده با نوع ارتباط سازگار نیست.");
+                throw new ArgumentException("نوع رکورد ERP یا معادل انتخاب‌شده با نوع ارتباط سازگار نیست.");
             return (source, target);
         }
 
@@ -89,14 +89,15 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                                 || (x.CustomerName ?? "").Replace("ي", "ی").Replace("ى", "ی").Replace("ك", "ک").Contains(search)
                                 || (x.dateSh ?? "").Contains(search) || (x.ReciveDate ?? "").Contains(search)
                                 || (x.VosolDate ?? "").Contains(search)
-                                || (number > 0 && (x.CustomerCode == number || x.pfSerialNumber == number || x.fSerialNumber == number))
+                                || (number > 0 && (x.SerialNum == number || x.CustomerCode == number || x.pfSerialNumber == number || x.fSerialNumber == number))
                                 || (hasAmount && x.credit == amount))
                             .OrderByDescending(x => x.CreateDate)
-                            .Select(x => new { x.Id, x.CustomerName, x.credit, x.PayTypeTxt, x.dateSh, x.ReciveDate, x.VosolDate, x.PayType })
+                            .Select(x => new { x.Id, x.SerialNum, x.CustomerName, x.credit, x.PayTypeTxt, x.dateSh, x.ReciveDate, x.VosolDate, x.PayType })
                             .Take(size).ToListAsync(ct);
                         return new { options = rows.Select(x => new { id = x.Id.ToString(),
-                            title = FormatManualOption(x.PayType == PayTypeEnum.چکی ? x.ReciveDate : x.VosolDate ?? x.dateSh,
-                                $"{x.CustomerName} | {x.PayTypeTxt} | {x.credit:N0} ریال"), detail = "" }) };
+                            title = FormatManualOption(
+                                $"{x.SerialNum} ({(string.IsNullOrWhiteSpace(x.PayTypeTxt) ? x.PayType.ToString() : x.PayTypeTxt)})",
+                                $"{x.CustomerName} | {(x.PayType == PayTypeEnum.چکی ? x.ReciveDate : x.VosolDate ?? x.dateSh)} | {x.credit:N0} ریال"), detail = "" }) };
                     }
                     case nameof(BankAccount):
                     {
