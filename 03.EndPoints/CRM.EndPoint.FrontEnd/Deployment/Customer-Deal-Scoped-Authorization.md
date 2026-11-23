@@ -9,7 +9,7 @@
    Back up the database, review role scopes and personal deny overrides, and
    create an AccessCatalog restore point before the SQL run. Direct SQL does not
    create application history automatically.
-3. Confirm the **Customer** and **Deal** entities, all 16 permissions, and
+3. Confirm the **Customer** and **Deal** entities, all 15 permissions, and
    role/user grants in AccessCatalogAdmin.
 4. Enable the policies **only on staging**:
    ```json
@@ -33,7 +33,6 @@
 | Customer.Approve | Approve person; no longer piggybacks on Edit All |
 | Customer.ManageExperts | Assign/remove person-expert relationships; unrestricted grant required |
 | Customer.AssignSelf | Claim a person; requires unrestricted View to prevent a scope bypass |
-| Customer.Normalize | Rebuild search fields, also restricted to senior admin |
 | Deal.View | Index, GetAllDeals, GetAllDealsDt, GetDeal, overdue lists/details |
 | Deal.Create | AddDeal for new deals |
 | Deal.Edit | AddDeal for existing deals; restores privileged fields from persisted record |
@@ -42,6 +41,18 @@
 | Deal.Assign | AssignUserSuspendDeal (plus Customer.ManageExperts if it changes UserCustomers) |
 | Deal.ApproveFinancial | ToggleFinancialStatusDeal |
 | Deal.ManageFollowUp | OverdueDeal.UpdateFollowUp and per-record follow-up control |
+
+The POST action `Customer/NormalizeAllCustomers` rebuilds search-normalization
+fields for persons. It is available to **any authenticated user** and has no
+`Customer.Normalize` permission or Identity role gate. It is a database-wide
+maintenance operation, not a permission in the AccessCatalog.
+
+The migration `20261123153000_RemoveCustomerNormalizePermission` removes the
+obsolete permission and its role/user grants from existing UserContextDb
+databases. Older copies of `AccLevel_Customer_Deal_Permissions_Backfill.sql`
+that still insert `Customer.Normalize` must not be run again without removing
+that permission from their seed data, or they will recreate it. Historical
+AccessCatalog restore points may also contain the retired permission.
 
 ## Ownership semantics
 
