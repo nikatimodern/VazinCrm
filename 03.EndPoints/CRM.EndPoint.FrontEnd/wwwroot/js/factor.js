@@ -684,6 +684,7 @@ let currentFactorContext = {
 };
 
 const GetFactorPartial = async ({ id, element, serialNumber, passType = 0, showLoading = true, customerId = null } = {}) => {
+    if (document.getElementById("cartableWorkspace")?.dataset.factorView === "false" || window.AccessLive?.can("Factor", "View") === false) return;
     if (passType === 4) {
         return await showModalDealFactors(currentDealDocumentData);
     }
