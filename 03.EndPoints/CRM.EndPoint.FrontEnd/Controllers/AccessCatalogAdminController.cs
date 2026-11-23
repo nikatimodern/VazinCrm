@@ -121,9 +121,22 @@ public sealed class AccessCatalogAdminController(
     public async Task<IActionResult> DeleteEntity(Guid id, CancellationToken ct) =>
         await Recorded("DeleteEntity", () => administration.DeleteEntityAsync(id, ct), ct);
 
-    [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeletePermission(Guid id, CancellationToken ct) =>
-        await Recorded("DeletePermission", () => administration.DeletePermissionAsync(id, ct), ct);
+    [HttpGet]
+    public async Task<IActionResult> PermissionRemovalPreview(Guid id, CancellationToken ct)
+    {
+        var preview = await administration.PermissionRemovalPreviewAsync(id, ct);
+        return preview is null ? NotFound(new { message = "دسترسی پیدا نشد." }) : Json(preview);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(8192)]
+    public async Task<IActionResult> DeletePermission(Guid id,
+        [FromBody] PermissionRemovalDraft? confirmation, CancellationToken ct)
+    {
+        if (confirmation is null || !confirmation.ConfirmRemoval)
+            return BadRequest(new { success = false, message = "تأیید حذف ضروری است." });
+        return await Recorded("DeletePermission",
+            () => administration.DeletePermissionAsync(id, confirmation, ct), ct);
+    }
 
     [HttpGet]
     public async Task<IActionResult> History(int page = 1, string? kind = null,
