@@ -371,6 +371,7 @@ async function setupSelectOptions() {
 }
 
 async function submitSupplyFactorModal() {
+    if (window.AccessLive?.can("SupplyFactor", supplyFactorData.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت فاکتور تأمین را ندارید."); return; }
     const activeItems = supplyFactorData.items.filter(item => !item.isDeleted);
     if (!activeItems.length) {
         document.getElementById("supplyFactorItemId").classList.add("AlertReq");
