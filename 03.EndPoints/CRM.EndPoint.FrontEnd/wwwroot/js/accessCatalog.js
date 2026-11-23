@@ -354,9 +354,10 @@
                 if (!preview || signal.aborted || preview.id !== id) return;
                 const dependencyCount = preview.roleCount + preview.userCount + preview.selectedMemberCount;
                 const warning = dependencyCount
-                    ? "این مجوز به " + preview.roleCount + " نقش و " + preview.userCount +
-                      " کاربر تخصیص داده شده و " + preview.selectedMemberCount +
-                      " ارتباط کاربر در محدوده‌های انتخابی دارد. با تأیید، تمام این تخصیص‌ها و خود مجوز حذف می‌شوند."
+                    ? "این مجوز به " + preview.roleCount + " نقش، " + preview.userCount +
+                      " کاربر به‌صورت اختصاصی و " + preview.selectedMemberCount +
+                      " مورد در محدوده کاربران انتخابی مرتبط است. با تأیید، خود مجوز و همه این تخصیص‌ها حذف می‌شوند؛ " +
+                      "کاربران عضو نقش‌های مرتبط نیز این مجوز را از دست می‌دهند."
                     : "این مجوز تخصیص فعالی ندارد و حذف خواهد شد.";
                 const allowed = await confirmAlert({
                     title: "حذف دسترسی «" + preview.title + "»",
