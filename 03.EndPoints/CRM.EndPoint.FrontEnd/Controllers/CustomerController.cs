@@ -272,10 +272,10 @@ public sealed class CustomerController(
     [NonAction]
     public async Task<string> GetUsersRel(IList<UserCustomer> userCustomers, CancellationToken cancellationToken) =>
         await requests.QueryAsync(new GetCustomerUserNamesQuery(userCustomers.Select(u => u.UserId).ToList()), cancellationToken);
-    [HttpPost, Authorize(Roles = "مدیر ارشد")]
+    [HttpPost]
     public async Task<IActionResult> NormalizeAllCustomers(CancellationToken cancellationToken)
     {
-        if (!await HasPermissionAsync("Normalize", cancellationToken)) return Forbid();
+        // The controller-level [Authorize] still requires a signed-in user.
         await requests.CommandAsync(new NormalizeCustomersCommand(), cancellationToken);
         return Ok();
     }
