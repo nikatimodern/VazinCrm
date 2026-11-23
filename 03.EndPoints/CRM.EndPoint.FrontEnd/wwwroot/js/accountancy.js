@@ -604,6 +604,7 @@ async function checkEtebariWarning() {
 
 
 const submitInvoice = async () => {
+    if (window.AccessLive?.can("Accountancy", isEditInvoiceModal ? "edit" : "create") === false) { toastifyError("مجوز ثبت واریزی را ندارید."); return; }
     if (!await mySer.CheckValidForm("PayFactorFormId")) return;
     
     const accData = mySer.convertFormToJSON("PayFactorFormId");
