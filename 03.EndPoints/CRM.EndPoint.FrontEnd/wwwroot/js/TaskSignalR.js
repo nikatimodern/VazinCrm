@@ -8,6 +8,13 @@ const connection = new signalR.HubConnectionBuilder()
 
 connection.onreconnected(connectionId => {
     window.signalRConnectionId = connectionId;
+    // Changes could have happened while this tab was disconnected.
+    window.dispatchEvent(new CustomEvent("erp:access-reconnected"));
+});
+
+// Invalidation notification only: never trust client-supplied permissions.
+connection.on("AccessPermissionsChanged", event => {
+    window.dispatchEvent(new CustomEvent("erp:access-changed", { detail: event }));
 });
 
 connection.onclose(() => {
