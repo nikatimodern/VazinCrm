@@ -120,7 +120,7 @@
                 button.disabled = true;
             });
         }
-        document.querySelectorAll("#PreFactor button[onclick*='submitPreFactor'], #Factor button[onclick*='submitFactor'], [data-document-permission]").forEach(button => {
+        document.querySelectorAll("#PreFactor button[onclick*='submitPreFactor'], #Factor button[onclick*='submitFactor'], [data-document-permission], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice(']").forEach(button => {
             button.setAttribute("aria-disabled", "true");
             if ("disabled" in button) button.disabled = true;
         });
@@ -137,7 +137,7 @@
         if (!editorLocked || !moduleForPath()) return;
         const action = event.target.closest(
             "#btnIn, #updateCustomerModal .buttonGreen3, #dealModal .buttonGreen3, " +
-            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
+            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
         );
         if (!action) return;
         event.preventDefault();
