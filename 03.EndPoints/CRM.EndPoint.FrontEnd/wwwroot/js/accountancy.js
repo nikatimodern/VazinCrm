@@ -170,6 +170,7 @@ const getAndShowWalletModal = async () => {
 };
 
 const addInvoiceWalletToPf = async (id) => {
+    if (window.AccessLive?.can("Accountancy", "useWallet") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await sendApiRequest({
         url: "/Accountancy/AddInvoiceWalletToPf",
         params: { id, pfId: pfactorID },
@@ -257,6 +258,7 @@ const ShowVosolCheckInvoiceModal = async (itemId, isTransfered) => {
 };
 
 async function submitVosolInvoice() {
+    if (window.AccessLive?.can("Accountancy", "settle") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     if (!await mySer.CheckValidForm("PayFactorVosolFormId")) return;
     const bankAccountSelect = document.querySelector("#InvoiceVosolModalId [name='bankAccountId']");
     const transferDetails = document.querySelector("#InvoiceVosolModalId .transferDetailsWrapper");
@@ -375,6 +377,7 @@ async function ShowEditTransferInvoiceModal(itemId) {
 
 
 async function submitTransferInvoice() {
+    if (window.AccessLive?.can("Accountancy", "transfer") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     if (!await mySer.CheckValidForm("InvoiceTransferFormId")) return;
     const model = {
         ...mySer.convertFormToJSON("InvoiceTransferFormId"),
@@ -439,6 +442,7 @@ const ShowModalListInvoice = async (id, type, ser, passType, hideAddInvoiceBtns 
 
 
 const ShowModalAddInvoice = async () => {
+    if (window.AccessLive?.can("Accountancy", "create") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     const hasWallet = await CheckWallet();
     
     if (hasWallet) {
@@ -479,6 +483,7 @@ async function getAccountancy(id, parent) {
 }
 
 const ShowEditModalInvoice = async (id) => {
+    if (window.AccessLive?.can("Accountancy", "edit") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     FLshowLoading();
     const result = await getAccountancy(id);
     const data = result.accData;
@@ -512,6 +517,7 @@ const ShowEditModalInvoice = async (id) => {
 
 
 async function removeVosolInvoice(id) {
+    if (window.AccessLive?.can("Accountancy", "settle") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await sendApiRequest({
         url: "/Accountancy/RemoveVosolInvoice",
         params: { id: id },
@@ -521,6 +527,7 @@ async function removeVosolInvoice(id) {
     });
 }
 async function removeTransferInvoice(id) {
+    if (window.AccessLive?.can("Accountancy", "transfer") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await sendApiRequest({
         url: "/Accountancy/RemoveTransferInvoice",
         params: { id: id },
@@ -789,6 +796,7 @@ async function selectPfFromPfListModal(pfId) {
 
 
 async function changeStatusAllAcc() {
+    if (window.AccessLive?.can("Accountancy", "changeStatus") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await sendApiRequest({
         url: "/Accountancy/ChangeStatusAllAcc",
         params: { pfId: pfactorID },
@@ -801,6 +809,7 @@ async function changeStatusAllAcc() {
 }
 
 async function changeStatusAcc(id) {
+    if (window.AccessLive?.can("Accountancy", "changeStatus") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await sendApiRequest({
         url: "/Accountancy/ChangeStatusAcc",
         params: { id },
@@ -827,6 +836,7 @@ async function acceptFinancial(pfId) {
 }
 
 async function acceptAccountancy(id, status, description = null) {
+    if (window.AccessLive?.can("Accountancy", "approve") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     const result = await sendApiRequest({
         url: `/Accountancy/AcceptAccountancy`,
         method: "POST",
@@ -1116,6 +1126,7 @@ const PayAttachFormChange = (type) => {
 
 
 const delPayment = async (id) => {
+    if (window.AccessLive?.can("Accountancy", "delete") === false) { toastifyError("مجوز این عملیات روی واریزی را ندارید."); return; }
     await deleteItem({
         url: `/Accountancy/DelAccountancy/${id}`,
         callback: refreshInvoiceSuccess,
