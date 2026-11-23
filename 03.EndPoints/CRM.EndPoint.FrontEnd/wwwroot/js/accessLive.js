@@ -70,9 +70,6 @@
                 background: "#00665c", color: "#fff", border: "none",
                 padding: "6px 12px", borderRadius: "6px", cursor: "pointer"
             });
-            button.addEventListener("click", () => {
-                location.assign(blocked ? "/Dashboard/Index" : location.href);
-            });
             accessBanner.append(label, button);
             document.body.append(accessBanner);
         }
@@ -150,6 +147,8 @@
 
         const module = moduleForPath();
         const changed = JSON.stringify(previous) !== JSON.stringify(latest);
+        const rolesChanged = !!previous &&
+            JSON.stringify(previous.roles) !== JSON.stringify(latest.roles);
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect";
         if (!changed && !forceRefresh) return;
 
@@ -167,12 +166,29 @@
             return;
         }
 
+        if (rolesChanged) window.dispatchEvent(new CustomEvent("erp:roles-refreshed"));
         if (module) lockVisibleActions(module, latest[module]);
         else editorLocked = true;
         displayWarning(viewRevoked
             ? "مجوز مشاهده این صفحه لغو شده است. اطلاعات فرم باز حفظ شده‌اند، اما ثبت و ارسال غیرفعال است."
             : "دسترسی شما تغییر کرده است. اطلاعات فرم باز حفظ شده‌اند؛ برای ادامه، صفحه را بارگذاری مجدد کنید.",
             !!viewRevoked);
+    }
+
+    // The shell uses in-place navigation; once a different page mounts, stale
+    // editor locks and form-dirty flags must not be carried into that page.
+    const workspace = document.getElementById("mainContent");
+    if (workspace) {
+        let lastPage = workspace.querySelector("[data-page-root]");
+        new MutationObserver(() => {
+            const page = workspace.querySelector("[data-page-root]");
+            if (page === lastPage) return;
+            lastPage = page;
+            formDirty = false;
+            editorLocked = false;
+            accessBanner?.remove();
+            accessBanner = null;
+        }).observe(workspace, { childList: true });
     }
 
     window.AccessLive = Object.freeze({
