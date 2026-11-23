@@ -421,11 +421,10 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         try
         {
             var deleted = await repository.DeletePermissionWithAssignmentsAsync(id, expected, ct);
-            return deleted
-                ? new(200, "دسترسی و تمام تخصیص‌های آن حذف شدند.")
-                : await repository.FindPermissionAsync(id, ct) is null
-                    ? new(404, "دسترسی پیدا نشد.")
-                    : new(409, "تخصیص‌های این دسترسی تغییر کرده‌اند. دوباره حذف را انتخاب و تأیید کنید.");
+            if (deleted) return new(200, "دسترسی و تمام تخصیص‌های آن حذف شدند.");
+            if (await repository.FindPermissionAsync(id, ct) is null)
+                return new(404, "دسترسی پیدا نشد.");
+            return new(409, "تخصیص‌های این دسترسی تغییر کرده‌اند. دوباره حذف را انتخاب و تأیید کنید.");
         }
         catch (AccessCatalogConflictException)
         {
