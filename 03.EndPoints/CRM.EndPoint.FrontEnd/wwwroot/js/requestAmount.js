@@ -61,6 +61,7 @@ let canEditPaymentTable;
 let reqAmountAttachModal = document.getElementById("reqAmountAttachModal");
 
 async function changeStatusReqAmount(id, status) {
+    if (window.AccessLive?.can("RequestAmount", "changeStatus") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/ChangeStatusRequestAmount",
@@ -159,6 +160,7 @@ const getAllPaymentsList = (id) => {
 
 
 const deletePayment = async (id) => {
+    if (window.AccessLive?.can("Payment", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await deleteItem({
         url: `/RequestAmount/DeletePayment/${id}`,
         callback: async () => {
@@ -169,6 +171,7 @@ const deletePayment = async (id) => {
 };
 
 async function showEditPaymentModal(id) {
+    if (window.AccessLive?.can("Payment", "edit") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     const data = await sendApiRequest({
         url: "/Supply/GetPayment",
         params: { paymentId: id },
@@ -485,6 +488,7 @@ const submitReqAmountAttach = async () => {
     };
     
     
+    if (window.AccessLive?.can("Payment", model.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/AddPaymentByRequestAmount",
@@ -514,6 +518,7 @@ let requestAmountData = {};
 let isFromOrderHead = false;
 let ohReqAmountId;
 async function showAddRequestAmountModal(ohId, ohNumber) {
+    if (window.AccessLive?.can("RequestAmount", "create") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     // Keep the TomSelect dropdown on native scrolling; modal-wide momentum
     // handlers intercept its wheel events and make the list feel sluggish.
     await setupSelectOptionsReqAmount();
@@ -705,6 +710,7 @@ async function submitRequestAmountModal() {
         requestAmountOrderHeads: orderHeadsSelectedIds.map(id => ({ orderHeadId: id, requestAmountId: requestAmountData.id })),
     };
     const relatedOrderHeadId = ohReqAmountId;
+    if (window.AccessLive?.can("RequestAmount", model.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
     await sendApiRequest({
         method: "POST",
         url: model.id ? "/RequestAmount/UpdateRequestAmount" : "/RequestAmount/AddRequestAmount",
@@ -738,6 +744,7 @@ function cancelRequestAmountModal() {
 }
 
 async function showEditRequestAmountModal(id) {
+    if (window.AccessLive?.can("RequestAmount", "edit") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await showAddRequestAmountModal();
     const data = await sendApiRequest({
         url: "/RequestAmount/GetRequestAmount",
@@ -778,6 +785,7 @@ async function showEditRequestAmountModal(id) {
 
 
 const deleteRequestAmount = async (id) => {
+    if (window.AccessLive?.can("RequestAmount", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await deleteItem({
         url: `/RequestAmount/DeleteRequestAmount/${id}`,
         callback: refreshRequestAmountDom,
@@ -840,6 +848,7 @@ function toggleAcceptBtn(elm, acceptAmount) {
 }
 
 async function submitAcceptedRequestAmount(btn, id) {
+    if (window.AccessLive?.can("RequestAmount", "approve") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     const card = btn.closest(".layered-card");
     const input = card.querySelector("input.acceptedAmount");
     const selOpPercent = card.querySelector("select.acceptedAmountPercent");
