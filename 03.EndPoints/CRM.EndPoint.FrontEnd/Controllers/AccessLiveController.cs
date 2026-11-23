@@ -101,6 +101,16 @@ public sealed class AccessLiveController(
         var supplyfactor = await DocumentState("SupplyFactor", supplyfactorEnforced, ["View", "Create", "Edit", "Delete", "ManageAllocations", "ExportExternal"]);
         var accountancyEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceAccountancyPermissions");
         var accountancy = await DocumentState("Accountancy", accountancyEnforced, ["View", "Create", "Edit", "Delete", "Approve", "ChangeStatus", "Settle", "Transfer", "UseWallet"]);
+        var requestamountEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceRequestAmountPermissions");
+        var requestamount = await DocumentState("RequestAmount", requestamountEnforced, ["View", "Create", "Edit", "Delete", "Approve", "ChangeStatus", "ChangeDocType", "Pay"]);
+        var paymentEnforced = configuration.GetValue<bool>("AccessCatalog:EnforcePaymentPermissions");
+        var payment = await DocumentState("Payment", paymentEnforced, ["View", "Create", "Edit", "Delete"]);
+        var bankaccountEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceBankAccountPermissions");
+        var bankaccount = await DocumentState("BankAccount", bankaccountEnforced, ["View", "Create", "Edit", "Delete", "ChangeActive"]);
+        var checkbookEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCheckbookPermissions");
+        var checkbook = await DocumentState("Checkbook", checkbookEnforced, ["View", "Create", "Edit", "Delete"]);
+        var checkEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCheckPermissions");
+        var check = await DocumentState("Check", checkEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus"]);
         var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
         var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
@@ -109,13 +119,13 @@ public sealed class AccessLiveController(
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced },
             customer,
             deal,
             prefactor = preFactor,
             factor,
             cartable,
-            orderhead, supply, supplyfactor, accountancy
+            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check
         });
     }
 }
