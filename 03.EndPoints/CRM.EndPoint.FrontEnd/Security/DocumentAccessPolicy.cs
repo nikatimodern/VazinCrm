@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,15 @@ public sealed class DocumentAccessPolicy(
     IHttpContextAccessor context, IConfiguration configuration, IAccessScopeService scopes,
     CRMContextDb db, UserContextDb users) : IDocumentReadAccess
 {
+    private readonly Dictionary<string, Task<DealOwnerAccess>> ownerCache = new(StringComparer.Ordinal);
+    private Task<Guid?>? externalPerson;
+    private Task<DealOwnerAccess> OwnersAsync(string permission, CancellationToken ct)
+    {
+        if (!ownerCache.TryGetValue(permission, out var cached))
+            ownerCache[permission] = cached = scopes.GetDocumentOwnerAccessAsync(UserId, permission, ct);
+        return cached;
+    }
+
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
         (entity is "PreFactor" or "Factor") &&
@@ -33,8 +43,8 @@ public sealed class DocumentAccessPolicy(
         return await scopes.GetEffectiveScopeAsync(UserId, entity + "." + action, ct) == AccessScopes.All;
     }
 
-    private async Task<Guid?> ExternalPersonAsync(CancellationToken ct) =>
-        await users.Users.AsNoTracking()
+    private Task<Guid?> ExternalPersonAsync(CancellationToken ct) => externalPerson ??=
+        users.Users.AsNoTracking()
             .Where(u => u.Id == UserId && !u.IsEmployee && u.IsCustomer)
             .Select(u => u.PersonId).FirstOrDefaultAsync(ct);
 
@@ -43,7 +53,7 @@ public sealed class DocumentAccessPolicy(
         if (!IsEnforced("PreFactor")) return query;
         if (action == "View" && await ExternalPersonAsync(ct) is Guid person)
             return query.Where(p => p.CustomerId == person);
-        var owners = await scopes.GetDocumentOwnerAccessAsync(UserId, "PreFactor." + action, ct);
+        var owners = await OwnersAsync("PreFactor." + action, ct);
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(p => false);
         bool supply = action is "ApproveTamin" or "EditSupply";
         bool view = action == "View";
@@ -70,7 +80,7 @@ public sealed class DocumentAccessPolicy(
         if (!IsEnforced("Factor")) return query;
         if (action == "View" && await ExternalPersonAsync(ct) is Guid person)
             return query.Where(f => f.CustomerId == person);
-        var owners = await scopes.GetDocumentOwnerAccessAsync(UserId, "Factor." + action, ct);
+        var owners = await OwnersAsync("Factor." + action, ct);
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(f => false);
         if (owners.AllowedOwnerIds is { } allowed)
         {
@@ -88,6 +98,37 @@ public sealed class DocumentAccessPolicy(
                                      (!f.UserTaminId.HasValue || !ids.Contains(f.UserTaminId.Value)));
         }
         return query;
+    }
+
+    // Row-level checks for Razor cards. Scope resolution is cached for this
+    // request; no additional per-card record queries are needed.
+    private static bool AllowsOwners(DealOwnerAccess access, string?[] included, string?[] excluded)
+    {
+        if (access.AllowedOwnerIds is { Length: 0 }) return false;
+        if (excluded.Any(id => id != null && access.ExcludedOwnerIds.Contains(id, StringComparer.OrdinalIgnoreCase))) return false;
+        return access.AllowedOwnerIds == null ||
+               included.Any(id => id != null && access.AllowedOwnerIds.Contains(id, StringComparer.OrdinalIgnoreCase));
+    }
+
+    public async Task<bool> AllowsPreFactorAsync(PreFactor row, string action, CancellationToken ct)
+    {
+        if (!IsEnforced("PreFactor")) return true;
+        if (action == "View" && await ExternalPersonAsync(ct) is Guid person) return row.CustomerId == person;
+        if (action != "View" && !await AllowsPreFactorAsync(row, "View", ct)) return false;
+        var all = new string?[] { row.UserCreatorID, row.UserTaminId?.ToString() };
+        var include = action is "ApproveTamin" or "EditSupply" ? new string?[] { row.UserTaminId?.ToString() }
+            : action == "View" ? all : new string?[] { row.UserCreatorID };
+        return AllowsOwners(await OwnersAsync("PreFactor." + action, ct), include, all);
+    }
+
+    public async Task<bool> AllowsFactorAsync(Factor row, string action, CancellationToken ct)
+    {
+        if (!IsEnforced("Factor")) return true;
+        if (action == "View" && await ExternalPersonAsync(ct) is Guid person) return row.CustomerId == person;
+        if (action != "View" && !await AllowsFactorAsync(row, "View", ct)) return false;
+        var all = new string?[] { row.SelerId, row.UserCreatorID, row.UserTaminId?.ToString() };
+        var include = action == "View" ? all : new string?[] { row.SelerId, row.UserCreatorID };
+        return AllowsOwners(await OwnersAsync("Factor." + action, ct), include, all);
     }
 
     public async Task<bool> CanAsync(string entity, string action, Guid id, CancellationToken ct)
