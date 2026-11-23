@@ -66,7 +66,11 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             foreach (var entry in new[] {
                 (Entity: "OrderHead", Url: "/Order/Index"),
                 (Entity: "SupplyFactor", Url: "/Supply/SupplyFactor"),
-                (Entity: "Accountancy", Url: "/Accountancy/Index")
+                (Entity: "Accountancy", Url: "/Accountancy/Index"),
+                (Entity: "RequestAmount", Url: "/RequestAmount/Index"),
+                (Entity: "Payment", Url: "/Supply/Payment"),
+                (Entity: "Checkbook", Url: "/Check/Index"),
+                (Entity: "Check", Url: "/Check/Received")
             })
                 if (settings.GetValue<bool>("AccessCatalog:Enforce" + entry.Entity + "Permissions") &&
                     await scopes.GetEffectiveScopeAsync(userId, entry.Entity + ".View", default) == AccessScopes.None)
