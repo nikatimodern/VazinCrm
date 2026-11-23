@@ -9,6 +9,10 @@ using CRM.Core.Domain.AccessCatalog.Entities;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Orders.Entities;
+using CRM.Core.Domain.Supplies.Entities;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Http;
@@ -34,7 +38,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
@@ -138,6 +142,56 @@ public sealed class DocumentAccessPolicy(
         return AllowsOwners(await OwnersAsync("Factor." + action, ct), include, all);
     }
 
+    public async Task<IQueryable<T>> ApplyAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
+    {
+        var entity = typeof(T).Name;
+        if (!IsEnforced(entity)) return query;
+        var owners = await OwnersAsync(entity + "." + action, ct);
+        if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        var allowed = owners.AllowedOwnerIds;
+        var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(OrderHead))
+        {
+            var heads = (IQueryable<OrderHead>)(object)query;
+            if (allowed != null)
+            {
+                var ids = allowed.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                heads = heads.Where(x => allowed.Contains(x.UserCreatorID) || (x.UserTaminId.HasValue && ids.Contains(x.UserTaminId.Value)));
+            }
+            if (excluded.Length > 0)
+            {
+                var ids = excluded.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                heads = heads.Where(x => !excluded.Contains(x.UserCreatorID) && (!x.UserTaminId.HasValue || !ids.Contains(x.UserTaminId.Value)));
+            }
+            return (IQueryable<T>)(object)heads;
+        }
+        if (typeof(T) == typeof(Supply))
+        {
+            var supplies = (IQueryable<Supply>)(object)query;
+            if (allowed != null)
+            {
+                var ids = allowed.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                supplies = supplies.Where(x => allowed.Contains(x.UserCreatorID) || db.PreFactors.Any(p => p.Id == x.PfId && p.UserTaminId.HasValue && ids.Contains(p.UserTaminId.Value)));
+            }
+            if (excluded.Length > 0)
+            {
+                var ids = excluded.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                supplies = supplies.Where(x => !excluded.Contains(x.UserCreatorID) && !db.PreFactors.Any(p => p.Id == x.PfId && p.UserTaminId.HasValue && ids.Contains(p.UserTaminId.Value)));
+            }
+            return (IQueryable<T>)(object)supplies;
+        }
+        if (allowed != null) query = query.Where(x => allowed.Contains(x.UserCreatorID));
+        if (excluded.Length > 0) query = query.Where(x => !excluded.Contains(x.UserCreatorID));
+        return query;
+    }
+
+    private async Task<bool> CanRowAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
+    {
+        query = await ApplyAsync(query, "View", ct);
+        if (action != "View") query = await ApplyAsync(query, action, ct);
+        return await query.AnyAsync(ct);
+    }
+
     public async Task<bool> CanAsync(string entity, string action, Guid id, CancellationToken ct)
     {
         if (!IsEnforced(entity)) return true;
@@ -154,13 +208,20 @@ public sealed class DocumentAccessPolicy(
             if (action != "View") q = await FactorsAsync(q, action, ct);
             return await q.AnyAsync(ct);
         }
-        return false;
+        return entity switch
+        {
+            "OrderHead" => await CanRowAsync(db.OrderHeads.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Supply" => await CanRowAsync(db.Supplies.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "SupplyFactor" => await CanRowAsync(db.SupplyFactors.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Accountancy" => await CanRowAsync(db.Accountancies.AsNoTracking().Where(x => x.Id == id), action, ct),
+            _ => false
+        };
     }
 
     public async Task<bool> HasViewAsync(string entity, CancellationToken ct)
     {
         if (!IsEnforced(entity)) return true;
         return await scopes.GetEffectiveScopeAsync(UserId, entity + ".View", ct) != AccessScopes.None ||
-               await ExternalPersonAsync(ct) != null;
+               ((entity is "PreFactor" or "Factor") && await ExternalPersonAsync(ct) != null);
     }
 }
