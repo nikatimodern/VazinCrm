@@ -19,12 +19,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.RequestAmounts.Repositories;
-public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRepository, IAsyncDisposable
+public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : IRequestAmountRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
     public Task<RequestAmount?> GetAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.RequestAmounts : db.RequestAmounts.AsNoTracking()).Include(r => r.RequestAmountOrderHeads).Include(r => r.RequestAmountSupplyFactor).Include(r => r.RequestAmountPayments).FirstOrDefaultAsync(r => r.Id == id, ct);
     public Task<List<RequestAmount>> GetByIdsAsync(List<Guid> ids, bool states, CancellationToken ct) => db.RequestAmounts.Include(r => r.RequestAmountPayments).Where(r => ids.Contains(r.Id) && (!states || r.RequestStatus == RequestStatusEnum.پرداخت_شده || r.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)).ToListAsync(ct);
-    public Task<List<RequestAmount>> GetByPaymentAsync(Guid id, CancellationToken ct) => db.RequestAmounts.AsNoTracking().Include(r => r.RequestAmountPayments.Where(p => p.PaymentId == id)).Where(r => r.RequestAmountPayments.Any(p => p.PaymentId == id)).ToListAsync(ct);
+    public async Task<List<RequestAmount>> GetByPaymentAsync(Guid id, CancellationToken ct) => await (await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct)).Include(r => r.RequestAmountPayments.Where(p => p.PaymentId == id)).Where(r => r.RequestAmountPayments.Any(p => p.PaymentId == id)).ToListAsync(ct);
     public Task<Payment?> GetPaymentAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Payments : db.Payments.AsNoTracking()).Include(p => p.RequestAmountPayments).FirstOrDefaultAsync(p => p.Id == id, ct);
     public Task<Accountancy?> GetCashCreditAsync(Guid id, CancellationToken ct) => db.Accountancies.FirstOrDefaultAsync(a => a.RequestAmountId == id, ct);
     public Task<Guid?> GetCashierUserIdAsync(Guid cashierId, CancellationToken ct) =>
@@ -121,8 +121,10 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
 
     public async Task<RequestAmountList> GetListAsync(int type, string? search, int searchNumber, Guid? orderHeadId, string userId, bool readAll, CancellationToken ct)
     {
-        var baseQuery = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
-        if (!readAll)
+        var baseQuery = await access.ApplyAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), "View", ct);
+        var visibleOrders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
+        var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", ct);
+        if (!access.IsEnforced("RequestAmount") && !readAll)
         {
             baseQuery = baseQuery.Where(f => f.UserCreatorID == userId);
         }
@@ -134,7 +136,7 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
 
         if (!string.IsNullOrEmpty(search))
         {
-            baseQuery = baseQuery.Where(f => f.RequestNumber == searchNumber || f.Description.Contains(search) || f.TargetPersonTxt.Contains(search) || f.UserCreator.Contains(search) || f.RequestAmountSupplyFactor.Any(raSf => db.SupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.SerialNumber == search)) || f.RequestAmountOrderHeads.Any(raOh => db.OrderHeads.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)));
+            baseQuery = baseQuery.Where(f => f.RequestNumber == searchNumber || f.Description.Contains(search) || f.TargetPersonTxt.Contains(search) || f.UserCreator.Contains(search) || f.RequestAmountSupplyFactor.Any(raSf => visibleSupplyFactors.Any(sf => sf.Id == raSf.SupplyFactorId && sf.SerialNumber == search)) || f.RequestAmountOrderHeads.Any(raOh => visibleOrders.Any(oh => oh.Id == raOh.OrderHeadId && oh.OrderNumber.ToString() == search)));
         }
 
         var filterCounts = new Dictionary<int, int>
@@ -154,13 +156,16 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
         var supplierFinancials = GetSupplierFinancialSummaries();
         var data = await query.GroupJoin(supplierFinancials,
             ra => ra.RequestAmountType == RequestAmountTypeEnum.تنخواه || ra.RequestAmountType == RequestAmountTypeEnum.عودت_به_مشتری ? null : ra.TargetPersonId,
-            sf => (Guid?)sf.SupplierId, (ra, financials) => new { RequestAmount = ra, Financial = financials.FirstOrDefault() }).Select(x => new RequestAmountRow { RequestAmount = x.RequestAmount, SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Select(x => x.SupplyFactor.SerialNumber).ToList(), OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.OrderNumber).ToList(), CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Select(x => x.OrderHead.CustomerTxt).ToList(), TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount), SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0, TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0, TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0, }).ToListAsync(ct);
+            sf => (Guid?)sf.SupplierId, (ra, financials) => new { RequestAmount = ra, Financial = financials.FirstOrDefault() }).Select(x => new RequestAmountRow { RequestAmount = x.RequestAmount, SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Where(l => visibleSupplyFactors.Any(sf => sf.Id == l.SupplyFactorId)).Select(x => x.SupplyFactor.SerialNumber).ToList(), OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Where(l => visibleOrders.Any(h => h.Id == l.OrderHeadId)).Select(x => x.OrderHead.OrderNumber).ToList(), CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Where(l => visibleOrders.Any(h => h.Id == l.OrderHeadId)).Select(x => x.OrderHead.CustomerTxt).ToList(), TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount), SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0, TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0, TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0, }).ToListAsync(ct);
         return new(data, filterCounts);
     }
 
     public async Task<RequestAmountRow?> GetDetailsAsync(Guid id, CancellationToken ct)
     {
-        var data = await db.RequestAmounts.AsNoTracking().Where(f => f.Id == id).Include(f => f.RequestAmountOrderHeads).Include(f => f.RequestAmountSupplyFactor).Select(ra => new RequestAmountRow { RequestAmount = ra, SupplyFactorSerials = ra.RequestAmountSupplyFactor.Join(db.SupplyFactors, raSf => raSf.SupplyFactorId, sf => sf.Id, (raSf, sf) => sf.SerialNumber).ToList(), OrderHeadSerials = ra.RequestAmountOrderHeads.Join(db.OrderHeads, raOh => raOh.OrderHeadId, oh => oh.Id, (raOh, oh) => oh.OrderNumber).ToList(), }).FirstOrDefaultAsync(ct);
+        var visibleRequests = await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct);
+        var visibleOrders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
+        var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", ct);
+        var data = await visibleRequests.Where(f => f.Id == id).Include(f => f.RequestAmountOrderHeads).Include(f => f.RequestAmountSupplyFactor).Select(ra => new RequestAmountRow { RequestAmount = ra, SupplyFactorSerials = ra.RequestAmountSupplyFactor.Join(visibleSupplyFactors, raSf => raSf.SupplyFactorId, sf => sf.Id, (raSf, sf) => sf.SerialNumber).ToList(), OrderHeadSerials = ra.RequestAmountOrderHeads.Join(visibleOrders, raOh => raOh.OrderHeadId, oh => oh.Id, (raOh, oh) => oh.OrderNumber).ToList(), }).FirstOrDefaultAsync(ct);
         return data;
     }
 
@@ -171,7 +176,8 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
         var length = table.Length;
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
-        var query = db.Payments.Where(p => p.RequestAmountPayments.Any(x => x.RequestAmountId == id)).Select(p => new RequestPaymentRow { Payment = p, RequestPaymentAmount = p.RequestAmountPayments.Where(x => x.RequestAmountId == id).Select(x => x.Amount).FirstOrDefault() }).OrderByDescending(f => f.Payment.CreateDate).AsNoTracking();
+        var visiblePayments = await access.ApplyAsync(db.Payments.AsNoTracking(), "View", ct);
+        var query = visiblePayments.Where(p => p.RequestAmountPayments.Any(x => x.RequestAmountId == id)).Select(p => new RequestPaymentRow { Payment = p, RequestPaymentAmount = p.RequestAmountPayments.Where(x => x.RequestAmountId == id).Select(x => x.Amount).FirstOrDefault() }).OrderByDescending(f => f.Payment.CreateDate).AsNoTracking();
         var recordsTotal = await query.CountAsync(ct);
         if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDirection))
         {
@@ -200,7 +206,7 @@ public sealed class RequestAmountRepository(CRMContextDb db) : IRequestAmountRep
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var query = db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking();
+        var query = await access.ApplyAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), "View", ct);
         if (!string.IsNullOrEmpty(searchValue))
         {
             query = query.Where(f => f.Amount == searchNumber);
