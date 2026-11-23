@@ -11,69 +11,11 @@
     let generation = 0;
     let accessBanner = null;
 
-    // Keep the reason across a redirect, then consume it only once.
-    const revokedPageNoticeKey = "erp:access:revoked-page-notice";
-    const revokedPageMessage = "دسترسی شما به صفحه قبلی توسط مدیر محدود شده است؛ به داشبورد منتقل شدید.";
-
+    // The destination page renders the notice on the server. No dependency
+    // on sessionStorage, toast initialization order, or a second JS load.
     function redirectAfterViewRevoked() {
-        try {
-            sessionStorage.setItem(revokedPageNoticeKey, String(Date.now()));
-        } catch (error) {
-            console.warn("Could not store access notice before redirect.", error);
-        }
-        location.replace("/Dashboard/Index");
+        location.replace("/Dashboard/Index?accessRevoked=1");
     }
-
-    function showRedirectNotice() {
-        const path = location.pathname.toLowerCase();
-        if (path !== "/dashboard" && !path.startsWith("/dashboard/")) return;
-        let savedAt;
-        try {
-            savedAt = sessionStorage.getItem(revokedPageNoticeKey);
-            if (!savedAt) return;
-            sessionStorage.removeItem(revokedPageNoticeKey);
-        } catch (error) {
-            console.warn("Could not read access notice.", error);
-            return;
-        }
-        // Do not show an old warning if a redirect was interrupted.
-        if (!Number.isFinite(Number(savedAt)) || Date.now() - Number(savedAt) > 60000) return;
-        if (typeof Toastify === "function") {
-            Toastify({
-                text: revokedPageMessage,
-                duration: 7000,
-                close: true,
-                gravity: "top",
-                position: "center",
-                stopOnFocus: true,
-                style: {
-                    background: "#76501c",
-                    color: "#fff",
-                    borderRadius: "9px",
-                    fontSize: "13px",
-                    textAlign: "right"
-                }
-            }).showToast();
-            return;
-        }
-        const message = document.createElement("div");
-        message.setAttribute("role", "alert");
-        message.setAttribute("dir", "rtl");
-        message.textContent = revokedPageMessage;
-        Object.assign(message.style, {
-            position: "fixed", top: "76px", left: "50%",
-            transform: "translateX(-50%)", zIndex: "2147483000",
-            background: "#76501c", color: "#fff",
-            padding: "12px 18px", borderRadius: "9px",
-            maxWidth: "94vw", boxShadow: "0 4px 16px #0002"
-        });
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 7000);
-    }
-
-    if (document.readyState === "loading")
-        document.addEventListener("DOMContentLoaded", showRedirectNotice, { once: true });
-    else showRedirectNotice();
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
