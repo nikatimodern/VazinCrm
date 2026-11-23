@@ -123,12 +123,12 @@
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مشتری:
-                                    if (canSend) {
+                                    if (canSend || canManualApprove) {
                                         <div class="flex-center flex-wrap flex-row flex-md-column gap-2">
-                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" data-document-permission="PreFactor.SendToCustomer" onclick="showMobileModal('@item.Id')">
+                                            @if (canSend) { <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" data-document-permission="PreFactor.SendToCustomer" onclick="showMobileModal('@item.Id')">
                                                 <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                                 <span>ارسال مجدد به مشتری</span>
-                                            </button>
+                                            </button> }
                                             @if (canManualApprove) { <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto px-2 py-1" data-document-permission="PreFactor.ApproveCustomerManual" onclick="HandAccepting('@item.Id', @passType)"> تایید به صورت دستی</button> }
                                         </div>
                                     }
