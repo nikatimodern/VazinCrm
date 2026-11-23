@@ -341,18 +341,47 @@
 
     async function deleteItem(kind, id) {
         if (saving) return;
-        const isPermission = kind === "Permission";
-        const allowed = await confirmAlert({
-            title: isPermission ? "حذف دسترسی" : "حذف انتیتی",
-            text: isPermission ? "آیا این دسترسی حذف شود؟" : "انتیتی فقط زمانی حذف می‌شود که هیچ دسترسی مرتبطی نداشته باشد.",
-            confirmText: "حذف", cancelText: "انصراف", icon: "warning"
-        });
-        if (!allowed || signal.aborted) return;
         saving = true;
         try {
-            const response = await post("Delete" + kind, null, id);
+            const isPermission = kind === "Permission";
+            let confirmation = null;
+            if (isPermission) {
+                // Show actual server-side dependencies BEFORE asking for consent.
+                const preview = await sendApiRequest({
+                    url: "/AccessCatalogAdmin/PermissionRemovalPreview",
+                    params: { id }, showLoading: false
+                });
+                if (!preview || signal.aborted || preview.id !== id) return;
+                const dependencyCount = preview.roleCount + preview.userCount + preview.selectedMemberCount;
+                const warning = dependencyCount
+                    ? "این مجوز به " + preview.roleCount + " نقش و " + preview.userCount +
+                      " کاربر تخصیص داده شده و " + preview.selectedMemberCount +
+                      " ارتباط کاربر در محدوده‌های انتخابی دارد. با تأیید، تمام این تخصیص‌ها و خود مجوز حذف می‌شوند."
+                    : "این مجوز تخصیص فعالی ندارد و حذف خواهد شد.";
+                const allowed = await confirmAlert({
+                    title: "حذف دسترسی «" + preview.title + "»",
+                    text: preview.fullKey + "\n" + warning + "\nآیا حذف قطعی را تأیید می‌کنید؟",
+                    confirmText: dependencyCount ? "حذف مجوز و تمام تخصیص‌ها" : "حذف دسترسی",
+                    cancelText: "انصراف", icon: "warning"
+                });
+                if (!allowed || signal.aborted) return;
+                confirmation = {
+                    confirmRemoval: true,
+                    roleCount: preview.roleCount,
+                    userCount: preview.userCount,
+                    selectedMemberCount: preview.selectedMemberCount
+                };
+            } else {
+                const allowed = await confirmAlert({
+                    title: "حذف انتیتی",
+                    text: "انتیتی فقط زمانی حذف می‌شود که هیچ دسترسی مرتبطی نداشته باشد.",
+                    confirmText: "حذف", cancelText: "انصراف", icon: "warning"
+                });
+                if (!allowed || signal.aborted) return;
+            }
+            const response = await post("Delete" + kind, confirmation, id);
             if (response?.success) {
-                toastifySuccess("حذف انجام شد.");
+                toastifySuccess(isPermission ? "مجوز و تمام تخصیص‌های آن حذف شدند." : "حذف انجام شد.");
                 await loadEntities();
             }
         } finally { saving = false; }
