@@ -14,18 +14,18 @@ public sealed record CustomerOption(Guid Id, string Text);
 public sealed record CustomerSupplier(Guid Id, string? CompanyName, string? AgentName, int CustomerCode);
 public sealed record CustomerSummary(Guid Id, string? Mobile, string? Tel, int RoleType, string CustomerName, int CustomerCode, string? CompanyName, string? AgentName);
 public sealed record CustomerPhone(Guid Id, string Name, string? Phone, int CustomerCode, string? Mobile, DateTime? ModifyDate, string? NormalizedAgentName, string? NormalizedCompanyName);
-public sealed record CustomerTableRequest(string? Draw, int Skip, int Take, string? SortColumn, bool Ascending, string? Search, byte Juridical, Guid[]? AllowedOwnerIds = null);
+public sealed record CustomerTableRequest(string? Draw, int Skip, int Take, string? SortColumn, bool Ascending, string? Search, byte Juridical, Guid[]? AllowedOwnerIds = null, Guid[]? ExcludedOwnerIds = null);
 public sealed record CustomerTableResult(string? Draw, int RecordsFiltered, int RecordsTotal, List<Customer> Data);
-public sealed record CustomerListFilter(int Skip, int Take, int RoleType, int Juridical, string? Search = null, string[]? Keywords = null, Guid[]? AllowedOwnerIds = null);
+public sealed record CustomerListFilter(int Skip, int Take, int RoleType, int Juridical, string? Search = null, string[]? Keywords = null, Guid[]? AllowedOwnerIds = null, Guid[]? ExcludedOwnerIds = null);
 public sealed record CustomerStatus(bool Active, bool Export);
 public interface ICustomerRepository
 {
     Task<Customer?> GetAsync(Guid id, bool includeDeleted, bool includeRelations, CancellationToken cancellationToken);
     Task<Customer?> GetByMobileAsync(string mobile, CancellationToken cancellationToken);
-    Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
-    Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
-    Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
-    Task<List<Customer>> GetDuplicatesAsync(Customer model, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
+    Task<List<CustomerOption>> SearchOptionsAsync(string search, int? roleType, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
+    Task<List<CustomerSupplier>> GetSuppliersAsync(CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
+    Task<List<Customer>> GetRelatedAsync(Guid id, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
+    Task<List<Customer>> GetDuplicatesAsync(Customer model, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
     Task<bool> HasLegalDuplicateAsync(Customer model, CancellationToken cancellationToken);
     Task<bool> HasAssignmentAsync(Guid customerId, Guid userId, CancellationToken cancellationToken);
     Task RemoveAssignmentAsync(Guid customerId, Guid userId, CancellationToken cancellationToken);
@@ -34,8 +34,8 @@ public interface ICustomerRepository
     Task<string> GetUserNamesAsync(IReadOnlyList<Guid> userIds, CancellationToken cancellationToken);
     Task<List<Customer>> GetListAsync(CustomerListFilter filter, string userId, bool readAll, CancellationToken cancellationToken);
     Task<CustomerTableResult> GetTableAsync(CustomerTableRequest filter, CancellationToken cancellationToken);
-    Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
-    Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null);
+    Task<List<CustomerSummary>> GetSummariesAsync(CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
+    Task<List<CustomerPhone>> GetPhonebookAsync(string search, string[] keywords, CancellationToken cancellationToken, Guid[]? allowedOwnerIds = null, Guid[]? excludedOwnerIds = null);
     Task<List<Customer>> GetForNormalizationAsync(CancellationToken cancellationToken);
     Task<ASetting?> GetSettingsAsync(CancellationToken cancellationToken);
     Task<CustomerStatus> GetStatusAsync(Guid id, CancellationToken cancellationToken);
