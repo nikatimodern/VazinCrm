@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @model List<CRM.EndPoint.FrontEnd.Models.Supply.SupplyFactorVModel>
 
 @{
@@ -7,6 +8,10 @@
 <div class="d-flex flex-column w-100 py-2" style="gap:12px">
     @foreach (var item in Model ?? []) {
         var supplyFactor = item.SupplyFactor;
+        var canEdit = await DocumentAccess.AllowsRowAsync(supplyFactor, "Edit", Context.RequestAborted);
+        var canDelete = await DocumentAccess.AllowsRowAsync(supplyFactor, "Delete", Context.RequestAborted);
+        var canAllocate = await DocumentAccess.AllowsRowAsync(supplyFactor, "ManageAllocations", Context.RequestAborted);
+        var canExport = await DocumentAccess.AllowsRowAsync(supplyFactor, "ExportExternal", Context.RequestAborted);
         var orderSerials = item.OrderSerials;
         <div class="layered-card sf-supply-card @(item.IsAllocationComplete ? "sf-supply-card-complete" : "")" data-supply-factor-id="@supplyFactor.Id" style=" border-radius: 8px; overflow: hidden; transition: border-color 0.2s; padding: 0;">
             <div class="layered-card__layer col-12 col-lg-4 col-xl-3 d-flex">
@@ -59,7 +64,7 @@
                         <span class="fbold direction-ltr" style="font-size: 13px">@supplyFactor.Description</span>
                     </div>
                 }
-                <button type="button" class="sf-manage-allocations" data-sf-open="@supplyFactor.Id">
+                <button hidden="@(!canAllocate)" data-document-permission="SupplyFactor.ManageAllocations" type="button" class="sf-manage-allocations" data-sf-open="@supplyFactor.Id">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h5v5H5zM14 14h5v5h-5zM8 10v7h6M14 7h5M17 4l3 3-3 3"/></svg>
                     <span>مدیریت تخصیص‌ها</span>
                 </button>
@@ -74,7 +79,7 @@
             </div>
 
             <div class="layered-card__layer col-12 col-lg-1 d-flex flex-row flex-lg-column justify-content-center align-items-center px-2 py-2 gap-4 gap-lg-3">
-                @if (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") || User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی")) {
+                @if (canExport && (User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") || User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"))) {
                     <button type="button" class="flex-center p-0 border-0 bg-transparent" style="color:var(--DarkColor)"
                             aria-label="ارتباط مالی" data-title-right="ارتباط مالی" onclick="openSupplyFinancial('@supplyFactor.Id')">
                         <i class="fa fa-link" aria-hidden="true"></i>
@@ -83,10 +88,10 @@
                 <button class="flex-center p-0" data-title-right="پیوست ها" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showAttachments('@supplyFactor.Id', 8)">
                     <i class="fa fa-paperclip"></i>
                 </button>
-                <button class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')">
+                <button hidden="@(!canEdit)" data-document-permission="SupplyFactor.Edit" class="flex-center p-0" data-title-right="ویرایش" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="showEditSupplyFactorModal('@supplyFactor.Id')">
                     <i class="fa fa-pencil"></i>
                 </button>
-                <button class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
+                <button hidden="@(!canDelete)" data-document-permission="SupplyFactor.Delete" class="flex-center p-0" data-title-right="حذف" style="color:var(--DarkColor); border:none; background-color:transparent" onclick="deleteSupplyFactor('@supplyFactor.Id')">
                     <i class="fa fa-trash"></i>
                 </button>
             </div>
