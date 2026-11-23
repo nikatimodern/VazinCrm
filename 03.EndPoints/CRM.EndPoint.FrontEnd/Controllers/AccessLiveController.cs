@@ -93,6 +93,14 @@ public sealed class AccessLiveController(
         // These documents are embedded in Cartable, Deal and Customer pages.
         var preFactor = await DocumentState("PreFactor", pfEnforced, ["View", "Create", "Edit", "Delete", "AssignTamin", "ApproveTamin", "ApproveSales", "ApproveFinancial", "SendToCustomer", "ApproveCustomerManual", "ChangeStatus", "EditSupply", "ExportExternal"]);
         var factor = await DocumentState("Factor", factorEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Cancel", "EditFinancial", "ExportExternal"]);
+        var orderheadEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceOrderHeadPermissions");
+        var orderhead = await DocumentState("OrderHead", orderheadEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus"]);
+        var supplyEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceSupplyPermissions");
+        var supply = await DocumentState("Supply", supplyEnforced, ["View", "Create", "Edit", "Delete"]);
+        var supplyfactorEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceSupplyFactorPermissions");
+        var supplyfactor = await DocumentState("SupplyFactor", supplyfactorEnforced, ["View", "Create", "Edit", "Delete", "ManageAllocations", "ExportExternal"]);
+        var accountancyEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceAccountancyPermissions");
+        var accountancy = await DocumentState("Accountancy", accountancyEnforced, ["View", "Create", "Edit", "Delete", "Approve", "ChangeStatus", "Settle", "Transfer", "UseWallet"]);
         var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
         var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
@@ -101,12 +109,13 @@ public sealed class AccessLiveController(
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced },
             customer,
             deal,
             prefactor = preFactor,
             factor,
-            cartable
+            cartable,
+            orderhead, supply, supplyfactor, accountancy
         });
     }
 }
