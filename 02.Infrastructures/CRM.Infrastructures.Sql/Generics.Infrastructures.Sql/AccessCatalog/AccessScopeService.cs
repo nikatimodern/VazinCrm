@@ -46,7 +46,7 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             return AccessScopes.IsOverrideGrant(custom.Scope) &&
                    (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
                    (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) ||
-                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy")
+                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check")
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -118,7 +118,12 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         permissionKey.StartsWith("OrderHead.", StringComparison.Ordinal) ||
         permissionKey.StartsWith("Supply.", StringComparison.Ordinal) ||
         permissionKey.StartsWith("SupplyFactor.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Accountancy.", StringComparison.Ordinal)
+        permissionKey.StartsWith("Accountancy.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("RequestAmount.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Payment.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("BankAccount.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Checkbook.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Check.", StringComparison.Ordinal)
             ? GetSingleOwnerAccessAsync(userId, permissionKey, ct)
             : Task.FromResult(new DealOwnerAccess([], []));
 
