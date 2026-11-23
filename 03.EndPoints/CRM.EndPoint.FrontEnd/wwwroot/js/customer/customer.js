@@ -168,6 +168,10 @@ const addToMyCustomer = async (id) => {
 
 let opLoaded = false;
 const showFormCustomer = () => {
+    if (window.AccessLive && !window.AccessLive.can("Customer", "create")) {
+        toastifyError("مجوز ایجاد شخص تغییر کرده است. صفحه را تازه‌سازی کنید.");
+        return;
+    }
     if (!opLoaded) {
         GetSenfOp();
         GetAcquaintanceWayOp();
@@ -289,6 +293,10 @@ const checkDuplicate = async () => {
 
 
 const submitFormCustomerBase = async () => {
+    if (window.AccessLive && !window.AccessLive.can("Customer", "create")) {
+        toastifyError("مجوز ثبت شخص را ندارید.");
+        return;
+    }
     switch (CurrentStep) {
         case 1:
             if (await mySer.CheckValidForm("#Step1")) {
@@ -376,6 +384,10 @@ const acceptCustomer = (id) => {
 
 let senfLoaded = false;
 const ShowModalUpCustomer = async (id) => {
+    if (window.AccessLive && !window.AccessLive.can("Customer", "edit")) {
+        toastifyError("مجوز ویرایش اشخاص را ندارید.");
+        return;
+    }
     if (!senfLoaded) {
         await GetUpSenfOp();
         senfLoaded = true;
@@ -393,6 +405,10 @@ const ShowModalUpCustomer = async (id) => {
 };
 
 const SubmitUpFormCustomer = async () => {
+    if (window.AccessLive && !window.AccessLive.can("Customer", "edit")) {
+        toastifyError("مجوز ویرایش شخص تغییر کرده است. فرم باز حفظ شده ولی ثبت غیرفعال است.");
+        return;
+    }
     if (!await mySer.CheckValidForm("#CuInfoUpFormId")) return;
     
     const data = mySer.convertFormToJSON("#CuInfoUpFormId");
