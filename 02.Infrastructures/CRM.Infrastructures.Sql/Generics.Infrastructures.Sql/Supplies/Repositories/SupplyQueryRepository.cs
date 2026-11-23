@@ -32,7 +32,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Supplies.Repositories;
 
-public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryRepository {
+public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : ISupplyQueryRepository {
     public async Task<SupplyResult> GetSupplyFactorAllocationsAsync(Guid id, CancellationToken cancellationToken)
     {
         var factor = await db.SupplyFactors.AsNoTracking().Where(x => x.Id == id).Select(x => new { x.Id, x.SerialNumber })
@@ -366,7 +366,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
     {
         try
         {
-            var query = db.SupplyFactors.Include(f => f.Deal).AsNoTracking();
+            var query = await access.ApplyAsync(db.SupplyFactors.Include(f => f.Deal).AsNoTracking(), "View", cancellationToken);
             if (dealId != null)
             {
                 query = query.Where(f => f.DealId == dealId);
@@ -400,8 +400,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
         {
             var search = model.Search;
             var searchNumber = SearchNumber(search);
-            var query = db.SupplyFactors.OrderByDescending(f => model.SelectedIds.Contains(f.Id)).ThenByDescending(f => f.CreateDate).AsNoTracking()
-                .AsQueryable();
+            var query = await access.ApplyAsync(db.SupplyFactors.OrderByDescending(f => model.SelectedIds.Contains(f.Id)).ThenByDescending(f => f.CreateDate).AsNoTracking(), "View", cancellationToken);
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(f => f.SupplierTxt.Contains(search) || f.SerialNumber == search || f.PaymentAmount == searchNumber);
@@ -492,7 +491,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
 
     public async Task<SupplyResult> GetSuppliesAsync(Guid pfId, CancellationToken cancellationToken)
     {
-        var data = await db.Supplies.AsNoTracking().Where(f => f.PfId == pfId).ToListAsync(cancellationToken);
+        var data = await (await access.ApplyAsync(db.Supplies.AsNoTracking().Where(f => f.PfId == pfId), "View", cancellationToken)).ToListAsync(cancellationToken);
         return SupplyResult.Success(data);
     }
 
@@ -737,7 +736,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
         try
         {
             var pfIds = await db.PreFactors.AsNoTracking().Where(f => f.DealId == dealId).Select(f => f.Id).ToListAsync(cancellationToken);
-            var supplies = await db.Supplies.AsNoTracking().Where(f => pfIds.Contains(f.PfId)).ToListAsync(cancellationToken);
+            var supplies = await (await access.ApplyAsync(db.Supplies.AsNoTracking().Where(f => pfIds.Contains(f.PfId)), "View", cancellationToken)).ToListAsync(cancellationToken);
             return SupplyResult.Success(supplies);
         }
         catch (Exception) when (!cancellationToken.IsCancellationRequested)
