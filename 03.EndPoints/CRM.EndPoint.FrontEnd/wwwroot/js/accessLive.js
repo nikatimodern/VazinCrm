@@ -19,6 +19,9 @@
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
+        if (/^\/order(?:\/|$)/.test(path)) return "orderhead";
+        if (/^\/supply\/supplyfactor(?:\/|$)/.test(path)) return "supplyfactor";
+        if (/^\/accountancy(?:\/index)?\/?$/.test(path)) return "accountancy";
         if (path.startsWith("/cartable/") || path === "/cartable" || path.startsWith("/factor/") || path === "/factor") return "cartable";
         if (path.startsWith("/prefactor/") || path === "/prefactor") return "prefactor";
         if (/^\/customer(?:\/|$)/.test(path)) return "customer";
@@ -178,8 +181,8 @@
             JSON.stringify(previous.roles) !== JSON.stringify(latest.roles);
         // Selected/excluded owner memberships can change without changing the numeric scope.
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
-            (event?.kind === "catalog" && (latest.enforced?.prefactor || latest.enforced?.factor) &&
-                ["cartable", "customer", "deal", "prefactor", "factor"].includes(module));
+            (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
+                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy"].includes(module));
         if (!changed && !forceRefresh) return;
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
