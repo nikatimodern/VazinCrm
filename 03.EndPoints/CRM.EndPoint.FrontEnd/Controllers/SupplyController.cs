@@ -51,13 +51,63 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPolicy documentAccess, CRMContextDb db) : Controller
 {
+    private Task<bool> CanSupplyFactor(string action, Guid id, CancellationToken ct) => documentAccess.CanAsync("SupplyFactor", action, id, ct);
+    private async Task<bool> CanSupplyItem(string action, Guid id, CancellationToken ct)
+    {
+        if (!documentAccess.IsEnforced("SupplyFactor")) return true;
+        var parent = await db.SupplyFactorItems.AsNoTracking().Where(x => x.Id == id).Select(x => (Guid?)x.SupplyFactorId).FirstOrDefaultAsync(ct);
+        return parent.HasValue && await CanSupplyFactor(action, parent.Value, ct);
+    }
+
+    private async Task<bool> CanAllocation(SupplyFactorAllocationRequest model, CancellationToken ct)
+    {
+        if (model == null) return false;
+        if (!await CanSupplyItem("ManageAllocations", model.SupplyFactorItemId, ct)) return false;
+        if (model.FactorItemId.HasValue && documentAccess.IsEnforced("Factor"))
+        {
+            var parent = await db.FactorItems.AsNoTracking().Where(x => x.Id == model.FactorItemId).Select(x => (Guid?)x.factorId).FirstOrDefaultAsync(ct);
+            if (!parent.HasValue || !await documentAccess.CanAsync("Factor", "Edit", parent.Value, ct)) return false;
+        }
+        if (model.Id != Guid.Empty && documentAccess.IsEnforced("SupplyFactor"))
+        {
+            var old = await db.SupplyFactorItemAllocations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
+            if (old == null || !old.SupplyFactorItemId.HasValue || !await CanSupplyItem("ManageAllocations", old.SupplyFactorItemId.Value, ct)) return false;
+        }
+        return true;
+    }
+
+    private async Task<bool> ValidateSupplyFactor(SupplyFactor model, bool create, CancellationToken ct)
+    {
+        if (!documentAccess.IsEnforced("SupplyFactor")) return true;
+        if (model == null) return false;
+        if (create)
+        {
+            if (model.Id != Guid.Empty || !await documentAccess.HasAsync("SupplyFactor", "Create", ct)) return false;
+            if (model.Items?.Any(x => x.Id != Guid.Empty) == true) return false;
+            model.IsDeleted = false;
+        }
+        else if (!await CanSupplyFactor("Edit", model.Id, ct)) return false;
+        model.Deal = null;
+        model.RequestAmountSupplyFactor = null;
+        model.PaymentSupplyFactors = null;
+        foreach (var link in model.SupplyFactorOrderHeads ?? new List<SupplyFactorOrderHead>())
+            if (!await documentAccess.CanAsync("OrderHead", "View", link.OrderHeadId, ct)) return false;
+        foreach (var attachment in model.Attachments ?? new List<Attachment>())
+            if (attachment.Id != Guid.Empty && !await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == attachment.Id && x.EntityId == model.Id, ct)) return false;
+        return true;
+    }
+
     private const string SalesAllocationRoles = "مدیر تامین,کارشناس تامین,مدیر ارشد,مدیر اجرایی,مدیر عامل,مدیر مالی,کارشناس مالی,مدیر فروش,کارشناس فروش";
     public class SupplyFactorAllocationRequest : CRM.Core.Domain.Supplies.Models.SupplyFactorAllocationRequest
     {
     }
 
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> SupplyFactor(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/SupplyFactor"), cancellationToken));
+    public async Task<IActionResult> SupplyFactor(CancellationToken cancellationToken)
+    {
+        if (!await documentAccess.HasViewAsync("SupplyFactor", cancellationToken)) return Forbid();
+        return View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/SupplyFactor"), cancellationToken));
+    }
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> Payment(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Payment"), cancellationToken));
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
@@ -68,6 +118,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> GetSupplyFactorAllocations(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!await CanSupplyFactor("View", id, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSupplyFactorAllocationsQuery(id), cancellationToken));
     }
 
@@ -75,6 +126,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> SearchAllocationFactorItems(string search, Guid supplyFactorItemId, Guid? allocationId = null, CancellationToken cancellationToken = default)
     {
+        if (!await CanSupplyItem("ManageAllocations", supplyFactorItemId, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new SearchAllocationFactorItemsQuery(search, supplyFactorItemId, allocationId), cancellationToken));
     }
 
@@ -113,27 +165,32 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
 
     public async Task<IActionResult> GetSupplierFinancialSummary(Guid supplierId, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasAsync("SupplyFactor", "View", cancellationToken) || !await documentAccess.HasAsync("Supply", "View", cancellationToken) || !await documentAccess.HasAsync("Accountancy", "View", cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSupplierFinancialSummaryQuery(supplierId), cancellationToken));
     }
 
     public async Task<IActionResult> GetAllSupplyFactorsPartial(string search, Guid? dealId = null, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("SupplyFactor", cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSupplyFactorsQuery(search, dealId), cancellationToken), nameof(GetAllSupplyFactorsPartial));
     }
 
     [HttpPost]
     public async Task<IActionResult> GetAllSupplyFactorsTablePartial([FromBody] GetAllBySelectedVModel model, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("SupplyFactor", cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new SearchSupplyFactorsQuery(model == null ? null : new SupplySelection(model.Search, model.SelectedIds)), cancellationToken), nameof(GetAllSupplyFactorsTablePartial));
     }
 
     public async Task<IActionResult> GetSupplyFactor(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!await CanSupplyFactor("View", id, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSupplyFactorQuery(id), cancellationToken));
     }
 
     public async Task<IActionResult> GetSupplyBaseData(CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("SupplyFactor", cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSupplyBaseDataQuery(), cancellationToken));
     }
 
@@ -145,6 +202,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpGet]
     public async Task<IActionResult> GetSupplies(Guid pfId, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("Supply", cancellationToken)) return Forbid();
         if (!await documentAccess.CanAsync("PreFactor", "View", pfId, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSuppliesQuery(pfId), cancellationToken));
     }
@@ -152,6 +210,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> GetSuppliesProfitDt(CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasAsync("SupplyFactor", "View", cancellationToken) || !await documentAccess.HasAsync("Supply", "View", cancellationToken) || !await documentAccess.HasAsync("Accountancy", "View", cancellationToken)) return Forbid();
         try
         {
             var request = await ReadTableRequestAsync(true, true, cancellationToken);
@@ -165,6 +224,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
 
     public async Task<IActionResult> GetSuppliesDemandsDt(CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasAsync("SupplyFactor", "View", cancellationToken) || !await documentAccess.HasAsync("Supply", "View", cancellationToken) || !await documentAccess.HasAsync("Accountancy", "View", cancellationToken)) return Forbid();
         try
         {
             var request = await ReadTableRequestAsync(false, true, cancellationToken);
@@ -179,6 +239,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> GetRpMotalebat(CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasAsync("SupplyFactor", "View", cancellationToken) || !await documentAccess.HasAsync("Supply", "View", cancellationToken) || !await documentAccess.HasAsync("Accountancy", "View", cancellationToken)) return Forbid();
         try
         {
             var request = await ReadTableRequestAsync(false, true, cancellationToken);
@@ -193,6 +254,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpGet]
     public async Task<IActionResult> GetSuppliesDetails(Guid dealId, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("Supply", cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetDealSuppliesQuery(dealId), cancellationToken), nameof(GetSuppliesDetails));
     }
 
@@ -206,6 +268,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> AddSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
         return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, null), cancellationToken));
@@ -216,6 +279,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> UpdateSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
         return Map(await requests.CommandAsync(new SaveSupplyAllocationCommand(model, model?.Id ?? Guid.Empty), cancellationToken));
@@ -226,6 +290,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = SalesAllocationRoles)]
     public async Task<IActionResult> AddSalesFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
         return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, null), cancellationToken));
@@ -236,6 +301,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = SalesAllocationRoles)]
     public async Task<IActionResult> UpdateSalesFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest("مقدار تخصیص باید مثبت و حداکثر دارای دو رقم اعشار باشد.");
         return Map(await requests.CommandAsync(new SaveSalesAllocationCommand(model, model?.Id ?? Guid.Empty), cancellationToken));
@@ -246,6 +312,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteSupplyFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new DeleteSupplyAllocationCommand(model), cancellationToken));
@@ -256,6 +323,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [Authorize(Roles = SalesAllocationRoles)]
     public async Task<IActionResult> DeleteSalesFactorAllocation([FromBody] SupplyFactorAllocationRequest model, CancellationToken cancellationToken = default)
     {
+        if (!await CanAllocation(model, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new DeleteSalesAllocationCommand(model), cancellationToken));
@@ -264,6 +332,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> AddSupplyFactor([FromBody] SupplyFactor model, CancellationToken cancellationToken = default)
     {
+        if (!await ValidateSupplyFactor(model, true, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new AddSupplyFactorCommand(model), cancellationToken));
@@ -272,6 +341,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> UpdateSupplyFactor([FromBody] SupplyFactor model, CancellationToken cancellationToken = default)
     {
+        if (!await ValidateSupplyFactor(model, false, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new UpdateSupplyFactorCommand(model), cancellationToken));
@@ -279,6 +349,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
 
     public async Task<IActionResult> DeleteSupplyFactor(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!await CanSupplyFactor("Delete", id, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new DeleteSupplyFactorCommand(id), cancellationToken));
@@ -303,6 +374,27 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> AddSupply([FromBody] List<Supply> model, CancellationToken cancellationToken = default)
     {
+        if (documentAccess.IsEnforced("Supply"))
+        {
+            if (model == null || model.Count == 0) return BadRequest();
+            foreach (var item in model)
+            {
+                if (item.Id == Guid.Empty)
+                {
+                    if (!await documentAccess.HasAsync("Supply", "Create", cancellationToken) || item.IsDeleted) return Forbid();
+                }
+                else
+                {
+                    if (!await documentAccess.CanAsync("Supply", item.IsDeleted ? "Delete" : "Edit", item.Id, cancellationToken)) return Forbid();
+                    var old = await db.Supplies.AsNoTracking().SingleOrDefaultAsync(x => x.Id == item.Id, cancellationToken);
+                    if (old == null || old.PfId != item.PfId) return Forbid();
+                    item.UserCreator = old.UserCreator;
+                    item.UserCreatorID = old.UserCreatorID;
+                }
+                if (!await documentAccess.CanAsync("PreFactor", "EditSupply", item.PfId, cancellationToken)) return Forbid();
+                if (item.PfItemId.HasValue && !await db.PreFactorItems.AsNoTracking().AnyAsync(x => x.Id == item.PfItemId && x.PrefactorId == item.PfId, cancellationToken)) return Forbid();
+            }
+        }
         if (!ModelState.IsValid)
             return BadRequest();
         if (documentAccess.IsEnforced("PreFactor"))
@@ -322,7 +414,11 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     }
 
     [HttpPost]
-    public async Task<IActionResult> ProcessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct) => Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
+    public async Task<IActionResult> ProcessSupplyFactorWithAi([FromBody] Attachment attachment, CancellationToken ct)
+    {
+        if (!await documentAccess.HasAsync("SupplyFactor", "Create", ct)) return Forbid();
+        return Map(await requests.CommandAsync(new ProcessSupplyInvoiceCommand(attachment), ct));
+    }
     private IActionResult Map(SupplyResult result, string viewName = null)
     {
         if (result.Kind == SupplyResultKind.Unauthorized)
