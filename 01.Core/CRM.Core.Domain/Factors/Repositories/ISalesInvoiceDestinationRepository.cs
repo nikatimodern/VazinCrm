@@ -21,9 +21,10 @@ public sealed record SalesInvoiceDeletionPreview(int Number, string SoftwareTitl
     IReadOnlyList<int> VoucherNumbers, IReadOnlyList<SalesInvoiceDeliveryNumber> Deliveries, IReadOnlyList<string> Blockers);
 public sealed record SalesInvoiceDeliveryNumber(int Number, int StockCode);
 public sealed record SalesInvoiceEditRow(int Id, int Row, int ItemId, string? ItemTitle, int StockId,
-    string? StockTitle, decimal Quantity, bool LinkedToQuotation);
+    string? StockTitle, decimal Quantity, decimal Fee, bool LinkedToQuotation);
 public sealed record SalesInvoiceEditState(SalesInvoiceDeletionPreview Impact, DateTime Date, int? QuotationId,
-    int CustomerId, string? CustomerName, int SaleTypeId, int? BrokerPartyId, IReadOnlyList<SalesInvoiceEditRow> Rows);
+    int CustomerId, string? CustomerName, int SaleTypeId, int? BrokerPartyId, IReadOnlyList<SalesInvoiceEditRow> Rows,
+    decimal Price, decimal Discount, decimal Rate);
 public sealed record SalesInvoiceEditSelection(int Id, int ItemId, int StockId);
 public sealed record SalesInvoiceEdit(DateTime Date, int Number, int? CustomerId, int? SaleTypeId,
     int? BrokerPartyId, IReadOnlyList<SalesInvoiceEditSelection> Items, bool AutoVoucher, bool AutoDelivery);

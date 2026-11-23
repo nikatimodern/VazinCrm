@@ -33,7 +33,8 @@ public sealed partial class SalesInvoiceDestinationRepository
         return new(impact, invoice.Date, invoice.QuotationRef, invoice.CustomerPartyRef, invoice.CustomerRealName,
             invoice.SaleTypeRef, snapshot.Broker?.PartyRef, snapshot.Rows.Select(row => new SalesInvoiceEditRow(
                 row.InvoiceItemID, row.RowID, row.ItemRef, items.GetValueOrDefault(row.ItemRef), row.StockRef,
-                stocks.GetValueOrDefault(row.StockRef), row.Quantity, row.QuotationItemRef.HasValue)).ToArray());
+                stocks.GetValueOrDefault(row.StockRef), row.Quantity, row.Fee, row.QuotationItemRef.HasValue)).ToArray(),
+            invoice.Price, invoice.Discount, invoice.Rate);
     }
 
     public async Task EditAsync(SalesInvoiceDestinationKey key, string token, int modifier, SalesInvoiceEdit edit,

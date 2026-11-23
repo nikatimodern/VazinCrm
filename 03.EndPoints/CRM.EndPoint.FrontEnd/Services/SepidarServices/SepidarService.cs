@@ -1251,7 +1251,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
 
     // The same calculation is used for both preview and final insert.
     // Sepidar stores a percentage on Party and a currency exchange rate on InvoiceBroker.
-    private async Task<SepidarInvoiceBrokerPreviewDto> CalculateInvoiceBrokerAsync(
+    internal async Task<SepidarInvoiceBrokerPreviewDto> CalculateInvoiceBrokerAsync(
         int brokerPartyId, decimal price, decimal discount, decimal currencyRate, CancellationToken ct)
     {
         var broker = await sepidarContext.Parties.AsNoTracking()

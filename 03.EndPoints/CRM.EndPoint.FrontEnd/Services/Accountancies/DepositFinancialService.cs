@@ -39,12 +39,12 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
                 var document = mapping == null ? null : await FindAsync(service, mapping, ct);
                 var cheque = document != null && source.PayType == PayTypeEnum.چکی
                     ? await GetChequeHistoryAsync(service, source, ReadId(mapping!), ct) : null;
-                return new { software.Id, software.Title, Document = document,
+                return new { software.Id, software.Title, Document = document, MappingId = mapping?.Id,
                     RegisteredAt = mapping?.CreateDateTxt, RegisteredBy = mapping?.UserCreator,
                     DateText = BaseServices.GetDatePersian(document?.Date), Missing = mapping != null && document == null && !mapping.HasPendingExternalId(),
                     Pending = mapping?.HasPendingExternalId() == true, Cheque = cheque };
             }));
-        return new { PayType = (int)source.PayType, source.CustomerName, Entries = entries };
+        return new { PayType = (int)source.PayType, source.SerialNum, source.CustomerName, Entries = entries };
     }
 
     public async Task<object> PrepareAsync(DepositTransferRequest request, CancellationToken ct)
@@ -55,9 +55,11 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
             .Where(x => x.ExternalSoftwareId == request.SoftwareId).ToArray();
         int MappedId(ExternalMappingTypeEnum type) => int.TryParse(
             maps.SingleOrDefault(x => x.MapType == type)?.ExEntityId, out var result) ? result : 0;
+        var needsOriginalChequeAmount = source.PayType == PayTypeEnum.چکی && source.Vosoled;
         return new { Type = (int)source.PayType, source.CustomerName, source.Beneficiary,
             source.BankAccountTxt, Amount = source.credit,
-            NeedsOriginalChequeAmount = source.PayType == PayTypeEnum.چکی && source.Vosoled,
+            NeedsOriginalChequeAmount = needsOriginalChequeAmount,
+            DefaultChequeAmount = needsOriginalChequeAmount ? source.credit?.ToString(CultureInfo.InvariantCulture) : null,
             DueText = source.PayType == PayTypeEnum.چکی && !source.Vosoled ? BaseServices.GetDatePersian(source.VosolDateM) : null,
             CustomerId = MappedId(ExternalMappingTypeEnum.مشتری), BankAccountId = MappedId(ExternalMappingTypeEnum.حساب_بانکی),
             Options = await service.GetDepositOptionsAsync((int)source.PayType, ct) };

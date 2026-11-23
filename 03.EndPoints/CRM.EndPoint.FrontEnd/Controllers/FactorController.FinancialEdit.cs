@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Factors.Repositories;
+using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Framework;
@@ -17,7 +18,7 @@ public partial class FactorController
 {
     public sealed record ExternalFactorEditRequest(SalesInvoiceDestinationKey Key, string Token, string DateText,
         int Number, int? CustomerId, int? SaleTypeId, bool IncludeBroker, SalesInvoiceEditSelection[] Items,
-        bool AutoVoucher, bool AutoDelivery);
+        bool AutoVoucher, bool AutoDelivery, int? PreviewBrokerPartyId);
 
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> GetExternalFactorEdit([FromQuery] SalesInvoiceDestinationKey key,
@@ -34,14 +35,34 @@ public partial class FactorController
             var customers = direct ? await service.GetSepidarCustomersAsync(ct, activeOnly: true) : [];
             var saleTypes = direct ? await service.GetSaleTypes(ct) : [];
             var settings = canEdit ? await service.GetSalesEditPostingSettingsAsync(ct) : null;
+            var factor = await db.Factors.AsNoTracking().SingleAsync(x => x.Id == key.SourceId, ct);
             return Ok(new {
                 state.Impact, state.QuotationId, state.CustomerId, state.CustomerName, state.SaleTypeId,
                 state.Rows, DateText = BaseServices.GetDatePersian(state.Date), IncludeBroker = state.BrokerPartyId.HasValue,
+                SalespersonName = await GetFactorSalespersonNameAsync(factor, ct),
                 AutoVoucher = settings?.AutoVoucher ?? false, AutoDelivery = settings?.AutoDelivery ?? false,
                 Customers = customers.Select(x => new { x.Id, Code = x.DlCode, Title = x.FullName }),
                 SaleTypes = saleTypes.Select(x => new { Id = x.SaleTypeId, Code = x.Number, x.Title }),
                 Items = canEdit ? await service.GetSepidarItemsAsync(ct) : []
             });
+        });
+
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> GetExternalFactorEditBroker([FromQuery] SalesInvoiceDestinationKey key, string token,
+        [FromServices] ISalesInvoiceDestinationRepository repository, CancellationToken ct) =>
+        RespondToFinancialEditAsync(async () =>
+        {
+            if (!ModelState.IsValid || key == null || key.SourceId == Guid.Empty || string.IsNullOrWhiteSpace(token))
+                return BadRequest("اطلاعات بررسی واسط معتبر نیست.");
+            var service = GetSepidarService(key.ExternalSoftwareId)
+                ?? throw new InvalidOperationException("نرم‌افزار مالی مقصد معتبر نیست.");
+            var state = await repository.GetEditAsync(key, ct);
+            if (state.Impact.Token != token)
+                return Conflict("فاکتور یا اسناد وابسته تغییر کرده‌اند. فرم را دوباره باز کنید.");
+            if (state.Impact.Blockers.Count > 0)
+                return Conflict(string.Join(" ", state.Impact.Blockers));
+            var broker = await GetExternalFactorEditBrokerAsync(key, state, service, ct);
+            return Ok(new { broker });
         });
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
@@ -64,25 +85,32 @@ public partial class FactorController
             var state = await repository.GetEditAsync(request.Key, ct);
             if (state.Impact.Token != request.Token)
                 return Conflict("فاکتور یا اسناد وابسته تغییر کرده‌اند. فرم را دوباره باز کنید.");
-            int? brokerId = null;
-            if (request.IncludeBroker)
-            {
-                brokerId = state.BrokerPartyId;
-                if (!brokerId.HasValue)
-                {
-                    var factor = await db.Factors.AsNoTracking().SingleAsync(x => x.Id == request.Key.SourceId, ct);
-                    brokerId = await ResolveExternalBrokerPartyIdAsync(factor, request.Key.ExternalSoftwareId, true, service, ct);
-                }
-            }
+            var broker = request.IncludeBroker ? await GetExternalFactorEditBrokerAsync(request.Key, state, service, ct) : null;
+            if (broker?.PartyId != request.PreviewBrokerPartyId)
+                return Conflict("اطلاعات واسط فروش تغییر کرده است. واسط را دوباره بررسی کنید.");
             var modifier = await sepidarUsers.GetCurrentExternalUserIdAsync(request.Key.ExternalSoftwareId, service, ct);
             var settings = new SepidarService.SalesPostingSettings(request.AutoVoucher, request.AutoDelivery);
             await repository.EditAsync(request.Key, request.Token, modifier,
-                new(date, request.Number, request.CustomerId, request.SaleTypeId, brokerId, request.Items,
+                new(date, request.Number, request.CustomerId, request.SaleTypeId, broker?.PartyId, request.Items,
                     request.AutoVoucher, request.AutoDelivery),
                 service.AcquireSepidarInvoiceExportLockAsync,
                 (posting, token) => service.PostEditedSalesInvoiceAsync(posting, settings, token), ct);
             return Ok(new { saved = true });
         });
+
+    private async Task<SepidarInvoiceBrokerPreviewDto> GetExternalFactorEditBrokerAsync(SalesInvoiceDestinationKey key,
+        SalesInvoiceEditState state, SepidarService service, CancellationToken ct)
+    {
+        var partyId = state.BrokerPartyId;
+        if (!partyId.HasValue)
+        {
+            var factor = await db.Factors.AsNoTracking().SingleAsync(x => x.Id == key.SourceId, ct);
+            partyId = await ResolveExternalBrokerPartyIdAsync(factor, key.ExternalSoftwareId, true, service, ct);
+        }
+        if (partyId is not > 0)
+            throw new InvalidOperationException("واسط فروش در سپیدار مشخص نشده است.");
+        return await service.CalculateInvoiceBrokerAsync(partyId.Value, state.Price, state.Discount, state.Rate, ct);
+    }
 
     private async Task<IActionResult> RespondToFinancialEditAsync(Func<Task<IActionResult>> operation)
     {

@@ -64,8 +64,9 @@ async function openSupplyFinancial(sourceId) {
         wizardUi.setActions({ confirmText, backText, backHidden: false });
         updateButtons();
     };
-    const field = (parent, text, control) => {
+    const field = (parent, text, control, required = false) => {
         control.id = "supply-financial-field-" + (++fieldId);
+        control.required = required;
         const caption = make("label", text, "form-label mb-0");
         caption.htmlFor = control.id;
         const group = make("div");
@@ -250,11 +251,14 @@ async function openSupplyFinancial(sourceId) {
                 confirmAction: async () => {
                     const stockId = Number(stock.value);
                     const details = [];
-                    if (impact.voucherNumber != null)
-                        details.push("سند حسابداری شماره " + impact.voucherNumber + " حذف می‌شود.");
-                    if (data.autoVoucher) details.push("سند حسابداری جدید صادر می‌شود.");
+                    if (impact.voucherNumber != null) {
+                        const action = data.autoVoucher ? "بازسازی می‌شود." : "حذف می‌شود.";
+                        details.push(`سند حسابداری شماره ${impact.voucherNumber} ${action}`);
+                    } else if (data.autoVoucher) {
+                        details.push("سند حسابداری صادر می‌شود.");
+                    }
                     if (stockId !== data.stockId)
-                        details.push("موجودی هر دو انبار به‌روزرسانی و شماره رسید بر اساس شماره‌گذاری انبار جدید تعیین می‌شود.");
+                        details.push("موجودی هر دو انبار به‌روز و شمارهٔ رسید در انبار مقصد تعیین می‌شود.");
                     if (!await historyCard.confirmEdit(wizard, "تغییرات رسید انبار شماره " + impact.number + " ذخیره شود؟", details)
                         || signal.aborted) return;
                     const result = await request("EditFinancialReceipt", {
@@ -475,7 +479,7 @@ async function openSupplyFinancial(sourceId) {
     const vendorStage = (data, source, software) => {
         const content = make("div", null, "d-flex flex-column gap-3");
         content.append(fields("تأمین‌کننده در ERP", source.supplierTxt));
-        const select = field(content, "تأمین‌کننده معادل در نرم‌افزار مالی", make("select", null, "show-dropdown-arrow"));
+        const select = field(content, "تأمین‌کننده معادل در نرم‌افزار مالی", make("select", null, "show-dropdown-arrow"), true);
         stage({ software, title: "تطبیق تأمین‌کننده", subtitle: "اتصال تأمین‌کننده ERP به نرم‌افزار مالی",
             icon: "fa-users", step: "مرحله ۱ از ۳", content,
             backAction: () => ModalToggle(wizard, "hide"), enabled: () => !!select.value,
@@ -493,7 +497,7 @@ async function openSupplyFinancial(sourceId) {
     const receiptStockStage = (data, source, software) => {
         const content = make("div", null, "d-grid gap-2");
         content.append(fields("شماره فاکتور خرید", source.number));
-        const stock = field(content, "انبار", make("select", null, "show-dropdown-arrow"));
+        const stock = field(content, "انبار", make("select", null, "show-dropdown-arrow"), true);
         stock.append(new Option("", ""));
         source.stocks.forEach(row => stock.append(new Option(label(row), row.id)));
         stock.value = String(data.stockId ?? (source.stocks.length === 1 ? source.stocks[0].id : ""));
@@ -518,7 +522,7 @@ async function openSupplyFinancial(sourceId) {
             const previous = data.items?.find(x => x.supplyFactorItemId === row.id);
             const target = appendExternalItemMatchRow(list, row.product, row.weightCount, row.unitTxt, receipt ? "مقدار:" : null);
             const select = receipt ? null : field(target, "کالای معادل در نرم‌افزار مالی",
-                make("select", null, "show-dropdown-arrow"));
+                make("select", null, "show-dropdown-arrow"), true);
             const text = optionalDescription(target, "توضیحات قلم",
                 receipt ? (data.rowDescriptions?.[row.id] ?? row.description) : previous?.description, receipt ? 4000 : 500);
             return { row, select, text, previous };
@@ -608,6 +612,7 @@ async function openSupplyFinancial(sourceId) {
             date.autocomplete = "off";
             date.value = preview.dateText;
             date.maxLength = 10;
+            date.required = true;
             date.setAttribute("data-datepicker-change", "");
             const updateDateButton = () => {
                 confirm.textContent = getDateText() === data.dateText

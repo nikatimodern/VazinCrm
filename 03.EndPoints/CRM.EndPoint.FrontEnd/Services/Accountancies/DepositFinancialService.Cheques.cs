@@ -28,7 +28,8 @@ public sealed partial class DepositFinancialService
         var status = await service.FindDepositChequeStatusAsync(receiptId, ct);
         var transferred = ActiveChequeTransfer(source) != null;
         if (status == null)
-            return new { NextAction = DepositChequeAction.None, Message = "چک این رسید در مقصد قابل تطبیق نیست." };
+            return new { NextAction = DepositChequeAction.None, Message = "چک این رسید در مقصد قابل تطبیق نیست.",
+                MaintenanceRestriction = "چک این رسید در مقصد قابل تطبیق نیست." };
         var assignment = status.Assignment;
         var assignmentBank = assignment?.BankId is int bankId
             ? await service.GetChequeAssignmentBankTitleAsync(bankId, ct) : null;
@@ -37,26 +38,34 @@ public sealed partial class DepositFinancialService
             ? await service.GetChequeAssignmentBankTitleAsync(collectedBankId, ct) : assignmentBank;
         var payment = status.Payment;
         var next = status.Next(transferred, source.Vosoled);
+        const string shared = "این سند شامل بیش از یک چک است.";
         return new
         {
             NextAction = next,
+            MaintenanceRestriction = payment != null ? "ابتدا اعلامیه پرداختِ خرج کردن چک را حذف کنید."
+                : collection != null || assignment != null ? "ابتدا عملیات وصول و واگذاری را به ترتیب از آخر حذف کنید."
+                : status.State != 1 ? "چک در وضعیت نزد صندوق نیست." : null,
             Message = status.Conflicts(transferred, source.Vosoled)
                 ? "وضعیت چک در نرم‌افزار مقصد با گردش ثبت‌شده در CRM سازگار نیست." : null,
             Assignment = assignment == null ? null : new
             {
                 assignment.Number, DateText = BaseServices.GetDatePersian(assignment.Date),
-                RegisteredAt = BaseServices.GetDatePersian(assignment.CreationDate), BankAccount = assignmentBank
+                RegisteredAt = BaseServices.GetDatePersian(assignment.CreationDate), BankAccount = assignmentBank,
+                MaintenanceRestriction = assignment.ItemCount != 1 ? shared
+                    : collection != null ? "ابتدا وصول چک را حذف کنید." : null
             },
             Collection = collection == null ? null : new
             {
                 collection.Number, DateText = BaseServices.GetDatePersian(collection.Date),
-                RegisteredAt = BaseServices.GetDatePersian(collection.CreationDate), BankAccount = collectionBank, status.Amount
+                RegisteredAt = BaseServices.GetDatePersian(collection.CreationDate), BankAccount = collectionBank, status.Amount,
+                MaintenanceRestriction = collection.ItemCount != 1 ? shared : null
             },
             Payment = payment == null ? null : new
             {
                 payment.Number, DateText = BaseServices.GetDatePersian(payment.Date),
                 RegisteredAt = BaseServices.GetDatePersian(payment.CreationDate),
-                Payee = TextService.NormalizePersianText(payment.Payee).Trim(), status.Amount
+                Payee = TextService.NormalizePersianText(payment.Payee).Trim(), status.Amount,
+                MaintenanceRestriction = payment.ItemCount != 1 ? shared : null
             }
         };
     }

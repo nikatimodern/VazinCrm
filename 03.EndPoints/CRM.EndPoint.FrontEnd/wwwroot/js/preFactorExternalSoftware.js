@@ -114,9 +114,8 @@ function renderPreFactorDestinationEdit(modal, key, { document: quote, saleTypes
     const list = element("div", "external-item-match-list");
     content.append(list);
     const rows = quote.items.map(row => {
-        const target = appendExternalItemMatchRow(list, row.itemTitle);
+        const target = appendExternalItemEditRow(list, row);
         const source = target.previousElementSibling;
-        source.append(element("small", null, `ردیف ${row.row} · مقدار ${row.quantity} · قیمت واحد ${Number(row.fee).toLocaleString()} ریال`));
         if (row.usedQuantity || row.deliveredQuantity) {
             source.append(element("small", null, `فاکتور شده ${row.usedQuantity} · خروج شده ${row.deliveredQuantity}`));
         }
@@ -408,6 +407,7 @@ function exSoftwarePreFactorRenderSaleType() {
         content: ExternalFinancialWizard.selectField({
             id: "externalMappingSaleTypeSelect",
             label: "نوع فروش",
+            required: true,
             selected: state.mappings.saleTypeId ?? "2",
             options: (state.software.saleTypes ?? []).map(item => ({
                 value: item.saleTypeId, label: item.title,
@@ -494,6 +494,7 @@ function exSoftwarePreFactorRenderCustomer() {
             ExternalFinancialWizard.selectField({
                 id: "externalMappingCustomerSelect",
                 label: "مشتری معادل در نرم‌افزار مالی",
+                required: true,
                 placeholder: "جستجو و انتخاب مشتری",
                 selected: mappedCustomerId,
                 options: (software.customers ?? []).map(customer => ({
@@ -626,6 +627,7 @@ function exSoftwarePreFactorRenderItems() {
         select.id = label.htmlFor;
         select.dataset.crmItemId = itemId;
         select.className = "external-mapping-item-select show-dropdown-arrow";
+        select.required = true;
         const selected = String(state.mappings.items[itemId]?.externalItemId ?? "");
         select.append(new Option("", ""));
         for (const product of software.sepidarItems ?? []) {
@@ -649,6 +651,7 @@ function exSoftwarePreFactorRenderItems() {
         const linkedStock = ExternalFinancialWizard.linkedStockField(target, {
             id: "externalMappingStock_" + itemId,
             softwareId: software.externalSoftwareId,
+            required: true,
             cache: software.stockCache,
             isCurrent: () => externalSoftwareProcess === state && state.software === software
                 && state.step === "items",

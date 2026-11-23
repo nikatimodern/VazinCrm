@@ -4,7 +4,7 @@
         <div class="modal-content col-12 p-2">
             <div id="addSepidarItemTitle" class="text-center text-white rounded py-1 fbold" style="background-color: #04857c">افزودن کالای جدید</div>
             <div class="modal-body pb-2">
-                <form id="addItemInSepidarForm" class="d-flex flex-column gap-2" novalidate>
+                <form id="addItemInSepidarForm" class="d-flex flex-column gap-2 required-mark" novalidate>
                     @Html.AntiForgeryToken()
                     <div>
                         <label for="sepidarItemTitleId">کالا</label>
@@ -12,7 +12,7 @@
                     </div>
                     <div id="sepidarItemCodeWrapper">
                         <div class="d-flex justify-content-between align-items-end">
-                            <label for="sepidarItemCodeId">کد:</label>
+                            <label for="sepidarItemCodeId" class="required-label">کد:</label>
                             <span class="text-muted fs-small" id="lastSepidarItemCode"></span>
                         </div>
                         <input class="form-control" name="itemCode" id="sepidarItemCodeId" required />
@@ -28,7 +28,7 @@
                         <input class="form-control digitNumber" inputmode="numeric" name="itemTaxRate" id="sepidarItemTaxRateId" required />
                     </div>
                     <div id="sepidarStockWrapper">
-                        <label for="sepidarStockId">انبار: </label>
+                        <label for="sepidarStockId" class="required-label">انبار:</label>
                         <div class="input-group">
                             <input id="sepidarStockId" type="text" class="form-control direction-ltr" placeholder="انبار.." disabled>
                             <button class="btn btn-sm btn-secondary" type="button" data-sepidar-item-stocks>انتخاب</button>

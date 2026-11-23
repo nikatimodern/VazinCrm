@@ -14,5 +14,11 @@ public interface IDepositFinancialRepository
     Task<List<ExternalMapping>> GetMappingsAsync(Guid id, Guid? customerId, Guid? bankId, CancellationToken ct);
     Task SaveMappingAsync(ExternalMapping mapping, CancellationToken ct);
     Task DeleteMappingAsync(ExternalMapping mapping, CancellationToken ct);
+    Task RemoveDestinationMappingAsync(ExternalMapping mapping, CancellationToken ct);
+    Task<bool> HasOtherDestinationMappingAsync(ExternalMapping mapping, int destinationId, CancellationToken ct);
+    Task<bool> HasDestinationDependenciesAsync(Guid softwareId, DepositDependencyTarget target, int id,
+        CancellationToken ct, DepositDependencyTarget? owner = null, int? ownerId = null);
     Task<IAsyncDisposable> LockAsync(Guid id, CancellationToken ct);
 }
+
+public enum DepositDependencyTarget { Receipt, Draft, Cheque, History, Banking, BankingItem, Payment, PaymentItem, Note, NoteItem, Voucher }
