@@ -21,22 +21,31 @@ public partial class SupplyController
     internal const string FinancialExportRoles = "مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
 
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
-    public Task<IActionResult> FinancialHistory(Guid sourceId, CancellationToken ct) =>
-        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyFinancialHistoryQuery(sourceId), ct));
+    public async Task<IActionResult> FinancialHistory(Guid sourceId, CancellationToken ct)
+    {
+        if (!await documentAccess.CanAsync("SupplyFactor", "ExportExternal", sourceId, ct)) return Forbid();
+        return await FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyFinancialHistoryQuery(sourceId), ct));
+    }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
-    public Task<IActionResult> DeleteMissingFinancialMapping([FromBody] DeleteMissingSupplyFinancialMappingCommand input, CancellationToken ct) =>
-        input == null ? Task.FromResult<IActionResult>(BadRequest("سابقه ارسال معتبر نیست."))
-            : FinancialResponseAsync(() => requests.CommandAsync(input, ct));
+    public async Task<IActionResult> DeleteMissingFinancialMapping([FromBody] DeleteMissingSupplyFinancialMappingCommand input, CancellationToken ct)
+    {
+        if (input == null) return BadRequest("سابقه ارسال معتبر نیست.");
+        if (!await documentAccess.CanAsync("SupplyFactor", "ExportExternal", input.SourceId, ct)) return Forbid();
+        return await FinancialResponseAsync(() => requests.CommandAsync(input, ct));
+    }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> PrepareFinancial([FromBody] SupplyFinancialRequest input, CancellationToken ct) =>
         FinancialInputAsync(input, () => requests.QueryAsync(new PrepareSupplyFinancialQuery(input), ct));
 
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
-    public Task<IActionResult> FinancialOptions(Guid externalSoftwareId, string search, bool items, CancellationToken ct) =>
-        FinancialResponseAsync(() => requests.QueryAsync(new SearchSupplyFinancialOptionsQuery(
+    public async Task<IActionResult> FinancialOptions(Guid externalSoftwareId, string search, bool items, CancellationToken ct)
+    {
+        if (!await documentAccess.HasAsync("SupplyFactor", "ExportExternal", ct)) return Forbid();
+        return await FinancialResponseAsync(() => requests.QueryAsync(new SearchSupplyFinancialOptionsQuery(
             new SupplyFinancialRequest { ExternalSoftwareId = externalSoftwareId, Search = search }, items), ct));
+    }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> SaveFinancialVendor([FromBody] SupplyFinancialRequest input, CancellationToken ct) =>
@@ -50,11 +59,12 @@ public partial class SupplyController
     public Task<IActionResult> SubmitFinancial([FromBody] SupplyFinancialRequest input, CancellationToken ct) =>
         FinancialInputAsync(input, () => requests.CommandAsync(new SubmitSupplyFinancialCommand(input), ct));
 
-    private Task<IActionResult> FinancialInputAsync(SupplyFinancialRequest input, Func<Task<SupplyResult>> run)
+    private async Task<IActionResult> FinancialInputAsync(SupplyFinancialRequest input, Func<Task<SupplyResult>> run)
     {
         if (input == null || input.SupplyFactorId == Guid.Empty || input.ExternalSoftwareId == Guid.Empty)
-            return Task.FromResult<IActionResult>(BadRequest("فاکتور تأمین یا نرم‌افزار مقصد معتبر نیست."));
-        return FinancialResponseAsync(run);
+            return BadRequest("فاکتور تأمین یا نرم‌افزار مقصد معتبر نیست.");
+        if (!await documentAccess.CanAsync("SupplyFactor", "ExportExternal", input.SupplyFactorId, HttpContext.RequestAborted)) return Forbid();
+        return await FinancialResponseAsync(run);
     }
 
     private async Task<IActionResult> FinancialResponseAsync(Func<Task<SupplyResult>> run)
