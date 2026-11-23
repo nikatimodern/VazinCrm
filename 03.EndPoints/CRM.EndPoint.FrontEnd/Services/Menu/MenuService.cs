@@ -14,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.ReleaseNotes.Repositories;
 using CRM.Core.ApplicationServices.ReleaseNotes.Services;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using Microsoft.Extensions.Configuration;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -28,6 +31,24 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var menus = BuildMenus(user);
 
         var filteredMenus = Filter(menus, roles);
+
+        // The legacy role menu must also respect the two modules whose
+        // AccessCatalog View enforcement is enabled. On a socket-triggered
+        // shell reload, removed links disappear immediately.
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            var settings = serviceProvider.GetRequiredService<IConfiguration>();
+            var scopes = serviceProvider.GetRequiredService<IAccessScopeService>();
+            if (settings.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") &&
+                await scopes.GetEffectiveScopeAsync(userId, "Customer.View", default) == AccessScopes.None)
+                filteredMenus.RemoveAll(item => item.Id == "customer");
+
+            if (settings.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
+                await scopes.GetEffectiveScopeAsync(userId, "Deal.View", default) == AccessScopes.None)
+                filteredMenus.RemoveAll(item => item.Id == "deal");
+        }
+
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
             // Match the exact audience/role resolution used by the release history.
