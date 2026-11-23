@@ -18,11 +18,14 @@ public partial class AddAllExceptSelectedUsersScope : Migration
     }
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        // Safe downgrade: exclude-list scopes revert to Own, never All.
+        // Safe downgrade: remove exclusion links only for scope 4, then revert
+        // those permissions to Own. Never silently widen them to All.
+        migrationBuilder.Sql(@"DELETE FROM [AccessUserScopeMembers] WHERE EXISTS (
+            SELECT 1 FROM [AccessUserPermissions] AS [p]
+            WHERE [p].[UserId] = [AccessUserScopeMembers].[UserId]
+            AND [p].[AccessPermissionId] = [AccessUserScopeMembers].[AccessPermissionId]
+            AND [p].[Scope] = 4)");
         migrationBuilder.Sql("UPDATE [AccessUserPermissions] SET [Scope] = 1 WHERE [Scope] = 4");
-        migrationBuilder.Sql(@"DELETE FROM [AccessUserScopeMembers]
-            WHERE [AccessPermissionId] IN (SELECT [AccessPermissionId] FROM [AccessUserPermissions]
-            WHERE [Scope] = 1)");
         migrationBuilder.Sql(@"ALTER TABLE [AccessUserPermissions]
             DROP CONSTRAINT [CK_AccessUserPermissions_Scope]");
         migrationBuilder.Sql(@"ALTER TABLE [AccessUserPermissions]

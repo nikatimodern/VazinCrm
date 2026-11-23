@@ -173,7 +173,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
     {
         if (draft is null || string.IsNullOrWhiteSpace(draft.UserId) || draft.UserId.Length > 450 ||
             draft.RoleIds is null || draft.RoleIds.Length > 100 || draft.Overrides is null ||
-            draft.Overrides.Length > 5000 || draft.ScopeEditorVersion != 2)
+            draft.Overrides.Length > 5000 || draft.ScopeEditorVersion != 3)
             return new(400, "اطلاعات کاربر یا نسخه صفحه معتبر نیست؛ صفحه مدیریت دسترسی را تازه‌سازی کنید.");
         var roleIds = draft.RoleIds.ToHashSet(StringComparer.Ordinal);
         if (roleIds.Count != draft.RoleIds.Length || roleIds.Any(x => string.IsNullOrWhiteSpace(x)))

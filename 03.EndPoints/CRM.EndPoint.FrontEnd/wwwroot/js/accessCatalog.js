@@ -1063,7 +1063,7 @@
         [...userRoleIds].some(id => !userOriginalRoles.has(id)) ||
         userOverrides.size !== userOriginalOverrides.size ||
         [...userOverrides].some(([id, scope]) => userOriginalOverrides.get(id) !== scope) ||
-        [...userOverrides].some(([id, scope]) => scope === 3 &&
+        [...userOverrides].some(([id, scope]) => (scope === 3 || scope === 4) &&
             (userSelectedUsers.get(id)?.size !== userOriginalSelectedUsers.get(id)?.size ||
              [...(userSelectedUsers.get(id)?.keys() ?? [])].some(userId =>
                 !userOriginalSelectedUsers.get(id)?.has(userId))));
@@ -1080,6 +1080,8 @@
             p.id === permissionId && p.supportsScope));
         const scopeLabel = scope === 1 ? "فقط اطلاعات خود" :
             scope === 3 ? "خودم + " + (userSelectedUsers.get(permissionId)?.size ?? 0) +
+                " کاربر انتخابی" :
+            scope === 4 ? "همه به‌جز " + (userSelectedUsers.get(permissionId)?.size ?? 0) +
                 " کاربر انتخابی" : "همه اطلاعات";
         return {
             allowed: scope > 0, scope,
@@ -1209,7 +1211,7 @@
         root.querySelector("[data-user-summary-roles]").textContent = userRoleIds.size + " نقش";
         root.querySelector("[data-user-summary-overrides]").textContent = userOverrides.size + " استثنا";
         root.querySelector("[data-user-summary-selected]").textContent =
-            [...userOverrides.values()].filter(scope => scope === 3).length + " مجوز انتخابی";
+            [...userOverrides.values()].filter(scope => scope === 3 || scope === 4).length + " مجوز انتخابی";
         const total = userCatalog.reduce((sum, e) =>
             sum + e.permissions.filter(p => effectivePermission(p.id).allowed).length, 0);
         root.querySelector("[data-user-effective-count]").textContent = total + " مجوز مؤثر";
@@ -1303,30 +1305,36 @@
                 select.setAttribute("aria-label", "وضعیت اختصاصی " + permission.title + " در " + entity.title);
                 select.append(new Option("از نقش‌ها", "inherit"));
                 if (permission.supportsScope) select.append(new Option("اجازه اختصاصی — فقط خود", "own"));
-                if (permission.supportsSelectedUsers)
+                if (permission.supportsSelectedUsers) {
                     select.append(new Option("کاربران انتخابی", "selected"));
+                    select.append(new Option("همه به‌جز کاربران انتخابی", "except"));
+                }
                 select.append(new Option(permission.supportsScope ?
                     "اجازه اختصاصی — همه" : "اجازه اختصاصی", "allow"),
                     new Option("محدودیت اختصاصی", "deny"));
                 const override = userOverrides.get(permission.id);
                 select.value = override === undefined ? "inherit" :
                     override === 0 ? "deny" : override === 1 ? "own" :
-                    override === 3 ? "selected" : "allow";
+                    override === 3 ? "selected" :
+                    override === 4 ? "except" : "allow";
                 const effective = text("span", null, "ac-user-effective");
                 effective.dataset.userEffective = permission.id;
                 controls.append(select, effective);
                 const sources = text("small", null, "ac-user-sources");
                 sources.dataset.userSources = permission.id;
                 item.append(title, controls, sources);
-                if (override === 3 && permission.supportsSelectedUsers) {
+                if ((override === 3 || override === 4) && permission.supportsSelectedUsers) {
                     item.classList.add("has-selected-users");
                     const panel = text("div", null, "ac-selected-users-panel");
-                    panel.append(text("label", "کاربران انتخابی برای " + permission.title, "ac-scope-users-label"));
+                    panel.append(text("label", override === 4 ?
+                        "کاربران مستثنا از " + permission.title : "کاربران انتخابی برای " + permission.title,
+                        "ac-scope-users-label"));
                     const selector = document.createElement("select");
                     selector.multiple = true;
                     selector.dataset.scopePickerId = permission.id;
                     selector.setAttribute("aria-label", "جست‌وجو و انتخاب کاربران مجاز");
-                    panel.append(selector, text("small",
+                    panel.append(selector, text("small", override === 4 ?
+                        "اشخاص مرتبط با هر یک از کاربران مستثنا نمایش داده نمی‌شوند؛ حتی اگر به کاربر مجاز دیگری هم مرتبط باشند." :
                         "اطلاعات مرتبط با خود کاربر نیز همیشه در این محدوده قرار دارند.",
                         "ac-scope-users-hint"));
                     item.append(panel);
@@ -1427,9 +1435,9 @@
         userRoleIds = new Set(result.roleIds.filter(id => available.has(id)));
         userOverrides = new Map(result.overrides.filter(x => active.has(x.accessPermissionId))
             .map(x => [x.accessPermissionId, !x.isAllowed ? 0 :
-                x.scope === 1 ? 1 : x.scope === 3 ? 3 : 2]));
+                x.scope === 1 ? 1 : x.scope === 3 ? 3 : x.scope === 4 ? 4 : 2]));
         userSelectedUsers = new Map(result.overrides
-            .filter(x => active.has(x.accessPermissionId) && x.isAllowed && x.scope === 3)
+            .filter(x => active.has(x.accessPermissionId) && x.isAllowed && (x.scope === 3 || x.scope === 4))
             .map(x => [x.accessPermissionId,
                 new Map((x.selectedUsers ?? []).map(member => [member.id, member]))]));
         userOriginalRoles = new Set(userRoleIds);
@@ -1543,10 +1551,17 @@
 
     function setUserOverride(id, value) {
         if (!userReady || userSaving) return;
-        if (value === "inherit") userOverrides.delete(id);
-        else userOverrides.set(id, value === "deny" ? 0 :
-            value === "own" ? 1 : value === "selected" ? 3 : 2);
-        if (value !== "selected") userSelectedUsers.delete(id);
+        const previous = userOverrides.get(id);
+        const next = value === "inherit" ? undefined :
+            value === "deny" ? 0 : value === "own" ? 1 :
+            value === "selected" ? 3 : value === "except" ? 4 : 2;
+        if (next === undefined) userOverrides.delete(id);
+        else userOverrides.set(id, next);
+        // Changing inclusion into exclusion reverses the meaning of every chip.
+        // Require the manager to deliberately choose the new set.
+        if (next !== 3 && next !== 4 || (previous === 3 && next === 4) ||
+            (previous === 4 && next === 3))
+            userSelectedUsers.delete(id);
         else if (!userSelectedUsers.has(id)) userSelectedUsers.set(id, new Map());
         renderUserPermissions();
     }
@@ -1554,8 +1569,8 @@
     async function saveUserAccess() {
         if (userSaving || !userReady || !userDirty() || !currentUserId) return;
         for (const [id, scope] of userOverrides) {
-            if (scope === 3 && !userSelectedUsers.get(id)?.size) {
-                showError("user", "برای محدوده «کاربران انتخابی» حداقل یک کاربر را انتخاب کنید.");
+            if ((scope === 3 || scope === 4) && !userSelectedUsers.get(id)?.size) {
+                showError("user", "برای این محدوده حداقل یک کاربر را انتخاب کنید.");
                 toastifyError("حداقل یک کاربر را انتخاب کنید.");
                 return;
             }
@@ -1566,10 +1581,10 @@
             syncUserState();
             showError("user", "");
             const result = await post("SaveUserAccess", {
-                userId, roleIds: [...userRoleIds], scopeEditorVersion: 2,
+                userId, roleIds: [...userRoleIds], scopeEditorVersion: 3,
                 overrides: [...userOverrides].map(([accessPermissionId, scope]) =>
                     ({ accessPermissionId, isAllowed: scope > 0, scope: scope || 2,
-                        selectedUserIds: scope === 3 ?
+                        selectedUserIds: (scope === 3 || scope === 4) ?
                             [...(userSelectedUsers.get(accessPermissionId)?.keys() ?? [])] : [] }))
             });
             if (signal.aborted || currentUserId !== userId) return;
