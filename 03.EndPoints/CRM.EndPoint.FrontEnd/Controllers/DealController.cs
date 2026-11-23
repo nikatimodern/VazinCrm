@@ -403,6 +403,30 @@ public class DealController : Controller {
     {
         try
         {
+            if (model == null) return BadRequest();
+            var ct = HttpContext.RequestAborted;
+            var existing = model.Id == Guid.Empty ? null :
+                await db.Deals.AsNoTracking().FirstOrDefaultAsync(d => d.Id == model.Id, ct);
+            if (Enforce)
+            {
+                if (model.Id == Guid.Empty)
+                {
+                    if (!await HasPermissionAsync("Create", ct)) return Forbid();
+                }
+                else
+                {
+                    if (existing is null) return NotFound();
+                    if (!await CanAccessAsync("Edit", existing, ct)) return Forbid();
+                    if (existing.FinancialStatus == DealFinancialStausEnum.تایید_شده)
+                        return Conflict("سفارش تایید مالی‌شده قابل ویرایش نیست.");
+                    if (existing.CustomerId != model.CustomerId &&
+                        await db.PreFactors.AnyAsync(p => p.DealId == model.Id, ct))
+                        return Conflict("مشتری سفارش دارای پیش‌فاکتور قابل تغییر نیست.");
+                }
+            }
+            if (CustomerEnforce && model.CustomerId.HasValue &&
+                !await accessScopes.CanAccessCustomerAsync(CurrentUserId, "Customer.View",
+                    model.CustomerId.Value, ct)) return Forbid();
             if (model.CustomerId == null && db.Customers.Any(f => f.Mobile == model.MobileNumber))
             {
                 return Conflict("مشتری با این شماره موبایل قبلا در سیستم ثبت شده است!");
@@ -424,9 +448,14 @@ public class DealController : Controller {
             }
 
 
-            var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == model.Id).FirstOrDefaultAsync();
+            var oldDeal = existing;
             var customer = await db.Customers.Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
-            if (customer != null)
+            // Deal.Create/Edit does not implicitly grant Customer.Edit.
+            // Keep the linked person's fields unchanged when that grant is absent.
+            var canEditCustomer = customer != null &&
+                (!CustomerEnforce || await accessScopes.CanAccessCustomerAsync(
+                    CurrentUserId, "Customer.Edit", customer.Id, ct));
+            if (canEditCustomer)
             {
                 customer.NumberRegister = model.CusNumberRegister;
                 customer.EghtesadiCode = model.CusEghtesadiCode;
@@ -451,6 +480,44 @@ public class DealController : Controller {
                 //customer.NormalizedAgentName = TextService.NormalizeText(model.CustomerName);
             }
 
+
+            if (Enforce)
+            {
+                // Ignore privileged fields supplied by an untrusted JSON body.
+                // Status and financial approval have dedicated actions/permissions.
+                model.Customer = null;
+                model.Factors = null;
+                model.Accountancies = null;
+                model.PreFactors = null;
+                model.Reports = null;
+                model.OrderHeads = null;
+                model.SupplyFactors = null;
+                model.UserIdsForSuspend = null;
+                if (existing is null)
+                {
+                    model.Status = DealStatusEnum.باز;
+                    model.FinancialStatus = DealFinancialStausEnum.تایید_نشده;
+                    model.IsDeleted = false;
+                    model.Suspend = false;
+                    model.OverdueFollowUpAt = null;
+                    model.OverdueFollowUpNote = null;
+                }
+                else
+                {
+                    model.UserCreatorID = existing.UserCreatorID;
+                    model.UserCreator = existing.UserCreator;
+                    model.CreateDate = existing.CreateDate;
+                    model.CreateDateTxt = existing.CreateDateTxt;
+                    model.SerialNumber = existing.SerialNumber;
+                    model.CountNum = existing.CountNum;
+                    model.Status = existing.Status;
+                    model.FinancialStatus = existing.FinancialStatus;
+                    model.Suspend = existing.Suspend;
+                    model.OverdueFollowUpAt = existing.OverdueFollowUpAt;
+                    model.OverdueFollowUpNote = existing.OverdueFollowUpNote;
+                    model.IsDeleted = existing.IsDeleted;
+                }
+            }
 
             if (model.Id == Guid.Empty)
             {
@@ -494,6 +561,9 @@ public class DealController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var deal = await db.Deals.Where(f => f.Id == id).FirstOrDefaultAsync();
             if (deal == null) return NotFound("رکوردی یافت نشد!");
+            if (!await CanAccessAsync("Delete", deal, HttpContext.RequestAborted)) return Forbid();
+            if (Enforce && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده)
+                return Conflict("سفارش تایید مالی‌شده قابل حذف نیست.");
 
             deal.IsDeleted = true;
             deal.UserModify = user.FullName;
@@ -529,6 +599,10 @@ public class DealController : Controller {
             var oldDeal = await db.Deals.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var deal = await db.Deals.Include(f => f.Factors).Where(f => f.Id == id).FirstOrDefaultAsync();
             if (deal == null) return NotFound("رکوردی یافت نشد!");
+            if (!Enum.IsDefined(status)) return BadRequest();
+            if (!await CanAccessAsync("ChangeStatus", deal, HttpContext.RequestAborted)) return Forbid();
+            if (Enforce && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده)
+                return Conflict("وضعیت سفارش تایید مالی‌شده قابل تغییر نیست.");
 
             if (status == DealStatusEnum.موفق && !deal.Factors.Any())
                 return BadRequest("سفارش بدون فاکتور نمی‌تواند موفق شود.");
@@ -564,8 +638,18 @@ public class DealController : Controller {
             var deal = await db.Deals.FirstOrDefaultAsync(f => f.Id == dealId);
             if (deal == null) return NotFound("رکوردی یافت نشد!");
             if (deal.CustomerId == null) return BadRequest();
+            if (!await HasPermissionAsync("Assign", HttpContext.RequestAborted) ||
+                !await CanAccessAsync("View", deal, HttpContext.RequestAborted)) return Forbid();
+            var recipient = await udb.Users.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == userId.ToString(), HttpContext.RequestAborted);
+            if (Enforce && (recipient is null || !recipient.IsEmployee || recipient.OrganAdmin))
+                return BadRequest("کارشناس انتخاب‌شده معتبر نیست.");
+            if (Enforce && CustomerEnforce &&
+                !await accessScopes.CanAccessCustomerAsync(CurrentUserId, "Customer.View",
+                    deal.CustomerId.Value, HttpContext.RequestAborted)) return Forbid();
 
-            if (Guid.Parse(deal.UserCreatorID) == userId)
+            var oldDealForLog = (Deal)db.Entry(deal).OriginalValues.ToObject();
+            if (string.Equals(deal.UserCreatorID, userId.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 var customerId = (Guid)deal.CustomerId;
                 var exists = await db.UserCustomers
@@ -581,13 +665,12 @@ public class DealController : Controller {
             } else
             {
                 deal.UserCreatorID = userId.ToString();
-                deal.UserCreator = userFullName;
+                deal.UserCreator = Enforce ? (recipient.FirstName + " " + recipient.LastName).Trim() : userFullName;
             }
 
             deal.Suspend = false;
 
-            var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
-            await _logSystemService.LogChange(oldDeal, deal, LogActionEnum.تغییر_وضعیت, user);
+            await _logSystemService.LogChange(oldDealForLog, deal, LogActionEnum.تغییر_وضعیت, user);
 
             await db.SaveChangesAsync();
             return Ok();
