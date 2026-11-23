@@ -299,7 +299,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     //const tabId = location.hash?.split("=")[1];
     const { tab = "TPrefactorFactorId", sub } = getUrlParams();
     // A temporarily unavailable tab (including a bookmarked URL) falls back to the default.
-    const activeTab = document.getElementById(tab) ? tab : "TPrefactorFactorId";
+    const selected = document.getElementById(tab);
+    const activeTab = selected && !selected.classList.contains("d-none") ? tab : document.querySelector("#CartableTabs .TCar:not(.d-none)")?.id;
     GetCartable(activeTab, activeTab === tab ? sub : undefined);
 });
 
@@ -397,7 +398,7 @@ const exportExcelFactors = async () => {
 };*/
 
 const GetCartable = (tabId, subId) => {
-    if (!document.getElementById(tabId)) return;
+    if (!tabId || !document.getElementById(tabId) || document.getElementById(tabId).classList.contains("d-none")) return;
     setUrlParams({ tab: tabId, sub: subId });
     document.querySelectorAll(".cartable-pane").forEach(el => el.classList.add("d-none"));
     document.querySelectorAll(".TCar").forEach(async (item) => {
@@ -407,6 +408,7 @@ const GetCartable = (tabId, subId) => {
                 case "TPrefactorFactorId":
                     document.getElementById("CPrefactorFactorId")?.classList.remove("d-none");
                     removeTabAllFactorsDesktop();
+                    if (document.getElementById("cartableWorkspace")?.dataset.pfView === "false") ShowTab("allFactorTab");
                     const promises = [];
                     if (filConfigSession?.filterVar) {
                         promises.push(FilterAccepted(filConfigSession));
@@ -427,7 +429,7 @@ const GetCartable = (tabId, subId) => {
                 
                 case "TFinancialExpertId":
                     document.getElementById("CFinancialExpertId")?.classList.remove("d-none");
-                    if (subId === "FinancialInvoiceTab") {
+                    if (subId === "FinancialInvoiceTab" || (document.getElementById("cartableWorkspace")?.dataset.pfFinancial === "false" && (!subId || subId === "FinancialPrefactorTab"))) {
                         await GetInvoicesFinancialExpert();
                     } else if (subId === "FinancialRequestTab") {
                         await GetRequestFinancialExpert();
@@ -454,7 +456,7 @@ const GetCartable = (tabId, subId) => {
                 
                 case "TTaminExpertId":
                     document.getElementById("CTaminExpertId")?.classList.remove("d-none");
-                    if (subId === "TaminInvoiceTab") {
+                    if (subId === "TaminInvoiceTab" || document.getElementById("cartableWorkspace")?.dataset.pfTamin === "false") {
                         await GetInvoicesTaminExpert();
                     } else {
                         await GetPreFactorTaminExpert();
@@ -477,6 +479,7 @@ const GetCartable = (tabId, subId) => {
 };
 
 const GetPreFactorPartial = async (showLoading = true) => {
+    if (document.getElementById("cartableWorkspace")?.dataset.pfView === "false" || window.AccessLive?.can("PreFactor", "View") === false) return;
     const model = {
         serVal: document.getElementById("searchId")?.value.trim() ?? "",
         _type: Number(document.querySelector("input[type='radio'][name='financeFilter']:checked")?.value ?? 0),
@@ -537,6 +540,7 @@ const GetPreFactorSalesAdmin = async () => {
 
 
 const GetPreFactorTaminExpert = async () => {
+    if (document.getElementById("cartableWorkspace")?.dataset.pfTamin === "false") return;
     const val = document.getElementById("TSearchId")?.value.trim() ?? "";
     const type = document.querySelector("input[type='radio'][name='TFilter']:checked")?.value;
     if (type === undefined) return;
@@ -668,6 +672,7 @@ const GetTransferManagingDirector = async () => {
 
 
 const GetPreFactorFinancialExpert = async () => {
+    if (document.getElementById("cartableWorkspace")?.dataset.pfFinancial === "false") return;
     const val = document.getElementById("FinancialExpertSearchId")?.value.trim() ?? "";
     const type = document.querySelector("input[type='radio'][name='financialExpertFilter']:checked")?.value;
     if (type === undefined) return;
