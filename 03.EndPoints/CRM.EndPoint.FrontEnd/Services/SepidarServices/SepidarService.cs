@@ -23,6 +23,7 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Factor;
 using CRM.EndPoint.FrontEnd.Models.Sepidar;
 using CRM.Infrastructures.Sql;
+using CRM.Infrastructures.Sql.Sepidar.Stocks.Repositories;
 using CRM.Framework;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -2029,17 +2030,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             sepidarContext.SalesInvoices.Add(invoice);
             await sepidarContext.SaveChangesAsync(ct);
             if (broker != null)
-            {
-                sepidarContext.InvoiceBrokers.Add(new InvoiceBrokerRecord {
-                    BrokerID = await GetNextIdAsync("SLS.InvoiceBroker", ct: ct),
-                    InvoiceRef = invoiceId,
-                    PartyRef = broker.PartyId,
-                    Commission = broker.Commission,
-                    Rate = broker.CurrencyRate,
-                    CommissionInBaseCurrency = broker.CommissionInBaseCurrency
-                });
-                await sepidarContext.SaveChangesAsync(ct);
-            }
+                await AddInvoiceBrokerAsync(invoiceId, broker, ct);
 
             // The delivery items reference the real newly allocated SLS.InvoiceItem IDs.
             if (issueInventoryDelivery)
@@ -2083,7 +2074,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
 
     private async Task<Voucher> AddSalesInvoiceVoucherAsync(
-        SalesInvoiceRecord invoice, SepidarInvoiceBrokerPreviewDto? broker, CancellationToken ct)
+        SalesInvoiceRecord invoice, SepidarInvoiceBrokerPreviewDto? broker, CancellationToken ct, bool useModifierAsCreator = false)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("سند حسابداری فروش باید داخل تراکنش فاکتور ثبت شود.");
@@ -2160,7 +2151,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             Description = baseDescription[..Math.Min(baseDescription.Length, 250)],
             Description_En = baseDescription[..Math.Min(baseDescription.Length, 250)],
             Version = 1,
-            Creator = invoice.Creator,
+            Creator = useModifierAsCreator ? invoice.LastModifier : invoice.Creator,
             CreationDate = now,
             LastModifier = invoice.LastModifier,
             LastModificationDate = now,
@@ -2399,7 +2390,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         return itemCodes;
     }
 
-    private async Task AcquireSepidarInvoiceExportLockAsync(CancellationToken ct)
+    internal async Task AcquireSepidarInvoiceExportLockAsync(CancellationToken ct)
     {
         var transaction = sepidarContext.Database.CurrentTransaction?.GetDbTransaction() as SqlTransaction
                           ?? throw new InvalidOperationException("Sepidar invoice export requires an active SQL transaction.");
@@ -2424,59 +2415,13 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         => CreateInventorySummaryTable(invoiceItems.Select(x => new InventoryStockKey(x.StockRef, x.ItemRef, x.TracingRef)), fiscalYearId);
 
     private static DataTable CreateInventorySummaryTable(IEnumerable<InventoryStockKey> keys, int fiscalYearId)
-    {
-        var table = new DataTable();
-        table.Columns.Add("StockID", typeof(int));
-        table.Columns.Add("ItemID", typeof(int));
-        table.Columns.Add("TracingID", typeof(int));
-        table.Columns.Add("FiscalYearID", typeof(int));
-        table.Columns.Add("FeedFromClosingOperation", typeof(bool));
+        => SepidarStockSummary.CreateTable(keys.Select(x => (x.StockRef, x.ItemRef, x.TracingRef)), fiscalYearId);
 
-        foreach (var key in keys
-                     .Distinct()
-                     .OrderBy(x => x.StockRef).ThenBy(x => x.ItemRef).ThenBy(x => x.TracingRef))
-        {
-            table.Rows.Add(
-                key.StockRef,
-                key.ItemRef,
-                key.TracingRef.HasValue ? (object)key.TracingRef.Value : DBNull.Value,
-                fiscalYearId,
-                false);
-        }
+    private Task LockInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
+        => SepidarStockSummary.LockAsync(sepidarContext, summaryTable, ct);
 
-        return table;
-    }
-
-    private SqlCommand CreateInventorySummaryCommand(string sql, CommandType commandType, DataTable summaryTable)
-    {
-        var transaction = sepidarContext.Database.CurrentTransaction?.GetDbTransaction() as SqlTransaction
-                          ?? throw new InvalidOperationException("Inventory changes require an active Sepidar SQL transaction.");
-        var connection = sepidarContext.Database.GetDbConnection() as SqlConnection
-                         ?? throw new InvalidOperationException("The Sepidar connection must be a SQL Server connection.");
-
-        var command = new SqlCommand(sql, connection, transaction) { CommandType = commandType };
-        command.Parameters.Add(new SqlParameter("@SummaryTable", SqlDbType.Structured) {
-            TypeName = "INV.SummaryRecordTable",
-            Value = summaryTable
-        });
-        return command;
-    }
-
-    private async Task LockInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
-    {
-        await using var command = CreateInventorySummaryCommand("INV.spLockItemStockSummary", CommandType.StoredProcedure, summaryTable);
-        await command.ExecuteNonQueryAsync(ct);
-    }
-
-    private async Task UpdateInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
-    {
-        await using var command = CreateInventorySummaryCommand("INV.spUpdateItemStockSummary", CommandType.StoredProcedure, summaryTable);
-
-        // Recalculate reservations as well as stock and undelivered invoice quantities.
-        command.Parameters.Add("@UpdateSaleWithReserve", SqlDbType.Bit).Value = true;
-        command.Parameters.Add("@IncludeRegisteredOrders", SqlDbType.Bit).Value = false;
-        await command.ExecuteNonQueryAsync(ct);
-    }
+    private Task UpdateInventoryStockSummaryAsync(DataTable summaryTable, CancellationToken ct)
+        => SepidarStockSummary.RecalculateAsync(sepidarContext, summaryTable, ct);
 
     private async Task<Dictionary<InventoryStockKey, InventoryStockBalance>> ReadInventoryStockBalancesAsync(
         IEnumerable<SalesInvoiceItemRecord> invoiceItems, int fiscalYearId, CancellationToken ct)
@@ -2566,7 +2511,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
     }
 
     private async Task<int> GetNextInventoryDeliveryNumberAsync(
-        int fiscalYearId, int stockRef, CancellationToken ct)
+        int fiscalYearId, int stockRef, CancellationToken ct, int previousNumber = 0)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("Inventory delivery numbering requires a transaction.");
@@ -2578,11 +2523,12 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                         && x.Type == 1 && !x.IsReturn)
             .MaxAsync(x => (int?)x.Number, ct) ?? 0;
 
-        return checked(lastNumber + 1);
+        return checked(Math.Max(lastNumber, previousNumber) + 1);
     }
 
     private async Task AddInventoryDeliveryAsync(SalesInvoiceRecord invoice,
-        IReadOnlyDictionary<int, int> stockCodes, CancellationToken ct)
+        IReadOnlyDictionary<int, int> stockCodes, CancellationToken ct,
+        IReadOnlyDictionary<int, int>? previousNumbers = null)
     {
         if (sepidarContext.Database.CurrentTransaction == null)
             throw new InvalidOperationException("Inventory delivery must use the invoice SQL transaction.");
@@ -2606,7 +2552,8 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 throw new InvalidOperationException($"انبار سپیدار با کد {stockCodes[group.Key]} فعال نیست.");
 
             var deliveryId = await GetNextIdAsync("INV.InventoryDelivery", ct: ct);
-            var deliveryNumber = await GetNextInventoryDeliveryNumberAsync(invoice.FiscalYearRef, group.Key, ct);
+            var deliveryNumber = await GetNextInventoryDeliveryNumberAsync(invoice.FiscalYearRef, group.Key, ct,
+                previousNumbers?.GetValueOrDefault(group.Key) ?? 0);
 
             var delivery = new InventoryDeliveryRecord {
                 InventoryDeliveryID = deliveryId,
@@ -2621,7 +2568,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 FiscalYearRef = invoice.FiscalYearRef,
                 DestinationStockRef = null,
                 CreatorForm = 1,
-                Creator = invoice.Creator,
+                Creator = previousNumbers == null ? invoice.Creator : invoice.LastModifier,
                 CreationDate = now,
                 LastModifier = invoice.LastModifier,
                 LastModificationDate = now,

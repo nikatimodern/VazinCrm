@@ -58,7 +58,8 @@ async function openDepositFinancial(id) {
                 const card = {
                     title: row.title, missing: row.missing, related: row.cheque ? chequeHistory(row) : null,
                     fields: [["شماره " + label(result.payType), row.document?.number],
-                        ["مشتری", result.customerName], ["تاریخ ثبت", row.dateText]],
+                        ["مشتری", result.customerName]],
+                    registration: { date: row.registeredAt, by: row.registeredBy },
                     status: row.missing ? "سند در نرم‌افزار مقصد پیدا نشد." : row.cheque?.message,
                 };
                 if (row.missing || row.pending) {
@@ -90,8 +91,7 @@ async function openDepositFinancial(id) {
                                 await refresh();
                         } finally { busy = false; }
                     };
-                    if (row.pending) card.action = button;
-                    else card.operations = [button];
+                    card.action = button;
                 }
                 return card;
             },
@@ -121,10 +121,12 @@ async function openDepositFinancial(id) {
             ["اعلامیه پرداخت · خرج کردن چک", row.cheque.payment, "تاریخ اعلامیه", "طرف مقابل", row.cheque.payment?.payee]
         ]) {
             if (!entry) continue;
-            const fields = [["شماره", entry.number], [dateLabel, entry.dateText]];
-            if (entry.amount != null) fields.push(["مبلغ چک", entry.amount.toLocaleString() + " ریال"]);
-            fields.push([detailLabel, detail]);
-            entries.push(historyCard.relatedItem({ title, fields }));
+            const caption = title + " شماره " + entry.number +
+                (entry.amount == null ? "" : " · " + entry.amount.toLocaleString() + " ریال");
+            entries.push(historyCard.relatedItem({
+                title: caption, fields: [[dateLabel, entry.dateText], [detailLabel, detail]],
+                registration: { date: entry.registeredAt },
+            }));
         }
         return entries.length || nextAction
             ? { title: "عملیات مرتبط چک", entries, action: nextAction, open: true }

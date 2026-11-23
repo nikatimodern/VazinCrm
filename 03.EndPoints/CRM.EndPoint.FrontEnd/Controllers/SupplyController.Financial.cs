@@ -8,6 +8,12 @@ using CRM.Core.ApplicationServices.Supplies.Queries.SearchSupplyFinancialOptions
 using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyFinancial;
 using CRM.Core.ApplicationServices.Supplies.Commands.SaveSupplyVendorMapping;
 using CRM.Core.ApplicationServices.Supplies.Commands.DeleteMissingSupplyFinancialMapping;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyPurchaseEdit;
+using CRM.Core.ApplicationServices.Supplies.Commands.EditSupplyPurchaseDestination;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyReceiptEdit;
+using CRM.Core.ApplicationServices.Supplies.Commands.EditSupplyReceiptDestination;
+using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyDestinationDeletion;
+using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyDestination;
 using CRM.Core.ApplicationServices.Supplies.Commands.SubmitSupplyFinancial;
 using CRM.Core.Domain.Supplies.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +55,31 @@ public partial class SupplyController
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> SubmitFinancial([FromBody] SupplyFinancialRequest input, CancellationToken ct) =>
         FinancialInputAsync(input, () => requests.CommandAsync(new SubmitSupplyFinancialCommand(input), ct));
+
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> GetFinancialPurchaseEdit([FromQuery] SupplyDestinationKey key, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyPurchaseEditQuery(key), ct));
+
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> GetFinancialReceiptEdit([FromQuery] SupplyDestinationKey key, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyReceiptEditQuery(key), ct));
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> EditFinancialReceipt([FromBody] SupplyReceiptEditRequest input, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.CommandAsync(new EditSupplyReceiptDestinationCommand(input), ct));
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> EditFinancialPurchase([FromBody] SupplyDestinationEditRequest input, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.CommandAsync(new EditSupplyPurchaseDestinationCommand(input), ct));
+
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> PreviewFinancialDeletion([FromQuery] SupplyDestinationKey key, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.QueryAsync(new PreviewSupplyDestinationDeletionQuery(key), ct));
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> DeleteFinancialDocument([FromBody] DeleteSupplyDestinationCommand input, CancellationToken ct) =>
+        input == null ? Task.FromResult<IActionResult>(BadRequest("سابقه ارسال معتبر نیست."))
+            : FinancialResponseAsync(() => requests.CommandAsync(input, ct));
 
     private Task<IActionResult> FinancialInputAsync(SupplyFinancialRequest input, Func<Task<SupplyResult>> run)
     {

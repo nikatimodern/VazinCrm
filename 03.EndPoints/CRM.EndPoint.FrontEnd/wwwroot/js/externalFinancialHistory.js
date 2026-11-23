@@ -95,7 +95,27 @@ class ExternalFinancialHistory {
         return group;
     }
 
-    static card({ title, fields = [], view, operations = [], action, related, status, missing = false }) {
+    static recordFields(fields, registration) {
+        const documentFields = this.fields(fields);
+        documentFields.classList.add("external-pf-record-fields");
+        const registeredAt = registration?.date?.replace(/^(\S+) (\d{2}:\d{2})(?::\d{2})?$/, "$1 | $2");
+        const metadata = this.fields([
+            ["تاریخ ثبت", registeredAt, false, true],
+            ["ثبت‌کننده", registration?.by],
+        ]);
+        metadata.classList.add("external-pf-record-fields", "external-pf-registration");
+        return [documentFields, metadata];
+    }
+
+    static statusMessage(status) {
+        const message = this.element("p", "external-pf-missing-message");
+        const icon = this.element("i", "fas fa-exclamation-circle");
+        icon.setAttribute("aria-hidden", "true");
+        message.append(icon, this.element("span", null, status));
+        return message;
+    }
+
+    static card({ title, fields = [], registration, view, operations = [], action, related, status, missing = false }) {
         const card = this.element("article", "external-pf-card" + (missing ? " external-pf-missing" : ""));
         const header = this.element("header", "external-pf-card-header");
         header.append(this.element("strong", "external-pf-software", title));
@@ -106,13 +126,14 @@ class ExternalFinancialHistory {
             if (operations.length) controls.append(this.operations(operations));
             header.append(controls);
         }
-        card.append(header, this.fields(fields));
-        if (status) card.append(this.element("p", "external-pf-missing-message", status));
+        card.append(header);
+        if (status) card.append(this.statusMessage(status));
+        card.append(...this.recordFields(fields, registration));
         if (related) card.append(this.related(related));
         return card;
     }
 
-    static relatedItem({ title, fields = [], view, action, status, missing = false }) {
+    static relatedItem({ title, fields = [], registration, view, action, operations = [], status, missing = false }) {
         const item = this.element("div", "external-pf-related-item" + (missing ? " external-pf-missing" : ""));
         const header = this.element("div", "external-pf-card-header");
         const caption = this.element("strong", "external-pf-related-title");
@@ -120,10 +141,18 @@ class ExternalFinancialHistory {
         icon.setAttribute("aria-hidden", "true");
         caption.append(icon, title);
         header.append(caption);
-        if (view || action) header.append(view ?? action);
+        if (operations.length) {
+            const controls = this.element("div", "external-pf-actions");
+            if (view) controls.append(view);
+            if (action) controls.append(action);
+            controls.append(this.operations(operations));
+            header.append(controls);
+        } else if (view || action) {
+            header.append(view ?? action);
+        }
         item.append(header);
-        if (fields.length) item.append(this.fields(fields));
-        if (status) item.append(this.element("p", "external-pf-missing-message", status));
+        if (status) item.append(this.statusMessage(status));
+        if (fields.length || registration) item.append(...this.recordFields(fields, registration));
         return item;
     }
 

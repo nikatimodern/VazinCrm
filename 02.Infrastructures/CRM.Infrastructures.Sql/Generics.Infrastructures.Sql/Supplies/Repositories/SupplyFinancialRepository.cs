@@ -48,6 +48,27 @@ public sealed class SupplyFinancialRepository(CRMContextDb db) : ISupplyFinancia
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteDestinationMappingAsync(ExternalMapping mapping, CancellationToken ct)
+    {
+        var deleted = await db.ExternalMappings.Where(x => x.Id == mapping.Id &&
+                x.EntityId == mapping.EntityId && x.EntityName == mapping.EntityName &&
+                x.ExternalSoftwareId == mapping.ExternalSoftwareId && x.MapType == mapping.MapType &&
+                x.ExEntityName == mapping.ExEntityName && x.ExEntityId == mapping.ExEntityId)
+            .ExecuteDeleteAsync(ct);
+        db.Entry(mapping).State = EntityState.Detached;
+        if (deleted == 0 && await db.ExternalMappings.AnyAsync(x => x.Id == mapping.Id, ct))
+            throw new InvalidOperationException("سند مقصد حذف شد، اما ارتباط آن در ERP هم‌زمان تغییر کرده است. سوابق را بررسی کنید.");
+    }
+
     public Task<IAsyncDisposable> LockAsync(Guid sourceId, CancellationToken ct) =>
         ExternalSoftwares.FinancialMappingLock.AcquireAsync(db, sourceId, ct);
+
+    public Task<bool> HasOtherDocumentMappingAsync(Guid destinationId, string entityName, int documentId,
+        Guid? mappingId, CancellationToken ct)
+    {
+        var id = documentId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var reserved = ExternalMapping.PendingIdPrefix + id;
+        return db.ExternalMappings.AnyAsync(x => x.ExternalSoftwareId == destinationId &&
+            x.ExEntityName == entityName && (x.ExEntityId == id || x.ExEntityId == reserved) && x.Id != mappingId, ct);
+    }
 }

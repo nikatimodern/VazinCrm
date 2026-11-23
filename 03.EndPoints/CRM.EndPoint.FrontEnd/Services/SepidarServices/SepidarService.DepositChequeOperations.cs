@@ -31,8 +31,8 @@ public partial class SepidarService
     private const string BankingNumberedEntity = "SG.ReceiptAndPayment.ReceiptManagement.Common.ReceiptChequeBankingRow";
     private const string PaymentNumberedEntity = "SG.ReceiptAndPayment.PaymentManagement.Common.PaymentHeaderRow";
 
-    public sealed record ChequeBankingDocument(int ItemId, int Number, DateTime Date, int? BankId);
-    public sealed record ChequePaymentDocument(int Number, DateTime Date, string? Payee);
+    public sealed record ChequeBankingDocument(int ItemId, int Number, DateTime Date, int? BankId, DateTime? CreationDate);
+    public sealed record ChequePaymentDocument(int Number, DateTime Date, string? Payee, DateTime? CreationDate);
     public sealed record DepositChequeStatus(int Id, int State, decimal Amount, string Number, DateTime ReceivedDate,
         DateTime? DueDate, int? CashId, ChequeBankingDocument? Assignment, ChequeBankingDocument? Collection,
         ChequePaymentDocument? Payment)
@@ -74,7 +74,7 @@ public partial class SepidarService
                 ((header.Type == AssignmentType && item.State == ChequeAssigned) ||
                  (header.Type == CollectionType && item.State == ChequeCollected))
             orderby header.Date descending, item.ReceiptChequeBankingItemId descending
-            select new { header.Type, item.ReceiptChequeBankingItemId, header.Number, header.Date,
+            select new { header.Type, item.ReceiptChequeBankingItemId, header.Number, header.Date, header.CreationDate,
                 BankId = item.BankAccountRef ?? header.BankAccountRef, item.ReceiptChequeBankingItemRef }).ToListAsync(ct);
         var collection = banking.FirstOrDefault(x => x.Type == CollectionType);
         var assignment = collection != null && cheque.State == ChequeCollected
@@ -86,11 +86,14 @@ public partial class SepidarService
             from detail in details.DefaultIfEmpty()
             where item.ReceiptChequeRef == cheque.ReceiptChequeId
             orderby header.Date descending, header.PaymentHeaderId descending
-            select new ChequePaymentDocument(header.Number, header.Date, detail == null ? null : detail.Title)).FirstOrDefaultAsync(ct);
+            select new ChequePaymentDocument(header.Number, header.Date, detail == null ? null : detail.Title,
+                header.CreationDate)).FirstOrDefaultAsync(ct);
         return new(cheque.ReceiptChequeId, cheque.State, cheque.Amount, cheque.Number, cheque.HeaderDate,
             cheque.Date, cheque.CashRef,
-            assignment == null ? null : new(assignment.ReceiptChequeBankingItemId, assignment.Number, assignment.Date, assignment.BankId),
-            collection == null ? null : new(collection.ReceiptChequeBankingItemId, collection.Number, collection.Date, collection.BankId), payment);
+            assignment == null ? null : new(assignment.ReceiptChequeBankingItemId, assignment.Number, assignment.Date,
+                assignment.BankId, assignment.CreationDate),
+            collection == null ? null : new(collection.ReceiptChequeBankingItemId, collection.Number, collection.Date,
+                collection.BankId, collection.CreationDate), payment);
     }
 
     internal async Task<string?> GetChequeAssignmentBankTitleAsync(int bankId, CancellationToken ct)

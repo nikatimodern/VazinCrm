@@ -45,12 +45,15 @@ function renderExternalSoftwareFactors(items = []) {
             fields: [
                 ["شماره فاکتور", item.externalFactorNumber],
                 ["مشتری", item.customerName],
-                ["تاریخ ثبت", item.creationDate],
             ],
+            registration: { date: item.creationDate, by: item.registeredBy },
             view: !item.isMissing && item.viewUrl
                 ? ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" }) : null,
-            operations: item.isMissing && item.mappingId && item.canDeleteMissing
-                ? [ui.missingMappingAction({
+            operations: !item.isMissing && item.canMaintainDestination && item.mappingId
+                ? factorDestinationOperations(history, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId })
+                : [],
+            action: item.isMissing && item.mappingId && item.canDeleteMissing
+                ? ui.missingMappingAction({
                     modal: history.modal,
                     sourceId,
                     softwareId: item.externalSoftwareId,
@@ -58,9 +61,63 @@ function renderExternalSoftwareFactors(items = []) {
                     softwareTitle: item.externalSoftwareTitle,
                     url: "/Factor/DeleteMissingExternalFactorMapping",
                     onDeleted: () => loadFactorExternalSoftwares(sourceId),
-                })] : [],
+                }) : null,
         }),
     });
+}
+
+function factorDestinationOperations(history, key) {
+    const ui = ExternalFinancialHistory;
+    const edit = ui.action("ویرایش انتقال", { icon: "fa-pencil-alt" });
+    edit.disabled = true;
+    edit.title = "ویرایش فاکتور فعلاً فعال نیست.";
+    const remove = ui.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
+        onClick: event => deleteFactorDestination(event.currentTarget, key, history.modal) });
+    return [edit, remove];
+}
+
+async function deleteFactorDestination(button, key, historyModal) {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+        const plan = await sendApiRequest({ url: "/Factor/PreviewExternalFactorDeletion", params: key, showLoading: false });
+        if (!plan || !button.isConnected || !isModalOpen(historyModal)) return;
+
+        const ui = ExternalFinancialHistory;
+        const content = ui.element("div", "text-start");
+        const blocked = plan.blockers.length > 0;
+        content.append(ui.element("p", "mb-2", blocked
+            ? `فاکتور شماره ${plan.number} در «${plan.softwareTitle}» قابل حذف نیست.`
+            : `فاکتور فروش شماره ${plan.number} از «${plan.softwareTitle}» حذف شود؟`));
+        const entries = blocked ? plan.blockers : [
+            ...plan.voucherNumbers.map(number => `سند حسابداری فروش شماره ${number}`),
+            ...plan.deliveries.map(item => `خروج انبار شماره ${item.number} (انبار ${item.stockCode})`),
+        ];
+        if (entries.length) {
+            if (!blocked) content.append(ui.element("p", "mb-1 small", "این اسناد هم همراه فاکتور حذف می‌شوند:"));
+            const list = ui.element("ul", "mb-2 small");
+            for (const entry of entries) list.append(ui.element("li", null, entry));
+            content.append(list);
+        }
+        if (!blocked && plan.deliveries.length)
+            content.append(ui.element("p", "mb-0 small", "موجودی انبار پس از حذف به‌روزرسانی می‌شود."));
+
+        const answer = await Swal.fire({
+            target: historyModal, title: "حذف فاکتور فروش از مقصد", html: content, icon: "warning",
+            showCancelButton: !blocked, focusCancel: true,
+            confirmButtonText: blocked ? "بستن" : "حذف فاکتور", cancelButtonText: "انصراف",
+        });
+        if (blocked || !answer.isConfirmed || !button.isConnected || !isModalOpen(historyModal)) return;
+        try {
+            await sendApiRequest({
+                url: "/Factor/DeleteExternalFactor", method: "POST", showLoading: false,
+                headers: ExternalFinancialWizard.antiforgeryHeaders(historyModal), data: { key, token: plan.token },
+                successMsg: "فاکتور فروش از نرم‌افزار مقصد حذف شد.",
+            });
+        } finally {
+            if (externalFactorHistory.factorId === key.sourceId) await loadFactorExternalSoftwares(key.sourceId);
+        }
+    } finally { button.disabled = false; }
 }
 
 document.addEventListener("click", async event => {

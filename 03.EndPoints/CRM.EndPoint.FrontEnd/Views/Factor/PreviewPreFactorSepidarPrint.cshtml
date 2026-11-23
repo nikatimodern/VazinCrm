@@ -1,0 +1,141 @@
+@model CRM.Core.Domain.PreFactors.Repositories.SepidarPreFactorPrint
+@using CRM.EndPoint.FrontEnd.Services
+@using CRM.Framework
+@using System.Globalization
+@{
+    Layout = null;
+    var quote = Model.Header;
+    var seller = Model.Seller;
+    string Amount(decimal value) => value.ToString("#,0.####", CultureInfo.InvariantCulture);
+    string Adjustment(decimal value) => value == 0 ? "" : Amount(value);
+}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>پیش‌فاکتور @quote.Number</title>
+    <link rel="stylesheet" href="~/lib/Bootstrap/bootstrap5.3.rtl.min.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/normalize.min.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/paper.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sepidarPreFactorPrint.css?release=7.0.4" asp-append-version="true" />
+    <script src="~/js/sepidarPreFactorPrint.js?release=7.0.4" asp-append-version="true" defer></script>
+</head>
+<body class="sepidar-quotation-print">
+    <main class="sheet quote-preview">
+        <article class="quote-sheet @(quote.IsOfficial ? "quote-official" : "")">
+            <header class="quote-heading">
+                <h1>پیش فاکتور فروش کالا و خدمات</h1>
+                <dl>
+                    <div><dt>شماره سریال</dt><dd dir="ltr">@quote.Number</dd></div>
+                    <div><dt>تاریخ</dt><dd dir="ltr">@BaseServices.GetDatePersian(quote.Date)</dd></div>
+                    <div><dt>تاریخ اعتبار</dt><dd dir="ltr">@BaseServices.GetDatePersian(quote.ExpirationDate)</dd></div>
+                </dl>
+            </header>
+
+            <section class="quote-party" aria-labelledby="sellerHeading">
+                <h2 id="sellerHeading">مشخصات فروشنده</h2>
+                <dl>
+                    <div><dt>نام فروشنده</dt><dd>@seller.Name</dd></div>
+                    <div><dt>شماره اقتصادی</dt><dd>@seller.EconomicCode</dd></div>
+                    <div><dt>شماره ثبت/شماره ملی</dt><dd>@seller.RegistrationCode</dd></div>
+                    <div><dt>شناسه ملی</dt><dd>@seller.NationalId</dd></div>
+                    <div><dt>کد پستی</dt><dd>@seller.PostalCode</dd></div>
+                    <div><dt>فکس</dt><dd dir="ltr">@seller.Fax</dd></div>
+                    <div class="quote-address"><dt>نشانی</dt><dd>@seller.Address</dd></div>
+                    <div><dt>تلفن</dt><dd dir="ltr">@seller.Phone</dd></div>
+                </dl>
+            </section>
+
+            <section class="quote-party" aria-labelledby="buyerHeading">
+                <h2 id="buyerHeading">مشخصات خریدار</h2>
+                <dl>
+                    <div><dt>نام خریدار</dt><dd>@quote.BuyerName</dd></div>
+                    <div><dt>شماره اقتصادی</dt><dd>@quote.BuyerEconomicCode</dd></div>
+                    <div><dt>شماره ثبت/شماره ملی</dt><dd>@quote.BuyerRegistrationCode</dd></div>
+                    <div><dt>نشانی</dt><dd>@quote.BuyerAddress</dd></div>
+                    <div><dt>تلفن</dt><dd dir="ltr">@quote.BuyerPhone</dd></div>
+                    <div><dt>کد پستی</dt><dd>@quote.BuyerPostalCode</dd></div>
+                </dl>
+            </section>
+
+            <table class="quote-lines">
+                <colgroup>
+                    <col class="quote-row-number" /><col class="quote-item-code" /><col />
+                    <col class="quote-quantity" /><col class="quote-unit" /><col class="quote-price" /><col class="quote-amount" />
+                </colgroup>
+                <thead>
+                    <tr><th colspan="7">مشخصات کالا یا خدمات مورد معامله</th></tr>
+                    <tr>
+                        <th scope="col">ردیف</th><th scope="col">کد کالا</th><th scope="col">شرح کالا/خدمت</th>
+                        <th scope="col">تعداد/مقدار</th><th scope="col">واحد</th>
+                        <th scope="col">مبلغ واحد</th><th scope="col">مبلغ کل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in Model.Lines)
+                    {
+                        <tr>
+                            <td>@line.RowNumber</td><td dir="auto">@line.Code</td>
+                            <td class="quote-item-title">
+                                @line.Title
+                                @if (!string.IsNullOrWhiteSpace(line.Description))
+                                {
+                                    <span>@line.Description</span>
+                                }
+                            </td>
+                            <td dir="ltr">@Amount(line.Quantity)</td><td>@line.Unit</td>
+                            <td dir="ltr">@Amount(line.UnitPrice)</td><td dir="ltr">@Amount(line.Total)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="quote-summary">
+                <p class="quote-amount-in-words">@TextService.ConvertDecimalToWords(quote.Total) @quote.CurrencyTitle</p>
+                <table class="quote-totals" aria-label="جمع مبالغ">
+                    <tbody>
+                        <tr><th scope="row">جمع کل</th><td dir="ltr">@Amount(quote.Subtotal)</td></tr>
+                        <tr><th scope="row">اضافات</th><td dir="ltr">@Adjustment(quote.Additions)</td></tr>
+                        <tr><th scope="row">تخفیف</th><td dir="ltr">@Adjustment(quote.Discount)</td></tr>
+                        <tr><th scope="row">مالیات و عوارض</th><td dir="ltr">@Adjustment(quote.Tax + quote.Duty)</td></tr>
+                        <tr><th scope="row">مبلغ پرداختی</th><td dir="ltr">@Amount(quote.Total)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="quote-payment">
+                <span>شرایط و نحوه فروش</span>
+                <span class="quote-payment-option">نقدی <i aria-hidden="true"></i></span>
+                <span class="quote-payment-option">غیر نقدی <i aria-hidden="true"></i></span>
+            </div>
+            <section class="quote-note" aria-labelledby="quoteNoteHeading">
+                <h2 id="quoteNoteHeading">توضیحات</h2>
+                <p>@Model.Note</p>
+            </section>
+            <footer class="quote-signatures">
+                <div>مهر و امضای فروشنده</div>
+                <div>مهر و امضای خریدار</div>
+            </footer>
+        </article>
+    </main>
+    <div class="d-flex flex-column align-items-center justify-content-center w-100" id="previewPrintBtns">
+        <div class="btn-group">
+            <button type="button" class="btn buttonCancel fbold" id="closeSepidarPreFactor">انصراف</button>
+            <button type="button" class="btn buttonCancel fbold justify-content-between" id="printSepidarPreFactor">
+                <span>چاپ</span>
+                <svg width="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.915a1.75 1.75 0 0 1-1.73-2.016L4.492 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.127-.153L5 6.25v-3.5Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.17a.25.25 0 0 0 .246-.288l-.692-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="Brand" id="BanerId">
+        <a href="//www.natix.ir" target="_blank" rel="noopener noreferrer">
+            <span>طراحی و تولید توسط شرکت مهندسی نرم‌افزاری ناتیکس</span>
+            <span>WWW.NATIX.IR</span>
+        </a>
+    </div>
+</body>
+</html>

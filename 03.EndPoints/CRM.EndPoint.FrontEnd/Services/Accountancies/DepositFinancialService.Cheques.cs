@@ -44,15 +44,18 @@ public sealed partial class DepositFinancialService
                 ? "وضعیت چک در نرم‌افزار مقصد با گردش ثبت‌شده در CRM سازگار نیست." : null,
             Assignment = assignment == null ? null : new
             {
-                assignment.Number, DateText = BaseServices.GetDatePersian(assignment.Date), BankAccount = assignmentBank
+                assignment.Number, DateText = BaseServices.GetDatePersian(assignment.Date),
+                RegisteredAt = BaseServices.GetDatePersian(assignment.CreationDate), BankAccount = assignmentBank
             },
             Collection = collection == null ? null : new
             {
-                collection.Number, DateText = BaseServices.GetDatePersian(collection.Date), BankAccount = collectionBank, status.Amount
+                collection.Number, DateText = BaseServices.GetDatePersian(collection.Date),
+                RegisteredAt = BaseServices.GetDatePersian(collection.CreationDate), BankAccount = collectionBank, status.Amount
             },
             Payment = payment == null ? null : new
             {
                 payment.Number, DateText = BaseServices.GetDatePersian(payment.Date),
+                RegisteredAt = BaseServices.GetDatePersian(payment.CreationDate),
                 Payee = TextService.NormalizePersianText(payment.Payee).Trim(), status.Amount
             }
         };

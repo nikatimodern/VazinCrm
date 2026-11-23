@@ -149,6 +149,132 @@ async function openSupplyFinancial(sourceId) {
         }, { signal });
         return remove;
     };
+
+    const destinationOperations = (software, purchase, receipt) => {
+        const key = { sourceId, softwareId: software.id, purchaseMappingId: purchase.mappingId };
+        if (receipt) {
+            key.receiptId = receipt.document.id;
+            if (receipt.mappingId) key.receiptMappingId = receipt.mappingId;
+        }
+        const edit = historyCard.action("ویرایش انتقال", { icon: "fa-pencil-alt",
+            onClick: () => openPurchaseEdit(software, key) });
+        edit.disabled = Boolean(receipt);
+        if (receipt) edit.title = "ویرایش رسید انبار فعلا امکان‌پذیر نیست.";
+        const remove = historyCard.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
+            onClick: event => deleteDestination(event.currentTarget, software, key) });
+        return [edit, remove];
+    };
+
+    const deleteDestination = async (button, software, key) => {
+        if (choosing || busy || isModalOpen(wizard)) return;
+        choosing = true;
+        button.disabled = true;
+        try {
+            const plan = await request("PreviewFinancialDeletion", key, "GET", false);
+            if (!plan || signal.aborted || !isModalOpen(historyModal)) return;
+            const receipt = Boolean(key.receiptId);
+            const title = receipt ? "رسید انبار" : "فاکتور خرید";
+            const blocked = plan.blockers.length > 0;
+            const content = make("div", null, "text-start");
+            content.append(make("p", blocked ? `${title} شماره ${plan.number} قابل حذف نیست.`
+                : `${title} شماره ${plan.number} از «${software.title}» حذف شود؟`, "mb-2"));
+            if (blocked) {
+                const list = make("ul", null, "mb-0 small");
+                plan.blockers.forEach(message => list.append(make("li", message)));
+                content.append(list);
+            } else {
+                if (plan.voucherNumber != null)
+                    content.append(make("p", `سند حسابداری شماره ${plan.voucherNumber} هم حذف می‌شود.`, "mb-2 small"));
+                if (receipt)
+                    content.append(make("p", "موجودی انبار و مانده اقلام فاکتور خرید به‌روزرسانی می‌شوند.", "mb-0 small"));
+            }
+            const answer = await Swal.fire({
+                target: historyModal, title: "حذف " + title + " از مقصد", html: content, icon: "warning",
+                showCancelButton: !blocked, focusCancel: true,
+                confirmButtonText: blocked ? "بستن" : "حذف " + title, cancelButtonText: "انصراف",
+            });
+            if (blocked || !answer.isConfirmed || signal.aborted || !isModalOpen(historyModal)) return;
+            try {
+                const result = await request("DeleteFinancialDocument", { key, token: plan.token });
+                if (result?.deleted) toastifySuccess(title + " از نرم‌افزار مقصد حذف شد.");
+            } finally {
+                if (!signal.aborted) await loadHistory();
+            }
+        } finally {
+            choosing = false;
+            button.disabled = false;
+        }
+    };
+
+    const openPurchaseEdit = async (software, key) => {
+        if (choosing || busy || isModalOpen(wizard)) return;
+        choosing = true;
+        try {
+            const data = await request("GetFinancialPurchaseEdit", key, "GET", false);
+            if (!data || signal.aborted || !isModalOpen(historyModal)) return;
+            const locked = Boolean(data.restriction);
+            const lookupsLocked = locked || data.hasLinkedReceipt;
+            const { content, toolbar, list } = createExternalItemMatching();
+            const general = make("div", null, "d-grid gap-2");
+            content.prepend(general);
+            toolbar.remove();
+            const vendor = field(general, "تأمین‌کننده مقصد", make("select", null, "show-dropdown-arrow"));
+            if (!lookupsLocked && !data.vendorId && data.vendorName)
+                general.append(fields("تأمین‌کننده فعلی", data.vendorName));
+            const description = optionalDescription(general, "توضیحات سند", data.description, 400);
+            description.disabled = locked;
+            const options = data.items.map(searchableOption);
+            const rows = data.rows.map(row => {
+                const target = appendExternalItemMatchRow(list, row.itemLabel, row.quantity, row.unit, "مقدار:");
+                const item = field(target, "کالای معادل در نرم‌افزار مالی", make("select", null, "show-dropdown-arrow"));
+                const note = optionalDescription(target, "توضیحات قلم", row.description, 500);
+                note.disabled = locked;
+                target.prepend(make("div", "قیمت واحد " + row.fee.toLocaleString() + " ریال", "small"));
+                return { row, item, note };
+            });
+            destinations = [software];
+            position = 0;
+            stage({
+                software, title: "ویرایش انتقال فاکتور خرید", icon: "fa-pencil-alt", large: true,
+                subtitle: data.restriction ?? (data.hasLinkedReceipt
+                    ? "برای این فاکتور رسید انبار ثبت شده است. توضیحات سند و اقلام قابل ویرایش است."
+                    : "تأمین‌کننده، کالاهای معادل و توضیحات انتقال را بررسی کنید."),
+                step: "فاکتور شماره " + data.number, content,
+                backAction: () => ModalToggle(wizard, "hide"), backText: locked ? "بستن" : "انصراف",
+                confirmText: "ذخیره تغییرات",
+                enabled: () => !locked && rows.length > 0 &&
+                    (data.hasLinkedReceipt || Boolean(vendor.value && rows.every(x => x.item.value))),
+                confirmAction: async () => {
+                    if (locked) return;
+                    const result = await request("EditFinancialPurchase", {
+                        key, token: data.token, description: description.value,
+                        ...(!lookupsLocked && { vendorId: Number(vendor.value) }),
+                        items: rows.map(x => ({
+                            rowNumber: x.row.rowNumber, description: x.note.value,
+                            ...(!lookupsLocked && { itemId: Number(x.item.value) }),
+                        })),
+                    });
+                    if (!result?.saved) return;
+                    toastifySuccess("تغییرات فاکتور خرید در نرم‌افزار مقصد ذخیره شد.");
+                    closing = true;
+                    ModalToggle(wizard, "hide");
+                },
+            });
+            const mount = (control, choices, id, text) => {
+                const current = String(id);
+                setupSearchableSelect(control, "جستجو و انتخاب", choices.some(x => x.value === current)
+                    ? choices : [...choices, { value: current, text: text || "—", searchText: normalizeOptionSearch(text ?? "") }], id);
+                if (lookupsLocked) control.tomselect.disable();
+            };
+            mount(vendor, data.vendors.map(searchableOption), data.vendorId || (lookupsLocked ? -1 : 0), data.vendorName);
+            rows.forEach(({ row, item }) => mount(item, options, row.itemId, row.itemLabel));
+            updateButtons();
+            ModalToggle(wizard, "show");
+        } finally {
+            choosing = false;
+        }
+    };
+
     const loadHistory = async () => {
         const current = ++version;
         send.disabled = true;
@@ -160,14 +286,14 @@ async function openSupplyFinancial(sourceId) {
             return;
         }
         historyModal.querySelector(".modal-title").textContent = "مدیریت ارسال فاکتور تأمین " + (result.serialNumber ?? "");
-        const records = result.softwares.filter(row => row.purchase || row.receipt);
+        const records = result.softwares.filter(row => row.purchase || row.receipts.length);
         historyUi.render(records, {
             emptyText: "این فاکتور خرید هنوز در نرم‌افزار مالی ثبت نشده است.",
             card: row => {
-                const { purchase, receipt } = row;
+                const { purchase, receipts } = row;
                 const invoice = purchase?.document;
                 let related;
-                if (invoice && !receipt) {
+                if (invoice && receipts.length === 0) {
                     const register = historyCard.action("ثبت رسید انبار");
                     register.addEventListener("click", async () => {
                         if (choosing || send.disabled || isModalOpen(wizard)) return;
@@ -184,27 +310,34 @@ async function openSupplyFinancial(sourceId) {
                     }, { signal });
                     related = { title: "رسید انبار", action: register };
                 }
-                if (receipt) {
-                    const document = receipt.document;
-                    const unrelated = !!invoice && !!document && document.basePurchaseId !== invoice.id;
-                    const missing = !document || unrelated;
-                    const entry = historyCard.relatedItem({
-                        title: missing ? "رسید انبار" : "رسید انبار شماره " + document.number,
-                        missing,
-                        fields: missing ? [] : [["تحویل‌دهنده", document.partyTitle], ["تاریخ ثبت", receipt.dateText]],
-                        status: unrelated ? "رسید ثبت‌شده به این فاکتور خرید مربوط نیست." :
-                            !document ? "رسید انبار در نرم‌افزار مقصد پیدا نشد." : "",
-                        action: !document && receipt.mappingId ? missingHistory(row, receipt, true) : null,
+                if (receipts.length) {
+                    const entries = receipts.map(receipt => {
+                        const document = receipt.document;
+                        const unrelated = !!invoice && !!document && document.basePurchaseId !== invoice.id;
+                        const missing = !document || unrelated;
+                        return historyCard.relatedItem({
+                            title: "رسید انبار",
+                            missing,
+                            fields: [["شماره رسید انبار", missing ? null : document.number],
+                                ["تحویل‌دهنده", missing ? null : document.partyTitle]],
+                            registration: unrelated ? null : { date: receipt.registeredAt, by: receipt.registeredBy },
+                            status: unrelated ? "رسید ثبت‌شده به این فاکتور خرید مربوط نیست." :
+                                !document ? "رسید انبار در نرم‌افزار مقصد پیدا نشد." : "",
+                            action: !document && receipt.mappingId ? missingHistory(row, receipt, true) : null,
+                            operations: invoice && purchase.mappingId && !missing
+                                ? destinationOperations(row, purchase, receipt) : [],
+                        });
                     });
-                    related = { title: "رسید انبار", entries: [entry], open: true };
+                    related = { title: "رسید انبار", entries, open: true };
                 }
                 return {
                     title: row.title, missing: !invoice, related,
-                    fields: [["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle],
-                        ["تاریخ ثبت", purchase?.dateText]],
+                    fields: [["شماره فاکتور خرید", invoice?.number], ["تأمین‌کننده", invoice?.partyTitle]],
+                    registration: { date: purchase?.registeredAt, by: purchase?.registeredBy },
                     status: !invoice ? (purchase ? "فاکتور خرید در نرم‌افزار مقصد پیدا نشد." :
                         "سابقه فاکتور خرید برای این مقصد موجود نیست.") : "",
-                    operations: purchase && !invoice && purchase.mappingId ? [missingHistory(row, purchase, false)] : [],
+                    operations: invoice && purchase.mappingId ? destinationOperations(row, purchase) : [],
+                    action: purchase && !invoice && purchase.mappingId ? missingHistory(row, purchase, false) : null,
                 };
             },
         });

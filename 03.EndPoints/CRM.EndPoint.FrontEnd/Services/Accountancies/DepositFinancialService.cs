@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Accountancies.Repositories;
+using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.PreFactors.Enum;
@@ -39,6 +40,7 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
                 var cheque = document != null && source.PayType == PayTypeEnum.چکی
                     ? await GetChequeHistoryAsync(service, source, ReadId(mapping!), ct) : null;
                 return new { software.Id, software.Title, Document = document,
+                    RegisteredAt = mapping?.CreateDateTxt, RegisteredBy = mapping?.UserCreator,
                     DateText = BaseServices.GetDatePersian(document?.Date), Missing = mapping != null && document == null && !mapping.HasPendingExternalId(),
                     Pending = mapping?.HasPendingExternalId() == true, Cheque = cheque };
             }));
@@ -72,18 +74,18 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
             PreviewToken = GetPreviewToken(draft) };
     }
 
-    public async Task<int> SaveCustomerMappingAsync(DepositTransferRequest request, string actorId, CancellationToken ct)
+    public async Task<int> SaveCustomerMappingAsync(DepositTransferRequest request, AppUser actor, CancellationToken ct)
     {
         var source = await SourceAsync(request.Id, ct);
         var customerId = GetMappedCustomerChoice(source, request)
             ?? throw new SepidarTransferValidationException("برای این نوع بستانکار نیازی به تطبیق مشتری نیست.");
         await Destination(request.SoftwareId).GetDepositCustomerAsync(customerId, ct);
         await SaveChoiceAsync(source, source.CustomerId!.Value, request.SoftwareId, ExternalMappingTypeEnum.مشتری,
-            "Customer", "Party", customerId, actorId, ct);
+            "Customer", "Party", customerId, actor, ct);
         return customerId;
     }
 
-    public async Task<int> SaveBankMappingAsync(DepositTransferRequest request, string actorId, CancellationToken ct)
+    public async Task<int> SaveBankMappingAsync(DepositTransferRequest request, AppUser actor, CancellationToken ct)
     {
         var source = await SourceAsync(request.Id, ct);
         if ((source.PayType != PayTypeEnum.نقدی && !UsesBankCollection(source))
@@ -91,26 +93,26 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
             throw new SepidarTransferValidationException("ابتدا حساب بانکی این واریزی را در CRM مشخص کنید.");
         await Destination(request.SoftwareId).ValidateDepositBankAccountAsync(request.BankAccountId, ct);
         await SaveChoiceAsync(source, bankId, request.SoftwareId, ExternalMappingTypeEnum.حساب_بانکی,
-            nameof(BankAccount), "BankAccount", request.BankAccountId, actorId, ct);
+            nameof(BankAccount), "BankAccount", request.BankAccountId, actor, ct);
         return request.BankAccountId;
     }
 
     private async Task SaveChoiceAsync(Accountancy source, Guid id, Guid softwareId, ExternalMappingTypeEnum type,
-        string crmEntity, string externalEntity, int value, string actorId, CancellationToken ct)
+        string crmEntity, string externalEntity, int value, AppUser actor, CancellationToken ct)
     {
         await using var choiceLock = await repository.LockAsync(id, ct);
         var mappings = await repository.GetMappingsAsync(source.Id, source.CustomerId, source.BankAccountId, ct);
         var mapping = mappings.SingleOrDefault(x => x.MapType == type && x.ExternalSoftwareId == softwareId)
             ?? new ExternalMapping { Id = Guid.NewGuid(), EntityId = id, ExternalSoftwareId = softwareId, MapType = type,
                 MapTypeTxt = type.ToString().Replace('_', ' '), EntityName = crmEntity, ExEntityName = externalEntity,
-                UserCreatorID = actorId };
+                UserCreatorID = actor.Id, UserCreator = actor.FullName };
         var externalId = value.ToString(CultureInfo.InvariantCulture);
         if (mapping.ExEntityId == externalId) return;
         mapping.ExEntityId = externalId;
         await repository.SaveMappingAsync(mapping, ct);
     }
 
-    public async Task<SepidarService.DepositDocument> SubmitAsync(DepositTransferRequest request, string actorId, CancellationToken ct)
+    public async Task<SepidarService.DepositDocument> SubmitAsync(DepositTransferRequest request, AppUser actor, CancellationToken ct)
     {
         await using var guard = await repository.LockAsync(request.Id, ct);
         var source = await SourceAsync(request.Id, ct);
@@ -153,7 +155,7 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
         ExternalMapping NewMapping(Guid id, ExternalMappingTypeEnum type, string entity, string external, string value) =>
             new() { Id = Guid.NewGuid(), EntityId = id, ExternalSoftwareId = request.SoftwareId,
                 MapType = type, MapTypeTxt = type.ToString().Replace('_', ' '), EntityName = entity,
-                ExEntityName = external, ExEntityId = value, UserCreatorID = actorId };
+                ExEntityName = external, ExEntityId = value, UserCreatorID = actor.Id, UserCreator = actor.FullName };
     }
 
     public async Task DeleteMissingAsync(Guid id, Guid softwareId, CancellationToken ct)

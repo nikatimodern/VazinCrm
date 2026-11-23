@@ -15,30 +15,6 @@ async function sendPreFactorToExternalSoftware(id) {
     });
 }
 
-async function openPreFactorDestinationView(button, key, historyModal) {
-    if (button.disabled) return;
-    button.disabled = true;
-    try {
-        const result = await sendApiRequest({
-            url: "/PreFactorDestination/Details", params: key, showLoading: false,
-        });
-        if (!result?.document || !button.isConnected || !isModalOpen(historyModal)) return;
-        const quote = result.document;
-        const content = ExternalFinancialHistory.element("div", "text-start");
-        content.append(ExternalFinancialHistory.fields([
-            ["نرم‌افزار", quote.softwareTitle], ["مشتری", quote.customerName],
-        ]));
-        const items = ExternalFinancialHistory.element("div", "mt-3");
-        items.innerHTML = renderExternalFinancialPreviewTable(["ردیف", "کالا", "انبار", "مقدار", "قیمت واحد (ریال)"],
-            quote.items.map(row => [row.row, row.itemTitle, row.stockTitle, row.quantity, Number(row.fee).toLocaleString()]));
-        content.append(items);
-        await Swal.fire({ target: historyModal, title: "پیش‌فاکتور شماره " + quote.number, html: content,
-            confirmButtonText: "بستن", width: 720 });
-    } finally {
-        button.disabled = false;
-    }
-}
-
 async function deletePreFactorDestination(button, key, historyModal) {
     if (button.disabled) return;
     button.disabled = true;
@@ -52,7 +28,7 @@ async function deletePreFactorDestination(button, key, historyModal) {
         const blockers = [documentState.restriction, ...documentState.deleteBlockers].filter(Boolean);
         if (blockers.length) {
             text.append(ExternalFinancialHistory.element("p", null, "این پیش‌فاکتور در مقصد قابل حذف نیست."));
-            const list = ExternalFinancialHistory.element("ul", "text-start mb-0");
+            const list = ExternalFinancialHistory.element("ul", "text-start mb-0 small");
             for (const blocker of blockers) list.append(ExternalFinancialHistory.element("li", null, blocker));
             text.append(list);
         } else {

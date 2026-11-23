@@ -19,4 +19,5 @@ public class ExternalSoftwarePreFactorDto
 
     public string ViewUrl { get; set; } = string.Empty;
     public string CreationDate { get; set; }
+    public string RegisteredBy { get; set; }
 }

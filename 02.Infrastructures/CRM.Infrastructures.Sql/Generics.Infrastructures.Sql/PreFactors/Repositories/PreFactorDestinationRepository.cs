@@ -4,11 +4,14 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Repositories;
+using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.Sepidar.Invoices.Entities;
 using CRM.Core.Domain.Sepidar.Quotations.Entites;
 using CRM.Framework;
 using Microsoft.Data.SqlClient;
@@ -24,6 +27,96 @@ public sealed class PreFactorDestinationRepository(CRMContextDb crm, Sepidar1Con
     private const int OpenFiscalYear = 1;
     private const string PendingDelete = "حذف پیش‌فاکتور در نرم‌افزار مالی، در انتظار ثبت نتیجه";
 
+    public async Task<SepidarPreFactorPrint?> GetPrintAsync(PreFactorDestinationKey key, CancellationToken ct)
+    {
+        var (destination, _, id, sourceNumber) = await ResolveAsync(key, ct);
+        var header = await destination.Database.SqlQuery<SepidarPreFactorPrintHeader>($"""
+            SELECT q.Number, q.Date, q.ExpirationDate, q.CurrencyTitle,
+                COALESCE(NULLIF(q.CustomerRealName, N''), q.CustomerPartyName) AS BuyerName,
+                q.CustomerEconomicCode AS BuyerEconomicCode, q.CustomerIdentificationCode AS BuyerRegistrationCode,
+                q.PartyAddress AS BuyerAddress, q.CustomerZipCode AS BuyerPostalCode, q.CustomerPhone AS BuyerPhone,
+                q.Price AS Subtotal, COALESCE(q.Addition,0) + COALESCE(q.AdditionFactor,0) AS Additions,
+                COALESCE(q.Discount,0) AS Discount, COALESCE(q.Tax,0) AS Tax, COALESCE(q.Duty,0) AS Duty,
+                COALESCE(q.NetPrice, q.Price - COALESCE(q.Discount,0) + COALESCE(q.Tax,0) + COALESCE(q.Duty,0)
+                    + COALESCE(q.Addition,0) + COALESCE(q.AdditionFactor,0)) AS Total
+            FROM SLS.vwQuotation q WHERE q.QuotationId = {id} AND q.Number = {sourceNumber}
+            """).SingleOrDefaultAsync(ct);
+        if (header == null)
+            return null;
+
+        var lines = await destination.Database.SqlQuery<SepidarPreFactorPrintLine>($"""
+            SELECT RowID AS RowNumber, ItemCode AS Code, ItemTitle AS Title, Description,
+                Quantity, UnitTitle AS Unit, Fee AS UnitPrice, Price AS Total
+            FROM SLS.vwQuotationItem WHERE QuotationRef = {id}
+            """).OrderBy(row => row.RowNumber).ToListAsync(ct);
+        var seller = await GetPrintSellerAsync(destination, header.IsOfficial, ct);
+        var note = await destination.ExtraData.AsNoTracking()
+            .Where(x => x.EntityTypeName == "SG.Sales.InvoiceManagement.Common.DsQuotation" && x.EntityRef == id)
+            .Select(x => x.Note).FirstOrDefaultAsync(ct);
+        return new(header, seller, lines, note);
+    }
+
+    private static async Task<SepidarPreFactorSeller> GetPrintSellerAsync(
+        SepidarContextDbBase destination, bool isOfficial, CancellationToken ct)
+    {
+        var templates = await destination.Database.SqlQuery<QuotationPrintTemplate>($"""
+            SELECT UserReportsID AS Id, ReportData AS Layout,
+                CONVERT(xml, XMLData).value('(/RgReport/LanguageTitle/LanguageEntry[@Culture="Farsi"]/@Value)[1]',
+                    'nvarchar(200)') AS Title
+            FROM FMK.UserReports
+            WHERE ParentName = N'QuotationA4' AND ReportData IS NOT NULL AND XMLData IS NOT NULL
+            """).OrderByDescending(x => x.Id).ToListAsync(ct);
+        var template = templates.FirstOrDefault(x =>
+        {
+            var title = x.Title?.Replace('ي', 'ی').Replace(" ", "").Replace("\u200c", "");
+            if (title?.EndsWith("رسمی", StringComparison.Ordinal) != true)
+                return false;
+            var isUnofficialTemplate = title.EndsWith("غیررسمی", StringComparison.Ordinal);
+            return isOfficial == !isUnofficialTemplate;
+        });
+
+        var settings = await destination.Database.SqlQuery<QuotationPrintSetting>($"""
+            SELECT RTRIM([Key]) AS Name, [Value] AS Value FROM FMK.Configuration
+            WHERE [Key] IN ('CompanyName','CompanyEconomicCode','CompanyRegistrationCode','CompanyNationalId',
+                'CompanyPostCode','CompanyFax','CompanyAddress','CompanyPhone')
+            """).ToDictionaryAsync(x => x.Name, x => x.Value?.Trim(), ct);
+
+        // When the destination uses the standard report, its seller comes from company settings.
+        if (template == null)
+        {
+            var name = settings.GetValueOrDefault("CompanyName");
+            return isOfficial
+                ? new(name, settings.GetValueOrDefault("CompanyEconomicCode"),
+                    settings.GetValueOrDefault("CompanyRegistrationCode"), settings.GetValueOrDefault("CompanyNationalId"),
+                    settings.GetValueOrDefault("CompanyPostCode"), settings.GetValueOrDefault("CompanyFax"),
+                    settings.GetValueOrDefault("CompanyAddress"), settings.GetValueOrDefault("CompanyPhone"))
+                : new(name, null, null, null, null, null, null, null);
+        }
+
+        using var layout = new System.IO.MemoryStream(template.Layout);
+        var report = XDocument.Load(layout);
+        var sellerBand = report.Descendants("ChildBand").FirstOrDefault(band =>
+            band.Elements("TextObject").Any(field => (string?)field.Attribute("Name") == "Text8"));
+
+        // Read the seller fields from the customized FastReport header without evaluating report scripts.
+        string? GetField(string fieldName, string settingName)
+        {
+            var value = (string?)sellerBand?.Elements("TextObject")
+                .FirstOrDefault(field => (string?)field.Attribute("Name") == fieldName)?.Attribute("Text");
+            if (value == $"[RgParam{settingName}]")
+                return settings.GetValueOrDefault(settingName);
+            return value?.Trim();
+        }
+
+        return new(GetField("Text8", "CompanyName"), GetField("Text11", "CompanyEconomicCode"),
+            GetField("Text20", "CompanyRegistrationCode"), GetField("Text101", "CompanyNationalId"),
+            GetField("Text100", "CompanyPostCode"), GetField("Text86", "CompanyFax"),
+            GetField("Text10", "CompanyAddress"), GetField("Text24", "CompanyPhone"));
+    }
+
+    private sealed record QuotationPrintSetting(string Name, string? Value);
+    private sealed record QuotationPrintTemplate(int Id, byte[] Layout, string? Title);
+
     public async Task<IReadOnlyList<PreFactorRelatedInvoice>> GetRelatedInvoicesAsync(PreFactorDestinationKey key, CancellationToken ct)
     {
         var (destination, _, id, sourceNumber) = await ResolveAsync(key, ct);
@@ -35,11 +128,27 @@ public sealed class PreFactorDestinationRepository(CRMContextDb crm, Sepidar1Con
             join row in destination.QuotationItems on line.QuotationItemRef equals (int?)row.QuotationItemID
             where row.QuotationRef == id
             select line.InvoiceRef;
-        return await destination.SalesInvoices.AsNoTracking()
+        var invoices = await destination.SalesInvoices.AsNoTracking()
             .Where(x => x.QuotationRef == id || linkedInvoices.Contains(x.InvoiceId))
             .OrderByDescending(x => x.Date).ThenByDescending(x => x.InvoiceId)
-            .Select(x => new PreFactorRelatedInvoice(x.InvoiceId, x.Number, x.Date))
+            .Select(x => new PreFactorRelatedInvoice(x.InvoiceId, x.Number, x.Date, x.CustomerRealName, x.CreationDate, null, null))
             .ToListAsync(ct);
+        if (invoices.Count == 0)
+            return invoices;
+
+        var externalIds = invoices.Select(x => x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+        var mappings = await crm.ExternalMappings.AsNoTracking()
+            .Where(x => x.ExternalSoftwareId == key.ExternalSoftwareId && x.MapType == ExternalMappingTypeEnum.فاکتور &&
+                x.EntityName == nameof(Factor) && x.ExEntityName == nameof(Invoice) && externalIds.Contains(x.ExEntityId))
+            .Select(x => new { x.ExEntityId, x.CreateDateTxt, x.UserCreator })
+            .ToListAsync(ct);
+        var registrationById = mappings.GroupBy(x => x.ExEntityId)
+            .Where(group => group.Count() == 1)
+            .ToDictionary(group => group.Key, group => group.Single());
+        return invoices.ConvertAll(invoice =>
+            registrationById.TryGetValue(invoice.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), out var registration)
+                ? invoice with { RegisteredAt = registration.CreateDateTxt, RegisteredBy = registration.UserCreator }
+                : invoice);
     }
 
     public async Task<PreFactorDestination?> GetAsync(PreFactorDestinationKey key, CancellationToken ct)

@@ -23,6 +23,9 @@ public sealed class PreFactorDestinationController(IPreFactorDestinationReposito
         RespondAsync(async () => Ok((await repository.GetRelatedInvoicesAsync(key, ct)).Select(invoice => new {
             invoice.Number,
             Date = dates.GetDatePersian(invoice.Date),
+            invoice.CustomerName,
+            RegisteredAt = invoice.RegisteredAt ?? dates.GetDateTimePersian(invoice.CreationDate),
+            invoice.RegisteredBy,
             ViewUrl = Url.Action("PreviewFactorSepidarPrint", "Factor", new { id = invoice.Id, softwareId = key.ExternalSoftwareId })
         })));
 

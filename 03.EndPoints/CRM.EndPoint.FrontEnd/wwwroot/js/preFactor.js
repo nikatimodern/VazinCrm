@@ -1334,24 +1334,23 @@ function renderExternalSoftwarePreFactors(items = [], sourceId = externalSotware
                 fields: [
                     ["شماره پیش‌فاکتور", item.externalPreFactorNumber],
                     ["مشتری", item.customerName],
-                    ["تاریخ ثبت", item.creationDate?.slice(0, -3).replace(" ", " | "), false, true],
                 ],
+                registration: { date: item.creationDate, by: item.registeredBy },
             };
             if (item.isMissing) {
                 card.status = "پیش‌فاکتور در نرم‌افزار مقصد پیدا نشد.";
                 if (item.mappingId && item.canDeleteMissing) {
-                    card.operations = [ui.missingMappingAction({
+                    card.action = ui.missingMappingAction({
                         modal: history.modal, sourceId, softwareId: item.externalSoftwareId,
                         mappingId: item.mappingId, softwareTitle: item.externalSoftwareTitle,
                         url: "/Factor/DeleteMissingExternalPreFactorMapping",
                         onDeleted: () => getPreFactorExternalSotwares(sourceId),
-                    })];
+                    });
                 }
                 return card;
             }
 
-            card.view = ui.action("مشاهده سند", { icon: "fa-eye",
-                onClick: event => openPreFactorDestinationView(event.currentTarget, key, history.modal) });
+            if (item.viewUrl) card.view = ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" });
             card.related = {
                 title: "فاکتورهای مرتبط",
                 emptyText: "هنوز فاکتوری صادر نشده است.",
@@ -1359,8 +1358,9 @@ function renderExternalSoftwarePreFactors(items = [], sourceId = externalSotware
                     const rows = await sendApiRequest({ url: "/PreFactorDestination/RelatedInvoices",
                         params: key, showLoading: false, showError: false });
                     return Array.isArray(rows) ? rows.map(row => ui.relatedItem({
-                        title: "فاکتور فروش شماره " + row.number,
-                        fields: [["تاریخ فاکتور", row.date, false, true]],
+                        title: "فاکتور فروش",
+                        fields: [["شماره فاکتور", row.number], ["مشتری", row.customerName]],
+                        registration: { date: row.registeredAt, by: row.registeredBy },
                         view: row.viewUrl ? ui.action("مشاهده سند", { href: row.viewUrl, icon: "fa-eye" }) : null,
                     })) : null;
                 },

@@ -69,6 +69,10 @@
     gap: .4rem .85rem;
 }
 
+.external-pf-record-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .external-pf-field {
     display: flex;
     align-items: baseline;
@@ -207,23 +211,37 @@ button.external-pf-related-caption {
 }
 
 .external-pf-missing {
-    border-color: var(--color-danger, #C2185B);
+    border-inline-start-color: var(--color-danger, #C2185B);
     background: var(--color-danger-light, #FCE8F0);
 }
 
-.external-pf-missing-message,
-.external-pf-missing .external-pf-value,
-.external-pf-missing .external-pf-related-title,
-.external-pf-remove {
-    color: var(--color-danger, #C2185B);
+.external-pf-card.external-pf-missing > .external-pf-related {
+    background: var(--color-background, #F0F1F7);
 }
 
-.external-pf-card.external-pf-missing .external-pf-related-item:not(.external-pf-missing) :is(.external-pf-value, .external-pf-related-title) {
-    color: var(--color-text, #212529);
+.external-pf-missing-message {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    justify-self: start;
+    max-inline-size: 100%;
+    padding: .25rem .5rem;
+    border-radius: .35rem;
+    background: var(--color-danger-light, #FCE8F0);
+    color: var(--color-danger, #C2185B);
+    overflow-wrap: anywhere;
+}
+
+.external-pf-missing > .external-pf-missing-message {
+    background: color-mix(in srgb, var(--color-danger-light, #FCE8F0) 90%, var(--color-danger, #C2185B));
+}
+
+.external-pf-remove,
+.external-pf-remove:hover:not(:disabled) {
+    color: var(--color-danger, #C2185B);
 }
 
 .external-pf-remove:hover:not(:disabled) {
-    color: var(--color-danger, #C2185B);
     background: var(--color-danger-light, #FCE8F0);
 }
 
