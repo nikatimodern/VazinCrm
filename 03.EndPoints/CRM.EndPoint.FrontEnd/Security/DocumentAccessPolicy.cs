@@ -43,6 +43,13 @@ public sealed class DocumentAccessPolicy(
         return await scopes.GetEffectiveScopeAsync(UserId, entity + "." + action, ct) == AccessScopes.All;
     }
 
+    public async Task<bool> HasAnyAsync(string entity, string action, CancellationToken ct)
+    {
+        if (!IsEnforced(entity)) return true;
+        var owners = await OwnersAsync(entity + "." + action, ct);
+        return owners.AllowedOwnerIds is not { Length: 0 };
+    }
+
     private Task<Guid?> ExternalPersonAsync(CancellationToken ct) => externalPerson ??=
         users.Users.AsNoTracking()
             .Where(u => u.Id == UserId && !u.IsEmployee && u.IsCustomer)
