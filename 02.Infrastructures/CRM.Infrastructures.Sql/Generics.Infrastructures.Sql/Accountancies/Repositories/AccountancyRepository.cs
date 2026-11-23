@@ -18,12 +18,12 @@ using CRM.Infrastructures.Sql.Querying;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Accountancies.Repositories;
-public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyRepository
+public sealed class AccountancyRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : IAccountancyRepository
 {
     public Task<Accountancy?> GetAsync(Guid id, bool parent, bool tracking, CancellationToken ct) => (tracking ? db.Accountancies : db.Accountancies.AsNoTracking()).Include(a => a.AccountancyTransfer).FirstOrDefaultAsync(a => parent ? a.ParentId == id : a.Id == id, ct);
     public Task<List<Attachment>> GetAttachmentsAsync(Guid id, CancellationToken ct) => db.Attachments.AsNoTracking().Where(a => a.EntityId == id).ToListAsync(ct);
     public Task<PreFactor?> GetPreFactorAsync(Guid? id, CancellationToken ct) => db.PreFactors.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
-    public Task<List<Accountancy>> GetWalletAsync(Guid customerId, CancellationToken ct) => db.Accountancies.AsNoTracking().ForCustomer(customerId).NotVosoled().Where(a => a.Wallet && a.PayType != PayTypeEnum.انتقال && a.AccType == AcEnum.واریزی).ToListAsync(ct);
+    public async Task<List<Accountancy>> GetWalletAsync(Guid customerId, CancellationToken ct) => await (await access.ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct)).ForCustomer(customerId).NotVosoled().Where(a => a.Wallet && a.PayType != PayTypeEnum.انتقال && a.AccType == AcEnum.واریزی).ToListAsync(ct);
     public Task<List<BankAccount>> GetBankAccountsAsync(BankAccountTypeEnum? type, CancellationToken ct) => db.BankAccounts.AsNoTracking().Where(b => !type.HasValue || b.BankAccountType == type).OrderBy(b => b.AccountName).ToListAsync(ct);
     public Task<BankAccount?> GetBankAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.BankAccounts : db.BankAccounts.AsNoTracking()).FirstOrDefaultAsync(b => b.Id == id, ct);
     public Task<List<Accountancy>> GetPendingAsync(Guid pfId, CancellationToken ct) => db.Accountancies.ForPreFactor(pfId).Where(a => a.Status == AccStatusEnum.ثبت_اولیه || a.Status == AccStatusEnum.رد_شده).ToListAsync(ct);
@@ -119,7 +119,7 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
 
     public async Task<AccountancyPayments> GetPaymentsAsync(int type, Guid id, bool depositsOnly, bool realizedDepositsOnly, bool returnsOnly, CancellationToken ct)
     {
-        var query = db.Accountancies.AsNoTracking().Include(a => a.Deal).Include(a => a.AccountancyTransfer).AsQueryable();
+        var query = await access.ApplyAsync(db.Accountancies.AsNoTracking().Include(a => a.Deal).Include(a => a.AccountancyTransfer), "View", ct);
         PreFactor? pf = null;
         Deal? deal = null;
         switch (type)
@@ -165,7 +165,7 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
 
     public async Task<AccountancyCartable> GetCartableAsync(string? serVal, int searchNumber, CartableEnum cartable, int type, PayTypeEnum? payType, CancellationToken ct)
     {
-        var baseQuery = db.Accountancies.AsNoTracking().Include(x => x.Deal).Include(x => x.AccountancyTransfer).ForPreFactor().OrderByDescending(x => x.CreateDate).AsQueryable();
+        var baseQuery = await access.ApplyAsync(db.Accountancies.AsNoTracking().Include(x => x.Deal).Include(x => x.AccountancyTransfer).ForPreFactor().OrderByDescending(x => x.CreateDate), "View", ct);
         if (cartable == CartableEnum.کارشناس_تامین)
         {
             baseQuery = baseQuery.OnlyTamin();
@@ -214,8 +214,8 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
         var recordsTotal = 0;
-        var dataF = db.Accountancies.AsNoTracking().Where(f => f.FirstAcc == false && f.InvoiceType != InvoiceTypeEnum.تنخواه).AsQueryable();
-        if (!readAll)
+        var dataF = await access.ApplyAsync(db.Accountancies.AsNoTracking().Where(f => f.FirstAcc == false && f.InvoiceType != InvoiceTypeEnum.تنخواه), "View", ct);
+        if (!access.IsEnforced("Accountancy") && !readAll)
         {
             dataF = dataF.Where(f => f.UserCreatorID == userId);
         }
