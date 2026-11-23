@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.Factors.Enum
 @inject IFileVersionProvider AllocationFileVersions
 @model CRM.EndPoint.FrontEnd.Models.Factor.FactorsViewModel
@@ -11,6 +12,14 @@
 }
 <div class="pf-accepted-list factor-card-list">
 @foreach (var item in Model.Factors.OrderByDescending(f => f.ModifyDate)) {
+    if (!await DocumentAccess.AllowsFactorAsync(item, "View", Context.RequestAborted)) { continue; }
+    var enforced = DocumentAccess.IsEnforced("Factor");
+    var canApprove = !isReadOnly && (enforced ? await DocumentAccess.AllowsFactorAsync(item, "Approve", Context.RequestAborted) : isAdminOrFinancial);
+    var canCancel = !isReadOnly && (enforced ? await DocumentAccess.AllowsFactorAsync(item, "Cancel", Context.RequestAborted) : isAdminOrFinancial);
+    var canEdit = !isReadOnly && (enforced ? await DocumentAccess.AllowsFactorAsync(item, "Edit", Context.RequestAborted) : isAdminOrFinancial);
+    var canDelete = !isReadOnly && (enforced ? await DocumentAccess.AllowsFactorAsync(item, "Delete", Context.RequestAborted) : User.IsAdmin());
+    var canExport = !isReadOnly && (enforced ? await DocumentAccess.AllowsFactorAsync(item, "ExportExternal", Context.RequestAborted) : (User.IsAdmin() || User.IsFinancial() || User.IsInRole("مدیر عامل")));
+    var canReturn = !isReadOnly && (enforced ? (canEdit && await DocumentAccess.HasAsync("Factor", "Create", Context.RequestAborted)) : isAdminOrFinancial);
     var isReturnFactor = item.ParentReturnedId != null;
     <article class="pf-accepted-card @(isReturnFactor || item.Returned ? "factor-card--returned" : "")">
         <div class="@(item.OfficialType == 1 ? "InfoDataHead_PrefactorRasmi" : "InfoDataHead_PrefactorNonRasmi")"><label style="writing-mode:vertical-lr">@(item.OfficialType == 1 ? "رسمی" : "غیررسمی")</label></div>
@@ -41,17 +50,21 @@
                     <div class="factor-card__status">
                                 @if (Model._Setting?.FactorTowStep == true && !isReturnFactor && !item.Returned) {
                                     if (item.status == FactorStatus.در_دست_تایید) {
-                                        if (isAdminOrFinancial) {
-                                            <button type="button" class="buttonGray" style="font-size: 13px;"
+                                        if (canApprove || canCancel) {
+                                            if (canApprove) {
+                                            <button data-document-permission="Factor.Approve" type="button" class="buttonGray" style="font-size: 13px;"
                                                     disabled="@(!item.HasExternalFinancialMapping)"
                                                     title="@(item.HasExternalFinancialMapping ? "تأیید فاکتور" : "ابتدا فاکتور را به یکی از نرم‌افزارهای مالی ارسال کنید")"
                                                     onclick="acceptFactor('@item.Id', 2, @passType)">
                                                 تایید
                                             </button>
+                                            }
 
-                                            <button type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
+                                            if (canCancel) {
+                                            <button data-document-permission="Factor.Cancel" type="button" class="buttonCancel3" style="font-size: 13px;" onclick="acceptFactor('@item.Id', 3, @passType)">
                                                 ابطال
                                             </button>
+                                            }
                                         } else {
                                             <div class="fbold factor-card__state--pending">
                                                 در دست تایید
@@ -104,18 +117,20 @@
             <div class="pf-accepted-card__actions"><div class="pf-accepted-card__action-list">
                     @if (isAdminOrFinancial) {
                         if (User.IsAdmin()) {
-                            <button type="button" class="flex-center" aria-label="حذف" data-title-right="حذف" style="color:var(--DarkColor);" onclick="deleteFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                            <button type="button" class="flex-center" data-document-permission="Factor.Delete" aria-label="حذف" data-title-right="حذف" style="color:var(--DarkColor);" onclick="deleteFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                                 <i class="fa fa-trash"></i>
                             </span></button>
                         }
 
-                        <button type="button" class="flex-center" aria-label="ویرایش" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                        if (canEdit) {
+                        <button data-document-permission="Factor.Edit" type="button" class="flex-center" aria-label="ویرایش" data-title-right="ویرایش" style="color:var(--DarkColor);" onclick="upFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                             <i class="fa fa-pencil"></i>
                         </span></button>
+                        }
                     }
 
 
-                    @if (canManageAllocations) {
+                    @if (canManageAllocations && canEdit) {
                         <button type="button" class="flex-center" aria-label="مدیریت تخصیص آیتم‌های فروش"
                                 data-title-right="تخصیص‌ها" data-allocation-script="@allocationScript"
                                 style="color:var(--DarkColor);" onclick="openSalesFactorAllocationWorkspace(this, '@item.Id')">
@@ -125,9 +140,9 @@
                         </button>
                     }
 
-                    @if (User.IsAdmin() || User.IsFinancial() || User.IsInRole("مدیر عامل")) {
+                    @if (canExport) {
                         <button type="button" class="flex-center" aria-label="ارتباط مالی" data-title-right="ارتباط مالی"
-                                onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
+                                data-document-permission="Factor.ExportExternal" onclick="showFactorExternalSoftwaresModal('@item.Id', '@item.SerialNumber')">
                             <span class="pf-accepted-card__action-icon" aria-hidden="true">
                                 <i class="fa fa-link"></i>
                             </span>
@@ -145,8 +160,8 @@
                         </span></button>
                     }
 
-                    @if ((isAdminOrFinancial) && !isReturnFactor) {
-                        <button type="button" class="flex-center" aria-label="فاکتور برگشتی" data-title-right="فاکتور برگشتی" style="color:darkred" onclick="returnFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    @if (canReturn && !isReturnFactor) {
+                        <button type="button" class="flex-center" aria-label="فاکتور برگشتی" data-title-right="فاکتور برگشتی" style="color:darkred" data-document-permission="Factor.Create" onclick="returnFactor('@item.Id', @passType)"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                             <i class="fa fa-arrow-right"></i>
                             @* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19.933 13.041a8 8 0 1 1 -9.925 -8.788c3.899 -1 7.935 1.007 9.425 4.747" /><path d="M20 4v5h-5" /></svg> *@
                         </span></button>
