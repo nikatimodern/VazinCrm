@@ -17,6 +17,23 @@ connection.on("AccessPermissionsChanged", event => {
     window.dispatchEvent(new CustomEvent("erp:access-changed", { detail: event }));
 });
 
+// Hub role groups are assigned when the socket connects. Refresh them after
+// the HTTP session receives its new role claims.
+let accessRoleReconnect = false;
+window.addEventListener("erp:roles-refreshed", async () => {
+    if (accessRoleReconnect || connection.state !== signalR.HubConnectionState.Connected) return;
+    accessRoleReconnect = true;
+    try {
+        await connection.stop();
+        await connection.start();
+        window.signalRConnectionId = connection.connectionId;
+    } catch (error) {
+        console.error("Could not refresh SignalR role groups.", error);
+    } finally {
+        accessRoleReconnect = false;
+    }
+});
+
 connection.onclose(() => {
     window.signalRConnectionId = null;
 });
