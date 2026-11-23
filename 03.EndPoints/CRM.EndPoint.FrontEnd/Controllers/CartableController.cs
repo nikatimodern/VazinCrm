@@ -35,7 +35,8 @@ public class CartableController(ICqrsDispatcher dispatcher, DocumentAccessPolicy
     [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        if (!await documentAccess.HasViewAsync("PreFactor", ct) && !await documentAccess.HasViewAsync("Factor", ct)) return Forbid();
+        if (!await documentAccess.HasViewAsync("PreFactor", ct) && !await documentAccess.HasViewAsync("Factor", ct) &&
+            !User.IsInRole("مدیر ارشد") && !User.IsInRole("کارشناس مالی") && !User.IsInRole("مدیر تامین") && !User.IsInRole("کارشناس تامین") && !User.IsInRole("مدیر عامل")) return Forbid();
         var data = await dispatcher.QueryAsync(new GetWorkspacePageQuery("Cartable"), ct);
         ViewBag.SubTitle = "کارتابل من";
         ViewBag.Head = "Cartable";
