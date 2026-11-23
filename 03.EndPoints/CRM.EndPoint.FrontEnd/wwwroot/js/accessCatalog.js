@@ -1210,7 +1210,7 @@
     }
 
     function syncUserPermissionRows() {
-        for (const row of userPermissions.querySelectorAll("[data-user-permission-id]")) {
+        for (const row of userPermissions.querySelectorAll(".ac-user-permission-item[data-user-permission-id]")) {
             const id = row.dataset.userPermissionId;
             const effective = effectivePermission(id);
             const status = row.querySelector("[data-user-effective]");
@@ -1729,7 +1729,7 @@
             const entityId = target.dataset.userEntityId;
             const permissionId = target.dataset.userPermissionId;
             if (selectedUserPermissions.get(entityId) === permissionId &&
-                userPermissions.querySelector("[data-user-permission-id='" + permissionId + "']")) return;
+                userPermissions.querySelector(".ac-user-permission-item[data-user-permission-id='" + permissionId + "']")) return;
             selectedUserPermissions.set(entityId, permissionId);
             renderUserPermissions();
             const activeTab = [...userPermissions.querySelectorAll(".ac-user-permission-nav-item")]
