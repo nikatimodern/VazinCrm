@@ -37,6 +37,7 @@ public class DealController : Controller {
     private readonly UserContextDb udb;
     private readonly IAccessScopeService accessScopes;
     private readonly IConfiguration configuration;
+    private readonly IDocumentReadAccess documentAccess;
     private bool Enforce => configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions");
     private bool CustomerEnforce => configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions");
     private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
@@ -69,7 +70,7 @@ public class DealController : Controller {
 
     public DealController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
         LogSystemService logSystemService, UserContextDb udb, IAccessScopeService accessScopes,
-        IConfiguration configuration)
+        IConfiguration configuration, IDocumentReadAccess documentAccess)
     {
         this.db = db;
         this.userManager = userManager;
@@ -79,6 +80,7 @@ public class DealController : Controller {
         this.udb = udb;
         this.accessScopes = accessScopes;
         this.configuration = configuration;
+        this.documentAccess = documentAccess;
     }
 
 
@@ -333,13 +335,13 @@ public class DealController : Controller {
         if (dealIds.Count == 0)
             return;
 
-        var preFactorCounts = await db.PreFactors
+        var preFactorCounts = await (await documentAccess.PreFactorsAsync(db.PreFactors.AsNoTracking(), "View", HttpContext.RequestAborted))
             .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
 
-        var factorCounts = await db.Factors
+        var factorCounts = await (await documentAccess.FactorsAsync(db.Factors.AsNoTracking(), "View", HttpContext.RequestAborted))
             .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
@@ -580,6 +582,9 @@ public class DealController : Controller {
             if (deal.CustomerId == null)
             {
                 var pfs = await db.PreFactors.Where(f => f.DealId == id).ToListAsync();
+                var authorized = await documentAccess.PreFactorsAsync(db.PreFactors.Where(f => f.DealId == id), "View", HttpContext.RequestAborted);
+                authorized = await documentAccess.PreFactorsAsync(authorized, "Delete", HttpContext.RequestAborted);
+                if (await authorized.CountAsync(HttpContext.RequestAborted) != pfs.Count) return Forbid();
                 foreach (var pf in pfs)
                 {
                     pf.IsDeleted = true;
