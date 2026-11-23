@@ -195,10 +195,12 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
             .ToHashSet();
         if (draft.Overrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||
              (x.IsAllowed && x.Scope != AccessScopes.All && !scopedPermissions.Contains(x.AccessPermissionId)) ||
-             (x.Scope == AccessScopes.SelectedUsers && (!x.IsAllowed || !selectedCapable.Contains(x.AccessPermissionId))) ||
-             (x.Scope != AccessScopes.SelectedUsers && (x.SelectedUserIds?.Length ?? 0) > 0)))
+             (x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers &&
+                  (!x.IsAllowed || !selectedCapable.Contains(x.AccessPermissionId))) ||
+             (x.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) &&
+                  (x.SelectedUserIds?.Length ?? 0) > 0)))
             return new(400, "محدوده اختصاصی برای یک یا چند مجوز معتبر نیست.");
-        foreach (var choice in draft.Overrides.Where(x => x.Scope == AccessScopes.SelectedUsers))
+        foreach (var choice in draft.Overrides.Where(x => x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers))
             if (!await repository.ValidateScopeUsersAsync(draft.UserId, choice.SelectedUserIds ?? [], ct))
                 return new(400, "حداقل یک کاربر معتبر و متفاوت از کاربر فعلی انتخاب کنید.");
 

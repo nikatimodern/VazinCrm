@@ -261,6 +261,10 @@ public sealed partial class AccessHistoryService : IAccessHistoryService
                 "override" => !Parse<UserOverrideState>(item.Data).IsAllowed ? "محدودیت اختصاصی" :
                     Parse<UserOverrideState>(item.Data).Scope == AccessScopes.Own ?
                     "اجازه اختصاصی (فقط خود)" :
+                    Parse<UserOverrideState>(item.Data).Scope == AccessScopes.AllExceptSelectedUsers ?
+                    "اجازه اختصاصی (همه به‌جز " +
+                    (Parse<UserOverrideState>(item.Data).SelectedUserIds?.Length ?? 0) +
+                    " کاربر)" :
                     Parse<UserOverrideState>(item.Data).Scope == AccessScopes.SelectedUsers ?
                     "اجازه اختصاصی (خود + " +
                     (Parse<UserOverrideState>(item.Data).SelectedUserIds?.Length ?? 0) +

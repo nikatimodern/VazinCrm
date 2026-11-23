@@ -46,7 +46,8 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
 
     public async Task<bool> HasOwnScopeAssignmentsAsync(Guid permissionId, CancellationToken ct) =>
         await db.AccessRolePermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.Scope == AccessScopes.Own, ct) ||
-        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.IsAllowed && (x.Scope == AccessScopes.Own || x.Scope == AccessScopes.SelectedUsers), ct);
+        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId && x.IsAllowed && (x.Scope == AccessScopes.Own || x.Scope == AccessScopes.SelectedUsers ||
+                x.Scope == AccessScopes.AllExceptSelectedUsers), ct);
 
     // Update only active permissions. Disabled permissions retain their historical associations
     // but are not editable/grantable from this screen.
@@ -185,7 +186,7 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
             // Only active permission overrides are editable; retain inactive historical overrides.
             var active = activePermissionIds.ToHashSet();
             var requested = overrides.ToDictionary(x => x.AccessPermissionId);
-            var selectedMembers = overrides.Where(x => x.IsAllowed && x.Scope == AccessScopes.SelectedUsers)
+            var selectedMembers = overrides.Where(x => x.IsAllowed && x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers)
                 .SelectMany(x => (x.SelectedUserIds ?? []).Select(id =>
                     (PermissionId: x.AccessPermissionId, TargetUserId: id))).ToHashSet();
             var links = await db.AccessUserScopeMembers.Where(x => x.UserId == userId &&

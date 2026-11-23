@@ -123,11 +123,12 @@ public sealed partial class AccessHistoryService
                       (x.Scope == AccessScopes.Own && !canScope.Contains(x.PermissionId))) ||
             targetOverrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||
                 (x.IsAllowed && x.Scope != AccessScopes.All && !canScope.Contains(x.PermissionId)) ||
-                (x.Scope == AccessScopes.SelectedUsers &&
+                (x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers &&
                     (!x.IsAllowed || !selectedCapable.Contains(x.PermissionId))) ||
-                (x.Scope != AccessScopes.SelectedUsers && (x.SelectedUserIds?.Length ?? 0) > 0)))
+                (x.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) &&
+                    (x.SelectedUserIds?.Length ?? 0) > 0)))
             return "نسخه انتخاب‌شده شامل محدوده دسترسی نامعتبر است.";
-        var selectedOverrides = targetOverrides.Where(x => x.Scope == AccessScopes.SelectedUsers).ToArray();
+        var selectedOverrides = targetOverrides.Where(x => x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers).ToArray();
         foreach (var item in selectedOverrides)
         {
             var ids = item.SelectedUserIds ?? [];
@@ -275,7 +276,8 @@ public sealed partial class AccessHistoryService
 
         // Selected owners are part of the same restore transaction and snapshot.
         // Updating links after overrides guarantees their composite parent FK exists.
-        var desiredLinks = overrides.Where(x => x.Scope == AccessScopes.SelectedUsers && x.IsAllowed)
+        var desiredLinks = overrides.Where(x => x.IsAllowed &&
+            x.Scope is AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers)
             .SelectMany(x => (x.SelectedUserIds ?? []).Select(id =>
                 (x.UserId, x.PermissionId, TargetUserId: id))).ToHashSet();
         var existingLinks = await db.AccessUserScopeMembers.ToListAsync(ct);
