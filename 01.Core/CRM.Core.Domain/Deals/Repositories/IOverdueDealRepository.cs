@@ -19,6 +19,9 @@ public sealed class OverdueDealRow
     public DateTime CreateDate { get; set; }
     public DateTime? OverdueFollowUpAt { get; set; }
     public string? UserCreator { get; set; }
+    public string? UserCreatorID { get; set; }
+    public bool CanManageFollowUp { get; set; }
+    public bool CanChangeStatus { get; set; }
     public string? CommentText { get; set; }
 }
 

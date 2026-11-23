@@ -79,7 +79,7 @@ public sealed class OverdueDealRepository(CRMContextDb db) : IOverdueDealReposit
             ("commenttext", true) => query.OrderByDescending(deal => (deal.CommentText ?? "").Trim()),
             ("commenttext", false) => query.OrderBy(deal => (deal.CommentText ?? "").Trim()),
             _ => query.OrderByDescending(deal => deal.CreateDate)};
-        var deals = await query.Select(deal => new OverdueDealRow { Id = deal.Id, SerialNumber = deal.SerialNumber, Title = deal.Title, CustomerName = deal.CustomerName, CusCompanyName = deal.CusCompanyName, CustomerCode = deal.CustomerCode, CreateDate = deal.CreateDate, OverdueFollowUpAt = deal.OverdueFollowUpAt, UserCreator = deal.UserCreator, CommentText = deal.CommentText, }).ToListAsync(ct);
+        var deals = await query.Select(deal => new OverdueDealRow { Id = deal.Id, SerialNumber = deal.SerialNumber, Title = deal.Title, CustomerName = deal.CustomerName, CusCompanyName = deal.CusCompanyName, CustomerCode = deal.CustomerCode, CreateDate = deal.CreateDate, OverdueFollowUpAt = deal.OverdueFollowUpAt, UserCreator = deal.UserCreator, UserCreatorID = deal.UserCreatorID, CommentText = deal.CommentText, }).ToListAsync(ct);
         return new(deals, overdueCount);
     }
 

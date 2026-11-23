@@ -58,9 +58,21 @@ public sealed class OverdueDealController(ICqrsDispatcher requests, IAccessScope
             access = await accessScopes.GetDealOwnerAccessAsync(UserId, "Deal.View", ct);
             if (access.AllowedOwnerIds is { Length: 0 }) return Forbid();
         }
-        return Ok(await requests.QueryAsync(new GetOverdueDealsQuery(model.ToApplicationFilter(),
+        var result = await requests.QueryAsync(new GetOverdueDealsQuery(model.ToApplicationFilter(),
             startDate, endDate, sortBy, sortDirection, withFollowUp,
-            access?.AllowedOwnerIds, access?.ExcludedOwnerIds, Enforce), ct));
+            access?.AllowedOwnerIds, access?.ExcludedOwnerIds, Enforce), ct);
+        var followUpAccess = Enforce ? await accessScopes.GetDealOwnerAccessAsync(
+            UserId, "Deal.ManageFollowUp", ct) : null;
+        var statusAccess = Enforce ? await accessScopes.GetDealOwnerAccessAsync(
+            UserId, "Deal.ChangeStatus", ct) : null;
+        foreach (var row in result.Data)
+        {
+            row.CanManageFollowUp = Enforce
+                ? followUpAccess!.Allows(row.UserCreatorID) : LegacyCanFollowUp;
+            row.CanChangeStatus = Enforce
+                ? statusAccess!.Allows(row.UserCreatorID) : LegacyCanFollowUp;
+        }
+        return Ok(result);
     }
 
     [HttpGet]
