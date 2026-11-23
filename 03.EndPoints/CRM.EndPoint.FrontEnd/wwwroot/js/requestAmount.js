@@ -915,6 +915,7 @@ document.addEventListener("click", e => {
 
 document.addEventListener("change", async (e) => {
     if (!e.target.classList.contains("doc-type-select")) return;
+    if (window.AccessLive?.can("RequestAmount", "changeDocType") === false) { toastifyError("مجوز تغییر نوع سند را ندارید."); return; }
     
     const select = e.target;
     const card = select.closest(".layered-card");
