@@ -17,7 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 namespace CRM.Infrastructures.Sql.Customers.Repositories;
 
-public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : ICustomerRepository, IAsyncDisposable
+public sealed class CustomerRepository(CRMContextDb db, UserContextDb users, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess documentAccess) : ICustomerRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
     public Task<Customer?> GetAsync(Guid id, bool includeDeleted, bool includeRelations, CancellationToken ct)
@@ -239,7 +239,7 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
     public async Task<List<PreFactor>> GetPreFactorsAsync(Guid? customerId, Guid? dealId, bool includeDeleted, CancellationToken ct, Guid? requiredCustomerId = null)
     {
         if (!customerId.HasValue && !dealId.HasValue) return [];
-        IQueryable<PreFactor> query = db.PreFactors.AsNoTracking().Include(p => p.Deal).Include(p => p.CustomerEntity);
+        IQueryable<PreFactor> query = await documentAccess.PreFactorsAsync(db.PreFactors.AsNoTracking().Include(p => p.Deal).Include(p => p.CustomerEntity), "View", ct);
         if (includeDeleted) query = query.IgnoreQueryFilters();
         query = dealId.HasValue ? query.Where(p => p.DealId == dealId) : query.Where(p => p.CustomerId == customerId);
         if (requiredCustomerId.HasValue) query = query.Where(p => p.CustomerId == requiredCustomerId.Value);
@@ -248,7 +248,7 @@ public sealed class CustomerRepository(CRMContextDb db, UserContextDb users) : I
         var amounts = await db.Accountancies.AsNoTracking().ForPreFactor().NotVosoled().Where(a => a.pfid.HasValue && ids.Contains(a.pfid.Value)).GroupBy(a => a.pfid)
             .Select(g => new { Id = g.Key!.Value, Amount = g.Sum(a => a.AccType == AcEnum.واریزی ? a.credit : -a.BackWard) ?? 0 }).ToDictionaryAsync(g => g.Id, g => g.Amount, ct);
         var settings = await GetSettingsAsync(ct); var counts = new Dictionary<Guid, int>();
-        if (settings?.CrmFactors == true) counts = await db.Factors.AsNoTracking().Where(f => ids.Contains(f.PfactorID)).GroupBy(f => f.PfactorID).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
+        if (settings?.CrmFactors == true) counts = await (await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => ids.Contains(f.PfactorID)), "View", ct)).GroupBy(f => f.PfactorID).Select(g => new { Id = g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Id, g => g.Count, ct);
         foreach (var p in data) { p.ReciveAmount = amounts.GetValueOrDefault(p.Id); p.PaymentAmount = p.SumTotalAmount + p.TotalTax - p.Discount - p.ReciveAmount; p.SumTotalAmountTax = p.SumTotalAmount + p.TotalTax - p.Discount; if (settings?.CrmFactors == true) p.CountFactor = counts.GetValueOrDefault(p.Id); }
         return data;
     }
