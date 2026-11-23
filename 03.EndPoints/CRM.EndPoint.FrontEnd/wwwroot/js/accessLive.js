@@ -21,6 +21,7 @@
         const path = location.pathname.toLowerCase();
         if (/^\/requestamount(?:\/|$)/.test(path)) return "requestamount";
         if (/^\/supply\/payment(?:\/|$)/.test(path)) return "payment";
+        if (/^\/check\/received(?:\/|$)/.test(path)) return "check";
         if (/^\/check(?:\/|$)/.test(path)) return "checkbook";
         if (/^\/order(?:\/|$)/.test(path)) return "orderhead";
         if (/^\/supply\/supplyfactor(?:\/|$)/.test(path)) return "supplyfactor";
@@ -185,7 +186,7 @@
         // Selected/excluded owner memberships can change without changing the numeric scope.
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
             (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
-                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook"].includes(module));
+                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check"].includes(module));
         if (!changed && !forceRefresh) return;
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
