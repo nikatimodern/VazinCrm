@@ -24,6 +24,8 @@
         const permissions = state?.[module];
         // If status has not been fetched, the existing server checks remain the authority.
         if (!permissions) return true;
+        if (!Object.prototype.hasOwnProperty.call(permissions, key))
+            return permissions.view !== 0; // Detail scope is fetched when its page opens.
         return Number(permissions[key]) > 0;
     };
 
@@ -190,6 +192,10 @@
             editorLocked = false;
             accessBanner?.remove();
             accessBanner = null;
+            const version = ++generation;
+            void getState(false).then(next => {
+                if (version === generation) state = next;
+            }).catch(error => console.warn("Could not refresh page access.", error));
         }).observe(workspace, { childList: true });
     }
 
