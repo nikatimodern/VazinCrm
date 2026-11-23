@@ -33,7 +33,7 @@ public sealed class UpdateOverdueFollowUpCommandHandler(IDealRepository reposito
         var current = await actor.FindAsync(ct);
         if (current == null)
             return new(401);
-        if (configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions"))
+        if (bool.TryParse(configuration["AccessCatalog:EnforceDealPermissions"], out var enforceDeal) && enforceDeal)
         {
             if (!await accessScopes.CanAccessDealAsync(current.User.Id, "Deal.View", request.Id, ct) ||
                 !await accessScopes.CanAccessDealAsync(current.User.Id, "Deal.ManageFollowUp", request.Id, ct) ||
