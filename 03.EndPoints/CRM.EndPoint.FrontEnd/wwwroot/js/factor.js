@@ -25,6 +25,7 @@ document.addEventListener("input", (e) => {
 });
 
 const AddFactor = async (pfId, type = 1) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", "create")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     if (!await isAllowedToAddFactor(pfId)) return;
     
     typeSubmitFactor = type;
@@ -115,6 +116,7 @@ const AddFactor = async (pfId, type = 1) => {
 
 
 const upFactor = async (id, type = 1) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", "edit")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     typeSubmitFactor = type;
     currentFactorContext.passType = type;
     
@@ -159,6 +161,7 @@ const upFactor = async (id, type = 1) => {
 
 
 const returnFactor = async (fid, type = 1) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", "create")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     typeSubmitFactor = type;
     currentFactorContext.passType = type;
     
@@ -557,6 +560,7 @@ const submitFactor = async () => {
 };
 
 const submitFactorOK = async (type, unlinkSepidar = false) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", factor.id && factor.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     FLshowLoading();
     factor.snFinancial = document.querySelector("#snFinancialFormId input[name='snFinancial']").value || null;
     factor.date = document.querySelector("#f_dateFormId input[name='f_date']").value;
@@ -649,6 +653,7 @@ const cancelFactor = () => {
 
 
 const deleteFactor = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", "delete")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     await deleteItem({
         url: `/Factor/DelFactor/${id}`,
         callback: async () => {
@@ -791,6 +796,7 @@ const showSepidarFactorsModal = async (pfSerialNumber, fId, type) => {
 };
 
 const updateFactorFinancial = async (sepidarId) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", "editFinancial")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     await sendApiRequest({
         url: "/Factor/UpdateFactorFinancial",
         method: "POST",
@@ -866,6 +872,7 @@ const getAllFactorsModal = async (id, type, pfSerialNumber) => {
 
 
 const acceptFactor = async (id, type, passType) => {
+    if (window.AccessLive && !window.AccessLive.can("Factor", Number(type) === 2 ? "approve" : "cancel")) { toastifyError("مجوز این عملیات روی فاکتور را ندارید."); return; }
     await sendApiRequest({
         url: "/Factor/AcceptFactor",
         params: { id, type },
