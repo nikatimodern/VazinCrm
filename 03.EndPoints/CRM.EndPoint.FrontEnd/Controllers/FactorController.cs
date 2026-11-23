@@ -1,4 +1,6 @@
 ﻿using CRM.Core.Domain;
+using CRM.EndPoint.FrontEnd.Security;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
@@ -89,6 +91,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly SignInManager<AppUser> signInManager;
 
         private readonly SepidarUserResolver sepidarUsers;
+        private readonly DocumentAccessPolicy documentAccess;
+        private CancellationToken AccessCt => HttpContext.RequestAborted;
+
+        private Task<bool> CanPf(string action, Guid id) => documentAccess.CanAsync("PreFactor", action, id, AccessCt);
+        private Task<bool> CanF(string action, Guid id) => documentAccess.CanAsync("Factor", action, id, AccessCt);
+        private Task<bool> HasDocument(string entity, string action) => documentAccess.HasAsync(entity, action, AccessCt);
+
+        private bool HasLegacyRole(string roles) =>
+            roles.Split(',').Any(role => User.IsInRole(role.Trim()));
+
+        // Shared accounting helpers keep legacy access for modules not yet migrated.
+        private async Task<bool> CanExportAnyDocumentAsync() =>
+            (documentAccess.IsEnforced("PreFactor") ? await HasDocument("PreFactor", "ExportExternal") : HasLegacyRole(FinancialExportRoles)) ||
+            (documentAccess.IsEnforced("Factor") ? await HasDocument("Factor", "ExportExternal") : HasLegacyRole(FinancialExportRoles));
+
+        private async Task<bool> CanReadInvoiceReferenceAsync(Guid? pfId, Guid? factorId)
+        {
+            if (pfId.HasValue && !await CanPf("View", pfId.Value)) return false;
+            if (factorId.HasValue && !await CanF("View", factorId.Value)) return false;
+            return true;
+        }
 
         public FactorController(CrmSaveCahngeAsync crmSaveCahngeAsync, TaskServices ts, Sepidar1Service sepidar1Service,
             Sepidar2Service sepidar2Service,
@@ -99,7 +122,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             DateTimeServices dtService, CRMContextDb db, UserContextDb Udb,
             IHubContext<TaskHub> hub, LogSystemService logSystemService, IPushQueue pushQueue, ISmsQueue smsQueue,
             IDocumentRenderService documentRender, PreFactorService preFactorService,
-            ILogger<FactorController> logger, SepidarUserResolver sepidarUsers)
+            ILogger<FactorController> logger, SepidarUserResolver sepidarUsers, DocumentAccessPolicy documentAccess)
         {
             this.crmSaveCahngeAsync = crmSaveCahngeAsync;
             this.ts = ts;
@@ -122,11 +145,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.documentRender = documentRender;
             this.logger = logger;
             this.preFactorService = preFactorService;
+            this.documentAccess = documentAccess;
         }
 
         [Authorize(Policy = "NotCustomerOnly")]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            if (!await documentAccess.HasViewAsync("Factor", AccessCt) &&
+                !await documentAccess.HasViewAsync("PreFactor", AccessCt)) return Forbid();
             return View();
         }
 
@@ -134,6 +160,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetFactorCount(Guid pfid, string desc)
         {
+            if (!await CanPf("View", pfid)) return Forbid();
             var user = userManager.GetUserAsync(HttpContext.User).Result;
             List<Guid> pf = null;
 
@@ -190,6 +217,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFactor(Guid id, int type)
         {
+            if (type is < 1 or > 3) return BadRequest();
+            if (!await CanF(type == 2 ? "Approve" : "Cancel", id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -258,6 +287,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptSalesAdmin(Guid id)
         {
+            if (!await CanPf("ApproveSales", id)) return Forbid();
             if (id == Guid.Empty) return null;
 
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -342,6 +372,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> NotAcceptSalesAdmin([FromBody] DescriptionIdVModel model)
         {
             if (model == null) return BadRequest();
+            if (!await CanPf("ApproveSales", model.Id)) return Forbid();
+            if (model == null) return BadRequest();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -405,6 +437,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> Backward(Guid id)
         {
+            if (!await CanPf("ChangeStatus", id)) return Forbid();
             await using var tran = await db.Database.BeginTransactionAsync();
             var user = await userManager.GetUserAsync(HttpContext.User);
 
@@ -481,6 +514,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetFactor(Guid id)
         {
+            if (!await CanF("View", id)) return Forbid();
             var data = await db.Factors
                 .Include(f => f.FactorItems)
                 .Include(f => f.Descriptions)
@@ -492,14 +526,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetPartialAllItemFactor(Guid pfId)
         {
+            if (!await CanPf("View", pfId)) return Forbid();
             var pFac = await db.PreFactors.Include(f => f.PreFactorItems)
                 .Where(f => f.Id == pfId)
                 .FirstOrDefaultAsync();
 
-            var Fac = await db.Factors
+            var Fac = await (await documentAccess.FactorsAsync(db.Factors
                 .Include(f => f.FactorItems)
-                .Where(f => f.PfactorID == pfId && f.status == FactorStatus.تایید_شده)
-                .ToListAsync();
+                .Where(f => f.PfactorID == pfId && f.status == FactorStatus.تایید_شده), "View", AccessCt))
+                .ToListAsync(AccessCt);
 
             var model = new List<AllItemsViewModel>();
 
@@ -536,8 +571,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetPartialAllItemFactorDetail(Guid pfId, Guid pfItemId)
         {
-            var factors = await db.Factors.Include(f => f.FactorItems)
-                .Where(f => f.PfactorID == pfId).ToListAsync();
+            if (!await CanPf("View", pfId)) return Forbid();
+            var factors = await (await documentAccess.FactorsAsync(db.Factors.Include(f => f.FactorItems)
+                .Where(f => f.PfactorID == pfId), "View", AccessCt)).ToListAsync(AccessCt);
 
 
             IList<AllItemsDetailViewModel> model = new List<AllItemsDetailViewModel>();
@@ -568,6 +604,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetCustomerPhone(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             if (id == Guid.Empty)
             {
                 return BadRequest();
@@ -593,6 +630,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptTaminExpert(Guid id)
         {
+            if (!await CanPf("ApproveTamin", id)) return Forbid();
             if (id == Guid.Empty) return null;
 
             var setting = await db.ASettings.FirstOrDefaultAsync();
@@ -641,6 +679,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> NotAcceptTaminExpert([FromBody] DescriptionIdVModel model)
         {
+            if (model == null) return BadRequest();
+            if (!await CanPf("ApproveTamin", model.Id)) return Forbid();
             if (model == null) return BadRequest();
             try
             {
@@ -717,6 +757,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> RejectTaminExpert(Guid id) // رد تایید
         {
+            if (!await CanPf("ApproveTamin", id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -752,6 +793,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptFinancial(Guid id)
         {
+            if (!await CanPf("ApproveFinancial", id)) return Forbid();
             if (id == Guid.Empty) return BadRequest();
 
             var user = await userManager.GetUserAsync(HttpContext.User);
@@ -799,6 +841,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> NotAcceptFinancial([FromBody] DescriptionIdVModel model)
         {
+            if (model == null) return BadRequest();
+            if (!await CanPf("ApproveFinancial", model.Id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -855,6 +899,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> RejectFinancial(Guid id)
         {
+            if (!await CanPf("ApproveFinancial", id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -888,10 +933,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> PreviewFactorSepidarPrint(int id, Guid? softwareId = null)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
+            if (documentAccess.IsEnforced("Factor") && !await HasDocument("Factor", "ExportExternal")) return Forbid();
             try
             {
                 //var factor = await db.Factors
@@ -939,6 +986,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> PreviewFactorPrint(Guid id)
         {
+            if (!await CanF("View", id)) return Forbid();
             try
             {
                 var factor = await db.Factors
@@ -976,6 +1024,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> PreviewPfactorPrint(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             try
             {
                 var pfactor = await db.PreFactors
@@ -1032,6 +1081,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DownloadPreFactorPdf(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             try
             {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
@@ -1048,6 +1098,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DownloadPreFactorImage(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             try
             {
                 var url = Url.Action(nameof(PreviewPfactorPrint), "Factor", new { id }, Request.Scheme);
@@ -1067,6 +1118,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DownloadFactorPdf(Guid id)
         {
+            if (!await CanF("View", id)) return Forbid();
             try
             {
                 var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
@@ -1082,6 +1134,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> DownloadFactorImage(Guid id)
         {
+            if (!await CanF("View", id)) return Forbid();
             try
             {
                 var url = Url.Action(nameof(PreviewFactorPrint), "Factor", new { id }, Request.Scheme);
@@ -1245,6 +1298,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> AcceptPreFactorManual(Guid id)
         {
+            if (!await CanPf("ApproveCustomerManual", id)) return Forbid();
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -1414,6 +1468,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> SendToCustomer(Guid id, string toNumber)
         {
+            if (!await CanPf("SendToCustomer", id)) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldPfactor = await db.PreFactors.AsNoTracking().Where(f => f.Id == id).FirstOrDefaultAsync();
             var pfactor = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
@@ -1450,6 +1505,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> ExpirePreFactor([FromBody] DescriptionIdVModel model)
         {
+            if (model == null) return BadRequest();
+            if (!await CanPf("ChangeStatus", model.Id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -1484,6 +1541,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetAttachment(Guid id, int? type = null)
         {
+            if (documentAccess.IsEnforced("PreFactor") && await db.PreFactors.AsNoTracking().AnyAsync(p => p.Id == id, AccessCt) &&
+                !await CanPf("View", id)) return Forbid();
+            if (documentAccess.IsEnforced("Factor") && await db.Factors.AsNoTracking().AnyAsync(f => f.Id == id, AccessCt) &&
+                !await CanF("View", id)) return Forbid();
             var query = db.Attachments.Where(f => f.EntityId == id);
 
             if (type.HasValue)
@@ -1499,6 +1560,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetAttachmentsInvoiceUploaded(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             try
             {
                 var accountancies = await db.Accountancies.Where(f => f.pfid == id).ToListAsync();
@@ -1526,6 +1588,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt)
         {
+            if (model == null) return BadRequest();
+            if (!await CanReadInvoiceReferenceAsync(model.pfid, model.fid)) return Forbid();
             using var transAction = db.Database.BeginTransaction(); //شروع
             try
             {
@@ -1618,6 +1682,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
             if (item == null) return NotFound();
+            if (!await CanReadInvoiceReferenceAsync(item.pfid, item.fid)) return Forbid();
 
 
             item.credit = model.ReciveAmount;
@@ -1636,6 +1701,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model)
         {
+            if (model?.AccData == null) return BadRequest();
+            if (!await CanReadInvoiceReferenceAsync(model.AccData.pfid, model.AccData.fid)) return Forbid();
             if (model?.AccData == null) return BadRequest();
             await using var transAction = await db.Database.BeginTransactionAsync(); //شروع
             try
@@ -1773,6 +1840,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> HasAnyEtebari(Guid pfId)
         {
+            if (!await CanPf("View", pfId)) return Forbid();
             var hasAnyEtebari = await db.Accountancies.AnyAsync(a =>
                 a.pfid == pfId
                 && a.InvoiceType == InvoiceTypeEnum.پیش_فاکتور
@@ -1795,6 +1863,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddAcPrefacAttachment([FromBody] AttachmentModel model)
         {
+            if (model == null) return BadRequest();
+            if (!await CanPf("Edit", model.Id)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -2176,6 +2246,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> ChangeStatePf(Guid id, int code)
         {
+            if (!await CanPf("ChangeStatus", id)) return Forbid();
             try
             {
                 var user = userManager.GetUserAsync(HttpContext.User).Result;
@@ -2237,6 +2308,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> UpHeadF(Guid Fid)
         {
+            if (!await CanF("Edit", Fid)) return Forbid();
             var model = await db.Factors.Where(f => f.Id == Fid).FirstOrDefaultAsync();
             var cus = await db.Customers.AsNoTracking().Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             model.AgentName = cus.AgentName;
@@ -2257,6 +2329,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> UpHeadPf(Guid Pfid)
         {
+            if (!await CanPf("Edit", Pfid)) return Forbid();
             var model = await db.PreFactors.Where(f => f.Id == Pfid).FirstOrDefaultAsync();
             var cus = await db.Customers.AsNoTracking().Where(f => f.Id == model.CustomerId).FirstOrDefaultAsync();
             if (cus != null)
@@ -2300,6 +2373,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddPrefactor([FromBody] PreFactor model)
         {
+            if (model == null) return BadRequest();
+            if (documentAccess.IsEnforced("PreFactor"))
+            {
+                if (model.Id == Guid.Empty)
+                {
+                    if (!await HasDocument("PreFactor", "Create")) return Forbid();
+                }
+                else if (!await CanPf("Edit", model.Id)) return Forbid();
+            }
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -2446,6 +2528,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AddFactor(Factor model, bool unlinkSepidar = false)
         {
+            if (model == null) return BadRequest();
+            if (documentAccess.IsEnforced("Factor"))
+            {
+                if (model.Id == Guid.Empty)
+                {
+                    if (!await HasDocument("Factor", "Create")) return Forbid();
+                }
+                else if (!await CanF("Edit", model.Id)) return Forbid();
+                if (model.ParentReturnedId.HasValue && !await CanF("Edit", model.ParentReturnedId.Value)) return Forbid();
+                if (unlinkSepidar && !await HasDocument("Factor", "EditFinancial")) return Forbid();
+            }
+            if (!await CanPf("View", model.PfactorID)) return Forbid();
             if (model == null) return BadRequest();
 
             await using var transAction = await db.Database.BeginTransactionAsync();
@@ -2623,6 +2717,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> UtaminReg(Guid pfId, Guid usId)
         {
+            if (!await CanPf("AssignTamin", pfId)) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var oldPf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).FirstOrDefaultAsync();
             var pf = await db.PreFactors.Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
@@ -2682,6 +2777,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> ResendRegUtamin(Guid pfId, Guid usId)
         {
+            if (!await CanPf("AssignTamin", pfId)) return Forbid();
             try
             {
                 var pf = await db.PreFactors.AsNoTracking().Where(f => f.Id == pfId).Include(f => f.CustomerEntity).FirstOrDefaultAsync();
@@ -2717,6 +2813,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize]
+        [NonAction]
         public async Task<PreFactor> checkPrefactor(PreFactor model)
         {
             if (model.Id == Guid.Empty)
@@ -2801,9 +2898,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return items;
         }
 
-        [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]
+        [Authorize]
         public async Task<IActionResult> DelFactor(Guid id)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole("مدیر ارشد,مدیر مالی,کارشناس مالی")) return Forbid();
+            if (!await CanF("Delete", id)) return Forbid();
             AppUser user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Factors.Where(f => f.Id == id).FirstOrDefaultAsync();
 
@@ -2833,6 +2932,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpDelete]
         public async Task<IActionResult> DelPreFactor(Guid id)
         {
+            if (!await CanPf("Delete", id)) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var pf = await db.PreFactors.Where(f => f.Id == id).FirstOrDefaultAsync();
 
@@ -2846,6 +2946,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetPFactor(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             var data = await db.PreFactors
                 .Include(f => f.PreFactorItems)
                 .Include(f => f.Descriptions)
@@ -2858,6 +2959,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetPFactorItems(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
 
             var data = await db.PreFactorItems.AsNoTracking()
@@ -2893,6 +2995,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetPFactorItemsGroupBySuppliers(Guid id)
         {
+            if (!await CanPf("View", id)) return Forbid();
             try
             {
                 var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
@@ -2951,6 +3054,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> UpdateFactorFinancial([FromBody] FactorFinancialVModel model)
         {
+            if (model == null) return BadRequest();
+            if (!await CanF("EditFinancial", model.CrmFactorId)) return Forbid();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -2991,6 +3096,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> UpdatePrefactorItems([FromBody] List<PreFactorItem> model)
         {
+            if (model == null || model.Count == 0) return BadRequest();
+            if (documentAccess.IsEnforced("PreFactor"))
+            {
+                var pfId = model.First().PrefactorId;
+                if (!pfId.HasValue || model.Any(x => x.PrefactorId != pfId)) return BadRequest();
+                if (!await CanPf("EditSupply", pfId.Value)) return Forbid();
+                var ids = model.Select(x => x.Id).Distinct().ToArray();
+                if (ids.Length != model.Count ||
+                    await db.PreFactorItems.AsNoTracking().CountAsync(x => ids.Contains(x.Id) && x.PrefactorId == pfId, AccessCt) != ids.Length)
+                    return Forbid();
+            }
             var user = await userManager.GetUserAsync(HttpContext.User);
             var setting = await db.ASettings.FirstOrDefaultAsync();
 
@@ -3035,6 +3151,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost] // وقتی در تنظیمات "تایید مالی" فعال است
         public async Task<IActionResult> UploadAttachmentInvoice(List<Attachment> list, Guid pFactorId, int type) // 5:توسط مشتری / 6:توسط کارشناس
         {
+            if (documentAccess.IsEnforced("PreFactor") && type == 6 && !await CanPf("Edit", pFactorId)) return Forbid();
+            if (documentAccess.IsEnforced("PreFactor") && type != 5 && type != 6) return BadRequest();
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
@@ -3124,6 +3242,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> IsAllowedToAddFactor(Guid pfId)
         {
+            if (!await CanPf("View", pfId)) return Forbid();
+            if (!await HasDocument("Factor", "Create")) return Forbid();
             var errorList = new List<ErrorVModel>();
 
             var hasAnyWarnings = await db.SystemWarnings.AnyAsync(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
@@ -3172,12 +3292,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         public async Task<IActionResult> GetAllPreFactorList(string search = "")
         {
+            if (!await documentAccess.HasViewAsync("PreFactor", AccessCt)) return Forbid();
             try
             {
-                var query = db.PreFactors
+                var query = await documentAccess.PreFactorsAsync(db.PreFactors
                     .OrderByDescending(f => f.CreateDate)
-                    .AsNoTracking()
-                    .AsQueryable();
+                    .AsNoTracking(), "View", AccessCt);
 
                 if (!string.IsNullOrEmpty(search))
                 {
@@ -3356,6 +3476,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> PrepareExternalFactorModes(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 var (factor, softwareTitle) = await GetDirectFactorForExportAsync(request, ct);
@@ -3384,6 +3506,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> PrepareExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 var (factor, title) = await GetDirectFactorForExportAsync(request, ct);
@@ -3415,6 +3539,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> SaveExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 var (factor, _) = await GetDirectFactorForExportAsync(request, ct);
@@ -3458,6 +3584,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> PrepareExternalFactorQuotationItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 var (factor, preFactor, quotationId, _) = await GetMappedFactorForExportAsync(request, ct);
@@ -3496,6 +3624,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> PrepareExternalFactorItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 var (factor, _) = await GetDirectFactorForExportAsync(request, ct);
@@ -3582,6 +3712,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 Factor factor;
@@ -3634,6 +3766,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> CheckExternalFactorInvoiceNumber(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 if (request?.InvoiceNumber is not int invoiceNumber || invoiceNumber <= 0)
@@ -3671,6 +3805,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
             {
                 Factor factor;
@@ -3745,6 +3881,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetAllSepidarStocksPartial([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             try
             {
                 if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
@@ -3775,6 +3912,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalSaleType([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
                 return BadRequest("هیچ نرم‌افزاری انتخاب نشده است.");
 
@@ -3809,6 +3947,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (request?.Ids == null || request.Ids.Count != 1) return BadRequest();
+            if (!await CanPf("ExportExternal", request.Ids[0])) return Forbid();
             if (request.Ids == null || request.Ids.Count != 1)
                 return BadRequest("فعلاً فقط یک پیش‌فاکتور را می‌توان ارسال کرد.");
 
@@ -3890,6 +4030,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveExternalCustomerMapping([FromBody] SaveExternalCustomerMappingRequest request)
         {
+            if (request == null) return BadRequest();
+            if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             var preFactor = await db.PreFactors
                 .AsNoTracking()
                 .Where(x => x.Id == request.PreFactorId)
@@ -3957,6 +4099,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalItemMapping([FromBody] PrepareExternalItemMappingRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             var preFactor = await db.PreFactors
                 .AsNoTracking()
                 .Where(x => x.Id == request.PreFactorId)
@@ -4006,6 +4150,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalStockMapping([FromBody] PrepareExternalItemMappingRequest request)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             var service = GetSepidarService(request.ExternalSoftwareId);
 
             if (service == null)
@@ -4026,6 +4171,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] ExternalSoftwarePreFactorRequest request, CancellationToken ct)
         {
+            if (request == null) return BadRequest();
+            if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             if (request == null)
                 return BadRequest("اطلاعات ارسال نشده است.");
 
@@ -4127,6 +4274,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> PrepareExternalUnits([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             try
             {
                 if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
@@ -4156,6 +4304,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetLastSepidarItemCode([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             try
             {
                 if (request.ExternalSoftwareIds == null || request.ExternalSoftwareIds.Count == 0)
@@ -4187,6 +4336,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendItemToExternalSoftware([FromBody] ExternalSoftwareAddItemRequest request, CancellationToken ct)
         {
+            if (!await CanExportAnyDocumentAsync()) return Forbid();
             if (request == null)
                 return BadRequest("اطلاعات ارسال نشده است.");
 
@@ -4230,6 +4380,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
         {
+            if (!await CanF("ExportExternal", factorId)) return Forbid();
             if (factorId == Guid.Empty)
                 return BadRequest("شناسه فاکتور معتبر نیست.");
 
@@ -4309,6 +4460,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 request.ExternalSoftwareId == Guid.Empty || request.MappingId == Guid.Empty)
                 return BadRequest("شناسه سابقه ارسال معتبر نیست.");
 
+            if (!await documentAccess.CanAsync(entityName, "ExportExternal", request.SourceId, ct)) return Forbid();
             var service = GetSepidarService(request.ExternalSoftwareId);
             if (service == null)
                 return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
@@ -4343,6 +4495,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
+            if (!await CanPf("ExportExternal", preFactorId)) return Forbid();
             try
             {
                 if (preFactorId == Guid.Empty)
