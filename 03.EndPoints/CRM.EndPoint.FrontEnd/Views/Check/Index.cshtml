@@ -1,7 +1,9 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @model List<CRM.EndPoint.FrontEnd.Models.Check.CheckbookVModel>
 
 @{
     Layout = "_Layout";
+    var canCreateCheck = await DocumentAccess.HasAsync("Check", "Create", Context.RequestAborted);
     var hasCheckbookId = Context.Request.Query.ContainsKey("cBook");
 }
 
@@ -24,7 +26,7 @@
                 <h5 id="selected-checkbook-title" class="fbold text-dark m-0">لیست چک‌ها</h5>
             </div>
             <div class="section-actions d-flex gap-2 flex-grow-1 justify-content-end">
-                <button class="buttonGreen0" onclick="openNewCheckModal()">
+                <button hidden="@(!canCreateCheck)" data-document-permission="Check.Create" class="buttonGreen0" onclick="openNewCheckModal()">
                     ثبت چک جدید
                     <svg style="width: 18px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                 </button>
