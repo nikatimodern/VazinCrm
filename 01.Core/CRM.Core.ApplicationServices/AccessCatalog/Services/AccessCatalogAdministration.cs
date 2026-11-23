@@ -234,7 +234,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
             .Select(e => new RoleAccessEntityInfo(e.Id, e.Key, e.Title,
                 e.Permissions.Where(p => p.IsActive).OrderBy(p => p.Title)
                     .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title, p.SupportsScope,
-                        p.SupportsScope && e.Key == "Customer"))
+                        p.SupportsScope && (e.Key is "Customer" or "Deal")))
                     .ToArray())).ToArray();
 
     public async Task<IReadOnlyList<AccessRoleGrant>?> RolePermissionsAsync(string roleId, CancellationToken ct)

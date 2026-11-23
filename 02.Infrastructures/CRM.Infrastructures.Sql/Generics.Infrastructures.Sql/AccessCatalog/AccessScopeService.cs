@@ -45,7 +45,8 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             if (!custom.IsAllowed) return AccessScopes.None;
             return AccessScopes.IsOverrideGrant(custom.Scope) &&
                    (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
-                   (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) || entityKey == "Customer")
+                   (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) ||
+                    entityKey is "Customer" or "Deal")
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -102,6 +103,58 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             .Select(u => u.Id).ToArrayAsync(ct);
         var allowed = validTargetIds.Select(Guid.Parse).Append(ownId).Distinct().ToArray();
         return new(allowed, []);
+    }
+
+    public async Task<DealOwnerAccess> GetDealOwnerAccessAsync(
+        string userId, string permissionKey, CancellationToken ct)
+    {
+        if (!permissionKey.StartsWith("Deal.", StringComparison.Ordinal))
+            return new([], []);
+        var scope = await GetEffectiveScopeAsync(userId, permissionKey, ct);
+        if (scope == AccessScopes.All) return new(null, []);
+        if (scope == AccessScopes.None || !Guid.TryParse(userId, out _))
+            return new([], []);
+        if (scope == AccessScopes.Own) return new([userId], []);
+        if (scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers))
+            return new([], []);
+
+        var key = permissionKey["Deal.".Length..];
+        var selected = await (from link in users.AccessUserScopeMembers.AsNoTracking()
+            join perm in users.AccessPermissions.AsNoTracking()
+                on link.AccessPermissionId equals perm.Id
+            where link.UserId == userId && perm.Key == key && perm.AccessEntity.Key == "Deal"
+            select link.TargetUserId).ToArrayAsync(ct);
+        // Empty, corrupt or self-referential exclusions must never widen access.
+        if (selected.Length == 0 ||
+            selected.Any(id => !Guid.TryParse(id, out _) ||
+                               string.Equals(id, userId, StringComparison.OrdinalIgnoreCase)))
+            return new([], []);
+        var validEmployeeIds = await users.Users.AsNoTracking()
+            .Where(u => selected.Contains(u.Id) && u.IsEmployee && !u.OrganAdmin)
+            .Select(u => u.Id).ToArrayAsync(ct);
+        if (validEmployeeIds.Length != selected.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+            return new([], []);
+        if (scope == AccessScopes.AllExceptSelectedUsers)
+            return new(null, selected.Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+        return new(validEmployeeIds.Append(userId).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(), []);
+    }
+
+    public async Task<bool> CanAccessDealAsync(
+        string userId, string permissionKey, Guid dealId, CancellationToken ct)
+    {
+        if (dealId == Guid.Empty || !permissionKey.StartsWith("Deal.", StringComparison.Ordinal))
+            return false;
+        var filter = await GetDealOwnerAccessAsync(userId, permissionKey, ct);
+        if (filter.AllowedOwnerIds is { Length: 0 }) return false;
+        var query = crm.Deals.AsNoTracking().Where(x => x.Id == dealId);
+        if (filter.AllowedOwnerIds is { } allowed)
+            query = query.Where(x => allowed.Contains(x.UserCreatorID));
+        if (filter.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = filter.ExcludedOwnerIds;
+            query = query.Where(x => !excluded.Contains(x.UserCreatorID));
+        }
+        return await query.AnyAsync(ct);
     }
 
     public async Task<bool> CanAccessCustomerAsync(

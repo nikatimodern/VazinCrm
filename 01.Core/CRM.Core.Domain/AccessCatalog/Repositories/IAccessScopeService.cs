@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AccessCatalog.Entities;
@@ -11,6 +12,19 @@ namespace CRM.Core.Domain.AccessCatalog.Repositories;
 /// </summary>
 public sealed record CustomerOwnerAccess(Guid[]? AllowedOwnerIds, Guid[] ExcludedOwnerIds);
 
+/// <summary>
+/// Deal ownership is Deal.UserCreatorID (Identity user ID), not OrderHead ownership.
+/// Null allowed list means All; empty means None. Exclusions always override inclusions.
+/// </summary>
+public sealed record DealOwnerAccess(string[]? AllowedOwnerIds, string[] ExcludedOwnerIds)
+{
+    public bool Allows(string? ownerId) =>
+        AllowedOwnerIds is not { Length: 0 } &&
+        (AllowedOwnerIds is null ||
+         AllowedOwnerIds.Contains(ownerId ?? "", StringComparer.OrdinalIgnoreCase)) &&
+        !ExcludedOwnerIds.Contains(ownerId ?? "", StringComparer.OrdinalIgnoreCase);
+}
+
 public interface IAccessScopeService
 {
     Task<byte> GetEffectiveScopeAsync(string userId, string permissionKey, CancellationToken ct);
@@ -21,4 +35,6 @@ public interface IAccessScopeService
     // A null allowed list means all candidates; exclusions always win over inclusions.
     // An empty allowed array means no access (fail-closed).
     Task<CustomerOwnerAccess> GetCustomerOwnerAccessAsync(string userId, string permissionKey, CancellationToken ct);
+    Task<DealOwnerAccess> GetDealOwnerAccessAsync(string userId, string permissionKey, CancellationToken ct);
+    Task<bool> CanAccessDealAsync(string userId, string permissionKey, Guid dealId, CancellationToken ct);
 }
