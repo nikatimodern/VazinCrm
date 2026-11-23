@@ -51,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize]
 public sealed class CustomerController(
     ICqrsDispatcher requests, IAccessScopeService accessScopes, ICustomerRepository customers,
-    IConfiguration configuration) : Controller
+    IConfiguration configuration, DocumentAccessPolicy documentAccess) : Controller
 {
     // Opt-in while the remaining ERP controllers are migrated from legacy roles.
     private bool Enforce => configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions");
@@ -346,6 +346,7 @@ public sealed class CustomerController(
     [HttpGet]
     public async Task<IActionResult> GetAllPreFactorPartial(Guid? customerId, Guid? dealId, bool showDeleted = false, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("PreFactor", cancellationToken)) return Forbid();
         Guid? requiredCustomerId = null;
         // Deal ownership is independent of Customer.View. Reject a forged Deal ID
         // even when the person directory rollout flag is not yet enabled.
@@ -372,6 +373,7 @@ public sealed class CustomerController(
     [Authorize(Roles = "مدیر ارشد"), HttpGet]
     public async Task<IActionResult> GetUsersForPreFactor(Guid cusId, Guid pfId, CancellationToken cancellationToken)
     {
+        if (!await documentAccess.CanAsync("PreFactor", "AssignTamin", pfId, cancellationToken)) return Forbid();
         if (!await CanEditAllAsync(cancellationToken)) return Forbid();
         if (!await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
         if (Enforce)
@@ -385,6 +387,7 @@ public sealed class CustomerController(
     [Authorize(Roles = "مدیر ارشد"), HttpGet]
     public async Task<IActionResult> ChangeUsersPreFactor(Guid pfId, Guid userId, Guid taminUserId, CancellationToken cancellationToken)
     {
+        if (!await documentAccess.CanAsync("PreFactor", "AssignTamin", pfId, cancellationToken)) return Forbid();
         if (!await CanEditAllAsync(cancellationToken) ||
             !await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new ChangePreFactorUsersCommand(pfId, userId, taminUserId), cancellationToken), cancellationToken);
