@@ -3,7 +3,11 @@
 @model IList<CRM.Core.Domain.Customers.Entities.Customer>
 @{
     Layout = null;
-    bool canManage = ViewBag.AccessAccepte == true;
+    bool canManage = ViewBag.CanViewOwners == true;
+    bool canApproveAny = ViewBag.AccessAccepte == true;
+    byte approveScope = ViewBag.ApproveScope is byte a ? a : (byte)0;
+    var approveOwnerIds = (ViewBag.ApproveOwnerIds as Guid[] ?? Array.Empty<Guid>()).ToHashSet();
+    var approveExcludedIds = (ViewBag.ApproveExcludedOwnerIds as Guid[] ?? Array.Empty<Guid>()).ToHashSet();
     bool isEnforced = ViewBag.ScopeEnforced == true;
     byte editScope = ViewBag.EditScope is byte e ? e : (byte)0;
     byte deleteScope = ViewBag.DeleteScope is byte d ? d : (byte)0;
@@ -20,6 +24,11 @@
             (editScope is 1 or 3 && item.UserCustomers?.Any(x => editOwnerIds.Contains(x.UserId)) == true) ||
             (editScope == 4 && ViewBag.EditOwnerIds == null &&
                 editExcludedIds.Count > 0 && item.UserCustomers?.Any(x => editExcludedIds.Contains(x.UserId)) != true);
+        bool allowApprove = !isEnforced ? canApproveAny :
+            approveScope == 2 ||
+            (approveScope is 1 or 3 && item.UserCustomers?.Any(x => approveOwnerIds.Contains(x.UserId)) == true) ||
+            (approveScope == 4 && ViewBag.ApproveOwnerIds == null && approveExcludedIds.Count > 0 &&
+                item.UserCustomers?.Any(x => approveExcludedIds.Contains(x.UserId)) != true);
         bool allowDelete = !isEnforced || deleteScope == 2 ||
             (deleteScope is 1 or 3 && item.UserCustomers?.Any(x => deleteOwnerIds.Contains(x.UserId)) == true) ||
             (deleteScope == 4 && ViewBag.DeleteOwnerIds == null &&
@@ -68,9 +77,9 @@
                     }
                 } else {
                     <span class="customer-person-card__pending">در انتظار تأیید</span>
-                    @if (canManage || (isEnforced && allowDelete)) {
+                    @if (allowApprove || allowDelete || canManage) {
                         <div class="customer-person-card__actions">
-                            @if (canManage) {
+                            @if (allowApprove) {
                                 <button type="button" aria-label="تأیید" title="تأیید" onclick="acceptCustomer('@item.Id')"><i class="fa fa-check" aria-hidden="true"></i></button>
                             }
                             @if (allowDelete) {

@@ -75,6 +75,9 @@ public sealed class CustomerController(
     private bool? DirectoryReadAll(byte scope) => Enforce
         ? scope is AccessScopes.All or AccessScopes.AllExceptSelectedUsers : null;
 
+    private async Task<bool> HasPermissionAsync(string key, CancellationToken ct) =>
+        !Enforce || await ScopeAsync(key, ct) == AccessScopes.All;
+
     private async Task<bool> CanEditAllAsync(CancellationToken ct) =>
         !Enforce || await ScopeAsync("Edit", ct) == AccessScopes.All;
 
@@ -101,14 +104,16 @@ public sealed class CustomerController(
     public async Task<IActionResult> RemoveUserCustomer([FromBody] UserCustomer model, CancellationToken cancellationToken)
     {
         if (model is null || model.CustomerId == Guid.Empty) return BadRequest();
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        if (!await HasPermissionAsync("ManageExperts", cancellationToken) ||
+            !await CanAccessAsync("View", model.CustomerId, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new RemoveCustomerExpertCommand(model.CustomerId, model.UserId), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
     public async Task<IActionResult> AddSelsToCustomers([FromBody] SelsCustomerVModel model, CancellationToken cancellationToken)
     {
         if (model is null || model.customerId == Guid.Empty) return BadRequest();
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        if (!await HasPermissionAsync("ManageExperts", cancellationToken) ||
+            !await CanAccessAsync("View", model.customerId, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AssignCustomerExpertsCommand(model.customerId, model.selExperts), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
@@ -170,14 +175,17 @@ public sealed class CustomerController(
     [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AcceptCustomer(Guid id, CancellationToken cancellationToken)
     {
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        if (!await CanAccessAsync("Approve", id, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AcceptCustomerCommand(id), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddToMyCustomer(Guid id, CancellationToken cancellationToken)
     {
-        // Self-assignment must not be a route around Own-only access.
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        // Self-assignment is a separate privileged operation; without unrestricted
+        // View it would become a route around Own/SelectedUsers ownership.
+        if (!await HasPermissionAsync("AssignSelf", cancellationToken) ||
+            (Enforce && await ScopeAsync("View", cancellationToken) != AccessScopes.All) ||
+            !await CanAccessAsync("View", id, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new AddCustomerToCurrentUserCommand(id), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
@@ -246,7 +254,7 @@ public sealed class CustomerController(
         var filter = await OwnerFilterAsync(scope, cancellationToken);
         var result = await requests.QueryAsync(new GetCustomerCardsQuery(skip, take, roleType, juridical,
             DirectoryReadAll(scope), filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
-        ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
+        await PrepareCustomerCardPermissionsAsync(result.CanAccept, cancellationToken);
         var editScope = await ScopeAsync("Edit", cancellationToken);
         var deleteScope = await ScopeAsync("Delete", cancellationToken);
         ViewBag.EditScope = editScope;
@@ -266,7 +274,7 @@ public sealed class CustomerController(
     [HttpPost, Authorize(Roles = "مدیر ارشد")]
     public async Task<IActionResult> NormalizeAllCustomers(CancellationToken cancellationToken)
     {
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        if (!await HasPermissionAsync("Normalize", cancellationToken)) return Forbid();
         await requests.CommandAsync(new NormalizeCustomersCommand(), cancellationToken);
         return Ok();
     }
@@ -278,7 +286,7 @@ public sealed class CustomerController(
         var filter = await OwnerFilterAsync(scope, cancellationToken);
         var result = await requests.QueryAsync(new SearchCustomerCardsQuery(val, roleType, juridical,
             DirectoryReadAll(scope), filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
-        ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
+        await PrepareCustomerCardPermissionsAsync(result.CanAccept, cancellationToken);
         var editScope = await ScopeAsync("Edit", cancellationToken);
         var deleteScope = await ScopeAsync("Delete", cancellationToken);
         ViewBag.EditScope = editScope;
@@ -341,6 +349,10 @@ public sealed class CustomerController(
         if (Enforce)
         {
             if (!customerId.HasValue && !dealId.HasValue) return BadRequest();
+            // A Deal ID must not bypass Deal.View through the Customer endpoint.
+            if (dealId.HasValue && configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
+                !await accessScopes.CanAccessDealAsync(UserId, "Deal.View", dealId.Value, cancellationToken))
+                return Forbid();
             // The query prioritizes DealId; never trust a different CustomerId passed alongside it.
             var personId = dealId.HasValue ? await customers.GetDealCustomerIdAsync(dealId.Value, cancellationToken) : customerId;
             if (!personId.HasValue || (customerId.HasValue && customerId != personId) ||
@@ -371,7 +383,8 @@ public sealed class CustomerController(
     [Authorize(Roles = "مدیر ارشد"), HttpGet]
     public async Task<IActionResult> ChangeUsersPreFactor(Guid pfId, Guid userId, Guid taminUserId, CancellationToken cancellationToken)
     {
-        if (!await CanEditAllAsync(cancellationToken)) return Forbid();
+        if (!await CanEditAllAsync(cancellationToken) ||
+            !await CanViewPreFactorAsync(pfId, cancellationToken)) return Forbid();
         return await Mutation(requests.CommandAsync(new ChangePreFactorUsersCommand(pfId, userId, taminUserId), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
@@ -382,6 +395,17 @@ public sealed class CustomerController(
         var filter = await OwnerFilterAsync(scope, cancellationToken);
         return Ok(await requests.QueryAsync(new GetCustomerPhonebookQuery(search,
             filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken));
+    }
+
+    private async Task PrepareCustomerCardPermissionsAsync(bool legacyCanAccept, CancellationToken ct)
+    {
+        ViewBag.AccessAccepte = Enforce ? await ScopeAsync("Approve", ct) != AccessScopes.None : legacyCanAccept;
+        ViewBag.CanViewOwners = Enforce ? await HasPermissionAsync("ManageExperts", ct) : legacyCanAccept;
+        var approveScope = await ScopeAsync("Approve", ct);
+        var owners = await OwnerFilterAsync(approveScope, ct, "Approve");
+        ViewBag.ApproveScope = approveScope;
+        ViewBag.ApproveOwnerIds = owners.AllowedOwnerIds;
+        ViewBag.ApproveExcludedOwnerIds = owners.ExcludedOwnerIds;
     }
 
     private async Task<IActionResult> Mutation(Task<CustomerMutationResult> operation, CancellationToken cancellationToken)
