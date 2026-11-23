@@ -74,11 +74,15 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         {
             if (!await access.CanAsync("OrderHead", "View", link.OrderHeadId, ct)) return false;
             link.OrderHead = null;
+            link.RequestAmount = null;
+            link.RequestAmountId = model.Id;
         }
         foreach (var link in model.RequestAmountSupplyFactor ?? [])
         {
             if (!await access.CanAsync("SupplyFactor", "View", link.SupplyFactorId, ct)) return false;
             link.SupplyFactor = null;
+            link.RequestAmount = null;
+            link.RequestAmountId = model.Id;
         }
         return true;
     }
@@ -94,7 +98,12 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         if (!await access.CanAsync("BankAccount", "View", model.FromAccountId, ct) ||
             !await access.CanAsync("BankAccount", "View", model.ToAccountId, ct)) return false;
         foreach (var link in model.RequestAmountPayments ?? [])
+        {
             if (!await Can("Pay", link.RequestAmountId, ct)) return false;
+            link.RequestAmount = null;
+            link.Payment = null;
+            link.PaymentId = model.Id;
+        }
         if (model.Id != Guid.Empty)
         {
             var oldIds = await db.RequestAmountPayments.Where(x => x.PaymentId == model.Id).Select(x => x.RequestAmountId).ToListAsync(ct);
@@ -140,13 +149,32 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     {
         if (model == null) return BadRequest();
         if (!await Can("Approve", model.Id, ct)) return Forbid();
+        if (access.IsEnforced("RequestAmount") && !await db.RequestAmounts.AnyAsync(x => x.Id == model.Id && x.RequestStatus == RequestStatusEnum.در_انتظار_تایید_مدیرعامل && model.AcceptedAmount > 0 && model.AcceptedAmount <= x.Amount, ct)) return BadRequest();
         return Map(await dispatcher.CommandAsync(new SetAcceptedRequestAmountCommand(model), ct));
     }
     public async Task<IActionResult> ChangeStatusRequestAmount(Guid id, RequestStatusEnum status, CancellationToken ct)
     {
         if (!await Can("ChangeStatus", id, ct)) return Forbid();
         if (!Enum.IsDefined(status)) return BadRequest();
-        if (access.IsEnforced("RequestAmount") && status == RequestStatusEnum.پرداخت_شده) return Forbid();
+        if (access.IsEnforced("RequestAmount"))
+        {
+            var row = await db.RequestAmounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct);
+            if (row == null) return NotFound();
+            var from = row.RequestStatus;
+            // A creator may submit a draft, but may not skip the approval/finance stages.
+            if (from != RequestStatusEnum.ثبت_اولیه || status != RequestStatusEnum.در_انتظار_تایید_مدیرعامل)
+            {
+                if (from is RequestStatusEnum.در_انتظار_تایید_مدیرعامل or RequestStatusEnum.در_انتظار_ارسال_به_مالی)
+                {
+                    if (!await Can("Approve", id, ct)) return Forbid();
+                }
+                else if (!await Can("Pay", id, ct)) return Forbid();
+                if (from == RequestStatusEnum.ثبت_اولیه) return Forbid();
+            }
+            if (status == RequestStatusEnum.پرداخت_شده &&
+                (row.AcceptedAmount <= 0 || await db.RequestAmountPayments.Where(x => x.RequestAmountId == id).SumAsync(x => x.Amount, ct) < row.AcceptedAmount))
+                return Conflict("مبلغ تایید شده هنوز کامل پرداخت نشده است.");
+        }
         return Map(await dispatcher.CommandAsync(new ChangeStatusRequestAmountCommand(id, status), ct));
     }
     [HttpPost]
