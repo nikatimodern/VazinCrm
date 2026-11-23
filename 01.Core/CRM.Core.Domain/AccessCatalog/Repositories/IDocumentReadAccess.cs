@@ -11,6 +11,7 @@ namespace CRM.Core.Domain.AccessCatalog.Repositories;
 public interface IDocumentReadAccess
 {
     Task<IQueryable<T>> ApplyAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : CRM.Framework.Domain.BaseEntity;
+    Task<bool> HasAsync(string entity, string action, CancellationToken ct);
     bool IsEnforced(string entity);
     Task<IQueryable<PreFactor>> PreFactorsAsync(IQueryable<PreFactor> query, string action, CancellationToken ct);
     Task<IQueryable<Factor>> FactorsAsync(IQueryable<Factor> query, string action, CancellationToken ct);
