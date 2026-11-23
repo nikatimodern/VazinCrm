@@ -47,6 +47,13 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             if (settings.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
                 await scopes.GetEffectiveScopeAsync(userId, "Deal.View", default) == AccessScopes.None)
                 filteredMenus.RemoveAll(item => item.Id == "deal");
+
+            if (settings.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions") &&
+                settings.GetValue<bool>("AccessCatalog:EnforceFactorPermissions") &&
+                await scopes.GetEffectiveScopeAsync(userId, "PreFactor.View", default) == AccessScopes.None &&
+                await scopes.GetEffectiveScopeAsync(userId, "Factor.View", default) == AccessScopes.None &&
+                !user.IsInRole("مدیر ارشد") && !user.IsInRole("کارشناس مالی") && !user.IsInRole("مدیر تامین") && !user.IsInRole("کارشناس تامین") && !user.IsInRole("مدیر عامل"))
+                filteredMenus.RemoveAll(item => item.Id == "cartable");
         }
 
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
