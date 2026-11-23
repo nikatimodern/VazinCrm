@@ -306,7 +306,8 @@ public class DealController : Controller {
             var statusAccess = await OwnerAccessAsync("ChangeStatus", HttpContext.RequestAborted);
             var permissionMap = deals.ToDictionary(d => d.Id.ToString(), d => new {
                 canEdit = editAccess.Allows(d.UserCreatorID) && d.FinancialStatus != DealFinancialStausEnum.تایید_شده,
-                canDelete = deleteAccess.Allows(d.UserCreatorID) && d.FinancialStatus != DealFinancialStausEnum.تایید_شده,
+                canDelete = (Enforce ? deleteAccess.Allows(d.UserCreatorID) : isAdmin) &&
+                            d.FinancialStatus != DealFinancialStausEnum.تایید_شده,
                 canChangeStatus = statusAccess.Allows(d.UserCreatorID),
                 canAssign = isAdmin
             });
