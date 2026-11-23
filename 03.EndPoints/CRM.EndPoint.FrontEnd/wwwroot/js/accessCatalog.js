@@ -43,6 +43,8 @@
     let userSelectedUsers = new Map(), userOriginalSelectedUsers = new Map();
     const scopePickers = new Map();
     const collapsedUserEntities = new Set();
+    // Remember the active permission in each entity while editing a user's grants.
+    const selectedUserPermissions = new Map();
     let userRolePicker = null;
     let userReady = false, userSaving = false, userLoading = false;
     let userTabGeneration = 0, userPageGeneration = 0, userSelectionGeneration = 0, userSearchTimer = null;
@@ -1190,6 +1192,15 @@
             row.classList.toggle("is-custom", effective.isCustom);
             row.querySelector("[data-user-override-id]").disabled = !userReady || userSaving;
         }
+        for (const nav of userPermissions.querySelectorAll("[data-nav-effective]")) {
+            const effective = effectivePermission(nav.dataset.navEffective);
+            nav.textContent = effective.isCustom ?
+                (effective.allowed ? "اختصاصی" : "محدود شده") :
+                (effective.allowed ? "مجاز از نقش" : "بدون دسترسی");
+            const button = nav.closest(".ac-user-permission-nav-item");
+            button.classList.toggle("is-custom", effective.isCustom);
+            button.classList.toggle("is-denied", !effective.allowed);
+        }
         for (const group of userPermissions.querySelectorAll("[data-user-entity]")) {
             const entity = userCatalog.find(x => x.id === group.dataset.userEntity);
             if (!entity) continue;
@@ -1236,6 +1247,9 @@
     }
 
     function renderUserPermissions() {
+        const scrollPosition = userPermissions.scrollTop;
+        const navPositions = new Map([...userPermissions.querySelectorAll("[data-user-permission-nav]")]
+            .map(nav => [nav.dataset.userPermissionNav, nav.scrollTop]));
         for (const editor of scopePickers.values()) editor.destroy();
         scopePickers.clear();
         userPermissions.replaceChildren();
@@ -1274,6 +1288,9 @@
             const count = text("span", null, "ac-role-group-count");
             count.dataset.userEntityCount = entity.id;
             header.append(name, count);
+
+            // The list stays on the right (RTL); only the selected permission's
+            // editor is mounted in the content panel on the left.
             const grid = text("div", null, "ac-user-permission-grid");
             grid.id = "ac-user-entity-permissions-" + entity.id;
             const isCollapsed = collapsedUserEntities.has(entity.id);
@@ -1281,69 +1298,110 @@
             name.setAttribute("aria-expanded", String(!isCollapsed));
             name.setAttribute("aria-controls", grid.id);
             section.classList.toggle("is-collapsed", isCollapsed);
-            for (const permission of visible) {
-                const item = text("div", null, "ac-user-permission-item");
-                item.dataset.userPermissionId = permission.id;
-                const title = text("div", null, "ac-user-permission-title");
-                // Permission keys may be stored as "Create" or "Customer.Create".
-                // Use the final segment so every CRUD icon is shown correctly.
+
+            const rememberedId = selectedUserPermissions.get(entity.id);
+            const selected = visible.find(permission => permission.id === rememberedId) || visible[0];
+            if (!rememberedId) selectedUserPermissions.set(entity.id, selected.id);
+            const nav = text("div", null, "ac-user-permission-nav");
+            nav.dataset.userPermissionNav = entity.id;
+            nav.setAttribute("role", "tablist");
+            nav.setAttribute("aria-label", "مجوزهای " + entity.title);
+            const content = text("div", null, "ac-user-permission-content");
+            content.id = "ac-user-permission-panel-" + entity.id;
+            content.setAttribute("role", "tabpanel");
+            content.setAttribute("aria-labelledby", "ac-user-permission-tab-" + selected.id);
+
+            for (const [index, permission] of visible.entries()) {
                 const kind = String(permission.key || "").split(".").pop().trim().toLowerCase();
                 const iconName = kind === "view" ? "fa-eye" :
                     kind === "create" ? "fa-plus" :
                     kind === "edit" ? "fa-pen" :
                     kind === "delete" ? "fa-trash-alt" : "fa-key";
-                const rawPermissionKey = String(permission.key || "");
-                const fullPermissionKey = rawPermissionKey.toLowerCase().startsWith(
-                    String(entity.key).toLowerCase() + ".")
-                    ? rawPermissionKey : entity.key + "." + rawPermissionKey;
-                title.append(text("i", null, "fas " + iconName),
-                    text("strong", permission.title), text("small", fullPermissionKey));
-                const controls = text("div", null, "ac-user-permission-row");
-                const select = document.createElement("select");
-                select.className = "ac-user-override-select";
-                select.dataset.userOverrideId = permission.id;
-                select.setAttribute("aria-label", "وضعیت اختصاصی " + permission.title + " در " + entity.title);
-                select.append(new Option("از نقش‌ها", "inherit"));
-                if (permission.supportsScope) select.append(new Option("اجازه اختصاصی — فقط خود", "own"));
-                if (permission.supportsSelectedUsers) {
-                    select.append(new Option("کاربران انتخابی", "selected"));
-                    select.append(new Option("همه به‌جز کاربران انتخابی", "except"));
-                }
-                select.append(new Option(permission.supportsScope ?
-                    "اجازه اختصاصی — همه" : "اجازه اختصاصی", "allow"),
-                    new Option("محدودیت اختصاصی", "deny"));
-                const override = userOverrides.get(permission.id);
-                select.value = override === undefined ? "inherit" :
-                    override === 0 ? "deny" : override === 1 ? "own" :
-                    override === 3 ? "selected" :
-                    override === 4 ? "except" : "allow";
-                const effective = text("span", null, "ac-user-effective");
-                effective.dataset.userEffective = permission.id;
-                controls.append(select, effective);
-                const sources = text("small", null, "ac-user-sources");
-                sources.dataset.userSources = permission.id;
-                item.append(title, controls, sources);
-                if ((override === 3 || override === 4) && permission.supportsSelectedUsers) {
-                    item.classList.add("has-selected-users");
-                    const panel = text("div", null, "ac-selected-users-panel");
-                    panel.append(text("label", override === 4 ?
-                        "کاربران مستثنا از " + permission.title : "کاربران انتخابی برای " + permission.title,
-                        "ac-scope-users-label"));
-                    const selector = document.createElement("select");
-                    selector.multiple = true;
-                    selector.dataset.scopePickerId = permission.id;
-                    selector.setAttribute("aria-label", "جست‌وجو و انتخاب کاربران مجاز");
-                    panel.append(selector, text("small", override === 4 ?
-                        "اشخاص مرتبط با هر یک از کاربران مستثنا نمایش داده نمی‌شوند؛ حتی اگر به کاربر مجاز دیگری هم مرتبط باشند." :
-                        "اطلاعات مرتبط با خود کاربر نیز همیشه در این محدوده قرار دارند.",
-                        "ac-scope-users-hint"));
-                    item.append(panel);
-                    pendingPickers.push([permission.id, selector]);
-                }
-                grid.append(item);
+                const tab = text("button", null, "ac-user-permission-nav-item" +
+                    (index % 2 ? " is-alt" : "") + (permission.id === selected.id ? " is-selected" : ""));
+                tab.type = "button";
+                tab.id = "ac-user-permission-tab-" + permission.id;
+                tab.dataset.action = "select-user-permission";
+                tab.dataset.userEntityId = entity.id;
+                tab.dataset.userPermissionId = permission.id;
+                tab.setAttribute("role", "tab");
+                tab.setAttribute("aria-selected", String(permission.id === selected.id));
+                tab.setAttribute("aria-controls", content.id);
+                tab.tabIndex = permission.id === selected.id ? 0 : -1;
+                const icon = text("i", null, "fas " + iconName);
+                icon.setAttribute("aria-hidden", "true");
+                const caption = text("span", null, "ac-user-nav-label");
+                caption.append(text("strong", permission.title));
+                const state = text("small", null, "ac-user-nav-state");
+                state.dataset.navEffective = permission.id;
+                caption.append(state);
+                tab.append(icon, caption);
+                nav.append(tab);
             }
+
+            const permission = selected;
+            const item = text("div", null, "ac-user-permission-item" +
+                (visible.indexOf(permission) % 2 ? " is-alt" : ""));
+            item.dataset.userPermissionId = permission.id;
+            const title = text("div", null, "ac-user-permission-title");
+            const kind = String(permission.key || "").split(".").pop().trim().toLowerCase();
+            const iconName = kind === "view" ? "fa-eye" :
+                kind === "create" ? "fa-plus" :
+                kind === "edit" ? "fa-pen" :
+                kind === "delete" ? "fa-trash-alt" : "fa-key";
+            const rawPermissionKey = String(permission.key || "");
+            const fullPermissionKey = rawPermissionKey.toLowerCase().startsWith(
+                String(entity.key).toLowerCase() + ".")
+                ? rawPermissionKey : entity.key + "." + rawPermissionKey;
+            title.append(text("i", null, "fas " + iconName),
+                text("strong", permission.title), text("small", fullPermissionKey));
+            const controls = text("div", null, "ac-user-permission-row");
+            const select = document.createElement("select");
+            select.className = "ac-user-override-select";
+            select.dataset.userOverrideId = permission.id;
+            select.setAttribute("aria-label", "وضعیت اختصاصی " + permission.title + " در " + entity.title);
+            select.append(new Option("از نقش‌ها", "inherit"));
+            if (permission.supportsScope) select.append(new Option("اجازه اختصاصی — فقط خود", "own"));
+            if (permission.supportsSelectedUsers) {
+                select.append(new Option("کاربران انتخابی", "selected"));
+                select.append(new Option("همه به‌جز کاربران انتخابی", "except"));
+            }
+            select.append(new Option(permission.supportsScope ?
+                "اجازه اختصاصی — همه" : "اجازه اختصاصی", "allow"),
+                new Option("محدودیت اختصاصی", "deny"));
+            const override = userOverrides.get(permission.id);
+            select.value = override === undefined ? "inherit" :
+                override === 0 ? "deny" : override === 1 ? "own" :
+                override === 3 ? "selected" :
+                override === 4 ? "except" : "allow";
+            const effective = text("span", null, "ac-user-effective");
+            effective.dataset.userEffective = permission.id;
+            controls.append(select, effective);
+            const sources = text("small", null, "ac-user-sources");
+            sources.dataset.userSources = permission.id;
+            item.append(title, controls, sources);
+            if ((override === 3 || override === 4) && permission.supportsSelectedUsers) {
+                item.classList.add("has-selected-users");
+                const panel = text("div", null, "ac-selected-users-panel");
+                panel.append(text("label", override === 4 ?
+                    "کاربران مستثنا از " + permission.title : "کاربران انتخابی برای " + permission.title,
+                    "ac-scope-users-label"));
+                const selector = document.createElement("select");
+                selector.multiple = true;
+                selector.dataset.scopePickerId = permission.id;
+                selector.setAttribute("aria-label", "جست‌وجو و انتخاب کاربران");
+                panel.append(selector, text("small", override === 4 ?
+                    "اشخاص مرتبط با هر یک از کاربران مستثنا نمایش داده نمی‌شوند؛ حتی اگر به کاربر مجاز دیگری هم مرتبط باشند." :
+                    "اطلاعات مرتبط با خود کاربر نیز همیشه در این محدوده قرار دارند.",
+                    "ac-scope-users-hint"));
+                item.append(panel);
+                pendingPickers.push([permission.id, selector]);
+            }
+            content.append(item);
+            grid.append(nav, content);
             section.append(header, grid);
             userPermissions.append(section);
+            nav.scrollTop = navPositions.get(entity.id) || 0;
         }
         if (!shown) {
             showEmpty(userPermissions,
@@ -1352,6 +1410,7 @@
         }
         for (const [permissionId, selector] of pendingPickers)
             attachScopePicker(permissionId, selector);
+        userPermissions.scrollTop = scrollPosition;
         syncUserState();
     }
 
@@ -1408,7 +1467,10 @@
     async function selectUser(userId) {
         if (!userPageItems.some(x => x.id === userId)) return;
         const generation = ++userSelectionGeneration;
-        if (currentUserId !== userId) collapsedUserEntities.clear();
+        if (currentUserId !== userId) {
+            collapsedUserEntities.clear();
+            selectedUserPermissions.clear();
+        }
         currentUserId = userId;
         userReady = false;
         userRoleIds = new Set();
@@ -1632,6 +1694,19 @@
         }
         if (target.disabled) return;
         const action = target.dataset.action;
+        if (action === "select-user-permission") {
+            if (!userReady || userSaving) return;
+            const entityId = target.dataset.userEntityId;
+            const permissionId = target.dataset.userPermissionId;
+            if (selectedUserPermissions.get(entityId) === permissionId &&
+                userPermissions.querySelector("[data-user-permission-id='" + permissionId + "']")) return;
+            selectedUserPermissions.set(entityId, permissionId);
+            renderUserPermissions();
+            const activeTab = [...userPermissions.querySelectorAll(".ac-user-permission-nav-item")]
+                .find(button => button.dataset.userPermissionId === permissionId);
+            activeTab?.focus({ preventScroll: true });
+            return;
+        }
         if (action === "toggle-user-entity") {
             const section = target.closest("[data-user-entity]");
             const grid = section?.querySelector(".ac-user-permission-grid");
@@ -1691,6 +1766,17 @@
         else if (action === "edit-permission") openPermissionEditor(permissions.find(x => x.id === target.dataset.id));
         else if (action === "delete-permission") void deleteItem("Permission", target.dataset.id);
         else if (action === "reload") void loadEntities();
+    }, { signal });
+    root.addEventListener("keydown", event => {
+        const tab = event.target.closest(".ac-user-permission-nav-item[role='tab']");
+        if (!tab || !["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+        const tabs = [...tab.parentElement.querySelectorAll(".ac-user-permission-nav-item")];
+        const index = tabs.indexOf(tab);
+        const nextIndex = event.key === "Home" ? 0 :
+            event.key === "End" ? tabs.length - 1 :
+            (index + (event.key === "ArrowDown" ? 1 : -1) + tabs.length) % tabs.length;
+        event.preventDefault();
+        tabs[nextIndex].click();
     }, { signal });
     root.querySelector(".ac-main-tabs").addEventListener("keydown", event => {
         const tab = event.target.closest("[data-main-tab]");
