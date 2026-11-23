@@ -1,3 +1,5 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{ var canCreateRequest = await DocumentAccess.HasAsync("RequestAmount", "Create", Context.RequestAborted); }
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -10,7 +12,7 @@
 <div id="requestAmountWorkspace" class="crm-operations-theme w-100 pb-3">
     <div class="request-page-toolbar">
         <div class="request-page-actions d-flex align-items-center flex-wrap gap-2">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showAddRequestAmountModal()">
+            <button hidden="@(!canCreateRequest)" data-document-permission="RequestAmount.Create" class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showAddRequestAmountModal()">
                 <span style="line-height: 1">ثبت درخواست جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
