@@ -1,9 +1,12 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.PreFactors.Enum
 @model List<CRM.EndPoint.FrontEnd.Models.PreFactors.PreFactorSalesAdminViewModel>
 @{ Layout = null; }
 <div class="pf-accepted-list">
 @foreach (var item in Model) {
     var pf = item.PreFactor;
+    var canApprove = await DocumentAccess.AllowsPreFactorAsync(pf, "ApproveSales", Context.RequestAborted);
+    var canChange = await DocumentAccess.AllowsPreFactorAsync(pf, "ChangeStatus", Context.RequestAborted);
     <article class="pf-accepted-card @(pf.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : "")">
         <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="pf" />
         <div class="InfoDataItem_Prefactor pf-accepted-card__content pf-finance-card">
@@ -29,7 +32,7 @@
                     <div class="pf-accepted-card__row"><span>پیش‌پرداخت</span><strong><bdi dir="ltr">@($"{item.ReceiveAmount:n0}")</bdi> <small>@(pf.CurrencyTypeTxt ?? "ريال")</small></strong></div>
                     <div class="pf-accepted-card__row"><span>مانده حساب تقریبی *</span><strong><bdi dir="ltr">@($"{item.PaymentAmount:n0}")</bdi> <small>@(pf.CurrencyTypeTxt ?? "ريال")</small></strong></div>
                     <div class="pf-accepted-card__row"><span>وضعیت</span><strong>@(pf.AcceptedFinancial == false ? "رد شده از طرف مالی" : pf.PftypeTxt)</strong></div>
-                    @if (pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
+                    @if (canApprove && pf.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مدیر_فروش) {
                         <div class="pf-finance-card__controls">
                             <button type="button" class="pf-finance-card__button" onclick="acceptSalesAdmin('@pf.Id')">تأیید</button>
                             <button type="button" class="pf-finance-card__reject" onclick="showModalNotAccept('@pf.Id', 14)">عدم تأیید</button>
@@ -51,7 +54,7 @@
                     <button type="button" class="flex-center" aria-label="پیوست ها" style="color:var(--DarkColor)" data-title-right="پیوست ها" onclick="AttachDoc('@pf.Id')"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-paperclip"></i>
                     </span></button>
-                    <button type="button" class="flex-center" aria-label="بستن پیش فاکتور" style="color:var(--DarkColor)" data-title-right="بستن پیش فاکتور" onclick="ShowModalExpireDescription('@pf.Id','@string.Format("{0:n0}", pf.PaymentAmount)','@pf.SerialNumber','@pf.Customer @pf.AgentName',3 )"><span class="pf-accepted-card__action-icon" aria-hidden="true">
+                    <button type="button" hidden="@(!canChange)" data-document-permission="PreFactor.ChangeStatus" class="flex-center" aria-label="بستن پیش فاکتور" style="color:var(--DarkColor)" data-title-right="بستن پیش فاکتور" onclick="ShowModalExpireDescription('@pf.Id','@string.Format("{0:n0}", pf.PaymentAmount)','@pf.SerialNumber','@pf.Customer @pf.AgentName',3 )"><span class="pf-accepted-card__action-icon" aria-hidden="true">
                         <i class="mp fa fa-times" style="font-size: 18px;"></i>
                     </span></button>
             </div></div>
