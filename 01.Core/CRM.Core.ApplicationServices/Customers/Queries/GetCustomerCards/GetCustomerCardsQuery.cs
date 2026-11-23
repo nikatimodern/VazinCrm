@@ -17,6 +17,7 @@ public sealed class GetCustomerCardsQueryHandler(ICustomerRepository repository,
     public async Task<CustomerListResult> HandleAsync(GetCustomerCardsQuery request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
-        return new(await repository.GetListAsync(new(request.Skip, request.Take, request.RoleType, request.Juridical, AllowedOwnerIds: request.AllowedOwnerIds, request.ExcludedOwnerIds), identity.User.Id, request.ReadAllOverride ?? identity.CanManage, ct), identity.CanManage);
+        return new(await repository.GetListAsync(new(request.Skip, request.Take, request.RoleType, request.Juridical, AllowedOwnerIds: request.AllowedOwnerIds,
+            ExcludedOwnerIds: request.ExcludedOwnerIds), identity.User.Id, request.ReadAllOverride ?? identity.CanManage, ct), identity.CanManage);
     }
 }
