@@ -1,4 +1,5 @@
-﻿@using CRM.Core.Domain.Deals.Enums
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.Orders.Enums
 @model List<OrderHead>
 @{
@@ -9,9 +10,12 @@
 }
 
 @foreach (var item in Model ?? []) {
+    var canEdit = await DocumentAccess.AllowsRowAsync(item, "Edit", Context.RequestAborted);
+    var canDelete = await DocumentAccess.AllowsRowAsync(item, "Delete", Context.RequestAborted);
+    var canChange = await DocumentAccess.AllowsRowAsync(item, "ChangeStatus", Context.RequestAborted);
     var requestCount = item.RequestAmountOrderHeads?.Count;
     var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
-    <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id">
+    <div class="orderBox @($"orderBox_col{(int)item.Status}")" data-id="@item.Id" data-order-can-change="@canChange.ToString().ToLowerInvariant()">
         <div class="d-flex flex-column justify-content-between p-2 w-100" style="column-gap:14px">
             <div class="order-card-facts">
                 <div><span>شماره حواله</span><strong>@item.OrderNumber</strong></div>
@@ -34,10 +38,10 @@
                         <i class="mp fa fa-eye"></i>
                     </button>
                     @if (!isDealClosed) {
-                        <button class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @passType, '@item.DealId')">
+                        <button hidden="@(!canEdit)" data-document-permission="OrderHead.Edit" class="flex-center px-2" data-title="ویرایش" style="color:var(--DarkColor)" onclick="ShowUpdateHeadOrder('@item.Id', @passType, '@item.DealId')">
                             <i class="mp fa fa-pencil"></i>
                         </button>
-                        <button class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType)">
+                        <button hidden="@(!canDelete)" data-document-permission="OrderHead.Delete" class="flex-center px-2" data-title="حذف" style="color:var(--DarkColor)" onclick="DelHeadOrderItem('@item.Id', @passType)">
                             <i class="mp fa fa-trash"></i>
                         </button>
                     } else {
@@ -63,16 +67,16 @@
                     }
                     <div class="order-card-status-actions">
                         @if (item.Status == OrderHeadStatusEnum.تولید || item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                            <button class="buttonGray @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @passType)">مرحله قبل</button>
+                            <button hidden="@(!canChange)" data-document-permission="OrderHead.ChangeStatus" class="buttonGray @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', @(item.Status == OrderHeadStatusEnum.تولید ? 1 : 2), @((int)item.Status), @passType)">مرحله قبل</button>
                         }
                         @if (item.Status == OrderHeadStatusEnum.ثبت_اولیه) {
-                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @passType)">طراحی و تولید</button>
+                            <button hidden="@(!canChange)" data-document-permission="OrderHead.ChangeStatus" class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 2, @((int)item.Status), @passType)">طراحی و تولید</button>
                         } else if (item.Status == OrderHeadStatusEnum.تولید) {
-                            <button class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">آماده تحویل</button>
+                            <button hidden="@(!canChange)" data-document-permission="OrderHead.ChangeStatus" class="buttonGreen2 @(passType != 4 ? "d-xl-none" : "")" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">آماده تحویل</button>
                         } else if (item.Status == OrderHeadStatusEnum.آماده_تحویل) {
-                            <button class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @passType)">تحویل شد</button>
+                            <button hidden="@(!canChange)" data-document-permission="OrderHead.ChangeStatus" class="buttonGreen2" onclick="changeStatusHd('@item.Id', 4, @((int)item.Status), @passType)">تحویل شد</button>
                         } else if (item.Status == OrderHeadStatusEnum.تحویل_شده) {
-                            <button class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">مرحله قبل</button>
+                            <button hidden="@(!canChange)" data-document-permission="OrderHead.ChangeStatus" class="buttonGray" onclick="changeStatusHd('@item.Id', 3, @((int)item.Status), @passType)">مرحله قبل</button>
                         }
                     </div>
                 </div>
