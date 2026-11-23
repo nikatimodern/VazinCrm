@@ -81,14 +81,31 @@ public sealed class AccessLiveController(
                 changeStatus = ds, assign = da, approveFinancial = df, manageFollowUp = dm };
         }
 
+        var pfEnforced = configuration.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions");
+        var factorEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceFactorPermissions");
+        async Task<System.Collections.Generic.Dictionary<string, byte>> DocumentState(string entity, bool enabled, string[] keys)
+        {
+            var values = new System.Collections.Generic.Dictionary<string, byte>();
+            foreach (var key in keys)
+                values[char.ToLowerInvariant(key[0]) + key[1..]] = await Scope(entity, key, enabled);
+            return values;
+        }
+        // These documents are embedded in Cartable, Deal and Customer pages.
+        var preFactor = await DocumentState("PreFactor", pfEnforced, ["View", "Create", "Edit", "Delete", "AssignTamin", "ApproveTamin", "ApproveSales", "ApproveFinancial", "SendToCustomer", "ApproveCustomerManual", "ChangeStatus", "EditSupply", "ExportExternal"]);
+        var factor = await DocumentState("Factor", factorEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Cancel", "EditFinancial", "ExportExternal"]);
+        var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 ? 2 : 0) };
+
         // The role list is read from the database, never from stale cookie claims.
         var roles = (await users.GetRolesAsync(user)).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced },
             customer,
-            deal
+            deal,
+            prefactor = preFactor,
+            factor,
+            cartable
         });
     }
 }
