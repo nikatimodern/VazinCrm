@@ -64,12 +64,13 @@ ORDER BY UserName, EntityKey, PermissionKey;
 
 -- 4) Counts; expected catalog: 2 entities, 21 permissions.
 SELECT e.[Key] AS EntityKey,
-       COUNT(DISTINCT p.Id) AS PermissionCount,
-       COUNT(rp.RoleId) AS RoleGrantCount,
-       COUNT(DISTINCT up.UserId) AS DirectUserOverrideCount
+       (SELECT COUNT(*) FROM dbo.AccessPermissions p
+        WHERE p.AccessEntityId = e.Id) AS PermissionCount,
+       (SELECT COUNT(*) FROM dbo.AccessRolePermissions rp
+        JOIN dbo.AccessPermissions p ON p.Id = rp.AccessPermissionId
+        WHERE p.AccessEntityId = e.Id) AS RoleGrantCount,
+       (SELECT COUNT(DISTINCT up.UserId) FROM dbo.AccessUserPermissions up
+        JOIN dbo.AccessPermissions p ON p.Id = up.AccessPermissionId
+        WHERE p.AccessEntityId = e.Id) AS DirectUserOverrideCount
 FROM dbo.AccessEntities e
-LEFT JOIN dbo.AccessPermissions p ON p.AccessEntityId = e.Id
-LEFT JOIN dbo.AccessRolePermissions rp ON rp.AccessPermissionId = p.Id
-LEFT JOIN dbo.AccessUserPermissions up ON up.AccessPermissionId = p.Id
-WHERE e.[Key] IN (N'PreFactor', N'Factor')
-GROUP BY e.[Key];
+WHERE e.[Key] IN (N'PreFactor', N'Factor');
