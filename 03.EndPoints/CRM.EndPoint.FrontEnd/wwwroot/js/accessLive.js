@@ -117,7 +117,9 @@
     }, true);
 
     async function getState(refreshSession) {
-        const response = await fetch(refreshSession ? "/AccessLive/Sync" : "/AccessLive/State", {
+        const endpoint = refreshSession ? "/AccessLive/Sync" : "/AccessLive/State";
+        const module = moduleForPath();
+        const response = await fetch(endpoint + (module ? "?module=" + encodeURIComponent(module) : ""), {
             method: refreshSession ? "POST" : "GET",
             credentials: "same-origin",
             cache: "no-store",
