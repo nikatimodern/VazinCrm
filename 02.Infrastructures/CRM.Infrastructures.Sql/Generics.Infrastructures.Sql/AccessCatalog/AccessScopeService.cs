@@ -114,9 +114,20 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         var excluded = filter.ExcludedOwnerIds;
         if (allowed is { Length: 0 }) return false;
         if (allowed is null && excluded.Length == 0) return true;
-        return await crm.Customers.AsNoTracking().AnyAsync(c => c.Id == customerId &&
-            (allowed == null || crm.UserCustomers.Any(link =>
-                link.CustomerId == c.Id && allowed.Contains(link.UserId))) &&
-            !crm.UserCustomers.Any(link => link.CustomerId == c.Id && excluded.Contains(link.UserId)), ct);
+
+        // Separate query shapes so EF never has to translate a null-array Contains.
+        // Any excluded owner's assignment blocks this person, even if shared.
+        if (allowed is null)
+            return await crm.Customers.AsNoTracking().AnyAsync(c =>
+                c.Id == customerId &&
+                !crm.UserCustomers.Any(link => link.CustomerId == c.Id &&
+                                               excluded.Contains(link.UserId)), ct);
+        if (excluded.Length == 0)
+            return await crm.UserCustomers.AsNoTracking().AnyAsync(link =>
+                link.CustomerId == customerId && allowed.Contains(link.UserId), ct);
+        return await crm.UserCustomers.AsNoTracking().AnyAsync(link =>
+            link.CustomerId == customerId && allowed.Contains(link.UserId) &&
+            !crm.UserCustomers.Any(blocked => blocked.CustomerId == customerId &&
+                                              excluded.Contains(blocked.UserId)), ct);
     }
 }
