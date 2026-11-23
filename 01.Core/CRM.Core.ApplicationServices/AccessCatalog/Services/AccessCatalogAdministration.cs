@@ -194,7 +194,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var scopedPermissions = (await repository.ListAsync(ct)).SelectMany(e => e.Permissions)
             .Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
         var selectedCapable = (await repository.ListAsync(ct))
-            .Where(e => e.IsActive && (e.Key is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy"))
+            .Where(e => e.IsActive && (e.Key is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check"))
             .SelectMany(e => e.Permissions.Where(p => p.IsActive && p.SupportsScope).Select(p => p.Id))
             .ToHashSet();
         if (draft.Overrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||
@@ -238,7 +238,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
             .Select(e => new RoleAccessEntityInfo(e.Id, e.Key, e.Title,
                 e.Permissions.Where(p => p.IsActive).OrderBy(p => p.Title)
                     .Select(p => new RoleAccessPermissionInfo(p.Id, e.Key + "." + p.Key, p.Title, p.SupportsScope,
-                        p.SupportsScope && (e.Key is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy")))
+                        p.SupportsScope && (e.Key is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check")))
                     .ToArray())).ToArray();
 
     public async Task<IReadOnlyList<AccessRoleGrant>?> RolePermissionsAsync(string roleId, CancellationToken ct)
