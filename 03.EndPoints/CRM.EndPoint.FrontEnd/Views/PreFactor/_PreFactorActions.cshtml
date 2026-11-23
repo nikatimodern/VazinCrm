@@ -12,7 +12,7 @@
     var canDelete = !closed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(Model, "Delete", ct) : hasAccess);
     var canChangeStatus = !closed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(Model, "ChangeStatus", ct) : hasAccess);
     var canExport = enforced ? await DocumentAccess.AllowsPreFactorAsync(Model, "ExportExternal", ct) : (User.IsFinancial() || User.IsAdmin() || User.IsInRole("مدیر عامل"));
-    var canAssign = !closed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(Model, "AssignTamin", ct) : User.IsAdmin());
+    var canAssign = !closed && User.IsAdmin() && (!enforced || await DocumentAccess.AllowsPreFactorAsync(Model, "AssignTamin", ct));
     var canCreateFactor = DocumentAccess.IsEnforced("Factor")
         ? await DocumentAccess.HasAsync("Factor", "Create", ct)
         : (User.IsAdmin() || User.IsFinancial());
