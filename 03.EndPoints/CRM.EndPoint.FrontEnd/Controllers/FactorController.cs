@@ -151,8 +151,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         private async Task<bool> CanWriteAccountancyAsync(Accountancy row)
         {
-            if (!documentAccess.IsEnforced("Accountancy")) return true;
             if (row == null) return false;
+            if (row.BankAccountId.HasValue && !await documentAccess.CanAsync("BankAccount", "View", row.BankAccountId.Value, AccessCt)) return false;
+            if (!documentAccess.IsEnforced("Accountancy")) return true;
             if (row.Id == Guid.Empty)
             {
                 if (!await documentAccess.HasAsync("Accountancy", "Create", AccessCt)) return false;
@@ -1657,6 +1658,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (documentAccess.IsEnforced("SupplyFactor") && await db.SupplyFactors.IgnoreQueryFilters().AnyAsync(f => f.Id == id, AccessCt) && !await documentAccess.CanAsync("SupplyFactor", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("Accountancy") && await db.Accountancies.IgnoreQueryFilters().AnyAsync(a => a.Id == id, AccessCt) && !await documentAccess.CanAsync("Accountancy", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("OrderHead") && await db.OrderHeads.IgnoreQueryFilters().AnyAsync(h => h.Id == id, AccessCt) && !await documentAccess.CanAsync("OrderHead", "View", id, AccessCt)) return Forbid();
+            if (documentAccess.IsEnforced("Payment") && await db.Payments.IgnoreQueryFilters().AnyAsync(p => p.Id == id, AccessCt) && !await documentAccess.CanAsync("Payment", "View", id, AccessCt)) return Forbid();
             var query = db.Attachments.Where(f => f.EntityId == id);
 
             if (type.HasValue)
@@ -1806,6 +1808,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             item.credit = model.ReciveAmount;
             item.VosolDate = model.VosolDate;
             item.VosolDateM = dtService.GetDateMiladi(model.VosolDate);
+            if (model.BankAccountId.HasValue && !await documentAccess.CanAsync("BankAccount", "View", model.BankAccountId.Value, AccessCt)) return Forbid();
             item.BankAccountId = model.BankAccountId;
             item.BankAccountTxt = model.BankAccountTxt;
             item.Vosoled = true;
