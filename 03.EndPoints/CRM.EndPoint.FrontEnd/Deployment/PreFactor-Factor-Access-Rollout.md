@@ -49,7 +49,7 @@ These are distinct workflow permissions, not copies of CRUD:
 
 ## Initial roles (inherited by current users)
 
-`All` and `Own` below indicate scope *metadata* only. There is no hardcoded
+`All` and `Own` below are enforced when the corresponding module flag is enabled. There is no hardcoded
 UserId anywhere; assigning/removing a role automatically changes a user's
 inherited rights. Existing explicit user overrides still take precedence.
 
@@ -79,7 +79,18 @@ Customer or Supplier Identity roles are not given ERP-wide grants by this migrat
    `Deployment/VerifyPreFactorFactorAccessCatalog.sql` (READ-ONLY).
 3. Review all 21 keys in AccessCatalogAdmin, inspect role counts and effective
    user permissions, especially users who have multiple roles or personal overrides.
-4. Do **not** enable a `PreFactor` or `Factor` enforcement flag yet.
+4. Build the solution, then enable the two flags on test/staging only after the grants have been verified:
+
+```json
+{
+  "AccessCatalog": {
+    "EnforcePreFactorPermissions": true,
+    "EnforceFactorPermissions": true
+  }
+}
+```
+
+The flags default to false when absent. Do not enable in production before the regression checks below.
 
 **SSMS alternative:** Run `Deployment/RegisterPreFactorFactorAccessCatalog.sql`
 on `UserConnection`. It starts with `@Apply = 0` and only previews the
@@ -93,10 +104,16 @@ application history; take a restore point and database backup beforehand.
 dotnet ef database update --context UserContextDb --project "02.Infrastructures/CRM.Infrastructures.Sql/Generics.Infrastructures.Sql/CRM.Infrastructures.Sql.csproj" --startup-project "03.EndPoints/CRM.EndPoint.FrontEnd/CRM.EndPoint.FrontEnd.csproj"
 ```
 
-**Important scope:** This phase registers entities, permissions and role grants
-only. It does **not** yet enforce these 21 keys in `FactorController`, cartable,
-reports, exports or public customer-approval links. The controller currently
-contains many actions with only `[Authorize]` and some specific role checks.
-Before enabling enforcement, audit all action paths and associated UI, enforce
-record ownership, and keep anonymous customer approval separately protected
-by its signed/token-based flow. Existing CRM data tables do not change.
+## Enforcement and regression checks
+
+- `DocumentAccessPolicy` resolves effective role/user grants and selected/excluded scopes.
+- PreFactor view includes sales creator and assigned supply expert; supply-specific actions use the supply owner. Factor view includes seller, creator and supply assignee. Factor edit/delete use seller or creator. Exclusions win over inclusions.
+- Main FactorController CRUD, approvals, state changes, prints/downloads, export and related APIs check document permissions. Cartable queries, Excel, customer document lists and deal document counts apply server-side scope filters.
+- Cards and document editor handlers check distinct permissions. AccessLive reloads affected tabs or locks an open editor on permission changes, preserving the existing Dashboard restriction message. Other independent cartable workflows remain available under their legacy roles.
+- Customer portal document reads are person-bound. The public SMS approval page retains the legacy link format, then uses a document-bound protected token for preview and approval. Internal sessions must also satisfy the corresponding access check.
+
+Test with separate sales, supply, finance and admin accounts. For each of the 21 keys, verify allowed/denied direct endpoint calls, scope Own/All/SelectedUsers/AllExceptSelectedUsers where supported, and explicit user deny over inherited role grants. Attempt forged document IDs, item/description IDs, approval fields and ownership changes. Verify lists, counts, Excel, print, linked attachments, approvals, cancellation, and Sepidar operations. Test revocation with an open form and two browser tabs, including both documents denied and only one denied. Test the customer SMS link and OTP receipt upload separately.
+
+Remaining rollout caveat: shared financial/reporting, allocation, order, QC and external integration endpoints that operate on documents through their own entities have not all been converted to the new policies. Audit those paths and run full .NET/Razor compilation and SQL Server integration tests before enabling in production. The existing 7-character public SMS link is legacy and should be replaced with a stronger opaque token in a separate rollout. No production configuration or database was changed by these source commits.
+
+Keep the separate registration and verification SQL scripts until the consolidated all-entity script is assembled.
