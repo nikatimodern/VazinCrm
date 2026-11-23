@@ -1,17 +1,30 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{
+    var pfVisible = await DocumentAccess.HasViewAsync("PreFactor", Context.RequestAborted);
+    var factorVisible = await DocumentAccess.HasViewAsync("Factor", Context.RequestAborted);
+}
+<style>
+    #cartableWorkspace[data-pf-view="false"] #allPreFactorTab-pane,
+    #cartableWorkspace[data-pf-view="false"] #allPreFactorTab,
+    #cartableWorkspace[data-factor-view="false"] #allFactorTab-pane,
+    #cartableWorkspace[data-factor-view="false"] #allFactorTab { display:none !important; }
+    #cartableWorkspace[data-pf-view="false"] #tabContentAllFactors,
+    #cartableWorkspace[data-factor-view="false"] #tabContentAllFactors { grid-template-columns:1fr !important; }
+</style>
 <div class="cartable-pane w-100 d-flex justify-content-start align-items-center flex-column d-none" id="CPrefactorFactorId">
     <ul class="nav nav-tabs w-100" id="allTabFactors" role="tablist" style="display: none;">
         <li class="nav-item col-6" role="presentation">
-            <button class="nav-link active text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allPreFactorTab" data-bs-toggle="tab" data-bs-target="#allPreFactorTab-pane" type="button" role="tab" aria-controls="allPreFactorTab-pane" aria-selected="true">پیش فاکتورها</button>
+            <button class="nav-link @(pfVisible ? "active" : "") text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allPreFactorTab" data-bs-toggle="tab" data-bs-target="#allPreFactorTab-pane" type="button" role="tab" aria-controls="allPreFactorTab-pane" aria-selected="true">پیش فاکتورها</button>
         </li>
         <li class="nav-item col-6" role="presentation">
-            <button class="nav-link text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allFactorTab" data-bs-toggle="tab" data-bs-target="#allFactorTab-pane" type="button" role="tab" aria-controls="allFactorTab-pane" aria-selected="false">فاکتورها</button>
+            <button class="nav-link @(!pfVisible && factorVisible ? "active" : "") text-dark w-100" style="margin-bottom:-2px;isolation:auto" id="allFactorTab" data-bs-toggle="tab" data-bs-target="#allFactorTab-pane" type="button" role="tab" aria-controls="allFactorTab-pane" aria-selected="false">فاکتورها</button>
         </li>
     </ul>
 
     <div class="parent-all-factors tab-content d-xxl-grid p-2 col-12" style="grid-template-columns:1fr 1fr;gap:8px;" id="tabContentAllFactors">
 
         @*پیش فاکتور*@
-        <div class="tab-pane fade show active border-0" id="allPreFactorTab-pane" role="tabpanel" aria-labelledby="allPreFactorTab" tabindex="0" style="flex-direction:column;width:100%">
+        <div class="tab-pane fade @(pfVisible ? "show active" : "") border-0" id="allPreFactorTab-pane" role="tabpanel" aria-labelledby="allPreFactorTab" tabindex="0" style="flex-direction:column;width:100%">
 
             <div class="cartable-column-heading"><h2>پیش‌فاکتورها</h2><span class="cartable-column-count">تعداد: <span id="CountId"></span></span><span id="CountMobileId" hidden></span></div>
             <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
@@ -124,7 +137,7 @@
 
 
         @*فاکتور*@
-        <div class="tab-pane fade border-0" id="allFactorTab-pane" role="tabpanel" aria-labelledby="allFactorTab" tabindex="0" style="flex-direction:column;width:100%">
+        <div class="tab-pane fade @(!pfVisible && factorVisible ? "show active" : "") border-0" id="allFactorTab-pane" role="tabpanel" aria-labelledby="allFactorTab" tabindex="0" style="flex-direction:column;width:100%">
             <div class="cartable-column-heading"><h2>فاکتورها</h2><span class="cartable-column-count">تعداد: <span id="fCountId"></span></span><span id="fCountMobileId" hidden></span></div>
             <div class="InfoData" style="width:100%;display:flex; flex-direction:column;  justify-content:center;align-items:center">
                 <div class="cartable-list-toolbar">
