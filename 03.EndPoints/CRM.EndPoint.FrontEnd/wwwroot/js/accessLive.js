@@ -27,7 +27,8 @@
     };
     const can = (entity, permission) => {
         const module = String(entity || "").toLowerCase();
-        const key = String(permission || "");
+        const rawKey = String(permission || "");
+        const key = rawKey.charAt(0).toLowerCase() + rawKey.slice(1);
         if (editorLocked) return false;
         const permissions = state?.[module];
         // If status has not been fetched, the existing server checks remain the authority.
