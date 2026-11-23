@@ -437,7 +437,8 @@ public class DealController : Controller {
 
             if (setting.CustomerAssignExpert && model.CustomerId != null)
             {
-                var dealCreatorId = model.Id == Guid.Empty ? user.Id : model.UserCreatorID;
+                var dealCreatorId = model.Id == Guid.Empty ? user.Id :
+                    (Enforce ? existing!.UserCreatorID : model.UserCreatorID);
                 var isCustomerForUser = await db.UserCustomers.Where(f =>
                     f.CustomerId == model.CustomerId &&
                     f.UserId.ToString() == dealCreatorId
@@ -536,7 +537,10 @@ public class DealController : Controller {
                 model.ModifyDate = DateTime.Now;
                 model.ModifyDateTxt = dtService.GetDateTimePersian();
 
-                await genService.UpdateChildEntityDeal(model.Id, customer, model.CustomerName, model.MobileNumber);
+                // Updating related invoices, prefactors and financial documents is
+                // not an automatic side effect of Deal.Edit when Customer.Edit is denied.
+                if (!Enforce || customer is null || canEditCustomer)
+                    await genService.UpdateChildEntityDeal(model.Id, customer, model.CustomerName, model.MobileNumber);
 
                 db.Deals.Update(model);
 
@@ -670,7 +674,8 @@ public class DealController : Controller {
             } else
             {
                 deal.UserCreatorID = userId.ToString();
-                deal.UserCreator = Enforce ? (recipient.FirstName + " " + recipient.LastName).Trim() : userFullName;
+                deal.UserCreator = Enforce ? ((recipient?.FirstName ?? "") + " " +
+                    (recipient?.LastName ?? "")).Trim() : userFullName;
             }
 
             deal.Suspend = false;
