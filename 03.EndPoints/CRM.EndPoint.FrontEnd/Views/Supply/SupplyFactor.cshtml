@@ -1,3 +1,5 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{ var canCreate = await DocumentAccess.HasAsync("SupplyFactor", "Create", Context.RequestAborted); }
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -7,7 +9,7 @@
 <div id="supplyFactorWorkspace" class="crm-operations-theme w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showSupplyFactorModal()">
+            <button hidden="@(!canCreate)" data-document-permission="SupplyFactor.Create" class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showSupplyFactorModal()">
                 <span style="line-height: 1">ثبت فاکتور جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
