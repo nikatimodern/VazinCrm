@@ -51,6 +51,32 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPolicy documentAccess, CRMContextDb db) : Controller
 {
+    private async Task<bool> ValidateLegacyPayment(Payment model, bool create, CancellationToken ct)
+    {
+        if (model == null) return false;
+        if (create)
+        {
+            if (!await documentAccess.HasAsync("Payment", "Create", ct)) return false;
+            if (documentAccess.IsEnforced("Payment") && model.Id != Guid.Empty) return false;
+        }
+        else if (!await documentAccess.CanAsync("Payment", "Edit", model.Id, ct)) return false;
+        if (!await documentAccess.CanAsync("BankAccount", "View", model.FromAccountId, ct) ||
+            !await documentAccess.CanAsync("BankAccount", "View", model.ToAccountId, ct)) return false;
+        foreach (var link in model.PaymentSupplyFactors ?? [])
+            if (!await documentAccess.CanAsync("SupplyFactor", "View", link.SupplyFactorId, ct)) return false;
+        if (documentAccess.IsEnforced("Payment"))
+        {
+            // Request-linked payments must use the request payment workflow.
+            if (model.RequestAmountPayments?.Any() == true ||
+                await db.RequestAmountPayments.AnyAsync(x => x.PaymentId == model.Id, ct)) return false;
+            model.RequestAmountPayments = null;
+            model.IsDeleted = false;
+            foreach (var att in model.Attachments ?? [])
+                if (att.Id != Guid.Empty && !await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == att.Id && x.EntityId == model.Id, ct)) return false;
+        }
+        return true;
+    }
+
     private Task<bool> CanSupplyFactor(string action, Guid id, CancellationToken ct) => documentAccess.CanAsync("SupplyFactor", action, id, ct);
     private async Task<bool> CanSupplyItem(string action, Guid id, CancellationToken ct)
     {
@@ -109,7 +135,11 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
         return View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/SupplyFactor"), cancellationToken));
     }
     [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> Payment(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Payment"), cancellationToken));
+    public async Task<IActionResult> Payment(CancellationToken cancellationToken)
+    {
+        if (!await documentAccess.HasViewAsync("Payment", cancellationToken)) return Forbid();
+        return View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Payment"), cancellationToken));
+    }
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی")]
     public async Task<IActionResult> Profit(CancellationToken cancellationToken) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/Profit"), cancellationToken));
     [Authorize(Roles = "مدیر ارشد, مدیر اجرایی, مدیر مالی, کارشناس مالی")]
@@ -147,11 +177,13 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
 
     public async Task<IActionResult> GetPayment(Guid? paymentId, CancellationToken cancellationToken = default)
     {
+        if (!paymentId.HasValue || !await documentAccess.CanAsync("Payment", "View", paymentId.Value, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetPaymentQuery(paymentId), cancellationToken));
     }
 
     public async Task<IActionResult> GetAllSupplyPaymentDt(CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.HasViewAsync("Payment", cancellationToken)) return Forbid();
         try
         {
             var request = await ReadTableRequestAsync(false, false, cancellationToken);
@@ -358,6 +390,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> AddPayment([FromBody] Payment model, CancellationToken cancellationToken = default)
     {
+        if (!await ValidateLegacyPayment(model, true, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new AddPaymentCommand(model), cancellationToken));
@@ -366,6 +399,7 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     [HttpPost]
     public async Task<IActionResult> UpdatePayment([FromBody] Payment model, CancellationToken cancellationToken = default)
     {
+        if (!await ValidateLegacyPayment(model, false, cancellationToken)) return Forbid();
         if (!ModelState.IsValid)
             return BadRequest();
         return Map(await requests.CommandAsync(new UpdatePaymentCommand(model), cancellationToken));
