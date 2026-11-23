@@ -32,7 +32,7 @@ public sealed class CheckController(ICqrsDispatcher requests, DocumentAccessPoli
     }
     public async Task<IActionResult> Received(CancellationToken ct)
     {
-        if (!await access.HasViewAsync("Checkbook", ct)) return Forbid();
+        if (!await access.HasViewAsync("Check", ct) || !await access.HasViewAsync("Accountancy", ct)) return Forbid();
         return View((await requests.QueryAsync(new GetCheckbooksQuery(), ct)).Select(row => new CheckbookVModel { Checkbook = row.Checkbook, ChecksCount = row.ChecksCount }).ToList());
     }
     public async Task<IActionResult> GetAllCheckbooksPartial(CancellationToken ct)
