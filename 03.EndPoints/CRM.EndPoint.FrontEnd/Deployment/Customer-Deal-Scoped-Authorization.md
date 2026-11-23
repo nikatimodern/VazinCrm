@@ -138,3 +138,55 @@ AccessCatalog restore points may also contain the retired permission.
 - A complete .NET build, Razor compilation, and SQL integration tests are
   required in the deployment environment; this source-only change has not
   been built or executed against the production database.
+
+
+## Live permission revocation (SignalR)
+
+- Any successful AccessCatalog admin write (`SaveUserAccess`, `SaveUserProfile`,
+  `SaveRolePermissions`, role/catalog changes and permission deletion) publishes
+  an `AccessPermissionsChanged` event only after the write/history operation
+  succeeds. Restoring access history publishes the same event.
+- Personal user changes use `IHubContext<TaskHub>.Clients.User(userId)`, which
+  delivers to every open tab/device for the user. Changes to roles/catalog
+  broadcast an anonymous invalidation hint; no grant details are sent over SignalR.
+- `/AccessLive/Sync` is authenticated and anti-forgery protected. It refreshes
+  the Identity sign-in ticket, then obtains current effective database scopes.
+  `/AccessLive/State` obtains the initial baseline without changing the cookie.
+- The current page's module receives the full action scope matrix. Both
+  `Customer.View` and `Deal.View` are checked on every page to revalidate
+  the menu. `MenuService` excludes their links if View is denied and
+  enforcement is enabled.
+- The browser reloads the current page (or redirects from a revoked View page)
+  when there is no open/modified form. A form already being edited is preserved;
+  stale submit/save actions are disabled and a reload warning is shown.
+  Customer/Deal create/update submit handlers also check the live state.
+  API/controller guards continue to independently enforce every action.
+- After a role change and a session refresh, the TaskHub connection reconnects
+  so its role-based SignalR group membership no longer uses old cookie claims.
+  A normal socket reconnection also rechecks access to cover missed messages.
+- Other entities automatically receive this generic invalidation and shell
+  revalidation behavior, but **per-action controls** are only wired for
+  `Customer` and `Deal` until the other controllers are converted to the
+  AccessCatalog. This mechanism does not grant/deny backend access by itself.
+
+### Required staging verification
+
+1. Sign in as user B in two different browser tabs (and optionally another device).
+   As an admin, remove `Customer.View`: both tabs receive the event and leave
+   the denied page; Customer is absent from the refreshed menu.
+2. Remove `Deal.Create` with the Deal modal open. Its inputs remain intact;
+   save is disabled and the backend rejects any direct forged POST.
+3. Change `Deal.View` from All to Own, or modify selected/excluded owners
+   without changing the numeric scope. In an unedited tab, the records are
+   reloaded using the new ownership filter.
+4. Remove a role with related users, change a role's grants, then restore a
+   history point. Verify the user's roles and menus refresh, and notifications
+   sent to role groups target current members after reconnection.
+5. Temporarily disable SignalR, change a permission, then restore connection.
+   Verify reconnect-triggered revalidation; backend checks must continue to
+   reject disallowed writes throughout the disconnection.
+6. Confirm catalog edits do not reload the administrator's current
+   AccessCatalog screen, and unrelated users with unchanged state are not
+   forced to reload.
+
+No automated browser or SQL Server staging test is implied by these notes.
