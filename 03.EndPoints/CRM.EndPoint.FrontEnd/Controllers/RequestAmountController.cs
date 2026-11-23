@@ -35,6 +35,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessPolicy access, CRMContextDb db) : Controller
 {
     private Task<bool> Can(string key, Guid id, CancellationToken ct) => access.CanAsync("RequestAmount", key, id, ct);
+    private async Task<bool> CanReadLinks(Guid id, CancellationToken ct)
+    {
+        var orders = await db.RequestAmountOrderHeads.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.OrderHeadId).ToListAsync(ct);
+        foreach (var order in orders) if (!await access.CanAsync("OrderHead", "View", order, ct)) return false;
+        var invoices = await db.RequestAmountSupplyFactor.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.SupplyFactorId).ToListAsync(ct);
+        foreach (var invoice in invoices) if (!await access.CanAsync("SupplyFactor", "View", invoice, ct)) return false;
+        return true;
+    }
+
     private async Task<bool> ValidateRequest(RequestAmount model, bool create, CancellationToken ct)
     {
         if (model == null) return false;
@@ -54,7 +63,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         }
         else
         {
-            if (!await Can("Edit", model.Id, ct)) return false;
+            if (!await Can("Edit", model.Id, ct) || !await CanReadLinks(model.Id, ct)) return false;
             if (access.IsEnforced("RequestAmount"))
             {
                 var old = await db.RequestAmounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
@@ -193,7 +202,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     }
     public async Task<IActionResult> DeleteRequestAmount(Guid id, CancellationToken ct)
     {
-        if (!await Can("Delete", id, ct)) return Forbid();
+        if (!await Can("Delete", id, ct) || !await CanReadLinks(id, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new DeleteRequestAmountCommand(id), ct));
     }
     [HttpPost]
@@ -211,6 +220,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     public async Task<IActionResult> GetRequestAmount(Guid id, CancellationToken ct)
     {
         if (!await Can("View", id, ct)) return Forbid();
+        if (!await CanReadLinks(id, ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetRequestAmountDetailsQuery(id), ct));
     }
     [HttpPost]
