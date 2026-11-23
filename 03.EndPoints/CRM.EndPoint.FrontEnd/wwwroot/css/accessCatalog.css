@@ -1076,3 +1076,154 @@
     #accessCatalog #acUsersPanel .ac-user-permission-groups { max-height: none; }
 }
 
+
+/* Split permission editor: compact tabs on the right, one focused editor on
+   the left. All entities reuse this layout without changing grant semantics. */
+#accessCatalog #acUsersPanel .ac-user-permission-grid {
+    display: grid;
+    grid-template-columns: minmax(155px, 30%) minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    direction: rtl;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: min(48vh, 430px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-width: 0;
+    padding: 5px;
+    background: #fcfaff;
+    border: 1px solid #e6d8f5;
+    border-radius: 9px;
+    scrollbar-width: thin;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    min-height: 49px;
+    width: 100%;
+    border: 1px solid #b9dfd2;
+    border-radius: 8px;
+    padding: 7px 10px;
+    background: #f4fbf7;
+    color: #166e56;
+    font: inherit;
+    text-align: right;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-alt {
+    border-color: #dbc3f7;
+    background: #faf6ff;
+    color: #6d28bd;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item > i {
+    flex-shrink: 0;
+    font-size: 13px;
+    width: 17px;
+    text-align: center;
+}
+#accessCatalog #acUsersPanel .ac-user-nav-label {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+#accessCatalog #acUsersPanel .ac-user-nav-label strong {
+    color: inherit;
+    font-size: 12px;
+    line-height: 1.6;
+}
+#accessCatalog #acUsersPanel .ac-user-nav-state {
+    font-size: 10px;
+    color: #527b6c;
+    font-weight: 400;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-alt .ac-user-nav-state {
+    color: #8062a2;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-custom .ac-user-nav-state {
+    font-weight: 700;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-denied .ac-user-nav-state {
+    color: #8a6670;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-selected {
+    border-width: 2px;
+    border-color: currentColor;
+    background: #e7f6ee;
+    padding: 6px 9px;
+    box-shadow: inset 3px 0 0 currentColor;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item.is-selected.is-alt {
+    background: #f0e5fd;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item:hover {
+    border-color: currentColor;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-nav-item:focus-visible {
+    outline: 2px solid var(--ac-secondary);
+    outline-offset: 1px;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-content {
+    grid-column: 2;
+    min-width: 0;
+    align-self: start;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-content > .ac-user-permission-item {
+    width: 100%;
+    grid-column: auto;
+    min-height: 192px;
+    margin: 0;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-content > .ac-user-permission-item.is-alt {
+    --ac-perm-accent: #6d28bd;
+    --ac-perm-border: #dbc3f7;
+    --ac-perm-header: #f0e5fd;
+    --ac-perm-soft: #faf6ff;
+    --ac-perm-faint: #87719d;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-content .ac-user-permission-row {
+    align-items: flex-start;
+}
+#accessCatalog #acUsersPanel .ac-user-permission-content .ac-user-effective {
+    min-width: min(170px, 100%);
+}
+@media (max-width: 650px) {
+    #accessCatalog #acUsersPanel .ac-user-permission-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 9px;
+    }
+    #accessCatalog #acUsersPanel .ac-user-permission-nav {
+        grid-column: 1;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-height: none;
+        padding: 5px;
+        scroll-snap-type: x proximity;
+    }
+    #accessCatalog #acUsersPanel .ac-user-permission-nav-item {
+        min-width: 136px;
+        max-width: 185px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+    #accessCatalog #acUsersPanel .ac-user-permission-content {
+        grid-column: 1;
+    }
+    #accessCatalog #acUsersPanel .ac-user-permission-content > .ac-user-permission-item {
+        min-height: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #accessCatalog #acUsersPanel .ac-user-permission-nav-item {
+        transition: none;
+    }
+}
