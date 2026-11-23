@@ -1,15 +1,17 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @model List<CRM.EndPoint.FrontEnd.Models.Check.CheckbookVModel>
 
 
 <div class="cards-grid">
     @foreach (var item in Model ?? []) {
         var checkbook = item.Checkbook;
+        var canDeleteBook = await DocumentAccess.AllowsRowAsync(checkbook, "Delete", Context.RequestAborted);
         <div class="clickable-card" data-id="@checkbook.Id" data-bank-name="@checkbook.BankAccount?.BankName">
             <h5 class="clickable-card__title">بانک @checkbook.BankAccount?.BankName</h5>
             <p class="text-muted small mb-3">شماره حساب: @checkbook.BankAccount?.AccountNumber</p>
 
             <span class="clickable-card__badge">@item.ChecksCount چک ثبت شده</span>
-            <div class="position-absolute" style="bottom: 4px;right: auto;left: 4px">
+            <div hidden="@(!canDeleteBook)" data-document-permission="Checkbook.Delete" class="position-absolute" style="bottom: 4px;right: auto;left: 4px">
                 <div class="d-flex align-items-center gap-2 align-self-end" style="position:relative">
                     <div class="clickable-card__toggle ellipsis-icon" tabindex="0">
                         <svg style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" /></svg>
@@ -24,7 +26,7 @@
             </div>
         </div>
     }
-    <div class="clickable-card clickable-card-add" onclick="showNewCheckbookModal()">
+    <div hidden="@(!(await DocumentAccess.HasAsync("Checkbook", "Create", Context.RequestAborted)))" data-document-permission="Checkbook.Create" class="clickable-card clickable-card-add" onclick="showNewCheckbookModal()">
         <span class="fs-3 fbold">
             <svg style="width: 24px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
         </span>
