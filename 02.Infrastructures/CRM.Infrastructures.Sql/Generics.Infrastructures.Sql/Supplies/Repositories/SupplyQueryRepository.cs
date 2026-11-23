@@ -299,11 +299,12 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
     {
         try
         {
-            var query = db.Payments.AsNoTracking().Where(f => f.Id == paymentId);
+            var query = await access.ApplyAsync(db.Payments.AsNoTracking().Where(f => f.Id == paymentId), "View", cancellationToken);
+            var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", cancellationToken);
             var data = await query.Include(f => f.PaymentSupplyFactors).AsNoTracking().Select(p => new {
                 Payment = p,
                 SupplyFactorSerials = p.PaymentSupplyFactors
-                    .Join(db.SupplyFactors, pSf => pSf.SupplyFactorId, sf => sf.Id, (pSf, sf) => sf.SerialNumber).ToList(),
+                    .Join(visibleSupplyFactors, pSf => pSf.SupplyFactorId, sf => sf.Id, (pSf, sf) => sf.SerialNumber).ToList(),
                 Attachments = db.Attachments.Where(a => a.EntityId == p.Id && a._AttachType == _AttachType.Payment).ToList()
             }).FirstOrDefaultAsync(cancellationToken);
             return SupplyResult.Success(data);
@@ -325,7 +326,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
             var sortColumnDirection = request.SortDirection;
             var searchValue = request.Search;
             searchValue = searchValue?.ToLower().Trim();
-            var query = db.Payments.OrderByDescending(f => f.CreateDate).AsNoTracking();
+            var query = await access.ApplyAsync(db.Payments.OrderByDescending(f => f.CreateDate).AsNoTracking(), "View", cancellationToken);
             if (!string.IsNullOrEmpty(searchValue))
             {
                 var searchNumber = SearchNumber(searchValue);
