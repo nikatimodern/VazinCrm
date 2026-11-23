@@ -157,9 +157,7 @@ async function openSupplyFinancial(sourceId) {
             if (receipt.mappingId) key.receiptMappingId = receipt.mappingId;
         }
         const edit = historyCard.action("ویرایش انتقال", { icon: "fa-pencil-alt",
-            onClick: () => openPurchaseEdit(software, key) });
-        edit.disabled = Boolean(receipt);
-        if (receipt) edit.title = "ویرایش رسید انبار فعلا امکان‌پذیر نیست.";
+            onClick: () => receipt ? openReceiptEdit(software, key) : openPurchaseEdit(software, key) });
         const remove = historyCard.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
             onClick: event => deleteDestination(event.currentTarget, software, key) });
         return [edit, remove];
@@ -203,6 +201,79 @@ async function openSupplyFinancial(sourceId) {
         } finally {
             choosing = false;
             button.disabled = false;
+        }
+    };
+
+    const openReceiptEdit = async (software, key) => {
+        if (choosing || busy || isModalOpen(wizard)) return;
+        choosing = true;
+        try {
+            const data = await request("GetFinancialReceiptEdit", key, "GET", false);
+            if (!data || signal.aborted || !isModalOpen(historyModal)) return;
+            const { impact } = data;
+            const locked = impact.blockers.length > 0;
+            const { content, toolbar, list } = createExternalItemMatching();
+            toolbar.remove();
+            const general = make("div", null, "d-grid gap-2");
+            content.prepend(general);
+            const date = field(general, "تاریخ رسید انبار", make("input", null, "sdate form-control form-control-sm"));
+            date.dir = "ltr";
+            date.autocomplete = "off";
+            date.maxLength = 10;
+            date.value = data.dateText;
+            date.disabled = locked;
+            date.setAttribute("data-datepicker-change", "");
+            const getDate = () => toEnglishDigits(date.value.trim());
+            date.addEventListener("input", updateButtons);
+            date.addEventListener("change", updateButtons);
+            const stock = field(general, "انبار مقصد", make("select", null, "show-dropdown-arrow"));
+            const options = data.stocks.map(searchableOption);
+            if (!options.some(x => x.value === String(data.stockId)))
+                options.push(searchableOption({ id: data.stockId, title: data.stockTitle }));
+            const description = optionalDescription(general, "توضیحات سند", data.description, 4000);
+            description.disabled = locked;
+            const rows = data.rows.map(row => {
+                const target = appendExternalItemMatchRow(list, row.itemLabel, row.quantity, row.unit, "مقدار:");
+                const note = optionalDescription(target, "توضیحات قلم", row.description, 4000);
+                note.disabled = locked;
+                return { id: row.id, note };
+            });
+            destinations = [software];
+            position = 0;
+            stage({
+                software, title: "ویرایش انتقال رسید انبار", icon: "fa-pencil-alt", large: true,
+                subtitle: locked ? impact.blockers.join(" ") : "تاریخ، انبار و توضیحات رسید را بررسی کنید.",
+                step: "رسید شماره " + impact.number, content,
+                backAction: () => ModalToggle(wizard, "hide"), backText: locked ? "بستن" : "انصراف",
+                confirmText: "ذخیره تغییرات",
+                enabled: () => !locked && !!stock.value && /^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(getDate()),
+                confirmAction: async () => {
+                    const stockId = Number(stock.value);
+                    const details = [];
+                    if (impact.voucherNumber != null)
+                        details.push("سند حسابداری شماره " + impact.voucherNumber + " حذف می‌شود.");
+                    if (data.autoVoucher) details.push("سند حسابداری جدید صادر می‌شود.");
+                    if (stockId !== data.stockId)
+                        details.push("موجودی هر دو انبار به‌روزرسانی و شماره رسید بر اساس شماره‌گذاری انبار جدید تعیین می‌شود.");
+                    if (!await historyCard.confirmEdit(wizard, "تغییرات رسید انبار شماره " + impact.number + " ذخیره شود؟", details)
+                        || signal.aborted) return;
+                    const result = await request("EditFinancialReceipt", {
+                        key, token: impact.token, dateText: getDate(), stockId, autoVoucher: data.autoVoucher,
+                        description: description.value, rowDescriptions: Object.fromEntries(rows.map(x => [x.id, x.note.value])),
+                    });
+                    if (!result?.saved) return;
+                    toastifySuccess("تغییرات رسید انبار در نرم‌افزار مقصد ذخیره شد.");
+                    closing = true;
+                    ModalToggle(wizard, "hide");
+                },
+            });
+            setupSearchableSelect(stock, "جستجو و انتخاب انبار", options, data.stockId);
+            if (locked) stock.tomselect.disable();
+            else dateTimePicker(stageContainer);
+            updateButtons();
+            ModalToggle(wizard, "show");
+        } finally {
+            choosing = false;
         }
     };
 

@@ -115,6 +115,21 @@ class ExternalFinancialHistory {
         return message;
     }
 
+    static async confirmEdit(modal, question, details) {
+        const content = this.element("div", "text-start");
+        content.append(this.element("p", details.length ? "mb-2" : "mb-0", question));
+        if (details.length) {
+            const list = this.element("ul", "small mb-0");
+            for (const detail of details) list.append(this.element("li", null, detail));
+            content.append(list);
+        }
+        const result = await Swal.fire({
+            target: modal, title: "تأیید ویرایش در مقصد", html: content, icon: "warning",
+            showCancelButton: true, focusCancel: true, confirmButtonText: "تأیید و ذخیره", cancelButtonText: "انصراف",
+        });
+        return result.isConfirmed;
+    }
+
     static card({ title, fields = [], registration, view, operations = [], action, related, status, missing = false }) {
         const card = this.element("article", "external-pf-card" + (missing ? " external-pf-missing" : ""));
         const header = this.element("header", "external-pf-card-header");
