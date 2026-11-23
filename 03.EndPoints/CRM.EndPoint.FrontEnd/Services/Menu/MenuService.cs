@@ -54,6 +54,23 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 await scopes.GetEffectiveScopeAsync(userId, "Factor.View", default) == AccessScopes.None &&
                 !user.IsInRole("مدیر ارشد") && !user.IsInRole("کارشناس مالی") && !user.IsInRole("مدیر تامین") && !user.IsInRole("کارشناس تامین") && !user.IsInRole("مدیر عامل"))
                 filteredMenus.RemoveAll(item => item.Id == "cartable");
+
+            void RemoveUrl(List<MenuItem> items, string url)
+            {
+                foreach (var item in items)
+                    if (item.SubItems?.Count > 0) RemoveUrl(item.SubItems, url);
+                items.RemoveAll(item => string.Equals(item.Url, url, StringComparison.OrdinalIgnoreCase) ||
+                    (string.IsNullOrEmpty(item.Url) && string.IsNullOrEmpty(item.OnClick) && item.SubItems?.Count == 0));
+            }
+
+            foreach (var entry in new[] {
+                (Entity: "OrderHead", Url: "/Order/Index"),
+                (Entity: "SupplyFactor", Url: "/Supply/SupplyFactor"),
+                (Entity: "Accountancy", Url: "/Accountancy/Index")
+            })
+                if (settings.GetValue<bool>("AccessCatalog:Enforce" + entry.Entity + "Permissions") &&
+                    await scopes.GetEffectiveScopeAsync(userId, entry.Entity + ".View", default) == AccessScopes.None)
+                    RemoveUrl(filteredMenus, entry.Url);
         }
 
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
