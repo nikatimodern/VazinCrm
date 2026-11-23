@@ -34,6 +34,7 @@ document.addEventListener("change", async (e) => {
 });
 
 async function showSupplyFactorModal(dealId = null) {
+    if (window.AccessLive?.can("SupplyFactor", "create") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     supplyFactorData.dealId = dealId;
     
     // document.getElementById("supplyFactorOrderHeadWrapper")?.classList.toggle("d-none", dealId !== null);
@@ -225,6 +226,7 @@ document.addEventListener("input", (e) => {
 
 
 async function processSupplyFactorWithAi(btn) {
+    if (window.AccessLive?.can("SupplyFactor", "create") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     if (window.supplyFactorAttachments.every(item => item.isDeleted)) {
         toastifyError("سند فاکتور باید بارگذاری شود");
         return;
@@ -429,6 +431,7 @@ async function getSupplyFactor(id) {
 }
 
 async function showEditSupplyFactorModal(id) {
+    if (window.AccessLive?.can("SupplyFactor", "edit") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     await initSupplyFactorModal();
     
     const data = await getSupplyFactor(id);
@@ -455,6 +458,7 @@ async function showEditSupplyFactorModal(id) {
 
 
 const deleteSupplyFactor = async (id) => {
+    if (window.AccessLive?.can("SupplyFactor", "delete") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     await deleteItem({
         url: `/Supply/DeleteSupplyFactor/${id}`,
         callback: () => {
@@ -1137,6 +1141,7 @@ function supplyAllocationFormError(form, message, field = "weight", notify = tru
     });
 }
 async function submitSupplyAllocation(form) {
+    if (window.AccessLive?.can("SupplyFactor", "manageAllocations") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     if (sfAllocationSaving || sfAllocationRefreshNeeded) return;
     clearSupplyAllocationFormError(form);
     const itemId = form.closest("[data-item-id]").dataset.itemId;
@@ -1233,6 +1238,7 @@ async function persistSupplyAllocation({ url, data, itemId = data.supplyFactorIt
     }
 }
 async function deleteSupplyAllocation(button) {
+    if (window.AccessLive?.can("SupplyFactor", "manageAllocations") === false) { toastifyError("مجوز این عملیات روی فاکتور تأمین را ندارید."); return; }
     if (sfAllocationSaving || sfAllocationRefreshNeeded) return;
     const section = button.closest("[data-item-id]");
     const id = button.dataset.allocationId;
