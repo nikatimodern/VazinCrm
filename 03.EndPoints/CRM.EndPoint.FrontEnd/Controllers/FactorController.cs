@@ -29,6 +29,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,6 +99,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private Task<bool> CanPf(string action, Guid id) => documentAccess.CanAsync("PreFactor", action, id, AccessCt);
         private Task<bool> CanF(string action, Guid id) => documentAccess.CanAsync("Factor", action, id, AccessCt);
         private Task<bool> HasDocument(string entity, string action) => documentAccess.HasAsync(entity, action, AccessCt);
+
+        private async Task<bool> CanLinkedDealAsync(Guid id)
+        {
+            var settings = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+            if (!settings.GetValue<bool>("AccessCatalog:EnforceDealPermissions")) return true;
+            var scopes = HttpContext.RequestServices.GetRequiredService<IAccessScopeService>();
+            return await scopes.CanAccessDealAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "", "Deal.View", id, AccessCt);
+        }
+
+        private async Task<bool> CanLinkedCustomerAsync(Guid id)
+        {
+            var settings = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+            if (!settings.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions")) return true;
+            var scopes = HttpContext.RequestServices.GetRequiredService<IAccessScopeService>();
+            return await scopes.CanAccessCustomerAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "", "Customer.View", id, AccessCt);
+        }
 
         private bool HasLegacyRole(string roles) =>
             roles.Split(',').Any(role => User.IsInRole(role.Trim()));
@@ -2379,8 +2397,63 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (model.Id == Guid.Empty)
                 {
                     if (!await HasDocument("PreFactor", "Create")) return Forbid();
+                    // A client cannot create a document already assigned, approved or deleted.
+                    model.IsDeleted = false;
+                    model.UserTaminId = null;
+                    model.UserTaminTxt = null;
+                    model.AcceptedFinancial = null;
+                    model.AcceptedManagingDirector = null;
+                    model.AcceptedDate = null;
+                    model.AcceptedDateTxt = null;
+                    model.Signature = null;
+                    model.SignatureDes = null;
+                    model.Emza = null;
+                    model.HasReturned = false;
+                    model.ReturnFromPftype = null;
                 }
-                else if (!await CanPf("Edit", model.Id)) return Forbid();
+                else
+                {
+                    if (!await CanPf("Edit", model.Id)) return Forbid();
+                    var persisted = await db.PreFactors.AsNoTracking().SingleOrDefaultAsync(p => p.Id == model.Id, AccessCt);
+                    if (persisted == null) return NotFound();
+                    // General Edit must never be used to change owners, approvals, workflow or identity.
+                    model.UserCreatorID = persisted.UserCreatorID;
+                    model.UserCreator = persisted.UserCreator;
+                    model.UserTaminId = persisted.UserTaminId;
+                    model.UserTaminTxt = persisted.UserTaminTxt;
+                    model.CustomerId = persisted.CustomerId;
+                    model.CustomerCode = persisted.CustomerCode;
+                    model.DealId = persisted.DealId;
+                    model.DealSerialNumber = persisted.DealSerialNumber;
+                    model.IsDeleted = persisted.IsDeleted;
+                    model.Pftype = persisted.Pftype;
+                    model.PftypeTxt = persisted.PftypeTxt;
+                    model.PrePftype = persisted.PrePftype;
+                    model.PftypeChangeDate = persisted.PftypeChangeDate;
+                    model.PftypeChangeDateTxt = persisted.PftypeChangeDateTxt;
+                    model.TaminStep = persisted.TaminStep;
+                    model.TaminStepTxt = persisted.TaminStepTxt;
+                    model.FinancialStep = persisted.FinancialStep;
+                    model.Accepted = persisted.Accepted;
+                    model.AcceptedTerms = persisted.AcceptedTerms;
+                    model.AcceptedFinancial = persisted.AcceptedFinancial;
+                    model.AcceptedManagingDirector = persisted.AcceptedManagingDirector;
+                    model.AcceptedDate = persisted.AcceptedDate;
+                    model.AcceptedDateTxt = persisted.AcceptedDateTxt;
+                    model.Signature = persisted.Signature;
+                    model.SignatureDes = persisted.SignatureDes;
+                    model.Emza = persisted.Emza;
+                    model.HasReturned = persisted.HasReturned;
+                    model.ReturnFromPftype = persisted.ReturnFromPftype;
+                }
+                // Do not attach an existing record belonging to another document.
+                if (model.PreFactorItems == null) return BadRequest();
+                var existingItemIds = model.PreFactorItems.Where(x => x.Id != Guid.Empty).Select(x => x.Id).Distinct().ToArray();
+                if (await db.PreFactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
+                        x => existingItemIds.Contains(x.Id) && x.PrefactorId != model.Id, AccessCt))
+                    return Forbid();
+                if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
+                if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
             }
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
@@ -2535,9 +2608,52 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 {
                     if (!await HasDocument("Factor", "Create")) return Forbid();
                 }
-                else if (!await CanF("Edit", model.Id)) return Forbid();
+                else
+                {
+                    if (!await CanF("Edit", model.Id)) return Forbid();
+                    var persisted = await db.Factors.AsNoTracking().SingleOrDefaultAsync(f => f.Id == model.Id, AccessCt);
+                    if (persisted == null) return NotFound();
+                    model.PfactorID = persisted.PfactorID;
+                    model.PfactorSerialNumber = persisted.PfactorSerialNumber;
+                    model.CustomerId = persisted.CustomerId;
+                    model.CustomerCode = persisted.CustomerCode;
+                    model.DealId = persisted.DealId;
+                    model.DealSerialNumber = persisted.DealSerialNumber;
+                    model.SelerId = persisted.SelerId;
+                    model.SelerFullName = persisted.SelerFullName;
+                    model.UserCreatorID = persisted.UserCreatorID;
+                    model.UserCreator = persisted.UserCreator;
+                    model.UserTaminId = persisted.UserTaminId;
+                    model.UserTaminTxt = persisted.UserTaminTxt;
+                    model.IsDeleted = persisted.IsDeleted;
+                    model.status = persisted.status;
+                    model.statusTxt = persisted.statusTxt;
+                    model.Returned = persisted.Returned;
+                    model.ParentReturnedId = persisted.ParentReturnedId;
+                    if (!await HasDocument("Factor", "EditFinancial"))
+                    {
+                        model.SepidarId = persisted.SepidarId;
+                        model.SnFinancial = persisted.SnFinancial;
+                    }
+                }
+                if (model.Id == Guid.Empty)
+                {
+                    model.IsDeleted = false;
+                    model.Returned = false;
+                    model.status = FactorStatus.در_دست_تایید;
+                    model.statusTxt = nameof(FactorStatus.در_دست_تایید).Replace("_", " ");
+                    model.SepidarId = null;
+                    model.SnFinancial = null;
+                }
                 if (model.ParentReturnedId.HasValue && !await CanF("Edit", model.ParentReturnedId.Value)) return Forbid();
                 if (unlinkSepidar && !await HasDocument("Factor", "EditFinancial")) return Forbid();
+                if (model.FactorItems == null) return BadRequest();
+                var existingItemIds = model.FactorItems.Where(x => x.Id != Guid.Empty).Select(x => x.Id).Distinct().ToArray();
+                if (await db.FactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
+                        x => existingItemIds.Contains(x.Id) && x.factorId != model.Id, AccessCt))
+                    return Forbid();
+                if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
+                if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
             }
             if (!await CanPf("View", model.PfactorID)) return Forbid();
             if (model == null) return BadRequest();
@@ -2551,6 +2667,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
                 var cus = await db.Customers.AsTracking().FirstOrDefaultAsync(f => f.Id == model.CustomerId);
                 var pf = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.PfactorID);
+                if (documentAccess.IsEnforced("Factor") && pf == null) return NotFound("پیش‌فاکتور یافت نشد.");
+                if (documentAccess.IsEnforced("Factor") && pf != null)
+                {
+                    if (model.CustomerId != pf.CustomerId || model.DealId != pf.DealId) return Forbid();
+                    model.PfactorSerialNumber = pf.SerialNumber;
+                    model.UserTaminId = pf.UserTaminId;
+                    model.UserTaminTxt = pf.UserTaminTxt;
+                }
 
                 //deal Not Tracking
                 var deal = await db.Deals.AsNoTracking().FirstOrDefaultAsync(f => f.Id == model.DealId);
@@ -3100,8 +3224,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (documentAccess.IsEnforced("PreFactor"))
             {
                 var pfId = model.First().PrefactorId;
-                if (!pfId.HasValue || model.Any(x => x.PrefactorId != pfId)) return BadRequest();
-                if (!await CanPf("EditSupply", pfId.Value)) return Forbid();
+                if (pfId == Guid.Empty || model.Any(x => x.PrefactorId != pfId)) return BadRequest();
+                if (!await CanPf("EditSupply", pfId)) return Forbid();
                 var ids = model.Select(x => x.Id).Distinct().ToArray();
                 if (ids.Length != model.Count ||
                     await db.PreFactorItems.AsNoTracking().CountAsync(x => ids.Contains(x.Id) && x.PrefactorId == pfId, AccessCt) != ids.Length)
@@ -3471,11 +3595,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 .PreviewDirectAsync(factor, request.SaleTypeId, request.ExternalCustomerId, mappings, ct);
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorModes(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3501,11 +3626,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3533,12 +3659,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveExternalFactorCustomer(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3579,11 +3706,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorQuotationItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3619,11 +3747,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactorItems(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3708,10 +3837,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return "نامشخص";
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalFactor([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3761,11 +3891,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CheckExternalFactorInvoiceNumber(
             [FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3800,11 +3931,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendFactorToExternalSoftware([FromBody] SendFactorToExternalSoftwareRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanF("ExportExternal", request.FactorId)) return Forbid();
             try
@@ -3943,10 +4075,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(result);
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalCustomerMapping([FromBody] SendToExternalSoftwaresDto request)
         {
+            if (!documentAccess.IsEnforced("PreFactor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request?.Ids == null || request.Ids.Count != 1) return BadRequest();
             if (!await CanPf("ExportExternal", request.Ids[0])) return Forbid();
             if (request.Ids == null || request.Ids.Count != 1)
@@ -4025,11 +4158,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveExternalCustomerMapping([FromBody] SaveExternalCustomerMappingRequest request)
         {
+            if (!documentAccess.IsEnforced("PreFactor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             var preFactor = await db.PreFactors
@@ -4095,10 +4229,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok();
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PrepareExternalItemMapping([FromBody] PrepareExternalItemMappingRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("PreFactor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             var preFactor = await db.PreFactors
@@ -4166,11 +4301,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendPreFactorsToExternalSoftware([FromBody] ExternalSoftwarePreFactorRequest request, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("PreFactor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (request == null) return BadRequest();
             if (!await CanPf("ExportExternal", request.PreFactorId)) return Forbid();
             if (request == null)
@@ -4376,10 +4512,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
         {
+            if (!documentAccess.IsEnforced("Factor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (!await CanF("ExportExternal", factorId)) return Forbid();
             if (factorId == Guid.Empty)
                 return BadRequest("شناسه فاکتور معتبر نیست.");
@@ -4491,10 +4628,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(new { deleted = true });
         }
 
-        [Authorize(Roles = FinancialExportRoles)]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
         {
+            if (!documentAccess.IsEnforced("PreFactor") && !HasLegacyRole(FinancialExportRoles)) return Forbid();
             if (!await CanPf("ExportExternal", preFactorId)) return Forbid();
             try
             {
