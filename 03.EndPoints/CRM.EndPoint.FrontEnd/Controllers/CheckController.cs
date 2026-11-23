@@ -100,6 +100,11 @@ public sealed class CheckController(ICqrsDispatcher requests, DocumentAccessPoli
     public async Task<IActionResult> GetCheck(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Check", "View", id, ct)) return Forbid();
+        if (access.IsEnforced("Checkbook"))
+        {
+            var parentId = await db.Checks.AsNoTracking().Where(x => x.Id == id).Select(x => (Guid?)x.CheckbookId).FirstOrDefaultAsync(ct);
+            if (!parentId.HasValue || !await access.CanAsync("Checkbook", "View", parentId.Value, ct)) return Forbid();
+        }
         var item = await requests.QueryAsync(new GetCheckQuery(id), ct);
         return item == null ? NotFound("رکوردی یافت نشد!") : Ok(item);
     }
