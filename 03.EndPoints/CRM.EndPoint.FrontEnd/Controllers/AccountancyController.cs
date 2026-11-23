@@ -104,6 +104,7 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
     public async Task<IActionResult> GetAllPaymentCartablePartial(string serVal, CartableEnum cartable, int type = 1, PayTypeEnum? payType = null, CancellationToken ct = default)
     {
         if (!await access.HasViewAsync("Accountancy", ct)) return Forbid();
+        if ((int)cartable == 7 && !await access.HasViewAsync("Check", ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetAccountancyCartableQuery(serVal, cartable, type, payType), ct));
     }
     [HttpGet]
@@ -209,6 +210,20 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
     {
         if (model == null) return BadRequest();
         if (!await access.CanAsync("BankAccount", "Edit", model.Id, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount"))
+        {
+            var old = await db.BankAccounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
+            if (old == null) return NotFound();
+            model.UserCreatorID = old.UserCreatorID;
+            model.UserCreator = old.UserCreator;
+            model.Active = old.Active;
+            model.IsDeleted = old.IsDeleted;
+            model.Customer = null;
+            model.Accountancies = null;
+            model.Checkbooks = null;
+            model.Cashes = null;
+            model.Cashiers = null;
+        }
         return Map(await dispatcher.CommandAsync(new UpBankAccountCommand(model), ct));
     }
     [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
