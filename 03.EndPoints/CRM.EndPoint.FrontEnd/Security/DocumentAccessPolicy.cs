@@ -12,6 +12,9 @@ using CRM.Core.Domain.Factors.Entities;
 using CRM.Core.Domain.Orders.Entities;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.RequestAmounts.Entities;
+using CRM.Core.Domain.Payments.Entities;
+using CRM.Core.Domain.Checks.Entities;
 using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -38,7 +41,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
@@ -229,6 +232,11 @@ public sealed class DocumentAccessPolicy(
             "Supply" => await CanRowAsync(db.Supplies.AsNoTracking().Where(x => x.Id == id), action, ct),
             "SupplyFactor" => await CanRowAsync(db.SupplyFactors.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Accountancy" => await CanRowAsync(db.Accountancies.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "RequestAmount" => await CanRowAsync(db.RequestAmounts.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Payment" => await CanRowAsync(db.Payments.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "BankAccount" => await CanRowAsync(db.BankAccounts.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Checkbook" => await CanRowAsync(db.Checkbooks.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Check" => await CanRowAsync(db.Checks.AsNoTracking().Where(x => x.Id == id), action, ct),
             _ => false
         };
     }
