@@ -36,6 +36,7 @@ document.addEventListener("change", (e) => {
 });
 
 const showModalAddPfactor = async (type, cusId = null, deal) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "create")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     typeSubmitPfactor = type;
     dealData = deal;
     FLshowLoading();
@@ -70,6 +71,7 @@ const toggleDisplayPrefactorModal = (isHide = true) => {
     */
 };
 const upPfactor = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "edit")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     typeSubmitPfactor = type;
     
     await getAllProductOp("PreFacItem");
@@ -707,6 +709,7 @@ const submitPreFactor = async () => {
 };
 
 const submitPreFactorOk = async () => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", pFactor.id && pFactor.id !== '00000000-0000-0000-0000-000000000000' ? 'edit' : 'create')) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     const dateInput = document.getElementById("date");
     const validityDateInput = document.getElementById("validityDade");
     
@@ -766,6 +769,7 @@ const ShowModalExpireDescription = (PfId, amount, serial, name, _formCode) => {
 };
 
 const SubmitDescExpirePreFactor = async () => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "changeStatus")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     if (!await mySer.CheckValidForm("#descExpirePfactor")) return;
     
     const data = mySer.convertFormToJSON("#descExpirePfactor");
@@ -805,6 +809,7 @@ document.addEventListener("change", (e) => {
 
 
 const deletePreFactor = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "delete")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     await deleteItem({
         url: `/Factor/DelPreFactor/${id}`,
         callback: async () => {
@@ -958,6 +963,7 @@ async function acceptAcc(id, accepted, pfId) {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 const HandAccepting = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "approveCustomerManual")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     if (setting.attAcceptHanding === true) {
         if (await checkPreFactorAttachment(id)) {
             await acceptPreFactorManual(id, type);
@@ -984,6 +990,7 @@ const checkPreFactorAttachment = async (id) => {
 };
 
 const acceptPreFactorManual = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "approveCustomerManual")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     await sendApiRequest({
         url: "/Factor/AcceptPreFactorManual",
         params: { id },
@@ -1039,6 +1046,7 @@ const cancelAttachment = () => {
 
 
 const regUtamin = async (pfId, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "assignTamin")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     if (!await mySer.CheckValidForm(pfId)) return;
     
     const el = document.getElementById("S_" + pfId);
@@ -1057,6 +1065,7 @@ const regUtamin = async (pfId, type) => {
 };
 
 const resendRegUtamin = async (pfId, userTaminId, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "assignTamin")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     await sendApiRequest({
         url: "/Factor/ResendRegUtamin",
         params: { pfId, usId: userTaminId },
@@ -1073,6 +1082,7 @@ const resendRegUtamin = async (pfId, userTaminId, type) => {
 let smsSendedPfId;
 let typeSubmitSmsSendPf;
 const showMobileModal = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "sendToCustomer")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     typeSubmitSmsSendPf = type;
     smsSendedPfId = id;
     
@@ -1088,6 +1098,7 @@ const showMobileModal = async (id, type) => {
 };
 
 const SendToCustomer = async () => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "sendToCustomer")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     const toNumber = document.getElementById("mobileid").value;
     await sendApiRequest({
         url: "/Factor/SendToCustomer",
@@ -1174,6 +1185,7 @@ const backDelivered = async (pfId, passType) => {
 };
 
 const ChangePf = async (id, code) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "changeStatus")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     const result = await sendApiRequest({
         url: "/Factor/ChangeStatePf",
         params: { id, code },
@@ -1182,6 +1194,7 @@ const ChangePf = async (id, code) => {
 };
 
 const Backward = async (id, type) => {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "changeStatus")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     await confirmAlert({
         title: "بازگشت!",
         text: "با این اقدام پیش فاکتور به مرحله اول فرایند منتقل می شود. آیا مطمئن هستید؟",
@@ -1287,6 +1300,7 @@ const getExternalSoftwarePreFactorsModal = () => document.getElementById("extern
     },
 ]);*/
 async function showPreFactorExternalSotwaresModal(id, serialNumber) {
+    if (window.AccessLive && !window.AccessLive.can("PreFactor", "exportExternal")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     externalSotwarePfId = id;
     getExternalSoftwarePreFactorsModal().querySelector(".modal-title").textContent = `مدیریت ارسال پیش‌فاکتور ${serialNumber}`;
     
