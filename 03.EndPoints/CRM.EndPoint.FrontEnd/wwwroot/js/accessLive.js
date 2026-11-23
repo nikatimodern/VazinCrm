@@ -42,8 +42,9 @@
     document.addEventListener("change", recordEdit, true);
     // A discarded modal or cancelled person form is no longer an open draft.
     document.addEventListener("hidden.bs.modal", () => {
+        const personForm = document.getElementById("formAddCustom");
         if (!document.querySelector(".modal.show") &&
-            document.getElementById("formAddCustom")?.style.display === "none")
+            (!personForm || personForm.style.display === "none"))
             formDirty = false;
     });
     document.addEventListener("click", event => {
