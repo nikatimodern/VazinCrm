@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.Orders.Repositories;
-public sealed class OrderRepository(CRMContextDb db) : IOrderRepository, IAsyncDisposable
+public sealed class OrderRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : IOrderRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
     private IQueryable<OrderHead> Visible(IQueryable<OrderHead> query, OrderReader reader)
@@ -26,19 +26,19 @@ public sealed class OrderRepository(CRMContextDb db) : IOrderRepository, IAsyncD
         return reader.ReadAssigned ? query.Where(h => h.UserCreatorID == reader.UserId || h.UserTaminId == id) : query.Where(h => h.UserCreatorID == reader.UserId);
     }
 
-    public Task<List<OrderHead>> GetHeadsByPreFactorAsync(Guid id, bool undelivered, CancellationToken ct) => db.OrderHeads.AsNoTracking().Where(h => h.Prefactor == id && (!undelivered || h.Status != OrderHeadStatusEnum.تحویل_شده)).Include(h => h.Orders).ToListAsync(ct);
-    public Task<List<OrderHead>> GetHeadsByDealAsync(Guid id, CancellationToken ct) => db.OrderHeads.AsNoTracking().Where(h => h.DealId == id).Include(h => h.Deal).ToListAsync(ct);
-    public Task<List<OrderOption>> GetPreFactorOptionsAsync(Guid id, CancellationToken ct) => db.PreFactors.AsNoTracking().Where(p => p.CustomerId == id && p.Pftype == (int)PreFactorEnum.در_انتظار_تولید).Select(p => new OrderOption(p.Id, p.SerialNumber.ToString())).ToListAsync(ct);
-    public Task<List<OrderOption>> GetFactorOptionsAsync(Guid id, CancellationToken ct) => db.Factors.AsNoTracking().Where(p => p.CustomerId == id).Select(p => new OrderOption(p.Id, p.SerialNumber.ToString())).ToListAsync(ct);
+    public async Task<List<OrderHead>> GetHeadsByPreFactorAsync(Guid id, bool undelivered, CancellationToken ct) => await (await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct)).Where(h => h.Prefactor == id && (!undelivered || h.Status != OrderHeadStatusEnum.تحویل_شده)).Include(h => h.Orders).ToListAsync(ct);
+    public async Task<List<OrderHead>> GetHeadsByDealAsync(Guid id, CancellationToken ct) => await (await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct)).Where(h => h.DealId == id).Include(h => h.Deal).ToListAsync(ct);
+    public async Task<List<OrderOption>> GetPreFactorOptionsAsync(Guid id, CancellationToken ct) => await (await access.PreFactorsAsync(db.PreFactors.AsNoTracking(), "View", ct)).Where(p => p.CustomerId == id && p.Pftype == (int)PreFactorEnum.در_انتظار_تولید).Select(p => new OrderOption(p.Id, p.SerialNumber.ToString())).ToListAsync(ct);
+    public async Task<List<OrderOption>> GetFactorOptionsAsync(Guid id, CancellationToken ct) => await (await access.FactorsAsync(db.Factors.AsNoTracking(), "View", ct)).Where(p => p.CustomerId == id).Select(p => new OrderOption(p.Id, p.SerialNumber.ToString())).ToListAsync(ct);
     public Task<List<OrderOption>> GetCustomerOptionsAsync(OrderReader reader, CancellationToken ct)
     {
         var id = Guid.Parse(reader.UserId);
         return db.Customers.AsNoTracking().Where(c => ((int)c.RoleType == 1 || (int)c.RoleType == 3) && db.UserCustomers.Any(u => u.CustomerId == c.Id && (reader.ReadAll || u.UserId == id))).Select(c => new OrderOption(c.Id, c.CompanyName + " " + c.AgentName + " _ (کد مشتری  " + c.CustomerCode + ")")).ToListAsync(ct);
     }
 
-    public Task<List<OrderHead>> GetBoardAsync(QueryFilter filter, int invoiceStatus, OrderReader reader, CancellationToken ct)
+    public async Task<List<OrderHead>> GetBoardAsync(QueryFilter filter, int invoiceStatus, OrderReader reader, CancellationToken ct)
     {
-        var query = db.OrderHeads.AsNoTracking().Include(h => h.RequestAmountOrderHeads).OrderByDescending(h => h.CreateDate).AsQueryable();
+        var query = await access.ApplyAsync(db.OrderHeads.AsNoTracking().Include(h => h.RequestAmountOrderHeads).OrderByDescending(h => h.CreateDate), "View", ct);
         if (!string.IsNullOrEmpty(filter.Search))
         {
             var val = filter.Search;
@@ -49,19 +49,20 @@ public sealed class OrderRepository(CRMContextDb db) : IOrderRepository, IAsyncD
             query = query.Where(h => db.PreFactors.Any(p => p.Id == h.Prefactor && p.Factors.Count > 0));
         if (invoiceStatus == 2)
             query = query.Where(h => !db.PreFactors.Any(p => p.Id == h.Prefactor && p.Factors.Count > 0));
-        query = Visible(query.ApplyFilter(filter, h => h.Customer, h => h.OrderDateMildi, h => h.UserCreatorID), reader);
+        query = query.ApplyFilter(filter, h => h.Customer, h => h.OrderDateMildi, h => h.UserCreatorID);
+        if (!access.IsEnforced("OrderHead")) query = Visible(query, reader);
         if (!filter.HasFilter && string.IsNullOrEmpty(filter.Search))
             query = query.Where(h => h.OrderDateMildi > new DateTime(2025, 3, 21)).Take(200);
-        return query.Include(h => h.Deal).ToListAsync(ct);
+        return await query.Include(h => h.Deal).ToListAsync(ct);
     }
 
     public Task<OrderHead?> GetHeadAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.OrderHeads : db.OrderHeads.AsNoTracking()).Include(h => h.Orders).FirstOrDefaultAsync(h => h.Id == id, ct);
     public Task<Order?> GetItemAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Orders : db.Orders.AsNoTracking()).FirstOrDefaultAsync(o => o.Id == id, ct);
     public Task<List<PreFactorItem>> GetMissingItemsAsync(Guid pfId, CancellationToken ct) => db.PreFactorItems.AsNoTracking().Where(i => i.PrefactorId == pfId && i.IsInProduction && !db.OrderHeads.Where(h => h.Prefactor == pfId).SelectMany(h => h.Orders).Any(o => o.PreFactorItemId == i.Id)).ToListAsync(ct);
-    public Task<List<Guid>> GetVisibleHeadIdsAsync(OrderReader reader, CancellationToken ct) => Visible(db.OrderHeads.AsNoTracking(), reader).Select(h => h.Id).ToListAsync(ct);
-    public Task<List<OrderHead>> SelectHeadsAsync(HeadSelection selection, CancellationToken ct)
+    public async Task<List<Guid>> GetVisibleHeadIdsAsync(OrderReader reader, CancellationToken ct) => await (access.IsEnforced("OrderHead") ? await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct) : Visible(db.OrderHeads.AsNoTracking(), reader)).Select(h => h.Id).ToListAsync(ct);
+    public async Task<List<OrderHead>> SelectHeadsAsync(HeadSelection selection, CancellationToken ct)
     {
-        var query = db.OrderHeads.AsNoTracking().AsQueryable();
+        var query = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
         if (selection.FilterIds != null)
             query = query.Where(h => selection.FilterIds.Contains(h.Id));
         query = query.OrderByDescending(h => selection.SelectedIds.Contains(h.Id)).ThenByDescending(h => h.CreateDate);
@@ -73,7 +74,7 @@ public sealed class OrderRepository(CRMContextDb db) : IOrderRepository, IAsyncD
         }
         else
             query = query.Take(50);
-        return query.ToListAsync(ct);
+        return await query.ToListAsync(ct);
     }
 
     public Task<bool> AllowMultipleSelectionAsync(CancellationToken ct) => db.ASettings.Select(s => s.MultiSelectOrderHeadsInRequestAmount).FirstOrDefaultAsync(ct);
@@ -87,7 +88,7 @@ public sealed class OrderRepository(CRMContextDb db) : IOrderRepository, IAsyncD
 
     public async Task<OrderHeadTableResult> GetHeadTableAsync(TableRequest request, CancellationToken ct)
     {
-        var query = db.OrderHeads.AsNoTracking();
+        var query = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
         if (!string.IsNullOrEmpty(request.Search))
             query = query.Where(h => h.CustomerTxt.Contains(request.Search));
         var count = await query.CountAsync(ct);
