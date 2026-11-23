@@ -59,6 +59,10 @@ const dealDropdown = Dropdown.setupDelegate({
 
 
 const deleteDeal = async (id) => {
+    if (window.AccessLive && !window.AccessLive.can("Deal", "delete")) {
+        toastifyError("مجوز حذف سفارش را ندارید.");
+        return;
+    }
     if (!dealCapabilities[id]?.canDelete) {
         toastifyError("مجوز حذف این سفارش را ندارید.");
         return;
@@ -417,6 +421,10 @@ async function getDeal(id) {
 }
 
 const editDealModal = async (id, preFactorCount) => {
+    if (window.AccessLive && !window.AccessLive.can("Deal", "edit")) {
+        toastifyError("مجوز ویرایش سفارش را ندارید.");
+        return;
+    }
     if (!dealCapabilities[id]?.canEdit) {
         toastifyError("مجوز ویرایش این سفارش را ندارید.");
         return;
@@ -445,6 +453,10 @@ const editDealModal = async (id, preFactorCount) => {
 
 let selectTomLoaded = false;
 const openDealModal = async () => {
+    if (window.AccessLive && window.AccessLive.isEditingLocked()) {
+        toastifyError("دسترسی‌ها تغییر کرده‌اند. برای ادامه صفحه را تازه‌سازی کنید.");
+        return;
+    }
     if (!selectTomLoaded) {
         await initSelectTom();
         selectTomLoaded = true;
@@ -465,6 +477,10 @@ const closeDealModal = () => {
 dealModalElm?.addEventListener("hidden.bs.modal", closeDealModal);
 
 const submitDeal = async () => {
+    if (window.AccessLive && !window.AccessLive.can("Deal", isEditMode ? "edit" : "create")) {
+        toastifyError("سطح دسترسی ثبت یا ویرایش سفارش تغییر کرده است. فرم فعلی حفظ شده ولی ثبت غیرفعال است.");
+        return;
+    }
     if (!isEditMode && !dealCreateAllowed) {
         toastifyError("مجوز ایجاد سفارش را ندارید.");
         return;
