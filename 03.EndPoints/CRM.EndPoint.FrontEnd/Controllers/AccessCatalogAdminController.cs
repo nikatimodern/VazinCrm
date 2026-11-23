@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.AccessCatalog.Services;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Security;
+using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
@@ -17,7 +20,8 @@ public sealed record AccessHistoryRestoreDraft(Guid Id, string? Mode, string? Re
 [Authorize(Roles = AppRoles.Admin)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AccessCatalogAdminController(
-    AccessCatalogAdministration administration, IAccessHistoryService history) : Controller
+    AccessCatalogAdministration administration, IAccessHistoryService history,
+    IHubContext<TaskHub> hub, ILogger<AccessCatalogAdminController> logger) : Controller
 {
     [HttpGet]
     public IActionResult Index() => View();
@@ -103,7 +107,8 @@ public sealed class AccessCatalogAdminController(
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
     public async Task<IActionResult> SaveUserAccess([FromBody] AccessUserSaveDraft draft, CancellationToken ct) =>
-        await Recorded("SaveUserAccess", () => administration.SaveUserAccessAsync(draft, User.FindFirstValue(ClaimTypes.NameIdentifier), ct), ct);
+        await Recorded("SaveUserAccess", () => administration.SaveUserAccessAsync(draft, User.FindFirstValue(ClaimTypes.NameIdentifier), ct), ct,
+            targetUserId: draft?.UserId);
 
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(65536)]
     public async Task<IActionResult> SaveRolePermissions([FromBody] RolePermissionsSaveDraft draft, CancellationToken ct) =>
@@ -174,11 +179,12 @@ public sealed class AccessCatalogAdminController(
             return BadRequest(new { success = false, message = "درخواست بازگردانی معتبر نیست." });
         var result = await history.RestoreAsync(draft.Id, draft.Mode!, draft.Revision!,
             User.FindFirstValue(ClaimTypes.NameIdentifier), ct);
+        if (result.Status == 200) await PublishAccessChangeAsync(null, ct);
         return StatusCode(result.Status, new { success = result.Status == 200, message = result.Message });
     }
 
     private async Task<IActionResult> Recorded(string action, Func<Task<AccessCatalogResult>> operation,
-        CancellationToken ct)
+        CancellationToken ct, string? targetUserId = null)
     {
         // A before-image is persisted before any write, and completed only on success.
         // Incomplete events are never offered as restore points.
@@ -187,6 +193,18 @@ public sealed class AccessCatalogAdminController(
         {
             var result = await operation();
             await history.FinishAsync(eventId, result.Status == 200, ct);
+            if (result.Status == 200)
+            {
+                // Only personal edits are targeted; role/catalog changes can
+                // affect an arbitrary set of signed-in users.
+                var userId = action switch
+                {
+                    "SaveUserAccess" => targetUserId,
+                    "SaveUserProfile" => result.UserId,
+                    _ => null
+                };
+                await PublishAccessChangeAsync(userId, ct);
+            }
             return Result(result);
         }
         catch
@@ -194,6 +212,25 @@ public sealed class AccessCatalogAdminController(
             try { await history.FinishAsync(eventId, false, CancellationToken.None); }
             catch { /* Preserve the original failure; unfinished entries are hidden. */ }
             throw;
+        }
+    }
+
+    private async Task PublishAccessChangeAsync(string? userId, CancellationToken ct)
+    {
+        try
+        {
+            // Clients.User targets every active SignalR connection of this
+            // Identity user, including multiple tabs and devices.
+            var target = !string.IsNullOrWhiteSpace(userId) ? hub.Clients.User(userId) : hub.Clients.All;
+            await target.SendCoreAsync("AccessPermissionsChanged",
+                new object[] { new { kind = userId is null ? "catalog" : "user",
+                    revision = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() } }, ct);
+        }
+        catch (Exception ex)
+        {
+            // The database write was successful; an unavailable socket must
+            // never turn it into a misleading failed-save response.
+            logger.LogWarning(ex, "Access change persisted but SignalR delivery failed.");
         }
     }
 
