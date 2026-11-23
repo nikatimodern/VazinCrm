@@ -46,7 +46,7 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             return AccessScopes.IsOverrideGrant(custom.Scope) &&
                    (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
                    (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) ||
-                    entityKey is "Customer" or "Deal")
+                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor")
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -105,11 +105,24 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         return new(allowed, []);
     }
 
-    public async Task<DealOwnerAccess> GetDealOwnerAccessAsync(
+    public Task<DealOwnerAccess> GetDealOwnerAccessAsync(
+        string userId, string permissionKey, CancellationToken ct) =>
+        permissionKey.StartsWith("Deal.", StringComparison.Ordinal)
+            ? GetSingleOwnerAccessAsync(userId, permissionKey, ct)
+            : Task.FromResult(new DealOwnerAccess([], []));
+
+    public Task<DealOwnerAccess> GetDocumentOwnerAccessAsync(
+        string userId, string permissionKey, CancellationToken ct) =>
+        permissionKey.StartsWith("PreFactor.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Factor.", StringComparison.Ordinal)
+            ? GetSingleOwnerAccessAsync(userId, permissionKey, ct)
+            : Task.FromResult(new DealOwnerAccess([], []));
+
+    private async Task<DealOwnerAccess> GetSingleOwnerAccessAsync(
         string userId, string permissionKey, CancellationToken ct)
     {
-        if (!permissionKey.StartsWith("Deal.", StringComparison.Ordinal))
-            return new([], []);
+        var dot = permissionKey.IndexOf('.');
+        var entity = permissionKey[..dot];
         var scope = await GetEffectiveScopeAsync(userId, permissionKey, ct);
         if (scope == AccessScopes.All) return new(null, []);
         if (scope == AccessScopes.None || !Guid.TryParse(userId, out _))
@@ -118,11 +131,11 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
         if (scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers))
             return new([], []);
 
-        var key = permissionKey["Deal.".Length..];
+        var key = permissionKey[(dot + 1)..];
         var selected = await (from link in users.AccessUserScopeMembers.AsNoTracking()
             join perm in users.AccessPermissions.AsNoTracking()
                 on link.AccessPermissionId equals perm.Id
-            where link.UserId == userId && perm.Key == key && perm.AccessEntity.Key == "Deal"
+            where link.UserId == userId && perm.Key == key && perm.AccessEntity.Key == entity
             select link.TargetUserId).ToArrayAsync(ct);
         // Empty, corrupt or self-referential exclusions must never widen access.
         if (selected.Length == 0 ||
