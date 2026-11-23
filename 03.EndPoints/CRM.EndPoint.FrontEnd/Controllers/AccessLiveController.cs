@@ -93,7 +93,8 @@ public sealed class AccessLiveController(
         // These documents are embedded in Cartable, Deal and Customer pages.
         var preFactor = await DocumentState("PreFactor", pfEnforced, ["View", "Create", "Edit", "Delete", "AssignTamin", "ApproveTamin", "ApproveSales", "ApproveFinancial", "SendToCustomer", "ApproveCustomerManual", "ChangeStatus", "EditSupply", "ExportExternal"]);
         var factor = await DocumentState("Factor", factorEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Cancel", "EditFinancial", "ExportExternal"]);
-        var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 ? 2 : 0) };
+        var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
+        var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
         // The role list is read from the database, never from stale cookie claims.
         var roles = (await users.GetRolesAsync(user)).OrderBy(x => x, StringComparer.Ordinal).ToArray();
