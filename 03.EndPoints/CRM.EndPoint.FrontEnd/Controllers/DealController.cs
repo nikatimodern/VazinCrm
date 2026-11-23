@@ -353,13 +353,13 @@ public class DealController : Controller {
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
 
-        var orderHeadCounts = await db.OrderHeads
+        var orderHeadCounts = await (await documentAccess.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", HttpContext.RequestAborted))
             .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
 
-        var accCounts = await db.Accountancies
+        var accCounts = await (await documentAccess.ApplyAsync(db.Accountancies.AsNoTracking(), "View", HttpContext.RequestAborted))
             .Where(f =>
                 f.DealId.HasValue &&
                 dealIds.Contains(f.DealId.Value) &&
@@ -369,7 +369,7 @@ public class DealController : Controller {
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count);
 
-        var supplyFactorCounts = await db.SupplyFactors
+        var supplyFactorCounts = await (await documentAccess.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", HttpContext.RequestAborted))
             .Where(f => f.DealId.HasValue && dealIds.Contains(f.DealId.Value))
             .GroupBy(f => f.DealId)
             .Select(g => new { g.Key, Count = g.Count() })
