@@ -57,7 +57,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
             // These totals combine ledgers; a partial total would misstate the balance.
-            foreach (var entity in new[] { "Accountancy", "Factor", "SupplyFactor" })
+            foreach (var entity in new[] { "Accountancy", "Factor", "SupplyFactor", "Payment" })
                 if (!await documentAccess.HasAsync(entity, "View", HttpContext.RequestAborted)) return NoContent();
 
             var hasFilter = model?.filt != null;
