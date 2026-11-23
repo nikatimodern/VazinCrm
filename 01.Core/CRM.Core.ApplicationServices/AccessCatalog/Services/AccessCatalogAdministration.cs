@@ -190,7 +190,7 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var scopedPermissions = (await repository.ListAsync(ct)).SelectMany(e => e.Permissions)
             .Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
         var selectedCapable = (await repository.ListAsync(ct))
-            .Where(e => e.IsActive && e.Key == "Customer")
+            .Where(e => e.IsActive && (e.Key is "Customer" or "Deal"))
             .SelectMany(e => e.Permissions.Where(p => p.IsActive && p.SupportsScope).Select(p => p.Id))
             .ToHashSet();
         if (draft.Overrides.Any(x => !AccessScopes.IsOverrideGrant(x.Scope) ||

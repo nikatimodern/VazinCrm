@@ -111,11 +111,11 @@ public sealed partial class AccessHistoryService
             .Any(x => !permissionIds.Contains(x.PermissionId)))
             return "برخی مجوزهای اختصاصی دیگر معتبر نیستند.";
         var canScope = permissions.Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
-        var customerEntityIds = target.Where(x => x.Kind == "entity")
+        var scopedEntityIds = target.Where(x => x.Kind == "entity")
             .Select(x => Parse<EntityState>(x.Data))
-            .Where(x => x.Key == "Customer").Select(x => x.Id).ToHashSet();
+            .Where(x => x.Key is "Customer" or "Deal").Select(x => x.Id).ToHashSet();
         var selectedCapable = permissions.Where(p =>
-            p.SupportsScope && customerEntityIds.Contains(p.AccessEntityId)).Select(p => p.Id).ToHashSet();
+            p.SupportsScope && scopedEntityIds.Contains(p.AccessEntityId)).Select(p => p.Id).ToHashSet();
         var targetOverrides = target.Where(x => x.Kind == "override")
             .Select(x => Parse<UserOverrideState>(x.Data)).ToArray();
         if (target.Where(x => x.Kind == "rolegrant").Select(x => Parse<RolePermissionState>(x.Data))
