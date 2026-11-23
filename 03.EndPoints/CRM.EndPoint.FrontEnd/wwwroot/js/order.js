@@ -466,6 +466,11 @@ const submitOrder = async () => {
         model.push(data);
     });
     
+    if (window.AccessLive && model.some(item => !window.AccessLive.can("OrderHead", item.id && item.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create"))) {
+        FLshowLoading(false);
+        toastifyError("مجوز ثبت این حواله را ندارید.");
+        return;
+    }
     axios.post(`/Order/AddHeadOrder`, model).then((res) => {
         if (res.status === 200) {
             toastifySuccess("حواله تولید با موفقیت ثبت شد");
