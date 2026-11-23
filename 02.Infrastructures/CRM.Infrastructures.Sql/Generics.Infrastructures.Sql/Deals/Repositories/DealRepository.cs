@@ -31,6 +31,8 @@ public sealed class DealRepository(CRMContextDb db) : IDealRepository
         if (deal is null) return OverdueFollowUpUpdateResult.NotFound;
         if (status == DealStatusEnum.ناموفق && deal.Factors.Any())
             return OverdueFollowUpUpdateResult.HasFactors;
+        if (status == DealStatusEnum.موفق && !deal.Factors.Any())
+            return OverdueFollowUpUpdateResult.RequiresFactor;
 
         deal.OverdueFollowUpAt = status == DealStatusEnum.باز ? followUpAt : null;
         deal.Status = status;

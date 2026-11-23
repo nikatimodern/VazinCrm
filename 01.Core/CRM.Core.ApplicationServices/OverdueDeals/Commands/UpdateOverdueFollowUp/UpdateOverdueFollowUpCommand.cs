@@ -48,6 +48,7 @@ public sealed class UpdateOverdueFollowUpCommandHandler(IDealRepository reposito
         {
             OverdueFollowUpUpdateResult.Updated => new(200),
             OverdueFollowUpUpdateResult.HasFactors => new(409, "این سفارش فاکتور دارد و نمی‌توان وضعیت آن را ناموفق کرد."),
+            OverdueFollowUpUpdateResult.RequiresFactor => new(409, "سفارش بدون فاکتور نمی‌تواند موفق شود."),
             _ => new(404, "سفارش معوقه یافت نشد یا دیگر باز نیست.")};
     }
 }

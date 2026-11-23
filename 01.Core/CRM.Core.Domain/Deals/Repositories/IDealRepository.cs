@@ -19,5 +19,6 @@ public enum OverdueFollowUpUpdateResult
 {
     Updated,
     NotFound,
-    HasFactors
+    HasFactors,
+    RequiresFactor
 }

@@ -89,7 +89,11 @@ public sealed class OverdueDealController(ICqrsDispatcher requests, IAccessScope
         }
         var result = await requests.QueryAsync(new GetOverdueDealDetailsQuery(id,
             access?.AllowedOwnerIds, access?.ExcludedOwnerIds, Enforce), ct);
-        return result == null ? NotFound() : Ok(result);
+        if (result is null) return NotFound();
+        result.CanChangeStatus = Enforce ?
+            await accessScopes.CanAccessDealAsync(UserId, "Deal.ChangeStatus", id, ct) :
+            LegacyCanFollowUp;
+        return Ok(result);
     }
 
     [HttpPost]

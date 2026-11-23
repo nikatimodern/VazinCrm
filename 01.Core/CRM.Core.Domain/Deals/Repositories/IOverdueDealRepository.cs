@@ -43,6 +43,7 @@ public sealed class OverdueDealDetails
     public string? OverdueFollowUpNote { get; set; }
     public DateTime? OverdueFollowUpAt { get; set; }
     public DealStatusEnum Status { get; set; }
+    public bool CanChangeStatus { get; set; }
     public int ReportCount { get; set; }
     public int PreFactorCount { get; set; }
     public decimal PreFactorTotalAmount { get; set; }

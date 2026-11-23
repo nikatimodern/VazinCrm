@@ -1550,7 +1550,8 @@
                             followUpDate.disabled = currentStatus !== "1";
                             document.getElementById("overdueFollowUpDateSection").classList.toggle("d-none", currentStatus !== "1");
                             document.getElementById("overdueFollowUpDateClear").disabled = followUpDate.disabled;
-                            failedStatusRadio.disabled = followUpDeal.factorCount > 0;
+                            failedStatusRadio.disabled = followUpDeal.factorCount > 0 ||
+                                !followUpDeal.canChangeStatus;
                             document.getElementById("overdueFailedStatusHint").textContent = failedStatusRadio.disabled
                                 ? "این سفارش فاکتور دارد و نمی‌تواند ناموفق شود."
                                 : "سفارش با نتیجه ناموفق بسته می‌شود.";
