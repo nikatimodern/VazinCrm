@@ -32,6 +32,7 @@ const GetAllCheckbooks = async () => {
 };
 
 async function showNewCheckbookModal() {
+    if (window.AccessLive?.can("Checkbook", "create") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await getAllBankAccounts([{ element: "#checkbookModal select[name='bankAccountId']", type: [1] }]);
     ModalToggle("checkbookModal", "show");
 }
@@ -41,6 +42,7 @@ function cancelNewCheckbookModal() {
 }
 
 const submitCheckbookModal = async () => {
+    if (window.AccessLive?.can("Checkbook", "create") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     if (!await mySer.CheckValidForm("checkbookForm")) return;
     const model = mySer.convertFormToJSON("checkbookForm");
     
@@ -193,6 +195,7 @@ document.addEventListener("change", async e => {
     
     select.disabled = true;
     try {
+        if (window.AccessLive?.can("Check", "changeStatus") === false) { toastifyError("مجوز تغییر وضعیت چک را ندارید."); return; }
         const res = await axios(`/Check/ChangeStatus?id=${id}&status=${status}`);
         if (res.status !== 200) return;
         
@@ -245,6 +248,7 @@ function backToCheckbooks() {
 
 
 function openNewCheckModal() {
+    if (window.AccessLive?.can("Check", "create") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     ModalToggle("newCheckModal");
 }
 
@@ -258,6 +262,7 @@ async function submitCheckForm() {
     
     try {
         FLshowLoading();
+        if (window.AccessLive?.can("Check", model.id && model.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create") === false) { toastifyError("مجوز ثبت چک را ندارید."); return; }
         const res = await axios.post(`/Check/AddCheck`, model);
         if (res.status === 200) {
             toastifySuccess("با موفقیت ثبت شد");
@@ -280,6 +285,7 @@ function cancelNewCheckModal() {
 }
 
 const editCheck = async (id) => {
+    if (window.AccessLive?.can("Check", "edit") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     checkData = await getCheck(id);
     if (!checkData) return;
     
@@ -305,6 +311,7 @@ const getCheck = async (id) => {
 };
 
 const deleteCheck = async (id) => {
+    if (window.AccessLive?.can("Check", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -328,6 +335,7 @@ const deleteCheck = async (id) => {
     });
 };
 const deleteCheckbook = async (id) => {
+    if (window.AccessLive?.can("Checkbook", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     checkbookDropdown.close();
     Swal.fire({
         title: "حذف!",
