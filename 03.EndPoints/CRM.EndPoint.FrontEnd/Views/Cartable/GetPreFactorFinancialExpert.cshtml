@@ -1,9 +1,11 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.PreFactors.Enum
 @model List<CRM.EndPoint.FrontEnd.Models.PreFactors.PreFactorFinancialExpertVModel>
 @{ Layout = null; }
 <div class="pf-accepted-list">
 @foreach (var vm in Model) {
     var preFactor = vm.PreFactor;
+    var canApprove = await DocumentAccess.AllowsPreFactorAsync(preFactor, "ApproveFinancial", Context.RequestAborted);
     var notAcceptedFiAccCount = vm.NotAcceptedFiAccCount;
     var notAcceptedMdAccCount = vm.NotAcceptedMdAccCount;
     var notAcceptedAccCount = notAcceptedMdAccCount + notAcceptedFiAccCount;
@@ -41,20 +43,20 @@
                             </button>
                         }
                                 @if (preFactor.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی && totalAccCount > 0 && notAcceptedAccCount == 0 && preFactor.AcceptedFinancial != true) {
-                                    <button type="button" class="pf-finance-card__button" onclick="acceptFinancial('@preFactor.Id')">
+                                    <button type="button" hidden="@(!canApprove)" data-document-permission="PreFactor.ApproveFinancial" class="pf-finance-card__button" onclick="acceptFinancial('@preFactor.Id')">
                                         تایید
                                     </button>
                                 }
 
                                 @if (preFactor.AcceptedFinancial == null && preFactor.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مالی) {
-                                    <button type="button" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
+                                    <button type="button" hidden="@(!canApprove)" data-document-permission="PreFactor.ApproveFinancial" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
                                         عدم تایید
                                     </button>
                                 } else if (preFactor.AcceptedFinancial == true && preFactor.Pftype != (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد) {
-                                    <button type="button" class="pf-finance-card__button" onclick="rejectPreFactor('@preFactor.Id', 12)">
+                                    <button type="button" hidden="@(!canApprove)" data-document-permission="PreFactor.ApproveFinancial" class="pf-finance-card__button" onclick="rejectPreFactor('@preFactor.Id', 12)">
                                         رد تایید
                                     </button>
-                                    <button type="button" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
+                                    <button type="button" hidden="@(!canApprove)" data-document-permission="PreFactor.ApproveFinancial" class="pf-finance-card__button" onclick="showModalNotAccept('@preFactor.Id', 12)">
                                         رد تایید و بازگشت
                                     </button>
                                 }
