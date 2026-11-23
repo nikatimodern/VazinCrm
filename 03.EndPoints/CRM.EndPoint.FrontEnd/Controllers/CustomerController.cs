@@ -15,6 +15,8 @@ using CRM.Core.Domain.Customers.Repositories;
 using CRM.EndPoint.FrontEnd.Models.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using CRM.Core.ApplicationServices.Customers.Queries.GetCustomersPage;
 using CRM.Core.ApplicationServices.Customers.Queries.SearchCustomerOptions;
 using CRM.Core.ApplicationServices.Customers.Queries.GetCustomerSuppliers;
@@ -51,7 +53,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize]
 public sealed class CustomerController(
     ICqrsDispatcher requests, IAccessScopeService accessScopes, ICustomerRepository customers,
-    IConfiguration configuration, DocumentAccessPolicy documentAccess) : Controller
+    IConfiguration configuration, DocumentAccessPolicy documentAccess, CRMContextDb db) : Controller
 {
     // Opt-in while the remaining ERP controllers are migrated from legacy roles.
     private bool Enforce => configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions");
@@ -171,6 +173,19 @@ public sealed class CustomerController(
     public async Task<IActionResult> AbortCustomer(Guid id, CancellationToken cancellationToken)
     {
         if (!await CanAccessAsync("Delete", id, cancellationToken)) return Forbid();
+        // Deleting a person also soft-deletes its pre-factors and their invoices.
+        // Require access to every affected document, not merely to the person.
+        if (documentAccess.IsEnforced("PreFactor") || documentAccess.IsEnforced("Factor"))
+        {
+            var pfs = db.PreFactors.AsNoTracking().Where(p => p.CustomerId == id);
+            var visiblePfs = await documentAccess.PreFactorsAsync(pfs, "View", cancellationToken);
+            var deletablePfs = await documentAccess.PreFactorsAsync(visiblePfs, "Delete", cancellationToken);
+            if (await pfs.AnyAsync(p => !deletablePfs.Any(d => d.Id == p.Id), cancellationToken)) return Forbid();
+            var factors = db.Factors.AsNoTracking().Where(f => pfs.Any(p => p.Id == f.PfactorID));
+            var visibleFactors = await documentAccess.FactorsAsync(factors, "View", cancellationToken);
+            var deletableFactors = await documentAccess.FactorsAsync(visibleFactors, "Delete", cancellationToken);
+            if (await factors.AnyAsync(f => !deletableFactors.Any(d => d.Id == f.Id), cancellationToken)) return Forbid();
+        }
         return await Mutation(requests.CommandAsync(new DeleteCustomerCommand(id), cancellationToken), cancellationToken);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.Managers), HttpPost, ValidateAntiForgeryToken]
