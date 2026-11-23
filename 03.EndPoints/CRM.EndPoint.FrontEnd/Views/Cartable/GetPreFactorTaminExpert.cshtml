@@ -7,6 +7,7 @@
     @foreach (var item in Model.PreFactors) {
         var canApprove = await DocumentAccess.AllowsPreFactorAsync(item, "ApproveTamin", Context.RequestAborted);
         var canEditSupply = await DocumentAccess.AllowsPreFactorAsync(item, "EditSupply", Context.RequestAborted);
+        var canViewSupply = await DocumentAccess.HasViewAsync("Supply", Context.RequestAborted);
         var orderNumbers = Model.OrderNumbers.TryGetValue(item.Id, out var numbers) ? numbers : null;
         <article class="pf-accepted-card @(item.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : item.SupplyMismatch ? "factor-card--returned" : "")">
             @if (!DocumentAccess.IsEnforced("PreFactor") && !Model.IsAdmin && item.UserTaminId.ToString() != Model.UserId) {
@@ -59,7 +60,7 @@
                         <div class="pf-finance-card__controls supply-card__controls">
                             @if (canEditSupply && item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
                                 <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-success")" style="min-width: 90px"
-                                        onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
+                                        hidden="@(!canViewSupply)" data-document-permission="Supply.View" onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
                                     @if (!item.SupplyMismatch && !item.NoSupply) {
                                         <i class="fa fa-check me-1" aria-hidden="true"></i>
                                     }
