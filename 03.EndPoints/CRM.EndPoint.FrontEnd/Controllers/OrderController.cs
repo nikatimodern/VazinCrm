@@ -62,7 +62,20 @@ public class OrderController(ICqrsDispatcher dispatcher, DocumentAccessPolicy ac
         if (model.Id == Guid.Empty)
         {
             if (!await access.HasAsync("OrderHead", "Create", ct)) return false;
-            if (model.Prefactor.HasValue && !await access.CanAsync("PreFactor", "View", model.Prefactor.Value, ct)) return false;
+            if (model.Prefactor.HasValue)
+            {
+                if (!await access.CanAsync("PreFactor", "View", model.Prefactor.Value, ct)) return false;
+                var pf = await db.PreFactors.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Prefactor.Value, ct);
+                if (pf == null) return false;
+                model.PrefactorSer = pf.SerialNumber;
+                model.Customer = pf.CustomerId;
+                model.CustomerCode = pf.CustomerCode;
+                model.CustomerTxt = pf.Customer;
+                model.DealId = pf.DealId;
+                model.DealSerialNumber = pf.DealSerialNumber;
+                model.UserTaminId = pf.UserTaminId;
+                model.UserTaminTxt = pf.UserTaminTxt;
+            }
             model.Status = CRM.Core.Domain.Orders.Enums.OrderHeadStatusEnum.ثبت_اولیه;
             model.IsDeleted = false;
         }
