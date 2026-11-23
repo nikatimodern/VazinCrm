@@ -154,6 +154,10 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
             _ => baseQuery
         };
         var supplierFinancials = GetSupplierFinancialSummaries();
+        if (!await access.HasAsync("SupplyFactor", "View", ct) ||
+            !await access.HasAsync("Payment", "View", ct) ||
+            !await access.HasAsync("RequestAmount", "View", ct))
+            supplierFinancials = supplierFinancials.Where(x => false);
         var data = await query.GroupJoin(supplierFinancials,
             ra => ra.RequestAmountType == RequestAmountTypeEnum.تنخواه || ra.RequestAmountType == RequestAmountTypeEnum.عودت_به_مشتری ? null : ra.TargetPersonId,
             sf => (Guid?)sf.SupplierId, (ra, financials) => new { RequestAmount = ra, Financial = financials.FirstOrDefault() }).Select(x => new RequestAmountRow { RequestAmount = x.RequestAmount, SupplyFactorSerials = x.RequestAmount.RequestAmountSupplyFactor.Where(l => visibleSupplyFactors.Any(sf => sf.Id == l.SupplyFactorId)).Select(x => x.SupplyFactor.SerialNumber).ToList(), OrderHeadSerials = x.RequestAmount.RequestAmountOrderHeads.Where(l => visibleOrders.Any(h => h.Id == l.OrderHeadId)).Select(x => x.OrderHead.OrderNumber).ToList(), CustomerNames = x.RequestAmount.RequestAmountOrderHeads.Where(l => visibleOrders.Any(h => h.Id == l.OrderHeadId)).Select(x => x.OrderHead.CustomerTxt).ToList(), TotalPaymentAmount = x.RequestAmount.RequestAmountPayments.Sum(x => x.Amount), SupplierDebt = x.Financial != null ? x.Financial.SupplierDebt : 0, TotalSupplyFactor = x.Financial != null ? x.Financial.TotalSupplyAmount : 0, TotalSupplyPayment = x.Financial != null ? x.Financial.TotalPaidAmount : 0, }).ToListAsync(ct);
