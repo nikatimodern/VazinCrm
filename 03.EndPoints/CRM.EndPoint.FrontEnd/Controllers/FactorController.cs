@@ -1650,6 +1650,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 !await CanPf("View", id)) return Forbid();
             if (documentAccess.IsEnforced("Factor") && await db.Factors.AsNoTracking().AnyAsync(f => f.Id == id, AccessCt) &&
                 !await CanF("View", id)) return Forbid();
+            // This endpoint is shared by invoices, payments and supplier invoices.
+            // Include deleted parents when identifying the document type.
+            if (documentAccess.IsEnforced("PreFactor") && await db.PreFactors.IgnoreQueryFilters().AnyAsync(p => p.Id == id, AccessCt) && !await CanPf("View", id)) return Forbid();
+            if (documentAccess.IsEnforced("Factor") && await db.Factors.IgnoreQueryFilters().AnyAsync(f => f.Id == id, AccessCt) && !await CanF("View", id)) return Forbid();
+            if (documentAccess.IsEnforced("SupplyFactor") && await db.SupplyFactors.IgnoreQueryFilters().AnyAsync(f => f.Id == id, AccessCt) && !await documentAccess.CanAsync("SupplyFactor", "View", id, AccessCt)) return Forbid();
+            if (documentAccess.IsEnforced("Accountancy") && await db.Accountancies.IgnoreQueryFilters().AnyAsync(a => a.Id == id, AccessCt) && !await documentAccess.CanAsync("Accountancy", "View", id, AccessCt)) return Forbid();
+            if (documentAccess.IsEnforced("OrderHead") && await db.OrderHeads.IgnoreQueryFilters().AnyAsync(h => h.Id == id, AccessCt) && !await documentAccess.CanAsync("OrderHead", "View", id, AccessCt)) return Forbid();
             var query = db.Attachments.Where(f => f.EntityId == id);
 
             if (type.HasValue)
@@ -1668,7 +1675,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!await CanPf("View", id)) return Forbid();
             try
             {
-                var accountancies = await db.Accountancies.Where(f => f.pfid == id).ToListAsync();
+                var accountancies = await (await documentAccess.ApplyAsync(db.Accountancies.Where(f => f.pfid == id), "View", AccessCt)).ToListAsync(AccessCt);
 
                 var accIdsList = accountancies.Select(g => g.Id);
                 var attachments = await db.Attachments.Where(f =>
