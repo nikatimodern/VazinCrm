@@ -147,6 +147,9 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Service>();
             services.AddTransient<SmsService>();
             services.AddHttpContextAccessor();
+            services.AddScoped<CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy>();
+            services.AddScoped<CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess>(sp =>
+                sp.GetRequiredService<CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy>());
             services.AddScoped<CRM.Core.Domain.AccessCatalog.Repositories.IAccessHistoryService,
                 CRM.Infrastructures.Sql.AccessCatalog.AccessHistoryService>();
             services.AddScoped<CRM.Core.Domain.AccessCatalog.Repositories.IAccessScopeService,
