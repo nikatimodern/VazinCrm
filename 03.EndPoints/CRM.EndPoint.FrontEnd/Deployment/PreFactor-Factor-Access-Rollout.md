@@ -81,6 +81,14 @@ Customer or Supplier Identity roles are not given ERP-wide grants by this migrat
    user permissions, especially users who have multiple roles or personal overrides.
 4. Do **not** enable a `PreFactor` or `Factor` enforcement flag yet.
 
+**SSMS alternative:** Run `Deployment/RegisterPreFactorFactorAccessCatalog.sql`
+on `UserConnection`. It starts with `@Apply = 0` and only previews the
+current catalog and existing role memberships; review that output, then set
+`@Apply = 1` and run it again to commit all three phases in one SQL
+transaction. Re-running or applying the matching EF data migrations afterwards
+does not duplicate permissions or role grants. SQL changes are not captured as
+application history; take a restore point and database backup beforehand.
+
 ```powershell
 dotnet ef database update --context UserContextDb --project "02.Infrastructures/CRM.Infrastructures.Sql/Generics.Infrastructures.Sql/CRM.Infrastructures.Sql.csproj" --startup-project "03.EndPoints/CRM.EndPoint.FrontEnd/CRM.EndPoint.FrontEnd.csproj"
 ```
