@@ -36,5 +36,6 @@ public interface IAccessScopeService
     // An empty allowed array means no access (fail-closed).
     Task<CustomerOwnerAccess> GetCustomerOwnerAccessAsync(string userId, string permissionKey, CancellationToken ct);
     Task<DealOwnerAccess> GetDealOwnerAccessAsync(string userId, string permissionKey, CancellationToken ct);
+    Task<DealOwnerAccess> GetDocumentOwnerAccessAsync(string userId, string permissionKey, CancellationToken ct);
     Task<bool> CanAccessDealAsync(string userId, string permissionKey, Guid dealId, CancellationToken ct);
 }
