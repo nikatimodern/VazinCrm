@@ -66,7 +66,7 @@ using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 namespace CRM.EndPoint.FrontEnd.Controllers {
     public class FactorController : Controller {
-        private const string FinancialExportRoles = "مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
+        private const string FinancialExportRoles = "مدیر فروش,کارشناس فروش,مدیر ارشد,مدیر عامل,مدیر مالی,کارشناس مالی";
         private readonly Service genService;
         private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;

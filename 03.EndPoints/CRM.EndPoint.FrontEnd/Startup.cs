@@ -224,7 +224,7 @@ namespace CRM.EndPoint.FrontEnd {
             });*/
 
             services.AddHttpClient<GapgptAi>(client => {
-                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
+                client.BaseAddress = new Uri(Configuration["Gapgpt:Url"]); // new Uri("https://api.gapgpt.ir/v1/");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
