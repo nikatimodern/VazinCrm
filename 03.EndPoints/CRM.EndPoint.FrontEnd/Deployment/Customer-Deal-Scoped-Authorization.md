@@ -70,6 +70,25 @@ AccessCatalog restore points may also contain the retired permission.
 - Selected user scopes are independently validated in the permission editor,
   repository, effective-scope service, and history restore.
 
+## Deleting a catalog permission that has assignments
+
+- The `PermissionRemovalPreview` endpoint reports how many role grants,
+  direct user overrides and selected-user Scope memberships reference the permission.
+- The UI explicitly warns that removing a role grant also removes that permission
+  from every user inheriting it through the role.
+- `DeletePermission` is an admin-only, anti-forgery-protected POST. It requires an
+  affirmative confirmation and the counts shown in the preview; old POST calls
+  with only an ID are rejected.
+- Deletion removes selected Scope members, user overrides, role grants and the
+  permission within one SQL Server serializable transaction.
+- If any dependency count changes between preview and execution, the operation
+  is cancelled and the user must review and confirm again.
+- Normal AccessCatalog history retains before/after snapshots for audit and
+  recovery. No Identity role membership or unrelated permission is deleted.
+- Regression checks: cancel confirmation (no writes); delete unassigned grant;
+  delete permission with roles/users/selected members; stale preview (409); 
+  permissions of other entities remain intact; inspect history after deletion.
+
 ## Direct API checks on staging
 
 1. **Role union**: two roles grant Own and All -> All. Explicit user Deny overrides
