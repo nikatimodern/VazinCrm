@@ -2,6 +2,8 @@ let modelDeal = { filt: null, serVal: null };
 var filterDealConfig = {};
 var dealSearchVal = null;
 let currentDealData = {};
+let dealCapabilities = {};
+let dealCreateAllowed = true;
 let isEditMode = false;
 let canCreateCustomerTomSelect = true;
 let selectTomCustomers;
@@ -57,6 +59,10 @@ const dealDropdown = Dropdown.setupDelegate({
 
 
 const deleteDeal = async (id) => {
+    if (!dealCapabilities[id]?.canDelete) {
+        toastifyError("مجوز حذف این سفارش را ندارید.");
+        return;
+    }
     dealDropdown.close();
     await deleteItem({
         url: `/Deal/DeleteDeal/${id}`,
@@ -141,6 +147,11 @@ const getAllDeals = async ({ showSkeleton = true } = {}) => {
             onSuccess: async (res) => {
                 if (dealListRequest !== request || request.signal.aborted) return;
                 const items = res.data.items;
+                dealCapabilities = res.data.permissionsByDeal || {};
+                dealCreateAllowed = res.data.canCreate !== false;
+                const createButton = document.querySelector(".deal-create-button");
+                if (createButton && !dealCreateAllowed)
+                    createButton.style.setProperty("display", "none", "important");
                 if (window.innerWidth < 1200) {
                     updateTabSwitchState({
                         wrapperSelector: "#dealTabs",
@@ -175,13 +186,18 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
     containerElm.innerHTML = "";
     
     items.forEach((item, index) => {
+        const access = dealCapabilities[item.id] || {
+            canEdit: false, canDelete: false, canChangeStatus: false, canAssign: false
+        };
         const isFinancialClosed = item.financialStatus === 1;
         
         const card = document.createElement("div");
         
         card.dataset.id = item.id;
         card.dataset.hasFactor = item.counts.factor > 0;
+        card.dataset.canChangeStatus = access.canChangeStatus ? "true" : "false";
         card.className = "deal-card";
+        if (!access.canChangeStatus) card.classList.add("noDrag");
         
         if (item.counts.factor > 0 && item.status === 3) {
             card.classList.add("noDrag");
@@ -251,14 +267,14 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                                 <span style="direction: ltr">${item.createDateTxt.slice(0, -3).split(" ").join(" | ")} </span>
                             </span>
                         </div>
-                        <div class="d-flex align-items-center gap-1 d-xl-none">
+                        ${access.canChangeStatus ? `<div class="d-flex align-items-center gap-1 d-xl-none">
                             <button class="${item.status === 1 ? "buttonGreen2" : "buttonBlue2"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 1 ? "3" : "1"})" ${item.status === 1 && !item.counts.factor ? "disabled title='ابتدا برای سفارش فاکتور صادر کنید'" : ""}>
                                 ${item.status === 1 ? "موفق" : "باز"}
                             </button>
                             <button class="${item.status === 2 ? "buttonGreen2" : "buttonCancel3"}" style="font-size: 11px" onclick="changeStatusDeal('${item.id}', ${item.status === 2 ? "3" : "2"})" ${item.status === 2 && !item.counts.factor ? "disabled title='ابتدا برای سفارش فاکتور صادر کنید'" : ""}>
                                 ${item.status === 2 ? "موفق" : "ناموفق"}
                             </button>
-                        </div>
+                        </div>` : ""}
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <button class="deal-dropdown__toggle d-flex align-items-center justify-content-center" tabindex="0">
@@ -308,12 +324,12 @@ const createDomAllDeals = (items, containersId, isAdmin) => {
                                 <svg style="width: 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
                                 <span>تاریخچه تغییرات</span>
                             </div>
-                            ${!isFinancialClosed ? `
+                            ${!isFinancialClosed && access.canEdit ? `
                                 <div class="dropdown-item itemGray editDeal" style="border-top: 1px solid #e3e3e3"">
                                     <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"></path></svg>
                                     <span>ویرایش</span>
                                 </div>` : ""}
-                            ${!isFinancialClosed && isAdmin ? `
+                            ${!isFinancialClosed && access.canDelete ? `
                                 <div class="dropdown-item itemRed deleteDeal">
                                     <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
                                     <span>حذف</span>
@@ -401,6 +417,10 @@ async function getDeal(id) {
 }
 
 const editDealModal = async (id, preFactorCount) => {
+    if (!dealCapabilities[id]?.canEdit) {
+        toastifyError("مجوز ویرایش این سفارش را ندارید.");
+        return;
+    }
     await openDealModal();
     
     const data = await getDeal(id);
@@ -445,6 +465,10 @@ const closeDealModal = () => {
 dealModalElm?.addEventListener("hidden.bs.modal", closeDealModal);
 
 const submitDeal = async () => {
+    if (!isEditMode && !dealCreateAllowed) {
+        toastifyError("مجوز ایجاد سفارش را ندارید.");
+        return;
+    }
     if (!await mySer.CheckValidForm("mainFormDeal")) return;
     
     if (!await mySer.CheckValidForm("extraCustomerPanel")) {
@@ -761,6 +785,11 @@ async function changeStatusDeal(id, targetStatus, dragEvent = null) {
         from.insertBefore(item, from.children[oldIndex] ?? null);
     };
 
+    if (!dealCapabilities[id]?.canChangeStatus) {
+        restorePosition();
+        toastifyError("مجوز تغییر وضعیت این سفارش را ندارید.");
+        return;
+    }
     if (targetStatus === 3 && dragEvent?.item.dataset.hasFactor === "false") {
         restorePosition();
         toastifyError("برای موفق شدن سفارش، ابتدا فاکتور صادر کنید.");
