@@ -50,24 +50,26 @@ public sealed class AccessLiveController(
 
         // Do not query every catalog permission on every ERP page load.
         // Only the currently opened module needs a live access matrix.
-        object? customer = null;
+        // The two View grants also control their navigation links, regardless
+        // of which page is currently open. Detail scopes are module-local.
+        var customerView = await Scope("Customer", "View", customerEnforced);
+        var dealView = await Scope("Deal", "View", dealEnforced);
+        object customer = new { view = customerView };
         if (string.Equals(module, "customer", StringComparison.OrdinalIgnoreCase))
         {
-            var cv = await Scope("Customer", "View", customerEnforced);
             var cc = await Scope("Customer", "Create", customerEnforced);
             var ce = await Scope("Customer", "Edit", customerEnforced);
             var cd = await Scope("Customer", "Delete", customerEnforced);
             var ca = await Scope("Customer", "Approve", customerEnforced);
             var cm = await Scope("Customer", "ManageExperts", customerEnforced);
             var cs = await Scope("Customer", "AssignSelf", customerEnforced);
-            customer = new { view = cv, create = cc, edit = ce, delete = cd,
+            customer = new { view = customerView, create = cc, edit = ce, delete = cd,
                 approve = ca, manageExperts = cm, assignSelf = cs };
         }
 
-        object? deal = null;
+        object deal = new { view = dealView };
         if (string.Equals(module, "deal", StringComparison.OrdinalIgnoreCase))
         {
-            var dv = await Scope("Deal", "View", dealEnforced);
             var dc = await Scope("Deal", "Create", dealEnforced);
             var de = await Scope("Deal", "Edit", dealEnforced);
             var dd = await Scope("Deal", "Delete", dealEnforced);
@@ -75,7 +77,7 @@ public sealed class AccessLiveController(
             var da = await Scope("Deal", "Assign", dealEnforced);
             var df = await Scope("Deal", "ApproveFinancial", dealEnforced);
             var dm = await Scope("Deal", "ManageFollowUp", dealEnforced);
-            deal = new { view = dv, create = dc, edit = de, delete = dd,
+            deal = new { view = dealView, create = dc, edit = de, delete = dd,
                 changeStatus = ds, assign = da, approveFinancial = df, manageFollowUp = dm };
         }
 
