@@ -19,8 +19,8 @@ public sealed class NormalizeCustomersCommandHandler(ICustomerRepository reposit
         if (access.ScopeEnforced)
         {
             var identity = await access.GetAsync(ct);
-            if (!await access.CanAccessAllAsync(identity, "Edit", ct))
-                throw new UnauthorizedAccessException("دسترسی ویرایش همه اشخاص لازم است.");
+            if (!identity.IsAdmin || !await access.CanAccessAllAsync(identity, "Normalize", ct))
+                throw new UnauthorizedAccessException("مجوز بازسازی اطلاعات جست‌وجو لازم است.");
         }
         var customers = await repository.GetForNormalizationAsync(ct);
         foreach (var customer in customers) { customer.NormalizedAgentName = effects.Normalize(customer.AgentName); customer.NormalizedCompanyName = effects.Normalize(customer.CompanyName); }

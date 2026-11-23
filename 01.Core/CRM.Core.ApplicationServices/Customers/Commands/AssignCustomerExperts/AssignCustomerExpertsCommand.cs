@@ -19,7 +19,9 @@ public sealed class AssignCustomerExpertsCommandHandler(ICustomerRepository repo
         if (access.ScopeEnforced)
         {
             var identity = await access.GetAsync(ct);
-            if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+            if (!await access.CanAccessAllAsync(identity, "ManageExperts", ct) ||
+                !await access.CanAccessAsync(identity, "View", request.CustomerId, ct))
+                return new(403);
         }
         await repository.AddAssignmentsAsync(request.CustomerId, request.UserIds, ct);
         await repository.SaveChangesAsync(ct);

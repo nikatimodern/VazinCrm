@@ -17,7 +17,10 @@ public sealed class AddCustomerToCurrentUserCommandHandler(ICustomerRepository r
     public async Task<CustomerMutationResult> HandleAsync(AddCustomerToCurrentUserCommand request, CancellationToken ct)
     {
         var identity = await access.GetAsync(ct);
-        if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+        // Claimed persons must already be visible without any owner filter;
+        // otherwise self-claim would bypass Own/SelectedUsers.
+        if (!await access.CanAccessAllAsync(identity, "AssignSelf", ct) ||
+            !await access.CanAccessAllAsync(identity, "View", ct)) return new(403);
         var customer = await repository.GetAsync(request.Id, false, false, ct);
         if (customer == null) return new(404);
         var userId = Guid.Parse(identity.User.Id);

@@ -18,7 +18,7 @@ public sealed class AcceptCustomerCommandHandler(ICustomerRepository repository,
     {
         var identity = await access.GetAsync(ct);
         if (access.ScopeEnforced
-            ? !await access.CanAccessAllAsync(identity, "Edit", ct)
+            ? !await access.CanAccessAsync(identity, "Approve", request.Id, ct)
             : !identity.CanManage) return new(403);
         var original = await repository.GetAsync(request.Id, false, false, ct);
         if (original == null) return new(404);

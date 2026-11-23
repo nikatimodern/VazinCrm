@@ -19,7 +19,9 @@ public sealed class RemoveCustomerExpertCommandHandler(ICustomerRepository repos
         if (access.ScopeEnforced)
         {
             var identity = await access.GetAsync(ct);
-            if (!await access.CanAccessAllAsync(identity, "Edit", ct)) return new(403);
+            if (!await access.CanAccessAllAsync(identity, "ManageExperts", ct) ||
+                !await access.CanAccessAsync(identity, "View", request.CustomerId, ct))
+                return new(403);
         }
         await repository.RemoveAssignmentAsync(request.CustomerId, request.UserId, ct);
         await repository.SaveChangesAsync(ct);
