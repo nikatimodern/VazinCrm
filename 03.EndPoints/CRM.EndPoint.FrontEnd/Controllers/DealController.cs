@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
@@ -30,9 +34,41 @@ public class DealController : Controller {
     private readonly Service genService;
     private readonly LogSystemService _logSystemService;
     private readonly UserContextDb udb;
+    private readonly IAccessScopeService accessScopes;
+    private readonly IConfiguration configuration;
+    private bool Enforce => configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions");
+    private bool CustomerEnforce => configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions");
+    private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+
+    private Task<byte> ScopeAsync(string key, CancellationToken ct) =>
+        Enforce ? accessScopes.GetEffectiveScopeAsync(CurrentUserId, "Deal." + key, ct)
+                : Task.FromResult(AccessScopes.All);
+
+    private async Task<bool> HasPermissionAsync(string key, CancellationToken ct) =>
+        !Enforce || await ScopeAsync(key, ct) == AccessScopes.All;
+
+    private Task<DealOwnerAccess> OwnerAccessAsync(string key, CancellationToken ct) =>
+        Enforce ? accessScopes.GetDealOwnerAccessAsync(CurrentUserId, "Deal." + key, ct)
+                : Task.FromResult(new DealOwnerAccess(null, []));
+
+    private async Task<bool> CanAccessAsync(string key, Deal deal, CancellationToken ct) =>
+        !Enforce || (await OwnerAccessAsync(key, ct)).Allows(deal.UserCreatorID);
+
+    private static IQueryable<Deal> ApplyOwnerFilter(IQueryable<Deal> query, DealOwnerAccess filter)
+    {
+        if (filter.AllowedOwnerIds is { } allowed)
+            query = query.Where(d => allowed.Contains(d.UserCreatorID));
+        if (filter.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = filter.ExcludedOwnerIds;
+            query = query.Where(d => !excluded.Contains(d.UserCreatorID));
+        }
+        return query;
+    }
 
     public DealController(CRMContextDb db, UserManager<AppUser> userManager, DateTimeServices dtService, Service genService,
-        LogSystemService logSystemService, UserContextDb udb)
+        LogSystemService logSystemService, UserContextDb udb, IAccessScopeService accessScopes,
+        IConfiguration configuration)
     {
         this.db = db;
         this.userManager = userManager;
@@ -40,47 +76,57 @@ public class DealController : Controller {
         this.genService = genService;
         _logSystemService = logSystemService;
         this.udb = udb;
+        this.accessScopes = accessScopes;
+        this.configuration = configuration;
     }
 
-    [Authorize(Roles = "کارشناس فروش ,مدیر ارشد ,مدیر تامین ,مدیر فروش ,کارشناس تامین, مدیر عامل")]
-    public IActionResult Index()
+
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
+        if (Enforce)
+        {
+            if (await ScopeAsync("View", ct) == AccessScopes.None) return Forbid();
+        }
+        else if (!new[] { "کارشناس فروش", "مدیر ارشد", "مدیر تامین", "مدیر فروش",
+                          "کارشناس تامین", "مدیر عامل" }.Any(User.IsInRole))
+        {
+            return Forbid();
+        }
+
+        ViewBag.CanCreateDeal = await HasPermissionAsync("Create", ct);
+        ViewBag.DealPermissionsEnforced = Enforce;
         return View();
     }
 
 
-    public async Task<IActionResult> ToggleFinancialStatusDeal(Guid id, DealFinancialStausEnum status)
+    public async Task<IActionResult> ToggleFinancialStatusDeal(Guid id, DealFinancialStausEnum status, CancellationToken ct)
     {
-        try
-        {
-            var user = await userManager.GetUserAsync(HttpContext.User);
-            var deal = await db.Deals.FindAsync(id);
-            if (deal == null) return NotFound("رکوردی یافت نشد!");
+        if (!Enum.IsDefined(status)) return BadRequest();
+        if (!await HasPermissionAsync("ApproveFinancial", ct)) return Forbid();
+        var deal = await db.Deals.FirstOrDefaultAsync(d => d.Id == id, ct);
+        if (deal is null) return NotFound("رکوردی یافت نشد!");
+        if (!await CanAccessAsync("View", deal, ct)) return Forbid();
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user is null) return Unauthorized();
 
-            deal.FinancialStatus = status;
+        var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
+        deal.FinancialStatus = status;
+        deal.UserModify = user.FullName;
+        deal.UserModifyID = user.Id;
+        deal.ModifyDate = DateTime.Now;
+        deal.ModifyDateTxt = dtService.GetDateTimePersian();
 
-            deal.UserModify = user.FullName;
-            deal.UserModifyID = user.Id;
-            deal.ModifyDate = DateTime.Now;
-            deal.ModifyDateTxt = dtService.GetDateTimePersian();
-
-            var oldDeal = (Deal)db.Entry(deal).OriginalValues.ToObject();
-            var logAction = status == DealFinancialStausEnum.تایید_شده ? LogActionEnum.تایید_و_تغییر_وضعیت : LogActionEnum.رد_و_تغییر_وضعیت;
-            await _logSystemService.LogChange(oldDeal, deal, logAction, user);
-
-            await db.SaveChangesAsync();
-            return Ok();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
+        var logAction = status == DealFinancialStausEnum.تایید_شده
+            ? LogActionEnum.تایید_و_تغییر_وضعیت : LogActionEnum.رد_و_تغییر_وضعیت;
+        await _logSystemService.LogChange(oldDeal, deal, logAction, user);
+        await db.SaveChangesAsync(ct);
+        return Ok();
     }
 
     [HttpPost]
-    public async Task<IActionResult> GetAllDealsDt()
+    public async Task<IActionResult> GetAllDealsDt(CancellationToken ct)
     {
+        if (Enforce && await ScopeAsync("View", ct) == AccessScopes.None) return Forbid();
         var draw = Request.Form["draw"].FirstOrDefault();
         var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
         var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
@@ -92,6 +138,8 @@ public class DealController : Controller {
 
         var baseQuery = db.Deals.AsNoTracking()
             .Where(d => d.Status == DealStatusEnum.موفق);
+        if (Enforce)
+            baseQuery = ApplyOwnerFilter(baseQuery, await OwnerAccessAsync("View", ct));
 
         if (!string.IsNullOrEmpty(searchValue))
         {
@@ -169,17 +217,20 @@ public class DealController : Controller {
     {
         try
         {
+            if (Enforce && await ScopeAsync("View", HttpContext.RequestAborted) == AccessScopes.None)
+                return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
+            if (user is null) return Unauthorized();
             var roles = await userManager.GetRolesAsync(user);
 
             var query = db.Deals.Include(f => f.Customer).AsNoTracking().AsQueryable();
-            var isAdmin = true;
-
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش") && !roles.Contains("مدیر عامل"))
-            {
+            var isAdmin = Enforce
+                ? await HasPermissionAsync("Assign", HttpContext.RequestAborted)
+                : roles.Contains("مدیر ارشد") || roles.Contains("مدیر فروش") || roles.Contains("مدیر عامل");
+            if (Enforce)
+                query = ApplyOwnerFilter(query, await OwnerAccessAsync("View", HttpContext.RequestAborted));
+            else if (!isAdmin)
                 query = query.Where(f => f.UserCreatorID == user.Id);
-                isAdmin = false;
-            }
 
             if (!string.IsNullOrWhiteSpace(model?.EntityId))
             {
@@ -231,7 +282,7 @@ public class DealController : Controller {
             var users = await udb.Users.Where(f => f.IsEmployee).Select(f => new { f.Id, f.FirstName, f.LastName })
                 .ToDictionaryAsync(x => Guid.Parse(x.Id), x => x.FirstName + " " + x.LastName);
 
-            foreach (var item in deals.Where(item => item.Suspend))
+            foreach (var item in deals.Where(item => item.Suspend && isAdmin))
             {
                 var userList = await db.UserCustomers
                     .Where(f => f.CustomerId == item.CustomerId)
@@ -250,9 +301,21 @@ public class DealController : Controller {
                 item.UserIdsForSuspend = userList.DistinctBy(u => Guid.Parse(u.Id)).Reverse().ToList();
             }
 
+            var editAccess = await OwnerAccessAsync("Edit", HttpContext.RequestAborted);
+            var deleteAccess = await OwnerAccessAsync("Delete", HttpContext.RequestAborted);
+            var statusAccess = await OwnerAccessAsync("ChangeStatus", HttpContext.RequestAborted);
+            var permissionMap = deals.ToDictionary(d => d.Id.ToString(), d => new {
+                canEdit = editAccess.Allows(d.UserCreatorID) && d.FinancialStatus != DealFinancialStausEnum.تایید_شده,
+                canDelete = deleteAccess.Allows(d.UserCreatorID) && d.FinancialStatus != DealFinancialStausEnum.تایید_شده,
+                canChangeStatus = statusAccess.Allows(d.UserCreatorID),
+                canAssign = isAdmin
+            });
+
             return Ok(new {
                 items = new { open, success, failed },
-                isAdmin
+                isAdmin,
+                canCreate = await HasPermissionAsync("Create", HttpContext.RequestAborted),
+                permissionsByDeal = permissionMap
             });
         }
         catch (Exception)
@@ -325,6 +388,7 @@ public class DealController : Controller {
         {
             var deal = await db.Deals.FindAsync(id);
             if (deal == null) return NotFound("رکوردی یافت نشد!");
+            if (!await CanAccessAsync("View", deal, HttpContext.RequestAborted)) return Forbid();
 
             return Ok(deal);
         }
