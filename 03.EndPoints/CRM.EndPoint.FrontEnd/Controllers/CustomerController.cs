@@ -65,12 +65,15 @@ public sealed class CustomerController(
         !Enforce ? Task.FromResult(true) :
         accessScopes.CanAccessCustomerAsync(UserId, "Customer." + permission, personId, ct);
 
-    // Null means All; an explicit owner array is always enforced within SQL.
-    private async Task<Guid[]?> OwnerFilterAsync(byte scope, CancellationToken ct,
-        string permission = "View") => !Enforce || scope == AccessScopes.All ? null :
-        await accessScopes.GetAllowedCustomerOwnerIdsAsync(UserId, "Customer." + permission, ct);
+    // Exclusions always take priority over included assignments. Do not treat
+    // the AllExcept scope as an unrestricted All when building list queries.
+    private Task<CustomerOwnerAccess> OwnerFilterAsync(byte scope, CancellationToken ct,
+        string permission = "View") => !Enforce || scope == AccessScopes.All
+        ? Task.FromResult(new CustomerOwnerAccess(null, []))
+        : accessScopes.GetCustomerOwnerAccessAsync(UserId, "Customer." + permission, ct);
 
-    private bool? DirectoryReadAll(byte scope) => Enforce ? scope == AccessScopes.All : null;
+    private bool? DirectoryReadAll(byte scope) => Enforce
+        ? scope is AccessScopes.All or AccessScopes.AllExceptSelectedUsers : null;
 
     private async Task<bool> CanEditAllAsync(CancellationToken ct) =>
         !Enforce || await ScopeAsync("Edit", ct) == AccessScopes.All;
@@ -113,21 +116,27 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        return Ok(await requests.QueryAsync(new SearchCustomerOptionsQuery(search, roleType, await OwnerFilterAsync(scope, cancellationToken)), cancellationToken));
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        return Ok(await requests.QueryAsync(new SearchCustomerOptionsQuery(search, roleType,
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken));
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetSuppliers(CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        return Ok(await requests.QueryAsync(new GetCustomerSuppliersQuery(await OwnerFilterAsync(scope, cancellationToken)), cancellationToken));
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        return Ok(await requests.QueryAsync(new GetCustomerSuppliersQuery(
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken));
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpGet]
     public async Task<IActionResult> GetCustomerRel(Guid Id, CancellationToken cancellationToken)
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None || !await CanAccessAsync("View", Id, cancellationToken)) return Forbid();
-        var data = await requests.QueryAsync(new GetRelatedCustomersQuery(Id, await OwnerFilterAsync(scope, cancellationToken)), cancellationToken);
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        var data = await requests.QueryAsync(new GetRelatedCustomersQuery(Id,
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
         return data.Count == 0 ? Ok(null) : PartialView("DuplicatePartialDetail", data);
     }
     [HttpGet]
@@ -190,7 +199,9 @@ public sealed class CustomerController(
         if (scope == AccessScopes.None ||
             (Enforce && await ScopeAsync("Create", cancellationToken) == AccessScopes.None &&
                         await ScopeAsync("Edit", cancellationToken) == AccessScopes.None)) return Forbid();
-        var data = await requests.QueryAsync(new FindDuplicateCustomersQuery(model, await OwnerFilterAsync(scope, cancellationToken)), cancellationToken);
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        var data = await requests.QueryAsync(new FindDuplicateCustomersQuery(model,
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
         return data.Count == 0 ? Ok(null) : PartialView("DuplicatePartial", data);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
@@ -212,7 +223,9 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        var request = (await ReadTableAsync(cancellationToken)) with { AllowedOwnerIds = await OwnerFilterAsync(scope, cancellationToken) };
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        var request = (await ReadTableAsync(cancellationToken)) with {
+            AllowedOwnerIds = filter.AllowedOwnerIds, ExcludedOwnerIds = filter.ExcludedOwnerIds };
         return Ok(await requests.QueryAsync(new GetJuridicalCustomerTableQuery(request), cancellationToken));
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]
@@ -220,7 +233,9 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        var request = (await ReadTableAsync(cancellationToken)) with { AllowedOwnerIds = await OwnerFilterAsync(scope, cancellationToken) };
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        var request = (await ReadTableAsync(cancellationToken)) with {
+            AllowedOwnerIds = filter.AllowedOwnerIds, ExcludedOwnerIds = filter.ExcludedOwnerIds };
         return Ok(await requests.QueryAsync(new GetIndividualCustomerTableQuery(request), cancellationToken));
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
@@ -228,16 +243,20 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        var owners = await OwnerFilterAsync(scope, cancellationToken);
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
         var result = await requests.QueryAsync(new GetCustomerCardsQuery(skip, take, roleType, juridical,
-            DirectoryReadAll(scope), owners), cancellationToken);
+            DirectoryReadAll(scope), filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
         ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
         var editScope = await ScopeAsync("Edit", cancellationToken);
         var deleteScope = await ScopeAsync("Delete", cancellationToken);
         ViewBag.EditScope = editScope;
         ViewBag.DeleteScope = deleteScope;
-        ViewBag.EditOwnerIds = await OwnerFilterAsync(editScope, cancellationToken, "Edit");
-        ViewBag.DeleteOwnerIds = await OwnerFilterAsync(deleteScope, cancellationToken, "Delete");
+        var editOwners = await OwnerFilterAsync(editScope, cancellationToken, "Edit");
+        var deleteOwners = await OwnerFilterAsync(deleteScope, cancellationToken, "Delete");
+        ViewBag.EditOwnerIds = editOwners.AllowedOwnerIds;
+        ViewBag.EditExcludedOwnerIds = editOwners.ExcludedOwnerIds;
+        ViewBag.DeleteOwnerIds = deleteOwners.AllowedOwnerIds;
+        ViewBag.DeleteExcludedOwnerIds = deleteOwners.ExcludedOwnerIds;
         ViewBag.ScopeEnforced = Enforce;
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
@@ -256,16 +275,20 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        var owners = await OwnerFilterAsync(scope, cancellationToken);
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
         var result = await requests.QueryAsync(new SearchCustomerCardsQuery(val, roleType, juridical,
-            DirectoryReadAll(scope), owners), cancellationToken);
+            DirectoryReadAll(scope), filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken);
         ViewBag.AccessAccepte = Enforce ? await CanEditAllAsync(cancellationToken) : result.CanAccept;
         var editScope = await ScopeAsync("Edit", cancellationToken);
         var deleteScope = await ScopeAsync("Delete", cancellationToken);
         ViewBag.EditScope = editScope;
         ViewBag.DeleteScope = deleteScope;
-        ViewBag.EditOwnerIds = await OwnerFilterAsync(editScope, cancellationToken, "Edit");
-        ViewBag.DeleteOwnerIds = await OwnerFilterAsync(deleteScope, cancellationToken, "Delete");
+        var editOwners = await OwnerFilterAsync(editScope, cancellationToken, "Edit");
+        var deleteOwners = await OwnerFilterAsync(deleteScope, cancellationToken, "Delete");
+        ViewBag.EditOwnerIds = editOwners.AllowedOwnerIds;
+        ViewBag.EditExcludedOwnerIds = editOwners.ExcludedOwnerIds;
+        ViewBag.DeleteOwnerIds = deleteOwners.AllowedOwnerIds;
+        ViewBag.DeleteExcludedOwnerIds = deleteOwners.ExcludedOwnerIds;
         ViewBag.ScopeEnforced = Enforce;
         return PartialView("GetAllCustomerPartial", result.Customers);
     }
@@ -274,7 +297,9 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        return Ok(await requests.QueryAsync(new GetCustomerSummariesQuery(await OwnerFilterAsync(scope, cancellationToken)), cancellationToken));
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        return Ok(await requests.QueryAsync(new GetCustomerSummariesQuery(
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken));
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
     public async Task<IActionResult> GetCustomer(Guid id, CancellationToken cancellationToken)
@@ -354,7 +379,9 @@ public sealed class CustomerController(
     {
         var scope = await ScopeAsync("View", cancellationToken);
         if (scope == AccessScopes.None) return Forbid();
-        return Ok(await requests.QueryAsync(new GetCustomerPhonebookQuery(search, await OwnerFilterAsync(scope, cancellationToken)), cancellationToken));
+        var filter = await OwnerFilterAsync(scope, cancellationToken);
+        return Ok(await requests.QueryAsync(new GetCustomerPhonebookQuery(search,
+            filter.AllowedOwnerIds, filter.ExcludedOwnerIds), cancellationToken));
     }
 
     private async Task<IActionResult> Mutation(Task<CustomerMutationResult> operation, CancellationToken cancellationToken)
