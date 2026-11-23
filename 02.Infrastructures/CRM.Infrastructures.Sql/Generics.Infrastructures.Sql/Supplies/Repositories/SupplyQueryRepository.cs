@@ -102,9 +102,10 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
         var sourceProductId = await db.SupplyFactorItemAllocations
             .Where(a => a.Id == excludedAllocationId && a.SupplyFactorItemId == supplyFactorItemId).Select(a => a.SourceWarehouseProductId)
             .FirstOrDefaultAsync(cancellationToken);
+        var visibleFactors = await access.FactorsAsync(db.Factors.AsNoTracking(), "View", cancellationToken);
         var query =
             from i in db.FactorItems.AsNoTracking()
-            join f in db.Factors.AsNoTracking() on i.factorId equals f.Id
+            join f in visibleFactors on i.factorId equals f.Id
             where i.Unit == unit
             select new {
                 i.Id,
@@ -216,9 +217,10 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
         var unit = (UnitTypeEnums)sales.Unit;
         search = search?.Trim();
         var excludedId = allocationId ?? Guid.Empty;
+        var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", cancellationToken);
         var query =
             from i in db.SupplyFactorItems.AsNoTracking()
-            join f in db.SupplyFactors.AsNoTracking() on i.SupplyFactorId equals f.Id
+            join f in visibleSupplyFactors on i.SupplyFactorId equals f.Id
             where i.Unit == unit && !db.SupplyFactorItemAllocations.Any(a =>
                 a.FactorItemId == factorItemId && a.SupplyFactorItemId == i.Id && a.SourceWarehouseProductId == null && a.Id != excludedId)
             select new {
@@ -246,7 +248,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
         var inventory =
             from p in db.WarehouseProducts.AsNoTracking()
             join si in db.SupplyFactorItems on p.SupplyFactorItemId equals si.Id
-            join sf in db.SupplyFactors on si.SupplyFactorId equals sf.Id
+            join sf in visibleSupplyFactors on si.SupplyFactorId equals sf.Id
             join w in db.Warehouses on p.WarehouseId equals w.Id
             where p.Unit == unit && si.Unit == unit &&
                   ((w.Id == SupplyAllocationRules.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات) ||
