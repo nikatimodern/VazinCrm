@@ -296,12 +296,6 @@ const getAllCashesDt = () => {
             data: (d) => {
                 d.model = JSON.stringify(modelCash);
             },
-            dataSrc: function (json) {
-                cashTbl.column(1).visible(window.isAdminOrFinancial);
-                cashTbl.settings()[0].aoColumns[1].bSearchable = window.isAdminOrFinancial;
-                // initCashierBalanceUI(json.cashierBalance);
-                return json.data;
-            },
         },
         language: languageDatatable,
         columnDefs: [
@@ -309,7 +303,11 @@ const getAllCashesDt = () => {
         ],
         columns: [
             { data: "serial", responsivePriority: 1 },
-            { data: "cashGroup.groupNumber" },
+            {
+                data: "cashGroup.groupNumber",
+                visible: window.isAdminOrFinancial,
+                searchable: window.isAdminOrFinancial,
+            },
             { data: "createDateTxt", render: renderDateTimeHtml },
             { data: "costTitleTxt", responsivePriority: 2 },
             { data: "costCenterTxt", responsivePriority: 3 },
