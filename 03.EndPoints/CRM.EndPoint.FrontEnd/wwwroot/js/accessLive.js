@@ -184,10 +184,13 @@
     const workspace = document.getElementById("mainContent");
     if (workspace) {
         let lastPage = workspace.querySelector("[data-page-root]");
+        let lastPageKey = lastPage?.dataset.pageKey;
         new MutationObserver(() => {
             const page = workspace.querySelector("[data-page-root]");
-            if (page === lastPage) return;
+            const currentKey = page?.dataset.pageKey;
+            if (page === lastPage && currentKey === lastPageKey) return;
             lastPage = page;
+            lastPageKey = currentKey;
             formDirty = false;
             editorLocked = false;
             accessBanner?.remove();
