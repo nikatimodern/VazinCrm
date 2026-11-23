@@ -63,7 +63,16 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
         if (!await documentAccess.CanAsync("BankAccount", "View", model.FromAccountId, ct) ||
             !await documentAccess.CanAsync("BankAccount", "View", model.ToAccountId, ct)) return false;
         foreach (var link in model.PaymentSupplyFactors ?? [])
+        {
             if (!await documentAccess.CanAsync("SupplyFactor", "View", link.SupplyFactorId, ct)) return false;
+            link.PaymentId = model.Id;
+        }
+        if (!create)
+        {
+            var previousIds = await db.PaymentSupplyFactors.AsNoTracking().Where(x => x.PaymentId == model.Id).Select(x => x.SupplyFactorId).ToListAsync(ct);
+            foreach (var id in previousIds)
+                if (!await documentAccess.CanAsync("SupplyFactor", "View", id, ct)) return false;
+        }
         if (documentAccess.IsEnforced("Payment"))
         {
             // Request-linked payments must use the request payment workflow.
