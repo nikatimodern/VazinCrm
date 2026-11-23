@@ -46,7 +46,7 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             return AccessScopes.IsOverrideGrant(custom.Scope) &&
                    (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
                    (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) ||
-                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor")
+                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy")
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -114,7 +114,11 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
     public Task<DealOwnerAccess> GetDocumentOwnerAccessAsync(
         string userId, string permissionKey, CancellationToken ct) =>
         permissionKey.StartsWith("PreFactor.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Factor.", StringComparison.Ordinal)
+        permissionKey.StartsWith("Factor.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("OrderHead.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Supply.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("SupplyFactor.", StringComparison.Ordinal) ||
+        permissionKey.StartsWith("Accountancy.", StringComparison.Ordinal)
             ? GetSingleOwnerAccessAsync(userId, permissionKey, ct)
             : Task.FromResult(new DealOwnerAccess([], []));
 
