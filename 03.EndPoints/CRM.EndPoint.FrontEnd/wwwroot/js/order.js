@@ -9,6 +9,7 @@ let currentStepCreateOrderModal = 1;
 let newTabCount = 1;
 
 const showModalCreateOrder = async (type, pfId, cusId, dealId, dealSerialNumber) => {
+    if (window.AccessLive?.can("OrderHead", "create") === false) { toastifyError("مجوز این عملیات روی حواله را ندارید."); return; }
     submitOrderPfId = pfId;
     submitOrderCusId = cusId;
     submitOrderDealId = dealId;
@@ -480,6 +481,7 @@ const submitOrder = async () => {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 let pfItemsNotInOrders;
 const ShowUpdateHeadOrder = async (id, passType, dealId) => {
+    if (window.AccessLive?.can("OrderHead", "edit") === false) { toastifyError("مجوز این عملیات روی حواله را ندارید."); return; }
     submitOrderDealId = dealId;
     FLshowLoading();
     const data = (await axios(`/Order/GetHeadOrder/${id}`)).data;
@@ -558,6 +560,7 @@ async function isSMSNotificationConfirmed() {
 }
 
 async function changeStatusHd(id, status, sourceStatus, passType, fromDrop = false, draggedItem = null, sourceColumn = null) {
+    if (window.AccessLive?.can("OrderHead", "changeStatus") === false) { toastifyError("مجوز این عملیات روی حواله را ندارید."); return; }
     let sendSms = false;
     if (status === 3 && sourceStatus !== 4) {
         sendSms = await isSMSNotificationConfirmed();
@@ -623,6 +626,7 @@ const DelHeadOrderItem = (id, passType) => {
 };
 
 const DelHeadOrderItemOk = async (id, passType) => {
+    if (window.AccessLive?.can("OrderHead", "delete") === false) { toastifyError("مجوز این عملیات روی حواله را ندارید."); return; }
     $("#FLshowLoading").css("display", "");
     axios(`/Order/DelOrderHead/${id}`).then(async (res) => {
         if (res.status === 200) {
