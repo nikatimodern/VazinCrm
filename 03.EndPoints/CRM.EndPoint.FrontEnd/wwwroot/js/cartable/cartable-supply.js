@@ -183,6 +183,7 @@ const submitSupplyModal = async () => {
 let hasSupplyAmountSetting;
 let hasSupplySetting;
 async function showSetSupplyModal(pfId, hasSupplyAmount = true, hasSupply = true) {
+    if (window.AccessLive?.can("Supply", "view") === false) { toastifyError("مجوز مشاهده بهای تأمین را ندارید."); return; }
     hasSupplyAmountSetting = hasSupplyAmount;
     hasSupplySetting = hasSupply;
     const [pFactorData, supplyData] = await Promise.all([getPreFactor(pfId), getSuppliesByPfId(pfId)]);
@@ -749,6 +750,11 @@ function createSetAmountTaminWaste(wasteItems) {
 
 const submitAmountTaminModal = async () => {
     const model = [...suppliesData.flat(), ...supplyItemsExtra, ...supplyItemsWaste];
+    if (window.AccessLive && model.some(item => !window.AccessLive.can("Supply",
+        item.id && item.id !== "00000000-0000-0000-0000-000000000000" ? (item.isDeleted ? "delete" : "edit") : "create"))) {
+        toastifyError("مجوز ثبت تغییرات بهای تأمین را ندارید.");
+        return false;
+    }
     /*if (!suppliesData.every(arr => arr.some(x => !x.isDeleted))) {
         toastifyError("لطفا اطلاعات همه آیتم‌ها را وارد کنید.");
         return false;
