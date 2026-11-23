@@ -24,7 +24,7 @@ public sealed class AccountancyRepository(CRMContextDb db, CRM.Core.Domain.Acces
     public Task<List<Attachment>> GetAttachmentsAsync(Guid id, CancellationToken ct) => db.Attachments.AsNoTracking().Where(a => a.EntityId == id).ToListAsync(ct);
     public Task<PreFactor?> GetPreFactorAsync(Guid? id, CancellationToken ct) => db.PreFactors.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
     public async Task<List<Accountancy>> GetWalletAsync(Guid customerId, CancellationToken ct) => await (await access.ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct)).ForCustomer(customerId).NotVosoled().Where(a => a.Wallet && a.PayType != PayTypeEnum.انتقال && a.AccType == AcEnum.واریزی).ToListAsync(ct);
-    public Task<List<BankAccount>> GetBankAccountsAsync(BankAccountTypeEnum? type, CancellationToken ct) => db.BankAccounts.AsNoTracking().Where(b => !type.HasValue || b.BankAccountType == type).OrderBy(b => b.AccountName).ToListAsync(ct);
+    public async Task<List<BankAccount>> GetBankAccountsAsync(BankAccountTypeEnum? type, CancellationToken ct) => await (await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct)).Where(b => !type.HasValue || b.BankAccountType == type).OrderBy(b => b.AccountName).ToListAsync(ct);
     public Task<BankAccount?> GetBankAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.BankAccounts : db.BankAccounts.AsNoTracking()).FirstOrDefaultAsync(b => b.Id == id, ct);
     public Task<List<Accountancy>> GetPendingAsync(Guid pfId, CancellationToken ct) => db.Accountancies.ForPreFactor(pfId).Where(a => a.Status == AccStatusEnum.ثبت_اولیه || a.Status == AccStatusEnum.رد_شده).ToListAsync(ct);
     public Task<AccountancyTransfer?> GetTransferAsync(Guid accountancyId, CancellationToken ct) => db.AccountancyTransfers.AsNoTracking().FirstOrDefaultAsync(x => x.AccountancyId == accountancyId, ct);
@@ -290,8 +290,8 @@ public sealed class AccountancyRepository(CRMContextDb db, CRM.Core.Domain.Acces
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var recordsTotal = await db.BankAccounts.CountAsync(ct);
-        var dataF = db.BankAccounts.AsQueryable();
+        var dataF = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
+        var recordsTotal = await dataF.CountAsync(ct);
         if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
         {
             if (sortColumnDirection == "asc")
