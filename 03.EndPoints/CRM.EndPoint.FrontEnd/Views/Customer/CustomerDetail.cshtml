@@ -136,13 +136,15 @@
             <div class="d-flex flex-column">
                 <div class="fbold d-flex gap-1">
                     <span>کارشناسانی که با این مشتری در ارتباط هستند:</span>
+                    @if (ViewBag.CanManageExperts == true) {
                     <div type="button" id="addExpertsBtn" class="mx-2" data-bs-toggle="modal" data-bs-target="#expertsModal" onclick="">
                         <i class="fa fa-plus"></i>
                     </div>
+                    }
                 </div>
 
                 <div class="InfoData" style="width:100%;">
-                    <div id="selContentId" style="display:flex; gap:4px ">
+                    <div id="selContentId" data-can-manage="@((ViewBag.CanManageExperts == true).ToString().ToLowerInvariant())" style="display:flex; gap:4px ">
                     </div>
                 </div>
             </div>

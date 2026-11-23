@@ -424,7 +424,7 @@ public class DealController : Controller {
                         return Conflict("مشتری سفارش دارای پیش‌فاکتور قابل تغییر نیست.");
                 }
             }
-            if (CustomerEnforce && model.CustomerId.HasValue &&
+            if ((Enforce || CustomerEnforce) && model.CustomerId.HasValue &&
                 !await accessScopes.CanAccessCustomerAsync(CurrentUserId, "Customer.View",
                     model.CustomerId.Value, ct)) return Forbid();
             if (model.CustomerId == null && db.Customers.Any(f => f.Mobile == model.MobileNumber))
@@ -453,7 +453,7 @@ public class DealController : Controller {
             // Deal.Create/Edit does not implicitly grant Customer.Edit.
             // Keep the linked person's fields unchanged when that grant is absent.
             var canEditCustomer = customer != null &&
-                (!CustomerEnforce || await accessScopes.CanAccessCustomerAsync(
+                (!(Enforce || CustomerEnforce) || await accessScopes.CanAccessCustomerAsync(
                     CurrentUserId, "Customer.Edit", customer.Id, ct));
             if (canEditCustomer)
             {
@@ -651,6 +651,11 @@ public class DealController : Controller {
             var oldDealForLog = (Deal)db.Entry(deal).OriginalValues.ToObject();
             if (string.Equals(deal.UserCreatorID, userId.ToString(), StringComparison.OrdinalIgnoreCase))
             {
+                // Assigning a customer-owner relation is a Customer.ManageExperts
+                // operation as well as Deal.Assign; never smuggle it through Deal.
+                if (Enforce && await accessScopes.GetEffectiveScopeAsync(CurrentUserId,
+                        "Customer.ManageExperts", HttpContext.RequestAborted) != AccessScopes.All)
+                    return Forbid();
                 var customerId = (Guid)deal.CustomerId;
                 var exists = await db.UserCustomers
                     .AnyAsync(x => x.UserId == userId && x.CustomerId == customerId);

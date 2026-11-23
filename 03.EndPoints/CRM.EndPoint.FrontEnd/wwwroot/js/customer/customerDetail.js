@@ -93,13 +93,14 @@ const getCustomerSelRelation = async () => {
     
     const content = document.getElementById("selContentId");
     
+    const canManage = content.dataset.canManage === "true";
     content.innerHTML = `
         <div class="w-100 d-flex flex-wrap gap-1">
             ${userRel.map(item => `
                 <label class="fbold flex-center gap-2 px-3 rounded-4" style="border: 2px solid #02514C">
-                    <button onclick="delUser('${item.id}', '${custId}')" class="flex-center">
+                    ${canManage ? `<button onclick="delUser('${item.id}', '${custId}')" class="flex-center">
                         <svg style="width: 16px" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
-                    </button>
+                    </button>` : ""}
 
                     ${item.fullName}
                 </label>

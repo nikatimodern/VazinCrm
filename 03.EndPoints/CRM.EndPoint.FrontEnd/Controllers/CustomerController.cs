@@ -164,6 +164,7 @@ public sealed class CustomerController(
         var data = await requests.QueryAsync(new GetCustomerDetailQuery(id), cancellationToken);
         if (id == Guid.Empty) return BadRequest();
         ViewBag.CustomerId = id;
+        ViewBag.CanManageExperts = await HasPermissionAsync("ManageExperts", cancellationToken);
         return View(data);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost, ValidateAntiForgeryToken]
@@ -346,13 +347,14 @@ public sealed class CustomerController(
     public async Task<IActionResult> GetAllPreFactorPartial(Guid? customerId, Guid? dealId, bool showDeleted = false, CancellationToken cancellationToken = default)
     {
         Guid? requiredCustomerId = null;
+        // Deal ownership is independent of Customer.View. Reject a forged Deal ID
+        // even when the person directory rollout flag is not yet enabled.
+        if (dealId.HasValue && configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
+            !await accessScopes.CanAccessDealAsync(UserId, "Deal.View", dealId.Value, cancellationToken))
+            return Forbid();
         if (Enforce)
         {
             if (!customerId.HasValue && !dealId.HasValue) return BadRequest();
-            // A Deal ID must not bypass Deal.View through the Customer endpoint.
-            if (dealId.HasValue && configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
-                !await accessScopes.CanAccessDealAsync(UserId, "Deal.View", dealId.Value, cancellationToken))
-                return Forbid();
             // The query prioritizes DealId; never trust a different CustomerId passed alongside it.
             var personId = dealId.HasValue ? await customers.GetDealCustomerIdAsync(dealId.Value, cancellationToken) : customerId;
             if (!personId.HasValue || (customerId.HasValue && customerId != personId) ||
