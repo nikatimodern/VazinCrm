@@ -114,7 +114,7 @@
             window.history.replaceState(window.history.state, "", destination.pathname + destination.search + destination.hash);
             notice.querySelector("[data-dismiss-access-notice]")?.addEventListener("click",
                 () => notice.remove(), { once: true });
-            setTimeout(() => notice.remove(), 7000);
+            setTimeout(() => notice.remove(), 14000);
         })();
     </script>
     <script src="~/js/dashboardLoading.js?release=7.5.6" data-page-bindings="dashboardLoading" asp-append-version="true"></script>
