@@ -41,12 +41,15 @@ using CRM.Core.Domain.Supplies.Models;
 using CRM.EndPoint.FrontEnd.Models;
 using GetAllBySelectedVModel = CRM.EndPoint.FrontEnd.Models.Supply.GetAllBySelectedVModel;
 using Microsoft.AspNetCore.Authorization;
+using CRM.EndPoint.FrontEnd.Security;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public partial class SupplyController(ICqrsDispatcher requests) : Controller
+public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPolicy documentAccess, CRMContextDb db) : Controller
 {
     private const string SalesAllocationRoles = "مدیر تامین,کارشناس تامین,مدیر ارشد,مدیر اجرایی,مدیر عامل,مدیر مالی,کارشناس مالی,مدیر فروش,کارشناس فروش";
     public class SupplyFactorAllocationRequest : CRM.Core.Domain.Supplies.Models.SupplyFactorAllocationRequest
@@ -79,6 +82,7 @@ public partial class SupplyController(ICqrsDispatcher requests) : Controller
     [Authorize(Roles = SalesAllocationRoles)]
     public async Task<IActionResult> GetSalesFactorAllocations(Guid id, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.CanAsync("Factor", "View", id, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSalesFactorAllocationsQuery(id), cancellationToken));
     }
 
@@ -141,6 +145,7 @@ public partial class SupplyController(ICqrsDispatcher requests) : Controller
     [HttpGet]
     public async Task<IActionResult> GetSupplies(Guid pfId, CancellationToken cancellationToken = default)
     {
+        if (!await documentAccess.CanAsync("PreFactor", "View", pfId, cancellationToken)) return Forbid();
         return Map(await requests.QueryAsync(new GetSuppliesQuery(pfId), cancellationToken));
     }
 
@@ -300,6 +305,19 @@ public partial class SupplyController(ICqrsDispatcher requests) : Controller
     {
         if (!ModelState.IsValid)
             return BadRequest();
+        if (documentAccess.IsEnforced("PreFactor"))
+        {
+            if (model == null || model.Count == 0) return BadRequest();
+            foreach (var pfId in model.Select(x => x.PfId).Distinct())
+                if (!await documentAccess.CanAsync("PreFactor", "EditSupply", pfId, cancellationToken)) return Forbid();
+            foreach (var item in model.Where(x => x.Id != Guid.Empty))
+            {
+                var old = await db.Supplies.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(x => x.Id == item.Id, cancellationToken);
+                if (old == null || old.PfId != item.PfId) return Forbid();
+            }
+            foreach (var item in model.Where(x => x.PfItemId.HasValue))
+                if (!await db.PreFactorItems.AsNoTracking().AnyAsync(x => x.Id == item.PfItemId && x.PrefactorId == item.PfId, cancellationToken)) return Forbid();
+        }
         return Map(await requests.CommandAsync(new AddSupplyCommand(model), cancellationToken));
     }
 
