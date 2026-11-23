@@ -1,4 +1,4 @@
-﻿using CRM.Core.Domain;
+using CRM.Core.Domain;
 using CRM.EndPoint.FrontEnd.Security;
 using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.Accountancies.Entities;
@@ -2510,6 +2510,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     model.ReturnFromPftype = persisted.ReturnFromPftype;
                 }
                 // Do not attach an existing record belonging to another document.
+                model.Deal = null;
+                model.CustomerEntity = null;
+                model.Factors = null;
+                var descriptionIds = model.Descriptions?.Where(x => x.Id.HasValue && x.Id.Value > 0).Select(x => x.Id.Value).Distinct().ToArray() ?? Array.Empty<int>();
+                if (await db.PreFactorDescriptions.IgnoreQueryFilters().AsNoTracking().AnyAsync(x =>
+                    x.Id.HasValue && descriptionIds.Contains(x.Id.Value) && x.PrefactorId != model.Id, AccessCt)) return Forbid();
                 if (model.PreFactorItems == null) return BadRequest();
                 var existingItemIds = model.PreFactorItems.Where(x => x.Id != Guid.Empty).Select(x => x.Id).Distinct().ToArray();
                 if (await db.PreFactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
@@ -2713,6 +2719,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 if (model.ParentReturnedId.HasValue && !await CanF("Edit", model.ParentReturnedId.Value)) return Forbid();
                 if (unlinkSepidar && !await HasDocument("Factor", "EditFinancial")) return Forbid();
+                model.Deal = null;
+                var descriptionIds = model.Descriptions?.Where(x => x.Id.HasValue && x.Id.Value > 0).Select(x => x.Id.Value).Distinct().ToArray() ?? Array.Empty<int>();
+                if (await db.FactorDescriptions.IgnoreQueryFilters().AsNoTracking().AnyAsync(x =>
+                    x.Id.HasValue && descriptionIds.Contains(x.Id.Value) && x.factorId != model.Id, AccessCt)) return Forbid();
                 if (model.FactorItems == null) return BadRequest();
                 var existingItemIds = model.FactorItems.Where(x => x.Id != Guid.Empty).Select(x => x.Id).Distinct().ToArray();
                 if (await db.FactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
