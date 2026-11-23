@@ -1,4 +1,5 @@
-﻿@using CRM.Core.Domain.Accountancies.Enum
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@using CRM.Core.Domain.Accountancies.Enum
 @using CRM.Core.Domain.Deals.Enums
 
 @model CRM.EndPoint.FrontEnd.Models.Accountancy.PaymentPartialVModel
@@ -47,6 +48,13 @@
                  ((Model.IsManagingDirector || Model.IsTamin) && item.PayType == PayTypeEnum.تهاتری) ||
                  (Model.IsManagingDirector && item.PayType == PayTypeEnum.اعتباری));
 
+            var canDelete = await DocumentAccess.AllowsRowAsync(item, "Delete", Context.RequestAborted);
+            var canSend = await DocumentAccess.AllowsRowAsync(item, "ChangeStatus", Context.RequestAborted);
+            canEdit = canEdit && await DocumentAccess.AllowsRowAsync(item, "Edit", Context.RequestAborted);
+            canVosol = canVosol && await DocumentAccess.AllowsRowAsync(item, "Settle", Context.RequestAborted);
+            canTransfer = canTransfer && await DocumentAccess.AllowsRowAsync(item, "Transfer", Context.RequestAborted);
+            canApproveOrReject = canApproveOrReject && await DocumentAccess.AllowsRowAsync(item, "Approve", Context.RequestAborted);
+
             var statusColor = item.Status switch {
                 AccStatusEnum.ثبت_اولیه => "#777",
                 AccStatusEnum.در_دست_تایید => "#CC9900",
@@ -83,7 +91,7 @@
                         } else if (canViewActions) {
                             <span class="inline-flex-center gap-2">
                                 @if (canEdit) {
-                                    <button class="inline-flex-center" data-title-right="حذف" style="color:var(--DarkColor)" onclick="delPayment('@item.Id')">
+                                    <button hidden="@(!canDelete)" data-document-permission="Accountancy.Delete" class="inline-flex-center" data-title-right="حذف" style="color:var(--DarkColor)" onclick="delPayment('@item.Id')">
                                         <i class="fa fa-trash"></i>
                                     </button>
 
@@ -130,7 +138,7 @@
                             switch (item.Status) {
                                 case AccStatusEnum.ثبت_اولیه:
                                     if (canManage) {
-                                        <button class="buttonGreen2" onclick="changeStatusAcc('@item.Id')">ارسال به مالی</button>
+                                        <button hidden="@(!canSend)" data-document-permission="Accountancy.ChangeStatus" class="buttonGreen2" onclick="changeStatusAcc('@item.Id')">ارسال به مالی</button>
                                     } else {
                                         <span class="fbold" style="color: @statusColor">@item.StatusTxt</span>
                                     }
@@ -181,7 +189,7 @@
                                 case AccStatusEnum.رد_شده:
                                     <span class="fbold" style="color: @statusColor">@item.StatusTxt</span>
                                     if (canManage) {
-                                        <button class="buttonGreen2" onclick="changeStatusAcc('@item.Id')">ارسال به مالی</button>
+                                        <button hidden="@(!canSend)" data-document-permission="Accountancy.ChangeStatus" class="buttonGreen2" onclick="changeStatusAcc('@item.Id')">ارسال به مالی</button>
                                     }
 
                                     break;
