@@ -149,6 +149,41 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             (documentAccess.IsEnforced("PreFactor") ? await HasDocument("PreFactor", "ExportExternal") : HasLegacyRole(FinancialExportRoles)) ||
             (documentAccess.IsEnforced("Factor") ? await HasDocument("Factor", "ExportExternal") : HasLegacyRole(FinancialExportRoles));
 
+        private async Task<bool> CanWriteAccountancyAsync(Accountancy row)
+        {
+            if (!documentAccess.IsEnforced("Accountancy")) return true;
+            if (row == null) return false;
+            if (row.Id == Guid.Empty)
+            {
+                if (!await documentAccess.HasAsync("Accountancy", "Create", AccessCt)) return false;
+                row.IsDeleted = false;
+                row.FirstAcc = false;
+                row.Vosoled = false;
+                row.Accepted = null;
+                row.AcceptedUser = null;
+                row.AcceptedUserId = null;
+                row.Status = AccStatusEnum.ثبت_اولیه;
+                row.AccountancyTransfer = null;
+                row.Deal = null;
+                if (row.ParentId.HasValue && !await documentAccess.CanAsync("Accountancy", "Settle", row.ParentId.Value, AccessCt)) return false;
+                if (row.CustomerId.HasValue && !await CanLinkedCustomerAsync(row.CustomerId.Value)) return false;
+            }
+            else
+            {
+                if (!await documentAccess.CanAsync("Accountancy", "Edit", row.Id, AccessCt)) return false;
+                var old = await db.Accountancies.AsNoTracking().SingleOrDefaultAsync(x => x.Id == row.Id, AccessCt);
+                if (old == null || old.FirstAcc || old.Vosoled || old.Status == AccStatusEnum.تایید_شده) return false;
+                row.pfid = old.pfid;
+                row.fid = old.fid;
+                row.CustomerId = old.CustomerId;
+                row.DealId = old.DealId;
+                row.InvoiceType = old.InvoiceType;
+                row.ParentId = old.ParentId;
+                row.AccType = old.AccType;
+            }
+            return await CanReadInvoiceReferenceAsync(row.pfid, row.fid);
+        }
+
         private async Task<bool> CanReadInvoiceReferenceAsync(Guid? pfId, Guid? factorId)
         {
             if (pfId.HasValue && !await CanPf("View", pfId.Value)) return false;
@@ -1659,6 +1694,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt)
         {
             if (model == null) return BadRequest();
+            if (!await CanWriteAccountancyAsync(model)) return Forbid();
+            if (documentAccess.IsEnforced("Accountancy") && ListAtt != null)
+                foreach (var attachment in ListAtt.Where(x => x.Id != Guid.Empty))
+                    if (!await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == attachment.Id && x.EntityId == model.Id, AccessCt)) return Forbid();
             if (!await CanReadInvoiceReferenceAsync(model.pfid, model.fid)) return Forbid();
             using var transAction = db.Database.BeginTransaction(); //شروع
             try
@@ -1750,6 +1789,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model)
         {
+            if (model == null) return BadRequest();
+            if (!await documentAccess.CanAsync("Accountancy", "Settle", model.Id, AccessCt)) return Forbid();
             var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
             if (item == null) return NotFound();
             if (!await CanReadInvoiceReferenceAsync(item.pfid, item.fid)) return Forbid();
@@ -1772,6 +1813,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model)
         {
             if (model?.AccData == null) return BadRequest();
+            if (!await CanWriteAccountancyAsync(model.AccData)) return Forbid();
+            if (documentAccess.IsEnforced("Accountancy") && model.ListAttach != null)
+                foreach (var attachment in model.ListAttach.Where(x => x.Id != Guid.Empty))
+                    if (!await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == attachment.Id && x.EntityId == model.AccData.Id, AccessCt)) return Forbid();
             if (!await CanReadInvoiceReferenceAsync(model.AccData.pfid, model.AccData.fid)) return Forbid();
             if (model?.AccData == null) return BadRequest();
             await using var transAction = await db.Database.BeginTransactionAsync(); //شروع
