@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Cartables.Repositories;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
@@ -19,11 +20,12 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.ASettings.Enums;
 
 namespace CRM.Infrastructures.Sql.Cartables.Repositories;
-public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
+public sealed class CartableRepository(CRMContextDb db, IDocumentReadAccess access) : ICartableRepository
 {
     public Task<ASetting?> GetSettingsAsync(CancellationToken ct) => db.ASettings.AsNoTracking().FirstOrDefaultAsync(ct);
     public Task<int> GetUnreadChatsAsync(string userId, CancellationToken ct) => db.MainChats.Where(f => f.ToUserId == userId || f.FromUserId == userId).SumAsync(f => f.Chats.Count(c => !c.Read && c.UserCreatorID != userId), ct);
-    public Task<List<PreFactor>> GetOwnPreFactorsAsync(string userId, CancellationToken ct) => db.PreFactors.AsNoTracking().Where(f => f.UserCreatorID == userId).ToListAsync(ct);
+    public async Task<List<PreFactor>> GetOwnPreFactorsAsync(string userId, CancellationToken ct) =>
+        await (await access.PreFactorsAsync(db.PreFactors.AsNoTracking().Where(f => f.UserCreatorID == userId), "View", ct)).ToListAsync(ct);
     public Task<List<Factor>?> GetModalFactorsAsync(Guid id, int type, CancellationToken ct) => type switch
     {
         4 => Read(db.Factors.Where(f => f.DealId == id), ct),
@@ -33,7 +35,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
         _ => Task.FromResult<List<Factor>?>(null)};
     private async Task<List<Factor>?> Read(IQueryable<Factor> query, CancellationToken ct)
     {
-        var factors = await query.AsNoTracking().ToListAsync(ct);
+        var factors = await (await access.FactorsAsync(query.AsNoTracking(), "View", ct)).ToListAsync(ct);
         await FillExternalFinancialMappingStateAsync(factors, ct);
         return factors;
     }
@@ -59,7 +61,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
     }
     public async Task<IList<PreFactor>> GetPreFactorsAsync(QueryFilter filter, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
-        var pListQ = db.PreFactors.Include(p => p.Deal).Include(p => p.CustomerEntity).OrderByDescending(p => p.DateMiladi).ThenByDescending(p => p.CreateDate).AsQueryable();
+        var pListQ = await access.PreFactorsAsync(db.PreFactors.Include(p => p.Deal).Include(p => p.CustomerEntity).OrderByDescending(p => p.DateMiladi).ThenByDescending(p => p.CreateDate), "View", ct);
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var ser = filter.Search;
@@ -72,7 +74,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
             pListQ = pListQ.ApplyFilter(filter, f => f.CustomerId, f => f.DateMiladi, f => f.UserCreatorID);
         }
 
-        if (!scope.ReadAll)
+        if (!access.IsEnforced("PreFactor") && !scope.ReadAll)
         {
             pListQ = pListQ.Where(f => f.UserCreatorID == scope.UserId);
         }
@@ -94,7 +96,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<IList<Factor>> GetFactorsAsync(QueryFilter filter, Guid? customerId, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
-        var fListQ = db.Factors.AsQueryable();
+        var fListQ = await access.FactorsAsync(db.Factors.AsQueryable(), "View", ct);
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var ser = filter.Search;
@@ -102,7 +104,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
             fListQ = fListQ.Where(s => EF.Functions.Like(s.AgentName, "%" + ser + "%") || EF.Functions.Like(s.Customer, "%" + ser + "%") || s.SerialNumber == serNum || s.CustomerCode == serNum || s.SnFinancial == ser);
         }
 
-        if (!scope.ReadAll)
+        if (!access.IsEnforced("Factor") && !scope.ReadAll)
         {
             fListQ = fListQ.Where(f => f.SelerId == scope.UserId);
         }
@@ -141,7 +143,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableSupplyData> GetSupplyAsync(string? search, int type, CartableReadScope scope, int searchNumber, CancellationToken ct)
     {
-        var queryBase = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
+        var queryBase = await access.PreFactorsAsync(db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable(), "View", ct);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
@@ -151,7 +153,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
                 s.SerialNumber == serialVal ||
                 (serialVal > 0 && db.OrderHeads.Any(order => order.Prefactor == s.Id && order.OrderNumber == serialVal)));
         }
-        else if (!scope.SupplyAdmin)
+        else if (!access.IsEnforced("PreFactor") && !scope.SupplyAdmin)
         {
             queryBase = queryBase.Where(f => f.UserTaminId == Guid.Parse(scope.UserId));
         }
@@ -203,7 +205,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableFinancialData> GetFinancialAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).OrderByDescending(g => g.ModifyDate).AsQueryable();
+        var baseQuery = await access.PreFactorsAsync(db.PreFactors.Include(pf => pf.CustomerEntity).OrderByDescending(g => g.ModifyDate), "View", ct);
         if (!string.IsNullOrWhiteSpace(search))
         {
             baseQuery = baseQuery.Where(f => f.AgentName.Contains(search) || f.Customer.Contains(search) || f.SerialNumber == searchNumber);
@@ -233,7 +235,7 @@ public sealed class CartableRepository(CRMContextDb db) : ICartableRepository
 
     public async Task<CartableSalesData> GetSalesAsync(string? search, int type, int searchNumber, CancellationToken ct)
     {
-        var baseQuery = db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable();
+        var baseQuery = await access.PreFactorsAsync(db.PreFactors.Include(pf => pf.CustomerEntity).AsQueryable(), "View", ct);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var serialVal = searchNumber;
