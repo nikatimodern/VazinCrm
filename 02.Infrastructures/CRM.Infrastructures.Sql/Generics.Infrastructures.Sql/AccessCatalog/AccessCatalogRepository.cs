@@ -35,9 +35,58 @@ public sealed class AccessCatalogRepository(UserContextDb db, UserManager<AppUse
         db.AccessPermissions.AnyAsync(x => x.AccessEntityId == entityId && x.Key == key &&
                                            (!exceptId.HasValue || x.Id != exceptId.Value), ct);
 
-    public async Task<bool> PermissionHasRoleAssignmentsAsync(Guid permissionId, CancellationToken ct) =>
-        await db.AccessRolePermissions.AnyAsync(x => x.AccessPermissionId == permissionId, ct) ||
-        await db.AccessUserPermissions.AnyAsync(x => x.AccessPermissionId == permissionId, ct);
+    public async Task<PermissionAssignmentCounts> PermissionAssignmentsAsync(Guid permissionId, CancellationToken ct) =>
+        new(
+            await db.AccessRolePermissions.CountAsync(x => x.AccessPermissionId == permissionId, ct),
+            await db.AccessUserPermissions.CountAsync(x => x.AccessPermissionId == permissionId, ct),
+            await db.AccessUserScopeMembers.CountAsync(x => x.AccessPermissionId == permissionId, ct));
+
+    public async Task<bool> DeletePermissionWithAssignmentsAsync(
+        Guid permissionId, PermissionAssignmentCounts expected, CancellationToken ct)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            db.ChangeTracker.Clear();
+            // All dependency checks and deletes are isolated from concurrent grant writes.
+            await using var transaction = await db.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, ct);
+
+            var permission = await db.AccessPermissions
+                .FirstOrDefaultAsync(x => x.Id == permissionId, ct);
+            if (permission is null) return false;
+
+            var roleGrants = await db.AccessRolePermissions
+                .Where(x => x.AccessPermissionId == permissionId).ToListAsync(ct);
+            var userOverrides = await db.AccessUserPermissions
+                .Where(x => x.AccessPermissionId == permissionId).ToListAsync(ct);
+            var selectedMembers = await db.AccessUserScopeMembers
+                .Where(x => x.AccessPermissionId == permissionId).ToListAsync(ct);
+
+            // A new or removed grant since the preview requires a fresh confirmation.
+            if (roleGrants.Count != expected.RoleCount ||
+                userOverrides.Count != expected.UserCount ||
+                selectedMembers.Count != expected.SelectedMemberCount)
+                return false;
+
+            db.AccessUserScopeMembers.RemoveRange(selectedMembers);
+            db.AccessUserPermissions.RemoveRange(userOverrides);
+            db.AccessRolePermissions.RemoveRange(roleGrants);
+            db.AccessPermissions.Remove(permission);
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException sql &&
+                                                 sql.Number is 2601 or 2627 or 547)
+            {
+                throw new AccessCatalogConflictException();
+            }
+            return true;
+        });
+    }
 
     public async Task<IReadOnlyList<AccessRoleGrant>> GetRolePermissionGrantsAsync(string roleId, CancellationToken ct) =>
         await db.AccessRolePermissions.AsNoTracking()
