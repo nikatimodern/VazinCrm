@@ -1,17 +1,25 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @{
-    var canAccessFinancialExpert = User.IsAdmin() || User.IsFinancialExpert();
+    var ct = Context.RequestAborted;
+    var canViewPreFactor = await DocumentAccess.HasViewAsync("PreFactor", ct);
+    var canViewFactor = await DocumentAccess.HasViewAsync("Factor", ct);
+    var enforcePreFactor = DocumentAccess.IsEnforced("PreFactor");
+    var canFinancialPreFactor = canViewPreFactor && await DocumentAccess.HasAnyAsync("PreFactor", "ApproveFinancial", ct);
+    var canTaminPreFactor = canViewPreFactor && await DocumentAccess.HasAnyAsync("PreFactor", "ApproveTamin", ct);
+    var canSalesPreFactor = canViewPreFactor && await DocumentAccess.HasAnyAsync("PreFactor", "ApproveSales", ct);
+    var canAccessFinancialExpert = User.IsAdmin() || User.IsFinancialExpert() || (enforcePreFactor && canFinancialPreFactor);
     var canAccessFinancialAdmin = false; //User.IsAdmin() || User.IsFinancialAdmin();
     var canAccessSalesExpert = User.IsAdmin() || User.IsSalesExpert();
     var showSalesExpertCartableTab = false; // Temporarily disabled on all viewport sizes.
-    var canAccessSalesAdmin = User.IsAdmin() || User.IsSalesAdmin();
-    var canAccessTaminExpert = User.IsAdmin() || User.IsTamin() || User.IsManagingDirector();
+    var canAccessSalesAdmin = enforcePreFactor ? canSalesPreFactor : User.IsAdmin() || User.IsSalesAdmin();
+    var canAccessTaminExpert = User.IsAdmin() || User.IsTamin() || User.IsManagingDirector() || (enforcePreFactor && canTaminPreFactor);
     var canAccessManagingDirector = User.IsAdmin() || User.IsManagingDirector();
 }
 
 
-<div id="cartableWorkspace">
+<div id="cartableWorkspace" data-pf-view="@canViewPreFactor.ToString().ToLowerInvariant()" data-factor-view="@canViewFactor.ToString().ToLowerInvariant()" data-pf-financial="@canFinancialPreFactor.ToString().ToLowerInvariant()" data-pf-tamin="@canTaminPreFactor.ToString().ToLowerInvariant()">
     <div id="CartableTabs" class="d-flex justify-content-center flex-wrap-reverse">
-        <div class="TCar" id="TPrefactorFactorId" onclick="GetCartable('TPrefactorFactorId')">
+        <div class="TCar @(!canViewPreFactor && !canViewFactor ? "d-none" : "")" id="TPrefactorFactorId" onclick="GetCartable('TPrefactorFactorId')">
             <p>پیش فاکتور و فاکتور</p>
         </div>
         @if (canAccessFinancialExpert) {
