@@ -7,7 +7,7 @@ using CRM.Core.Domain.Querying;
 using CRM.Core.Domain.Deals.Enums;
 
 namespace CRM.Core.Domain.Deals.Repositories;
-public sealed record OverdueSearch(DateTime Now, DateTime Cutoff, bool OwnOnly, string CreatorId, DateTime? StartDate, DateTime? EndDate, string? SortBy, string? SortDirection, bool WithFollowUp);
+public sealed record OverdueSearch(DateTime Now, DateTime Cutoff, bool OwnOnly, string CreatorId, DateTime? StartDate, DateTime? EndDate, string? SortBy, string? SortDirection, bool WithFollowUp, string[]? AllowedOwnerIds = null, string[]? ExcludedOwnerIds = null, bool ScopeEnforced = false);
 public sealed class OverdueDealRow
 {
     public Guid Id { get; set; }
@@ -53,5 +53,6 @@ public sealed record OverdueDealsResult(List<OverdueDealRow> Data, int OverdueCo
 public interface IOverdueDealRepository
 {
     Task<OverdueDealsResult> GetListAsync(QueryFilter filter, OverdueSearch search, CancellationToken cancellationToken);
-    Task<OverdueDealDetails?> GetDetailsAsync(Guid id, DateTime cutoff, bool ownOnly, string creatorId, CancellationToken cancellationToken);
+    Task<OverdueDealDetails?> GetDetailsAsync(Guid id, DateTime cutoff, bool ownOnly, string creatorId, CancellationToken cancellationToken,
+        string[]? allowedOwnerIds = null, string[]? excludedOwnerIds = null, bool scopeEnforced = false);
 }

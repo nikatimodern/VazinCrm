@@ -26,7 +26,14 @@ public sealed class OverdueDealRepository(CRMContextDb db) : IOverdueDealReposit
         var sortDirection = options.SortDirection;
         var withFollowUp = options.WithFollowUp;
         var query = db.Deals.AsNoTracking().Where(deal => deal.Status == DealStatusEnum.باز && deal.CreateDate >= OverdueDealRules.StartDate && deal.CreateDate <= overdueBefore);
-        if (restrictToOwnDeals)
+        if (options.ScopeEnforced)
+        {
+            if (options.AllowedOwnerIds is { } allowed)
+                query = query.Where(deal => allowed.Contains(deal.UserCreatorID));
+            if (options.ExcludedOwnerIds is { Length: > 0 } excluded)
+                query = query.Where(deal => !excluded.Contains(deal.UserCreatorID));
+        }
+        else if (restrictToOwnDeals)
             query = query.Where(deal => deal.UserCreatorID == creatorId);
         var overdueCount = await query.CountAsync(deal => !deal.OverdueFollowUpAt.HasValue || deal.OverdueFollowUpAt <= now, ct);
         query = withFollowUp ? query.Where(deal => deal.OverdueFollowUpAt.HasValue && deal.OverdueFollowUpAt > now) : query.Where(deal => !deal.OverdueFollowUpAt.HasValue || deal.OverdueFollowUpAt <= now);
@@ -76,9 +83,22 @@ public sealed class OverdueDealRepository(CRMContextDb db) : IOverdueDealReposit
         return new(deals, overdueCount);
     }
 
-    public async Task<OverdueDealDetails?> GetDetailsAsync(Guid id, DateTime overdueBefore, bool restrictToOwnDeals, string creatorId, CancellationToken ct)
+    public async Task<OverdueDealDetails?> GetDetailsAsync(Guid id, DateTime overdueBefore, bool restrictToOwnDeals, string creatorId, CancellationToken ct,
+        string[]? allowedOwnerIds = null, string[]? excludedOwnerIds = null, bool scopeEnforced = false)
     {
-        var deal = await db.Deals.AsNoTracking().Where(deal => deal.Id == id && deal.Status == DealStatusEnum.باز && deal.CreateDate >= OverdueDealRules.StartDate && (!restrictToOwnDeals || deal.UserCreatorID == creatorId) && deal.CreateDate <= overdueBefore).Select(deal => new OverdueDealDetails { Id = deal.Id, CustomerId = deal.CustomerId, UserCreatorID = deal.UserCreatorID, FinancialStatus = deal.FinancialStatus, SerialNumber = deal.SerialNumber, Title = deal.Title, CustomerName = deal.CustomerName, CusCompanyName = deal.CusCompanyName, CustomerCode = deal.CustomerCode, MobileNumber = deal.MobileNumber, CreateDate = deal.CreateDate, UserCreator = deal.UserCreator, CommentText = deal.CommentText, OverdueFollowUpNote = deal.OverdueFollowUpNote, OverdueFollowUpAt = deal.OverdueFollowUpAt, Status = deal.Status, ReportCount = deal.Reports.Count(), PreFactorCount = deal.PreFactors.Count(), PreFactorTotalAmount = deal.PreFactors.Sum(item => (decimal? )(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m, FactorCount = deal.Factors.Count(), FactorTotalAmount = deal.Factors.Sum(item => (decimal? )(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m, AccountancyCount = db.Accountancies.Count(accountancy => accountancy.pfid.HasValue && deal.PreFactors.Any(preFactor => preFactor.Id == accountancy.pfid.Value) && accountancy.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && accountancy.AccType == AcEnum.واریزی && !accountancy.IsDeleted), AccountancyTotalAmount = db.Accountancies.Where(accountancy => accountancy.pfid.HasValue && deal.PreFactors.Any(preFactor => preFactor.Id == accountancy.pfid.Value) && accountancy.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && accountancy.AccType == AcEnum.واریزی && (accountancy.PayType == PayTypeEnum.نقدی || accountancy.PayType == PayTypeEnum.تهاتری) && !accountancy.IsDeleted).Sum(accountancy => accountancy.credit) ?? 0m }).FirstOrDefaultAsync(ct);
+        var query = db.Deals.AsNoTracking().Where(deal => deal.Id == id &&
+            deal.Status == DealStatusEnum.باز && deal.CreateDate >= OverdueDealRules.StartDate &&
+            deal.CreateDate <= overdueBefore);
+        if (scopeEnforced)
+        {
+            if (allowedOwnerIds is { } allowed)
+                query = query.Where(deal => allowed.Contains(deal.UserCreatorID));
+            if (excludedOwnerIds is { Length: > 0 } excluded)
+                query = query.Where(deal => !excluded.Contains(deal.UserCreatorID));
+        }
+        else if (restrictToOwnDeals)
+            query = query.Where(deal => deal.UserCreatorID == creatorId);
+        var deal = await query.Select(deal => new OverdueDealDetails { Id = deal.Id, CustomerId = deal.CustomerId, UserCreatorID = deal.UserCreatorID, FinancialStatus = deal.FinancialStatus, SerialNumber = deal.SerialNumber, Title = deal.Title, CustomerName = deal.CustomerName, CusCompanyName = deal.CusCompanyName, CustomerCode = deal.CustomerCode, MobileNumber = deal.MobileNumber, CreateDate = deal.CreateDate, UserCreator = deal.UserCreator, CommentText = deal.CommentText, OverdueFollowUpNote = deal.OverdueFollowUpNote, OverdueFollowUpAt = deal.OverdueFollowUpAt, Status = deal.Status, ReportCount = deal.Reports.Count(), PreFactorCount = deal.PreFactors.Count(), PreFactorTotalAmount = deal.PreFactors.Sum(item => (decimal? )(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m, FactorCount = deal.Factors.Count(), FactorTotalAmount = deal.Factors.Sum(item => (decimal? )(item.SumTotalAmount + item.TotalTax - item.Discount)) ?? 0m, AccountancyCount = db.Accountancies.Count(accountancy => accountancy.pfid.HasValue && deal.PreFactors.Any(preFactor => preFactor.Id == accountancy.pfid.Value) && accountancy.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && accountancy.AccType == AcEnum.واریزی && !accountancy.IsDeleted), AccountancyTotalAmount = db.Accountancies.Where(accountancy => accountancy.pfid.HasValue && deal.PreFactors.Any(preFactor => preFactor.Id == accountancy.pfid.Value) && accountancy.InvoiceType == InvoiceTypeEnum.پیش_فاکتور && accountancy.AccType == AcEnum.واریزی && (accountancy.PayType == PayTypeEnum.نقدی || accountancy.PayType == PayTypeEnum.تهاتری) && !accountancy.IsDeleted).Sum(accountancy => accountancy.credit) ?? 0m }).FirstOrDefaultAsync(ct);
         return deal;
     }
 }

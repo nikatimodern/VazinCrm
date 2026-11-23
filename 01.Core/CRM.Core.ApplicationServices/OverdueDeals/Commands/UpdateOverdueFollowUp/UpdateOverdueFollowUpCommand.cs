@@ -1,4 +1,6 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using Microsoft.Extensions.Configuration;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
 using CRM.Core.Domain.LogSystems.Entities;
@@ -11,7 +13,8 @@ using CRM.Core.Domain.Querying;
 namespace CRM.Core.ApplicationServices.OverdueDeals.Commands.UpdateOverdueFollowUp;
 public sealed record FollowUpResult(int Status, string? Message = null);
 public sealed record UpdateOverdueFollowUpCommand(Guid Id, string? FollowUpDate, DealStatusEnum Status, string? Note) : ICommand<FollowUpResult>;
-public sealed class UpdateOverdueFollowUpCommandHandler(IDealRepository repository, CurrentActor actor, IApplicationDates dates) : ICommandHandler<UpdateOverdueFollowUpCommand, FollowUpResult>
+public sealed class UpdateOverdueFollowUpCommandHandler(IDealRepository repository, CurrentActor actor, IApplicationDates dates,
+    IAccessScopeService accessScopes, IConfiguration configuration) : ICommandHandler<UpdateOverdueFollowUpCommand, FollowUpResult>
 {
     public async Task<FollowUpResult> HandleAsync(UpdateOverdueFollowUpCommand request, CancellationToken ct)
     {
@@ -30,7 +33,15 @@ public sealed class UpdateOverdueFollowUpCommandHandler(IDealRepository reposito
         var current = await actor.FindAsync(ct);
         if (current == null)
             return new(401);
-        if (!current.HasRole("مدیر فروش", "مدیر ارشد"))
+        if (configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions"))
+        {
+            if (!await accessScopes.CanAccessDealAsync(current.User.Id, "Deal.View", request.Id, ct) ||
+                !await accessScopes.CanAccessDealAsync(current.User.Id, "Deal.ManageFollowUp", request.Id, ct) ||
+                (request.Status != DealStatusEnum.باز &&
+                 !await accessScopes.CanAccessDealAsync(current.User.Id, "Deal.ChangeStatus", request.Id, ct)))
+                return new(403);
+        }
+        else if (!current.HasRole("مدیر فروش", "مدیر ارشد"))
             return new(403);
         var result = await repository.UpdateOverdueFollowUpAsync(request.Id, followUpAt, request.Status, request.Note, current.User.Id, current.User.FullName, ct);
         return result switch
