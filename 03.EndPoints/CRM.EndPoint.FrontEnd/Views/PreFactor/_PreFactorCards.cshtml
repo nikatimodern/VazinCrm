@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.Deals.Enums
 @using CRM.Core.Domain.PreFactors.Enum
 @model CRM.EndPoint.FrontEnd.Models.PreFactors.PrefactorViewModel
@@ -15,7 +16,14 @@
             var isInvalid = item.Pftype is (int)PreFactorEnum.فاقد_اعتبار or (int)PreFactorEnum.بسته_شده
                 or (int)PreFactorEnum.حذف_شده or (int)PreFactorEnum.برگشت_خورده_از_طرف_مدیر_فروش;
             var isDealClosed = item.Deal?.FinancialStatus == DealFinancialStausEnum.تایید_شده;
-            var hasAccess = !isDealClosed && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
+            if (!await DocumentAccess.AllowsPreFactorAsync(item, "View", Context.RequestAborted)) { continue; }
+            var enforced = DocumentAccess.IsEnforced("PreFactor");
+            var legacyAccess = !isDealClosed && (User.IsAdmin() || User.IsSalesAdmin() || item.UserCreatorID == User.GetUserId());
+            var hasAccess = !isDealClosed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(item, "Edit", Context.RequestAborted) : legacyAccess);
+            var canAssign = !isDealClosed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(item, "AssignTamin", Context.RequestAborted) : legacyAccess);
+            var canSend = !isDealClosed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(item, "SendToCustomer", Context.RequestAborted) : legacyAccess);
+            var canManualApprove = !isDealClosed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(item, "ApproveCustomerManual", Context.RequestAborted) : legacyAccess);
+            var canChangeStatus = !isDealClosed && (enforced ? await DocumentAccess.AllowsPreFactorAsync(item, "ChangeStatus", Context.RequestAborted) : legacyAccess);
             var hideAddInvoiceBtns = isInvalid || !hasAccess;
             var currency = item.CurrencyTypeTxt ?? "ريال";
             var showFactors = Model._Setting?.CrmFactors == true
@@ -75,7 +83,7 @@
                     <div class="pf-accepted-card__actions">
                         <partial name="~/Views/PreFactor/_PreFactorActions.cshtml"
                                  model="item"
-                                 view-data='new ViewDataDictionary(ViewData) { ["PassType"] = passType, ["HasAccess"] = hasAccess, ["AcceptedCard"] = true }' />
+                                 view-data='new ViewDataDictionary(ViewData) { ["PassType"] = passType, ["HasAccess"] = hasAccess, ["DealClosed"] = isDealClosed, ["AcceptedCard"] = true }' />
                         @if (isDealView) {
                             <div class="pf-accepted-card__workflow" aria-label="عملیات مرحله پیش‌فاکتور">
                                 @if (!isInvalid) {
@@ -83,7 +91,7 @@
                                 }
                             @switch (item.Pftype) {
                                 case (int)PreFactorEnum.در_انتظار_واگذاری_به_مسئول_تامین:
-                                    if (hasAccess) {
+                                    if (canAssign) {
                                         <div class="flex-center flex-row flex-md-column gap-2">
                                             <form id="@item.Id">
                                                 <select aria-label="کارشناس تأمین" style="width:100%;" id="S_@item.Id" name="S_@item.Id" class="test form-select form-select-sm" required>
@@ -92,14 +100,14 @@
                                                     }
                                                 </select>
                                             </form>
-                                            <button type="button" style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="regUtamin('@item.Id', @passType)">ثبت</button>
+                                            <button type="button" style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" data-document-permission="PreFactor.AssignTamin" onclick="regUtamin('@item.Id', @passType)">ثبت</button>
                                         </div>
                                     }
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین:
-                                    if (hasAccess) {
-                                        <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType)">
+                                    if (canAssign) {
+                                        <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" data-document-permission="PreFactor.AssignTamin" onclick="resendRegUtamin('@item.Id', '@item.UserTaminId', @passType)">
                                             <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                             <span>ارسال مجدد به تامین</span>
                                         </button>
@@ -107,21 +115,21 @@
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری:
-                                    if (hasAccess) {
-                                        <button type="button" style="font-size: 13px;transition: all 0.3s" class="ToSend w-auto h-auto d-flex align-items-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id', @passType)">
+                                    if (canSend) {
+                                        <button type="button" style="font-size: 13px;transition: all 0.3s" class="ToSend w-auto h-auto d-flex align-items-center gap-1 px-2 py-1" data-document-permission="PreFactor.SendToCustomer" onclick="showMobileModal('@item.Id', @passType)">
                                             <i class="mp fa fa-paper-plane" aria-hidden="true"></i> ارسال شود
                                         </button>
                                     }
 
                                     break;
                                 case (int)PreFactorEnum.در_انتظار_تایید_مشتری:
-                                    if (hasAccess) {
+                                    if (canSend) {
                                         <div class="flex-center flex-wrap flex-row flex-md-column gap-2">
-                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" onclick="showMobileModal('@item.Id')">
+                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto flex-center gap-1 px-2 py-1" data-document-permission="PreFactor.SendToCustomer" onclick="showMobileModal('@item.Id')">
                                                 <i class="mp fa fa-paper-plane" aria-hidden="true"></i>
                                                 <span>ارسال مجدد به مشتری</span>
                                             </button>
-                                            <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto px-2 py-1" onclick="HandAccepting('@item.Id', @passType)"> تایید به صورت دستی</button>
+                                            @if (canManualApprove) { <button type="button" style="font-size: 13px;transition: all 0.3s;" class="ToSend w-auto h-auto px-2 py-1" data-document-permission="PreFactor.ApproveCustomerManual" onclick="HandAccepting('@item.Id', @passType)"> تایید به صورت دستی</button> }
                                         </div>
                                     }
 
@@ -157,15 +165,15 @@
                                         }
                                         <div class="flex-center flex-wrap gap-2">
                                             <button type="button" style="border-radius:4px;height:auto;width:80px " class="buttonGreen px-2" onclick="showModalDeliver('@item.Id',1 )">مانده تولید</button>
-                                            @if (hasAccess) {
-                                                <button type="button" style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" onclick="delivered('@item.Id', @passType)">اتمام کار</button>
+                                            @if (canChangeStatus) {
+                                                <button type="button" style="border-radius:4px;height:auto;width:80px" class="buttonGreen px-2" data-document-permission="PreFactor.ChangeStatus" onclick="delivered('@item.Id', @passType)">اتمام کار</button>
                                             }
                                         </div>
                                     </div>
                                     break;
                                 case (int)PreFactorEnum.جنس_به_مشتری_تحویل_داده_شد:
-                                    if (hasAccess) {
-                                        <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" onclick="backDelivered('@item.Id', @passType)">لغو اتمام کار</button>
+                                    if (canChangeStatus) {
+                                        <button type="button" style="border-radius:4px;height:auto;width:90px;" class="buttonGreen px-2" data-document-permission="PreFactor.ChangeStatus" onclick="backDelivered('@item.Id', @passType)">لغو اتمام کار</button>
                                     }
 
                                     break;
