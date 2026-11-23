@@ -20,6 +20,7 @@ public sealed record AccessRoleGrant(string RoleId, Guid AccessPermissionId, byt
 public sealed record AccessRoleGrantDraft(Guid AccessPermissionId, byte Scope);
 public sealed record AccessUserState(string UserId, IReadOnlyList<string> RoleIds, IReadOnlyList<AccessUserOverride> Overrides);
 public sealed record AccessUserWriteResult(bool Success, bool NotFound = false, string? Error = null);
+public sealed record PermissionAssignmentCounts(int RoleCount, int UserCount, int SelectedMemberCount);
 
 public interface IAccessCatalogRepository
 {
@@ -29,7 +30,8 @@ public interface IAccessCatalogRepository
     Task<bool> EntityKeyExistsAsync(string key, Guid? exceptId, CancellationToken ct);
     Task<bool> ModelExistsAsync(string contextName, string modelFullName, Guid? exceptId, CancellationToken ct);
     Task<bool> PermissionKeyExistsAsync(Guid entityId, string key, Guid? exceptId, CancellationToken ct);
-    Task<bool> PermissionHasRoleAssignmentsAsync(Guid permissionId, CancellationToken ct);
+    Task<PermissionAssignmentCounts> PermissionAssignmentsAsync(Guid permissionId, CancellationToken ct);
+    Task<bool> DeletePermissionWithAssignmentsAsync(Guid permissionId, PermissionAssignmentCounts expected, CancellationToken ct);
     Task<AccessUserState?> UserAccessAsync(string userId, CancellationToken ct);
     Task<IReadOnlyList<AccessRoleGrant>> RoleGrantsAsync(CancellationToken ct);
     Task<IReadOnlyList<AccessScopeUser>> SearchScopeUsersAsync(string search, CancellationToken ct);
