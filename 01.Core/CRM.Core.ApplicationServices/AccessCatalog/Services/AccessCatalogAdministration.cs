@@ -10,6 +10,10 @@ public sealed record AccessEntityDraft(string Key, string Title, string? Descrip
 public sealed record AccessPermissionDraft(Guid AccessEntityId, string Key, string Title, string? Description, bool IsActive, bool? SupportsScope);
 public sealed record AccessEntityInfo(Guid Id, string Key, string Title, string? Description, string DbContextName, string ModelFullName, bool IsActive, int PermissionCount);
 public sealed record AccessPermissionInfo(Guid Id, Guid AccessEntityId, string Key, string FullKey, string Title, string? Description, bool IsActive, bool SupportsScope);
+public sealed record PermissionRemovalPreview(Guid Id, string Title, string FullKey,
+    int RoleCount, int UserCount, int SelectedMemberCount);
+public sealed record PermissionRemovalDraft(bool ConfirmRemoval,
+    int RoleCount, int UserCount, int SelectedMemberCount);
 public sealed record AccessCatalogResult(int Status, string? Message = null, Guid? Id = null, string? RoleId = null, string? UserId = null);
 public sealed record RoleAccessPermissionInfo(Guid Id, string Key, string Title, bool SupportsScope, bool SupportsSelectedUsers);
 public sealed record RoleAccessEntityInfo(Guid Id, string Key, string Title, IReadOnlyList<RoleAccessPermissionInfo> Permissions);
@@ -390,15 +394,43 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         return new(200);
     }
 
-    public async Task<AccessCatalogResult> DeletePermissionAsync(Guid id, CancellationToken ct)
+    public async Task<PermissionRemovalPreview?> PermissionRemovalPreviewAsync(Guid id, CancellationToken ct)
     {
         var permission = await repository.FindPermissionAsync(id, ct);
-        if (permission is null) return new(404, "دسترسی پیدا نشد.");
-        if (await repository.PermissionHasRoleAssignmentsAsync(id, ct))
-            return new(409, "این دسترسی به نقش یا کاربر اختصاص داده شده و قابل حذف نیست.");
-        repository.Remove(permission);
-        await repository.SaveAsync(ct);
-        return new(200);
+        if (permission is null) return null;
+        var parent = await repository.FindEntityAsync(permission.AccessEntityId, ct);
+        if (parent is null) return null;
+        var counts = await repository.PermissionAssignmentsAsync(id, ct);
+        return new PermissionRemovalPreview(permission.Id, permission.Title,
+            parent.Key + "." + permission.Key,
+            counts.RoleCount, counts.UserCount, counts.SelectedMemberCount);
+    }
+
+    public async Task<AccessCatalogResult> DeletePermissionAsync(
+        Guid id, PermissionRemovalDraft? confirmation, CancellationToken ct)
+    {
+        // The server requires explicit consent to remove grants, even if a
+        // client bypasses the browser's confirmation dialog.
+        if (confirmation is null || !confirmation.ConfirmRemoval ||
+            confirmation.RoleCount < 0 || confirmation.UserCount < 0 ||
+            confirmation.SelectedMemberCount < 0)
+            return new(400, "ابتدا پیام تأیید حذف دسترسی و تخصیص‌های آن را تأیید کنید.");
+
+        var expected = new PermissionAssignmentCounts(
+            confirmation.RoleCount, confirmation.UserCount, confirmation.SelectedMemberCount);
+        try
+        {
+            var deleted = await repository.DeletePermissionWithAssignmentsAsync(id, expected, ct);
+            return deleted
+                ? new(200, "دسترسی و تمام تخصیص‌های آن حذف شدند.")
+                : await repository.FindPermissionAsync(id, ct) is null
+                    ? new(404, "دسترسی پیدا نشد.")
+                    : new(409, "تخصیص‌های این دسترسی تغییر کرده‌اند. دوباره حذف را انتخاب و تأیید کنید.");
+        }
+        catch (AccessCatalogConflictException)
+        {
+            return new(409, "این دسترسی هم‌زمان تغییر کرده است. صفحه را به‌روزرسانی کنید.");
+        }
     }
 
     private static bool Valid(string? key, string? title, string? description) =>
