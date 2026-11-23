@@ -24,6 +24,7 @@ using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -114,6 +115,30 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!settings.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions")) return true;
             var scopes = HttpContext.RequestServices.GetRequiredService<IAccessScopeService>();
             return await scopes.CanAccessCustomerAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "", "Customer.View", id, AccessCt);
+        }
+
+        private IDataProtector PublicPreFactorProtector => HttpContext.RequestServices
+            .GetRequiredService<IDataProtectionProvider>().CreateProtector("ERP.PublicPreFactor.v1");
+
+        private string PublicPreFactorToken(Guid id) =>
+            PublicPreFactorProtector.Protect(id.ToString("N") + ":" + DateTimeOffset.UtcNow.AddHours(2).ToUnixTimeSeconds());
+
+        private bool ValidPublicPreFactorToken(Guid id, string token)
+        {
+            if (id == Guid.Empty || string.IsNullOrWhiteSpace(token)) return false;
+            try
+            {
+                var parts = PublicPreFactorProtector.Unprotect(token).Split(':');
+                return parts.Length == 2 && parts[0] == id.ToString("N") &&
+                    long.TryParse(parts[1], out var expires) && expires >= DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            }
+            catch (System.Security.Cryptography.CryptographicException) { return false; }
+        }
+
+        private async Task<bool> IsEmployeeSessionAsync()
+        {
+            var user = await userManager.GetUserAsync(User);
+            return user?.IsEmployee == true;
         }
 
         private bool HasLegacyRole(string roles) =>
@@ -1040,9 +1065,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
-        public async Task<IActionResult> PreviewPfactorPrint(Guid id)
+        public async Task<IActionResult> PreviewPfactorPrint(Guid id, string publicToken = null)
         {
-            if (!await CanPf("View", id)) return Forbid();
+            if (!await CanPf("View", id) &&
+                (await IsEmployeeSessionAsync() || !ValidPublicPreFactorToken(id, publicToken))) return Forbid();
             try
             {
                 var pfactor = await db.PreFactors
@@ -1217,11 +1243,30 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet("{se}")]
         public async Task<IActionResult> AcceptingSMS(string se)
         {
-            if (se == null) return BadRequest();
+            if (string.IsNullOrWhiteSpace(se)) return BadRequest();
             try
             {
-                var pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id.ToString().StartsWith(se));
+                PreFactor pf;
+                if (documentAccess.IsEnforced("PreFactor"))
+                {
+                    // The SMS providers currently send exactly seven hex characters.
+                    // Reject arbitrary shorter prefixes and collisions. A full GUID
+                    // is also supported for future link formats.
+                    if (Guid.TryParse(se, out var fullId))
+                        pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id == fullId, AccessCt);
+                    else
+                    {
+                        if (se.Length != 7 || !se.All(Uri.IsHexDigit)) return NotFound();
+                        var matches = await db.PreFactors.Where(f => f.Id.ToString().StartsWith(se.ToLower()))
+                            .Take(2).ToListAsync(AccessCt);
+                        pf = matches.Count == 1 ? matches[0] : null;
+                    }
+                }
+                else pf = await db.PreFactors.FirstOrDefaultAsync(f => f.Id.ToString().StartsWith(se));
                 if (pf == null) return NotFound("پیش‌فاکتور یافت نشد!");
+                if (documentAccess.IsEnforced("PreFactor") && await IsEmployeeSessionAsync() &&
+                    !await CanPf("View", pf.Id)) return Forbid();
+                ViewData["PublicPreFactorToken"] = PublicPreFactorToken(pf.Id);
 
                 var cus = await db.Customers.Where(f => f.Id == pf.CustomerId).FirstOrDefaultAsync();
                 var setting = await db.ASettings.AsNoTracking().FirstOrDefaultAsync();
@@ -1240,6 +1285,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> AcceptingSMS([FromBody] PreFactor model)
         {
+            if (model == null) return BadRequest();
+            if (documentAccess.IsEnforced("PreFactor"))
+            {
+                if (!ValidPublicPreFactorToken(model.Id, Request.Headers["X-PreFactor-Token"].ToString())) return Forbid();
+                if (await IsEmployeeSessionAsync() && !await CanPf("ApproveCustomerManual", model.Id)) return Forbid();
+            }
+            ViewData["PublicPreFactorToken"] = PublicPreFactorToken(model.Id);
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
             {
@@ -2093,6 +2145,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [Authorize]
         public async Task<IActionResult> GetDetailAmount(Guid? cusId)
         {
+            if (documentAccess.IsEnforced("PreFactor") || documentAccess.IsEnforced("Factor"))
+            {
+                if (!cusId.HasValue || !await CanLinkedCustomerAsync(cusId.Value)) return Forbid();
+                var pfs = db.PreFactors.AsNoTracking().Where(p => p.CustomerId == cusId);
+                var fs = db.Factors.AsNoTracking().Where(f => f.CustomerId == cusId);
+                var visiblePfs = await documentAccess.PreFactorsAsync(pfs, "View", AccessCt);
+                var visibleFs = await documentAccess.FactorsAsync(fs, "View", AccessCt);
+                // A balance is an all-record total. Never present a partial ledger as the real balance.
+                if (await pfs.AnyAsync(p => !visiblePfs.Any(v => v.Id == p.Id), AccessCt) ||
+                    await fs.AnyAsync(f => !visibleFs.Any(v => v.Id == f.Id), AccessCt)) return Forbid();
+            }
             try
             {
                 // var date = Convert.ToDateTime("2026-03-21");
@@ -2452,8 +2515,11 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (await db.PreFactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
                         x => existingItemIds.Contains(x.Id) && x.PrefactorId != model.Id, AccessCt))
                     return Forbid();
-                if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
-                if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
+                if (model.Id == Guid.Empty)
+                {
+                    if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
+                    if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
+                }
             }
             await using var transAction = await db.Database.BeginTransactionAsync();
             try
@@ -2652,10 +2718,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 if (await db.FactorItems.IgnoreQueryFilters().AsNoTracking().AnyAsync(
                         x => existingItemIds.Contains(x.Id) && x.factorId != model.Id, AccessCt))
                     return Forbid();
-                if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
-                if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
+                if (model.Id == Guid.Empty)
+                {
+                    if (model.DealId.HasValue && !await CanLinkedDealAsync(model.DealId.Value)) return Forbid();
+                    if (model.CustomerId.HasValue && !await CanLinkedCustomerAsync(model.CustomerId.Value)) return Forbid();
+                }
             }
-            if (!await CanPf("View", model.PfactorID)) return Forbid();
+            if (model.Id == Guid.Empty && !await CanPf("View", model.PfactorID)) return Forbid();
             if (model == null) return BadRequest();
 
             await using var transAction = await db.Database.BeginTransactionAsync();
@@ -3275,8 +3344,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost] // وقتی در تنظیمات "تایید مالی" فعال است
         public async Task<IActionResult> UploadAttachmentInvoice(List<Attachment> list, Guid pFactorId, int type) // 5:توسط مشتری / 6:توسط کارشناس
         {
-            if (documentAccess.IsEnforced("PreFactor") && type == 6 && !await CanPf("Edit", pFactorId)) return Forbid();
-            if (documentAccess.IsEnforced("PreFactor") && type != 5 && type != 6) return BadRequest();
+            if (documentAccess.IsEnforced("PreFactor"))
+            {
+                if (type != 5 && type != 6) return BadRequest();
+                if (type == 6 && !await CanPf("Edit", pFactorId)) return Forbid();
+                if (type == 5 && (!await CanPf("View", pFactorId) || await IsEmployeeSessionAsync())) return Forbid();
+                if (list == null) return BadRequest();
+                var existingIds = list.Where(x => x.Id != Guid.Empty).Select(x => x.Id).ToArray();
+                if (await db.Attachments.AsNoTracking().AnyAsync(x => existingIds.Contains(x.Id) && x.EntityId != pFactorId, AccessCt))
+                    return Forbid();
+            }
             try
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
