@@ -164,6 +164,7 @@
 
             FLshowLoading();
             try {
+                if (window.AccessLive?.can("Payment", model.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت پرداخت را ندارید."); return; }
                 const apiUrl = model.id ? "/Supply/UpdatePayment" : "/Supply/AddPayment";
                 const res = await axios.post(apiUrl, model);
                 if (res.status === 200) {
