@@ -19,6 +19,8 @@
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
+        if (path.startsWith("/cartable/") || path === "/cartable" || path.startsWith("/factor/") || path === "/factor") return "cartable";
+        if (path.startsWith("/prefactor/") || path === "/prefactor") return "prefactor";
         if (/^\/customer(?:\/|$)/.test(path)) return "customer";
         if (/^\/(?:deal|overduedeal)(?:\/|$)/.test(path)) return "deal";
         return null;
@@ -114,6 +116,10 @@
                 button.disabled = true;
             });
         }
+        document.querySelectorAll("#PreFactor button[onclick*='submitPreFactor'], #Factor button[onclick*='submitFactor'], [data-document-permission]").forEach(button => {
+            button.setAttribute("aria-disabled", "true");
+            if ("disabled" in button) button.disabled = true;
+        });
     }
 
     // Inline onclick handlers and JS-driven modals still run through here.
@@ -127,7 +133,7 @@
         if (!editorLocked || !moduleForPath()) return;
         const action = event.target.closest(
             "#btnIn, #updateCustomerModal .buttonGreen3, #dealModal .buttonGreen3, " +
-            ".deal-create-button, #btnNew, button[type=submit]"
+            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
         );
         if (!action) return;
         event.preventDefault();
@@ -169,7 +175,10 @@
         const changed = JSON.stringify(previous) !== JSON.stringify(latest);
         const rolesChanged = !!previous &&
             JSON.stringify(previous.roles) !== JSON.stringify(latest.roles);
-        const forceRefresh = event?.kind === "user" || event?.kind === "reconnect";
+        // Selected/excluded owner memberships can change without changing the numeric scope.
+        const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
+            (event?.kind === "catalog" && (latest.enforced?.prefactor || latest.enforced?.factor) &&
+                ["cartable", "customer", "deal", "prefactor", "factor"].includes(module));
         if (!changed && !forceRefresh) return;
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
@@ -187,8 +196,7 @@
         }
 
         if (rolesChanged) window.dispatchEvent(new CustomEvent("erp:roles-refreshed"));
-        if (module) lockVisibleActions(module, latest[module]);
-        else editorLocked = true;
+        lockVisibleActions(module, latest[module]);
         displayWarning(viewRevoked
             ? "مجوز مشاهده این صفحه لغو شده است. اطلاعات فرم باز حفظ شده‌اند، اما ثبت و ارسال غیرفعال است."
             : "دسترسی شما تغییر کرده است. اطلاعات فرم باز حفظ شده‌اند؛ برای ادامه، صفحه را بارگذاری مجدد کنید.",
