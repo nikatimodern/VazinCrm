@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
@@ -9,6 +10,7 @@ using CRM.Core.Domain.Factors.Entities;
 using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CRM.Core.ApplicationServices.Cartables.Queries.GetCartablePreFactors;
@@ -28,11 +30,12 @@ using CRM.Core.ApplicationServices.Cartables.Queries.GetCartableSalesHtml;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize]
-public class CartableController(ICqrsDispatcher dispatcher) : Controller
+public class CartableController(ICqrsDispatcher dispatcher, DocumentAccessPolicy documentAccess) : Controller
 {
     [Authorize(Policy = "NotCustomerOnly")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct) && !await documentAccess.HasViewAsync("Factor", ct)) return Forbid();
         var data = await dispatcher.QueryAsync(new GetWorkspacePageQuery("Cartable"), ct);
         ViewBag.SubTitle = "کارتابل من";
         ViewBag.Head = "Cartable";
@@ -41,11 +44,17 @@ public class CartableController(ICqrsDispatcher dispatcher) : Controller
 
     [Authorize(Policy = "NotCustomerOnly"), HttpGet]
     public async Task<IActionResult> GetCountEnvelope(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartableEnvelopeQuery(), ct));
-    [HttpPost, Authorize(Roles = "کارشناس فروش ,مدیر ارشد ,مدیر مالی, کارشناس مالی,مدیر فروش,کارشناس تامین")]
-    public async Task<IActionResult> PreFactorAcceptedPartial([FromBody] FilterVModel model, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartablePreFactorsHtmlQuery(model.ToApplicationFilter()), ct));
+    [HttpPost, Authorize]
+    public async Task<IActionResult> PreFactorAcceptedPartial([FromBody] FilterVModel model, CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
+        if (!documentAccess.IsEnforced("PreFactor") && !"کارشناس فروش ,مدیر ارشد ,مدیر مالی, کارشناس مالی,مدیر فروش,کارشناس تامین".Split(',').Any(role => User.IsInRole(role.Trim()))) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartablePreFactorsHtmlQuery(model.ToApplicationFilter()), ct));
+    }
     [HttpPost, Authorize]
     public async Task<IActionResult> PrefactorExportToExcel([FromBody] FilterVModel model, CancellationToken ct)
     {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
         var preFactors = (await dispatcher.QueryAsync(new GetCartablePreFactorsQuery(model.ToApplicationFilter()), ct)).Data;
         var columns = new List<ExcelColumnConfig<PreFactor>>
         {
@@ -112,6 +121,7 @@ public class CartableController(ICqrsDispatcher dispatcher) : Controller
     [HttpPost, Authorize]
     public async Task<IActionResult> FactorExportToExcel([FromBody] FactorVModel model, CancellationToken ct)
     {
+        if (!await documentAccess.HasViewAsync("Factor", ct)) return Forbid();
         var factors = (await dispatcher.QueryAsync(new GetCartableFactorsQuery(model.FModel.ToApplicationFilter(), model.CustomerId), ct)).Factors;
         var columns = new List<ExcelColumnConfig<Factor>>
         {
@@ -180,16 +190,46 @@ public class CartableController(ICqrsDispatcher dispatcher) : Controller
         return ExcelExportService.ExportToExcel(factors, columns, "PreFactors");
     }
 
-    [HttpGet, Authorize(Roles = "مدیر ارشد , کارشناس تامین , مدیر تامین")]
-    public async Task<IActionResult> GetPreFactorTaminExpert(string serVal, int type, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartableSupplyHtmlQuery(serVal, type), ct));
-    [HttpGet, Authorize(Roles = "مدیر ارشد , مدیر مالی, کارشناس مالی")]
-    public async Task<IActionResult> GetPreFactorFinancialExpert(string serVal, int type = 1, CancellationToken ct = default) => Ok(await dispatcher.QueryAsync(new GetCartableFinancialHtmlQuery(serVal, type), ct));
+    [HttpGet, Authorize]
+    public async Task<IActionResult> GetPreFactorTaminExpert(string serVal, int type, CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
+        if (!documentAccess.IsEnforced("PreFactor") && !"مدیر ارشد , کارشناس تامین , مدیر تامین".Split(',').Any(role => User.IsInRole(role.Trim()))) return Forbid();
+        if (documentAccess.IsEnforced("PreFactor") && !await documentAccess.HasAnyAsync("PreFactor", "ApproveTamin", ct)) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartableSupplyHtmlQuery(serVal, type), ct));
+    }
+    [HttpGet, Authorize]
+    public async Task<IActionResult> GetPreFactorFinancialExpert(string serVal, int type = 1, CancellationToken ct = default)
+    {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
+        if (!documentAccess.IsEnforced("PreFactor") && !"مدیر ارشد , مدیر مالی, کارشناس مالی".Split(',').Any(role => User.IsInRole(role.Trim()))) return Forbid();
+        if (documentAccess.IsEnforced("PreFactor") && !await documentAccess.HasAnyAsync("PreFactor", "ApproveFinancial", ct)) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartableFinancialHtmlQuery(serVal, type), ct));
+    }
     [HttpGet]
-    public async Task<IActionResult> GetSelesExpertPartial(CancellationToken ct) => PartialView(await dispatcher.QueryAsync(new GetCartableOwnPreFactorsQuery(), ct));
-    [HttpGet, Authorize(Roles = "مدیر ارشد , مدیر فروش")]
-    public async Task<IActionResult> GetPreFactorSalesAdmin(string serVal, int type, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartableSalesHtmlQuery(serVal, type), ct));
+    public async Task<IActionResult> GetSelesExpertPartial(CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
+        return PartialView(await dispatcher.QueryAsync(new GetCartableOwnPreFactorsQuery(), ct));
+    }
+    [HttpGet, Authorize]
+    public async Task<IActionResult> GetPreFactorSalesAdmin(string serVal, int type, CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("PreFactor", ct)) return Forbid();
+        if (!documentAccess.IsEnforced("PreFactor") && !"مدیر ارشد , مدیر فروش".Split(',').Any(role => User.IsInRole(role.Trim()))) return Forbid();
+        if (documentAccess.IsEnforced("PreFactor") && !await documentAccess.HasAnyAsync("PreFactor", "ApproveSales", ct)) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartableSalesHtmlQuery(serVal, type), ct));
+    }
     [HttpPost]
-    public async Task<IActionResult> FactorPartial([FromBody] FactorVModel model, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartableFactorsHtmlQuery(model.FModel.ToApplicationFilter(), model.CustomerId, model.PassType), ct));
+    public async Task<IActionResult> FactorPartial([FromBody] FactorVModel model, CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("Factor", ct)) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartableFactorsHtmlQuery(model.FModel.ToApplicationFilter(), model.CustomerId, model.PassType), ct));
+    }
     [HttpGet]
-    public async Task<IActionResult> GetAllFactorsPartialModal(Guid id, int type, CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCartableModalFactorsHtmlQuery(id, type), ct));
+    public async Task<IActionResult> GetAllFactorsPartialModal(Guid id, int type, CancellationToken ct)
+    {
+        if (!await documentAccess.HasViewAsync("Factor", ct)) return Forbid();
+        return Ok(await dispatcher.QueryAsync(new GetCartableModalFactorsHtmlQuery(id, type), ct));
+    }
 }
