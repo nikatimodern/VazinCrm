@@ -6,6 +6,7 @@ using CRM.Core.Domain.PreFactors.Entities;
 using CRM.EndPoint.FrontEnd.Models.Dashboard;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.Infrastructures.Sql;
+using CRM.EndPoint.FrontEnd.Security;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -27,13 +28,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
+        private readonly DocumentAccessPolicy documentAccess;
 
-        public DashboardController(UserManager<AppUser> userManager, DateTimeServices dtService, CRMContextDb db, UserContextDb udb)
+        public DashboardController(UserManager<AppUser> userManager, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, DocumentAccessPolicy documentAccess)
         {
             this.userManager = userManager;
             this.dtService = dtService;
             this.db = db;
             this.udb = udb;
+            this.documentAccess = documentAccess;
         }
 
         //[Route("Dashboard")]
@@ -52,6 +55,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر عامل"))
                 return NoContent();
 
+
+            // These totals combine ledgers; a partial total would misstate the balance.
+            foreach (var entity in new[] { "Accountancy", "Factor", "SupplyFactor" })
+                if (!await documentAccess.HasAsync(entity, "View", HttpContext.RequestAborted)) return NoContent();
 
             var hasFilter = model?.filt != null;
 
@@ -139,7 +146,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             //var rols = await userManager.GetRolesAsync(user);
 
-            var factorsQ = db.Factors.Where(f => f.status == FactorStatus.تایید_شده).AsQueryable();
+            var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
             if (model.filt != null)
             {
@@ -180,7 +187,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var rols = await userManager.GetRolesAsync(user);
 
 
-            var factorsQ = db.Factors.Where(f => f.status == FactorStatus.تایید_شده).AsQueryable();
+            var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
             if (model.filt != null)
             {
@@ -255,6 +262,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
 
+            orderHeadQ = await documentAccess.ApplyAsync(orderHeadQ, "View", HttpContext.RequestAborted);
             if (_filter.filt != null)
             {
                 orderHeadQ = orderHeadQ.ApplyFilter(_filter, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
@@ -285,7 +293,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
-            var factorsQ = db.Factors.Where(f => f.status == FactorStatus.تایید_شده);
+            var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
             if (!roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی") && !roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
                 factorsQ = factorsQ.Where(f => f.SelerId == user.Id);
@@ -315,11 +323,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             IList<Customer> data;
             IList<PreFactor> allPf;
             decimal SumPayment;
+            var visiblePreFactors = await documentAccess.PreFactorsAsync(db.PreFactors.AsNoTracking(), "View", HttpContext.RequestAborted);
 
             if (_filter.FromDate == null || _filter.ToDate == null)
             {
-                data = await db.Customers.Include(f => f.PreFactors).ToListAsync();
-                allPf = await db.PreFactors.ToListAsync();
+                data = await db.Customers.AsNoTracking().ToListAsync();
+                allPf = await visiblePreFactors.ToListAsync();
                 SumPayment = allPf.Select(f => f.PaymentAmount).ToArray().Sum();
             } else
             {
@@ -328,7 +337,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 data = await db.Customers.Include(f => f.PreFactors)
                     .Where(f => f.CreateDate >= stDate && f.CreateDate <= enDate).ToListAsync();
-                allPf = await db.PreFactors
+                allPf = await visiblePreFactors
                     .Where(f => f.DateMiladi >= stDate && f.DateMiladi <= enDate).ToListAsync();
                 SumPayment = allPf.Select(f => f.PaymentAmount).ToArray().Sum();
             }
