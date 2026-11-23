@@ -1,12 +1,15 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.ASettings.Entities
 @using CRM.Core.Domain.PreFactors.Enum
 @model CRM.EndPoint.FrontEnd.Models.Cartable.TaminViewModel
 @{ Layout = null; }
 <div class="pf-accepted-list">
     @foreach (var item in Model.PreFactors) {
+        var canApprove = await DocumentAccess.AllowsPreFactorAsync(item, "ApproveTamin", Context.RequestAborted);
+        var canEditSupply = await DocumentAccess.AllowsPreFactorAsync(item, "EditSupply", Context.RequestAborted);
         var orderNumbers = Model.OrderNumbers.TryGetValue(item.Id, out var numbers) ? numbers : null;
         <article class="pf-accepted-card @(item.Pftype == (int)PreFactorEnum.فاقد_اعتبار ? "pf-accepted-card--invalid" : item.SupplyMismatch ? "factor-card--returned" : "")">
-            @if (!Model.IsAdmin && item.UserTaminId.ToString() != Model.UserId) {
+            @if (!DocumentAccess.IsEnforced("PreFactor") && !Model.IsAdmin && item.UserTaminId.ToString() != Model.UserId) {
                 <div class="disabled-overlay"></div>
             }
             <partial name="~/Views/PreFactor/_PreFactorSideLabels.cshtml" model="item" />
@@ -54,7 +57,7 @@
                             <div class="supply-card__warning">مغایرت تأمین</div>
                         }
                         <div class="pf-finance-card__controls supply-card__controls">
-                            @if (item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
+                            @if (canEditSupply && item.Pftype > (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین && Model.Setting.SetAmountByRoleType != SetAmountRoleEnum.فروش) {
                                 <button type="button" class="px-2 py-0 btn @(item.SupplyMismatch ? "btn-outline-danger" : item.NoSupply ? "btn-outline-secondary" : "btn-success")" style="min-width: 90px"
                                         onclick="showSetSupplyModal('@item.Id', @Model.Setting.SetSupplyAmountByTamin.ToString().ToLower(), @Model.Setting.SetSupplyByTamin.ToString().ToLower())">
                                     @if (!item.SupplyMismatch && !item.NoSupply) {
@@ -67,13 +70,13 @@
                                 </button>
                             }
                             <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-                                @if (item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
+                                @if (canApprove && item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مسئول_تامین) {
                                     <button type="button" class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" id="NotAcceptTaminExpertId" onclick="showModalNotAccept('@item.Id', 13)">
                                         عدم تایید
                                     </button>
 
                                     <button type="button" class="px-2 py-0 btn btn-secondary" style="min-width: 90px" onclick="showModalSetAmount('@item.Id')">تایید</button>
-                                } else if (item.Pftype == (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری || item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مشتری) {
+                                } else if (canApprove && (item.Pftype == (int)PreFactorEnum.در_انتظار_ارسال_به_مشتری || item.Pftype == (int)PreFactorEnum.در_انتظار_تایید_مشتری)) {
                                     <button type="button" class="px-2 py-0 btn btn-outline-secondary" style="min-width: 90px" onclick="rejectPreFactor('@item.Id', 13)">
                                         رد تایید
                                     </button>
