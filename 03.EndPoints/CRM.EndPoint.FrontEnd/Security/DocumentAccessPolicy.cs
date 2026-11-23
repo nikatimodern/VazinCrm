@@ -185,6 +185,21 @@ public sealed class DocumentAccessPolicy(
         return query;
     }
 
+    public async Task<bool> AllowsRowAsync<T>(T row, string action, CancellationToken ct) where T : BaseEntity
+    {
+        var entity = typeof(T).Name;
+        if (!IsEnforced(entity)) return true;
+        if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
+        if (row is OrderHead head)
+        {
+            var owners = new string?[] { head.UserCreatorID, head.UserTaminId?.ToString() };
+            return AllowsOwners(await OwnersAsync(entity + "." + action, ct), owners, owners);
+        }
+        if (row is Supply) return await CanAsync(entity, action, row.Id, ct);
+        var creator = new string?[] { row.UserCreatorID };
+        return AllowsOwners(await OwnersAsync(entity + "." + action, ct), creator, creator);
+    }
+
     private async Task<bool> CanRowAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
     {
         query = await ApplyAsync(query, "View", ct);
