@@ -426,7 +426,7 @@ const getAllCashesDt = () => {
             
             if (!container) return;
             
-            const shouldShow = json?.data?.some(i => i.status === 0);
+            const shouldShow = window.AccessLive?.can("CashGroup", "create") !== false && json?.data?.some(i => i.status === 0 && json.permissions?.[i.id]?.canChangeStatus);
             
             let groupBtn = container.querySelector(".groupSelectCashBtn");
             let sendAllBtn = container.querySelector(".sendAllBtn");
@@ -471,7 +471,7 @@ const getAllCashesDt = () => {
         
         isSelectable: item => {
             const row = cashTbl.row(item);
-            return row.any() && row.data().status === 0;
+            return row.any() && row.data().status === 0 && row.data().actionRights?.canChangeStatus === true;
         },
         
         onAction: async (ids, selection) => {
@@ -601,6 +601,7 @@ function switchCashView(viewType) {
     const itemsContainer = document.getElementById("cashItemsContainer");
     const groupsContainer = document.getElementById("cashGroupsContainer");
     cashViewType = viewType;
+    if (viewType === "groups" && window.AccessLive?.can("CashGroup", "view") === false) return;
     if (viewType === "cashes") {
         itemsContainer.classList.remove("d-none");
         groupsContainer.classList.add("d-none");
@@ -872,7 +873,7 @@ function getAllCashesModalDt() {
         },
         drawCallback: function () {
             const json = this.api()?.ajax.json();
-            updateCashModalActionButtons(json?.data);
+            updateCashModalActionButtons(json?.data?.map(row => ({ ...row, actionRights: json.permissions?.[row.id] })));
         },
     });
     
@@ -889,7 +890,7 @@ function getAllCashesModalDt() {
         
         isSelectable: item => {
             const data = cashModalTbl.row(item).data();
-            return data.status === 2;
+            return data.status === 2 && data.actionRights?.canExport === true;
         },
         
         onAction: async (ids, selection) => {
