@@ -10,7 +10,7 @@ public sealed class ExportReportsQueryHandler(ICqrsDispatcher dispatcher, IRepor
 {
     public async Task<ReportExportFile> HandleAsync(ExportReportsQuery request, CancellationToken cancellationToken)
     {
-        var result = await dispatcher.QueryAsync(new GetAllReportsQuery(request.Filter, IncludeImages: false), cancellationToken);
+        var result = await dispatcher.QueryAsync(new GetAllReportsQuery(request.Filter with { ForExport = true }, IncludeImages: false), cancellationToken);
         return presentation.Export(result.Reports, request.Filter.Type);
     }
 }
