@@ -20,7 +20,8 @@ public sealed class GetQualityControlContactHistoryQueryHandler(
         GetQualityControlContactHistoryQuery query, CancellationToken ct)
     {
         var user = await actor.GetAsync(ct);
-        var isAdmin = user.HasRole(AppRoles.Admin);
+        var isAdmin = user.HasRole(AppRoles.Admin) &&
+            await permissions.HasAsync("QualityControl", "ManageContactHistory", ct);
         return await repository.GetContactHistoryAsync(query.CustomerId,
             query.IncludeDeleted && isAdmin, query.Start, query.Length,
             await QualityControlAccessPolicy.ForAsync(user, permissions, "View", ct), isAdmin, ct);

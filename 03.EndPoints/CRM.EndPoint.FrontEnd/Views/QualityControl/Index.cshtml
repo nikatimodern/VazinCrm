@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy QcPermissions
 @{
     ViewData["Title"] = "کنترل کیفیت مشتریان";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -7,7 +8,13 @@
     <link rel="stylesheet" href="~/css/qualityControlCustomer.css?release=7.5.6" asp-append-version="true" />
 }
 
-<section id="qualityControlCustomerPage" class="qc-customer-page" dir="rtl">
+<section id="qualityControlCustomerPage" class="qc-customer-page" dir="rtl"
+         data-qc-create="@((await QcPermissions.HasAsync("QualityControl", "Create", Context.RequestAborted)).ToString().ToLowerInvariant())"
+         data-qc-edit="@((await QcPermissions.HasAsync("QualityControl", "Edit", Context.RequestAborted)).ToString().ToLowerInvariant())"
+         data-qc-delete="@((await QcPermissions.HasAsync("QualityControl", "Delete", Context.RequestAborted)).ToString().ToLowerInvariant())"
+         data-qc-contact="@((await QcPermissions.HasAsync("QualityControl", "SetContactStatus", Context.RequestAborted)).ToString().ToLowerInvariant())"
+         data-qc-questions="@((await QcPermissions.HasAsync("QualityControlQuestion", "View", Context.RequestAborted)).ToString().ToLowerInvariant())"
+         data-qc-history-manage="@((await QcPermissions.HasAsync("QualityControl", "ManageContactHistory", Context.RequestAborted)).ToString().ToLowerInvariant())">
     <div class="qc-client-dashboard-top">
     <section class="qc-client-overview" aria-label="خلاصه وضعیت کنترل کیفیت مشتریان">
         <div class="qc-client-overview-card qc-client-overview-contact">

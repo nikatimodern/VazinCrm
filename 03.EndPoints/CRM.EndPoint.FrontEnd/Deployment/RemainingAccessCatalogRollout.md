@@ -55,3 +55,7 @@ Supplier enrichment and search use the existing document read filters for pre-in
 ## QC queue shared metadata
 
 The queue now filters shared contact records, note-existence markers and contact history before querying status filters, sorting, dashboard counts, retry cooldowns and page badges. The same complete-customer eligibility predicate is reused for direct shared operations; partially visible customers retain their authorized invoice-item counts but receive no shared contact metadata. No per-customer database queries are introduced. The disabled QC flag retains legacy customer visibility. Verify against SQL Server with mixed visible/hidden invoices, all contact statuses, date filters and direct history requests before activation. Suppressed contact status is represented by the existing neutral value, not a claim that the customer was contacted.
+
+## QC UI permission wiring
+
+Queue responses now include the same complete-customer capability used by shared contact operations. Razor exposes current catalog grants to the QC page; JavaScript hides unauthorized controls, prevents stale writes and invalidates pending reads after live access changes. History management additionally requires the exact catalog grant, not just the admin role. Question viewing is required for opening the review form and saving reviews. Browser and SQL integration validation remain prerequisites for enabling the QC flags.

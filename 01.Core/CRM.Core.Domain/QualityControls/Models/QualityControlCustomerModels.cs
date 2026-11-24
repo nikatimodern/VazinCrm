@@ -35,6 +35,7 @@ public sealed record QualityControlCustomerRow(
     QualityControlCustomerContactStatus ContactStatus, int NoResponseAttempts,
     int NoResponseCooldownSeconds, int ContactHistoryCount)
 {
+    public bool CanAccessSharedCustomer { get; init; }
     public bool HasNotes { get; init; }
     public bool HasNoResponse { get; init; }
     public bool IsInvalidNumber { get; init; }

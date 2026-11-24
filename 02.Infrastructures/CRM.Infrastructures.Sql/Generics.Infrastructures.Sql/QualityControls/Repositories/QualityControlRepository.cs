@@ -256,6 +256,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         // Fetch for the visible page so large customer sets do not inflate this query.
         var now = DateTime.Now;
         var pageCustomerIds = page.Select(row => row.CustomerId).ToArray();
+        var sharedPageIds = await sharedCustomers.Where(id => pageCustomerIds.Contains(id)).ToHashSetAsync(cancellationToken);
         var recentAttempts = await visibleHistory
             .Where(entry => pageCustomerIds.Contains(entry.CustomerId)
                 && entry.UserCreatorID == access.UserId
@@ -288,6 +289,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
                 ? CooldownRemaining(lastAttempt, now) : 0,
             historyCounts.GetValueOrDefault(row.CustomerId))
             {
+                CanAccessSharedCustomer = sharedPageIds.Contains(row.CustomerId),
                 HasNotes = customersWithNotes.Contains(row.CustomerId),
                 HasNoResponse = contacts.TryGetValue(row.CustomerId, out var savedContact)
                     && savedContact.NoResponseAttempts > 0,
