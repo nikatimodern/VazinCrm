@@ -65,6 +65,7 @@ const submitCheckbookModal = async () => {
 
 function initCheckbookTable(id) {
     let checkStatuses;
+    let checkPermissions = {};
     checksDataTable = $("#checksTable").DataTable({
         paging: false,
         scrollCollapse: true,
@@ -76,6 +77,7 @@ function initCheckbookTable(id) {
             url: `/Check/GetCheckListByCheckbookId?checkbookId=${id}`,
             dataSrc: json => {
                 checkStatuses = json.statuses || [];
+                checkPermissions = json.permissions || {};
                 return json.data;
             },
         },
@@ -95,9 +97,11 @@ function initCheckbookTable(id) {
             },*/
             {
                 data: "statusTxt",
-                render: (data, type, row) => `
+                render: (data, type, row) => checkPermissions[row.id]?.canChangeStatus !== true || window.AccessLive?.can("Check", "changeStatus") === false
+                    ? `<span class="badge ${getCheckStatusBadgeClass(row.status)}">${data || "-"}</span>`
+                    : `
                     <div class="check-status-wrapper d-inline-flex justify-content-center" data-id="${row.id}">
-                        <button type="button" class="check-status-btn badge ${getCheckStatusBadgeClass(row.status)} align-items-center">
+                        <button type="button" data-document-permission="Check.ChangeStatus" class="check-status-btn badge ${getCheckStatusBadgeClass(row.status)} align-items-center">
                             <span class="check-status-text">${data || "-"}</span>
                             <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" /><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" /></svg>
                         </button>
@@ -118,8 +122,8 @@ function initCheckbookTable(id) {
                 data: "id",
                 render: data => `
                     <div class="inline-flex-center gap-1">
-                        <button type="button" class="icon-button icon-button--green" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>
-                        <button type="button" class="icon-button icon-button--red" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>
+                        ${checkPermissions[data]?.canEdit === true && window.AccessLive?.can("Check", "edit") !== false ? `<button type="button" data-document-permission="Check.Edit" class="icon-button icon-button--green" onclick="editCheck('${data}')"><i class="fa fa-pencil"></i></button>` : ""}
+                        ${checkPermissions[data]?.canDelete === true && window.AccessLive?.can("Check", "delete") !== false ? `<button type="button" data-document-permission="Check.Delete" class="icon-button icon-button--red" onclick="deleteCheck('${data}')"><i class="fa fa-trash"></i></button>` : ""}
                     </div>
                 `,
             },
