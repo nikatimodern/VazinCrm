@@ -1,4 +1,7 @@
 using System;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using Microsoft.Extensions.Configuration;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
@@ -30,6 +33,21 @@ public class PushBackgroundService : BackgroundService {
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
                 cts.CancelAfter(TimeSpan.FromSeconds(5));
+                var path = item.Url?.Split('?', '#')[0]?.TrimEnd('/') ?? "";
+                var entity = path.Equals("/Chat/Main", StringComparison.OrdinalIgnoreCase) ? "Chat" :
+                    path.Equals("/Carizo/Index", StringComparison.OrdinalIgnoreCase) ? "Carizo" : null;
+                var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                if (entity != null && configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions"))
+                {
+                    if (item.SendToAll || !string.IsNullOrEmpty(item.RoleName) || string.IsNullOrEmpty(item.UserId)) continue;
+                    var access = scope.ServiceProvider.GetRequiredService<IAccessScopeService>();
+                    var grant = await access.GetEffectiveScopeAsync(item.UserId, entity + ".View", cts.Token);
+                    if (grant == AccessScopes.None) continue;
+                    // Generic notice only; record-specific information is fetched through authorized endpoints.
+                    item.Title = entity == "Chat" ? "پیام‌رسان" : "کاریز";
+                    item.Body = entity == "Chat" ? "پیام جدیدی دارید." : "فعالیت شما تغییر کرد.";
+                    item.Tag = entity;
+                }
                 if (item.SendToAll)
                 {
                     await pushService.SendToAllAsync(item.Title, item.Body, item.Url, item.Tag, cts.Token);

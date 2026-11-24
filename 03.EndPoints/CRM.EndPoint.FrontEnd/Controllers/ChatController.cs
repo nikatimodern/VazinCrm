@@ -85,6 +85,7 @@ public class ChatController : Controller {
     public async Task<IActionResult> ShowListChats()
     {
         var fromUser = await userManager.GetUserAsync(HttpContext.User);
+        if (fromUser == null) return Unauthorized();
 
         var mainChats = await db.MainChats
             .Where(f => f.FromUserId == fromUser.Id || f.ToUserId == fromUser.Id)
@@ -216,7 +217,7 @@ public class ChatController : Controller {
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateMainChat(string toUserId, string toUserTxt)
     {
-        var user = await udb.Users.Where(f => f.PhoneNumber == toUserId).AsNoTracking().FirstOrDefaultAsync();
+        var user = await udb.Users.Where(f => f.Id == toUserId || f.PhoneNumber == toUserId).AsNoTracking().FirstOrDefaultAsync();
         if (user != null)
         {
             toUserId = user.Id;
@@ -224,6 +225,9 @@ public class ChatController : Controller {
         }
 
         var fromUser = await userManager.GetUserAsync(HttpContext.User);
+        if (fromUser == null) return Unauthorized();
+        if (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions") &&
+            (user == null || await scopes.GetEffectiveScopeAsync(user.Id, "Chat.View", HttpContext.RequestAborted) != AccessScopes.All)) return Forbid();
         if (string.IsNullOrEmpty(toUserTxt))
             toUserTxt = toUserId;
 
@@ -390,14 +394,13 @@ public class ChatController : Controller {
 
         await hub.Clients.User(notifUserId).SendAsync("NotifChat", mainChat.Id, $"{fromUser?.FullName}: {displayText}".Trim());
 
-        // The queued transport does not recheck access at delivery; avoid deferred private text under enforcement.
-        if (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions")) return;
+        var enforced = configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions");
         pushQueue?.Enqueue(new PushQueueItem {
             UserId = notifUserId,
-            Title = fromUser?.FullName ?? "پیام رسان",
-            Body = displayText,
+            Title = enforced ? "پیام‌رسان" : fromUser?.FullName ?? "پیام رسان",
+            Body = enforced ? "پیام جدیدی دارید." : displayText,
             Url = "/Chat/Main",
-            Tag = "chat" + fromUser?.FullName
+            Tag = enforced ? "chat" : "chat" + fromUser?.FullName
         });
     }
 

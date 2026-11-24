@@ -2312,6 +2312,15 @@ function showTaminDropdown() {
 }
 /////////
 
+window.addEventListener("erp:access-state", () => {
+    document.getElementById("emailListContainer")?.replaceChildren();
+    document.getElementById("emailContentContainer")?.replaceChildren();
+    document.getElementById("notification-dropdown")?.replaceChildren();
+    document.querySelectorAll("[data-task-id]").forEach(card => card.remove());
+    document.querySelectorAll(".report-wrapper audio").forEach(audio => { audio.pause(); audio.removeAttribute("src"); audio.load(); });
+    document.querySelectorAll(".report-wrapper").forEach(card => card.remove());
+    document.querySelectorAll("#CountChatId, #CountEmailId, #notificationIconBadge").forEach(el => { el.textContent = ""; el.classList.add("d-none"); });
+});
 const accessMutationHeaders = () => ({ RequestVerificationToken: document.querySelector("#accessLiveToken [name=__RequestVerificationToken]")?.value || "" });
 const canCarizoAction = action => window.AccessLive?.can("Carizo", action) !== false && !window.AccessLive?.isEditingLocked();
 const notificationDropdown = document.getElementById("notification-dropdown");
@@ -2326,6 +2335,7 @@ async function getRemind() {
         }
         
     }).then((tasks) => {
+        if (!canCarizoAction("View")) return;
         notificationDropdown.innerHTML = tasks.html;
         notificationIconBadge.classList.toggle("d-none", !tasks.count);
         
@@ -2824,6 +2834,7 @@ async function getAllTask(type, systematic = 0, loc = 1) {
                 return;
             }
             if (res.status === 200) {
+                if (!canCarizoAction("View")) return;
                 if (containerElm) {
                     disposeDateTimePickers(containerElm);
                     containerElm.innerHTML = res.data.html;

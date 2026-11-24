@@ -31,9 +31,9 @@ public sealed class CarizoEffects(IHubContext<TaskHub> hub, IPushQueue push, IVi
     }
     public void Push(string userId, string title, string body, string tag)
     {
-        // Queue payloads cannot carry task details past a later permission revocation.
-        if (configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions")) return;
-        push.Enqueue(new PushQueueItem { UserId = userId, Title = title, Body = body, Tag = tag, Url = "/Carizo/Index" });
+        var enforced = configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions");
+        push.Enqueue(new PushQueueItem { UserId = userId, Title = enforced ? "کاریز" : title,
+            Body = enforced ? "فعالیت شما تغییر کرد." : body, Tag = enforced ? "carizo" : tag, Url = "/Carizo/Index" });
     }
     public async Task<object> RenderAsync(List<CRM.Core.Domain.Carizos.Entities.Carizo> tasks, AppUser user, int type, int location, bool reminders, CancellationToken ct) => new
     {

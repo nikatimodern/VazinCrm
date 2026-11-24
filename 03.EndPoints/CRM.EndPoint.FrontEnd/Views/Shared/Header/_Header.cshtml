@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy HeaderAccess
 @inject UserManager<AppUser> UserManager
 @{
     var currentUser = await UserManager.GetUserAsync(User);
@@ -50,21 +51,25 @@
                 </span>
             }
 
-            @if (User.IsAdmin() || User.IsSalesExpert() || User.IsTaminExpert()) {
-                <div class="header-icon-btn" data-title-bottom="ثبت گزارش" onclick="ShowModalReport()">
+            @if ((User.IsAdmin() || User.IsSalesExpert() || User.IsTaminExpert()) && await HeaderAccess.HasViewAsync("Report", Context.RequestAborted) && await HeaderAccess.HasAsync("Report", "Create", Context.RequestAborted)) {
+                <div data-document-permission="Report.Create" class="header-icon-btn" data-title-bottom="ثبت گزارش" onclick="ShowModalReport()">
                     <svg style="width:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
                 </div>
             }
 
-            <a class="header-icon-btn me-2" data-title-bottom="پیام ها" asp-controller="Email" asp-action="Index">
+            @if (await HeaderAccess.HasAsync("Email", "View", Context.RequestAborted)) {
+            <a data-document-permission="Email.View" class="header-icon-btn me-2" data-title-bottom="پیام ها" asp-controller="Email" asp-action="Index">
                 <span id="CountEmailId" class="badge-count badge-count-blue badge-top fbold d-none" style="--badge-top: -6px"></span>
                 <svg style="height:24px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
             </a>
+            }
 
+            @if (await HeaderAccess.HasAsync("Chat", "View", Context.RequestAborted)) {
             <div class="me-2 position-relative">
                 <span id="CountChatId" class="badge-count badge-top-right d-none"></span>
-                <a class="header-chat-link" asp-controller="Chat" asp-action="Main">پیام‌رسان</a>
+                <a data-document-permission="Chat.View" class="header-chat-link" asp-controller="Chat" asp-action="Main">پیام‌رسان</a>
             </div>
+            }
         </div>
     </div>
 </header>
