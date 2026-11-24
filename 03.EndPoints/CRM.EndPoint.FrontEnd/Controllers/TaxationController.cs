@@ -1,6 +1,7 @@
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Security;
 using CRM.EndPoint.FrontEnd.Composition;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -34,6 +35,7 @@ using CRM.Core.ApplicationServices.Taxation.Commands.SetTaxProductMapping;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [ApiController, Route("api/taxation"), Authorize(Roles = AppRoles.Admin), AutoValidateAntiforgeryToken]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration config) : ControllerBase
 {
     [HttpGet("memories")]
@@ -94,6 +96,10 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> Submit(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] TaxFilingDetails filing, CancellationToken ct) =>
         RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct));
 
+    [HttpGet("dispatches/{id:guid}")]
+    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct) =>
+        Run(() => dispatcher.QueryAsync(new GetTaxDispatchQuery(id), ct));
+
     [HttpPost("dispatches/{id:guid}/inquire")]
     public Task<IActionResult> Inquire(Guid id, CancellationToken ct) =>
         RunSandbox(() => dispatcher.CommandAsync(new InquireTaxSubmissionCommand(id), ct));
@@ -103,7 +109,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         RunSandbox(() => dispatcher.CommandAsync(new InquireTaxWorkFolderCommand(id), ct));
 
     private Task<IActionResult> RunSandbox<T>(Func<Task<T>> action) =>
-        config.GetValue<bool>("Taxation:Sandbox:Enabled") ? Run(action) : Task.FromResult<IActionResult>(NotFound());
+        TaxationAvailability.TryGetSandboxAddress(environment, config, out _) ? Run(action) : Task.FromResult<IActionResult>(NotFound());
 
     public sealed record TaxPreviewVersion(string Version, ExportTaxDetails Export = null);
 

@@ -25,4 +25,5 @@ public interface ITaxSubmissionRepository
     Task RecordAcknowledgementAsync(Guid dispatchId, Guid attemptId, Guid reference, string evidence, CancellationToken ct);
     Task RecordProcessingAsync(Guid dispatchId, Guid attemptId, Guid? reference, string status, string evidence, CancellationToken ct);
     Task RecordWorkFolderAsync(Guid dispatchId, Guid attemptId, string evidence, CancellationToken ct);
+    Task RecordInquiryWithoutResultAsync(Guid dispatchId, Guid attemptId, TaxDispatchEventKind kind, CancellationToken ct);
 }

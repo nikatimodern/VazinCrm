@@ -72,6 +72,10 @@
                         <tr>
                             <th scope="row">
                                 @invoice.Number
+                                @if (!invoice.IsReturn && invoice.Documents.All(x => x.Kind != TaxDispatchKind.Original))
+                                {
+                                    <a class="d-block" asp-action="Preview" asp-route-id="@invoice.Id">پیش‌نمایش</a>
+                                }
                                 <small>@(invoice.IsReturn ? "برگشت از فروش" : invoice.IsExport ? "صادراتی" : "داخلی")</small>
                             </th>
                             <td>@(invoice.Customer ?? "ثبت نشده")</td>
@@ -112,7 +116,7 @@
                                             @foreach (var document in invoice.Documents)
                                             {
                                                 <li>
-                                                    @KindLabel(document.Kind)
+                                                    <a asp-action="Dispatch" asp-route-id="@document.Id">@KindLabel(document.Kind)</a>
                                                     <span class="taxation-status" data-status="@document.Status">@StatusLabel(document.Status)</span>
                                                     @if (!string.IsNullOrEmpty(document.TaxId))
                                                     {

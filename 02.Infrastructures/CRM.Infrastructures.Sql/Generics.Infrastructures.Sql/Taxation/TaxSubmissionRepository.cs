@@ -63,8 +63,9 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
         }
     }
 
-    public async Task<bool> TryStartAsync(Guid dispatchId, Guid attemptId, DateTimeOffset startedAt, string referenceEvidenceVersion, CancellationToken ct) =>
-        await db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.Status == TaxDispatchStatus.Pending &&
+    public Task<bool> TryStartAsync(Guid dispatchId, Guid attemptId, DateTimeOffset startedAt, string referenceEvidenceVersion, CancellationToken ct) =>
+        TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, TaxDispatchEventKind.SubmissionStarted, "Started",
+            () => db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.Status == TaxDispatchStatus.Pending &&
                 (x.ReferencedDispatchId == null || (referenceEvidenceVersion != null && db.TaxDispatches.Any(reference =>
                     reference.Id == x.ReferencedDispatchId && reference.Status == TaxDispatchStatus.Accepted &&
                     reference.Kind != TaxDispatchKind.Cancellation &&
@@ -72,17 +73,18 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, TaxDispatchStatus.InFlight)
                 .SetProperty(x => x.AttemptId, attemptId)
                 .SetProperty(x => x.SubmissionStartedAt, startedAt)
-                .SetProperty(x => x.LeaseUntilUtc, startedAt.UtcDateTime.AddMinutes(2)), ct) == 1;
+                .SetProperty(x => x.LeaseUntilUtc, startedAt.UtcDateTime.AddMinutes(2)), ct), ct);
 
     public async Task RecordAcknowledgementAsync(Guid dispatchId, Guid attemptId, Guid reference, string evidence, CancellationToken ct)
     {
         var encrypted = protection.Protect(evidence);
-        await ForAttempt(dispatchId, attemptId)
+        await TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, TaxDispatchEventKind.Acknowledgement, "Received",
+            () => ForAttempt(dispatchId, attemptId)
             .Where(x => x.Status == TaxDispatchStatus.InFlight || x.Status == TaxDispatchStatus.Unknown)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.AuthorityReference, reference)
                 .SetProperty(x => x.ProtectedAcknowledgement, encrypted)
                 .SetProperty(x => x.Status, TaxDispatchStatus.Submitted)
-                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct);
+                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct), ct);
     }
 
     public async Task RecordProcessingAsync(Guid dispatchId, Guid attemptId, Guid? reference, string status, string evidence, CancellationToken ct)
@@ -96,20 +98,30 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
             "TIMEOUT" => TaxDispatchStatus.Unknown,
             _ => throw new ArgumentOutOfRangeException(nameof(status))
         };
-        await ForAttempt(dispatchId, attemptId).Where(x => x.Status == TaxDispatchStatus.Unknown || x.Status == TaxDispatchStatus.Submitted)
+        await TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, TaxDispatchEventKind.Processing, status,
+            () => ForAttempt(dispatchId, attemptId).Where(x => x.Status == TaxDispatchStatus.Unknown || x.Status == TaxDispatchStatus.Submitted)
             .Where(x => reference == null || x.AuthorityReference == null || x.AuthorityReference == reference)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.AuthorityReference, x => reference ?? x.AuthorityReference)
                 .SetProperty(x => x.AuthorityProcessingStatus, status)
                 .SetProperty(x => x.ProtectedProcessingEvidence, encrypted)
                 .SetProperty(x => x.Status, x => next == TaxDispatchStatus.Unknown &&
-                    x.Status == TaxDispatchStatus.Submitted ? x.Status : next), ct);
+                    x.Status == TaxDispatchStatus.Submitted ? x.Status : next), ct), ct);
     }
 
     public async Task RecordWorkFolderAsync(Guid dispatchId, Guid attemptId, string evidence, CancellationToken ct)
     {
         var encrypted = protection.Protect(evidence);
-        await ForAttempt(dispatchId, attemptId).Where(x => x.Status == TaxDispatchStatus.Accepted)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.ProtectedWorkFolderEvidence, encrypted), ct);
+        await TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, TaxDispatchEventKind.WorkFolder, "Received",
+            () => ForAttempt(dispatchId, attemptId).Where(x => x.Status == TaxDispatchStatus.Accepted)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.ProtectedWorkFolderEvidence, encrypted), ct), ct);
+    }
+
+    public Task RecordInquiryWithoutResultAsync(Guid dispatchId, Guid attemptId, TaxDispatchEventKind kind, CancellationToken ct)
+    {
+        if (kind is not (TaxDispatchEventKind.Processing or TaxDispatchEventKind.WorkFolder))
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        return TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, kind, "NoResult",
+            async () => await ForAttempt(dispatchId, attemptId).AnyAsync(ct) ? 1 : 0, ct);
     }
 
     private IQueryable<TaxDispatch> ForAttempt(Guid dispatchId, Guid attemptId) =>

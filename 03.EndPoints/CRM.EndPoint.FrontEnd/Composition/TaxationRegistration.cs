@@ -2,6 +2,7 @@ using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
@@ -10,7 +11,6 @@ using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.EndPoint.FrontEnd.Integrations.Moadian;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System.Net.Http;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
@@ -47,11 +47,7 @@ internal static class TaxationRegistration
         {
             var config = sp.GetRequiredService<IConfiguration>();
             var environment = sp.GetRequiredService<IWebHostEnvironment>();
-            if (!environment.IsDevelopment() || !config.GetValue<bool>("Taxation:Sandbox:Enabled") ||
-                !Uri.TryCreate(config["Taxation:Sandbox:BaseAddress"], UriKind.Absolute, out var address) ||
-                address.Scheme != Uri.UriSchemeHttps || !address.IsDefaultPort ||
-                address.Host != "sandboxrc.tax.gov.ir" || address.AbsolutePath != "/requestsmanager/api/v2/" ||
-                address.UserInfo.Length != 0 || address.Query.Length != 0 || address.Fragment.Length != 0)
+            if (!TaxationAvailability.TryGetSandboxAddress(environment, config, out var address))
                 throw new InvalidOperationException("Tax Sandbox transport is disabled or has an invalid address.");
             return new MoadianClient(new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false })
             {
@@ -71,6 +67,7 @@ internal static class TaxationRegistration
         services.AddScoped<ITaxationRepository, TaxationRepository>();
         services.AddScoped<ITaxInvoiceListing, TaxInvoiceListing>();
         services.AddScoped<IQueryHandler<ListTaxInvoicesQuery, TaxInvoicePage>, ListTaxInvoicesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetTaxDispatchQuery, TaxDispatchDetails>, GetTaxDispatchQueryHandler>();
         services.AddScoped<ICommandHandler<SaveTaxMemoryCommand, Guid>, SaveTaxMemoryCommandHandler>();
         services.AddScoped<ICommandHandler<ActivateTaxMemoryCommand, bool>, ActivateTaxMemoryCommandHandler>();
         services.AddScoped<IQueryHandler<ListTaxMemoriesQuery, IReadOnlyList<TaxMemory>>, ListTaxMemoriesQueryHandler>();

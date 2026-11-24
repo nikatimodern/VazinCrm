@@ -21,6 +21,9 @@ public sealed class InquireTaxSubmissionCommandHandler(ITaxSubmissionRepository 
         if (result is not null)
             await repository.RecordProcessingAsync(request.DispatchId, state.AttemptId!.Value, result.ReferenceNumber,
                 result.Status, result.Evidence, ct);
+        else
+            await repository.RecordInquiryWithoutResultAsync(request.DispatchId, state.AttemptId!.Value,
+                TaxDispatchEventKind.Processing, ct);
         return await queue.GetStateAsync(request.DispatchId, ct);
     }
 }

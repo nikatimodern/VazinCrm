@@ -18,7 +18,10 @@ public sealed class InquireTaxWorkFolderCommandHandler(ITaxSubmissionRepository 
             throw new ArgumentException("ابتدا نتیجهٔ پردازش صورتحساب را استعلام کنید.");
         var result = await client.GetWorkFolderAsync(submission, ct);
         if (result is null)
+        {
+            await repository.RecordInquiryWithoutResultAsync(request.DispatchId, attempt, TaxDispatchEventKind.WorkFolder, ct);
             return new(null, null, null);
+        }
         await repository.RecordWorkFolderAsync(request.DispatchId, attempt, result.Evidence, ct);
         return new(result.InvoiceStatus, result.Article6Status, result.Error);
     }

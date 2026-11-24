@@ -330,16 +330,27 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         var received = await queue.GetStateAsync(id, Ct);
         Assert.Equal(TaxDispatchStatus.Submitted, received.Status);
         Assert.Equal(gateway.Reference, received.ReferenceNumber);
+        var processing = new InquireTaxSubmissionCommandHandler(repo, queue, gateway);
+        Assert.Equal(TaxDispatchStatus.Submitted, (await processing.HandleAsync(new(id), Ct)).Status);
         gateway.Result = new(gateway.Reference, "SUCCESS", """{"sign":"mock-receipt"}""");
-        var result = await new InquireTaxSubmissionCommandHandler(repo, queue, gateway).HandleAsync(new(id), Ct);
+        var result = await processing.HandleAsync(new(id), Ct);
         Assert.Equal(TaxDispatchStatus.Accepted, result.Status);
-        var folder = await new InquireTaxWorkFolderCommandHandler(repo, gateway).HandleAsync(new(id), Ct);
+        var workFolder = new InquireTaxWorkFolderCommandHandler(repo, gateway);
+        var folder = await workFolder.HandleAsync(new(id), Ct);
+        await workFolder.HandleAsync(new(id), Ct);
         Assert.Equal("REJECTED", folder.InvoiceStatus);
         Assert.Equal(TaxDispatchStatus.Accepted, (await queue.GetStateAsync(id, Ct)).Status);
         var stored = await left.TaxDispatches.AsNoTracking().SingleAsync();
         Assert.StartsWith("test:", stored.ProtectedAcknowledgement);
         Assert.StartsWith("test:", stored.ProtectedProcessingEvidence);
         Assert.StartsWith("test:", stored.ProtectedWorkFolderEvidence);
+        var details = await new TaxInvoiceListing(right, protection).ReadDispatchAsync(id, Ct);
+        Assert.True(details.HasAcknowledgement);
+        Assert.Equal("REJECTED", details.WorkFolderStatus);
+        Assert.Equal("SUCCESS", details.ProcessingStatus);
+        Assert.Equal(new[] { "Started", "Received", "NoResult", "SUCCESS", "Received", "Received" },
+            details.History.Reverse().Select(x => x.Result));
+        Assert.All(details.History, x => Assert.Equal(received.AttemptId, x.AttemptId));
     }
 
     [TaxationSqlFact]
@@ -756,8 +767,6 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         {
             var preceding = before.Database.GetMigrations()
                 .TakeWhile(x => !x.EndsWith("_AddTaxPaymentDispatches", StringComparison.Ordinal)).Last();
-            await before.GetService<IMigrator>().MigrateAsync(preceding, Ct);
-
             var protector = new TaxPreviewProtector(DataProtectionProvider.Create(keyRing));
             original = await SetupReferenceAsync(before, "AWAITING_REACTION", protector);
             originalId = original.Id;
@@ -766,6 +775,7 @@ public sealed class TaxationSqlTests : IAsyncLifetime
             relatedId = await ReferenceHandler(before, protector).HandleAsync(new(originalId, "tester",
                 new(null, TaxDispatchKind.Cancellation, 2, Filing().IssuedAt.AddMinutes(2), null, false,
                     TaxCancellationReason.IncorrectTransactionDate)), Ct);
+            await before.GetService<IMigrator>().MigrateAsync(preceding, Ct);
             await before.Database.MigrateAsync(Ct);
         }
 

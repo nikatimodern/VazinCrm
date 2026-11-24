@@ -17,7 +17,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -7099,6 +7099,38 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         });
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatchEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DispatchId", "Id");
+
+                    b.ToTable("TaxDispatchEvents");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8552,6 +8584,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasOne("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", null)
                         .WithMany()
                         .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatchEvent", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("DispatchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -19,4 +19,5 @@ public sealed record TaxInvoicePage(IReadOnlyList<TaxInvoiceListItem> Items, int
 public interface ITaxInvoiceListing
 {
     Task<TaxInvoicePage> ListAsync(TaxInvoiceFilter filter, CancellationToken ct);
+    Task<TaxDispatchDetails> ReadDispatchAsync(Guid id, CancellationToken ct);
 }

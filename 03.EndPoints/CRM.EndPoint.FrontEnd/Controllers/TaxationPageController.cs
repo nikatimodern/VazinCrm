@@ -1,9 +1,15 @@
 using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
+using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
+using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
 using CRM.EndPoint.FrontEnd.Composition;
 using CRM.EndPoint.FrontEnd.Models.Taxation;
@@ -15,7 +21,9 @@ using Microsoft.Extensions.Configuration;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Roles = AppRoles.Admin), Route("Taxation")]
-public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration configuration)
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration configuration,
+    ITaxSigningBindings bindings)
     : Controller
 {
     [HttpGet("")]
@@ -44,6 +52,38 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
         {
             return InvalidFilters(search, export, state);
         }
+    }
+
+    [HttpGet("invoices/{id:guid}/preview")]
+    public Task<IActionResult> Preview(Guid id, CancellationToken ct) => ShowPreviewAsync(async () =>
+        new(await dispatcher.QueryAsync(new PreviewTaxInvoiceQuery(id), ct), null, false));
+
+    [HttpGet("dispatches/{id:guid}")]
+    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct) => ShowPreviewAsync(async () =>
+    {
+        var item = await dispatcher.QueryAsync(new GetTaxDispatchQuery(id), ct);
+        var snapshot = await dispatcher.QueryAsync(new GetTaxPreviewSnapshotQuery(item.SnapshotId), ct);
+        return new(snapshot, item, HasSandboxBinding(item.MemoryId));
+    });
+
+    private async Task<IActionResult> ShowPreviewAsync(Func<Task<TaxationPreviewModel>> load)
+    {
+        if (!TaxationAvailability.IsLocalEnabled(environment, configuration)) return NotFound();
+        try { return View("Preview", await load()); }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (CryptographicException)
+        {
+            Response.StatusCode = 503;
+            return View("Preview", new TaxationPreviewModel(null, null, false, "بازخوانی Snapshot رمزگذاری‌شده امکان‌پذیر نیست."));
+        }
+    }
+
+    private bool HasSandboxBinding(Guid memoryId)
+    {
+        if (!TaxationAvailability.TryGetSandboxAddress(environment, configuration, out _))
+            return false;
+        try { return !string.IsNullOrWhiteSpace(bindings.Get(memoryId).SellerEconomicCode); }
+        catch (ArgumentException) { return false; }
     }
 
     private IActionResult InvalidFilters(string search, bool? export, string state)

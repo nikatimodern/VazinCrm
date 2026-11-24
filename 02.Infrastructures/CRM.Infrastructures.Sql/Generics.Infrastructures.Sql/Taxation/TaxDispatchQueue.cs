@@ -58,9 +58,10 @@ public sealed class TaxDispatchQueue(CRMContextDb db, ITaxPreviewProtector prote
     }
 
     public Task MarkSubmissionUnknownAsync(Guid dispatchId, Guid attemptId, CancellationToken ct) =>
-        db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.AttemptId == attemptId && x.Status == TaxDispatchStatus.InFlight)
+        TaxDispatchEventWriter.RecordAsync(db, dispatchId, attemptId, TaxDispatchEventKind.Unknown, "Ambiguous",
+            () => db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.AttemptId == attemptId && x.Status == TaxDispatchStatus.InFlight)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, TaxDispatchStatus.Unknown)
-                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct);
+                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct), ct);
 
     private Task ExpireAsync(Guid dispatchId, DateTime utcNow, CancellationToken ct) =>
         db.TaxDispatches.Where(x => x.Id == dispatchId && x.Status == TaxDispatchStatus.InFlight && x.LeaseUntilUtc <= utcNow)

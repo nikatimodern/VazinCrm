@@ -95,3 +95,31 @@
 
 .taxation-error, .taxation-empty { padding: .65rem; }
 .taxation-pagination { justify-content: center; margin-block: .65rem; }
+
+.taxation-summary, .taxation-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: .5rem 1rem;
+}
+
+.taxation-summary > div { min-inline-size: 8rem; }
+.taxation-summary dt, .taxation-fields label { font-size: .87rem; }
+.taxation-summary dd { margin: .15rem 0 0; overflow-wrap: anywhere; }
+.taxation-fields label { flex: 1 1 9rem; max-inline-size: 20rem; }
+.taxation-fields legend { font-size: .95rem; font-family: IRANSansMedium, IRANSans, sans-serif; }
+
+.taxation-workflow {
+    padding: .65rem;
+    margin-block: .65rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .5rem;
+    background: var(--tax-surface);
+}
+
+.taxation-workflow h2 { font-size: 1.05rem; color: var(--tax-primary); }
+.taxation-workflow button { margin-block-start: .4rem; }
+.taxation-workflow fieldset { margin-block-end: .55rem; }
+.taxation-page [data-action-message]:empty { display: none; }
+.taxation-row-errors td { color: var(--tax-danger); background: var(--tax-danger-light); }
+.taxation-row-errors ul { margin-block: 0; }

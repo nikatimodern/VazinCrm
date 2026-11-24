@@ -2,14 +2,43 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Taxation;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CRM.Infrastructures.Sql.Taxation;
 
-public sealed class TaxInvoiceListing(CRMContextDb db) : ITaxInvoiceListing
+public sealed class TaxInvoiceListing(CRMContextDb db, ITaxPreviewProtector protection = null) : ITaxInvoiceListing
 {
+    public async Task<TaxDispatchDetails> ReadDispatchAsync(Guid id, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var dispatch = await db.TaxDispatches.AsNoTracking().Where(x => x.Id == id)
+            .Select(x => new
+            {
+                x.Id, x.SnapshotId, x.MemoryId, x.Kind, x.TaxId, x.AttemptId, x.AuthorityReference, x.QueuedUtc,
+                x.SubmissionStartedAt, x.AuthorityProcessingStatus,
+                Status = x.Status == TaxDispatchStatus.InFlight && x.LeaseUntilUtc <= now
+                    ? TaxDispatchStatus.Unknown : x.Status,
+                HasAcknowledgement = x.ProtectedAcknowledgement != null,
+                x.ProtectedWorkFolderEvidence
+            }).SingleOrDefaultAsync(ct) ?? throw new KeyNotFoundException();
+        var history = await db.TaxDispatchEvents.AsNoTracking().Where(x => x.DispatchId == id)
+            .OrderByDescending(x => x.Id).Take(50).ToListAsync(ct);
+        using var workFolder = dispatch.ProtectedWorkFolderEvidence == null || protection == null ? null :
+            JsonDocument.Parse(protection.Unprotect(dispatch.ProtectedWorkFolderEvidence));
+        return new(dispatch.Id, dispatch.SnapshotId, dispatch.MemoryId, dispatch.Kind, dispatch.Status, dispatch.TaxId,
+            dispatch.AttemptId, dispatch.AuthorityReference, dispatch.HasAcknowledgement, dispatch.QueuedUtc,
+            dispatch.SubmissionStartedAt, dispatch.AuthorityProcessingStatus, dispatch.ProtectedWorkFolderEvidence != null,
+            ReadStatus(workFolder, "invoiceStatus"), ReadStatus(workFolder, "article6Status"), history);
+    }
+
+    private static string ReadStatus(JsonDocument evidence, string key) =>
+        evidence?.RootElement is { ValueKind: JsonValueKind.Object } value &&
+        value.TryGetProperty(key, out var status) && status.ValueKind == JsonValueKind.String ? status.GetString() : null;
+
     public async Task<TaxInvoicePage> ListAsync(TaxInvoiceFilter filter, CancellationToken ct)
     {
         var dispatches = db.TaxDispatches.AsNoTracking();
