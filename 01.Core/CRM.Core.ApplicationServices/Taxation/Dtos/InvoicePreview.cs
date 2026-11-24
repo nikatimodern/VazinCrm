@@ -9,7 +9,11 @@ using CRM.Core.Domain.Taxation;
 namespace CRM.Core.ApplicationServices.Taxation.Dtos;
 
 public sealed record PreviewLine(int Row, Guid? ProductId, string Description, decimal Quantity,
-    string? GoodsId, string? TaxUnit, decimal UnitPrice, decimal Discount, decimal Vat, decimal Total);
+    string? GoodsId, string? TaxUnit, decimal UnitPrice, decimal Discount, decimal Vat, decimal Total)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? FactorItemId { get; init; }
+}
 
 public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? FiscalId, DateTime? InvoiceDate,
     string Buyer, string BuyerEconomicCode, string Currency, decimal Gross, decimal Discount, decimal Vat,
@@ -28,18 +32,33 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ReferenceReason { get; init; }
 
-    public static InvoicePreview Build(TaxPreviewSource source, bool allowReturn = false)
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? InvoiceType { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TaxInvoicePattern? Pattern { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ExportTaxDetails? ExportDetails { get; init; }
+
+    public static InvoicePreview Build(TaxPreviewSource source, bool allowReturn = false, ExportTaxDetails? export = null)
     {
         var factor = source.Factor;
+        var isExport = factor.Export == true;
+        var exportDetails = export is { Lines: not null }
+            ? export with { Lines = export.Lines.OrderBy(x => x?.FactorItemId).ToArray() }
+            : export;
         var errors = new List<string>();
         var lines = new List<PreviewLine>();
-        if (!source.TaxAfterDiscount.HasValue) errors.Add("تنظیم مبنای مالیات ERP مشخص نیست.");
+        if (!isExport && !source.TaxAfterDiscount.HasValue) errors.Add("تنظیم مبنای مالیات ERP مشخص نیست.");
         if (source.ActiveMemory is null) errors.Add("حافظه فعال انتخاب نشده است.");
         if (factor.DateMiladi is null) errors.Add("تاریخ فاکتور مشخص نیست.");
-        if (factor.CustomerId is null || string.IsNullOrWhiteSpace(factor.Cus_EghtesadiCode))
-            errors.Add("اطلاعات خریدار برای پیش‌نمایش فروش داخلی کامل نیست.");
-        if (factor.Export == true || factor.CurrencyType != 0 || (!allowReturn && factor.ParentReturnedId.HasValue))
-            errors.Add("این پیش‌نمایش برای فاکتور اصلی فروش داخلی ریالی است.");
+        if (factor.CustomerId is null || (!isExport && string.IsNullOrWhiteSpace(factor.Cus_EghtesadiCode)))
+            errors.Add("اطلاعات خریدار فاکتور کامل نیست.");
+        if (!isExport && (int)factor.CurrencyType != 0)
+            errors.Add("نوع ارز به‌تنهایی نشان‌دهندهٔ فروش ارز یا صادرات نیست. این الگو برای فروش داخلی ریالی است.");
+        if ((!allowReturn || isExport) && factor.ParentReturnedId.HasValue)
+            errors.Add("موضوع برگشت از فروش برای این پیش‌نمایش یا الگو مجاز نیست.");
+        if (!isExport && export is not null)
+            errors.Add("اطلاعات گمرکی فقط برای فاکتور دارای علامت صادرات پذیرفته می‌شود.");
         if (factor.status == CRM.Core.Domain.Factors.Enum.FactorStatus.ابطال_شده)
             errors.Add("فاکتور ابطال شده است.");
         if (factor.OfficialType != 1) errors.Add("فاکتور رسمی نیست.");
@@ -80,9 +99,12 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
             vat += item.TaxAmount;
             total += item.TotalAmount;
             var line = new PreviewLine(item.Row, item.ProductCode, item.Product, quantity, mapping?.GoodsId, mapping?.TaxUnit,
-                item.UnitAmount, item.Discount, item.TaxAmount, item.TotalAmount);
+                item.UnitAmount, item.Discount, item.TaxAmount, item.TotalAmount)
+            {
+                FactorItemId = isExport ? item.Id : null
+            };
             lines.Add(line);
-            if (TaxInvoiceAmounts.ValidateLine(line, factor.PercentTax, out _, out _) is { } mismatch)
+            if (!isExport && TaxInvoiceAmounts.ValidateLine(line, factor.PercentTax, out _, out _) is { } mismatch)
                 errors.Add(label + mismatch);
         }
         // The setting is current, so an older invoice can match the other ERP basis.
@@ -92,8 +114,8 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
         if (lines.Count == 0) errors.Add("فاکتور ردیف فعال ندارد.");
         if (gross != factor.SumTotalAmount || discount != factor.Discount || vat != factor.TotalTax || total != factor.PaymentAmount)
             errors.Add("جمع ردیف‌ها با مبالغ فاکتور یکسان نیست.");
-        else if (!TaxInvoiceAmounts.IsRial(gross) || !TaxInvoiceAmounts.IsRial(discount) ||
-            !TaxInvoiceAmounts.IsRial(vat) || !TaxInvoiceAmounts.IsRial(total))
+        else if (!isExport && (!TaxInvoiceAmounts.IsRial(gross) || !TaxInvoiceAmounts.IsRial(discount) ||
+            !TaxInvoiceAmounts.IsRial(vat) || !TaxInvoiceAmounts.IsRial(total)))
             errors.Add("جمع مبالغ ثبت‌شده در دامنهٔ ریالی V7.9 نیست.");
         var preview = new InvoicePreview(factor.Id, source.ActiveMemory?.Id, source.ActiveMemory?.FiscalId, factor.DateMiladi,
             factor.Customer, factor.Cus_EghtesadiCode, factor.CurrencyType.ToString(), gross, discount, vat, total, lines, errors)
@@ -101,8 +123,13 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
             BuyerNationalId = factor.Cus_ShenaseMeli,
             BuyerPostalCode = factor.Cus_PostalCode,
             VatPercent = factor.PercentTax,
-            TaxAfterDiscount = source.TaxAfterDiscount
+            TaxAfterDiscount = source.TaxAfterDiscount,
+            InvoiceType = isExport ? 1 : null,
+            Pattern = isExport ? TaxInvoicePattern.Export : null,
+            ExportDetails = isExport ? exportDetails : null
         };
+        if (isExport)
+            errors.AddRange(TaxExportInvoice.Validate(preview));
         var revision = JsonSerializer.SerializeToUtf8Bytes(new
         {
             Preview = preview, factor.SerialNumber, factor.ModifyDate, Status = factor.status,

@@ -20,15 +20,20 @@ internal static class TaxReferenceInvoice
         var header = payload.RootElement.GetProperty("header");
         var prior = JsonSerializer.Deserialize<InvoicePreview>(source.Preview)
             ?? throw Invalid("پیش‌نمایش مرجع در دسترس نیست.");
+        var pattern = prior.Pattern ?? TaxInvoicePattern.DomesticSale;
         if (prior.Errors.Count != 0 || prior.FiscalId != reference.FiscalId || prior.MemoryId != reference.MemoryId ||
             header.GetProperty("taxid").GetString() != reference.TaxId ||
             header.GetProperty("tins").GetString() != binding.SellerEconomicCode ||
-            header.GetProperty("inty").GetInt32() != 1 || header.GetProperty("inp").GetInt32() != 1)
+            header.GetProperty("inty").GetInt32() != 1 || header.GetProperty("inp").GetInt32() != (int)pattern ||
+            pattern is not (TaxInvoicePattern.DomesticSale or TaxInvoicePattern.Export))
             throw Invalid("هویت فروشنده، حافظه یا الگوی سند مرجع یکسان نیست.");
 
         var referenceTime = DateTimeOffset.FromUnixTimeMilliseconds(header.GetProperty("indatim").GetInt64());
         if (request.IssuedAt < referenceTime)
             throw Invalid("زمان صدور سند ارجاعی نباید پیش از مرجع باشد.");
+
+        if (pattern == TaxInvoicePattern.Export && request.Kind == TaxDispatchKind.Return)
+            throw Invalid("طبق V7.9 الگوی صادرات موضوع برگشت از فروش ندارد.");
 
         ValidateWorkFolder(source.WorkFolderEvidence, reference.TaxId, reference.Kind, request.Kind);
         var id = TaxInvoicePayload.TaxId(reference.FiscalId, request.Serial, request.IssuedAt);
@@ -38,7 +43,7 @@ internal static class TaxReferenceInvoice
         if (request.Kind == TaxDispatchKind.Cancellation)
         {
             if (request.CancellationReason is not { } reason || !Enum.IsDefined(reason) ||
-                request.Settlement.HasValue || request.CorrectsQuantityError)
+                request.Settlement.HasValue || request.CorrectsQuantityError || request.Export is not null)
                 throw Invalid("برای ابطال، علت مستند و معتبر مشخص کنید.");
             var cancellation = JsonSerializer.Serialize(new
             {
@@ -53,8 +58,10 @@ internal static class TaxReferenceInvoice
         }
 
         var candidate = InvoicePreview.Build(source.Candidate ??
-            throw Invalid("فاکتور ارجاعی در دسترس نیست."), request.Kind == TaxDispatchKind.Return);
-        if (candidate.Errors.Count != 0 || candidate.BuyerEconomicCode != prior.BuyerEconomicCode ||
+            throw Invalid("فاکتور ارجاعی در دسترس نیست."), request.Kind == TaxDispatchKind.Return, request.Export);
+        if (candidate.Errors.Count != 0)
+            throw Invalid(string.Join(" ", candidate.Errors));
+        if ((candidate.Pattern ?? TaxInvoicePattern.DomesticSale) != pattern || candidate.BuyerEconomicCode != prior.BuyerEconomicCode ||
             candidate.BuyerNationalId != prior.BuyerNationalId || candidate.BuyerPostalCode != prior.BuyerPostalCode ||
             prior.VatPercent != candidate.VatPercent || request.CancellationReason.HasValue ||
             candidate.InvoiceDate?.Date != request.IssuedAt.Date)
@@ -102,7 +109,8 @@ internal static class TaxReferenceInvoice
     private static void ValidateCorrection(InvoicePreview prior, InvoicePreview candidate, TaxReferenceRequest request, int settlement)
     {
         var previous = Index(prior.Lines);
-        var changed = request.Settlement.HasValue && request.Settlement != settlement;
+        var changed = (request.Settlement.HasValue && request.Settlement != settlement) ||
+            (prior.Pattern == TaxInvoicePattern.Export && ExportChanged(prior, candidate, previous));
         if (Index(candidate.Lines).Count != previous.Count)
             throw Invalid("در اصلاحیه شناسهٔ کالا یا واحد مرجع نباید اضافه یا حذف شود.");
         foreach (var line in candidate.Lines)
@@ -115,6 +123,31 @@ internal static class TaxReferenceInvoice
         }
         if (!changed)
             throw Invalid("اصلاحیه باید دست‌کم یک تغییر قابل ارسال داشته باشد.");
+    }
+
+    private static bool ExportChanged(InvoicePreview prior, InvoicePreview candidate,
+        IReadOnlyDictionary<(string?, string?), PreviewLine> previous)
+    {
+        var oldDetails = prior.ExportDetails ?? throw Invalid("اطلاعات گمرکی مرجع در دسترس نیست.");
+        var newDetails = candidate.ExportDetails ?? throw Invalid("اطلاعات گمرکی اصلاحیه در دسترس نیست.");
+        if (oldDetails.CustomsDeclarationDate is { } oldDate &&
+            (newDetails.CustomsDeclarationDate is not { } newDate || newDate < oldDate))
+            throw Invalid("تاریخ کوتاژ اصلاحیه نباید پیش از تاریخ کوتاژ مرجع باشد.");
+
+        if ((oldDetails.CustomsDeclarationNumber, oldDetails.CustomsDeclarationDate, oldDetails.CustomsOffice) !=
+            (newDetails.CustomsDeclarationNumber, newDetails.CustomsDeclarationDate, newDetails.CustomsOffice))
+            return true;
+        var oldLines = oldDetails.Lines.ToDictionary(x => x.FactorItemId);
+        var newLines = newDetails.Lines.ToDictionary(x => x.FactorItemId);
+        foreach (var line in candidate.Lines)
+        {
+            if (previous.TryGetValue(Key(line), out var oldLine) &&
+                oldLines.TryGetValue(oldLine.FactorItemId.GetValueOrDefault(), out var oldCustoms) &&
+                newLines.TryGetValue(line.FactorItemId.GetValueOrDefault(), out var newCustoms) &&
+                (oldCustoms with { FactorItemId = newCustoms.FactorItemId }) != newCustoms)
+                return true;
+        }
+        return false;
     }
 
     private static InvoicePreview SubtractReturn(InvoicePreview prior, InvoicePreview returned)

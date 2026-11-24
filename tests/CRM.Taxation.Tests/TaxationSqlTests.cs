@@ -1,3 +1,5 @@
+using CRM.Core.Domain.PreFactors.Enum;
+using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -470,6 +472,79 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.Null(blocked.AttemptId);
         await Assert.ThrowsAsync<ArgumentException>(() => submit.HandleAsync(new(id, null), Ct));
         Assert.Equal(0, gateway.Sends);
+    }
+
+    [TaxationSqlFact]
+    public async Task ExportFreezesCustomsDataAndUsesExistingQueueAndMockInquiry()
+    {
+        await using var db = Open();
+        await using var other = Open();
+        var (factorId, memoryId) = await SeedAsync(db, FactorStatus.تایید_شده);
+        var filing = Filing() with { BuyerType = 0 };
+        var details = await SetExportFixtureAsync(db, factorId, filing.IssuedAt.AddDays(-1));
+        var operations = new TaxationRepository(db, protection);
+        var preview = await new PreviewTaxInvoiceQueryHandler(operations).HandleAsync(new(factorId, details), Ct);
+        Assert.Empty(preview.Errors);
+        var enqueue = new EnqueueTaxInvoiceCommandHandler(operations);
+        var changed = details with { Lines = [details.Lines[0] with { ExchangeRate = 90001 }] };
+        await Assert.ThrowsAsync<TaxPreviewConflictException>(() =>
+            enqueue.HandleAsync(new(factorId, "tester", preview.Version, changed), Ct));
+        Assert.Empty(await db.TaxInvoiceSnapshots.ToListAsync());
+        var request = new EnqueueTaxInvoiceCommand(factorId, "tester", preview.Version, details);
+        var ids = await Task.WhenAll(enqueue.HandleAsync(request, Ct),
+            new EnqueueTaxInvoiceCommandHandler(new TaxationRepository(other, protection)).HandleAsync(request, Ct));
+        Assert.Equal(ids[0], ids[1]);
+        var queued = await db.TaxDispatches.AsNoTracking().SingleAsync();
+        var saved = JsonSerializer.Deserialize<InvoicePreview>(await operations.ReadSnapshotAsync(queued.SnapshotId, Ct));
+        Assert.Equal(memoryId, queued.MemoryId);
+        Assert.Equal(TaxInvoicePattern.Export, saved.Pattern);
+        Assert.Equal(1, saved.InvoiceType);
+        Assert.Equal(100m, saved.Total);
+        Assert.Equal(150000m, saved.ExportDetails.Lines[0].RialValue);
+
+        await other.Factors.Where(x => x.Id == factorId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.PaymentAmount, 99m));
+        var repository = new TaxSubmissionRepository(db, protection);
+        var queue = new TaxDispatchQueue(db, protection);
+        var gateway = new TestGateway { WorkFolderStatus = "APPROVED" };
+        var submit = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
+        var state = await submit.HandleAsync(new(queued.Id, filing), Ct);
+        Assert.Equal(TaxDispatchStatus.Submitted, state.Status);
+        Assert.True(TaxInvoicePayload.MatchesTaxId(queued.FiscalId, state.TaxId, filing.Serial));
+        using var posted = JsonDocument.Parse(gateway.PreparedPayload);
+        Assert.Equal(150000m, posted.RootElement.GetProperty("header").GetProperty("tbill").GetDecimal());
+        Assert.Equal(1, gateway.Sends);
+        Assert.Equal(state, await submit.HandleAsync(new(queued.Id, filing), Ct));
+        Assert.Equal(1, gateway.Sends);
+        gateway.Result = new(gateway.Reference, "SUCCESS", """{"sign":"mock"}""");
+        Assert.Equal(TaxDispatchStatus.Accepted,
+            (await new InquireTaxSubmissionCommandHandler(repository, queue, gateway).HandleAsync(new(queued.Id), Ct)).Status);
+        await new InquireTaxWorkFolderCommandHandler(repository, gateway).HandleAsync(new(queued.Id), Ct);
+
+        var correctionId = await AddCandidateAsync(db, factorId, 2, null);
+        var correctionDetails = await SetExportFixtureAsync(db, correctionId, filing.IssuedAt.AddDays(-1));
+        var reference = ReferenceHandler(db);
+        var correction = new TaxReferenceRequest(correctionId, TaxDispatchKind.Correction, 2, filing.IssuedAt,
+            null, false, null, correctionDetails with { CustomsDeclarationNumber = "2000" });
+        var correctedId = await reference.HandleAsync(new(queued.Id, "tester", correction), Ct);
+        var corrected = await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == correctedId);
+        Assert.Equal(queued.Id, corrected.ReferencedDispatchId);
+        Assert.NotEqual(state.TaxId, corrected.TaxId);
+        using var correctedPayload = JsonDocument.Parse(protection.Unprotect(corrected.ProtectedSubmission));
+        Assert.Equal(7, correctedPayload.RootElement.GetProperty("header").GetProperty("inp").GetInt32());
+        Assert.Equal(state.TaxId, correctedPayload.RootElement.GetProperty("header").GetProperty("irtaxid").GetString());
+        Assert.Equal(2, await db.TaxInvoiceSnapshots.CountAsync());
+    }
+
+    private static async Task<ExportTaxDetails> SetExportFixtureAsync(CRMContextDb db, Guid factor, DateTimeOffset customsDate)
+    {
+        await db.Factors.Where(x => x.Id == factor).ExecuteUpdateAsync(s => s.SetProperty(x => x.Export, true)
+            .SetProperty(x => x.CurrencyType, CurrencyTypeEnum.یورو).SetProperty(x => x.PercentTax, 0)
+            .SetProperty(x => x.TotalTax, 0).SetProperty(x => x.PaymentAmount, x => x.SumTotalAmount));
+        await db.FactorItems.Where(x => x.factorId == factor).ExecuteUpdateAsync(s => s.SetProperty(x => x.TaxAmount, 0)
+            .SetProperty(x => x.TotalAmount, x => x.TotalAmount - x.TaxAmount));
+        var item = await db.FactorItems.Where(x => x.factorId == factor).Select(x => x.Id).SingleAsync();
+        return new("1000", customsDate, "12345", true, [new ExportTaxLine(item, "EUR", 90000, 150000, 1.5m, 10)]);
     }
 
     private EnqueueTaxReferenceCommandHandler ReferenceHandler(CRMContextDb db) =>

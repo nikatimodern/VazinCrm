@@ -47,6 +47,11 @@ public static class TaxInvoicePayload
     internal static (string TaxId, string Json) Build(InvoicePreview preview, TaxSigningBinding binding,
         TaxFilingDetails filing, TaxDispatchKind kind, string? referenceTaxId)
     {
+        if (preview.Pattern == TaxInvoicePattern.Export)
+            return TaxExportInvoice.Build(preview, binding, filing, kind, referenceTaxId);
+        if ((preview.Pattern is not null and not TaxInvoicePattern.DomesticSale) ||
+            (preview.InvoiceType is not null and not 1) || preview.ExportDetails is not null)
+            throw new ArgumentException("داده‌های این نوع یا الگوی صورتحساب در ERP پشتیبانی نمی‌شود.");
         var original = kind == TaxDispatchKind.Original;
         if (!original && (kind is not (TaxDispatchKind.Correction or TaxDispatchKind.Return) ||
             referenceTaxId is not { Length: 22 }))

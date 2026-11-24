@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Taxation.Dtos;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
@@ -13,7 +14,8 @@ public enum TaxCancellationReason
 }
 
 public sealed record TaxReferenceRequest(Guid? FactorId, TaxDispatchKind Kind, long Serial,
-    DateTimeOffset IssuedAt, int? Settlement, bool CorrectsQuantityError, TaxCancellationReason? CancellationReason);
+    DateTimeOffset IssuedAt, int? Settlement, bool CorrectsQuantityError, TaxCancellationReason? CancellationReason,
+    ExportTaxDetails? Export = null);
 
 public sealed record EnqueueTaxReferenceCommand(Guid ReferenceId, string ActorId, TaxReferenceRequest Reference) : ICommand<Guid>;
 

@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Taxation.Dtos;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
@@ -51,17 +52,21 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> Preview(Guid id, CancellationToken ct) =>
         Run(() => dispatcher.QueryAsync(new PreviewTaxInvoiceQuery(id), ct));
 
+    [HttpPost("invoices/{id:guid}/preview")]
+    public Task<IActionResult> PreviewExport(Guid id, ExportTaxDetails export, CancellationToken ct) =>
+        Run(() => dispatcher.QueryAsync(new PreviewTaxInvoiceQuery(id, export), ct));
+
     [HttpGet("snapshots/{id:guid}")]
     public Task<IActionResult> GetSnapshot(Guid id, CancellationToken ct) =>
         Run(() => dispatcher.QueryAsync(new GetTaxPreviewSnapshotQuery(id), ct));
 
     [HttpPost("invoices/{id:guid}/snapshots")]
     public Task<IActionResult> Snapshot(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
-        Run(() => dispatcher.CommandAsync(new SaveTaxPreviewCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
+        Run(() => dispatcher.CommandAsync(new SaveTaxPreviewCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version, body.Export), ct));
 
     [HttpPost("invoices/{id:guid}/queue")]
     public Task<IActionResult> Enqueue(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
-        Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
+        Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version, body.Export), ct));
 
     [HttpPost("dispatches/{id:guid}/references")]
     public Task<IActionResult> EnqueueReference(Guid id, TaxReferenceRequest body, CancellationToken ct) =>
@@ -83,7 +88,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     private Task<IActionResult> RunSandbox<T>(Func<Task<T>> action) =>
         config.GetValue<bool>("Taxation:Sandbox:Enabled") ? Run(action) : Task.FromResult<IActionResult>(NotFound());
 
-    public sealed record TaxPreviewVersion(string Version);
+    public sealed record TaxPreviewVersion(string Version, ExportTaxDetails Export = null);
 
     private async Task<IActionResult> Run<T>(Func<Task<T>> action)
     {
