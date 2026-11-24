@@ -24,3 +24,5 @@ Branch: AccLevel. SQL registration: RegisterRequestPaymentBankCheckAccessCatalog
 - Build with `dotnet build VazinProject.sln`. JavaScript syntax was checked for check.js, requestAmount.js, Layout.js and the settings page inline scripts; C# compilation, database and browser regression tests were not executed in the editing environment.
 - Verify the four scope modes, explicit user denies, initial role grants, live revocation across tabs/modals, all workflow transitions, linked records, attachment ownership and deletion/restoration, bank ownership rules, search/count isolation and partial/grouped payment flows.
 - Continue the indirect-path audit for cash/cashier reads, aggregates/exports, nested objects and generic Accountancy received-check operations; recheck warehouse, external mappings and reports as their entity rollouts proceed. Do not treat the current source changes as an exhaustive security or runtime verification.
+
+Transfer/cash follow-up: cashier targets are scoped on request lists and related payment operations; previous bank references and payment creator are checked on update. See Transfer-Cash-Access-Rollout.md for remaining integration checks.
