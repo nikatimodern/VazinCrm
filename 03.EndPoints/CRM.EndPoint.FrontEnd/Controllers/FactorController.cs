@@ -1686,6 +1686,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (documentAccess.IsEnforced("Payment") && await db.Payments.IgnoreQueryFilters().AnyAsync(p => p.Id == id, AccessCt) && !await documentAccess.CanAsync("Payment", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("Transfer") && await db.Transfers.IgnoreQueryFilters().AnyAsync(x => x.Id == id, AccessCt) && !await documentAccess.CanAsync("Transfer", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("Cash") && await db.Cashes.IgnoreQueryFilters().AnyAsync(x => x.Id == id, AccessCt) && !await documentAccess.CanAsync("Cash", "View", id, AccessCt)) return Forbid();
+            if (await db.Attachments.AnyAsync(a => a.EntityId == id && a._AttachType == _AttachType.Chat, AccessCt) &&
+                !await documentAccess.CanChatAsync(id, AccessCt)) return Forbid();
+            if (await db.Attachments.AnyAsync(a => a.EntityId == id && a._AttachType == _AttachType.ContractAttach, AccessCt) &&
+                (User.IsInRole("مشتری") || !await documentAccess.CanAsync("Contract", "View", id, AccessCt))) return Forbid();
+            if (documentAccess.IsEnforced("RequestAmount") && await db.RequestAmounts.IgnoreQueryFilters().AnyAsync(x => x.Id == id, AccessCt) &&
+                !await documentAccess.CanAsync("RequestAmount", "View", id, AccessCt)) return Forbid();
             var query = db.Attachments.Where(f => f.EntityId == id);
 
             if (type.HasValue)
