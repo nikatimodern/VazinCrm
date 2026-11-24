@@ -46,7 +46,7 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
             return AccessScopes.IsOverrideGrant(custom.Scope) &&
                    (custom.Scope == AccessScopes.All || permission.SupportsScope) &&
                    (custom.Scope is not (AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers) ||
-                    entityKey is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check")
+                    AccessScopes.SupportsSelectedOwners(entityKey))
                 ? custom.Scope : AccessScopes.None;
         }
 
@@ -113,17 +113,8 @@ public sealed class AccessScopeService(UserContextDb users, CRMContextDb crm) : 
 
     public Task<DealOwnerAccess> GetDocumentOwnerAccessAsync(
         string userId, string permissionKey, CancellationToken ct) =>
-        permissionKey.StartsWith("PreFactor.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Factor.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("OrderHead.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Supply.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("SupplyFactor.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Accountancy.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("RequestAmount.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Payment.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("BankAccount.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Checkbook.", StringComparison.Ordinal) ||
-        permissionKey.StartsWith("Check.", StringComparison.Ordinal)
+        permissionKey.IndexOf('.') is var dot && dot > 0 &&
+        AccessScopes.SupportsDocumentOwners(permissionKey[..dot])
             ? GetSingleOwnerAccessAsync(userId, permissionKey, ct)
             : Task.FromResult(new DealOwnerAccess([], []));
 
