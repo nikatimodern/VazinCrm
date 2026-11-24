@@ -305,6 +305,8 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
         var candidate = models.GetCandidates().FirstOrDefault(x =>
             x.DbContextName == draft.DbContextName && x.ModelFullName == draft.ModelFullName);
         if (candidate is null) return new(400, "مدل انتخاب‌شده در Context موجود نیست.");
+        if (candidate.ModelFullName == typeof(CRM.Core.Domain.AccessCatalog.Modules.Dashboard).FullName && !id.HasValue)
+            return new(400, "داشبورد از طریق اسکریپت ثبت دسترسی ایجاد می‌شود.");
 
         AccessEntity? entity = null;
         if (id.HasValue)

@@ -20,6 +20,7 @@ public sealed class AccessModelCatalog(CRMContextDb db) : IAccessModelCatalog
                              !entity.IsOwned() && entity.FindPrimaryKey() is not null &&
                              entity.ClrType.Namespace?.StartsWith("CRM.Core.Domain.", StringComparison.Ordinal) == true)
             .Select(entity => new AccessModelOption(nameof(CRMContextDb), entity.ClrType.FullName!, entity.ClrType.Name))
+            .Append(new AccessModelOption(nameof(CRMContextDb), typeof(CRM.Core.Domain.AccessCatalog.Modules.Dashboard).FullName!, "Dashboard"))
             .Distinct()
             .OrderBy(x => x.ModelName)
             .ToArray();

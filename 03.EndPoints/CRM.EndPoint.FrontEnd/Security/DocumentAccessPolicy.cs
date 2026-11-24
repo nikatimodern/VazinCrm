@@ -52,7 +52,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "QualityControl" or "QualityControlQuestion" or "Product" or "ProductGroup" or "ProductAmount" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Chat" or "Email" or "Contact" or "Agent" or "ReleaseNote" or "LogSystem" or "SystemWarning" or "Company" or "ASetting" or "BaseItem" or "BaseDescription" or "ExternalSoftware" or "ExternalMapping" or "SentSms" or "ReceivedSms") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "QualityControl" or "QualityControlQuestion" or "Product" or "ProductGroup" or "ProductAmount" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Chat" or "Email" or "Contact" or "Agent" or "ReleaseNote" or "LogSystem" or "SystemWarning" or "Company" or "ASetting" or "BaseItem" or "BaseDescription" or "ExternalSoftware" or "ExternalMapping" or "SentSms" or "ReceivedSms" or "Dashboard") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<IQueryable<Customer>> CustomersAsync(IQueryable<Customer> query, string action, CancellationToken ct)
@@ -116,6 +116,31 @@ public sealed class DocumentAccessPolicy(
         if (!IsEnforced(entity)) return true;
         var owners = await OwnersAsync(entity + "." + action, ct);
         return owners.AllowedOwnerIds is not { Length: 0 };
+    }
+
+    public async Task<bool> HasDashboardSourceViewAsync(string entity, CancellationToken ct)
+    {
+        if (entity == "Customer")
+            return !configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") ||
+                await scopes.GetEffectiveScopeAsync(UserId, "Customer.View", ct) != AccessScopes.None;
+        return await HasViewAsync(entity, ct);
+    }
+
+    public async Task<IQueryable<T>> ApplyDashboardOwnersAsync<T>(IQueryable<T> query, string action, string ownerProperty, CancellationToken ct)
+        where T : class
+    {
+        if (!IsEnforced("Dashboard")) return query;
+        if (!CRM.Core.Domain.AccessCatalog.Modules.Dashboard.SupportsScope(action)) return query.Where(x => false);
+        var owners = await OwnersAsync("Dashboard." + action, ct);
+        if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        if (owners.AllowedOwnerIds is { } allowed)
+            query = query.Where(x => allowed.Contains(EF.Property<string>(x, ownerProperty)));
+        if (owners.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = owners.ExcludedOwnerIds;
+            query = query.Where(x => !excluded.Contains(EF.Property<string>(x, ownerProperty)));
+        }
+        return query;
     }
 
     private Task<Guid?> ExternalPersonAsync(CancellationToken ct) => externalPerson ??=

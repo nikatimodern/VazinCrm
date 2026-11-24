@@ -5,10 +5,10 @@ var filterDashboardConfig = { filterVar: {} };
 document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("dashboardWorkspace"));
     enableMomentumScroll(document.scrollingElement);
-    const tasks = getAllTask(1, 0, 2);
+    const tasks = document.getElementById("todayTaskDashId") ? getAllTask(1, 0, 2) : Promise.resolve();
     try {
         currentMonthArr = await myDate.getCurrentMonth();
-        showTaskUsersDropdown();
+        if (document.getElementById("todayTaskDashId")) showTaskUsersDropdown();
         showInfoFactors();
 
         const filConfigCurrentMonth = {
@@ -116,7 +116,7 @@ const getDashReports = async () => {
         const reportContainer = document.getElementById("allReportsDashboardId");
         try {
             const model = { ...modelDash, count: 50, _type: -1 };
-            const res = await axios.post("/Report/GetAllReportPartial", model);
+            const res = await axios.post("/Dashboard/GetDashboardReports", model);
             if (res.status === 200) {
                 reportContainer.innerHTML = res.data.html;
             }
@@ -129,6 +129,7 @@ const getDashReports = async () => {
 
 
 async function getInfoFactors() {
+    if (!document.getElementById("infoFactors-icon")) return;
 
     const res = await axios.post("/dashboard/GetInfoFactors", modelDash);
     const data = res.data;
@@ -172,7 +173,7 @@ function redirectFromDashboard(targetPage, sellerId = null, sellerName = null) {
     window.location.href = `/${targetPage}/Index`;
 }
 
-document.getElementById("systematicTaskDash").addEventListener("change", async (e) => {
+document.getElementById("systematicTaskDash")?.addEventListener("change", async (e) => {
     e.target.setAttribute("disabled", "true");
     systematicTask = e.target.value;
     try {
@@ -241,9 +242,12 @@ async function getFinancialReport() {
 
         const data = res.data;
 
-        container.querySelector("#bankBalanceId").textContent = data.bankBalance?.toLocaleString() || "-";
-        container.querySelector("#totalDemandId").textContent = data.demands?.toLocaleString() || "-";
-        container.querySelector("#totalDebitId").textContent = data.debit?.toLocaleString() || "-";
+        for (const [id, key] of [["bankBalanceId", "bankBalance"], ["totalDemandId", "demands"], ["totalDebitId", "debit"]]) {
+            const element = container.querySelector("#" + id);
+            if (element) element.textContent = data[key]?.toLocaleString() ?? "—";
+        }
+
+        if (!container.querySelector("#demandInfo") || !container.querySelector("#debitInfo")) return;
 
         container.querySelector("#demandInfo").dataset.bsContent = `<div class="popover-financial">
             <div>جمع کل فاکتور فروش: <b>${(data.factorAmount || 0).toLocaleString()}</b></div>

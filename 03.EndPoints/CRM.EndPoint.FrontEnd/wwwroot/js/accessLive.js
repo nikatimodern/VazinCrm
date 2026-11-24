@@ -19,6 +19,7 @@
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
+        if (/^\/dashboard(?:\/|$)/.test(path)) return "dashboard";
         if (/^\/qualitycontrol(?:\/|$)/.test(path)) return "qualitycontrol";
         if (/^\/amount(?:\/|$)/.test(path)) return "productamount";
         if (/^\/contract(?:\/|$)/.test(path)) return "contract";
@@ -207,7 +208,7 @@
         // Selected/excluded owner memberships can change without changing the numeric scope.
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
             (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
-                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash", "warehouse", "warehousevoucher", "qualitycontrol", "productamount", "contract", "carizo", "report", "chat", "email", "releasenote", "sms", "externalmapping", "externalsoftware", "asetting", "baseitem"].includes(module));
+                ["dashboard", "cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash", "warehouse", "warehousevoucher", "qualitycontrol", "productamount", "contract", "carizo", "report", "chat", "email", "releasenote", "sms", "externalmapping", "externalsoftware", "asetting", "baseitem"].includes(module));
         if (!changed && !forceRefresh) { editorLocked = false; return; }
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
@@ -219,7 +220,7 @@
 
         const viewRevoked = module && latest[module]?.view === 0;
         if (!hasOpenEditor()) {
-            if (viewRevoked) redirectAfterViewRevoked();
+            if (viewRevoked && module !== "dashboard") redirectAfterViewRevoked();
             else location.reload(); // New server HTML, cards, menu and scopes.
             return;
         }

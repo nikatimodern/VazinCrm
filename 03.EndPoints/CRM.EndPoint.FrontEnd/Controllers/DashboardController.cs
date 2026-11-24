@@ -12,7 +12,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Reports.Queries.GetReportPartial;
+using CRM.Core.Domain.Reports.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Enum;
@@ -29,31 +34,55 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly CRMContextDb db;
         private readonly UserContextDb udb;
         private readonly DocumentAccessPolicy documentAccess;
+        private readonly ICqrsDispatcher requests;
+        private CancellationToken Ct => HttpContext.RequestAborted;
+        private bool Enforced => documentAccess.IsEnforced("Dashboard");
+        private Task<bool> Can(string key) => DashboardAccess.CanAsync(documentAccess, User, key, Ct);
 
-        public DashboardController(UserManager<AppUser> userManager, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, DocumentAccessPolicy documentAccess)
+        public DashboardController(UserManager<AppUser> userManager, DateTimeServices dtService, CRMContextDb db, UserContextDb udb, DocumentAccessPolicy documentAccess, ICqrsDispatcher requests)
         {
             this.userManager = userManager;
             this.dtService = dtService;
             this.db = db;
             this.udb = udb;
             this.documentAccess = documentAccess;
+            this.requests = requests;
         }
 
         //[Route("Dashboard")]
         [Route("Dashboard/Index")]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            if (!await Can("View"))
+            {
+                Response.StatusCode = 403;
+                return View("AccessDenied");
+            }
             return View();
         }
 
+
+        [HttpPost]
+        public async Task<IActionResult> GetDashboardReports([FromBody] ReportFilterVModel model)
+        {
+            if (!await Can("ViewReports") || !await documentAccess.HasViewAsync("Report", Ct)) return Forbid();
+            if (model == null) return BadRequest();
+            var result = await requests.QueryAsync(new GetReportPartialQuery(model.ToReportSearch(), null), Ct);
+            return Ok(new { count = result.Count, html = result.Html });
+        }
 
         [HttpPost]
         public async Task<IActionResult> GetFinancialReport([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
-            if (!roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر عامل"))
+            if (!Enforced && !roles.Contains("مدیر ارشد") && !roles.Contains("مدیر مالی") && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر عامل"))
                 return NoContent();
+
+            var showBank = await Can("ViewBankBalance");
+            var showReceivables = await Can("ViewReceivables");
+            var showPayables = await Can("ViewPayables");
+            if (!showBank && !showReceivables && !showPayables) return Forbid();
 
 
             // These totals combine ledgers; a partial total would misstate the balance.
@@ -98,6 +127,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var supplyFactorAmount = await supplyFactorQuery.SumAsync(x => x.PaymentAmount);
 
 
+            if (Enforced)
+            {
+                var permitted = new Dictionary<string, decimal>();
+                if (showBank) permitted["bankBalance"] = bankBalance;
+                if (showReceivables) permitted["demands"] = factorAmount - (bankBalance + tahatori);
+                if (showPayables) permitted["debit"] = supplyFactorAmount - (paymentAmount + tahatori);
+                // Breakdown values can reveal independently denied financial cards.
+                return Ok(permitted);
+            }
+
             var data = new {
                 bankBalance,
                 tahatori,
@@ -119,7 +158,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
-            var canDetails = await documentAccess.HasAsync("LogSystem", "ViewDetails", HttpContext.RequestAborted);
+            if (!await Can("ViewLogs")) return Forbid();
+            var canDetails = Enforced ? await Can("ViewLogDetails") :
+                rols.Contains("مدیر ارشد") && await documentAccess.HasAsync("LogSystem", "ViewDetails", Ct);
             var logSystem = db.logSystems.Where(f => !string.IsNullOrEmpty(f.Description)).AsQueryable();
 
             if (model?.filt != null)
@@ -134,8 +175,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     f.Description,
                     f.ChangeTimeTxt,
                     f.ActionType,
-                    ChangeDetails = canDetails && rols.Contains("مدیر ارشد") ? f.ChangeDetails : null,
-                    CommentTxt = canDetails && rols.Contains("مدیر ارشد") && f.EntityName == nameof(AppUser) ? f.CommentTxt : null
+                    ChangeDetails = canDetails ? f.ChangeDetails : null,
+                    CommentTxt = canDetails && f.EntityName == nameof(AppUser) ? f.CommentTxt : null
                 });
 
             return Ok(data);
@@ -145,16 +186,22 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetInfoFactors([FromBody] FilterVModel model)
         {
+            if (!await Can("ViewSalesDetails")) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             //var rols = await userManager.GetRolesAsync(user);
 
             var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
-            if (model.filt != null)
+            if (model?.filt != null)
             {
                 factorsQ = factorsQ.ApplyFilter(model, null, f => f.DateMiladi, null);
             }
 
+            if (Enforced)
+            {
+                factorsQ = await documentAccess.ApplyDashboardOwnersAsync(factorsQ, "ViewSales", "SelerId", Ct);
+                factorsQ = await documentAccess.ApplyDashboardOwnersAsync(factorsQ, "ViewSalesDetails", "SelerId", Ct);
+            }
             var factorsBySeller = await factorsQ
                 .GroupBy(f => new { f.SelerId })
                 .Select(g => new {
@@ -185,26 +232,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> getCustomerSuccess([FromBody] FilterVModel model)
         {
+            if (!await Can("ViewCustomers")) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
 
 
             var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
-            if (model.filt != null)
+            if (model?.filt != null)
             {
                 factorsQ = factorsQ.ApplyFilter(model, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
             }
 
 
-            if (!rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش") && !rols.Contains("کارشناس مالی") && !rols.Contains("مدیر مالی"))
+            if (!Enforced && !rols.Contains("مدیر ارشد") && !rols.Contains("مدیر فروش") && !rols.Contains("کارشناس مالی") && !rols.Contains("مدیر مالی"))
             {
                 factorsQ = factorsQ.Where(f => f.SelerId == user.Id);
             }
 
-            var customerIds = await factorsQ.Select(f => f.CustomerId).Distinct().ToListAsync();
-
-            var cusQ = db.Customers.Where(c => customerIds.Contains(c.Id));
+            factorsQ = await documentAccess.ApplyDashboardOwnersAsync(factorsQ, "ViewCustomers", "SelerId", Ct);
+            var customerIds = factorsQ.Select(f => f.CustomerId).Distinct();
+            var cusQ = await documentAccess.CustomersAsync(db.Customers.AsNoTracking().Where(c => customerIds.Contains(c.Id)), "View", Ct);
 
             var count = await cusQ.CountAsync();
             var export = await cusQ.Where(c => c.Export).CountAsync();
@@ -221,6 +269,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetReportsCount([FromBody] FilterVModel model)
         {
+            if (!await Can("ViewReportCount")) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
 
@@ -230,18 +279,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var calls = await documentAccess.ApplyAsync(db.CallRecordings.AsNoTracking(), "View", HttpContext.RequestAborted);
                 reports = reports.Where(r => !r.CallRecordingId.HasValue || calls.Any(c => c.Id == r.CallRecordingId.Value));
             }
-            if (model.filt != null)
+            if (model?.filt != null)
             {
                 reports = reports.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
             }
 
 
-            if (!(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی")))
+            if (!Enforced && !(rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی")))
             {
                 reports = reports.Where(f => f.UserCreatorID == user.Id);
             }
 
-            var data = reports.Count();
+            reports = await documentAccess.ApplyDashboardOwnersAsync(reports, "ViewReportCount", "UserCreatorID", Ct);
+            var data = await reports.CountAsync(Ct);
 
             return Ok(data);
         }
@@ -250,13 +300,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetOrderCount([FromBody] FilterVModel _filter)
         {
-            var user = userManager.GetUserAsync(HttpContext.User).Result;
+            if (!await Can("ViewOrders")) return Forbid();
+            var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
             IQueryable<OrderHead> orderHeadQ;
 
-            if (rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
+            if (Enforced || rols.Contains("مدیر ارشد") || rols.Contains("مدیر فروش") || rols.Contains("کارشناس مالی") || rols.Contains("مدیر مالی"))
             {
-                if (_filter.filt != null && _filter.filt.SelFilterChd)
+                if (_filter?.filt != null && _filter.filt.SelFilterChd)
                 {
                     orderHeadQ = db.OrderHeads.Where(f => f.UserCreatorID == _filter.filt.selFilter.ToString()).AsQueryable();
                 } else
@@ -269,8 +320,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
 
 
-            orderHeadQ = await documentAccess.ApplyAsync(orderHeadQ, "View", HttpContext.RequestAborted);
-            if (_filter.filt != null)
+            orderHeadQ = await documentAccess.ApplyAsync(orderHeadQ.AsNoTracking(), "View", Ct);
+            orderHeadQ = await documentAccess.ApplyDashboardOwnersAsync(orderHeadQ, "ViewOrders", "UserCreatorID", Ct);
+            if (_filter?.filt != null)
             {
                 orderHeadQ = orderHeadQ.ApplyFilter(_filter, f => f.Customer, f => f.OrderDateMildi, f => f.UserCreatorID);
             }
@@ -289,6 +341,16 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpGet]
         public async Task<IActionResult> GetAllUserForosh()
         {
+            if (!await Can("ViewSalesDetails")) return Forbid();
+            if (Enforced)
+            {
+                var visible = await documentAccess.FactorsAsync(db.Factors.AsNoTracking(), "View", Ct);
+                visible = await documentAccess.ApplyDashboardOwnersAsync(visible, "ViewSales", "SelerId", Ct);
+                visible = await documentAccess.ApplyDashboardOwnersAsync(visible, "ViewSalesDetails", "SelerId", Ct);
+                var ids = await visible.Select(f => f.SelerId).Distinct().ToListAsync(Ct);
+                return Ok(await udb.Users.AsNoTracking().Where(u => ids.Contains(u.Id))
+                    .Select(u => new { u.FirstName, u.LastName, u.FullName, u.Id }).ToListAsync(Ct));
+            }
             var ss = await userManager.GetUsersInRoleAsync("کارشناس فروش");
             return Ok(ss.Select(f => new { f.FirstName, f.LastName, f.FullName, f.Id }).ToList());
         }
@@ -297,12 +359,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetDashFactors([FromBody] FilterVModel filter)
         {
+            if (!await Can("ViewSales")) return Forbid();
             var user = await userManager.GetUserAsync(HttpContext.User);
             var roles = await userManager.GetRolesAsync(user);
 
             var factorsQ = await documentAccess.FactorsAsync(db.Factors.AsNoTracking().Where(f => f.status == FactorStatus.تایید_شده), "View", HttpContext.RequestAborted);
 
-            if (!roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی") && !roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
+            if (!Enforced && !roles.Contains("کارشناس مالی") && !roles.Contains("مدیر مالی") && !roles.Contains("مدیر ارشد") && !roles.Contains("مدیر فروش"))
                 factorsQ = factorsQ.Where(f => f.SelerId == user.Id);
 
             if (filter?.filt != null)
@@ -310,7 +373,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 factorsQ = factorsQ.ApplyFilter(filter, f => f.CustomerId, f => f.DateMiladi, f => f.SelerId);
             }
 
-            var factors = await factorsQ.ToListAsync();
+            factorsQ = await documentAccess.ApplyDashboardOwnersAsync(factorsQ, "ViewSales", "SelerId", Ct);
+            var factors = await factorsQ.ToListAsync(Ct);
 
 
             var model = new DashFactorsVModel {
@@ -327,6 +391,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [HttpPost]
         public async Task<IActionResult> GetDashboardPartial(FilterViewModel _filter)
         {
+            if (!await Can("ViewCustomers")) return Forbid();
+            // The old combined partial has no independent card-level rendering.
+            // Require full dashboard grants for both aggregates; source record scopes still apply.
+            if (Enforced && (!await documentAccess.HasAsync("Dashboard", "ViewCustomers", Ct) ||
+                !await documentAccess.HasAsync("Dashboard", "ViewSales", Ct) ||
+                !await documentAccess.HasViewAsync("PreFactor", Ct))) return Forbid();
+            if (_filter == null) return BadRequest();
+            var visibleCustomers = await documentAccess.CustomersAsync(db.Customers.AsNoTracking(), "View", Ct);
             IList<Customer> data;
             IList<PreFactor> allPf;
             decimal SumPayment;
@@ -334,7 +406,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (_filter.FromDate == null || _filter.ToDate == null)
             {
-                data = await db.Customers.AsNoTracking().ToListAsync();
+                data = await visibleCustomers.ToListAsync(Ct);
                 allPf = await visiblePreFactors.ToListAsync();
                 SumPayment = allPf.Select(f => f.PaymentAmount).ToArray().Sum();
             } else
@@ -342,7 +414,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var stDate = dtService.GetDateMiladi(_filter.FromDate);
                 var enDate = dtService.GetDateMiladi(_filter.ToDate);
 
-                data = await db.Customers.Include(f => f.PreFactors)
+                data = await visibleCustomers
                     .Where(f => f.CreateDate >= stDate && f.CreateDate <= enDate).ToListAsync();
                 allPf = await visiblePreFactors
                     .Where(f => f.DateMiladi >= stDate && f.DateMiladi <= enDate).ToListAsync();

@@ -1,5 +1,20 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DashboardPermissions
+@using CRM.EndPoint.FrontEnd.Security
 @{
     Layout = "_Layout";
+    var ct = Context.RequestAborted;
+    var enabled = DashboardPermissions.IsEnforced("Dashboard");
+    async Task<bool> Can(string key) => await DashboardAccess.CanAsync(DashboardPermissions, User, key, ct);
+    var sales = await Can("ViewSales");
+    var orders = await Can("ViewOrders");
+    var customers = await Can("ViewCustomers");
+    var reportCount = await Can("ViewReportCount");
+    var reports = await Can("ViewReports");
+    var tasks = await Can("ViewTasks");
+    var logs = await Can("ViewLogs");
+    var finance = enabled
+        ? await Can("ViewBankBalance") || await Can("ViewReceivables") || await Can("ViewPayables")
+        : User.IsAdmin() || User.IsFinancial() || User.IsManagingDirector();
 }
 
 @* Render notification in destination HTML, independent of JS storage. *@
@@ -43,44 +58,47 @@
     </div>
 
     <div class="dashGridContainer">
-        <div class="dashGridItem" style="container-type: inline-size">
-            <partial name="_DashboardSalesPartial" />
-        </div>
+        @if (sales) {
+            <div class="dashGridItem" style="container-type: inline-size">
+                <partial name="_DashboardSalesPartial" />
+            </div>
+        }
 
-        <div class="dashGridItem" style="container-type: inline-size">
-            <partial name="_DashboardOrderHeadPartial" />
-        </div>
+        @if (orders) {
+            <div class="dashGridItem" style="container-type: inline-size">
+                <partial name="_DashboardOrderHeadPartial" />
+            </div>
+        }
 
-        <div class="dashGridItem" style="container-type: inline-size">
-            <partial name="_DashboardCustomersPartial" />
-        </div>
+        @if (customers) {
+            <div class="dashGridItem" style="container-type: inline-size">
+                <partial name="_DashboardCustomersPartial" />
+            </div>
+        }
 
-        <div class="dashGridItem" style="container-type: inline-size">
-            <partial name="_DashboardReportCountPartial" />
-        </div>
+        @if (reportCount) {
+            <div class="dashGridItem" style="container-type: inline-size">
+                <partial name="_DashboardReportCountPartial" />
+            </div>
+        }
 
-        <div class="dashGridItem gridItemFinancial">
-            @if (User.IsAdmin() || User.IsFinancial() || User.IsManagingDirector())
-            {
-                <partial name="_DashboardFinancialPartial" />
-            }
-            else
-            {
-                <partial name="_DashboardTargetPartial" />
-            }
-        </div>
+        @if (finance) {
+            <div class="dashGridItem gridItemFinancial"><partial name="_DashboardFinancialPartial" /></div>
+        } else if (!enabled) {
+            <div class="dashGridItem gridItemFinancial"><partial name="_DashboardTargetPartial" /></div>
+        }
 
-<div class="dashGridItem gridItemReports">
-            <partial name="_DashboardReportPartial" />
-        </div>
+@if (reports) {
+            <div class="dashGridItem gridItemReports"><partial name="_DashboardReportPartial" /></div>
+        }
 
-        <div class="dashGridItem gridItemTasks">
-            <partial name="_DashboardCarizoPartial" />
-        </div>
+        @if (tasks) {
+            <div class="dashGridItem gridItemTasks"><partial name="_DashboardCarizoPartial" /></div>
+        }
 
-        <div class="dashGridItem gridItemLogs">
-            <partial name="_DashboardLogsPartial" />
-        </div>
+        @if (logs) {
+            <div class="dashGridItem gridItemLogs"><partial name="_DashboardLogsPartial" /></div>
+        }
 
         @*<div class="dashGridItem" style="grid-column: span 2">
             <div class="d-flex flex-column h-100 w-100 p-3">
@@ -101,7 +119,7 @@
     </div>
 </div>
 
-<partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" />
+@if (tasks) { <partial name="~/Views/Carizo/Modals/_EditTaskModal.cshtml" /> }
 
 @section Scripts {
     <script>

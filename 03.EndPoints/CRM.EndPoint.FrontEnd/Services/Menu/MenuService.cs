@@ -40,6 +40,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             var settings = serviceProvider.GetRequiredService<IConfiguration>();
             var scopes = serviceProvider.GetRequiredService<IAccessScopeService>();
             foreach (var entry in new[] {
+                (Entity: "Dashboard", Url: "/Dashboard/Index"),
                 (Entity: "Customer", Url: "/Customer/Index"),
                 (Entity: "Deal", Url: "/Deal/Index"),
                 (Entity: "OrderHead", Url: "/Order/Index"),

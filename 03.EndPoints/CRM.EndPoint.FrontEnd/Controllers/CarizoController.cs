@@ -38,12 +38,14 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
     [HttpGet]
     public async Task<IActionResult> GetAllTask(int type, int loc, int systematic, CancellationToken ct)
     {
+        if (loc == 2 && !await DashboardAccess.CanAsync(access, User, "ViewTasks", ct)) return Forbid();
         if (!await access.HasViewAsync("Carizo", ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetTaskListQuery(type, loc, systematic), ct));
     }
     [HttpGet]
     public async Task<IActionResult> GetTaskCards(Guid id, int systematic = 0, int loc = 1, CancellationToken ct = default)
     {
+        if (loc == 2 && !await DashboardAccess.CanAsync(access, User, "ViewTasks", ct)) return Forbid();
         if (!await access.HasViewAsync("Carizo", ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetTaskCardsQuery(id, systematic, loc), ct));
     }

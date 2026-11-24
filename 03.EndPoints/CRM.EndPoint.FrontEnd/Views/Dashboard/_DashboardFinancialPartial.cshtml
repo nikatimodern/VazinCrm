@@ -1,3 +1,12 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DashboardPermissions
+@using CRM.EndPoint.FrontEnd.Security
+@{
+    var enabled = DashboardPermissions.IsEnforced("Dashboard");
+    var ct = Context.RequestAborted;
+    var bank = await DashboardAccess.CanAsync(DashboardPermissions, User, "ViewBankBalance", ct);
+    var receivables = await DashboardAccess.CanAsync(DashboardPermissions, User, "ViewReceivables", ct);
+    var payables = await DashboardAccess.CanAsync(DashboardPermissions, User, "ViewPayables", ct);
+}
 <div id="financialReportContainer" class="w-100 h-100">
     <div class="dashboard-panel d-flex flex-column h-100 w-100 p-3">
         <div class="d-flex align-items-center justify-content-between w-100 mb-2">
@@ -10,6 +19,7 @@
         </div>
         <div class="dashboard-scroll flex-grow-1 mt-1">
             <div class="financialSummary">
+                @if (bank) {
                 <div class="financialItem">
                     <div class="financialHead">
                         <span class="financialTitle">موجودی بانک</span>
@@ -20,13 +30,17 @@
                         <span class="financialCurrency">ريال</span>
                     </div>
                 </div>
+                }
 
+                @if (receivables) {
                 <div class="financialItem financialDemandItem position-relative">
                     <div class="financialHead">
-                        <a class="financialTitle stretched-link text-decoration-none" asp-controller="Supply" asp-action="Demand">مطالبات</a>
+                        @if (!enabled) { <a class="financialTitle stretched-link text-decoration-none" asp-controller="Supply" asp-action="Demand">مطالبات</a> } else { <span class="financialTitle">مطالبات</span> }
+                        @if (!enabled) {
                         <span id="demandInfo" data-bs-title="جزئیات" data-bs-toggle="popover" data-bs-html="true" data-bs-placement="top">
                             <svg class="financialInfoIcon" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" /></svg>
                         </span>
+                        }
                     </div>
 
                     <div class="financialValueWrap">
@@ -34,19 +48,24 @@
                         <span class="financialCurrency">ريال</span>
                     </div>
                 </div>
+                }
 
+                @if (payables) {
                 <div class="financialItem">
                     <div class="financialHead">
                         <span class="financialTitle">بدهی</span>
+                        @if (!enabled) {
                         <span id="debitInfo" data-bs-title="جزئیات" data-bs-toggle="popover" data-bs-html="true" data-bs-placement="bottom">
                             <svg class="financialInfoIcon" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" /></svg>
                         </span>
+                        }
                     </div>
                     <div class="financialValueWrap">
                         <span class="dashboard-value financialValue direction-ltr" id="totalDebitId"></span>
                         <span class="financialCurrency">ريال</span>
                     </div>
                 </div>
+                }
             </div>
         </div>
     </div>
