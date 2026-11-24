@@ -113,7 +113,7 @@ public sealed partial class AccessHistoryService
         var canScope = permissions.Where(p => p.SupportsScope).Select(p => p.Id).ToHashSet();
         var scopedEntityIds = target.Where(x => x.Kind == "entity")
             .Select(x => Parse<EntityState>(x.Data))
-            .Where(x => x.Key is "Customer" or "Deal" or "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check").Select(x => x.Id).ToHashSet();
+            .Where(x => AccessScopes.SupportsSelectedOwners(x.Key)).Select(x => x.Id).ToHashSet();
         var selectedCapable = permissions.Where(p =>
             p.SupportsScope && scopedEntityIds.Contains(p.AccessEntityId)).Select(p => p.Id).ToHashSet();
         var targetOverrides = target.Where(x => x.Kind == "override")
