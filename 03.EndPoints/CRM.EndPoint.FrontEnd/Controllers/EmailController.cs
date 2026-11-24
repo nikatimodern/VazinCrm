@@ -7,11 +7,15 @@ using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using CRM.EndPoint.FrontEnd.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, UserContextDb udb, Service genService, DateTimeServices dtService)
+[Authorize]
+[CatalogPermission("Email")]
+public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, UserContextDb udb, Service genService, DateTimeServices dtService, DocumentAccessPolicy access)
     : Controller {
     public IActionResult Index()
     {
@@ -22,7 +26,8 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
     {
         try
         {
-            var userId = Guid.Parse(userManager.GetUserId(HttpContext.User));
+            if (type is not (1 or 2)) return BadRequest();
+            if (!Guid.TryParse(userManager.GetUserId(HttpContext.User), out var userId)) return Unauthorized();
             var emailsQuery = db.Emails.AsNoTracking().AsQueryable();
             var emailsCount = await emailsQuery.Where(e => e.ToId == userId && !e.Seen).CountAsync();
 
@@ -73,10 +78,13 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
         try
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
-            var email = await db.Emails.Where(e => e.Id == id).FirstOrDefaultAsync();
+            if (type is not (1 or 2)) return BadRequest();
+            if (user == null || !Guid.TryParse(user.Id, out var userId)) return Unauthorized();
+            var email = await db.Emails.Where(e => e.Id == id &&
+                (type == 1 ? e.ToId == userId : e.FromId == userId)).FirstOrDefaultAsync();
             if (email == null) return NotFound("رکوردی یافت نشد!");
 
-            if (type == 1)
+            if (type == 1 && await access.HasAsync("Email", "MarkRead", HttpContext.RequestAborted))
             {
                 email.Seen = true;
                 email.ModifyDate = DateTime.Now;
