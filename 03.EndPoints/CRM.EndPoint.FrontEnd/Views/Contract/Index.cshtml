@@ -1,4 +1,6 @@
-﻿@{
+﻿@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy Access
+@{
+    var canCreate = await Access.HasAsync("Contract", "Create", Context.RequestAborted);
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -9,7 +11,9 @@
 
 <div class=" " style="display:flex;justify-content:center; align-items:center; flex-direction:column ">
     <div style="width:50% ;margin-bottom:10px;">
-        <button class="buttonGreen " onclick="showModalAdd()">قرارداد جدید</button>
+        @if (canCreate) {
+            <button class="buttonGreen " data-document-permission="Contract.Create" onclick="showModalAdd()">قرارداد جدید</button>
+        }
 
     </div>
 
@@ -94,7 +98,7 @@
 
                 <div style="margin-top:10px; width:100%; display:flex;justify-content:center">
                     <button class="button" style="border-radius:5px" onclick="$('#AddContractModal').modal('toggle') ">انصراف</button>
-                    <button class="buttonGreen" style="border-radius:5px" onclick="SubmitContract()">ثبت</button>
+                    <button class="buttonGreen" style="border-radius:5px" data-document-permission="Contract.Create" onclick="SubmitContract()">ثبت</button>
 
                 </div>
             </div>
@@ -175,7 +179,7 @@
 
                 <div style="margin-top:10px; width:100%; display:flex;justify-content:center">
                     <button class="button" style="border-radius:5px" onclick="$('#upContractModal').modal('toggle') ">انصراف</button>
-                    <button class="buttonGreen" style="border-radius:5px" onclick="UpSubmitContract()">ویرایش</button>
+                    <button class="buttonGreen" style="border-radius:5px" data-document-permission="Contract.Edit" onclick="UpSubmitContract()">ویرایش</button>
                 </div>
             </div>
         </div>
@@ -209,6 +213,7 @@
                     $.get(baseUrl + `Contract/GetContract/${id}`, (res) => {
                         document.getElementById("FLshowLoading").style.display = "none";
                         Attachments = res.attachments;
+                        document.querySelector("[onclick='UpSubmitContract()']").hidden = res.canEdit === false;
                         resolve(res);
                     })
 
@@ -239,7 +244,9 @@
                     })
                         .fail(async () => {
                            
-                            await this.del(cid)
+                            document.getElementById("FLshowLoading").style.display = "none";
+                            toastifyError("حذف قرارداد انجام نشد");
+                            resolve(null);
                         })
 
 
@@ -314,7 +321,8 @@
                     }
                 })
                     .fail(() => {
-                        SubmitContract();
+                        document.getElementById("FLshowLoading").style.display = "none";
+                        toastifyError("ثبت قرارداد انجام نشد");
                     })
             }
         }
@@ -369,7 +377,8 @@
                     }
                 })
                     .fail(() => {
-                        UpSubmitContract();
+                        document.getElementById("FLshowLoading").style.display = "none";
+                        toastifyError("ویرایش قرارداد انجام نشد");
                     })
 
             }
