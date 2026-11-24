@@ -50,15 +50,15 @@
     </div>
 
     <div class="sms-content-card">
-        <div class="sms-tabs">
-            <button type="button" class="sms-tab active" data-target="receivesTab">
-                <i class="fa-regular fa-comment-dots"></i>
+        <div class="sms-tabs" role="group" aria-label="نمایش پیامک‌ها">
+            <button type="button" class="sms-tab active" data-target="receivesTab" aria-controls="receivesTab" aria-pressed="true">
+                <i class="fas fa-comment-dots" aria-hidden="true"></i>
                 پیامک‌های دریافتی
                 <span class="sms-tab-count d-none" id="receivesCount">0</span>
             </button>
 
-            <button type="button" class="sms-tab" data-target="reportsTab">
-                <i class="fa-regular fa-paper-plane"></i>
+            <button type="button" class="sms-tab" data-target="reportsTab" aria-controls="reportsTab" aria-pressed="false">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i>
                 گزارش ارسال
                 <span class="sms-tab-count d-none" id="reportsCount">0</span>
             </button>

@@ -63,10 +63,14 @@ syncSentSmsBtn.addEventListener("click", async () => {
 function initSmsTabs() {
     document.querySelectorAll(".sms-tab").forEach(tab => {
         tab.addEventListener("click", () => {
-            document.querySelectorAll(".sms-tab").forEach(x => x.classList.remove("active"));
+            document.querySelectorAll(".sms-tab").forEach(x => {
+                x.classList.remove("active");
+                x.setAttribute("aria-pressed", "false");
+            });
             document.querySelectorAll(".sms-tab-content").forEach(x => x.classList.add("d-none"));
             
             tab.classList.add("active");
+            tab.setAttribute("aria-pressed", "true");
             
             const target = tab.dataset.target;
             
