@@ -1,3 +1,4 @@
+using CRM.EndPoint.FrontEnd.Security;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,8 +16,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 public sealed class AmountController(ICqrsDispatcher requests) : Controller
 {
     [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
+    [CatalogPermission("ProductAmount", "View")]
+    [CatalogPermission("Product", "View")]
     public async Task<IActionResult> index(CancellationToken ct) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Amount"), ct));
     [HttpGet]
+    [CatalogPermission("ProductAmount", "View")]
+    [CatalogPermission("Product", "View")]
     public async Task<IActionResult> ListProduct(string searchValue, string from = "amountIndex", CancellationToken ct = default)
     {
         try
@@ -35,5 +40,6 @@ public sealed class AmountController(ICqrsDispatcher requests) : Controller
     [HttpPost]
     public async Task<IActionResult> AddAmount([FromBody] ProductAmount model, CancellationToken ct) => StatusCode(await requests.CommandAsync(new SaveProductPriceCommand(model), ct));
     [HttpGet]
+    [CatalogPermission("ProductAmount", "Delete")]
     public async Task<IActionResult> DelAmount(Guid id, CancellationToken ct) => StatusCode(await requests.CommandAsync(new DeleteProductPriceCommand(id), ct));
 }
