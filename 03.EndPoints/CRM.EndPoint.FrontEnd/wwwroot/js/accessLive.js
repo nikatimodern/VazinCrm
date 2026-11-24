@@ -19,6 +19,10 @@
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
+        if (/^\/transfer(?:\/|$)/.test(path)) return "transfer";
+        if (/^\/cash\/cashier(?:\/|$)/.test(path)) return "cashier";
+        if (/^\/cash(?:\/|$)/.test(path)) return "cash";
+        if (/^\/baseitem\/financial(?:\/|$)/.test(path)) return "basecash";
         if (/^\/requestamount(?:\/|$)/.test(path)) return "requestamount";
         if (/^\/supply\/payment(?:\/|$)/.test(path)) return "payment";
         if (/^\/check\/received(?:\/|$)/.test(path)) return "check";
@@ -124,7 +128,7 @@
                 button.disabled = true;
             });
         }
-        document.querySelectorAll("#PreFactor button[onclick*='submitPreFactor'], #Factor button[onclick*='submitFactor'], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice(']").forEach(button => {
+        document.querySelectorAll("#PreFactor button[onclick*='submitPreFactor'], #Factor button[onclick*='submitFactor'], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], [onclick*='submitTransferModal('], [onclick*='submitCashModal('], [onclick*='submitCashierModal('], [onclick*='submitBaseCashForm(']").forEach(button => {
             button.setAttribute("aria-disabled", "true");
             if ("disabled" in button) button.disabled = true;
         });
@@ -141,7 +145,7 @@
         if (!editorLocked || !moduleForPath()) return;
         const action = event.target.closest(
             "#btnIn, #updateCustomerModal .buttonGreen3, #dealModal .buttonGreen3, " +
-            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
+            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], [onclick*='submitTransferModal('], [onclick*='submitCashModal('], [onclick*='submitCashierModal('], [onclick*='submitBaseCashForm('], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
         );
         if (!action) return;
         event.preventDefault();
@@ -186,7 +190,7 @@
         // Selected/excluded owner memberships can change without changing the numeric scope.
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
             (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
-                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check"].includes(module));
+                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash"].includes(module));
         if (!changed && !forceRefresh) return;
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
