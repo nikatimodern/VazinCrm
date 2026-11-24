@@ -3135,6 +3135,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpGet]
+        [CatalogPermission("BaseDescription", "View")]
         public async Task<IActionResult> GetItemsDescription(BaseDescriptionTypeEnum? type = null)
         {
             try
@@ -3149,6 +3150,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [CatalogPermission("BaseDescription", "View")]
         public async Task<IActionResult> GetPrefactorTerms()
         {
             try
