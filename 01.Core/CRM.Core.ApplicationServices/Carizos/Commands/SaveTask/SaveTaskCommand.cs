@@ -27,6 +27,8 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
                 {
                     if (!await access.HasAsync("Carizo", "Create", ct))
                         return 403;
+                    if (!Enum.IsDefined(_model.TaskType)) return 400;
+                    if (_model.TaskUsers?.Any(u => u.Id != Guid.Empty || u.IsDeleted) == true) return 400;
                     _model.IsDeleted = false;
                     _model.Systematic = false;
                     _model.TaskStatus = false;
@@ -58,9 +60,35 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
                     _model.CompleteTaskUserId = original.CompleteTaskUserId;
                     _model.CreateDate = original.CreateDate;
                     _model.CreateDateTxt = original.CreateDateTxt;
+                    if (original.Systematic || original.UserCreatorID != _user.Id)
+                    {
+                        _model.Title = original.Title;
+                        _model.Description = original.Description;
+                        _model.TaskType = original.TaskType;
+                        _model.TaskTypeTxt = original.TaskTypeTxt;
+                    }
+                    if (original.TaskUsers != null && _model.TaskUsers != null)
+                        foreach (var participant in _model.TaskUsers)
+                        {
+                            var stored = original.TaskUsers.FirstOrDefault(x => x.Id == participant.Id && x.UserId == participant.UserId);
+                            participant.completed = stored?.completed ?? false;
+                            participant.TaskId = original.Id;
+                        }
                     if (_model.TaskUsers != null && _model.TaskUsers.Any(u => u.Id != Guid.Empty &&
                         !(original.TaskUsers ?? new List<TaskUser>()).Any(x => x.Id == u.Id && x.UserId == u.UserId)))
                         return 403;
+                }
+                if (_model.TaskUsers?.Count > 0)
+                {
+                    var ids = _model.TaskUsers.Select(x => x.UserId).ToArray();
+                    if (ids.Any(x => x == Guid.Empty) || ids.Distinct().Count() != ids.Length) return 400;
+                    var names = await repository.ResolveParticipantsAsync(ids, ct);
+                    if (names.Count != ids.Length) return 403;
+                    foreach (var participant in _model.TaskUsers)
+                    {
+                        participant.FullName = names[participant.UserId];
+                        if (participant.Id == Guid.Empty) participant.completed = false;
+                    }
                 }
             }
             if (_model.EntityType == "Deal" && !access.IsEnforced("Carizo"))

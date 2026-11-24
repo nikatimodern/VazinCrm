@@ -25,6 +25,9 @@ jobs:
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/PublicFunction.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/Layout.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/File.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/chat.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/report.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/TaskSignalR.js
       - name: Build solution and Razor views
         run: dotnet build VazinProject.sln -p:MvcRazorCompileOnBuild=true
       - name: Access scope checks

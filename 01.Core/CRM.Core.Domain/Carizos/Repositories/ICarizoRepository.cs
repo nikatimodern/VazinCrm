@@ -11,6 +11,8 @@ public interface ICarizoRepository
 {
     Task<bool> CanAccessAsync(Guid id, string action, CancellationToken ct);
     Task<bool> CanMutateSharedAsync(Guid? shareId, string action, CancellationToken ct);
+    Task<bool> CanPropagateStatusAsync(Guid shareId, string actorId, CancellationToken ct);
+    Task<Dictionary<Guid, string>> ResolveParticipantsAsync(Guid[] userIds, CancellationToken ct);
     Task<Carizo?> GetAsync(Guid? id, bool tracking, CancellationToken ct);
     Task<List<Carizo>> GetSharedAsync(Guid? shareId, Guid? exceptId, CancellationToken ct);
     Task<Carizo?> GetAssignedAsync(Guid? shareId, string userId, CancellationToken ct);

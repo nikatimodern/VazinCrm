@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Carizos.Repositories;
 using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Carizos.Repositories;
-public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access) : ICarizoRepository
+public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access, IAccessScopeService scopes, UserContextDb users) : ICarizoRepository
 {
     public async Task<bool> CanAccessAsync(Guid id, string action, CancellationToken ct)
     {
@@ -29,12 +31,38 @@ public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access
         return !await all.AnyAsync(t => !visible.Any(v => v.Id == t.Id), ct);
     }
 
+    public async Task<bool> CanPropagateStatusAsync(Guid shareId, string actorId, CancellationToken ct)
+    {
+        if (!access.IsEnforced("Carizo")) return true;
+        if (shareId == Guid.Empty) return false;
+        var scope = await scopes.GetEffectiveScopeAsync(actorId, "Carizo.ChangeStatus", ct);
+        if (scope != AccessScopes.Own)
+            return await CanMutateSharedAsync(shareId, "ChangeStatus", ct);
+        // A participant completing their own assigned task can trigger the legacy
+        // coordinated group status transition, not arbitrary child edits or deletion.
+        var root = await db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && t.Id == shareId && t.ShareTaskId == shareId)
+            .Select(t => new { t.UserCreatorID, t.AssignUserId }).FirstOrDefaultAsync(ct);
+        if (root == null) return false;
+        var group = db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && (t.Id == shareId || t.ShareTaskId == shareId));
+        return !await group.AnyAsync(t => t.UserCreatorID != root.UserCreatorID, ct);
+    }
+
+    public async Task<Dictionary<Guid, string>> ResolveParticipantsAsync(Guid[] userIds, CancellationToken ct)
+    {
+        var ids = userIds.Select(x => x.ToString()).ToArray();
+        var result = await users.Users.AsNoTracking()
+            .Where(u => u.IsEmployee && !u.OrganAdmin && ids.Contains(u.Id))
+            .Select(u => new { u.Id, u.FirstName, u.LastName }).ToListAsync(ct);
+        return result.Where(u => Guid.TryParse(u.Id, out _))
+            .ToDictionary(u => Guid.Parse(u.Id), u => (u.FirstName + " " + u.LastName).Trim());
+    }
+
     public async Task<Carizo?> GetAsync(Guid? id, bool tracking, CancellationToken ct)
     {
         var query = tracking ? db.Carizos.AsQueryable() : db.Carizos.AsNoTracking();
         return await query.Include(t => t.TaskUsers.Where(u => !u.IsDeleted)).FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
     }
-    public Task<List<Carizo>> GetSharedAsync(Guid? id, Guid? except, CancellationToken ct) => db.Carizos.Include(t => t.TaskUsers).Where(t => t.ShareTaskId == id && (!except.HasValue || t.Id != except)).ToListAsync(ct);
+    public Task<List<Carizo>> GetSharedAsync(Guid? id, Guid? except, CancellationToken ct) => db.Carizos.Include(t => t.TaskUsers.Where(u => !u.IsDeleted)).Where(t => id.HasValue && id != Guid.Empty && !t.IsDeleted && t.ShareTaskId == id && (!except.HasValue || t.Id != except)).ToListAsync(ct);
     public Task<Carizo?> GetAssignedAsync(Guid? id, string userId, CancellationToken ct) => db.Carizos.FirstOrDefaultAsync(t => t.ShareTaskId == id && t.AssignUserId == userId, ct);
     public async Task<List<Carizo>> GetRemindersAsync(string userId, DateTime now, CancellationToken ct) =>
         await (await access.ApplyAsync(db.Carizos.AsNoTracking(), "View", ct)).Include(t => t.TaskUsers).Where(t => t.AssignUserId == userId && !t.TaskStatus && t.Remind == true && t.DateMiladi <= now).ToListAsync(ct);

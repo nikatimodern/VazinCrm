@@ -25,6 +25,7 @@ public sealed class UnCheckTaskCommandHandler(ICarizoRepository repository, Curr
         {
             var parent = await repository.GetAsync(Ta.ShareTaskId, false, ct);
             if (parent == null || parent.ShareTaskId != parent.Id ||
+                !await repository.CanPropagateStatusAsync(parent.Id, user.Id, ct) ||
                 (parent.UserCreatorID != user.Id && (parent.TaskUsers == null ||
                  !parent.TaskUsers.Any(member => !member.IsDeleted && member.UserId.ToString() == user.Id))))
                 return 403;
