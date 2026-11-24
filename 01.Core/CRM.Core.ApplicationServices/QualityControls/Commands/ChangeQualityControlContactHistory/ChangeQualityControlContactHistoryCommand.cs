@@ -21,7 +21,7 @@ public sealed class ChangeQualityControlContactHistoryCommandHandler(
         ChangeQualityControlContactHistoryCommand command, CancellationToken ct)
     {
         var user = await actor.GetAsync(ct);
-        if (!user.HasRole(AppRoles.Admin))
+        if (!permissions.IsEnforced("QualityControl") && !user.HasRole(AppRoles.Admin))
             return new(403, "فقط مدیر ارشد امکان حذف یا بازیابی تاریخچه تماس را دارد.");
         return await repository.ChangeContactHistoryDeletionAsync(command.Request,
             await QualityControlAccessPolicy.ForAsync(user, permissions, "ManageContactHistory", ct), dates.PersianNow(), ct);

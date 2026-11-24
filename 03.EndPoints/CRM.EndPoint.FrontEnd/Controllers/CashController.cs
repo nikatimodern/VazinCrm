@@ -51,7 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy access, CRMContextDb db) : Controller
 {
-    [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
+    [LegacyCatalogRoles("Cash", "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         if (!await access.HasViewAsync("Cash", ct)) return Forbid();
@@ -59,7 +59,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         return View(new CashIndexVModel { IsTaminUser = data.IsTaminUser, CashCenters = data.CashCenters.Select(o => new SelectOptionDto<Guid> { Value = o.Value, Text = o.Text }).ToList(), CashTitles = data.CashTitles.Select(o => new SelectOptionDto<Guid> { Value = o.Value, Text = o.Text }).ToList(), CashierTitles = data.CashierTitles.Select(o => new SelectOptionDto<Guid> { Value = o.Value, Text = o.Text }).ToList() });
     }
 
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("Cashier", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> Cashier(CancellationToken ct)
     {
         if (!await access.HasViewAsync("Cashier", ct)) return Forbid();
@@ -67,7 +67,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         return View(data.Select(x => new CashierDto { ExternalSoftware = x.ExternalSoftware, SelectOptions = x.SelectOptions.Select(o => new SelectOptionDto<string> { Value = o.Value, Text = o.Text }).ToList() }).ToList());
     }
 
-    [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
+    [LegacyCatalogRoles("Cash", "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddCash([FromBody] Cash model, CancellationToken ct)
     {
@@ -132,7 +132,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
 
     private async Task<bool> CanUseBankAccount(Guid? id, CancellationToken ct) =>
         !id.HasValue || await access.CanAsync("BankAccount", "View", id.Value, ct);
-    [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]
+    [LegacyCatalogRoles("Cashier", "مدیر ارشد,مدیر مالی,کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddCashier([FromBody] Cashier model, CancellationToken ct)
     {
@@ -234,12 +234,12 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (access.IsEnforced("Cash") && !await db.Cashes.AnyAsync(x => x.Id == id && x.Status == CashStatusEnum.ثبت_موقت, ct)) return Conflict();
         return Map(await dispatcher.CommandAsync(new DeleteCashCommand(id), ct));
     }
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("Cashier", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteCashier(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("Cashier", "Delete", id, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new DeleteCashierCommand(id), ct));
     }
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("BaseCash", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     [HttpPost]
     public async Task<IActionResult> AddBaseCash([FromBody] BaseCash model, CancellationToken ct) {
         if (model == null) return BadRequest();
@@ -261,7 +261,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         }
         return Map(await dispatcher.CommandAsync(new AddBaseCashCommand(model), ct));
     }
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("BaseCash", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> DeleteBaseCash(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("BaseCash", "Delete", id, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new DeleteBaseCashCommand(id), ct));

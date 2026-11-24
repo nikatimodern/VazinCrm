@@ -15,7 +15,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public sealed class AmountController(ICqrsDispatcher requests, DocumentAccessPolicy access) : Controller
 {
-    [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
+    [LegacyCatalogRoles("ProductAmount", "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
     [CatalogPermission("ProductAmount", "View")]
     [CatalogPermission("Product", "View")]
     public async Task<IActionResult> index(CancellationToken ct) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Amount"), ct));

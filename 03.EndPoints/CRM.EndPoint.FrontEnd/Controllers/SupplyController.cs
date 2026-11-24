@@ -173,13 +173,13 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
     {
     }
 
-    [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("SupplyFactor", "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> SupplyFactor(CancellationToken cancellationToken)
     {
         if (!await documentAccess.HasViewAsync("SupplyFactor", cancellationToken)) return Forbid();
         return View(await requests.QueryAsync(new GetWorkspacePageQuery("Supply/SupplyFactor"), cancellationToken));
     }
-    [Authorize(Roles = "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("Payment", "مدیر تامین , کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> Payment(CancellationToken cancellationToken)
     {
         if (!await documentAccess.HasViewAsync("Payment", cancellationToken)) return Forbid();

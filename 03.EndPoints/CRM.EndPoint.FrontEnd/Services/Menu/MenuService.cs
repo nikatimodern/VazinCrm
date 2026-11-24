@@ -30,40 +30,18 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
         var menus = BuildMenus(user);
 
-        var filteredMenus = Filter(menus, roles);
+        var catalogViews = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-        // The legacy role menu must also respect the two modules whose
-        // AccessCatalog View enforcement is enabled. On a socket-triggered
-        // shell reload, removed links disappear immediately.
+        // Catalog-controlled links are evaluated before legacy role filtering.
+        // A granted child can appear even if its legacy parent group was hidden.
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!string.IsNullOrWhiteSpace(userId))
         {
             var settings = serviceProvider.GetRequiredService<IConfiguration>();
             var scopes = serviceProvider.GetRequiredService<IAccessScopeService>();
-            if (settings.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") &&
-                await scopes.GetEffectiveScopeAsync(userId, "Customer.View", default) == AccessScopes.None)
-                filteredMenus.RemoveAll(item => item.Id == "customer");
-
-            if (settings.GetValue<bool>("AccessCatalog:EnforceDealPermissions") &&
-                await scopes.GetEffectiveScopeAsync(userId, "Deal.View", default) == AccessScopes.None)
-                filteredMenus.RemoveAll(item => item.Id == "deal");
-
-            if (settings.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions") &&
-                settings.GetValue<bool>("AccessCatalog:EnforceFactorPermissions") &&
-                await scopes.GetEffectiveScopeAsync(userId, "PreFactor.View", default) == AccessScopes.None &&
-                await scopes.GetEffectiveScopeAsync(userId, "Factor.View", default) == AccessScopes.None &&
-                !user.IsInRole("مدیر ارشد") && !user.IsInRole("کارشناس مالی") && !user.IsInRole("مدیر تامین") && !user.IsInRole("کارشناس تامین") && !user.IsInRole("مدیر عامل"))
-                filteredMenus.RemoveAll(item => item.Id == "cartable");
-
-            void RemoveUrl(List<MenuItem> items, string url)
-            {
-                foreach (var item in items)
-                    if (item.SubItems?.Count > 0) RemoveUrl(item.SubItems, url);
-                items.RemoveAll(item => string.Equals(item.Url, url, StringComparison.OrdinalIgnoreCase) ||
-                    (string.IsNullOrEmpty(item.Url) && string.IsNullOrEmpty(item.OnClick) && item.SubItems?.Count == 0));
-            }
-
             foreach (var entry in new[] {
+                (Entity: "Customer", Url: "/Customer/Index"),
+                (Entity: "Deal", Url: "/Deal/Index"),
                 (Entity: "OrderHead", Url: "/Order/Index"),
                 (Entity: "SupplyFactor", Url: "/Supply/SupplyFactor"),
                 (Entity: "Accountancy", Url: "/Accountancy/Index"),
@@ -84,10 +62,25 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 (Entity: "Report", Url: "/Report/Index"),
                 (Entity: "Contract", Url: "/Contract/Index")
             })
-                if (settings.GetValue<bool>("AccessCatalog:Enforce" + entry.Entity + "Permissions") &&
-                    await scopes.GetEffectiveScopeAsync(userId, entry.Entity + ".View", default) == AccessScopes.None)
-                    RemoveUrl(filteredMenus, entry.Url);
+            {
+                if (!settings.GetValue<bool>("AccessCatalog:Enforce" + entry.Entity + "Permissions")) continue;
+                var scope = await scopes.GetEffectiveScopeAsync(userId, entry.Entity + ".View", default);
+                // Employee-only endpoints keep their independent account-type boundary.
+                var allowed = scope != AccessScopes.None &&
+                    (entry.Entity is "Customer" or "QualityControl" || !user.IsInRole(AppRoles.Customer));
+                catalogViews[entry.Url] = allowed && catalogViews.GetValueOrDefault(entry.Url, true);
+            }
+
+            if (settings.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions") &&
+                settings.GetValue<bool>("AccessCatalog:EnforceFactorPermissions") &&
+                await scopes.GetEffectiveScopeAsync(userId, "PreFactor.View", default) == AccessScopes.None &&
+                await scopes.GetEffectiveScopeAsync(userId, "Factor.View", default) == AccessScopes.None &&
+                !user.IsInRole("مدیر ارشد") && !user.IsInRole("کارشناس مالی") && !user.IsInRole("مدیر تامین") &&
+                !user.IsInRole("کارشناس تامین") && !user.IsInRole("مدیر عامل"))
+                catalogViews["/Cartable/Index"] = false;
         }
+
+        var filteredMenus = FilterItems(menus, roles, [], catalogViews);
 
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
@@ -648,39 +641,24 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         ];
     }
 
-    private static List<MenuItem> Filter(List<MenuItem> menus, HashSet<string> userRoles)
-    {
-        return FilterItems(menus, userRoles, []);
-    }
-
-    private static List<MenuItem> FilterItems(List<MenuItem> items, HashSet<string> userRoles, List<string> parentRoles)
+    private static List<MenuItem> FilterItems(List<MenuItem> items, HashSet<string> userRoles,
+        List<string> parentRoles, IReadOnlyDictionary<string, bool> catalogViews)
     {
         var result = new List<MenuItem>();
-
         foreach (var item in items ?? [])
         {
-            // اگر خودش Role داشته باشد، همان ملاک است
-            // اگر نداشته باشد، Role پرنت را به ارث می‌برد
             var effectiveRoles = item.Roles.Count > 0 ? item.Roles : parentRoles;
+            var legacyAllowed = effectiveRoles.Count == 0 || effectiveRoles.Any(userRoles.Contains);
+            var hasCatalog = !string.IsNullOrEmpty(item.Url) && catalogViews.ContainsKey(item.Url);
+            var allowed = hasCatalog ? catalogViews[item.Url] : legacyAllowed;
+            var children = FilterItems(item.SubItems, userRoles, effectiveRoles, catalogViews);
+            item.SubItems = children;
 
-            var hasAccess = effectiveRoles?.Count == 0 || effectiveRoles.Any(userRoles.Contains);
-
-            if (!hasAccess) continue;
-
-            // Recursive
-            var filteredSubItems = FilterItems(item.SubItems, userRoles, effectiveRoles);
-
-            item.SubItems = filteredSubItems.OrderBy(x => x.DisplayOrder).ToList();
-
-
-            if (string.IsNullOrEmpty(item.Url) && string.IsNullOrEmpty(item.OnClick) && item.SubItems.Count == 0)
-            {
-                continue;
-            }
-
-            result.Add(item);
+            // A denied direct action must not be reintroduced by an allowed descendant.
+            var hasAction = !string.IsNullOrEmpty(item.Url) || !string.IsNullOrEmpty(item.OnClick);
+            if (hasAction ? allowed : children.Count > 0)
+                result.Add(item);
         }
-
         return result.OrderBy(x => x.DisplayOrder).ToList();
     }
 

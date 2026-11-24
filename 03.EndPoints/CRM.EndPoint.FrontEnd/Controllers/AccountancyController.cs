@@ -216,7 +216,7 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
     }
 
     // All mutations of a bank account require the same financial-management roles.
-    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
+    [HttpPost, LegacyCatalogRoles("BankAccount", "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> UpBankAccount([FromBody] BankAccount model, CancellationToken ct)
     {
         if (model == null) return BadRequest();
@@ -237,7 +237,7 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
         }
         return Map(await dispatcher.CommandAsync(new UpBankAccountCommand(model), ct));
     }
-    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
+    [HttpPost, LegacyCatalogRoles("BankAccount", "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> AddBankAccount([FromBody] BankAccount model, CancellationToken ct)
     {
         if (model == null) return BadRequest();
@@ -254,14 +254,14 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
         }
         return Map(await dispatcher.CommandAsync(new AddBankAccountCommand(model), ct));
     }
-    [HttpPost, Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
+    [HttpPost, LegacyCatalogRoles("BankAccount", "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> ChangeActiveBankAccount([FromBody] BankAccount model, CancellationToken ct)
     {
         if (model == null) return BadRequest();
         if (!await access.CanAsync("BankAccount", "ChangeActive", model.Id, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new ChangeActiveBankAccountCommand(model), ct));
     }
-    [Authorize(Roles = "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
+    [LegacyCatalogRoles("BankAccount", "مدیر مالی, کارشناس مالی, مدیر ارشد, مدیر عامل")]
     public async Task<IActionResult> DelBankAccountItem(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("BankAccount", "Delete", id, ct)) return Forbid();

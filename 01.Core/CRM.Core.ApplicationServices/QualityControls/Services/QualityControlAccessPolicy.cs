@@ -12,7 +12,7 @@ public static class QualityControlAccessPolicy
     public static async Task<QualityControlAccess> ForAsync(ApplicationActor actor,
         IDocumentReadAccess permissions, string action, CancellationToken ct, bool requireQuestions = false)
     {
-        if (!actor.HasRole(Roles.Split(',')))
+        if (!permissions.IsEnforced("QualityControl") && !actor.HasRole(Roles.Split(',')))
             throw new UnauthorizedAccessException();
         if (!await permissions.HasAsync("QualityControl", "View", ct) ||
             (action != "View" && !await permissions.HasAsync("QualityControl", action, ct)) ||

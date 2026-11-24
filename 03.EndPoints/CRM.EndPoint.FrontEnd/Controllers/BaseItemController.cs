@@ -34,14 +34,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.access = access;
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
+        [LegacyCatalogRoles("BaseItem", "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
         [CatalogPermission("BaseItem", "View")]
         public IActionResult Index()
         {
             return View();
         }
 
-        [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+        [LegacyCatalogRoles("BaseCash", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
         public async Task<IActionResult> Financial(CancellationToken ct)
         {
             if (!await access.HasViewAsync("BaseCash", ct)) return Forbid();

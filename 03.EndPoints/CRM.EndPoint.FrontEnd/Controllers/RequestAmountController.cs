@@ -157,7 +157,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         return true;
     }
 
-    [Authorize(Roles = "مدیر تامین ,کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی, تنخواه دار")]
+    [LegacyCatalogRoles("RequestAmount", "مدیر تامین ,کارشناس تامین ,مدیر ارشد, مدیر اجرایی, مدیر عامل, مدیر مالی, کارشناس مالی, تنخواه دار")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         if (!await access.HasViewAsync("RequestAmount", ct)) return Forbid();

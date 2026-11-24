@@ -24,7 +24,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[Authorize(Roles = QualityControlAccessPolicy.Roles)]
+[Authorize]
+[LegacyCatalogRoles("QualityControl", QualityControlAccessPolicy.Roles)]
 public sealed class QualityControlController(ICqrsDispatcher requests) : Controller
 {
     [CatalogPermission("QualityControl", "View")]
@@ -164,7 +165,8 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
             : Ok(data);
     }
 
-    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = AppRoles.Admin)]
+    [HttpPost, ValidateAntiForgeryToken]
+    [LegacyCatalogRoles("QualityControl", AppRoles.Admin)]
     [CatalogPermission("QualityControl", "ManageContactHistory")]
     public async Task<IActionResult> ChangeContactHistory([FromBody] ChangeQualityControlContactHistoryRequest request,
         CancellationToken ct)
