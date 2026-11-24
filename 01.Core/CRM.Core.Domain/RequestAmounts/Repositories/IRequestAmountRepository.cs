@@ -30,6 +30,8 @@ public sealed class RequestPaymentRow
 {
     public Payment Payment { get; set; } = null !;
     public decimal RequestPaymentAmount { get; set; }
+    public bool CanEdit { get; set; }
+    public bool CanDelete { get; set; }
 }
 
 public sealed record RequestPaymentsTable(string? Draw, int RecordsTotal, int RecordsFiltered, List<RequestPaymentRow> Data);
