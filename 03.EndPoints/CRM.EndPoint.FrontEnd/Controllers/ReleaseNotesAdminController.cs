@@ -1,4 +1,5 @@
 #nullable enable
+using CRM.EndPoint.FrontEnd.Security;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,22 +23,30 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class ReleaseNotesAdminController(ICqrsDispatcher dispatcher) : Controller
 {
+    [CatalogPermission("ReleaseNote", "View")]
     [HttpGet] public async Task<IActionResult> Index(CancellationToken ct) => View(await dispatcher.QueryAsync(new GetReleaseNoteAdminPageQuery(), ct));
+    [CatalogPermission("ReleaseNote", "View")]
     [HttpGet] public async Task<IActionResult> List(string? search, ReleaseNoteStatus? status, CancellationToken ct) => Json(await dispatcher.QueryAsync(new GetReleaseNotesQuery(search?.Trim(), status), ct));
+    [CatalogPermission("ReleaseNote", "View")]
     [HttpGet] public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
         var note = await dispatcher.QueryAsync(new GetReleaseNoteQuery(id), ct);
         return note is null ? NotFound() : Json(note);
     }
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(1048576)]
+    [CatalogPermission("ReleaseNote", "Create")]
     public async Task<IActionResult> Create([FromBody] ReleaseNoteDraft draft, CancellationToken ct) => !ModelState.IsValid ? BadRequest(new { message = "اطلاعات ارسالی معتبر نیست." }) : Result(await dispatcher.CommandAsync(new CreateReleaseNoteCommand(draft), ct));
     [HttpPost, ValidateAntiForgeryToken, RequestSizeLimit(1048576)]
+    [CatalogPermission("ReleaseNote", "Edit")]
     public async Task<IActionResult> Update(Guid id, [FromBody] ReleaseNoteDraft draft, CancellationToken ct) => !ModelState.IsValid ? BadRequest(new { message = "اطلاعات ارسالی معتبر نیست." }) : Result(await dispatcher.CommandAsync(new UpdateReleaseNoteCommand(id, draft), ct));
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("ReleaseNote", "Publish")]
     public async Task<IActionResult> Publish(Guid id, CancellationToken ct) => Result(await dispatcher.CommandAsync(new PublishReleaseNoteCommand(id), ct));
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("ReleaseNote", "Archive")]
     public async Task<IActionResult> Archive(Guid id, CancellationToken ct) => Result(await dispatcher.CommandAsync(new ArchiveReleaseNoteCommand(id), ct));
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("ReleaseNote", "Delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct) => Result(await dispatcher.CommandAsync(new DeleteReleaseNoteDraftCommand(id), ct));
     private IActionResult Result(ReleaseNoteResult result) => StatusCode(result.Status, result);
 }
