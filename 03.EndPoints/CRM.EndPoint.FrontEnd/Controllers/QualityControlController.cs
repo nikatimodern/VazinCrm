@@ -1,3 +1,4 @@
+using CRM.EndPoint.FrontEnd.Security;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -26,10 +27,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Roles = QualityControlAccessPolicy.Roles)]
 public sealed class QualityControlController(ICqrsDispatcher requests) : Controller
 {
+    [CatalogPermission("QualityControl", "View")]
     public async Task<IActionResult> Index(CancellationToken ct)
         => View(await requests.QueryAsync(new GetWorkspacePageQuery("QualityControl"), ct));
 
     [HttpGet]
+    [CatalogPermission("QualityControl", "View")]
     public async Task<IActionResult> GetCustomers([FromQuery] QualityControlCustomerListRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid || request.Start < 0 || request.Length is < 1 or > 100
@@ -72,6 +75,8 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpGet]
+    [CatalogPermission("QualityControl", "View")]
+    [CatalogPermission("QualityControlQuestion", "View")]
     public async Task<IActionResult> GetCustomerForm(
         Guid customerId, [FromQuery] QualityControlItemPageRequest page, CancellationToken ct)
     {
@@ -86,6 +91,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpGet]
+    [CatalogPermission("QualityControl", "View")]
     public async Task<IActionResult> GetCustomerNotes(
         Guid customerId, int start = 0, int length = 10, CancellationToken ct = default)
     {
@@ -99,6 +105,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("QualityControl", "Create")]
     public async Task<IActionResult> AddCustomerNote(
         [FromBody] AddQualityControlCustomerNoteRequest request, CancellationToken ct)
     {
@@ -110,6 +117,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("QualityControl", "Edit")]
     public async Task<IActionResult> UpdateCustomerNote(
         [FromBody] UpdateQualityControlCustomerNoteRequest request, CancellationToken ct)
     {
@@ -120,6 +128,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("QualityControl", "Delete")]
     public async Task<IActionResult> DeleteCustomerNote(
         [FromBody] DeleteQualityControlCustomerNoteRequest request, CancellationToken ct)
     {
@@ -130,6 +139,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("QualityControl", "SetContactStatus")]
     public async Task<IActionResult> SetCustomerContactStatus([FromBody] SetQualityControlCustomerContactRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid || request == null)
@@ -140,6 +150,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpGet]
+    [CatalogPermission("QualityControl", "View")]
     public async Task<IActionResult> GetContactHistory(
         Guid customerId, bool includeDeleted = false, int start = 0, int length = 20,
         CancellationToken ct = default)
@@ -154,6 +165,7 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = AppRoles.Admin)]
+    [CatalogPermission("QualityControl", "ManageContactHistory")]
     public async Task<IActionResult> ChangeContactHistory([FromBody] ChangeQualityControlContactHistoryRequest request,
         CancellationToken ct)
     {
@@ -166,6 +178,8 @@ public sealed class QualityControlController(ICqrsDispatcher requests) : Control
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("QualityControl", "Edit")]
+    [CatalogPermission("QualityControlQuestion", "View")]
     public async Task<IActionResult> SaveItems([FromBody] SaveQualityControlItemsRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid || request == null)
