@@ -21,8 +21,10 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.Products.Entities;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.Taxation;
+using CRM.EndPoint.FrontEnd.Composition;
 using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Taxation;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -551,15 +553,16 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         return new("1000", customsDate, "12345", true, [new ExportTaxLine(item, "EUR", 90000, 150000, 1.5m, 10)]);
     }
 
-    private EnqueueTaxReferenceCommandHandler ReferenceHandler(CRMContextDb db) =>
-        new(new TaxationRepository(db, protection), new TestBindings(), TimeProvider.System);
+    private EnqueueTaxReferenceCommandHandler ReferenceHandler(CRMContextDb db, ITaxPreviewProtector protector = null) =>
+        new(new TaxationRepository(db, protector ?? protection), new TestBindings(), TimeProvider.System);
 
-    private async Task<TaxDispatch> SetupReferenceAsync(CRMContextDb db, string workFolder)
+    private async Task<TaxDispatch> SetupReferenceAsync(CRMContextDb db, string workFolder, ITaxPreviewProtector protector = null)
     {
-        var id = await QueueSubmissionAsync(db);
+        protector ??= protection;
+        var id = await QueueSubmissionAsync(db, protector);
         var gateway = new TestGateway { WorkFolderStatus = workFolder };
-        var queue = new TaxDispatchQueue(db, protection);
-        var repository = new TaxSubmissionRepository(db, protection);
+        var queue = new TaxDispatchQueue(db, protector);
+        var repository = new TaxSubmissionRepository(db, protector);
         var submit = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
         await submit.HandleAsync(new(id, Filing()), Ct);
         gateway.Result = new(gateway.Reference, "SUCCESS", """{"sign":"mock"}""");
@@ -686,6 +689,64 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.Equal(state, await payments.GetStateAsync(id, Ct));
     }
 
+    [TaxationSqlFact]
+    public async Task PaymentMigrationPreservesAcceptedInvoiceSnapshotAndRelatedDispatch()
+    {
+        var keyRing = Directory.CreateTempSubdirectory("vazin-tax-test-keys-");
+        try
+        {
+            await VerifyExistingDispatchesSurvivePaymentMigrationAsync(keyRing);
+        }
+        finally
+        {
+            keyRing.Delete(recursive: true);
+        }
+    }
+
+    private async Task VerifyExistingDispatchesSurvivePaymentMigrationAsync(DirectoryInfo keyRing)
+    {
+        Guid originalId;
+        Guid relatedId;
+        string originalSnapshot;
+        TaxDispatch original;
+        await using (var before = Open())
+        {
+            var preceding = before.Database.GetMigrations()
+                .TakeWhile(x => !x.EndsWith("_AddTaxPaymentDispatches", StringComparison.Ordinal)).Last();
+            await before.GetService<IMigrator>().MigrateAsync(preceding, Ct);
+
+            var protector = new TaxPreviewProtector(DataProtectionProvider.Create(keyRing));
+            original = await SetupReferenceAsync(before, "AWAITING_REACTION", protector);
+            originalId = original.Id;
+            var taxation = new TaxationRepository(before, protector);
+            originalSnapshot = await taxation.ReadSnapshotAsync(original.SnapshotId, Ct);
+            relatedId = await ReferenceHandler(before, protector).HandleAsync(new(originalId, "tester",
+                new(null, TaxDispatchKind.Cancellation, 2, Filing().IssuedAt.AddMinutes(2), null, false,
+                    TaxCancellationReason.IncorrectTransactionDate)), Ct);
+            await before.Database.MigrateAsync(Ct);
+        }
+
+        await using var after = Open();
+        Assert.Empty(await after.Database.GetPendingMigrationsAsync(Ct));
+        var reloaded = await after.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == originalId, Ct);
+        Assert.Equal(TaxDispatchStatus.Accepted, reloaded.Status);
+        Assert.Equal(original.TaxId, reloaded.TaxId);
+        Assert.Equal(original.AuthorityReference, reloaded.AuthorityReference);
+        Assert.Equal(original.ProtectedSubmission, reloaded.ProtectedSubmission);
+        Assert.Equal(original.ProtectedAcknowledgement, reloaded.ProtectedAcknowledgement);
+        Assert.Equal(original.ProtectedProcessingEvidence, reloaded.ProtectedProcessingEvidence);
+        Assert.Equal(original.ProtectedWorkFolderEvidence, reloaded.ProtectedWorkFolderEvidence);
+        var restartedProtector = new TaxPreviewProtector(DataProtectionProvider.Create(keyRing));
+        var taxationAfter = new TaxationRepository(after, restartedProtector);
+        Assert.Equal(originalSnapshot, await taxationAfter.ReadSnapshotAsync(reloaded.SnapshotId, Ct));
+        var related = await after.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == relatedId, Ct);
+        Assert.Equal(TaxDispatchKind.Cancellation, related.Kind);
+        Assert.Equal(originalId, related.ReferencedDispatchId);
+        Assert.Equal(reloaded.MemoryId, related.MemoryId);
+        Assert.NotEqual(reloaded.SnapshotId, related.SnapshotId);
+        Assert.Empty(await after.TaxPaymentDispatches.ToListAsync(Ct));
+    }
+
     private sealed class MockPaymentTransport : ITaxPaymentTransport
     {
         private int calls;
@@ -703,10 +764,10 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         }
     }
 
-    private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)
+    private async Task<Guid> QueueSubmissionAsync(CRMContextDb db, ITaxPreviewProtector protector = null)
     {
         var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
-        var repo = new TaxationRepository(db, protection);
+        var repo = new TaxationRepository(db, protector ?? protection);
         return await new EnqueueTaxInvoiceCommandHandler(repo)
             .HandleAsync(new(factor, "tester", await PreviewVersion(repo, factor)), Ct);
     }
