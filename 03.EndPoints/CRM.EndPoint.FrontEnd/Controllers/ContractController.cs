@@ -47,7 +47,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (data == null) return NotFound();
             data.Attachments = await db.Attachments.AsNoTracking().Where(a => a.EntityId == id &&
                 a._AttachType == _AttachType.ContractAttach).ToListAsync(HttpContext.RequestAborted);
-            return Ok(data);
+            ViewBag.CanEdit = await access.AllowsRowAsync(data, "Edit", HttpContext.RequestAborted);
+            return Ok(new { data.Id, data.CTitle, data.Employer, data.Contractor, data.fromDate, data.fromDateSh, data.toDate, data.toDateSh, data.description, data.Attachments, canEdit = (bool)ViewBag.CanEdit });
         }
 
         public async Task<IActionResult> GetAllContract()
