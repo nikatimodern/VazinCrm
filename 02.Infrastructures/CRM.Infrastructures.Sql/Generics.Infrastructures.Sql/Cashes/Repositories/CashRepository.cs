@@ -20,11 +20,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.Cashes.Repositories;
-public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDisposable
+public sealed class CashRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : ICashRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
     public Task<Cash?> GetAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Cashes : db.Cashes.AsNoTracking()).Include(c => c.CashOrderHeads).Include(c => c.CostCenter).Include(c => c.CostTitle).Include(c => c.CashExternalSoftwares).FirstOrDefaultAsync(c => c.Id == id, ct);
-    public Task<CashDetail?> GetDetailAsync(Guid id, CancellationToken ct) => db.Cashes.AsNoTracking().Where(c => c.Id == id).Select(c => new CashDetail(c, c.CashOrderHeads.Select(o => o.OrderHead.OrderNumber).ToList(), db.Attachments.Where(a => a.EntityId == c.Id && a._AttachType == _AttachType.Cash).ToList())).FirstOrDefaultAsync(ct);
+    private async Task<IQueryable<Cash>> VisibleCashesAsync(CancellationToken ct)
+    {
+        var query = await access.ApplyAsync(db.Cashes.AsNoTracking(), "View", ct);
+        if (access.IsEnforced("BankAccount"))
+        {
+            var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
+            query = query.Where(c => !c.BankAccountId.HasValue || banks.Any(b => b.Id == c.BankAccountId.Value));
+        }
+        return query;
+    }
+
+    public async Task<CashDetail?> GetDetailAsync(Guid id, CancellationToken ct)
+    {
+        var query = await VisibleCashesAsync(ct);
+        var orders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
+        return await query.Where(c => c.Id == id).Select(c => new CashDetail(c,
+            c.CashOrderHeads.Where(o => orders.Any(h => h.Id == o.OrderHeadId)).Select(o => o.OrderHead.OrderNumber).ToList(),
+            db.Attachments.Where(a => a.EntityId == c.Id && a._AttachType == _AttachType.Cash).ToList())).FirstOrDefaultAsync(ct);
+    }
     public Task<Cashier?> GetCashierAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Cashiers : db.Cashiers.AsNoTracking()).Include(c => c.CashierExternalSoftwares).FirstOrDefaultAsync(c => c.Id == id, ct);
     public Task<BaseCash?> GetBaseAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.BaseCashes : db.BaseCashes.AsNoTracking()).FirstOrDefaultAsync(c => c.Id == id, ct);
     public Task<CashGroup?> GetGroupAsync(Guid id, CancellationToken ct) => db.CashGroups.FirstOrDefaultAsync(g => g.Id == id, ct);
@@ -39,23 +57,23 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
     public Task<List<Cash>> GetDraftsAsync(string userId, CancellationToken ct) => db.Cashes.Where(c => c.UserCreatorID == userId && c.Status == CashStatusEnum.ثبت_موقت).ToListAsync(ct);
     public Task<List<Cash>> GetByIdsAsync(List<Guid> ids, CancellationToken ct) => db.Cashes.Where(c => ids.Contains(c.Id)).ToListAsync(ct);
     public Task<Accountancy?> GetDebitAsync(Guid id, CancellationToken ct) => db.Accountancies.FirstOrDefaultAsync(a => a.CashId == id, ct);
-    public Task<List<CashOption<Guid>>> GetCentersAsync(CancellationToken ct) => db.BaseCenterCashes.AsNoTracking().Select(c => new CashOption<Guid>(c.Id, c.Title)).ToListAsync(ct);
-    public Task<List<CashOption<Guid>>> GetTitlesAsync(bool supply, CancellationToken ct) => db.BaseCashes.AsNoTracking().Where(c => supply ? c.BaseCashType == BaseCashTypeEnum.تامین || c.BaseCashType == BaseCashTypeEnum.عمومی : c.BaseCashType == BaseCashTypeEnum.عمومی).Select(c => new CashOption<Guid>(c.Id, c.CostTitle)).ToListAsync(ct);
-    public Task<List<CashOption<Guid>>> GetOwnCashiersAsync(string userId, CancellationToken ct)
+    public async Task<List<CashOption<Guid>>> GetCentersAsync(CancellationToken ct) => await (await access.ApplyAsync(db.BaseCenterCashes.AsNoTracking(), "View", ct)).Select(c => new CashOption<Guid>(c.Id, c.Title)).ToListAsync(ct);
+    public async Task<List<CashOption<Guid>>> GetTitlesAsync(bool supply, CancellationToken ct) => await (await access.ApplyAsync(db.BaseCashes.AsNoTracking(), "View", ct)).Where(c => supply ? c.BaseCashType == BaseCashTypeEnum.تامین || c.BaseCashType == BaseCashTypeEnum.عمومی : c.BaseCashType == BaseCashTypeEnum.عمومی).Select(c => new CashOption<Guid>(c.Id, c.CostTitle)).ToListAsync(ct);
+    public async Task<List<CashOption<Guid>>> GetOwnCashiersAsync(string userId, CancellationToken ct)
     {
         var id = Guid.Parse(userId);
-        return db.Cashiers.AsNoTracking().Where(c => c.UserId == id).Select(c => new CashOption<Guid>(c.Id, c.Title)).ToListAsync(ct);
+        return await (await access.ApplyAsync(db.Cashiers.AsNoTracking(), "View", ct)).Where(c => c.UserId == id).Select(c => new CashOption<Guid>(c.Id, c.Title)).ToListAsync(ct);
     }
 
-    public Task<List<CashierOption>> GetCashierOptionsAsync(string userId, bool useEntityId, CancellationToken ct)
+    public async Task<List<CashierOption>> GetCashierOptionsAsync(string userId, bool useEntityId, CancellationToken ct)
     {
         var id = Guid.Parse(userId);
-        return db.Cashiers.AsNoTracking().Select(c => new CashierOption(useEntityId ? c.Id : c.UserId, c.UserTxt, c.UserId == id)).ToListAsync(ct);
+        return await (await access.ApplyAsync(db.Cashiers.AsNoTracking(), "View", ct)).Select(c => new CashierOption(useEntityId ? c.Id : c.UserId, c.UserTxt, c.UserId == id)).ToListAsync(ct);
     }
 
     public async Task<CashierBalanceDto> GetBalanceAsync(Guid id, CancellationToken ct)
     {
-        var data = await db.Accountancies.AsNoTracking().Where(a => a.CashierId == id).Select(a => new { a.credit, a.debit, a.Accepted }).ToListAsync(ct);
+        var data = await (await access.ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct)).Where(a => a.CashierId == id).Select(a => new { a.credit, a.debit, a.Accepted }).ToListAsync(ct);
         return new()
         {
             CashierId = id,
@@ -128,14 +146,15 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
         var isExported = false;
-        var query = db.Cashes.AsNoTracking().AsQueryable();
+        var query = await VisibleCashesAsync(ct);
+        var visibleGroups = await access.ApplyAsync(db.CashGroups.AsNoTracking(), "View", ct);
         var mappedCash = await db.ExternalMappings.AsNoTracking().Where(f => f.MapType == ExternalMappingTypeEnum.تنخواه && f.EntityName == nameof(Cash)).Select(f => new { f.EntityId, SoftwareTitle = f.ExternalSoftware.Title }).ToListAsync(ct);
         if (Guid.TryParse(filter.EntityId, out var groupId))
         {
-            query = query.Where(f => f.CashGroupId == groupId);
+            query = query.Where(f => f.CashGroupId == groupId && visibleGroups.Any(g => g.Id == groupId));
         }
 
-        if (!readAll)
+        if (!access.IsEnforced("Cash") && !readAll)
         {
             query = query.Where(f => f.UserCreatorID == userId);
         }
@@ -198,7 +217,8 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
     private async Task AppendOrderHeadNumbersToCashDescriptions(List<Cash> cashes, CancellationToken ct)
     {
         var cashIds = cashes.Select(x => x.Id).ToList();
-        var orderNumbers = await db.CashOrderHeads.AsNoTracking().Where(x => cashIds.Contains(x.CashId)).Select(x => new { x.CashId, x.OrderHead.OrderNumber }).ToListAsync(ct);
+        var visibleOrders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
+        var orderNumbers = await db.CashOrderHeads.AsNoTracking().Where(x => cashIds.Contains(x.CashId) && visibleOrders.Any(o => o.Id == x.OrderHeadId)).Select(x => new { x.CashId, x.OrderHead.OrderNumber }).ToListAsync(ct);
         var orderNumbersLookup = orderNumbers.ToLookup(x => x.CashId, x => x.OrderNumber);
         foreach (var cash in cashes)
         {
@@ -218,8 +238,10 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var baseQuery = db.CashGroups.AsQueryable();
-        if (!readAll)
+        var baseQuery = await access.ApplyAsync(db.CashGroups.AsNoTracking(), "View", ct);
+        var visibleCashes = await VisibleCashesAsync(ct);
+        baseQuery = baseQuery.Where(g => !g.Cashes.Any(c => !visibleCashes.Any(v => v.Id == c.Id)));
+        if (!access.IsEnforced("CashGroup") && !readAll)
         {
             baseQuery = baseQuery.Where(g => g.UserCreatorID == userId || g.Cashes.Any(c => c.UserCreatorID == userId));
         }
@@ -267,7 +289,9 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var query = db.Cashiers.AsNoTracking().GroupJoin(db.Accountancies.AsNoTracking(), c => c.UserId, ac => ac.CashierId, (c, ac) => new CashierRow { Cashier = c, CashierMappings = c.CashierExternalSoftwares.Select(m => new CashierMappingRow { SoftwareTitle = m.ExternalSoftware.Title, TafsiliCode = m.TafsiliCode }).ToList(), TotalCredit = ac.Sum(x => x.credit ?? 0), TotalDebit = ac.Sum(x => x.debit ?? 0), Balance = ac.Sum(x => (x.credit ?? 0) - (x.debit ?? 0)), IsAccepted = ac.All(x => x.Accepted == true) });
+        var cashiers = await access.ApplyAsync(db.Cashiers.AsNoTracking(), "View", ct);
+        var accountancies = await access.ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct);
+        var query = cashiers.GroupJoin(accountancies, c => c.UserId, ac => ac.CashierId, (c, ac) => new CashierRow { Cashier = c, CashierMappings = c.CashierExternalSoftwares.Select(m => new CashierMappingRow { SoftwareTitle = m.ExternalSoftware.Title, TafsiliCode = m.TafsiliCode }).ToList(), TotalCredit = ac.Sum(x => x.credit ?? 0), TotalDebit = ac.Sum(x => x.debit ?? 0), Balance = ac.Sum(x => (x.credit ?? 0) - (x.debit ?? 0)), IsAccepted = ac.All(x => x.Accepted == true) });
         var recordsTotal = await query.CountAsync(ct);
         if (!string.IsNullOrEmpty(searchValue))
         {
@@ -300,7 +324,7 @@ public sealed class CashRepository(CRMContextDb db) : ICashRepository, IAsyncDis
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
         var sortDirection = table.SortDirection;
-        var query = db.BaseCashes.AsNoTracking();
+        var query = await access.ApplyAsync(db.BaseCashes.AsNoTracking(), "View", ct);
         var recordsTotal = await query.CountAsync(ct);
         if (!string.IsNullOrEmpty(searchValue))
         {
