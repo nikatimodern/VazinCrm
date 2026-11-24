@@ -75,6 +75,7 @@ async function initCashierSelectOpt() {
 
 
 async function showEditCashModal(id) {
+    if (window.AccessLive?.can("Cash", "edit") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     FLshowLoading();
     ModalToggle(cashModal);
     
@@ -102,6 +103,7 @@ async function showEditCashModal(id) {
 }
 
 async function sendCashToExternalSoftwares(id) {
+    if (window.AccessLive?.can("Cash", "exportExternal") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await showExternalSoftwareModal(id, {
         mapType: 0,
         onConfirm: async ({ entityIds, externalSoftwareIds }) => {
@@ -138,6 +140,7 @@ async function sendCashToExternalSoftwares(id) {
 
 
 const deleteCash = async (id) => {
+    if (window.AccessLive?.can("Cash", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     Swal.fire({
         title: "حذف!",
         text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
@@ -166,6 +169,7 @@ const deleteCash = async (id) => {
 
 
 async function submitCashModal() {
+    if (window.AccessLive?.can("Cash", cashData.id && cashData.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create") === false) { toastifyError("مجوز ثبت تنخواه را ندارید."); return; }
     if (!await mySer.CheckValidForm("cashForm")) return;
     if (cashAttachments.every(item => item.isDeleted)) {
         toastifyError("تصویر رسید اجباری است");
@@ -203,6 +207,7 @@ async function submitCashModal() {
 }
 
 async function changeStatusCash(id, status) {
+    if (window.AccessLive?.can("Cash", "changeStatus") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await sendApiRequest({
         url: `/Cash/ChangeStatusCash/${id}`,
         params: { status: status },
@@ -219,6 +224,7 @@ async function changeStatusCash(id, status) {
 }
 
 async function changeStatusAllCashToPending() {
+    if (window.AccessLive?.can("Cash", "changeStatus") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await sendApiRequest({
         url: `/Cash/ChangeStatusAllCashToPending`,
         successMsg: "به مالی ارسال شد",
@@ -229,6 +235,7 @@ async function changeStatusAllCashToPending() {
 }
 
 async function changeStatusGroupCashToPending(listIds = []) {
+    if (window.AccessLive?.can("Cash", "changeStatus") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await sendApiRequest({
         url: `/Cash/ChangeStatusGroupCashToPending`,
         method: "POST",
@@ -241,6 +248,7 @@ async function changeStatusGroupCashToPending(listIds = []) {
 }
 
 async function approveCashGroup() {
+    if (window.AccessLive?.can("CashGroup", "approve") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     if (!currentCashGroupId) return;
     await sendApiRequest({
         url: `/Cash/ApproveCashGroup`,
@@ -254,6 +262,7 @@ async function approveCashGroup() {
 }
 
 async function rejectCashGroup() {
+    if (window.AccessLive?.can("CashGroup", "approve") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     if (!currentCashGroupId) return;
     
     await confirmAlert({
@@ -300,7 +309,7 @@ const getAllCashesDt = () => {
                 cashTbl.column(1).visible(window.isAdminOrFinancial);
                 cashTbl.settings()[0].aoColumns[1].bSearchable = window.isAdminOrFinancial;
                 // initCashierBalanceUI(json.cashierBalance);
-                return json.data;
+                return (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.id] }));
             },
         },
         language: languageDatatable,
@@ -339,9 +348,9 @@ const getAllCashesDt = () => {
                     
                     if (data === 0) { // ثبت موقت
                         //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
-                        statusContent = `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
+                        statusContent = row.actionRights?.canChangeStatus && window.AccessLive?.can("CashGroup", "create") !== false ? `<button data-document-permission="Cash.ChangeStatus" class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>` : row.statusTxt;
                     } else if (data === 1) { // در دست تایید
-                        statusContent = window.isAdminOrFinancial
+                        statusContent = window.isAdminOrFinancial && row.actionRights?.canApprove && row.actionRights?.canChangeStatus
                             ? `<div class="inline-flex-center gap-1">
                                     <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                     <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -355,8 +364,8 @@ const getAllCashesDt = () => {
                             <div class="d-inline-flex flex-column align-items-center gap-1">
                                 <div class="inline-flex-center gap-1">
                                     <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
-                                    ${window.isAdminOrFinancial ? `
-                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                    ${window.isAdminOrFinancial && row.actionRights?.canApprove && row.actionRights?.canChangeStatus ? `
+                                        <button data-document-permission="Cash.Approve" style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                             <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
                                         </button>` : ""}
                                 </div>
@@ -376,13 +385,13 @@ const getAllCashesDt = () => {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                        ${window.isAdminOrFinancial && row.status === 2 ? `
+                        ${window.isAdminOrFinancial && row.status === 2 && row.actionRights?.canExport ? `
                             <button type="button" class="buttonGray" onclick="sendCashToExternalSoftwares('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
-                                <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                                <button type="button" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                ${row.actionRights?.canEdit ? `<button type="button" data-document-permission="Cash.Edit" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>` : ""}
+                                ${row.actionRights?.canDelete ? `<button type="button" data-document-permission="Cash.Delete" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>` : ""}
                             ` : ""}
                         </div>
                     `;
@@ -625,7 +634,7 @@ function updateCashModalActionButtons(items) {
         return;
     }
     
-    if (!items || items.length === 0) {
+    if (!items || items.length === 0 || window.AccessLive?.can("CashGroup", "approve") === false || !items.every(item => item.actionRights?.canApprove)) {
         btnApprove?.classList.add("d-none");
         btnReject?.classList.add("d-none");
         return;
@@ -750,7 +759,7 @@ function getAllCashesModalDt() {
             },
             dataSrc: function (json) {
                 currentCashGroupExported = json.isExported;
-                return json.data;
+                return (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.id] }));
             },
         },
         language: languageDatatable,
@@ -788,10 +797,10 @@ function getAllCashesModalDt() {
                     if (data === 0) {
                         // ثبت موقت
                         //if (isManager) return `<span class="fMedium" style="color: #666">${row.statusTxt}</span>`;
-                        statusContent = `<button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>`;
+                        statusContent = row.actionRights?.canChangeStatus && window.AccessLive?.can("CashGroup", "create") !== false ? `<button data-document-permission="Cash.ChangeStatus" class="buttonGreen2" onclick="changeStatusCash('${row.id}', 1)">ارسال به مالی</button>` : row.statusTxt;
                     } else if (data === 1) {
                         // در دست تایید
-                        statusContent = window.isAdminOrFinancial
+                        statusContent = window.isAdminOrFinancial && row.actionRights?.canApprove && row.actionRights?.canChangeStatus
                             ? `<div class="inline-flex-center gap-1">
                                     <button class="buttonGreen2" onclick="changeStatusCash('${row.id}', 2)">تایید</button>
                                     <button class="buttonCancel3" onclick="changeStatusCash('${row.id}', 0)">برگشت</button>
@@ -804,8 +813,8 @@ function getAllCashesModalDt() {
                             <div class="d-inline-flex flex-column align-items-center gap-1">
                                 <div class="inline-flex-center gap-1">
                                     <span class="fMedium" style="color:darkgreen">${row.statusTxt}</span>
-                                    ${window.isAdminOrFinancial ? `
-                                        <button style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
+                                    ${window.isAdminOrFinancial && row.actionRights?.canApprove && row.actionRights?.canChangeStatus ? `
+                                        <button data-document-permission="Cash.Approve" style="color:#333" onclick="changeStatusCash('${row.id}', 1)" data-title-left="بازگشت">
                                             <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
                                         </button>` : ""}
                                 </div>
@@ -826,13 +835,13 @@ function getAllCashesModalDt() {
                 render: function (data, type, row) {
                     return `
                         <div class="inline-flex-center gap-1">
-                        ${window.isAdminOrFinancial && row.status === 2 ? `
+                        ${window.isAdminOrFinancial && row.status === 2 && row.actionRights?.canExport ? `
                             <button type="button" class="buttonGray" onclick="sendCashToExternalSoftwares('${row.id}')">ارسال به نرم‌افزار مالی</button>                       
                         ` : ""}
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.id}', 10)"><i class="fa fa-paperclip"></i></button>
                             ${row.status === 0 ? `
-                                <button type="button" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>
-                                <button type="button" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>
+                                ${row.actionRights?.canEdit ? `<button type="button" data-document-permission="Cash.Edit" class="icon-button icon-button--green" onclick="showEditCashModal('${row.id}')"><i class="fa fa-pencil"></i></button>` : ""}
+                                ${row.actionRights?.canDelete ? `<button type="button" data-document-permission="Cash.Delete" class="icon-button icon-button--red" onclick="deleteCash('${row.id}')"><i class="fa fa-trash"></i></button>` : ""}
                             ` : ""}
                         </div>
                     `;
@@ -906,6 +915,7 @@ function getAllCashesModalDt() {
 }
 
 async function exportGroupCashToExcel() {
+    if (window.AccessLive?.can("CashGroup", "export") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     if (!currentCashGroupId) return;
     
     let startVoucherNumber = null;
