@@ -1,3 +1,12 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
+using CRM.Core.ApplicationServices.Taxation.Submission;
+using CRM.EndPoint.FrontEnd.Integrations.Moadian;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using System.Net.Http;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
@@ -22,6 +31,30 @@ internal static class TaxationRegistration
     {
         services.AddScoped<IQueryHandler<GetTaxPreviewSnapshotQuery, InvoicePreview>, GetTaxPreviewSnapshotQueryHandler>();
         services.AddScoped<ITaxPreviewProtector, TaxPreviewProtector>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ITaxCertificateStore, TaxCertificateStore>();
+        services.AddScoped<ITaxSigningBindings, SandboxTaxSigningBindings>();
+        services.AddScoped<ITaxSubmissionRepository, TaxSubmissionRepository>();
+        services.AddSingleton<ITaxAuthorityClient>(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var environment = sp.GetRequiredService<IWebHostEnvironment>();
+            if (!environment.IsDevelopment() || !config.GetValue<bool>("Taxation:Sandbox:Enabled") ||
+                !Uri.TryCreate(config["Taxation:Sandbox:BaseAddress"], UriKind.Absolute, out var address) ||
+                address.Scheme != Uri.UriSchemeHttps || !address.IsDefaultPort ||
+                address.Host != "sandboxrc.tax.gov.ir" || address.AbsolutePath != "/requestsmanager/api/v2/" ||
+                address.UserInfo.Length != 0 || address.Query.Length != 0 || address.Fragment.Length != 0)
+                throw new InvalidOperationException("Tax Sandbox transport is disabled or has an invalid address.");
+            return new MoadianClient(new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false })
+            {
+                BaseAddress = address,
+                Timeout = TimeSpan.FromSeconds(20),
+                MaxResponseContentBufferSize = 1024 * 1024
+            }, sp.GetRequiredService<ITaxCertificateStore>(), sp.GetRequiredService<TimeProvider>());
+        });
+        services.AddScoped<ICommandHandler<SubmitTaxInvoiceCommand, TaxDispatchState>, SubmitTaxInvoiceCommandHandler>();
+        services.AddScoped<ICommandHandler<InquireTaxSubmissionCommand, TaxDispatchState>, InquireTaxSubmissionCommandHandler>();
+        services.AddScoped<ICommandHandler<InquireTaxWorkFolderCommand, TaxWorkFolderState>, InquireTaxWorkFolderCommandHandler>();
         services.AddScoped<ITaxDispatchQueue, TaxDispatchQueue>();
         services.AddScoped<ICommandHandler<EnqueueTaxInvoiceCommand, Guid>, EnqueueTaxInvoiceCommandHandler>();
         services.AddScoped<ITaxationRepository, TaxationRepository>();

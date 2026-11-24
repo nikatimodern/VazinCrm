@@ -1,3 +1,8 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
+using CRM.Core.ApplicationServices.Taxation.Submission;
+using System.Security.Cryptography;
 using System.Diagnostics;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxPreview;
@@ -255,6 +260,135 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.NotNull(await queue.ClaimAsync(dispatchId, TimeSpan.FromMinutes(1), Ct));
     }
 
+    [TaxationSqlFact]
+    public async Task LocalFailureStaysPendingAndTimeoutRequiresInquiryBeforeAnyResolution()
+    {
+        await using var db = Open();
+        var id = await QueueSubmissionAsync(db);
+        var gateway = new TestGateway { FailPrepare = true };
+        var queue = new TaxDispatchQueue(db, protection);
+        var repo = new TaxSubmissionRepository(db, protection);
+        var bindings = new TestBindings();
+        var submit = new SubmitTaxInvoiceCommandHandler(repo, queue, bindings, gateway, TimeProvider.System);
+        var command = new SubmitTaxInvoiceCommand(id, Filing());
+        var broken = new SubmitTaxInvoiceCommandHandler(new TaxSubmissionRepository(db, new UnreadableProtection()),
+            queue, bindings, gateway, TimeProvider.System);
+        await Assert.ThrowsAsync<CryptographicException>(() => broken.HandleAsync(command, Ct));
+        Assert.Null((await queue.GetStateAsync(id, Ct)).AttemptId);
+        await Assert.ThrowsAsync<CryptographicException>(() => submit.HandleAsync(command, Ct));
+        var stillPending = await queue.GetStateAsync(id, Ct);
+        Assert.Equal(TaxDispatchStatus.Pending, stillPending.Status);
+        Assert.Null(stillPending.AttemptId);
+
+        gateway.FailPrepare = false;
+        gateway.Timeout = true;
+        bindings.Hash = new string('B', 64);
+        var unknown = await submit.HandleAsync(command, Ct);
+        Assert.Equal(new string('A', 64), gateway.PreparedCertificate);
+        Assert.Equal(TaxDispatchStatus.Unknown, unknown.Status);
+        Assert.Equal(1, gateway.Sends);
+        Assert.Equal(unknown, await submit.HandleAsync(command, Ct));
+        Assert.Equal(1, gateway.Sends);
+
+        await using var restarted = Open();
+        var restored = new TaxSubmissionRepository(restarted, protection);
+        var restoredQueue = new TaxDispatchQueue(restarted, protection);
+        var inquiry = new InquireTaxSubmissionCommandHandler(restored, restoredQueue, gateway);
+        Assert.Equal(unknown, await inquiry.HandleAsync(new(id), Ct));
+        Assert.Equal(unknown.AttemptId, gateway.InquiredAttempt);
+        gateway.Result = new(Guid.NewGuid(), "FAILED", """{"error":[{"code":"mock"}]}""");
+        Assert.Equal(TaxDispatchStatus.Rejected, (await inquiry.HandleAsync(new(id), Ct)).Status);
+        Assert.Equal(1, gateway.Sends);
+    }
+
+    [TaxationSqlFact]
+    public async Task ConcurrentSubmitSendsOnceAndSeparatesAcknowledgementProcessingAndWorkFolder()
+    {
+        await using var left = Open();
+        await using var right = Open();
+        var id = await QueueSubmissionAsync(left);
+        var gateway = new TestGateway();
+        var queue = new TaxDispatchQueue(left, protection);
+        var repo = new TaxSubmissionRepository(left, protection);
+        var a = new SubmitTaxInvoiceCommandHandler(repo, queue, new TestBindings(), gateway, TimeProvider.System);
+        var b = new SubmitTaxInvoiceCommandHandler(new TaxSubmissionRepository(right, protection),
+            new TaxDispatchQueue(right, protection), new TestBindings(), gateway, TimeProvider.System);
+        var request = new SubmitTaxInvoiceCommand(id, Filing());
+        await Task.WhenAll(a.HandleAsync(request, Ct), b.HandleAsync(request, Ct));
+        Assert.Equal(1, gateway.Sends);
+        var received = await queue.GetStateAsync(id, Ct);
+        Assert.Equal(TaxDispatchStatus.Submitted, received.Status);
+        Assert.Equal(gateway.Reference, received.ReferenceNumber);
+        gateway.Result = new(gateway.Reference, "SUCCESS", """{"sign":"mock-receipt"}""");
+        var result = await new InquireTaxSubmissionCommandHandler(repo, queue, gateway).HandleAsync(new(id), Ct);
+        Assert.Equal(TaxDispatchStatus.Accepted, result.Status);
+        var folder = await new InquireTaxWorkFolderCommandHandler(repo, gateway).HandleAsync(new(id), Ct);
+        Assert.Equal("REJECTED", folder.InvoiceStatus);
+        Assert.Equal(TaxDispatchStatus.Accepted, (await queue.GetStateAsync(id, Ct)).Status);
+        var stored = await left.TaxDispatches.AsNoTracking().SingleAsync();
+        Assert.StartsWith("test:", stored.ProtectedAcknowledgement);
+        Assert.StartsWith("test:", stored.ProtectedProcessingEvidence);
+        Assert.StartsWith("test:", stored.ProtectedWorkFolderEvidence);
+    }
+
+    private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)
+    {
+        var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
+        var repo = new TaxationRepository(db, protection);
+        return await new EnqueueTaxInvoiceCommandHandler(repo)
+            .HandleAsync(new(factor, "tester", await PreviewVersion(repo, factor)), Ct);
+    }
+
+    private static TaxFilingDetails Filing() => new(1, new DateTimeOffset(
+        DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified), TimeSpan.FromMinutes(210)), 2, 2);
+
+    private sealed class TestBindings : ITaxSigningBindings
+    {
+        public string Hash { get; set; } = new('A', 64);
+        public TaxSigningBinding Get(Guid memoryId) => new(TaxAuthorityEnvironment.Sandbox, Hash, "14003778990");
+    }
+
+    private sealed class TestGateway : ITaxAuthorityClient
+    {
+        private int sends;
+        public int Sends => sends;
+        public bool FailPrepare { get; set; }
+        public bool Timeout { get; set; }
+        public Guid Reference { get; } = Guid.NewGuid();
+        public Guid? InquiredAttempt { get; private set; }
+        public string PreparedCertificate { get; private set; }
+        public TaxProcessingResult Result { get; set; }
+
+        public Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
+        {
+            if (FailPrepare) throw new CryptographicException();
+            PreparedCertificate = submission.CertificateSha256;
+            return Task.FromResult(new PreparedTaxRequest(attemptId, new HttpRequestMessage()));
+        }
+
+        public Task<TaxAcknowledgement> SendAsync(PreparedTaxRequest request, CancellationToken ct)
+        {
+            Interlocked.Increment(ref sends);
+            if (Timeout) throw new TaskCanceledException();
+            return Task.FromResult(new TaxAcknowledgement(Reference, """{"receipt":"mock"}"""));
+        }
+
+        public Task<TaxProcessingResult> InquireAsync(TaxSubmission submission, CancellationToken ct)
+        {
+            InquiredAttempt = submission.AttemptId;
+            return Task.FromResult(Result);
+        }
+
+        public Task<TaxWorkFolderResult> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct) =>
+            Task.FromResult(new TaxWorkFolderResult("REJECTED", "NOT_EXCEEDED", null, """{"invoiceStatus":"REJECTED"}"""));
+    }
+
+    private sealed class UnreadableProtection : ITaxPreviewProtector
+    {
+        public string Protect(string preview) => throw new NotSupportedException();
+        public string Unprotect(string preview) => throw new CryptographicException();
+    }
+
     private static async Task RunLocalDbAsync(string action)
     {
         var startInfo = new ProcessStartInfo("SqlLocalDB.exe") { UseShellExecute = false, CreateNoWindow = true };
@@ -279,10 +413,10 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         var factor = new Factor
         {
             Id = Guid.NewGuid(), PfactorID = preFactor.Id, DateMiladi = DateTime.Today, CustomerId = Guid.NewGuid(), Customer = "Original buyer",
-            Cus_EghtesadiCode = "123", OfficialType = 1, status = status, PercentTax = 10,
-            SumTotalAmount = 100, Discount = 5, TotalTax = 9, PaymentAmount = 104,
+            Cus_EghtesadiCode = "10100302746", Cus_ShenaseMeli = "10100302746", OfficialType = 1, status = status, PercentTax = 10,
+            SumTotalAmount = 100, Discount = 0, TotalTax = 10, PaymentAmount = 110,
             FactorItems = [new FactorItem { Id = Guid.NewGuid(), Row = 1, ProductCode = product.Id,
-                WeightCount = "1", UnitAmount = 100, Discount = 5, TaxAmount = 9, TotalAmount = 104 }]
+                WeightCount = "1", UnitAmount = 100, Discount = 0, TaxAmount = 10, TotalAmount = 110 }]
         };
         db.Factors.Add(factor);
         await db.SaveChangesAsync();

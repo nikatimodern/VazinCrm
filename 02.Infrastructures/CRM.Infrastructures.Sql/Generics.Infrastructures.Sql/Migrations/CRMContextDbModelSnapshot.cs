@@ -6986,6 +6986,20 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<Guid?>("AttemptId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("AuthorityEnvironment")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AuthorityProcessingStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid?>("AuthorityReference")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CertificateSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<Guid>("FactorId")
                         .HasColumnType("uniqueidentifier");
 
@@ -6993,6 +7007,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsRequired()
                         .HasMaxLength(6)
                         .HasColumnType("nvarchar(6)");
+
+                    b.Property<long?>("InvoiceSerial")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Kind")
                         .HasColumnType("int");
@@ -7014,6 +7031,18 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<bool>("MemoryWasActive")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ProtectedAcknowledgement")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedProcessingEvidence")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedSubmission")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedWorkFolderEvidence")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("QueuedUtc")
                         .HasColumnType("datetime2");
 
@@ -7026,6 +7055,13 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<DateTimeOffset?>("SubmissionStartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(22)
+                        .HasColumnType("nvarchar(22)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FactorId")
@@ -7037,13 +7073,21 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasIndex("SnapshotId")
                         .IsUnique();
 
+                    b.HasIndex("AuthorityEnvironment", "TaxId")
+                        .IsUnique()
+                        .HasFilter("[TaxId] IS NOT NULL");
+
                     b.HasIndex("Status", "QueuedUtc");
+
+                    b.HasIndex("AuthorityEnvironment", "FiscalId", "InvoiceSerial")
+                        .IsUnique()
+                        .HasFilter("[InvoiceSerial] IS NOT NULL");
 
                     b.ToTable("TaxDispatches", null, t =>
                         {
                             t.HasCheckConstraint("CK_TaxDispatches_Reference", "([Kind] = 0 AND [ReferencedDispatchId] IS NULL) OR ([Kind] IN (1, 2) AND [ReferencedDispatchId] IS NOT NULL AND [ReferencedDispatchId] <> [Id])");
 
-                            t.HasCheckConstraint("CK_TaxDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR ([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR ([Status] IN (2, 3, 4) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)");
+                            t.HasCheckConstraint("CK_TaxDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR ([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR ([Status] IN (2, 3, 4, 5) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)");
                         });
                 });
 

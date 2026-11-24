@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="../../01.Core/CRM.Core.ApplicationServices/CRM.Core.ApplicationServices.csproj" />
     <ProjectReference Include="../../02.Infrastructures/CRM.Infrastructures.Sql/Generics.Infrastructures.Sql/CRM.Infrastructures.Sql.csproj" />
+    <ProjectReference Include="../../03.EndPoints/CRM.EndPoint.FrontEnd/CRM.EndPoint.FrontEnd.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.6.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.4" PrivateAssets="all" />

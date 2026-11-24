@@ -1,3 +1,8 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
+using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
+using CRM.Core.ApplicationServices.Taxation.Submission;
+using System.Security.Cryptography;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.Domain.Taxation;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
@@ -56,6 +61,21 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> Enqueue(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
 
+    [HttpPost("dispatches/{id:guid}/submit")]
+    public Task<IActionResult> Submit(Guid id, TaxFilingDetails filing, CancellationToken ct) =>
+        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct));
+
+    [HttpPost("dispatches/{id:guid}/inquire")]
+    public Task<IActionResult> Inquire(Guid id, CancellationToken ct) =>
+        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxSubmissionCommand(id), ct));
+
+    [HttpPost("dispatches/{id:guid}/work-folder")]
+    public Task<IActionResult> WorkFolder(Guid id, CancellationToken ct) =>
+        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxWorkFolderCommand(id), ct));
+
+    private Task<IActionResult> RunSandbox<T>(Func<Task<T>> action) =>
+        config.GetValue<bool>("Taxation:Sandbox:Enabled") ? Run(action) : Task.FromResult<IActionResult>(NotFound());
+
     public sealed record TaxPreviewVersion(string Version);
 
     private async Task<IActionResult> Run<T>(Func<Task<T>> action)
@@ -64,6 +84,8 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         try { return Ok(await action()); }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (TaxPreviewConflictException ex) { return Conflict(ex.Message); }
+        catch (TaxTransportException) { return StatusCode(502, "پاسخ معتبر از محیط آزمایشی دریافت نشد."); }
+        catch (CryptographicException) { return StatusCode(503, "گواهی یا اطلاعات رمزگذاری‌شده در دسترس نیست."); }
         catch (ArgumentException ex) { return BadRequest(ex.Message); }
     }
 }
