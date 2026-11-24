@@ -44,6 +44,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
                 { x.Id, x.Product, x.ProductSmallName, x.WeightCount, x.UnitTxt, Allocated = x.Allocations.Sum(a => (decimal?)a.Weight) ?? 0 })
             .ToListAsync(cancellationToken);
         // Keep historical allocations visible even if the sales invoice was soft-deleted.
+        var visibleWarehouses = await access.ApplyAsync(db.Warehouses.AsNoTracking(), "View", cancellationToken);
+        var visibleWarehouseProducts = await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", cancellationToken);
         var allocations = await (
             from a in db.SupplyFactorItemAllocations.AsNoTracking()
             join si in db.SupplyFactorItems on a.SupplyFactorItemId equals si.Id
@@ -51,6 +53,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
             from f in db.Factors.IgnoreQueryFilters().Where(f => fi != null && f.Id == fi.factorId).DefaultIfEmpty()
             from w in db.Warehouses.IgnoreQueryFilters().Where(w => w.Id == a.WarehouseId).DefaultIfEmpty()
             where si.SupplyFactorId == id && !si.IsDeleted
+                && (!a.WarehouseId.HasValue || visibleWarehouses.Any(v => v.Id == a.WarehouseId.Value))
+                && (!a.SourceWarehouseProductId.HasValue || visibleWarehouseProducts.Any(v => v.Id == a.SourceWarehouseProductId.Value))
             orderby a.Id
             select new {
                 a.Id,
@@ -131,7 +135,7 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
                 x.Customer.Contains(search) || x.Product.Contains(search) || x.ProductSmallName.Contains(search) ||
                 x.SerialNumber.ToString().Contains(search));
         var items = await query.OrderByDescending(x => x.CreateDate).ThenByDescending(x => x.Id).Take(201).ToListAsync(cancellationToken);
-        var warehouses = await db.Warehouses.AsNoTracking()
+        var warehouses = await (await access.ApplyAsync(db.Warehouses.AsNoTracking(), "View", cancellationToken))
             .Where(w => (w.Id == SupplyAllocationRules.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات) ||
                         (w.Id == SupplyAllocationRules.StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))
             .Select(w => new { w.Id, w.Title, w.WarehouseType }).ToListAsync(cancellationToken);
@@ -161,6 +165,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
             WeightCount = SupplyAllocationRules.TryParseSalesWeight(i.WeightCount, out var weight) ? Math.Max(0, weight) : 0
         }).ToList();
         // Read the same junction rows used by the supply workspace, including historical sources.
+        var visibleWarehouses = await access.ApplyAsync(db.Warehouses.AsNoTracking(), "View", cancellationToken);
+        var visibleWarehouseProducts = await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", cancellationToken);
         var allocations = await (
             from a in db.SupplyFactorItemAllocations.AsNoTracking()
             join fi in db.FactorItems on a.FactorItemId equals fi.Id
@@ -168,6 +174,8 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
             from sf in db.SupplyFactors.IgnoreQueryFilters().Where(f => si != null && f.Id == si.SupplyFactorId).DefaultIfEmpty()
             from w in db.Warehouses.IgnoreQueryFilters().Where(w => w.Id == a.WarehouseId).DefaultIfEmpty()
             where fi.factorId == id && !fi.IsDeleted
+                && (!a.WarehouseId.HasValue || visibleWarehouses.Any(v => v.Id == a.WarehouseId.Value))
+                && (!a.SourceWarehouseProductId.HasValue || visibleWarehouseProducts.Any(v => v.Id == a.SourceWarehouseProductId.Value))
             orderby a.Id
             select new {
                 a.Id,
@@ -241,12 +249,13 @@ public sealed class SupplyQueryRepository(CRMContextDb db, CRM.Core.Domain.Acces
             query = query.Where(i =>
                 i.Supplier.Contains(search) || i.SerialNumber.Contains(search) || i.Product.Contains(search) || i.ProductSmallName.Contains(search));
         var items = await query.OrderByDescending(i => i.CreateDate).ThenByDescending(i => i.Id).Take(201).ToListAsync(cancellationToken);
-        var warehouses = await db.Warehouses.AsNoTracking()
+        var warehouses = await (await access.ApplyAsync(db.Warehouses.AsNoTracking(), "View", cancellationToken))
             .Where(w => (w.Id == SupplyAllocationRules.WasteId && w.WarehouseType == WarehouseType.انبار_ضایعات) ||
                         (w.Id == SupplyAllocationRules.StorageId && w.WarehouseType == WarehouseType.انبار_ذخیره))
             .Select(w => new { w.Id, w.Title, w.WarehouseType }).ToListAsync(cancellationToken);
+        var visibleWarehouseProducts = await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", cancellationToken);
         var inventory =
-            from p in db.WarehouseProducts.AsNoTracking()
+            from p in visibleWarehouseProducts
             join si in db.SupplyFactorItems on p.SupplyFactorItemId equals si.Id
             join sf in visibleSupplyFactors on si.SupplyFactorId equals sf.Id
             join w in db.Warehouses on p.WarehouseId equals w.Id
