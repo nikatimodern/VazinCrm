@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public sealed class AmountController(ICqrsDispatcher requests) : Controller
+public sealed class AmountController(ICqrsDispatcher requests, DocumentAccessPolicy access) : Controller
 {
     [Authorize(Roles = "کارشناس فروش ,مدیر فروش , مدیر تامین , مدیر ارشد , کارشناس تامین")]
     [CatalogPermission("ProductAmount", "View")]
@@ -38,7 +38,13 @@ public sealed class AmountController(ICqrsDispatcher requests) : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddAmount([FromBody] ProductAmount model, CancellationToken ct) => StatusCode(await requests.CommandAsync(new SaveProductPriceCommand(model), ct));
+    public async Task<IActionResult> AddAmount([FromBody] ProductAmount model, CancellationToken ct)
+    {
+        if (model == null) return BadRequest();
+        if (!await access.HasAsync("Product", "View", ct) || !await access.HasAsync("ProductAmount", "View", ct) ||
+            !await access.HasAsync("ProductAmount", model.Id == Guid.Empty ? "Create" : "Edit", ct)) return Forbid();
+        return StatusCode(await requests.CommandAsync(new SaveProductPriceCommand(model), ct));
+    }
     [HttpGet]
     [CatalogPermission("ProductAmount", "Delete")]
     public async Task<IActionResult> DelAmount(Guid id, CancellationToken ct) => StatusCode(await requests.CommandAsync(new DeleteProductPriceCommand(id), ct));
