@@ -119,7 +119,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
             !await access.CanAsync("BankAccount", "View", model.ToAccountId, ct)) return false;
         foreach (var link in model.RequestAmountPayments ?? [])
         {
-            if (!await Can("Pay", link.RequestAmountId, ct)) return false;
+            if (!await Can("Pay", link.RequestAmountId, ct) || !await CanReadLinks(link.RequestAmountId, ct)) return false;
             link.RequestAmount = null;
             link.Payment = null;
             link.PaymentId = model.Id;
@@ -134,7 +134,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
                     !await access.CanAsync("BankAccount", "View", previous.ToAccountId, ct)) return false;
             }
             var oldIds = await db.RequestAmountPayments.Where(x => x.PaymentId == model.Id).Select(x => x.RequestAmountId).ToListAsync(ct);
-            foreach (var id in oldIds) if (!await Can("Pay", id, ct)) return false;
+            foreach (var id in oldIds) if (!await Can("Pay", id, ct) || !await CanReadLinks(id, ct)) return false;
         }
         if (access.IsEnforced("Payment"))
         {
@@ -228,7 +228,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         if (access.IsEnforced("Payment") && (!await db.RequestAmountPayments.AnyAsync(x => x.PaymentId == id, ct) ||
             await db.PaymentSupplyFactors.AnyAsync(x => x.PaymentId == id, ct))) return Forbid();
         foreach (var requestId in await db.RequestAmountPayments.Where(x => x.PaymentId == id).Select(x => x.RequestAmountId).ToListAsync(ct))
-            if (!await Can("Pay", requestId, ct)) return Forbid();
+            if (!await Can("Pay", requestId, ct) || !await CanReadLinks(requestId, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new DeletePaymentCommand(id), ct));
     }
     public async Task<IActionResult> DeleteRequestAmount(Guid id, CancellationToken ct)
@@ -260,7 +260,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         if (model == null) return BadRequest();
         if (!await access.HasViewAsync("RequestAmount", ct) || !await access.HasAsync("Payment", "Create", ct)) return Forbid();
         foreach (var id in model.FilterIds ?? [])
-            if (!await Can("Pay", id, ct)) return Forbid();
+            if (!await Can("Pay", id, ct) || !await CanReadLinks(id, ct)) return Forbid();
         var data = await dispatcher.QueryAsync(new GetSelectedRequestsQuery(model.FilterIds ?? []), ct);
         return data.Error == null ? Ok(data.Data) : BadRequest(data.Error);
     }
