@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Concurrent;
 using System;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Services.SignalR
 {
+    [Authorize]
     public class TaskHub : Hub
     {
         // ذخیره‌ی ConnectionIdها بر اساس UserId
@@ -14,7 +16,8 @@ namespace CRM.EndPoint.FrontEnd.Services.SignalR
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.UserIdentifier ?? Context.ConnectionId; // شناسه کاربر
+            var userId = Context.UserIdentifier;
+            if (string.IsNullOrEmpty(userId)) { Context.Abort(); return; }
             _connections[userId] = Context.ConnectionId; // ذخیره
 
 
@@ -39,8 +42,10 @@ namespace CRM.EndPoint.FrontEnd.Services.SignalR
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Context.UserIdentifier ?? Context.ConnectionId;
-            _connections.TryRemove(userId, out _);
+            var userId = Context.UserIdentifier;
+            if (!string.IsNullOrEmpty(userId))
+                ((System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<string, string>>)_connections)
+                    .Remove(new(userId, Context.ConnectionId));
 
             var roles = Context.User?
                 .Claims
