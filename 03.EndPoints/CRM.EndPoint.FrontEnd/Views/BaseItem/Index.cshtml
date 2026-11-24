@@ -11,6 +11,8 @@
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var canManageBankAccounts = User.IsAdmin() || User.IsManagingDirector() || User.IsFinancialAdmin() || User.IsFinancialExpert();
+    var canViewProducts = await DocumentAccess.HasAsync("Product", "View", Context.RequestAborted);
+    var canCreateProducts = canViewProducts && await DocumentAccess.HasAsync("Product", "Create", Context.RequestAborted);
     var canViewBankAccounts = await DocumentAccess.HasViewAsync("BankAccount", Context.RequestAborted);
     var canCreateBankAccounts = canManageBankAccounts && await DocumentAccess.HasAsync("BankAccount", "Create", Context.RequestAborted);
 }
@@ -65,13 +67,17 @@
             </div>
         </div>
 
+        @if (canViewProducts) {
         <div class="col-12 col-xl-4 pt-xl-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">محصولات</label>
             <div class="InfoData base-item-list-panel" style="width:100%;min-height:430px;">
+                @if (canCreateProducts) {
                 <form id="formProductId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
+                    @Html.AntiForgeryToken()
                     <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت محصول" required />
-                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formProductSubmit()">ثبت</span>
+                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" data-document-permission="Product.Create" onclick="formProductSubmit()">ثبت</span>
                 </form>
+                }
 
                 <div class="line my-3" style="border-bottom-color: #aaa"></div>
                 <table class="table-hover table table-bordered table-striped" id="ProductTable">
@@ -87,6 +93,7 @@
                 </table>
             </div>
         </div>
+        }
 
         <div hidden="@(!canViewBankAccounts)" class="col-12" style="padding:4px">
             <h2 id="bankAccountsHeading" class="bank-accounts-section-title">حساب‌های بانکی</h2>
@@ -269,7 +276,7 @@
         $(document).ready(async () => {
             getAllSenf();
             getAllFamilyWay();
-            getAllProductBase();
+            if (@(canViewProducts ? "true" : "false")) getAllProductBase();
             if (@(canViewBankAccounts ? "true" : "false")) getAllBankAccount();
             getCompany();
         });
@@ -413,7 +420,7 @@
                         {
                             "render": function (data, type, row) {
                                 var _co = "<span class='d-flex align-items-center justify-content-center'>";
-                                _co += "<button id='BtnUpdate' type='button' title='حذف' class='buttonCancel3 d-flex align-items-center justify-content-center' style='padding: 6px' onclick='DelProductItem(\"" + row.id + "\",this)' ><i class='fa fa-trash '></i></button>";
+
                                 _co += "</span>";
                                 return _co;
 
@@ -670,23 +677,24 @@
         };
 
 
-        const formProductSubmit = () => {
-            if (document.querySelector("#formProductId input").value.trim()) {
-                let model = mySer.convertFormToJSON("#formProductId");
-
-                $.post(baseUrl + "BaseItem/AddProduct", model, (res) => {
+        const formProductSubmit = async () => {
+            if (!@(canCreateProducts ? "true" : "false") || window.AccessLive?.can("Product", "Create") === false) return;
+            const form = document.getElementById("formProductId");
+            if (!form || form.dataset.submitting === "true" || !form.querySelector("[name=Title]").value.trim()) return;
+            form.dataset.submitting = "true";
+            try {
+                const data = new URLSearchParams(new FormData(form));
+                const response = await sendApiRequest({
+                    url: baseUrl + "BaseItem/AddProduct", method: "POST", data,
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    returnFullResponse: true
+                });
+                if (response) {
                     AllProductTbl.ajax.reload(null, false);
-                    mySer.emptyForm("formProductId");
-
-                })
-                 .fail(() => {
-                     setTimeout(() => {
-                         formProductSubmit();
-                     }, 1000);
-                 });
-            }
+                    form.reset();
+                }
+            } finally { delete form.dataset.submitting; }
         };
-
 
         const formSenfSubmit = () => {
             if (document.querySelector("#formSenfId input").value.trim()) {
@@ -791,7 +799,7 @@
             e.preventDefault();
             //formSenfSubmit();
         });
-        document.querySelector("#formProductId").addEventListener("submit", (e) => {
+        document.querySelector("#formProductId")?.addEventListener("submit", (e) => {
             e.preventDefault();
             //formProductSubmit();
         });

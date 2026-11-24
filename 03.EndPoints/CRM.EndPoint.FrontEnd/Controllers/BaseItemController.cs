@@ -104,8 +104,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var searchValue = Request.Form["search[value]"].FirstOrDefault();
                 int pageSize = length != null ? Convert.ToInt32(length) : 0;
                 int skip = start != null ? Convert.ToInt32(start) : 0;
-                int recordsTotal = await db.Products.CountAsync();
-                var dataF = db.Products.AsQueryable();
+                var dataF = db.Products.AsNoTracking().Where(product => !product.IsDeleted);
+                int recordsTotal = await dataF.CountAsync();
 
                 if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
                 {
@@ -144,8 +144,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 // DataTables sends -1 to request all matching rows.
                 var recordsFiltered = await dataF.CountAsync();
                 var data = pageSize == -1
-                    ? await dataF.ToListAsync()
-                    : await dataF.Skip(skip).Take(pageSize).ToListAsync();
+                    ? await dataF.Select(product => new { product.Id, product.Title }).ToListAsync()
+                    : await dataF.Skip(skip).Take(pageSize).Select(product => new { product.Id, product.Title }).ToListAsync();
                 var jsonData = new { draw, recordsFiltered, recordsTotal, data };
                 return Ok(jsonData);
             }
@@ -302,11 +302,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         [CatalogPermission("Product", "Create")]
-        public async Task<IActionResult> AddProduct(Product model)
+        public async Task<IActionResult> AddProduct([FromForm] string title)
         {
-            db.Products.Add(model);
+            if (string.IsNullOrWhiteSpace(title)) return BadRequest();
+            db.Products.Add(new Product { Title = title.Trim() });
             await db.SaveChangesAsync();
 
             return Ok();
