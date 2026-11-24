@@ -15,6 +15,8 @@ using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.RequestAmounts.Entities;
 using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.Checks.Entities;
+using CRM.Core.Domain.Cashes.Entities;
+using CRM.Core.Domain.Transfers.Entities;
 using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -41,7 +43,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
@@ -167,6 +169,21 @@ public sealed class DocumentAccessPolicy(
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
         var allowed = owners.AllowedOwnerIds;
         var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(Cashier))
+        {
+            var rows = (IQueryable<Cashier>)(object)query;
+            if (allowed != null)
+            {
+                var ids = allowed.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                rows = rows.Where(x => ids.Contains(x.UserId));
+            }
+            if (excluded.Length > 0)
+            {
+                var ids = excluded.Where(s => Guid.TryParse(s, out _)).Select(Guid.Parse).ToArray();
+                rows = rows.Where(x => !ids.Contains(x.UserId));
+            }
+            return (IQueryable<T>)(object)rows;
+        }
         if (typeof(T) == typeof(OrderHead))
         {
             var heads = (IQueryable<OrderHead>)(object)query;
@@ -207,6 +224,11 @@ public sealed class DocumentAccessPolicy(
         var entity = typeof(T).Name;
         if (!IsEnforced(entity)) return true;
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
+        if (row is Cashier cashier)
+        {
+            var owner = new string?[] { cashier.UserId.ToString() };
+            return AllowsOwners(await OwnersAsync(entity + "." + action, ct), owner, owner);
+        }
         if (row is OrderHead head)
         {
             var owners = new string?[] { head.UserCreatorID, head.UserTaminId?.ToString() };
@@ -251,6 +273,12 @@ public sealed class DocumentAccessPolicy(
             "BankAccount" => await CanRowAsync(db.BankAccounts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Checkbook" => await CanRowAsync(db.Checkbooks.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Check" => await CanRowAsync(db.Checks.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Transfer" => await CanRowAsync(db.Transfers.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Cashier" => await CanRowAsync(db.Cashiers.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Cash" => await CanRowAsync(db.Cashes.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "BaseCash" => await CanRowAsync(db.BaseCashes.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "BaseCenterCash" => await CanRowAsync(db.BaseCenterCashes.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "CashGroup" => await CanRowAsync(db.CashGroups.AsNoTracking().Where(x => x.Id == id), action, ct),
             _ => false
         };
     }
