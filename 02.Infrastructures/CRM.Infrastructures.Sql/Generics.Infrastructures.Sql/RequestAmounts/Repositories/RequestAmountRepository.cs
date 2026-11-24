@@ -24,7 +24,19 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
     private IDbContextTransaction? transaction;
     public Task<RequestAmount?> GetAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.RequestAmounts : db.RequestAmounts.AsNoTracking()).Include(r => r.RequestAmountOrderHeads).Include(r => r.RequestAmountSupplyFactor).Include(r => r.RequestAmountPayments).FirstOrDefaultAsync(r => r.Id == id, ct);
     public Task<List<RequestAmount>> GetByIdsAsync(List<Guid> ids, bool states, CancellationToken ct) => db.RequestAmounts.Include(r => r.RequestAmountPayments).Where(r => ids.Contains(r.Id) && (!states || r.RequestStatus == RequestStatusEnum.پرداخت_شده || r.RequestStatus == RequestStatusEnum.در_انتظار_پرداخت)).ToListAsync(ct);
-    public async Task<List<RequestAmount>> GetByPaymentAsync(Guid id, CancellationToken ct) => await (await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct)).Include(r => r.RequestAmountPayments.Where(p => p.PaymentId == id)).Where(r => r.RequestAmountPayments.Any(p => p.PaymentId == id)).ToListAsync(ct);
+    private async Task<IQueryable<RequestAmount>> VisibleRequestsAsync(IQueryable<RequestAmount> query, CancellationToken ct)
+    {
+        query = await access.ApplyAsync(query, "View", ct);
+        if (access.IsEnforced("Cashier"))
+        {
+            var cashiers = await access.ApplyAsync(db.Cashiers.AsNoTracking(), "View", ct);
+            query = query.Where(r => r.RequestAmountType != RequestAmountTypeEnum.تنخواه ||
+                (r.TargetPersonId.HasValue && cashiers.Any(c => c.Id == r.TargetPersonId.Value)));
+        }
+        return query;
+    }
+
+    public async Task<List<RequestAmount>> GetByPaymentAsync(Guid id, CancellationToken ct) => await (await VisibleRequestsAsync(db.RequestAmounts.AsNoTracking(), ct)).Include(r => r.RequestAmountPayments.Where(p => p.PaymentId == id)).Where(r => r.RequestAmountPayments.Any(p => p.PaymentId == id)).ToListAsync(ct);
     public Task<Payment?> GetPaymentAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.Payments : db.Payments.AsNoTracking()).Include(p => p.RequestAmountPayments).FirstOrDefaultAsync(p => p.Id == id, ct);
     public Task<Accountancy?> GetCashCreditAsync(Guid id, CancellationToken ct) => db.Accountancies.FirstOrDefaultAsync(a => a.RequestAmountId == id, ct);
     public Task<Guid?> GetCashierUserIdAsync(Guid cashierId, CancellationToken ct) =>
@@ -121,7 +133,7 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
 
     public async Task<RequestAmountList> GetListAsync(int type, string? search, int searchNumber, Guid? orderHeadId, string userId, bool readAll, CancellationToken ct)
     {
-        var baseQuery = await access.ApplyAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), "View", ct);
+        var baseQuery = await VisibleRequestsAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), ct);
         var visibleOrders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
         var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", ct);
         if (!access.IsEnforced("RequestAmount") && !readAll)
@@ -166,7 +178,7 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
 
     public async Task<RequestAmountRow?> GetDetailsAsync(Guid id, CancellationToken ct)
     {
-        var visibleRequests = await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct);
+        var visibleRequests = await VisibleRequestsAsync(db.RequestAmounts.AsNoTracking(), ct);
         var visibleOrders = await access.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", ct);
         var visibleSupplyFactors = await access.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", ct);
         var data = await visibleRequests.Where(f => f.Id == id).Include(f => f.RequestAmountOrderHeads).Include(f => f.RequestAmountSupplyFactor).Select(ra => new RequestAmountRow { RequestAmount = ra, SupplyFactorSerials = ra.RequestAmountSupplyFactor.Join(visibleSupplyFactors, raSf => raSf.SupplyFactorId, sf => sf.Id, (raSf, sf) => sf.SerialNumber).ToList(), OrderHeadSerials = ra.RequestAmountOrderHeads.Join(visibleOrders, raOh => raOh.OrderHeadId, oh => oh.Id, (raOh, oh) => oh.OrderNumber).ToList(), }).FirstOrDefaultAsync(ct);
@@ -204,7 +216,7 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
         var deletable = await access.ApplyAsync(visiblePayments, "Delete", ct);
         var editableIds = (await editable.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct)).ToHashSet();
         var deletableIds = (await deletable.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct)).ToHashSet();
-        var payableRequests = await access.ApplyAsync(await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct), "Pay", ct);
+        var payableRequests = await access.ApplyAsync(await VisibleRequestsAsync(db.RequestAmounts.AsNoTracking(), ct), "Pay", ct);
         var blockedIds = (await db.RequestAmountPayments.AsNoTracking()
             .Where(link => ids.Contains(link.PaymentId) && !payableRequests.Any(r => r.Id == link.RequestAmountId))
             .Select(link => link.PaymentId).Distinct().ToListAsync(ct)).ToHashSet();
@@ -224,7 +236,7 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
         var sortColumn = table.SortColumn;
         var sortColumnDirection = table.SortDirection;
         var searchValue = table.Search;
-        var query = await access.ApplyAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), "View", ct);
+        var query = await VisibleRequestsAsync(db.RequestAmounts.OrderByDescending(f => f.CreateDate).AsNoTracking(), ct);
         if (!string.IsNullOrEmpty(searchValue))
         {
             query = query.Where(f => f.Amount == searchNumber);
