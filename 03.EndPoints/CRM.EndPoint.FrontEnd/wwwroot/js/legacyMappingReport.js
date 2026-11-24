@@ -5,12 +5,18 @@
         const page = document.getElementById("legacyMappingReport");
         if (!page || page.dataset.initialized) return;
         page.dataset.initialized = "1";
+        const allowed = key => page.dataset[key.toLowerCase()] === "true" && window.AccessLive?.can("ExternalMapping", key) !== false;
 
         const get = id => page.querySelector("#" + id);
         const savedRoot = get("lmrSavedRecords");
         const proposalRoot = get("lmrProposalRecords");
         const selectAll = get("lmrSelectPage");
         const saveSelected = get("lmrSaveSelected");
+        if (!allowed("Create")) {
+            get("lmrManualOpen").hidden = true;
+            get("lmrManualOpenSaved").hidden = true;
+            saveSelected.hidden = true;
+        }
         const proposalTabs = get("lmrProposalStatusTabs");
         const mainTabs = get("lmrMainTabs");
         const proposalReason = get("lmrProposalReason");
@@ -166,7 +172,7 @@
         }
 
         function canMap(row) {
-            return row.status !== "saved" && row.status !== "blocked" &&
+            return allowed("Create") && row.status !== "saved" && row.status !== "blocked" &&
                 !["PartyAlreadyMappedToAnotherCustomer", "ExistingDuplicateCustomerParty",
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
                 // Duplicate-party conflicts must be resolved by selecting one ERP customer.
@@ -526,10 +532,10 @@
                     : "") +
                 (row.status === "saved" && row.mappingId && manualEntityTypes[Number(row.mapType)]
                     ? '<span class="lmr-saved-actions">' +
-                        '<button type="button" class="lmr-btn lmr-btn-soft" ' +
-                        'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
-                        '<button type="button" class="lmr-btn lmr-btn-danger" ' +
-                        'data-delete-mapping>حذف ارتباط</button></span>'
+                        (allowed("Edit") ? '<button type="button" class="lmr-btn lmr-btn-soft" ' +
+                        'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' : "") +
+                        (allowed("Delete") ? '<button type="button" class="lmr-btn lmr-btn-danger" ' +
+                        'data-delete-mapping>حذف ارتباط</button>' : "") + '</span>'
                     : "");
             return '<article class="lmr-item lmr-decision-card lmr-' + stateClass +
                 '" data-key="' + escape(row.key) + '" role="listitem">' +
@@ -633,7 +639,7 @@
                 button.classList.toggle("is-active", active);
                 button.setAttribute("aria-pressed", String(active));
             });
-            get("lmrSelectionActions").hidden = !state.proposal.loaded ||
+            get("lmrSelectionActions").hidden = !allowed("Create") || !state.proposal.loaded ||
                 state.proposal.status === "blocked" ||
                 !state.manualIds.includes(state.softwareId);
             const showReason = state.proposal.status !== "pending";
@@ -792,7 +798,7 @@
         }
 
         async function deleteSavedMapping(row) {
-            if (state.deleting || !row?.mappingId || row.status !== "saved") return;
+            if (!allowed("Delete") || state.deleting || !row?.mappingId || row.status !== "saved") return;
 
             const ok = await confirmAlert({
                 title: "حذف ارتباط",
@@ -916,7 +922,7 @@
         }
 
         async function save(items) {
-            if (state.processing || !items.length) return;
+            if (!allowed("Create") || state.processing || !items.length) return;
             // Receipt records depend on a confirmed purchase mapping. If a purchase is
             // only suggested, select it together with its receipt or save it first.
             const pendingReceipts = state.proposal.rows.filter(row =>
@@ -1075,8 +1081,8 @@
             const savedCard = event.target.closest("[data-key]");
             const row = state.saved.rows.find(item => item.key === savedCard?.dataset.key);
             if (!row) return;
-            if (editButton) await editSavedMapping(row);
-            else await deleteSavedMapping(row);
+            if (editButton && allowed("Edit")) await editSavedMapping(row);
+            else if (deleteButton && allowed("Delete")) await deleteSavedMapping(row);
         });
         proposalRoot.addEventListener("click", async event => {
             if (toggleDetails(proposalRoot, event)) return;
@@ -1466,6 +1472,7 @@
         }
 
         function openManualMapping(editing = null) {
+            if (!allowed(editing?.mappingId ? "Edit" : "Create")) return;
             if (state.processing || state.manualOpen ||
                 !state.manualIds.includes(state.softwareId)) {
                 toastifyError("ثبت یا ویرایش برای این نرم‌افزار پشتیبانی نمی‌شود.");
@@ -1530,7 +1537,7 @@
             resetManualOptions({ preserveCrm: Number(manualType.value) === 0 }));
 
         get("lmrManualConfirm").addEventListener("click", async () => {
-            if (state.processing || !state.manualOpen ||
+            if (!allowed(state.manualEditing ? "Edit" : "Create") || state.processing || !state.manualOpen ||
                 get("lmrManualConfirm").disabled) return;
             const entityId = manualValue("crm");
             const exEntityId = manualValue("external");

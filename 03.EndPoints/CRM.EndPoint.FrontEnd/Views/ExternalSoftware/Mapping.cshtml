@@ -1,6 +1,10 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy MappingAccess
 @{
     ViewData["Title"] = "مدیریت تطبیق اطلاعات";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var create = await MappingAccess.HasAsync("ExternalMapping", "Create", Context.RequestAborted);
+    var edit = await MappingAccess.HasAsync("ExternalMapping", "Edit", Context.RequestAborted);
+    var delete = await MappingAccess.HasAsync("ExternalMapping", "Delete", Context.RequestAborted);
 }
 
 @section Styles {
@@ -8,7 +12,7 @@
 }
 
 <section id="legacyMappingReport" class="legacy-mapping-report" dir="rtl"
-         data-software-id="@ViewData["SoftwareId"]" data-software-title="@ViewData["SoftwareTitle"]">
+         data-create="@create.ToString().ToLowerInvariant()" data-edit="@edit.ToString().ToLowerInvariant()" data-delete="@delete.ToString().ToLowerInvariant()" data-software-id="@ViewData["SoftwareId"]" data-software-title="@ViewData["SoftwareTitle"]">
     @Html.AntiForgeryToken()
 
     <header class="lmr-page-heading">
