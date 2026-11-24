@@ -182,7 +182,18 @@ public class AccountancyController(ICqrsDispatcher dispatcher, DocumentAccessPol
         if (!await access.HasViewAsync("BankAccount", ct)) return Forbid();
         var form = await Request.ReadFormAsync(ct);
         var model = JsonConvert.DeserializeObject<FilterVModel>(form["model"].FirstOrDefault() ?? "null");
-        return Ok(await dispatcher.QueryAsync(new GetBankAccountsTableQuery(await ReadTableAsync(ct), model?._type), ct));
+        var result = await dispatcher.QueryAsync(new GetBankAccountsTableQuery(await ReadTableAsync(ct), model?._type), ct);
+        var permissions = new System.Collections.Generic.Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+        {
+            permissions[row.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row, "Delete", ct),
+                canChangeActive = await access.AllowsRowAsync(row, "ChangeActive", ct)
+            };
+        }
+        return Ok(new { result.Draw, result.RecordsFiltered, result.RecordsTotal, result.Data, permissions });
     }
 
     [Authorize(Policy = "NotCustomerOnly")]
