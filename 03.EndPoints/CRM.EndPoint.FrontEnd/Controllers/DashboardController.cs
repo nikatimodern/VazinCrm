@@ -114,10 +114,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpPost]
+        [CatalogPermission("LogSystem")]
         public async Task<IActionResult> GetLogSystem([FromBody] FilterVModel model)
         {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
+            var canDetails = await documentAccess.HasAsync("LogSystem", "ViewDetails", HttpContext.RequestAborted);
             var logSystem = db.logSystems.Where(f => !string.IsNullOrEmpty(f.Description)).AsQueryable();
 
             if (model?.filt != null)
@@ -132,8 +134,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     f.Description,
                     f.ChangeTimeTxt,
                     f.ActionType,
-                    ChangeDetails = rols.Contains("مدیر ارشد") ? f.ChangeDetails : null,
-                    CommentTxt = rols.Contains("مدیر ارشد") && f.EntityName == nameof(AppUser) ? f.CommentTxt : null
+                    ChangeDetails = canDetails && rols.Contains("مدیر ارشد") ? f.ChangeDetails : null,
+                    CommentTxt = canDetails && rols.Contains("مدیر ارشد") && f.EntityName == nameof(AppUser) ? f.CommentTxt : null
                 });
 
             return Ok(data);
@@ -222,7 +224,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var rols = await userManager.GetRolesAsync(user);
 
-            var reports = db.Reports.AsQueryable();
+            var reports = await documentAccess.ApplyAsync(db.Reports.AsNoTracking(), "View", HttpContext.RequestAborted);
+            if (documentAccess.IsEnforced("CallRecording"))
+            {
+                var calls = await documentAccess.ApplyAsync(db.CallRecordings.AsNoTracking(), "View", HttpContext.RequestAborted);
+                reports = reports.Where(r => !r.CallRecordingId.HasValue || calls.Any(c => c.Id == r.CallRecordingId.Value));
+            }
             if (model.filt != null)
             {
                 reports = reports.ApplyFilter(model, f => f.CustomerId, f => f.CreateDate, f => f.UserCreatorID);
