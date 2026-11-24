@@ -1,0 +1,24 @@
+name: Access catalog checks
+on:
+  push:
+    branches: [AccLevel]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-domain-checks:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check architecture
+        run: python scripts/check-onion-architecture.py
+      - name: Check coding standards structure
+        run: python scripts/check-coding-standards.py
+      - name: Build solution and Razor views
+        run: dotnet build VazinProject.sln -p:MvcRazorCompileOnBuild=true
+      - name: Access scope checks
+        run: dotnet run --project tests/CRM.AccessCatalog.Checks/CRM.AccessCatalog.Checks.csproj
