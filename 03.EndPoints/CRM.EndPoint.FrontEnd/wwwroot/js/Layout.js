@@ -3046,6 +3046,8 @@ window.addEventListener("erp:access-state", () => {
     warningData = [];
     document.getElementById("warningContainer")?.replaceChildren();
     document.querySelectorAll(".logSystem-container").forEach(el => el.replaceChildren());
+    document.getElementById("ShowDetailsLog")?.replaceChildren();
+    document.getElementById("logContainer")?.replaceChildren();
 });
 async function showModalWarnings() {
     await getAllWarnings();
@@ -3320,13 +3322,16 @@ function showModalSetting() {
 }
 
 function showDetailsLog(changeDetails, commentTxt) {
-    document.getElementById("ShowDetailsLog").innerHTML = changeDetails || commentTxt;
+    if (window.AccessLive?.can("LogSystem", "ViewDetails") === false) return;
+    document.getElementById("ShowDetailsLog").textContent = changeDetails || commentTxt || "";
     ModalToggle("#ShowDetailsLogModal");
 }
 
 async function showLogEntity(entityName, entityId) {
+    if (window.AccessLive?.can("LogSystem", "View") === false) return;
+    const generation = warningAccessGeneration;
     const data = await getLogEntity(entityName, entityId);
-    if (!data) return;
+    if (!data || generation !== warningAccessGeneration) return;
     
     const container = document.getElementById("logContainer");
     container.innerHTML = "";
@@ -3365,7 +3370,15 @@ function createDomLogSystem(data) {
             </p>
         `;
         li.querySelector(".logSystem-time").textContent = (item.changeTimeTxt || "").split(" ").join(" | ");
-        li.querySelector("[data-log-description]").textContent = item.description || "";
+        const description = li.querySelector("[data-log-description]");
+        // Preserve the existing bold labels, but never render arbitrary log HTML.
+        for (const part of (item.description || "").split(/(<b>[\s\S]*?<\/b>)/gi)) {
+            if (/^<b>[\s\S]*<\/b>$/i.test(part)) {
+                const bold = document.createElement("b");
+                bold.textContent = part.slice(3, -4);
+                description.append(bold);
+            } else description.append(document.createTextNode(part));
+        }
         li.querySelector(".showDetailLog-icon")?.addEventListener("click", () => showDetailsLog(item.changeDetails, item.commentTxt));
         ul.appendChild(li);
     });

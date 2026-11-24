@@ -196,6 +196,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         [CatalogPermission("SystemWarning", "Refresh")]
         public async Task<IActionResult> RefreshSystemWarnings()
         {
+            if (documentAccess.IsEnforced("SystemWarning") && (!documentAccess.IsEnforced("Factor") ||
+                !await documentAccess.HasAsync("Factor", "View", HttpContext.RequestAborted))) return Forbid();
             return Ok(await genService.GetAllWarnings(User, true));
         }
 

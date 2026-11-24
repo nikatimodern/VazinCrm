@@ -1,7 +1,7 @@
 @inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy SettingAccess
 @{
     var canManageReleaseNotes = SettingAccess.IsEnforced("ReleaseNote")
-        ? await SettingAccess.HasAsync("ReleaseNote", "View", Context.RequestAborted) : User.IsAdmin();
+        ? !User.IsCustomer() && await SettingAccess.HasAsync("ReleaseNote", "View", Context.RequestAborted) : User.IsAdmin();
     var canViewBaseCash = SettingAccess.IsEnforced("BaseCash")
         ? await SettingAccess.HasViewAsync("BaseCash", Context.RequestAborted) : User.IsAdmin() || User.IsFinancial();
     var canViewSentSms = SettingAccess.IsEnforced("SentSms")

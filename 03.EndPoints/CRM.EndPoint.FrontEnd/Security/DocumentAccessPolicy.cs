@@ -120,9 +120,9 @@ public sealed class DocumentAccessPolicy(
 
     public async Task<bool> HasDashboardSourceViewAsync(string entity, CancellationToken ct)
     {
-        if (entity == "Customer")
-            return configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") &&
-                await scopes.GetEffectiveScopeAsync(UserId, "Customer.View", ct) != AccessScopes.None;
+        if (entity is "Customer" or "Deal")
+            return configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions") &&
+                await scopes.GetEffectiveScopeAsync(UserId, entity + ".View", ct) != AccessScopes.None;
         return IsEnforced(entity) && await HasViewAsync(entity, ct);
     }
 
@@ -318,6 +318,8 @@ public sealed class DocumentAccessPolicy(
         if (typeof(T) == typeof(Agent))
         {
             var agents = (IQueryable<Agent>)(object)query;
+            if (!configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions"))
+                return query.Where(x => false);
             var customers = await CustomersAsync(db.Customers.AsNoTracking().Where(c => !c.IsDeleted), "View", ct);
             agents = agents.Where(a => !a.IsDeleted && a.CustomerId.HasValue &&
                 customers.Any(c => c.Id == a.CustomerId.Value));

@@ -25,6 +25,7 @@ jobs:
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/qualityControlCustomer.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/accessLive.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/dashboard.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/releaseNotesAdmin.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/PublicFunction.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/Layout.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/File.js

@@ -39,11 +39,11 @@ Check(!own.Allows(null), "Own denies missing owner");
 foreach (var entity in new[] { "PreFactor", "Factor", "OrderHead", "Supply", "SupplyFactor", "Accountancy",
     "RequestAmount", "Payment", "BankAccount", "Checkbook", "Check", "Transfer", "Cashier", "Cash", "BaseCash",
     "BaseCenterCash", "CashGroup", "Warehouse", "WarehouseProduct", "WarehouseTransaction", "WarehouseVoucher",
-    "Contract", "Carizo", "Report", "CallRecording", "Contact", "Dashboard" })
+    "Contract", "Carizo", "Report", "CallRecording", "Contact", "Dashboard", "Agent" })
     Check(AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " owner resolver registered");
 foreach (var entity in new[] { "Customer", "Deal" })
     Check(!AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " uses its dedicated owner resolver");
-foreach (var entity in new[] { "QualityControl", "QualityControlQuestion", "Product", "ProductGroup", "ASetting", "Chat", "Email", "SentSms", "ReceivedSms", "Unknown" })
+foreach (var entity in new[] { "QualityControl", "QualityControlQuestion", "Product", "ProductGroup", "ASetting", "Chat", "Email", "SentSms", "ReceivedSms", "ReleaseNote", "LogSystem", "SystemWarning", "Unknown" })
     Check(!AccessScopes.SupportsSelectedOwners(entity), entity + " cannot use arbitrary owner scopes");
 
 var dashboardKeys = CRM.Core.Domain.AccessCatalog.Modules.Dashboard.ScopedKeys

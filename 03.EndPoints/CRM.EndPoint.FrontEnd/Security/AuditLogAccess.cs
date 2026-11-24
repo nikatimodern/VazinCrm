@@ -14,7 +14,7 @@ public static class AuditLogAccess
         return entity switch
         {
             "Customer" => await access.HasDashboardSourceViewAsync("Customer", ct) && await access.CanCustomerAsync(key, "View", ct),
-            "Deal" => await access.CanDealAsync(key, "View", ct) && await access.HasDashboardSourceViewAsync("Customer", ct),
+            "Deal" => await access.HasDashboardSourceViewAsync("Deal", ct) && await access.CanDealAsync(key, "View", ct),
             "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or
             "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or
             "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or
