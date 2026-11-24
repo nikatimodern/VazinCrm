@@ -90,6 +90,12 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
                 var old = await db.Cashes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
                 if (old == null) return NotFound();
                 if (old.Status != CashStatusEnum.ثبت_موقت) return Conflict("فقط سند موقت قابل ویرایش است.");
+                if (!await access.CanAsync("BaseCash", "View", old.CostTitleId, ct) ||
+                    !await access.CanAsync("BaseCenterCash", "View", old.CostCenterId, ct) ||
+                    (old.CashierId.HasValue && !await access.CanAsync("Cashier", "View", old.CashierId.Value, ct))) return Forbid();
+                var oldOrders = await db.CashOrderHeads.AsNoTracking().Where(x => x.CashId == model.Id).Select(x => x.OrderHeadId).ToListAsync(ct);
+                foreach (var orderId in oldOrders)
+                    if (!await access.CanAsync("OrderHead", "View", orderId, ct)) return Forbid();
                 model.Status = old.Status;
                 model.CashGroupId = old.CashGroupId;
                 model.PaymentVoucherNumber = old.PaymentVoucherNumber;
@@ -165,6 +171,11 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     }
     private async Task<bool> CanCashRows(IQueryable<Cash> rows, string action, CancellationToken ct)
     {
+        if (access.IsEnforced("BankAccount"))
+        {
+            var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
+            if (await rows.AnyAsync(c => c.BankAccountId.HasValue && !banks.Any(b => b.Id == c.BankAccountId.Value), ct)) return false;
+        }
         if (!await access.HasAnyAsync("Cash", action, ct)) return false;
         var permitted = await access.ApplyAsync(await access.ApplyAsync(rows, "View", ct), action, ct);
         return !await rows.AnyAsync(x => !permitted.Any(p => p.Id == x.Id), ct);
@@ -173,18 +184,12 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     private async Task<bool> CanGroup(Guid id, string action, string childAction, CancellationToken ct)
     {
         if (!await access.CanAsync("CashGroup", action, id, ct)) return false;
-        var rows = db.Cashes.Where(x => x.CashGroupId == id);
-        if (access.IsEnforced("BankAccount"))
-        {
-            var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
-            if (await rows.AnyAsync(c => c.BankAccountId.HasValue && !banks.Any(b => b.Id == c.BankAccountId.Value), ct)) return false;
-        }
-        return await CanCashRows(rows, childAction, ct);
+        return await CanCashRows(db.Cashes.Where(x => x.CashGroupId == id), childAction, ct);
     }
 
     public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status, CancellationToken ct) {
         if (!Enum.IsDefined(status)) return BadRequest();
-        if (!await access.CanAsync("Cash", "ChangeStatus", id, ct)) return Forbid();
+        if (!await access.CanAsync("Cash", "ChangeStatus", id, ct) || !await CanCashRows(db.Cashes.Where(x => x.Id == id), "ChangeStatus", ct)) return Forbid();
         if (access.IsEnforced("Cash"))
         {
             var row = await db.Cashes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
@@ -210,6 +215,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (!await access.HasAsync("CashGroup", "Create", ct)) return Forbid();
         foreach (var id in listIds.Distinct())
             if (!await access.CanAsync("Cash", "ChangeStatus", id, ct)) return Forbid();
+        if (!await CanCashRows(db.Cashes.Where(x => listIds.Contains(x.Id)), "ChangeStatus", ct)) return Forbid();
         if (access.IsEnforced("Cash") && await db.Cashes.AnyAsync(x => listIds.Contains(x.Id) && x.Status != CashStatusEnum.ثبت_موقت, ct)) return Conflict();
         return Map(await dispatcher.CommandAsync(new ChangeStatusGroupCashToPendingCommand(listIds), ct));
     }
@@ -224,7 +230,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         return Map(await dispatcher.CommandAsync(new RejectCashGroupCommand(groupId), ct));
     }
     public async Task<IActionResult> DeleteCash(Guid id, CancellationToken ct) {
-        if (!await access.CanAsync("Cash", "Delete", id, ct)) return Forbid();
+        if (!await access.CanAsync("Cash", "Delete", id, ct) || !await CanCashRows(db.Cashes.Where(x => x.Id == id), "Delete", ct)) return Forbid();
         if (access.IsEnforced("Cash") && !await db.Cashes.AnyAsync(x => x.Id == id && x.Status == CashStatusEnum.ثبت_موقت, ct)) return Conflict();
         return Map(await dispatcher.CommandAsync(new DeleteCashCommand(id), ct));
     }
@@ -272,13 +278,28 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     }
     public async Task<IActionResult> GetCashier(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("Cashier", "View", id, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount"))
+        {
+            var row = await db.Cashiers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (row == null) return NotFound();
+            if (!await CanUseBankAccount(row.BankAccountId, ct)) return Forbid();
+        }
         return Ok(await dispatcher.QueryAsync(new GetCashierDetailQuery(id), ct));
     }
     public async Task<IActionResult> GetBaseCash(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("BaseCash", "View", id, ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetBaseCashDetailQuery(id), ct));
     }
-    public async Task<IActionResult> GetBalanceCashier(CancellationToken ct) => Ok(await dispatcher.QueryAsync(new GetCashierBalanceQuery(), ct));
+    public async Task<IActionResult> GetBalanceCashier(CancellationToken ct)
+    {
+        if (!await access.HasViewAsync("Cashier", ct)) return Forbid();
+        if (access.IsEnforced("Cashier") && Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var userId))
+        {
+            var visible = await access.ApplyAsync(db.Cashiers.AsNoTracking().Where(c => c.UserId == userId), "View", ct);
+            if (!await visible.AnyAsync(ct)) return Forbid();
+        }
+        return Ok(await dispatcher.QueryAsync(new GetCashierBalanceQuery(), ct));
+    }
     public async Task<IActionResult> GetAllCashiers(bool useEntityId = false, CancellationToken ct = default) {
         if (!await access.HasViewAsync("Cashier", ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetCashierOptionsQuery(useEntityId), ct));
@@ -297,7 +318,9 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (!await access.HasViewAsync("Cash", ct)) return Forbid();
         var form = await Request.ReadFormAsync(ct);
         var model = JsonConvert.DeserializeObject<FilterVModel>(form["model"].FirstOrDefault() ?? "null");
-        var result = await dispatcher.QueryAsync(new GetCashTableQuery(await ReadTableAsync(ct), model.ToApplicationFilter()), ct);
+        var filter = model.ToApplicationFilter();
+        if (Guid.TryParse(filter?.EntityId, out var groupId) && !await CanGroup(groupId, "View", "View", ct)) return Forbid();
+        var result = await dispatcher.QueryAsync(new GetCashTableQuery(await ReadTableAsync(ct), filter), ct);
         var permissions = new Dictionary<Guid, object>();
         foreach (var row in result.Data)
             permissions[row.Id] = new
@@ -346,7 +369,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (model == null)
             return BadRequest();
         foreach (var id in model.Ids ?? [])
-            if (!await access.CanAsync("Cash", "ExportExternal", id, ct)) return Forbid();
+            if (!await access.CanAsync("Cash", "ExportExternal", id, ct) || !await CanCashRows(db.Cashes.Where(x => x.Id == id), "ExportExternal", ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new SendCashesToSoftwareCommand(model.Ids ?? [], model.ExternalSoftwareIds ?? []), ct));
     }
 
