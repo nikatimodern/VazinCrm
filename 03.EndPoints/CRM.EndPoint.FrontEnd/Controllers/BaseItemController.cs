@@ -93,6 +93,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 file = item.file,
                 FileUrl = fileSaver.SaveBaseItemImage(item.file, item.Filename, item.fileExten.ToLowerInvariant())
             }).ToList();
+            db.CompanyFile.AddRange(company.CompanyFiles);
             await db.SaveChangesAsync(HttpContext.RequestAborted);
             return Ok();
         }

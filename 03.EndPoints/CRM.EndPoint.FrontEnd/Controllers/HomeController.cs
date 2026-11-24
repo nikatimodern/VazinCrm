@@ -170,7 +170,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 return Ok(visible.Select(log => new { log.Id, log.EntityName, log.EntityId, log.EntitySerialNumber,
                     log.ParentEntityId, log.ParentEntityName, log.ChangeTime, log.ChangeTimeTxt, log.ChangedBy,
                     log.ChangedById, log.ActionType, log.ActionTypeTxt, log.Description,
-                    ChangeDetails = details ? log.ChangeDetails : null, CommentTxt = details ? log.CommentTxt : null }));
+                    ChangeDetails = details && log.EntityName != nameof(AppUser) ? log.ChangeDetails : null, CommentTxt = details ? log.CommentTxt : null }));
             }
             catch (Exception ex)
             {

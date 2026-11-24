@@ -21,13 +21,18 @@ public static class AuditLogAccess
             "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "Contract" or
             "Carizo" or "Report" or "CallRecording" or "Contact" or "Agent" =>
                 access.IsEnforced(entity) && await access.CanAsync(entity, "View", key, ct),
-            // Security-administration events and unmapped legacy types must not leak through a general log grant.
+            "AppUser" => await access.HasAsync("LogSystem", "ViewUserEvents", ct),
+            // Other security-administration events and unmapped types remain denied.
             _ => false
         };
     }
 
     public static async Task<bool> CanReadAsync(DocumentAccessPolicy access, LogSystem log, CancellationToken ct)
     {
+        if (log.EntityName == "AppUser")
+            return log.ActionType is LogActionEnum.ثبت or LogActionEnum.ورود_کاربر or LogActionEnum.خروج_کاربر &&
+                string.IsNullOrWhiteSpace(log.ParentEntityName) && string.IsNullOrWhiteSpace(log.ParentEntityId) &&
+                await CanReadRecordAsync(access, log.EntityName, log.EntityId, ct);
         var hasParent = !string.IsNullOrWhiteSpace(log.ParentEntityName) || !string.IsNullOrWhiteSpace(log.ParentEntityId);
         if (hasParent && !await CanReadRecordAsync(access, log.ParentEntityName, log.ParentEntityId, ct)) return false;
         // Attachment changes inherit their verified parent. Other rows must also authorize the actual record.

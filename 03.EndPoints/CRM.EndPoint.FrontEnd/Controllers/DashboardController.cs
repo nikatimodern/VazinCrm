@@ -177,7 +177,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 foreach (var log in candidates)
                     if (await AuditLogAccess.CanReadAsync(documentAccess, log, Ct)) visible.Add(log);
                 return Ok(visible.Select(f => new { f.Description, f.ChangeTimeTxt, f.ActionType,
-                    ChangeDetails = canDetails ? f.ChangeDetails : null,
+                    ChangeDetails = canDetails && f.EntityName != nameof(AppUser) ? f.ChangeDetails : null,
                     CommentTxt = canDetails ? f.CommentTxt : null }));
             }
             var data = logSystem
