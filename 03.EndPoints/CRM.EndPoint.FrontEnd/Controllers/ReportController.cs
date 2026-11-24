@@ -90,6 +90,11 @@ public class ReportController(ICqrsDispatcher requests, DocumentAccessPolicy acc
         if (model == null) return BadRequest();
         if (model.Id == Guid.Empty ? !await access.HasAsync("Report", "Create", cancellationToken) :
             !await access.CanAsync("Report", "Edit", model.Id, cancellationToken)) return Forbid();
+        if (access.IsEnforced("Report"))
+        {
+            if (model.CustomerId.HasValue && !await access.CanCustomerAsync(model.CustomerId.Value, "View", cancellationToken)) return Forbid();
+            if (model.DealId.HasValue && !await access.CanDealAsync(model.DealId.Value, "View", cancellationToken)) return Forbid();
+        }
         if (model.CallRecordingId.HasValue && !await access.CanAsync("CallRecording", "View", model.CallRecordingId.Value, cancellationToken)) return Forbid();
         try
         {
