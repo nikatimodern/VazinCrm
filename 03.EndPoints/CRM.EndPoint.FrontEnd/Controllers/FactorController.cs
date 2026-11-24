@@ -2646,7 +2646,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var groupIds = activeItems.Where(item => item.ProductGroup.HasValue)
                     .Select(item => item.ProductGroup.Value).Distinct().ToArray();
                 var products = await db.Products.AsNoTracking().Where(product => !product.IsDeleted && productIds.Contains(product.Id))
-                    .Select(product => new { product.Id, product.IsInProduction }).ToDictionaryAsync(product => product.Id, AccessCt);
+                    .Select(product => new { product.Id, product.IsInProduction, product.Title }).ToDictionaryAsync(product => product.Id, AccessCt);
                 var groups = await db.ProductGroups.AsNoTracking().Where(group => groupIds.Contains(group.Id))
                     .Select(group => new { group.Id, group.GroupName }).ToDictionaryAsync(group => group.Id, AccessCt);
                 foreach (var item in activeItems)
@@ -2656,8 +2656,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     var changedGroup = previous == null || previous.ProductGroup != item.ProductGroup;
                     if (changedProduct && item.ProductCode.HasValue && !canSelectProduct) return Forbid();
                     if (changedGroup && item.ProductGroup.HasValue && !canSelectGroup) return Forbid();
+                    if (documentAccess.IsEnforced("Product") && !changedProduct && previous != null && !canSelectProduct)
+                        item.ProductSmallName = previous.ProductSmallName;
                     if (item.ProductCode.HasValue && products.TryGetValue(item.ProductCode.Value, out var product))
+                    {
                         item.IsInProduction = !canSelectProduct && previous != null ? previous.IsInProduction : product.IsInProduction;
+                        if (documentAccess.IsEnforced("Product") && changedProduct)
+                            item.ProductSmallName = product.Title;
+                    }
                     else if (!changedProduct && previous != null)
                         item.IsInProduction = previous.IsInProduction;
                     else

@@ -411,6 +411,17 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             var oldData = await db.WarehouseProducts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
             if (oldData == null) return NotFound();
+            if (access.IsEnforced("Product") && oldData.ProductCode != model.ProductCode)
+            {
+                if (!await Has("Product", "View")) return Forbid();
+                var catalogProduct = await db.Products.AsNoTracking()
+                    .Where(product => product.Id == model.ProductCode && !product.IsDeleted)
+                    .Select(product => new { product.Title }).SingleOrDefaultAsync(Ct);
+                if (catalogProduct == null) return BadRequest("کالای انتخاب‌شده معتبر نیست.");
+                model.ProductSmallName = catalogProduct.Title;
+            }
+            else if (access.IsEnforced("Product"))
+                model.ProductSmallName = oldData.ProductSmallName;
             if (oldData?.SupplyFactorItemId != null || oldData?.FactorItemId != null)
                 return BadRequest("محصول مرتبط با تخصیص فقط از فاکتور مربوط قابل ویرایش است.");
             if (access.IsEnforced("WarehouseProduct"))
@@ -603,6 +614,15 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return warehouseProduct;
         }
 
+        if (access.IsEnforced("Product"))
+        {
+            var catalogProduct = await db.Products.AsNoTracking()
+                .Where(product => product.Id == model.ProductCode && !product.IsDeleted)
+                .Select(product => new { product.Title }).SingleOrDefaultAsync(Ct);
+            if (catalogProduct == null) throw new ArgumentException("کالای انتخاب‌شده معتبر نیست.");
+            model.ProductSmallName = catalogProduct.Title;
+        }
+
         var exists = await db.WarehouseProducts.AnyAsync(x =>
             x.WarehouseId == model.WarehouseId &&
             x.ProductCode == model.ProductCode &&
@@ -646,6 +666,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         if (model == null) return BadRequest();
         if (!await Has("WarehouseTransaction", "Create") || !await access.CanWarehouseScopeAsync("WarehouseTransaction", "View", model.WarehouseId, Ct)) return Forbid();
+        if (!model.WarehouseProductId.HasValue && !await Has("Product", "View")) return Forbid();
         if (access.IsEnforced("WarehouseTransaction"))
         {
             if (model.Id != Guid.Empty || model.WarehouseVoucherId.HasValue || !Enum.IsDefined(model.TransactionType)) return BadRequest();
