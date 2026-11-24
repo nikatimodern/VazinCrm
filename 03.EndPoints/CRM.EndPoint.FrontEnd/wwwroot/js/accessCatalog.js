@@ -42,7 +42,8 @@
     let userOverrides = new Map(), userOriginalOverrides = new Map();
     let userSelectedUsers = new Map(), userOriginalSelectedUsers = new Map();
     const scopePickers = new Map();
-    const collapsedUserEntities = new Set();
+    // All user permission groups start closed; remember only explicitly opened groups.
+    const expandedUserEntities = new Set();
     // Remember the active permission in each entity while editing a user's grants.
     const selectedUserPermissions = new Map();
     let userRolePicker = null;
@@ -1323,7 +1324,7 @@
             // editor is mounted in the content panel on the left.
             const grid = text("div", null, "ac-user-permission-grid");
             grid.id = "ac-user-entity-permissions-" + entity.id;
-            const isCollapsed = collapsedUserEntities.has(entity.id);
+            const isCollapsed = !expandedUserEntities.has(entity.id);
             grid.hidden = isCollapsed;
             name.setAttribute("aria-expanded", String(!isCollapsed));
             name.setAttribute("aria-controls", grid.id);
@@ -1498,7 +1499,7 @@
         if (!userPageItems.some(x => x.id === userId)) return;
         const generation = ++userSelectionGeneration;
         if (currentUserId !== userId) {
-            collapsedUserEntities.clear();
+            expandedUserEntities.clear();
             selectedUserPermissions.clear();
         }
         currentUserId = userId;
@@ -1584,6 +1585,7 @@
     }
 
     async function loadUserTab() {
+        expandedUserEntities.clear();
         const generation = ++userTabGeneration;
         ++userPageGeneration;
         ++userSelectionGeneration;
@@ -1746,8 +1748,8 @@
             grid.hidden = isCollapsed;
             target.setAttribute("aria-expanded", String(!isCollapsed));
             section.classList.toggle("is-collapsed", isCollapsed);
-            if (isCollapsed) collapsedUserEntities.add(entityId);
-            else collapsedUserEntities.delete(entityId);
+            if (isCollapsed) expandedUserEntities.delete(entityId);
+            else expandedUserEntities.add(entityId);
             return;
         }
         if (action === "new-user") void openUserProfileEditor();
