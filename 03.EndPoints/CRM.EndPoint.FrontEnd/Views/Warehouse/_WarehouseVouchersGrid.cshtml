@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.Warehouses.Enums
 @model IList<CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher>
 
@@ -70,26 +71,26 @@
                     <div class="footer-management-actions">
                         @* <span class="items-count">@voucher.WarehouseProductVouchers?.Count قلم</span> *@
                         @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && voucher.Status != WarehouseVoucherStatusEnum.تحویل_شده) {
-                            <button type="button" class="btn-icon btn-icon-danger" data-title="حذف" onclick="deleteWarehouseVoucher('@voucher.Id')">
+                            <button hidden="@(!(await DocumentAccess.CanAsync("WarehouseVoucher", "Delete", voucher.Id, Context.RequestAborted)))" data-document-permission="WarehouseVoucher.Delete" type="button" class="btn-icon btn-icon-danger" data-title="حذف" onclick="deleteWarehouseVoucher('@voucher.Id')">
                                 <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clip-rule="evenodd" /></svg>
                             </button>
 
-                            <button type="button" class="btn-icon btn-icon-secondary" data-title="ویرایش" onclick="editWarehouseVoucher('@voucher.Id')">
+                            <button hidden="@(!(await DocumentAccess.CanAsync("WarehouseVoucher", "Edit", voucher.Id, Context.RequestAborted)))" data-document-permission="WarehouseVoucher.Edit" type="button" class="btn-icon btn-icon-secondary" data-title="ویرایش" onclick="editWarehouseVoucher('@voucher.Id')">
                                 <svg style="width: 12px;" viewBox="0 0 512 512"><path fill="currentColor" d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"></path></svg>
                             </button>
                         }
                     </div>
                     <div class="footer-actions">
 
-                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && (User.IsAdmin() || User.IsTaminAdmin()) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
-                            <button type="button" class="btn-action btn-confirm" onclick="confirmWarehouseVoucher('@voucher.Id')">
+                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && (DocumentAccess.IsEnforced("WarehouseVoucher") || User.IsAdmin() || User.IsTaminAdmin()) && await DocumentAccess.CanAsync("WarehouseVoucher", "Approve", voucher.Id, Context.RequestAborted) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
+                            <button type="button" data-document-permission="WarehouseVoucher.Approve" class="btn-action btn-confirm" onclick="confirmWarehouseVoucher('@voucher.Id')">
                                 <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                                 تایید حواله
                             </button>
                         }
 
-                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
-                            <button type="button" class="btn-action btn-deliver" onclick="deliverWarehouseVoucher('@voucher.Id')">
+                        @if ((User.IsAdmin() || voucher.Warehouse?.IsMain == false) && voucher.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل && await DocumentAccess.CanAsync("WarehouseVoucher", "Deliver", voucher.Id, Context.RequestAborted) && await DocumentAccess.HasAsync("WarehouseTransaction", "Create", Context.RequestAborted)) {
+                            <button type="button" data-document-permission="WarehouseVoucher.Deliver" class="btn-action btn-deliver" onclick="deliverWarehouseVoucher('@voucher.Id')">
                                 <i class="fas fa-box-check"></i>
                                 @* <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8.5 12 4 4 8.5v7L12 20l8-4.5v-7ZM12 6.3l5.8 3.2L12 12.7 6.2 9.5 12 6.3Zm-6 4.9 5 2.8v3.7l-5-2.8v-3.7Zm7 6.5V14l5-2.8v3.7l-5 2.8Z" /></svg> *@
                                 تحویل شد
