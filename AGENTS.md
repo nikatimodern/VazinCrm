@@ -76,6 +76,8 @@ For new features, prefer the intended architecture. Do not add business rules to
 
 ## Skills
 ### UI design standard
+
+- When working on access permissions or backend logic, preserve existing UI design, CSS layout, sizing, spacing, colors and responsive behavior. Hide unauthorized controls or sections without redesigning the remaining interface. Any visual redesign requires explicit user approval.
 When creating or editing UI (including design previews), load and follow [.agents/skills/project-ui-design-system/SKILL.md](.agents/skills/project-ui-design-system/SKILL.md) and its design-token reference for the official palette and component styling. Apply it alongside the frontend skills below; this does not authorize global restyling or changes outside the requested scope.
 
 Use relevant skills in `.agents/skills/` when the task matches their descriptions. The repository's actual code and explicit user instructions take precedence over examples in skills.
