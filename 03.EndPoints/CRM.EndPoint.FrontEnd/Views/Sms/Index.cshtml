@@ -1,4 +1,11 @@
 @using CRM.Core.Domain.Sms.Enums
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{
+    var canReceive = await DocumentAccess.HasAsync("ReceivedSms", "View", Context.RequestAborted);
+    var canSent = await DocumentAccess.HasAsync("SentSms", "View", Context.RequestAborted);
+    var canSyncReceive = canReceive && await DocumentAccess.HasAsync("ReceivedSms", "Sync", Context.RequestAborted);
+    var canSyncSent = canSent && await DocumentAccess.HasAsync("SentSms", "Sync", Context.RequestAborted);
+}
 
 <div id="settingsSmsWorkspace" class="crm-settings-theme crm-operations-theme sms-page">
     <div class="sms-page-header">
@@ -14,7 +21,7 @@
         </button>*@
     </div>
 
-    <div class="sms-summary-grid">
+    <div class="sms-summary-grid @(!(canReceive && canSent) ? "d-none" : "")" data-sms-dashboard>
         <div class="sms-summary-card">
             <div class="sms-summary-icon sms-summary-icon-credit">
                 <i class="fas fa-wallet"></i>
@@ -51,13 +58,13 @@
 
     <div class="sms-content-card">
         <div class="sms-tabs">
-            <button type="button" class="sms-tab active" data-target="receivesTab">
+            <button type="button" class="sms-tab @(canReceive ? "active" : "d-none")" data-target="receivesTab" data-document-permission="ReceivedSms.View">
                 <i class="fa-regular fa-comment-dots"></i>
                 پیامک‌های دریافتی
                 <span class="sms-tab-count d-none" id="receivesCount">0</span>
             </button>
 
-            <button type="button" class="sms-tab" data-target="reportsTab">
+            <button type="button" class="sms-tab @(!canSent ? "d-none" : !canReceive ? "active" : "")" data-target="reportsTab" data-document-permission="SentSms.View">
                 <i class="fa-regular fa-paper-plane"></i>
                 گزارش ارسال
                 <span class="sms-tab-count d-none" id="reportsCount">0</span>
@@ -65,14 +72,14 @@
         </div>
 
 
-        <div class="sms-tab-content" id="receivesTab">
+        <div class="sms-tab-content @(!canReceive ? "d-none" : "")" id="receivesTab" data-sms-can-view="@canReceive.ToString().ToLowerInvariant()">
             <div class="sms-table-toolbar">
                 <div class="sms-table-header">
                     <h6>پیامک‌های دریافتی</h6>
                     <span>پیام‌های دریافت‌شده روی خطوط</span>
                 </div>
                 <div class="sms-table-actions">
-                    <button type="button" class="btn sms-refresh-btn" id="syncReceivesBtn">
+                    <button type="button" class="btn sms-refresh-btn @(!canSyncReceive ? "d-none" : "")" id="syncReceivesBtn" data-document-permission="ReceivedSms.Sync">
                         <svg class="sync-icon" style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" /></svg>
                         <div class="spinner-border spinner-border-sm d-none"></div>
                         همگام‌سازی دریافتی‌ها
@@ -96,7 +103,7 @@
             </div>
         </div>
 
-        <div class="sms-tab-content d-none" id="reportsTab">
+        <div class="sms-tab-content @(!canSent || canReceive ? "d-none" : "")" id="reportsTab" data-sms-can-view="@canSent.ToString().ToLowerInvariant()">
             <div class="sms-table-toolbar">
                 <div class="sms-table-header">
                     <h6>گزارش ارسال پیامک</h6>
@@ -110,7 +117,7 @@
                             <option value="@type">@type.GetDescription()</option>
                         }
                     </select>
-                    <button type="button" class="btn sms-refresh-btn" id="syncSentSmsBtn">
+                    <button type="button" class="btn sms-refresh-btn @(!canSyncSent ? "d-none" : "")" id="syncSentSmsBtn" data-document-permission="SentSms.Sync">
                         <svg class="sync-icon" style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" /></svg>
                         <div class="spinner-border spinner-border-sm d-none"></div>
                         همگام‌سازی ارسال‌ها
