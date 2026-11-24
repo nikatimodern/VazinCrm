@@ -39,7 +39,7 @@ Check(!own.Allows(null), "Own denies missing owner");
 foreach (var entity in new[] { "PreFactor", "Factor", "OrderHead", "Supply", "SupplyFactor", "Accountancy",
     "RequestAmount", "Payment", "BankAccount", "Checkbook", "Check", "Transfer", "Cashier", "Cash", "BaseCash",
     "BaseCenterCash", "CashGroup", "Warehouse", "WarehouseProduct", "WarehouseTransaction", "WarehouseVoucher",
-    "Contract", "Carizo", "Report", "CallRecording" })
+    "Contract", "Carizo", "Report", "CallRecording", "Contact" })
     Check(AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " owner resolver registered");
 foreach (var entity in new[] { "Customer", "Deal" })
     Check(!AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " uses its dedicated owner resolver");

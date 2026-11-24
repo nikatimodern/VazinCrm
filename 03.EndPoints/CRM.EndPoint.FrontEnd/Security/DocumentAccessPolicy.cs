@@ -20,6 +20,8 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Contracts.Entities;
 using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Contacts.Entities;
+using CRM.Core.Domain.Contacts.Enum;
 using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Reports.Entities;
@@ -288,6 +290,17 @@ public sealed class DocumentAccessPolicy(
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
         var allowed = owners.AllowedOwnerIds;
         var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(Contact))
+        {
+            var contacts = (IQueryable<Contact>)(object)query;
+            var customers = await CustomersAsync(db.Customers.AsNoTracking().Where(c => !c.IsDeleted), "View", ct);
+            // EntityId is the polymorphic parent. Require the owning customer even for an agent contact.
+            contacts = contacts.Where(c => !c.IsDeleted && c.EntityId.HasValue &&
+                ((c.ContactType == ContactTypeEnum.Customer && customers.Any(p => p.Id == c.EntityId.Value)) ||
+                 (c.ContactType == ContactTypeEnum.Agent && db.Agents.Any(a => !a.IsDeleted && a.Id == c.EntityId.Value &&
+                     a.CustomerId.HasValue && customers.Any(p => p.Id == a.CustomerId.Value)))));
+            query = (IQueryable<T>)(object)contacts;
+        }
         if (typeof(T) == typeof(Report))
         {
             var rows = (IQueryable<Report>)(object)query;
@@ -300,6 +313,13 @@ public sealed class DocumentAccessPolicy(
         if (typeof(T) == typeof(Carizo))
         {
             var rows = (IQueryable<Carizo>)(object)query;
+            var deals = await DealsAsync(db.Deals.AsNoTracking(), "View", ct);
+            var reports = await ApplyAsync(db.Reports.AsNoTracking(), "View", ct);
+            var deposits = await ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct);
+            rows = rows.Where(t => !t.EntityId.HasValue ||
+                (t.EntityType == "Deal" && deals.Any(d => d.Id == t.EntityId.Value)) ||
+                (t.EntityType == "Report" && reports.Any(r => r.Id == t.EntityId.Value)) ||
+                (t.EntityType == "Acc" && deposits.Any(a => a.Id == t.EntityId.Value)));
             if (allowed != null) rows = rows.Where(x => allowed.Contains(x.AssignUserId));
             if (excluded.Length > 0) rows = rows.Where(x => !excluded.Contains(x.AssignUserId));
             return (IQueryable<T>)(object)rows;
@@ -368,7 +388,7 @@ public sealed class DocumentAccessPolicy(
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
         if (WarehouseEnforced && IsWarehouseEntity(entity))
             return await CanAsync(entity, action, row.Id, ct);
-        if (row is Carizo || row is CallRecording)
+        if (row is Carizo || row is CallRecording || row is Contact || row is Report)
             return await CanAsync(entity, action, row.Id, ct);
         if (row is Cashier cashier)
         {
@@ -429,6 +449,7 @@ public sealed class DocumentAccessPolicy(
             "WarehouseProduct" => await CanRowAsync(db.WarehouseProducts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseTransaction" => await CanRowAsync(db.WarehouseTransactions.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseVoucher" => await CanRowAsync(db.WarehouseVouchers.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Contact" => await CanRowAsync(db.Contacts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Contract" => await CanRowAsync(db.Contracts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Carizo" => await CanRowAsync(db.Carizos.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Report" => await CanRowAsync(db.Reports.AsNoTracking().Where(x => x.Id == id), action, ct),

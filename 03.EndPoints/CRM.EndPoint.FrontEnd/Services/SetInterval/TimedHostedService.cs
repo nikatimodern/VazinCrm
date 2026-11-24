@@ -1,4 +1,6 @@
 ﻿using CRM.Core.Domain;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using Microsoft.Extensions.Configuration;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
@@ -179,7 +181,10 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                 var dts = scope.ServiceProvider.GetRequiredService<DateTimeServices>();
                 var hub = scope.ServiceProvider.GetRequiredService<IHubContext<TaskHub>>();
                 var pushQueue = scope.ServiceProvider.GetRequiredService<IPushQueue>();
-                var _data = await db.Carizos.Include(f => f.TaskUsers).Where(f =>
+                var accessScopes = scope.ServiceProvider.GetRequiredService<IAccessScopeService>();
+                var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                var enforce = configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions");
+                var _data = await db.Carizos.AsNoTracking().Where(f =>
                     f.TaskStatus == false
                     && f.Remind == true
                     && f.DateMiladi.Value <= DateTime.Now
@@ -187,8 +192,18 @@ namespace CRM.EndPoint.FrontEnd.Services.SetInterval {
                 ).ToListAsync();
                 foreach (var item in _data)
                 {
+                    if (string.IsNullOrWhiteSpace(item.AssignUserId)) continue;
+                    if (enforce)
+                    {
+                        var owners = await accessScopes.GetDocumentOwnerAccessAsync(item.AssignUserId, "Carizo.View", CancellationToken.None);
+                        if (owners.AllowedOwnerIds != null && !owners.AllowedOwnerIds.Contains(item.AssignUserId) ||
+                            owners.ExcludedOwnerIds.Contains(item.AssignUserId)) continue;
+                        // Linked descriptions can contain data from a different document scope.
+                        // Send only an invalidation; the recipient fetches authorized reminders through Carizo/GetRemind.
+                        await hub.Clients.User(item.AssignUserId).SendAsync("RefreshTasks");
+                        continue;
+                    }
                     item.ElapsTime = dts.ElapsTime(item.DateMiladi.Value);
-
                     await hub.Clients.User(item.AssignUserId).SendAsync("ReceiveNotification", item);
                 }
 

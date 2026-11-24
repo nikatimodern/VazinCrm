@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Core.Domain.CallRecordings.Enums;
 using CRM.Core.Domain.Customers.Entities;
@@ -40,6 +41,7 @@ public class AsteriskAmiListener : BackgroundService {
     }
 
     private readonly ConcurrentDictionary<string, CallSessionModel> _calls = new();
+    private readonly ConcurrentDictionary<string, string> _callNotificationRecipients = new();
 
     private readonly string[] test = [
         "varset", "newexten", "devicestatechange", "newchannel", "newstate",
@@ -166,8 +168,20 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (dest.StartsWith("1"))
             {
+                var notificationId = !string.IsNullOrEmpty(destUid) ? destUid : uniqueId;
+                if (_config.GetValue<bool>("AccessCatalog:EnforceCallRecordingPermissions"))
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var access = scope.ServiceProvider.GetRequiredService<IAccessScopeService>();
+                    var owners = await access.GetDocumentOwnerAccessAsync(userDest.Id, "CallRecording.View", CancellationToken.None);
+                    if ((owners.AllowedOwnerIds != null && !owners.AllowedOwnerIds.Contains(userDest.Id)) ||
+                        owners.ExcludedOwnerIds.Contains(userDest.Id)) return;
+                    // Do not resolve the CRM customer name across a separate Customer scope.
+                    srcText = number;
+                }
+                _callNotificationRecipients[notificationId] = userDest.Id;
                 await _hubContext.Clients.User(userDest.Id)
-                    .SendAsync("IncomingCall", srcText, number, dest, !string.IsNullOrEmpty(destUid) ? destUid : uniqueId, srcIsInternal);
+                    .SendAsync("IncomingCall", srcText, number, dest, notificationId, srcIsInternal);
             }
         }
         catch (Exception ex)
@@ -222,7 +236,9 @@ public class AsteriskAmiListener : BackgroundService {
 
             if (!string.IsNullOrEmpty(uniqueId) || !string.IsNullOrEmpty(destUid))
             {
-                await _hubContext.Clients.All.SendAsync("CallAnswered", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+                var notificationId = !string.IsNullOrEmpty(destUid) ? destUid : uniqueId;
+                if (_callNotificationRecipients.TryGetValue(notificationId, out var recipient))
+                    await _hubContext.Clients.User(recipient).SendAsync("CallAnswered", notificationId);
             }
 
             if (_calls.TryGetValue(linkedId, out var call))
@@ -271,7 +287,9 @@ public class AsteriskAmiListener : BackgroundService {
                 return;
             }
 
-            await _hubContext.Clients.All.SendAsync("CallEnded", !string.IsNullOrEmpty(destUid) ? destUid : uniqueId);
+            var notificationId = !string.IsNullOrEmpty(destUid) ? destUid : uniqueId;
+            if (_callNotificationRecipients.TryRemove(notificationId, out var recipient))
+                await _hubContext.Clients.User(recipient).SendAsync("CallEnded", notificationId);
 
             if (uniqueId != linkedId) return;
 

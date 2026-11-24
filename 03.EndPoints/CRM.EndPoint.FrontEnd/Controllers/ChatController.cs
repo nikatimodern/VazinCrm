@@ -390,6 +390,8 @@ public class ChatController : Controller {
 
         await hub.Clients.User(notifUserId).SendAsync("NotifChat", mainChat.Id, $"{fromUser?.FullName}: {displayText}".Trim());
 
+        // The queued transport does not recheck access at delivery; avoid deferred private text under enforcement.
+        if (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions")) return;
         pushQueue?.Enqueue(new PushQueueItem {
             UserId = notifUserId,
             Title = fromUser?.FullName ?? "پیام رسان",

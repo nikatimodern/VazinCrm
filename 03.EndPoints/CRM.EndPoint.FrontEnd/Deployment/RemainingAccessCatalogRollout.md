@@ -126,3 +126,7 @@ Chat mutations and email detail/mark-read POST now use antiforgery. Chat UI uses
 ## Carizo status and effects
 
 All seven remaining manual command handlers recheck action scope. Shared completion/uncompletion validates the persisted root and current actor membership before modifying group rows; normal assigned-user group side effects are preserved, while arbitrary group mutation is denied. Refresh broadcasts no longer include task IDs; notification content is generic under enforcement, and legacy push details are suppressed until queued-recipient authorization is implemented. Actual browser behavior and shared-task lifecycle tests remain pending.
+
+## Contact scope and notification review
+
+Contact is a distinct Customer/Agent-linked model. The owner resolver supports Contact and intersects contact creator scope with active parent customer visibility, including agent-owned contacts. Existing customer creation strips Contacts and update maps scalar values only; no independent Contact endpoint/UI has been verified. Carizo visibility intersects known linked Deal/Report/Accountancy access; timed reminders and deferred pushes avoid exposing cross-document text. Asterisk call notifications target the destination user rather than broadcasting call IDs, and under CallRecording enforcement check that recipient's view scope before displaying an incoming call. Queue-level delivery and call lifecycle correlation still require integration tests. No flags or final SQL delivered in this batch.
