@@ -111,9 +111,12 @@
     flex: 0 1 auto; min-width: 0; max-width: 100%;
 }
 #accessCatalog .ac-user-save-status {
+    display: inline-flex; align-items: center; gap: 5px;
     margin: 0; margin-inline-start: auto; padding: 3px 0;
-    color: var(--ac-muted); font-size: 12px; text-align: end;
+    color: var(--ac-muted); font-size: 12px; font-weight: 600; text-align: end;
 }
+#accessCatalog .ac-user-save-status[data-state="saved"] { color: var(--ac-primary); }
+#accessCatalog .ac-user-save-status[data-state="dirty"] { color: var(--ac-danger); }
 #accessCatalog .ac-user-heading-info {
     display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px;
 }
