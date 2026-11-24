@@ -19,6 +19,19 @@
 
     const moduleForPath = () => {
         const path = location.pathname.toLowerCase();
+        if (/^\/qualitycontrol(?:\/|$)/.test(path)) return "qualitycontrol";
+        if (/^\/amount(?:\/|$)/.test(path)) return "productamount";
+        if (/^\/contract(?:\/|$)/.test(path)) return "contract";
+        if (/^\/carizo(?:\/|$)/.test(path)) return "carizo";
+        if (/^\/report(?:\/|$)/.test(path)) return "report";
+        if (/^\/chat(?:\/|$)/.test(path)) return "chat";
+        if (/^\/email(?:\/|$)/.test(path)) return "email";
+        if (/^\/releasenotesadmin(?:\/|$)/.test(path)) return "releasenote";
+        if (/^\/sms(?:\/|$)/.test(path)) return "sms";
+        if (/^\/externalsoftware\/mapping(?:\/|$)/.test(path)) return "externalmapping";
+        if (/^\/externalsoftware(?:\/|$)/.test(path)) return "externalsoftware";
+        if (/^\/asetting\/(?:index)?\/?$/.test(path)) return "asetting";
+        if (/^\/baseitem(?:\/index)?\/?$/.test(path)) return "baseitem";
         if (/^\/warehouse\/voucher(?:detail)?(?:\/|$)/.test(path)) return "warehousevoucher";
         if (/^\/warehouse(?:\/|$)/.test(path)) return "warehouse";
         if (/^\/transfer(?:\/|$)/.test(path)) return "transfer";
@@ -192,7 +205,7 @@
         // Selected/excluded owner memberships can change without changing the numeric scope.
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
             (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
-                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash", "warehouse", "warehousevoucher"].includes(module));
+                ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash", "warehouse", "warehousevoucher", "qualitycontrol", "productamount", "contract", "carizo", "report", "chat", "email", "releasenote", "sms", "externalmapping", "externalsoftware", "asetting", "baseitem"].includes(module));
         if (!changed && !forceRefresh) return;
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
