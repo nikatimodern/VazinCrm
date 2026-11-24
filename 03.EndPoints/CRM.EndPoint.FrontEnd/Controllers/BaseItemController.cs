@@ -2,6 +2,8 @@
 using CRM.Core.Domain.Company.Entities;
 using CRM.Core.Domain.Products.Entities;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Security;
+using System.Threading;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +23,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly FileSaver fileSaver;
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
+        private readonly DocumentAccessPolicy access;
 
-        public BaseItemController(Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db)
+        public BaseItemController(Service GenService, FileSaver fileSaver, DateTimeServices dtService, CRMContextDb db, DocumentAccessPolicy access)
         {
             genService = GenService;
             this.fileSaver = fileSaver;
             this.dtService = dtService;
             this.db = db;
+            this.access = access;
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
@@ -37,8 +41,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
-        public IActionResult Financial()
+        public async Task<IActionResult> Financial(CancellationToken ct)
         {
+            if (!await access.HasViewAsync("BaseCash", ct)) return Forbid();
             var baseCashTypes = Enum.GetValues<BaseCashTypeEnum>().Select(x => new SelectOptionDto<int> {
                 Value = (int)x,
                 Text = x.ToString()
