@@ -11,6 +11,7 @@ using CRM.EndPoint.FrontEnd.Models.Chat;
 using CRM.EndPoint.FrontEnd.Models.PushNotification;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
+using CRM.EndPoint.FrontEnd.Security;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
+[CatalogPermission("Chat")]
 public class ChatController : Controller {
     private readonly DateTimeServices dtService;
     private readonly CRMContextDb db;
@@ -31,9 +33,10 @@ public class ChatController : Controller {
     private readonly FileSaver fileSaver;
     private readonly IHubContext<TaskHub> hub;
     private readonly IPushQueue pushQueue;
+    private readonly DocumentAccessPolicy access;
 
     public ChatController(DateTimeServices dtService, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, FileSaver fileSaver,
-        IHubContext<TaskHub> hub, IPushQueue pushQueue)
+        IHubContext<TaskHub> hub, IPushQueue pushQueue, DocumentAccessPolicy access)
     {
         this.dtService = dtService;
         this.db = db;
@@ -42,6 +45,7 @@ public class ChatController : Controller {
         this.fileSaver = fileSaver;
         this.hub = hub;
         this.pushQueue = pushQueue;
+        this.access = access;
     }
 
 
@@ -106,6 +110,7 @@ public class ChatController : Controller {
             .FirstOrDefaultAsync(x => x.Id == mainChatId);
 
         if (mainChat == null) return NotFound();
+        if (mainChat.FromUserId != fromUser.Id && mainChat.ToUserId != fromUser.Id) return Forbid();
 
         var userIds = mainChat.Chats.Select(x => x.UserCreatorID).Distinct().ToList();
         var userImages = await udb.Users
@@ -195,6 +200,7 @@ public class ChatController : Controller {
 
 
     [Authorize]
+    [CatalogPermission("Chat", "Create")]
     public async Task<IActionResult> CreateMainChat(string toUserId, string toUserTxt)
     {
         var user = await udb.Users.Where(f => f.PhoneNumber == toUserId).AsNoTracking().FirstOrDefaultAsync();
@@ -245,7 +251,10 @@ public class ChatController : Controller {
             var mainChatIdStr = HttpContext.Session.GetString("mainChatId");
             if (!Guid.TryParse(mainChatIdStr, out var mainChatId)) return BadRequest();
             var mainChat = await db.MainChats.FirstOrDefaultAsync(f => f.Id == mainChatId);
-
+            if (mainChat == null) return NotFound();
+            if (mainChat.FromUserId != fromUser.Id && mainChat.ToUserId != fromUser.Id) return Forbid();
+            if (model.Chat == null) return BadRequest();
+            if (!await access.HasAsync("Chat", model.Chat.Id == Guid.Empty ? "Create" : "Edit", HttpContext.RequestAborted)) return Forbid();
 
             // EDIT
             if (model.Chat?.Id != Guid.Empty)
@@ -319,6 +328,7 @@ public class ChatController : Controller {
         var chat = await db.Chats.FirstOrDefaultAsync(x => x.Id == editedChat.Id);
 
         if (chat == null) return NotFound("رکوردی یافت نشد!");
+        if (chat.MainChatId != mainChat.Id || chat.UserCreatorID != fromUser.Id) return Forbid();
 
         chat.Text = editedChat?.Text?.Trim();
         chat.IsEdited = true;
@@ -364,6 +374,7 @@ public class ChatController : Controller {
     }
 
     [Authorize]
+    [CatalogPermission("Chat", "Delete")]
     public async Task<IActionResult> DeleteChat(Guid id)
     {
         try
@@ -371,6 +382,9 @@ public class ChatController : Controller {
             var user = await userManager.GetUserAsync(HttpContext.User);
             var item = await db.Chats.FirstOrDefaultAsync(f => f.Id == id);
             if (item == null) return NotFound("رکوردی یافت نشد!");
+            if (user == null) return Unauthorized();
+            if (item.UserCreatorID != user.Id || !await db.MainChats.AnyAsync(c => c.Id == item.MainChatId &&
+                (c.FromUserId == user.Id || c.ToUserId == user.Id))) return Forbid();
 
             item.IsDeleted = true;
             item.ModifyDate = DateTime.Now;
