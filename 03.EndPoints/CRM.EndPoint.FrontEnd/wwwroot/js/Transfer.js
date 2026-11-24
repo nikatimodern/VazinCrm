@@ -14,6 +14,7 @@ const transferFields = {
 
 
 async function showModalTransfer(type) {
+    if (window.AccessLive?.can("Transfer", "create") === false) { toastifyError("مجوز ثبت نقل و انتقال را ندارید."); return; }
     transferData.transferType = type;
     
     setTransferModalUI(type);
@@ -69,6 +70,7 @@ function cancelTransferModal() {
 }
 
 async function submitTransferModal() {
+    if (window.AccessLive?.can("Transfer", transferData.id && transferData.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create") === false) { toastifyError("مجوز ثبت نقل و انتقال را ندارید."); return; }
     if (!await mySer.CheckValidForm("transferForm")) return;
     if (transferAttachment.every(item => item.isDeleted)) {
         toastifyError("رسید پرداخت اجباری است");
@@ -137,7 +139,7 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                         },
                     });
                 }
-                return json.data;
+                return (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.id] }));
             },
         },
         columns: [
@@ -164,20 +166,20 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                 data: "status",
                 orderable: false,
                 render: (data, _, row) => {
-                    if (isMdCartable && data === 1) {
+                    if (isMdCartable && data === 1 && row.actionRights?.canChangeStatus && row.actionRights?.canApprove) {
                         return `
                             <button class="buttonGreen2" onclick="changeStatusTransfer('${row.id}', 2)">تایید</button>
                             <button class="buttonCancel3" onclick="changeStatusTransfer('${row.id}', 0)">برگشت</button>
                         `;
                     }
                     
-                    if (!isMdCartable && data === 0) {
+                    if (!isMdCartable && data === 0 && row.actionRights?.canChangeStatus) {
                         return `<button class="buttonGreen2" onclick="changeStatusTransfer('${row.id}', 1)">ارسال به مدیرعامل</button>`;
                     }
                     
                     const STATUS_COLORS = { 0: "#777", 1: "#CC9900", 2: "#006400", 3: "#8b0000" };
                     let label = `<span class="fbold" style="color: ${STATUS_COLORS[data]}">${row.statusTxt}</span>`;
-                    if (isMdCartable && data === 2) {
+                    if (isMdCartable && data === 2 && row.actionRights?.canChangeStatus && row.actionRights?.canApprove) {
                         label += `
                             <span style="cursor:pointer;color:#333" onclick="changeStatusTransfer('${row.id}', 1)" data-title-right="بازگشت">
                               <svg style="width:16px" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"></path></svg>
@@ -192,8 +194,8 @@ function getAllTransfersDt(selector, isMdCartable = false) {
                 render: (data, _, row) => {
                     if (!isMdCartable && (row.status === 0 || row.status === 3)) return `
                         <div class="inline-flex-center gap-1">
-                            <button type="button" class="icon-button icon-button--green" onclick="editTransfer('${data}')"><i class="fa fa-pencil"></i></button>
-                            <button type="button" class="icon-button icon-button--red" onclick="deleteTransfer('${data}')"><i class="fa fa-trash"></i></button>
+                            ${row.actionRights?.canEdit ? `<button type="button" data-document-permission="Transfer.Edit" class="icon-button icon-button--green" onclick="editTransfer('${data}')"><i class="fa fa-pencil"></i></button>` : ""}
+                            ${row.actionRights?.canDelete ? `<button type="button" data-document-permission="Transfer.Delete" class="icon-button icon-button--red" onclick="deleteTransfer('${data}')"><i class="fa fa-trash"></i></button>` : ""}
                         </div>
                     `;
                     
@@ -227,6 +229,7 @@ function getAllTransfersDt(selector, isMdCartable = false) {
 
 
 const editTransfer = async (id) => {
+    if (window.AccessLive?.can("Transfer", "edit") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     const data = await sendApiRequest({
         url: `/Transfer/GetTransfer`,
         params: { id },
@@ -246,6 +249,7 @@ const editTransfer = async (id) => {
 };
 
 const deleteTransfer = async (id) => {
+    if (window.AccessLive?.can("Transfer", "delete") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await deleteItem({
         url: `/Transfer/DeleteTransfer/${id}`,
         callback: () => {
@@ -255,6 +259,7 @@ const deleteTransfer = async (id) => {
 };
 
 async function changeStatusTransfer(id, status) {
+    if (window.AccessLive?.can("Transfer", "changeStatus") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
     await sendApiRequest({
         url: "/Transfer/ChangeTransferStatus",
         method: "PATCH",
