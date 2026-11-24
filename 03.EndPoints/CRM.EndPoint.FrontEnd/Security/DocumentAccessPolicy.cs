@@ -44,7 +44,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "QualityControl" or "QualityControlQuestion" or "Product" or "ProductGroup" or "ProductAmount" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Chat" or "Email" or "Contact" or "Agent" or "ReleaseNote" or "LogSystem" or "SystemWarning" or "Company" or "ASetting" or "BaseItem" or "BaseDescription" or "ExternalSoftware" or "ExternalMapping" or "SentSms" or "ReceivedSms") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
