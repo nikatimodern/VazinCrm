@@ -88,7 +88,7 @@
 
     const hasOpenEditor = () =>
         formDirty ||
-        !!document.querySelector(".modal.show form, #dealModal.show, #updateCustomerModal.show, #qcCustomerNotesModal.show, #qcContactHistoryModal.show") ||
+        !!document.querySelector(".modal.show form, #dealModal.show, #updateCustomerModal.show, #qcCustomerNotesModal.show, #qcContactHistoryModal.show, #editTaskModal.show, #ModalReport.show, #chatInputWrapper textarea:focus") ||
         (document.getElementById("formAddCustom")?.style.display !== "none" &&
          !!document.getElementById("formAddCustom"));
 
@@ -160,7 +160,7 @@
         if (!editorLocked || !moduleForPath()) return;
         const action = event.target.closest(
             "#btnIn, #updateCustomerModal .buttonGreen3, #dealModal .buttonGreen3, " +
-            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], [onclick*='submitTransferModal('], [onclick*='submitCashModal('], [onclick*='submitCashierModal('], [onclick*='submitBaseCashForm('], [onclick*='submitWarehouseTransactionModal('], [onclick*='submitWarehouseProductModal('], [onclick*='submitWarehouseVoucherModal('], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor]"
+            ".deal-create-button, #btnNew, button[type=submit], [data-document-permission], [onclick*='submitRequestAmountModal('], [onclick*='submitReqAmountAttach('], [onclick*='submitCheckForm('], [onclick*='submitCheckbookModal('], [onclick*='submitOrder('], [onclick*='submitSupplyFactorModal('], [onclick*='submitInvoice('], [onclick*='submitTransferModal('], [onclick*='submitCashModal('], [onclick*='submitCashierModal('], [onclick*='submitBaseCashForm('], [onclick*='submitWarehouseTransactionModal('], [onclick*='submitWarehouseProductModal('], [onclick*='submitWarehouseVoucherModal('], #PreFactor button[onclick*=submitPreFactor], #Factor button[onclick*=submitFactor], #submitEditTaskModal, #submitTask-btn, #chatSendBtn, [onclick*=SubmitReportForm]"
         );
         if (!action) return;
         event.preventDefault();
@@ -185,6 +185,8 @@
     async function reconcile(event = { kind: "reconnect" }) {
         const version = ++generation;
         const previous = state;
+        // Lock before the asynchronous refresh; old permissions must not authorize an in-flight edit.
+        editorLocked = true;
         let latest;
         try {
             latest = await getState(true);
@@ -206,7 +208,7 @@
         const forceRefresh = event?.kind === "user" || event?.kind === "reconnect" ||
             (event?.kind === "catalog" && Object.values(latest.enforced || {}).some(Boolean) &&
                 ["cartable", "customer", "deal", "prefactor", "factor", "orderhead", "supplyfactor", "accountancy", "requestamount", "payment", "checkbook", "check", "transfer", "cash", "cashier", "basecash", "warehouse", "warehousevoucher", "qualitycontrol", "productamount", "contract", "carizo", "report", "chat", "email", "releasenote", "sms", "externalmapping", "externalsoftware", "asetting", "baseitem"].includes(module));
-        if (!changed && !forceRefresh) return;
+        if (!changed && !forceRefresh) { editorLocked = false; return; }
 
         window.dispatchEvent(new CustomEvent("erp:access-state", {
             detail: { previous, current: latest, module, reason: event?.kind }

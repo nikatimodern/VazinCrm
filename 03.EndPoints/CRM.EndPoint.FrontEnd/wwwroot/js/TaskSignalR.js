@@ -50,6 +50,7 @@ connection.onclose(() => {
 
 ////////// Carizo notification ////////////
 connection.on("ReceiveNotification", async (item) => {
+    if (window.AccessLive?.can("Carizo", "View") === false) return;
     if (!taskList.includes(item.id)) {
         taskList.push(item.id);
         notification(item.id, item.title, item.description, item.dateMiladi, item.entityType, item.entityId);
@@ -80,7 +81,7 @@ connection.on("countOfPendingCartable", (countObj) => {
 
 ////////// ShowReport ////////////
 connection.on("ShowReport", async () => {
-    await getAllReports(false);
+    if (window.AccessLive?.can("Report", "View") !== false && typeof getAllReports === "function") await getAllReports(false);
 });
 
 
@@ -92,6 +93,7 @@ connection.on("ShowAccessDeniedMessage", function (message) {
 
 ////////// Chat ////////////
 connection.on("NotifChat", async (mainChatId, text) => {
+    if (window.AccessLive?.can("Chat", "View") === false) return;
     if (location.pathname.toLowerCase() !== "/chat/main") {
         notificationChange(text, { link: "/Chat/Main", isBlank: false }, "chat");
         refreshCounterCartable();
@@ -104,6 +106,7 @@ connection.on("NotifChat", async (mainChatId, text) => {
     showListChats();
 });
 connection.on("UpdateChat", async (mainChatId) => {
+    if (window.AccessLive?.can("Chat", "View") === false) return;
     if (location.pathname.toLowerCase() !== "/chat/main") return;
     const { mci } = getUrlParams();
     if (mci === mainChatId) {
@@ -130,6 +133,7 @@ const callHistoryBtn = document.getElementById("callHistoryReportBtn");
 
 // Incoming call
 function handleIncomingCall(callerTextNumber, number, destNumber, uniqueid, srcIsInternal) {
+    if (window.AccessLive?.can("CallRecording", "View") === false) return;
     if (!notificationIncomingCall(callerTextNumber, uniqueid, destNumber)) return;
     if (srcIsInternal) return;
     

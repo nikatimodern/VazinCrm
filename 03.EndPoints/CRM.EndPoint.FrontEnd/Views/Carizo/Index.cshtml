@@ -1,4 +1,5 @@
-﻿@{
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy TaskAccess
+@{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -58,7 +59,7 @@
 
                 <div class="tasks-container">
                     @* <span class="carizo-badge fbold">تمام فعالیت ها</span> *@
-                    <div class="p-2 w-100 d-flex align-items-center justify-content-center mb-2">
+                    <div class="p-2 w-100 d-flex align-items-center justify-content-center mb-2" hidden="@(!(await TaskAccess.HasAsync("Carizo", "Create", Context.RequestAborted)))" data-document-permission="Carizo.Create">
                         <partial name="_AddTaskFormContainer" />
                     </div>
 

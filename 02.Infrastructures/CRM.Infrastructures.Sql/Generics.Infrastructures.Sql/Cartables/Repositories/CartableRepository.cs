@@ -23,7 +23,12 @@ namespace CRM.Infrastructures.Sql.Cartables.Repositories;
 public sealed class CartableRepository(CRMContextDb db, IDocumentReadAccess access) : ICartableRepository
 {
     public Task<ASetting?> GetSettingsAsync(CancellationToken ct) => db.ASettings.AsNoTracking().FirstOrDefaultAsync(ct);
-    public Task<int> GetUnreadChatsAsync(string userId, CancellationToken ct) => db.MainChats.Where(f => f.ToUserId == userId || f.FromUserId == userId).SumAsync(f => f.Chats.Count(c => !c.Read && c.UserCreatorID != userId), ct);
+    public async Task<int> GetUnreadChatsAsync(string userId, CancellationToken ct)
+    {
+        if (!await access.HasAsync("Chat", "View", ct)) return 0;
+        return await db.MainChats.AsNoTracking().Where(f => !f.IsDeleted && (f.ToUserId == userId || f.FromUserId == userId))
+            .SumAsync(f => f.Chats.Count(c => !c.IsDeleted && !c.Read && c.UserCreatorID != userId), ct);
+    }
     public async Task<List<PreFactor>> GetOwnPreFactorsAsync(string userId, CancellationToken ct) =>
         await (await access.PreFactorsAsync(db.PreFactors.AsNoTracking().Where(f => f.UserCreatorID == userId), "View", ct)).ToListAsync(ct);
     public Task<List<Factor>?> GetModalFactorsAsync(Guid id, int type, CancellationToken ct) => type switch

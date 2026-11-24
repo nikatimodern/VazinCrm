@@ -4,6 +4,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using CRM.Core.Domain;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using Microsoft.Extensions.Configuration;
+using System.Threading;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
@@ -31,16 +35,20 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.EndPoint.FrontEnd.Services {
     public class Service : Controller {
         private readonly CRMContextDb db;
+        private readonly IAccessScopeService accessScopes;
+        private readonly IConfiguration configuration;
         private readonly UserManager<AppUser> userManager;
         private readonly TimedHostedService hostService;
         private readonly DateTimeServices dtService;
 
-        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService, DateTimeServices dtService)
+        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService, DateTimeServices dtService, IAccessScopeService accessScopes, IConfiguration configuration)
         {
             this.db = db;
             this.userManager = userManager;
             this.hostService = hostService;
             this.dtService = dtService;
+            this.accessScopes = accessScopes;
+            this.configuration = configuration;
         }
 
 
@@ -66,7 +74,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
 
         public async Task<int> GetEmailsNotSeenCount(Guid userId)
         {
-            var emailsCount = await db.Emails.AsNoTracking().Where(e => e.ToId == userId && !e.Seen).CountAsync();
+            if (configuration.GetValue<bool>("AccessCatalog:EnforceEmailPermissions") &&
+                await accessScopes.GetEffectiveScopeAsync(userId.ToString(), "Email.View", CancellationToken.None) != AccessScopes.All) return 0;
+            var emailsCount = await db.Emails.AsNoTracking().Where(e => !e.IsDeleted && e.ToId == userId && !e.Seen).CountAsync();
             return emailsCount;
         }
 

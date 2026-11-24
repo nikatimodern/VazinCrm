@@ -119,7 +119,8 @@
 
 
 <!-- Call History Floating Button -->
-<button id="callHistoryReportBtn" class="call-history-fab" onclick="showIncomingCallReport()" type="button" aria-label="مشاهده سوابق تماس" title="مشاهده سوابق تماس">
+@if (await SharedPriceAccess.HasViewAsync("CallRecording", Context.RequestAborted) && await SharedPriceAccess.HasViewAsync("Report", Context.RequestAborted)) {
+<button data-document-permission="CallRecording.View" id="callHistoryReportBtn" class="call-history-fab" onclick="showIncomingCallReport()" type="button" aria-label="مشاهده سوابق تماس" title="مشاهده سوابق تماس">
     <span class="fab-halo" aria-hidden="true"></span>
 
     <span class="fab-icon-wrap">
@@ -136,6 +137,7 @@
 
 
 <partial name="Modals/_IncomingCallReport" />
+}
 <partial name="Modals/_PhoneBookModal" />
 <partial name="Modals/_ErrorModal" />
 <partial name="Modals/_FilterModal" />
