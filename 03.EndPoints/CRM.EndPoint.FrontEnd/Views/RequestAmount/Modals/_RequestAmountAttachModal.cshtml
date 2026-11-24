@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 <!-- Modal reqAmountAttach -->
 <div class="modal fade invoice-modal payment-mode" id="reqAmountAttachModal" tabindex="-1" role="dialog" data-bs-focus="false" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -38,7 +39,7 @@
                                         <div class="d-flex gap-2 justify-content-between">
                                             <label for="reqAttachToAccountId">حساب مقصد</label>
                                             @if (User.IsAdmin() || User.IsManagingDirector() || User.IsFinancialAdmin() || User.IsFinancialExpert()) {
-                                                <button class="addBankBtn-invoice" type="button" onclick="openNewRequestAmountBankAccount()">
+                                                <button hidden="@(!(await DocumentAccess.HasAsync("BankAccount", "Create", Context.RequestAborted)))" data-document-permission="BankAccount.Create" class="addBankBtn-invoice" type="button" onclick="openNewRequestAmountBankAccount()">
                                                     افزودن شماره‌حساب جدید
                                                 </button>
                                             }
