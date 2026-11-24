@@ -106,3 +106,7 @@ Contract has View/Create/Edit/Delete catalog entries; owner scopes apply to view
 ## Contract SQL handoff
 
 Contract implementation builds ebb7b0a8 and e48f91ec succeeded. RegisterContractAccessCatalog.sql is the scoped, preview-first handoff for entity 29 and uses the same four Contract permission keys and Admin-only initial grants already in AccessCatalog_CompleteSetup.sql and RegisterRemainingAccessCatalog.sql. No consolidated grant changes are needed because the entries match. The scoped script reports existing grants/overrides and does not overwrite them. The old NotCustomerOnly endpoint was broader than the staged role list; no approved additional role grant was inferred. Users without existing or individually approved Contract grants may lose access when the flag is enabled. Runtime SQL/browser tests, legacy file association checks and user confirmation of script application remain outstanding. Contract enforcement remains disabled until handoff confirmation.
+
+## Contract Development activation
+
+The user confirmed RegisterContractAccessCatalog.sql was executed. Contract enforcement is enabled in Development only (31/47 flags). Existing explicit overrides remain intact. Actual SQL grant results, legacy attachment association checks and runtime browser/SQL authorization tests were not independently observed. The staged Admin initial grants are unchanged; additional users require approved grants. Production configuration and main are unchanged.
