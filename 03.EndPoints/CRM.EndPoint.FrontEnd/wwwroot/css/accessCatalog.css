@@ -102,9 +102,20 @@
 
 /* Access-management tabs and role-to-permission matrix. */
 #accessCatalog [hidden] { display: none !important; }
+#accessCatalog .ac-main-tab-bar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px;
+    margin-bottom: 10px; border-bottom: 1px solid var(--ac-border);
+}
 #accessCatalog .ac-main-tabs {
     display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
-    margin-bottom: 10px; border-bottom: 1px solid var(--ac-border);
+    flex: 0 1 auto; min-width: 0; max-width: 100%;
+}
+#accessCatalog .ac-user-save-status {
+    margin: 0; margin-inline-start: auto; padding: 3px 0;
+    color: var(--ac-muted); font-size: 12px; text-align: end;
+}
+#accessCatalog .ac-user-heading-info {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px;
 }
 #accessCatalog .ac-main-tabs button {
     border: 0; border-bottom: 2px solid transparent; background: transparent;
@@ -601,7 +612,7 @@
 #accessCatalog #acUsersPanel .ac-user-access-panel > .ac-panel-heading {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     gap: 7px;
     padding: 10px 11px;
 }
