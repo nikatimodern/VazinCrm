@@ -51,7 +51,7 @@
                 </span>
             }
 
-            @if ((User.IsAdmin() || User.IsSalesExpert() || User.IsTaminExpert()) && await HeaderAccess.HasViewAsync("Report", Context.RequestAborted) && await HeaderAccess.HasAsync("Report", "Create", Context.RequestAborted)) {
+            @if ((HeaderAccess.IsEnforced("Report") || User.IsAdmin() || User.IsSalesExpert() || User.IsTaminExpert()) && await HeaderAccess.HasViewAsync("Report", Context.RequestAborted) && await HeaderAccess.HasAsync("Report", "Create", Context.RequestAborted)) {
                 <div data-document-permission="Report.Create" class="header-icon-btn" data-title-bottom="ثبت گزارش" onclick="ShowModalReport()">
                     <svg style="width:22px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
                 </div>

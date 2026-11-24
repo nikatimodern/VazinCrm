@@ -1,11 +1,12 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.Reports.Repositories;
 using CRM.Core.ApplicationServices.Reports.Abstractions;
 using CRM.Core.ApplicationServices.Reports.Dtos;
 using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 namespace CRM.Core.ApplicationServices.Reports.Commands.DeleteReport;
 public sealed record DeleteReportCommand(Guid Id) : ICommand<DeleteReportResult>;
-public sealed class DeleteReportCommandHandler(IReportRepository repository, IReportUserContext users, IReportAuditLogger audit, IReportNotifications notifications) : ICommandHandler<DeleteReportCommand, DeleteReportResult>
+public sealed class DeleteReportCommandHandler(IReportRepository repository, IReportUserContext users, IReportAuditLogger audit, IReportNotifications notifications, IDocumentReadAccess access) : ICommandHandler<DeleteReportCommand, DeleteReportResult>
 {
     public async Task<DeleteReportResult> HandleAsync(DeleteReportCommand request, CancellationToken cancellationToken)
     {
@@ -14,7 +15,7 @@ public sealed class DeleteReportCommandHandler(IReportRepository repository, IRe
         if (!await repository.CanMutateAsync(request.Id, "Delete", cancellationToken)) return DeleteReportResult.Forbidden;
         var report = await repository.GetForUpdateAsync(request.Id, cancellationToken);
         if (report is null) return DeleteReportResult.NotFound;
-        if (!user.CanEditOthers && report.UserCreatorID != user.User.Id) return DeleteReportResult.Forbidden;
+        if (!access.IsEnforced("Report") && !user.CanEditOthers && report.UserCreatorID != user.User.Id) return DeleteReportResult.Forbidden;
         await audit.DeleteAsync(report, user.User, cancellationToken);
         report.IsDeleted = true;
         report.UserModify = user.User.FullName;

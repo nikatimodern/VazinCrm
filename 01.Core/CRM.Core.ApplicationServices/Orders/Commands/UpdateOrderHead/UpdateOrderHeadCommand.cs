@@ -20,8 +20,8 @@ public sealed class UpdateOrderHeadCommandHandler(IOrderRepository repository, C
         if (old == null)
             return 204;
         var current = await actor.GetAsync(ct);
-        if (!OrderAccess.CanEdit(current, old))
-            return 204;
+        if (!await OrderAccess.CanMutateAsync(repository, current, old, "Edit", ct))
+            return 403;
         if ((request.Head.Orders ?? []).Any(i => i.Id != Guid.Empty && !old.Orders.Any(o => o.Id == i.Id)))
             return 400;
         var head = await repository.GetHeadAsync(old.Id, false, ct);

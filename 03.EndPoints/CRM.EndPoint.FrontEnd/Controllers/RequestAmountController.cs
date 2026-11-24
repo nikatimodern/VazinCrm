@@ -216,7 +216,8 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         return Map(await dispatcher.CommandAsync(new ChangeStatusRequestAmountCommand(id, status), ct));
     }
     [HttpPost]
-    [Authorize(Roles = "کارشناس مالی, مدیر مالی, مدیر ارشد")]
+    [LegacyCatalogRoles("RequestAmount", "کارشناس مالی, مدیر مالی, مدیر ارشد")]
+    [LegacyCatalogRoles("Payment", "کارشناس مالی, مدیر مالی, مدیر ارشد")]
     public async Task<IActionResult> AddPaymentByRequestAmount([FromBody] Payment model, CancellationToken ct)
     {
         if (!await CanPayment(model, ct)) return Forbid();

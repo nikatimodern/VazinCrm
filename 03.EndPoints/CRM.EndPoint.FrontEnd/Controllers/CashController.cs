@@ -219,12 +219,14 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (access.IsEnforced("Cash") && await db.Cashes.AnyAsync(x => listIds.Contains(x.Id) && x.Status != CashStatusEnum.ثبت_موقت, ct)) return Conflict();
         return Map(await dispatcher.CommandAsync(new ChangeStatusGroupCashToPendingCommand(listIds), ct));
     }
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("CashGroup", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("Cash", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> ApproveCashGroup(Guid groupId, CancellationToken ct) {
         if (!await CanGroup(groupId, "Approve", "Approve", ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new ApproveCashGroupCommand(groupId), ct));
     }
-    [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("CashGroup", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
+    [LegacyCatalogRoles("Cash", "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> RejectCashGroup(Guid groupId, CancellationToken ct) {
         if (!await CanGroup(groupId, "Approve", "Approve", ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new RejectCashGroupCommand(groupId), ct));

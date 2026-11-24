@@ -20,8 +20,8 @@ public sealed class DeleteOrderHeadCommandHandler(IOrderRepository repository, C
         if (head == null)
             return 404;
         var current = await actor.GetAsync(ct);
-        if (!OrderAccess.CanEdit(current, head))
-            return 204;
+        if (!await OrderAccess.CanMutateAsync(repository, current, head, "Delete", ct))
+            return 403;
         await audit.LogAsync(head, (OrderHead? )null, LogActionEnum.حذف, current.User, ct);
         head.IsDeleted = true;
         OrderAccess.Stamp(head, current, dates.PersianNow());

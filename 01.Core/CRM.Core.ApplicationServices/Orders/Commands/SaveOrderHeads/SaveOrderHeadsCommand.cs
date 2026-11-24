@@ -24,8 +24,9 @@ public sealed class SaveOrderHeadsCommandHandler(IOrderRepository repository, Cu
         {
             var old = head.Id == Guid.Empty ? null : await repository.GetHeadAsync(head.Id, false, ct);
             var create = old == null;
-            if (!create && !OrderAccess.CanEdit(current, old!))
-                return 204;
+            if (create ? !await repository.CanCreateHeadAsync(ct) :
+                !await OrderAccess.CanMutateAsync(repository, current, old!, "Edit", ct))
+                return 403;
             if (!create && (head.Orders ?? []).Any(i => i.Id != Guid.Empty && !old!.Orders.Any(o => o.Id == i.Id)))
                 return 400;
             head.OrderDateMildi = dates.ParsePersian(head.OrderDate);

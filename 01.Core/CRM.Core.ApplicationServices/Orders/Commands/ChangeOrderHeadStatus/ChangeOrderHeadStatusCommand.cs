@@ -23,8 +23,8 @@ public sealed class ChangeOrderHeadStatusCommandHandler(IOrderRepository reposit
         if (!Enum.IsDefined(typeof(OrderHeadStatusEnum), request.Status))
             return 400;
         var current = await actor.GetAsync(ct);
-        if (!OrderAccess.CanEdit(current, old))
-            return 204;
+        if (!await OrderAccess.CanMutateAsync(repository, current, old, "ChangeStatus", ct))
+            return 403;
         var head = await repository.GetHeadAsync(request.Id, true, ct);
         head!.Status = (OrderHeadStatusEnum)request.Status;
         OrderAccess.Stamp(head, current, dates.PersianNow());

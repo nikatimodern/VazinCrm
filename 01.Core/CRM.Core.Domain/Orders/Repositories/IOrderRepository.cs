@@ -23,6 +23,8 @@ public interface IOrderRepository
     Task<List<OrderOption>> GetFactorOptionsAsync(Guid customerId, CancellationToken cancellationToken);
     Task<List<OrderOption>> GetCustomerOptionsAsync(OrderReader reader, CancellationToken cancellationToken);
     Task<List<OrderHead>> GetBoardAsync(QueryFilter filter, int invoiceStatus, OrderReader reader, CancellationToken cancellationToken);
+    Task<bool?> GetCatalogHeadAccessAsync(Guid id, string action, CancellationToken cancellationToken);
+    Task<bool> CanCreateHeadAsync(CancellationToken cancellationToken);
     Task<OrderHead?> GetHeadAsync(Guid id, bool tracking, CancellationToken cancellationToken);
     Task<Order?> GetItemAsync(Guid id, bool tracking, CancellationToken cancellationToken);
     Task<List<PreFactorItem>> GetMissingItemsAsync(Guid pfId, CancellationToken cancellationToken);

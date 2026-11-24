@@ -18,6 +18,16 @@ namespace CRM.Infrastructures.Sql.Orders.Repositories;
 public sealed class OrderRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : IOrderRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
+    public async Task<bool?> GetCatalogHeadAccessAsync(Guid id, string action, CancellationToken ct)
+    {
+        if (!access.IsEnforced("OrderHead")) return null;
+        var query = await access.ApplyAsync(db.OrderHeads.AsNoTracking().Where(h => h.Id == id && !h.IsDeleted), "View", ct);
+        if (action != "View") query = await access.ApplyAsync(query, action, ct);
+        return await query.AnyAsync(ct);
+    }
+
+    public Task<bool> CanCreateHeadAsync(CancellationToken ct) => access.HasAsync("OrderHead", "Create", ct);
+
     private IQueryable<OrderHead> Visible(IQueryable<OrderHead> query, OrderReader reader)
     {
         if (reader.ReadAll)

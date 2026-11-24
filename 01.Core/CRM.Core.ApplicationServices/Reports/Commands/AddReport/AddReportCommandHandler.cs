@@ -29,7 +29,7 @@ public sealed class AddReportCommandHandler(
         if (!isNew)
         {
             if (original is null) return AddReportResult.NotFound;
-            if (!command.CanEditOthers && original.UserCreatorID != command.User.Id)
+            if (!access.IsEnforced("Report") && !command.CanEditOthers && original.UserCreatorID != command.User.Id)
                 return AddReportResult.Forbidden;
         }
 
