@@ -4,13 +4,13 @@
 
 The registration SQL and migration cover the 24 remaining entity definitions and 89 permission keys. The 347 role assignments are proposed initial grants, not a verified copy of effective production permissions. Existing grants are preserved. Review the SQL preview before applying.
 
-Only SentSms and ReceivedSms are enabled in Development in this batch. The earlier 23 flags are unchanged. The remaining flags are intentionally disabled pending completion of the checks below. Production configuration is unchanged.
+Development currently enables the earlier 23 entities, SentSms, ReceivedSms, QualityControl and QualityControlQuestion (27 of 47). The other 20 flags remain disabled. Production configuration is unchanged.
 
 ## Staged work and outstanding checks
 
 | Entity | Work | Outstanding |
 |---|---|---|
-| QualityControl / QualityControlQuestion | Endpoint permission checks | Customer and item relationships, review/note operations and UI, question administration |
+| QualityControl / QualityControlQuestion | Endpoint and CQRS gates, parent scopes, shared customer state, supplier enrichment, UI and live invalidation; Development flags enabled | Non-production SQL/browser integration checks, parent grant verification, question administration if a separate workflow is requested |
 | Product / ProductAmount | Lookup, price endpoint checks | Embedded selectors, price-role configuration, nested reads and UI |
 | ProductGroup | Catalog registration | Group relationships and actual use cases |
 | Contract | Scoped controller checks | Attachment persistence and private file delivery, views |
@@ -42,7 +42,7 @@ Only SentSms and ReceivedSms are enabled in Development in this batch. The earli
 - AccessCatalog_CompleteSetup.sql consolidates six registration scripts (45 entities, 210 permissions, 923 proposed grants) and validates the 15 existing Customer/Deal permission prerequisites. The original Customer/Deal backfill is not present in this branch. Do not treat this as a standalone clean-database installer. Default preview is read-only; existing grants are preserved.
 - Added tests/CRM.AccessCatalog.Checks and .github/workflows/access-catalog-checks.yml. On workflow run 45370240764, architecture and coding-standard checks passed; build and scope execution had not yet been confirmed at the time of this review. JavaScript syntax checks passed for accessLive.js, sms.js, chat.js and the contract inline script. These checks do not establish runtime database authorization or live revocation correctness.
 
-No additional enforcement flags were enabled. Development remains at 25 enabled entities out of 47. Do not merge into main or enable the remaining flags until the remaining implementation and integration checks pass. No production database operations have been performed.
+At the time of the initial hardening batch, Development had 25 enabled entities out of 47. See the QC activation update below for the current status. Do not merge into main until the remaining implementation and integration checks pass. No production database operations have been performed.
 
 ## QC parent-scope hardening
 
@@ -68,3 +68,9 @@ Queue responses now include the same complete-customer capability used by shared
 - Verify separate View/Create/Edit/Delete/SetContactStatus/ManageContactHistory/QualityControlQuestion.View grants, including admin without ManageContactHistory. Verify view-only buttons, note editor, pending bulk review, revoked permissions during open dialogs and failed state refresh.
 - Review whether there is an existing question administration entry point beyond the seeded questions; no new question CRUD workflow is introduced by this permission change.
 - Confirm CI and real browser/SQL integration tests before enabling both flags. JS syntax is checked in CI; syntax alone does not establish authorization.
+
+## QC Development activation and question review
+
+The user requested activation of both QC flags in Development. QualityControlQuestionConfig seeds three questions and excludes soft-deleted definitions; GetQuestionsAsync returns active definitions only. GetCustomerForm and SaveItems require QualityControlQuestion.View at both the endpoint and CQRS boundary; SaveItems validates the entire active question set, unique question IDs, binary answers and at least one discrepancy, and stores historical answer snapshots. No dedicated question administration controller/action was identified in the reviewed QC, settings, admin and base-item controllers; the catalog Create/Edit/Delete definitions do not create a question CRUD workflow. The question definitions are shared configuration, so arbitrary owner scopes are not supported. The page-level contact grant attribute has been renamed to avoid colliding with delegated contact action selectors.
+
+Both QC flags are now true in appsettings.Development.json only. The previous CI run 45380408930 succeeded; the new activation commit requires its own CI result. Parent Customer.View, Deal.View and Factor.View permissions must be explicitly verified for each QC user in the test UserContextDb; no grants have been widened, and missing grants deny access. No SQL Server or browser runtime verification was performed here. Development activation is not approval for production deployment or merge. Complete the acceptance checks above before production activation.

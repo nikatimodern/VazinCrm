@@ -100,8 +100,8 @@
             queue.querySelectorAll(".qc-client-card").forEach(card => {
                 const shared = card.dataset.qcShared === "true";
                 card.querySelectorAll("[data-qc-contact]").forEach(button =>
-                    showControl(button, shared && can("qcContact")));
-                showControl(card.querySelector(".qc-client-no-answer-action"), shared && can("qcContact"));
+                    showControl(button, shared && can("qcSetContact")));
+                showControl(card.querySelector(".qc-client-no-answer-action"), shared && can("qcSetContact"));
                 showControl(card.querySelector(".qc-client-call-group"), shared && !accessInvalidated);
                 showControl(card.querySelector("[data-qc-customer-notes]"), shared && !accessInvalidated);
                 const reviewButton = card.querySelector("[data-qc-customer]");
@@ -1553,7 +1553,7 @@
             }
             const contactButton = event.target.closest("[data-qc-contact]");
             if (contactButton) {
-                if (!can("qcContact") || !sharedCard(contactButton) || loading || contactBusy || !isActive() || contactButton.disabled) return;
+                if (!can("qcSetContact") || !sharedCard(contactButton) || loading || contactBusy || !isActive() || contactButton.disabled) return;
                 contactBusy = true;
                 const originalIcon = contactButton.innerHTML;
                 const originalTitle = contactButton.title;
@@ -1613,7 +1613,7 @@
 
             const customerId = button.dataset.qcCustomer;
             const card = button.closest(".qc-client-card");
-            if (!can("qcContact") || !sharedCard(button) || card?.dataset.qcInvalidNumber !== "true") {
+            if (!can("qcSetContact") || !sharedCard(button) || card?.dataset.qcInvalidNumber !== "true") {
                 void openCustomer(customerId);
                 return;
             }
@@ -1628,7 +1628,7 @@
                     cancelText: "خیر، هنوز اصلاح نشده",
                     confirmButtonColor: "#00695c",
                 });
-                if (!confirmed || !can("qcContact") || !isActive()) return;
+                if (!confirmed || !can("qcSetContact") || !isActive()) return;
 
                 queueFeedback.textContent = "";
                 const result = await sendApiRequest({

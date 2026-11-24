@@ -43,7 +43,7 @@ foreach (var entity in new[] { "PreFactor", "Factor", "OrderHead", "Supply", "Su
     Check(AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " owner resolver registered");
 foreach (var entity in new[] { "Customer", "Deal" })
     Check(!AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " uses its dedicated owner resolver");
-foreach (var entity in new[] { "Product", "ProductGroup", "ASetting", "Chat", "Email", "SentSms", "ReceivedSms", "Unknown" })
+foreach (var entity in new[] { "QualityControl", "QualityControlQuestion", "Product", "ProductGroup", "ASetting", "Chat", "Email", "SentSms", "ReceivedSms", "Unknown" })
     Check(!AccessScopes.SupportsSelectedOwners(entity), entity + " cannot use arbitrary owner scopes");
 
 Console.WriteLine($"{checks} access catalog domain checks passed. Database, endpoints and live revocation require integration tests.");
