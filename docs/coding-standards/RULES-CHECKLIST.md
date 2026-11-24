@@ -36,10 +36,14 @@ Status tracks written governance, not application-wide compliance. A checked sec
 - [x] 32 [UI/UX standards](../../.agents/skills/erp-clean-code/references/32-ui-ux-standards.md) — Mandatory
 - [x] 33 [Dependency management](../../.agents/skills/erp-clean-code/references/33-dependency-management.md) — Mandatory
 
+- [x] 34 [Onion Architecture](../../.agents/skills/erp-clean-code/references/34-onion-architecture.md) — Mandatory
+
 ## Rollout and verification
 - [x] Existing root instructions and specialist skills inspected; preserve them.
-- [x] Dedicated skill, 33 references and six review checklists authored.
+- [x] Dedicated skill, 34 references and seven review checklists authored.
 - [x] Root instruction integration, EditorConfig and structural validator authored.
+- [x] Onion Architecture reference, checklist and project-reference checker authored.
+- [ ] Execute project-reference checker in a checked-out repository and review source-level boundaries.
 - [ ] Execute structural validator in a checked-out repository.
 - [ ] Verify skill discovery with a real Codex session.
 - [ ] Run solution build and applicable existing tests in configured SDK environment.

@@ -14,3 +14,5 @@ Good: controller dispatches a command whose handler calls a Domain contract; bad
 ## Review checklist
 - [ ] Review project references, DI lifetimes, feature folders and every converted action.
 - [ ] Record relevant evidence and justified deviations; do not claim an unexecuted check.
+
+For detailed project-reference boundaries, layer responsibilities, CQRS, repository contracts, DI and legacy exceptions, follow [34 Onion Architecture](34-onion-architecture.md).

@@ -12,5 +12,5 @@ No redundant copies of specialist implementations, unsupported metadata or broke
 Good: load the security reference for permission changes; bad: paste all rules into each feature folder.
 
 ## Review checklist
-- [ ] Check 33 reference files, manifest, relative links, examples and discoverability.
+- [ ] Check 34 reference files, manifest, relative links, examples and discoverability.
 - [ ] Record relevant evidence and justified deviations; do not claim an unexecuted check.

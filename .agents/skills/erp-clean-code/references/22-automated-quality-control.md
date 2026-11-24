@@ -14,3 +14,6 @@ Good: run a read-only check and report new warnings; bad: set every existing war
 ## Review checklist
 - [ ] Record tool versions, exact commands, baseline, failures, missing tools and CI activation evidence.
 - [ ] Record relevant evidence and justified deviations; do not claim an unexecuted check.
+
+## Architecture and setup
+Run `python3 scripts/check-onion-architecture.py` for the direct project-reference boundary check. Review source-level dependencies and CQRS separately. See [quality tooling setup](../../../../docs/coding-standards/QUALITY-TOOLS.md) for installation locations, safe baseline and CI rollout. Existing .NET 10 SDK analyzers and the FrontEnd Roslynator package are preferable to redundant installations.

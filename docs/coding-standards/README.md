@@ -24,3 +24,7 @@ Start with [AGENTS.md](../../AGENTS.md), [erp-clean-code](../../.agents/skills/e
 | CI quality gate | Pending configured runner, secrets/restore, actual passing run and branch protection. Start with changed-code and structural checks, then tighten based on baseline. |
 
 Critical security/data issues must never be accepted merely because they predate a baseline. Document exceptions with rule, scope, rationale, risk, owner approval and expiry. No claimed automation is active until verified.
+
+## Architecture and installation
+
+See [quality tooling setup](QUALITY-TOOLS.md) and [Onion Architecture](../../.agents/skills/erp-clean-code/references/34-onion-architecture.md). Run `python3 scripts/check-onion-architecture.py` (Windows: `py -3 scripts/check-onion-architecture.py`) to check the five known layer project reference boundaries. It does not replace source-level review or build/test.

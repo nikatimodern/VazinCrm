@@ -5,7 +5,7 @@ description: Apply Vazin ERP coding standards to all implementation, bug fixes, 
 
 # ERP Clean Code
 
-Read repository AGENTS.md first. This skill supplements, not replaces, existing specialist skills and local instructions. Always read rules 01, 11, 19, 20 and 23; load other references based on affected code. For comprehensive audits read all 33. Critical rules cannot be waived; mandatory exceptions require documented authorization; recommended metrics are targets, not arbitrary blockers. Do not modify unrelated code, run live writes, or report checks not performed.
+Read repository AGENTS.md first. This skill supplements, not replaces, existing specialist skills and local instructions. Always read rules 01, 11, 19, 20, 23 and 34; load other references based on affected code. For comprehensive audits read all 34. Critical rules cannot be waived; mandatory exceptions require documented authorization; recommended metrics are targets, not arbitrary blockers. Do not modify unrelated code, run live writes, or report checks not performed.
 
 ## Reference index
 - [01 Core principles](references/01-core-principles.md)
@@ -42,7 +42,9 @@ Read repository AGENTS.md first. This skill supplements, not replaces, existing 
 - [32 UI/UX standards](references/32-ui-ux-standards.md)
 - [33 Dependency management](references/33-dependency-management.md)
 
+- [34 Onion Architecture](references/34-onion-architecture.md)
+
 ## Workflow
-Use [before development](checklists/before-development.md) and [after development](checklists/after-development.md) for all changes. Load [code review](checklists/code-review.md), [security](checklists/security-review.md), [database](checklists/database-review.md) and [refactoring](checklists/refactoring-review.md) when applicable. For reviews, follow existing [crm-code-review](../crm-code-review/SKILL.md). For backend/CQRS use [crm-backend](../crm-backend/SKILL.md); for frontend use [crm-frontend](../crm-frontend/SKILL.md) and AGENTS.md UI skill list; for persistence use [efcore-sqlserver](../efcore-sqlserver/SKILL.md); for finance/integrations use [crm-financial](../crm-financial/SKILL.md) and [sepidar-integration](../sepidar-integration/SKILL.md). Specialist rules govern their exact implementation; security/data safeguards remain mandatory. Report unresolved conflicts instead of guessing.
+Use [before development](checklists/before-development.md) and [after development](checklists/after-development.md) for all changes. Load [code review](checklists/code-review.md), [security](checklists/security-review.md), [database](checklists/database-review.md) and [refactoring](checklists/refactoring-review.md) when applicable. Use [architecture review](checklists/architecture-review.md) for backend, project references and cross-layer changes. For reviews, follow existing [crm-code-review](../crm-code-review/SKILL.md). For backend/CQRS use [crm-backend](../crm-backend/SKILL.md); for frontend use [crm-frontend](../crm-frontend/SKILL.md) and AGENTS.md UI skill list; for persistence use [efcore-sqlserver](../efcore-sqlserver/SKILL.md); for finance/integrations use [crm-financial](../crm-financial/SKILL.md) and [sepidar-integration](../sepidar-integration/SKILL.md). Specialist rules govern their exact implementation; security/data safeguards remain mandatory. Report unresolved conflicts instead of guessing.
 
 Governance status: [Rules checklist](../../../docs/coding-standards/RULES-CHECKLIST.md). Report changed files, relevant checks and actual outcomes in Persian.

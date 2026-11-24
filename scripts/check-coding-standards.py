@@ -21,8 +21,8 @@ require(manifest.startswith("---\n"), "Missing skill front matter")
 require("name: erp-clean-code" in manifest, "Wrong skill name")
 require("description:" in manifest, "Missing skill description")
 refs = sorted((skill / "references").glob("*.md"))
-require(len(refs) == 33, "Expected 33 reference files")
-require([p.name[:2] for p in refs] == [f"{i:02}" for i in range(1, 34)], "Reference numbering mismatch")
+require(len(refs) == 34, "Expected 34 reference files")
+require([p.name[:2] for p in refs] == [f"{i:02}" for i in range(1, 35)], "Reference numbering mismatch")
 checklist = read(root / "docs/coding-standards/RULES-CHECKLIST.md")
 for path in refs:
     body = read(path)
@@ -30,7 +30,7 @@ for path in refs:
         require(section in body, f"{path.name}: missing {section}")
     require(f"references/{path.name}" in manifest, f"Unindexed reference: {path.name}")
     require(f"references/{path.name}" in checklist, f"Missing checklist entry: {path.name}")
-for name in ("before-development", "after-development", "code-review", "security-review", "database-review", "refactoring-review"):
+for name in ("before-development", "after-development", "code-review", "security-review", "database-review", "refactoring-review", "architecture-review"):
     read(skill / "checklists" / f"{name}.md")
     require(f"checklists/{name}.md" in manifest, f"Unindexed checklist: {name}")
 require(".agents/skills/erp-clean-code/SKILL.md" in read(root / "AGENTS.md"), "AGENTS.md does not load skill")
