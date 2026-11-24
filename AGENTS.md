@@ -86,3 +86,10 @@ For every new or modified form, modal form, filter form, input, select, textarea
 
 ### Mobile button density
 For any new or modified button, text action, tab, filter action or modal action on CRM frontend pages, follow `.agents/skills/crm-mobile-button-density/SKILL.md` alongside the existing UI skills. It defines a compact mobile-only baseline for button **height, font size, margin, and padding**; do not alter button width, colors, borders, icons, positioning, or behavior as part of density changes. The shared runtime CSS is `wwwroot/css/mobileButtonDensity.css`. Preserve icon-only, close, pagination, and shell/navigation controls and required touch ergonomics.
+
+## ERP clean code and governance (all coding tasks)
+- Load and follow [erp-clean-code](.agents/skills/erp-clean-code/SKILL.md) for every implementation, bug fix, refactoring, review, SQL or UI task; read the mandatory baseline and relevant numbered references. Use its before/after checklists for edits. Preserve all existing specialist skills and architecture rules, including mandatory CQRS for API/React migration as specified by crm-backend.
+- Critical security, record Scope, data integrity and financial safeguards cannot be bypassed. Check direct and indirect access paths including reports, exports, search, files and real-time endpoints. Parameterize SQL; never trust client-side restrictions.
+- Reuse existing helpers and components; verify callers before deleting or modifying shared contracts. Keep changes scoped, preserve valid behavior and do not introduce unnecessary recovery paths, packages or parallel architecture.
+- Mandatory exceptions require documented authorization; recommended size/complexity metrics are guidance, not automatic blockers. Report actual build/test/lint results and unverified areas; never claim success without execution. No unauthorized migrations, live writes, commit, push or merge.
+- Track governance rollout in [چک لیست قوانین](docs/coding-standards/RULES-CHECKLIST.md). Documented rules do not imply application-wide compliance or active CI enforcement.
