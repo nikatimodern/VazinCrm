@@ -612,6 +612,7 @@
             userSearchTimer = null;
         }
         activeTab = next;
+        root.querySelector("[data-user-subtitle]").hidden = true;
         for (const tab of root.querySelectorAll("[data-main-tab]")) {
             const active = tab.dataset.mainTab === next;
             tab.classList.toggle("is-active", active);
@@ -1246,9 +1247,11 @@
         root.querySelector("[data-user-title]").textContent = person ? "دسترسی‌های " + person.name : "دسترسی‌های کاربر";
         root.querySelector("[data-user-position]").textContent = person ?
             "سمت کاری: " + (person.position || "ثبت نشده") : "برای شروع یک کاربر انتخاب کنید.";
-        root.querySelector("[data-user-subtitle]").textContent = !person ? "" :
+        const saveStatus = root.querySelector("[data-user-subtitle]");
+        saveStatus.textContent = !person ? "" :
             !userReady ? "در حال دریافت تنظیمات..." :
             userDirty() ? "تغییرات ذخیره‌نشده" : "تغییرات ذخیره شده‌اند.";
+        saveStatus.hidden = activeTab !== "users" || !person;
         root.querySelector("[data-user-roles-count]").textContent = userRoleIds.size + " نقش";
         root.querySelector("[data-user-summary-roles]").textContent = userRoleIds.size + " نقش";
         root.querySelector("[data-user-summary-overrides]").textContent = userOverrides.size + " استثنا";
