@@ -30,3 +30,16 @@ Only SentSms and ReceivedSms are enabled in Development in this batch. The earli
 2. Build the entire solution and run integration tests on a non-production database. Test authorized and denied direct URLs, mixed grants, explicit denies, ownership and selected-user scopes, and role compatibility.
 3. Complete remaining indirect, frontend and real-time checks before enabling each staged flag.
 4. Do not interpret catalog registration as a completed authorization rollout. No production database changes or production configuration activation have been performed.
+
+## Follow-up hardening
+
+- Centralized owner-scope entity support across effective permissions, administration and history restoration, including the warehouse assignment resolver.
+- Scoped recycle-bin queries and restore operations, including related customer, invoice and accounting checks. Report queries and writes now check related customer/deal visibility when Report enforcement is enabled.
+- Added private chat/contract attachment request authorization before static file serving. Contract uploads preserve creator information and reject foreign attachment identifiers. Legacy files without valid database associations must be reconciled; other attachment directories still require individual review.
+- Restricted hub authentication and removed the legacy unrestricted chat broadcast. Task/call broadcast payloads, notification recipients and real-time role group revocation still require end-to-end review.
+- Scoped source-document checks for financial destination lookup and cash mapping cleanup. Other mapping and export paths require review.
+- Added separate price action permissions and contract row action controls. The remaining module UI and shared/child record operations still need completion.
+- AccessCatalog_CompleteSetup.sql consolidates six registration scripts (45 entities, 210 permissions, 923 proposed grants) and validates the 15 existing Customer/Deal permission prerequisites. The original Customer/Deal backfill is not present in this branch. Do not treat this as a standalone clean-database installer. Default preview is read-only; existing grants are preserved.
+- Added tests/CRM.AccessCatalog.Checks and .github/workflows/access-catalog-checks.yml. On workflow run 45370240764, architecture and coding-standard checks passed; build and scope execution had not yet been confirmed at the time of this review. JavaScript syntax checks passed for accessLive.js, sms.js, chat.js and the contract inline script. These checks do not establish runtime database authorization or live revocation correctness.
+
+No additional enforcement flags were enabled. Development remains at 25 enabled entities out of 47. Do not merge into main or enable the remaining flags until the remaining implementation and integration checks pass. No production database operations have been performed.
