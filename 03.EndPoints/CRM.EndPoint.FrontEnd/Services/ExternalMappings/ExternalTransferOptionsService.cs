@@ -14,6 +14,7 @@ using CRM.Core.Domain.Sepidar.Vouchers.Entites;
 using CRM.Core.Domain.Supplies.Entities;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using CRM.Infrastructures.Sql;
+using CRM.EndPoint.FrontEnd.Security;
 using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings;
 /// Cash is the temporary exception until it has a financial-history UI.
 /// </summary>
 public sealed class ExternalTransferOptionsService(
-    CRMContextDb db, Sepidar1Service first, Sepidar2Service second)
+    CRMContextDb db, Sepidar1Service first, Sepidar2Service second, DocumentAccessPolicy access)
 {
 
     public sealed record TransferRule(
@@ -85,6 +86,9 @@ public sealed class ExternalTransferOptionsService(
         if (ids.Length == 0 || ids.Any(id => id == Guid.Empty))
             throw new ArgumentException("Source IDs must be nonempty.", nameof(sourceIds));
 
+        foreach (var id in ids)
+            if (!await access.CanAsync(rule.SourceEntity, "View", id, ct))
+                throw new UnauthorizedAccessException();
         var mappings = await LoadMappingsAsync(ids, mapType, rule, ct);
         var existence = await CheckExternalRecordsAsync(mappings, ct);
         await CleanupMissingCashDocumentsAsync(mappings, existence, rule, ct);
@@ -153,7 +157,7 @@ public sealed class ExternalTransferOptionsService(
         List<ExternalMapping> mappings, IReadOnlyDictionary<Guid, bool?> existence,
         TransferRule rule, CancellationToken ct)
     {
-        if (!rule.CleanupMissingCashDocuments) return;
+        if (!rule.CleanupMissingCashDocuments || !await access.HasAsync("ExternalMapping", "Delete", ct)) return;
 
         // Cash has no financial-history modal. This exception must not spread to
         // quotations, sales invoices, purchase invoices, receipts or new types.
@@ -163,6 +167,9 @@ public sealed class ExternalTransferOptionsService(
             (m.ExEntityName == nameof(PaymentHeader) || m.ExEntityName == nameof(Voucher)) &&
             existence.GetValueOrDefault(m.Id) == false).ToArray();
         if (missingCash.Length == 0) return;
+        foreach (var mapping in missingCash)
+            if (!await access.CanAsync("Cash", "Edit", mapping.EntityId, ct))
+                return;
 
         db.ExternalMappings.RemoveRange(missingCash);
         await db.SaveChangesAsync(ct);
