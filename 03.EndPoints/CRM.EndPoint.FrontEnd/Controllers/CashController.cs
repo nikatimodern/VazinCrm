@@ -173,7 +173,13 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     private async Task<bool> CanGroup(Guid id, string action, string childAction, CancellationToken ct)
     {
         if (!await access.CanAsync("CashGroup", action, id, ct)) return false;
-        return await CanCashRows(db.Cashes.Where(x => x.CashGroupId == id), childAction, ct);
+        var rows = db.Cashes.Where(x => x.CashGroupId == id);
+        if (access.IsEnforced("BankAccount"))
+        {
+            var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
+            if (await rows.AnyAsync(c => c.BankAccountId.HasValue && !banks.Any(b => b.Id == c.BankAccountId.Value), ct)) return false;
+        }
+        return await CanCashRows(rows, childAction, ct);
     }
 
     public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status, CancellationToken ct) {
@@ -219,6 +225,7 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     }
     public async Task<IActionResult> DeleteCash(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("Cash", "Delete", id, ct)) return Forbid();
+        if (access.IsEnforced("Cash") && !await db.Cashes.AnyAsync(x => x.Id == id && x.Status == CashStatusEnum.ثبت_موقت, ct)) return Conflict();
         return Map(await dispatcher.CommandAsync(new DeleteCashCommand(id), ct));
     }
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
@@ -255,6 +262,12 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     }
     public async Task<IActionResult> GetCash(Guid id, CancellationToken ct) {
         if (!await access.CanAsync("Cash", "View", id, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount"))
+        {
+            var row = await db.Cashes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (row == null) return NotFound();
+            if (!await CanUseBankAccount(row.BankAccountId, ct)) return Forbid();
+        }
         return Ok(await dispatcher.QueryAsync(new GetCashDetailQuery(id), ct));
     }
     public async Task<IActionResult> GetCashier(Guid id, CancellationToken ct) {
@@ -284,7 +297,18 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
         if (!await access.HasViewAsync("Cash", ct)) return Forbid();
         var form = await Request.ReadFormAsync(ct);
         var model = JsonConvert.DeserializeObject<FilterVModel>(form["model"].FirstOrDefault() ?? "null");
-        return Json(await dispatcher.QueryAsync(new GetCashTableQuery(await ReadTableAsync(ct), model.ToApplicationFilter()), ct));
+        var result = await dispatcher.QueryAsync(new GetCashTableQuery(await ReadTableAsync(ct), model.ToApplicationFilter()), ct);
+        var permissions = new Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+            permissions[row.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row, "Delete", ct),
+                canChangeStatus = await access.AllowsRowAsync(row, "ChangeStatus", ct),
+                canApprove = await access.AllowsRowAsync(row, "Approve", ct),
+                canExport = await access.AllowsRowAsync(row, "ExportExternal", ct)
+            };
+        return Json(new { result.Draw, result.RecordsTotal, result.RecordsFiltered, result.Data, result.IsExported, result.CashierBalance, permissions });
     }
 
     [HttpPost]
@@ -294,11 +318,27 @@ public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy acc
     }
     public async Task<IActionResult> GetAllCashiersDt(CancellationToken ct) {
         if (!await access.HasViewAsync("Cashier", ct)) return Forbid();
-        return Json(await dispatcher.QueryAsync(new GetCashierTableQuery(await ReadTableAsync(ct)), ct));
+        var result = await dispatcher.QueryAsync(new GetCashierTableQuery(await ReadTableAsync(ct)), ct);
+        var permissions = new Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+            permissions[row.Cashier.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row.Cashier, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row.Cashier, "Delete", ct)
+            };
+        return Json(new { result.Draw, result.RecordsTotal, result.RecordsFiltered, result.Data, permissions });
     }
     public async Task<IActionResult> GetAllBaseCashesDt(CancellationToken ct) {
         if (!await access.HasViewAsync("BaseCash", ct)) return Forbid();
-        return Json(await dispatcher.QueryAsync(new GetBaseCashTableQuery(await ReadTableAsync(ct)), ct));
+        var result = await dispatcher.QueryAsync(new GetBaseCashTableQuery(await ReadTableAsync(ct)), ct);
+        var permissions = new Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+            permissions[row.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row, "Delete", ct)
+            };
+        return Json(new { result.Draw, result.RecordsTotal, result.RecordsFiltered, result.Data, permissions });
     }
     [Authorize(Roles = "مدیر ارشد, مدیر مالی, کارشناس مالی")]
     public async Task<IActionResult> SendCashesToExternalSoftware([FromBody] SendToExternalSoftwaresDto model, CancellationToken ct)
