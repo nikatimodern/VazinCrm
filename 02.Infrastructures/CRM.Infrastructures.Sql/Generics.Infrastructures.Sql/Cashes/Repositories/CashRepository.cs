@@ -73,7 +73,11 @@ public sealed class CashRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalo
 
     public async Task<CashierBalanceDto> GetBalanceAsync(Guid id, CancellationToken ct)
     {
-        var data = await (await access.ApplyAsync(db.Accountancies.AsNoTracking(), "View", ct)).Where(a => a.CashierId == id).Select(a => new { a.credit, a.debit, a.Accepted }).ToListAsync(ct);
+        var all = db.Accountancies.AsNoTracking().Where(a => a.CashierId == id);
+        var visible = await access.ApplyAsync(all, "View", ct);
+        if (!await access.HasAsync("Accountancy", "View", ct) && await all.AnyAsync(a => !visible.Any(v => v.Id == a.Id), ct))
+            return new CashierBalanceDto { CashierId = id, TotalCredit = null, TotalDebit = null };
+        var data = await visible.Select(a => new { a.credit, a.debit, a.Accepted }).ToListAsync(ct);
         return new()
         {
             CashierId = id,
@@ -312,6 +316,19 @@ public sealed class CashRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalo
         if (length != -1)
             query = query.Skip(start).Take(length);
         var data = await query.ToListAsync(ct);
+        if (!await access.HasAsync("Accountancy", "View", ct))
+        {
+            var userIds = data.Select(x => x.Cashier.UserId).ToArray();
+            var incomplete = await db.Accountancies.AsNoTracking()
+                .Where(a => a.CashierId.HasValue && userIds.Contains(a.CashierId.Value) && !accountancies.Any(v => v.Id == a.Id))
+                .Select(a => a.CashierId.Value).Distinct().ToListAsync(ct);
+            foreach (var row in data.Where(x => incomplete.Contains(x.Cashier.UserId)))
+            {
+                row.HasFullBalanceAccess = false;
+                row.TotalCredit = row.TotalDebit = row.Balance = 0;
+                row.IsAccepted = false;
+            }
+        }
         return new(draw, recordsTotal, recordsFiltered, data);
     }
 
