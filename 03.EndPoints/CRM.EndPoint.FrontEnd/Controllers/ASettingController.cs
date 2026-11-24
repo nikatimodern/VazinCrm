@@ -45,6 +45,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد")]
+        [CatalogPermission("ASetting", "View")]
         public IActionResult Index()
         {
             return View();
@@ -576,6 +577,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [Authorize(Roles = "مدیر ارشد")]
+        [CatalogPermission("ASetting", "Edit")]
         public async Task<IActionResult> upSetting(ASetting model)
         {
             try
@@ -590,6 +592,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [CatalogPermission("ASetting", "View")]
         public async Task<IActionResult> GetSetting()
         {
             try
