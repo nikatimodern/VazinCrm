@@ -13,12 +13,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructures.Sql.Transfers.Repositories;
-public sealed class TransferRepository(CRMContextDb db) : ITransferRepository, IAsyncDisposable
+public sealed class TransferRepository(CRMContextDb db, CRM.Core.Domain.AccessCatalog.Repositories.IDocumentReadAccess access) : ITransferRepository, IAsyncDisposable
 {
     private IDbContextTransaction? transaction;
     public async Task<TransferTableResult> GetTableAsync(TransferTableRequest request, CancellationToken ct)
     {
         var query = db.Transfers.AsNoTracking();
+        if (access.IsEnforced("BankAccount"))
+        {
+            var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
+            query = query.Where(t => (!t.FromAccountId.HasValue || banks.Any(b => b.Id == t.FromAccountId.Value)) &&
+                                     (!t.ToAccountId.HasValue || banks.Any(b => b.Id == t.ToAccountId.Value)));
+        }
         var total = await query.CountAsync(ct);
         if (!string.IsNullOrEmpty(request.Search))
             query = query.Where(t => t.TransferNumber == request.SearchNumber || t.Description.Contains(request.Search) || t.ToAccountTxt.Contains(request.Search) || t.FromAccountTxt.Contains(request.Search));
