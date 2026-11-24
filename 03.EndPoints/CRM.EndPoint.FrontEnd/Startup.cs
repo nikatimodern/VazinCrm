@@ -311,6 +311,13 @@ namespace CRM.EndPoint.FrontEnd {
                 branch => branch.UseStatusCodePagesWithReExecute("/Error/{0}"));
 
             app.UseHttpsRedirection();
+            // Authenticate private attachment requests before serving files.
+            app.UseWhen(context => CRM.EndPoint.FrontEnd.Security.PrivateAttachmentAccessMiddleware.Matches(context.Request.Path),
+                branch =>
+                {
+                    branch.UseAuthentication();
+                    branch.UseMiddleware<CRM.EndPoint.FrontEnd.Security.PrivateAttachmentAccessMiddleware>();
+                });
             app.UseStaticFiles();
 
             app.UseRouting();
