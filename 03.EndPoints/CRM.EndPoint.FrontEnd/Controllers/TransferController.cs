@@ -13,14 +13,30 @@ using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Transfers.Enums;
 using CRM.Core.Domain.Transfers.Repositories;
 using CRM.EndPoint.FrontEnd.Models;
+using CRM.EndPoint.FrontEnd.Security;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public sealed class TransferController(ICqrsDispatcher requests) : Controller
+public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessPolicy access, CRMContextDb db) : Controller
 {
+    private async Task<bool> CanUseAccounts(Transfer transfer, CancellationToken ct)
+    {
+        return (!transfer.FromAccountId.HasValue || await access.CanAsync("BankAccount", "View", transfer.FromAccountId.Value, ct))
+            && (!transfer.ToAccountId.HasValue || await access.CanAsync("BankAccount", "View", transfer.ToAccountId.Value, ct));
+    }
+
+    private async Task<bool> CanUseExistingAccounts(Guid id, CancellationToken ct)
+    {
+        if (!access.IsEnforced("BankAccount")) return true;
+        var row = await db.Transfers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        return row != null && await CanUseAccounts(row, ct);
+    }
+
     public async Task<IActionResult> Index(CancellationToken ct) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Transfer"), ct));
     [HttpPost]
     public async Task<IActionResult> GetAllTransfersDt(CancellationToken ct)
@@ -40,6 +56,7 @@ public sealed class TransferController(ICqrsDispatcher requests) : Controller
     {
         if (model == null)
             return BadRequest();
+        if (!await CanUseAccounts(model, ct) || (model.Id != Guid.Empty && !await CanUseExistingAccounts(model.Id, ct))) return Forbid();
         try
         {
             return StatusCode(await requests.CommandAsync(new SaveTransferCommand(model), ct));
@@ -52,6 +69,7 @@ public sealed class TransferController(ICqrsDispatcher requests) : Controller
 
     public async Task<IActionResult> GetTransfer(Guid id, CancellationToken ct)
     {
+        if (!await CanUseExistingAccounts(id, ct)) return Forbid();
         try
         {
             var result = await requests.QueryAsync(new GetTransferQuery(id), ct);
@@ -65,6 +83,7 @@ public sealed class TransferController(ICqrsDispatcher requests) : Controller
 
     public async Task<IActionResult> DeleteTransfer(Guid id, CancellationToken ct)
     {
+        if (!await CanUseExistingAccounts(id, ct)) return Forbid();
         try
         {
             var status = await requests.CommandAsync(new DeleteTransferCommand(id), ct);
@@ -81,6 +100,7 @@ public sealed class TransferController(ICqrsDispatcher requests) : Controller
     {
         if (request is null)
             return BadRequest();
+        if (!await CanUseExistingAccounts(id, ct)) return Forbid();
         var status = await requests.CommandAsync(new ChangeTransferStatusCommand(id, request.Status), ct);
         return status == 404 ? NotFound("نقل و انتقال مورد نظر یافت نشد.") : StatusCode(status);
     }
