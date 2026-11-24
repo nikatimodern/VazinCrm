@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.Accountancies.Enum
 @using CRM.EndPoint.FrontEnd.Services.Extensions
 @section Styles {
@@ -10,6 +11,8 @@
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var canManageBankAccounts = User.IsAdmin() || User.IsManagingDirector() || User.IsFinancialAdmin() || User.IsFinancialExpert();
+    var canViewBankAccounts = await DocumentAccess.HasViewAsync("BankAccount", Context.RequestAborted);
+    var canCreateBankAccounts = canManageBankAccounts && await DocumentAccess.HasAsync("BankAccount", "Create", Context.RequestAborted);
 }
 
 <div id="settingsCompanyWorkspace" class="crm-settings-theme crm-operations-theme">
@@ -85,7 +88,7 @@
             </div>
         </div>
 
-        <div class="col-12" style="padding:4px">
+        <div hidden="@(!canViewBankAccounts)" class="col-12" style="padding:4px">
             <h2 id="bankAccountsHeading" class="bank-accounts-section-title">حساب‌های بانکی</h2>
             <section class="InfoData bank-accounts-panel" aria-labelledby="bankAccountsHeading">
                 <div class="bank-accounts-toolbar">
@@ -108,8 +111,8 @@
                         </select>
                         <span class="bank-accounts-toolbar__filter-label">ردیف</span>
                     </div>
-                    @if (canManageBankAccounts) {
-                        <button type="button" class="buttonGreen2 bank-accounts-toolbar__add" onclick="openAddBankAccountFromSettings()">
+                    @if (canCreateBankAccounts) {
+                        <button type="button" data-document-permission="BankAccount.Create" class="buttonGreen2 bank-accounts-toolbar__add" onclick="openAddBankAccountFromSettings()">
                             <i class="fas fa-plus" aria-hidden="true"></i>
                             <span>افزودن حساب بانکی</span>
                         </button>
@@ -267,7 +270,7 @@
             getAllSenf();
             getAllFamilyWay();
             getAllProductBase();
-            getAllBankAccount();
+            if (@(canViewBankAccounts ? "true" : "false")) getAllBankAccount();
             getCompany();
         });
 
@@ -593,6 +596,7 @@
                     ajax: {
                         url: "/Accountancy/GetAllBankAccount",
                         type: "POST",
+                        dataSrc: json => (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.id] })),
                         data: (d) => {
                             d.model = JSON.stringify(modelGetBankAccounts);
                         },
@@ -621,12 +625,12 @@
                         {
                             data: "active", name: "Active", autoWidth: true,
                             render: function (data, type, row) {
-                                if (!canManageBankAccounts) return data ? "فعال" : "غیرفعال";
+                                if (!canManageBankAccounts || row.actionRights?.canChangeActive !== true || window.AccessLive?.can("BankAccount", "changeActive") === false) return data ? "فعال" : "غیرفعال";
                                 return `
                                 <div class="d-flex flex-column justify-content-between align-items-center gap-2">
                                     <label class="form-check-label ${data ? "" : "text-muted"}" for="activeBank">${data ? "فعال" : "غیرفعال"}</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="activeBank" ${data ? "checked" : ""} onchange="updateBankAccountActive(this, '${row.id}')">
+                                        <input data-document-permission="BankAccount.ChangeActive" class="form-check-input" type="checkbox" role="switch" id="activeBank" ${data ? "checked" : ""} onchange="updateBankAccountActive(this, '${row.id}')">
                                     </div>
                                 </div>`;
                             },
@@ -637,8 +641,8 @@
                                 if (!canManageBankAccounts) return "-";
                                 return `
                                 <div class="inline-flex-center gap-1">
-                                    <button type="button" class="icon-button icon-button--green" onclick='ShowUpdateBankAccountItem("${row.id}")'><i class="fa fa-pencil"></i></button>
-                                    <button type="button" class="icon-button icon-button--red" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>
+                                    ${row.actionRights?.canEdit === true && window.AccessLive?.can("BankAccount", "edit") !== false ? `<button type="button" data-document-permission="BankAccount.Edit" class="icon-button icon-button--green" onclick='ShowUpdateBankAccountItem("${row.id}")'><i class="fa fa-pencil"></i></button>` : ""}
+                                    ${row.actionRights?.canDelete === true && window.AccessLive?.can("BankAccount", "delete") !== false ? `<button type="button" data-document-permission="BankAccount.Delete" class="icon-button icon-button--red" onclick='DelBankAccountItem("${row.id}")'><i class="fa fa-trash"></i></button>` : ""}
                                 </div>
                             `;
                             },
@@ -761,6 +765,7 @@
         };
 
         const updateBankAccountActive = async (elm, id) => {
+            if (window.AccessLive?.can("BankAccount", "changeActive") === false) { refreshBankAccountTable(); return; }
             try {
                 FLshowLoading();
                 const data = { id, active: elm.checked };
@@ -772,7 +777,9 @@
                 }
             } catch (err) {
                 console.log(err);
-                setTimeout(async () => await updateBankAccountActive(), 3000);
+                FLshowLoading(false);
+                refreshBankAccountTable();
+                toastifyError("تغییر وضعیت حساب بانکی انجام نشد.");
             }
         };
 
@@ -813,7 +820,7 @@
                 });
         };
         const DelBankAccountItemOk = async (id) => {
-
+            if (window.AccessLive?.can("BankAccount", "delete") === false) return;
             $("#FLshowLoading").css("display", "");
             axios(`/Accountancy/DelBankAccountItem/${id}`).then(async (res) => {
                 if (res.status === 200) {
@@ -823,7 +830,9 @@
                 $("#FLshowLoading").css("display", "none");
 
             }).catch(() => {
-                setTimeout(() => DelBankAccountItemOk(id), 3000);
+                $("#FLshowLoading").css("display", "none");
+                refreshBankAccountTable();
+                toastifyError("حذف حساب بانکی انجام نشد.");
             });
 
         };
