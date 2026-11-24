@@ -1,8 +1,11 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @model CRM.EndPoint.FrontEnd.Models.Cash.CashIndexVModel
 
 @{
     Layout = "_Layout";
-    var isFinancial = User.IsFinancial();
+    var canViewGroups = await DocumentAccess.HasViewAsync("CashGroup", Context.RequestAborted);
+    var isFinancial = User.IsFinancial() && canViewGroups;
+    var canCreateCash = await DocumentAccess.HasAsync("Cash", "Create", Context.RequestAborted);
 }
 
 
@@ -50,7 +53,7 @@
                             <i class="fa fa-list me-1"></i> ریز تنخواه‌ها
                         </label>
                     </li>
-                    <li class="filter-switch-item">
+                    <li hidden="@(!canViewGroups)" class="filter-switch-item">
                         <input type="radio" name="cashViewType" id="cashViewTypeGroups" value="groups" @(isFinancial ? "checked" : "")>
                         <label for="cashViewTypeGroups" class="flex-center gap-2">
                             <i class="fa fa-folder-open me-1"></i> گروه‌های ارسالی
@@ -58,7 +61,7 @@
                     </li>
                 </ul>
             </div>
-            <button id="cashModalBtn" class="buttonGray2 d-flex align-items-center gap-1 @(isFinancial ? "d-none" : "")" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
+            <button hidden="@(!canCreateCash)" data-document-permission="Cash.Create" id="cashModalBtn" class="buttonGray2 d-flex align-items-center gap-1 @(isFinancial ? "d-none" : "")" style="padding: 4px 8px" data-bs-toggle="modal" data-bs-target="#cashModal">
                 <span style="line-height: 1">ثبت تنخواه</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
