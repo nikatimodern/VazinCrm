@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.QualityControls.Services;
@@ -10,11 +11,11 @@ public sealed record GetQualityControlCustomerNotesQuery(Guid CustomerId, int St
     : IQuery<QualityControlCustomerNotesPage?>;
 
 public sealed class GetQualityControlCustomerNotesQueryHandler(
-    IQualityControlRepository repository, CurrentActor actor)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions)
     : IQueryHandler<GetQualityControlCustomerNotesQuery, QualityControlCustomerNotesPage?>
 {
     public async Task<QualityControlCustomerNotesPage?> HandleAsync(
         GetQualityControlCustomerNotesQuery query, CancellationToken ct)
         => await repository.GetCustomerNotesAsync(query.CustomerId, query.Start, query.Length,
-            QualityControlAccessPolicy.For(await actor.GetAsync(ct)), ct);
+            await QualityControlAccessPolicy.ForAsync(await actor.GetAsync(ct), permissions, "View", ct), ct);
 }

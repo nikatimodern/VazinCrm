@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -11,7 +12,7 @@ public sealed record DeleteQualityControlCustomerNoteCommand(DeleteQualityContro
     : ICommand<QualityControlCustomerNoteChangeResult>;
 
 public sealed class DeleteQualityControlCustomerNoteCommandHandler(
-    IQualityControlRepository repository, CurrentActor actor, IApplicationDates dates)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationDates dates)
     : ICommandHandler<DeleteQualityControlCustomerNoteCommand, QualityControlCustomerNoteChangeResult>
 {
     public async Task<QualityControlCustomerNoteChangeResult> HandleAsync(
@@ -22,6 +23,6 @@ public sealed class DeleteQualityControlCustomerNoteCommandHandler(
             || input.RowVersion is not { Length: 8 })
             return new(400, "اطلاعات حذف یادداشت معتبر نیست.");
         return await repository.DeleteCustomerNoteAsync(input,
-            QualityControlAccessPolicy.For(await actor.GetAsync(ct)), dates.PersianNow(), ct);
+            await QualityControlAccessPolicy.ForAsync(await actor.GetAsync(ct), permissions, "Delete", ct), dates.PersianNow(), ct);
     }
 }

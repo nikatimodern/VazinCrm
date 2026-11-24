@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -11,7 +12,7 @@ public sealed record UpdateQualityControlCustomerNoteCommand(UpdateQualityContro
     : ICommand<QualityControlCustomerNoteChangeResult>;
 
 public sealed class UpdateQualityControlCustomerNoteCommandHandler(
-    IQualityControlRepository repository, CurrentActor actor, IApplicationDates dates)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationDates dates)
     : ICommandHandler<UpdateQualityControlCustomerNoteCommand, QualityControlCustomerNoteChangeResult>
 {
     public async Task<QualityControlCustomerNoteChangeResult> HandleAsync(
@@ -23,6 +24,6 @@ public sealed class UpdateQualityControlCustomerNoteCommandHandler(
             || string.IsNullOrWhiteSpace(input.Description) || input.Description.Length > 4000)
             return new(400, "اطلاعات ویرایش یادداشت معتبر نیست.");
         return await repository.UpdateCustomerNoteAsync(input,
-            QualityControlAccessPolicy.For(await actor.GetAsync(ct)), dates.PersianNow(), ct);
+            await QualityControlAccessPolicy.ForAsync(await actor.GetAsync(ct), permissions, "Edit", ct), dates.PersianNow(), ct);
     }
 }

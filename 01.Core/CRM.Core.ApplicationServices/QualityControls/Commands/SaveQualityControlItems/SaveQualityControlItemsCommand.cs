@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -11,7 +12,7 @@ public sealed record SaveQualityControlItemsCommand(SaveQualityControlItemsReque
     : ICommand<SaveQualityControlItemsResult>;
 
 public sealed class SaveQualityControlItemsCommandHandler(
-    IQualityControlRepository repository, CurrentActor actor, IApplicationDates dates)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationDates dates)
     : ICommandHandler<SaveQualityControlItemsCommand, SaveQualityControlItemsResult>
 {
     public async Task<SaveQualityControlItemsResult> HandleAsync(SaveQualityControlItemsCommand command, CancellationToken ct)
@@ -20,6 +21,6 @@ public sealed class SaveQualityControlItemsCommandHandler(
         if (request.CustomerId == Guid.Empty || request.Items == null || request.Items.Count is < 1 or > 2000)
             return new(400, "مشتری یا اقلام کنترل کیفیت معتبر نیست.");
         return await repository.SaveItemsAsync(request,
-            QualityControlAccessPolicy.For(await actor.GetAsync(ct)), dates.PersianNow(), ct);
+            await QualityControlAccessPolicy.ForAsync(await actor.GetAsync(ct), permissions, "Edit", ct, requireQuestions: true), dates.PersianNow(), ct);
     }
 }

@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -13,7 +14,7 @@ public sealed record ChangeQualityControlContactHistoryCommand(
     : ICommand<ChangeQualityControlContactHistoryResult>;
 
 public sealed class ChangeQualityControlContactHistoryCommandHandler(
-    IQualityControlRepository repository, CurrentActor actor, IApplicationDates dates)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationDates dates)
     : ICommandHandler<ChangeQualityControlContactHistoryCommand, ChangeQualityControlContactHistoryResult>
 {
     public async Task<ChangeQualityControlContactHistoryResult> HandleAsync(
@@ -23,6 +24,6 @@ public sealed class ChangeQualityControlContactHistoryCommandHandler(
         if (!user.HasRole(AppRoles.Admin))
             return new(403, "فقط مدیر ارشد امکان حذف یا بازیابی تاریخچه تماس را دارد.");
         return await repository.ChangeContactHistoryDeletionAsync(command.Request,
-            QualityControlAccessPolicy.For(user), dates.PersianNow(), ct);
+            await QualityControlAccessPolicy.ForAsync(user, permissions, "ManageContactHistory", ct), dates.PersianNow(), ct);
     }
 }

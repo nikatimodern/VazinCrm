@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -11,7 +12,7 @@ public sealed record SetQualityControlCustomerContactCommand(SetQualityControlCu
     : ICommand<SetQualityControlCustomerContactResult>;
 
 public sealed class SetQualityControlCustomerContactCommandHandler(
-    IQualityControlRepository repository, CurrentActor actor, IApplicationDates dates)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationDates dates)
     : ICommandHandler<SetQualityControlCustomerContactCommand, SetQualityControlCustomerContactResult>
 {
     public async Task<SetQualityControlCustomerContactResult> HandleAsync(
@@ -23,6 +24,6 @@ public sealed class SetQualityControlCustomerContactCommandHandler(
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
         return await repository.SetCustomerContactStatusAsync(request,
-            QualityControlAccessPolicy.For(await actor.GetAsync(ct)), dates.PersianNow(), ct);
+            await QualityControlAccessPolicy.ForAsync(await actor.GetAsync(ct), permissions, "SetContactStatus", ct), dates.PersianNow(), ct);
     }
 }

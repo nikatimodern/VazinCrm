@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.QualityControls.Services;
@@ -12,7 +13,7 @@ public sealed record GetQualityControlContactHistoryQuery(
     : IQuery<QualityControlContactHistoryPage?>;
 
 public sealed class GetQualityControlContactHistoryQueryHandler(
-    IQualityControlRepository repository, CurrentActor actor)
+    IQualityControlRepository repository, CurrentActor actor, IDocumentReadAccess permissions)
     : IQueryHandler<GetQualityControlContactHistoryQuery, QualityControlContactHistoryPage?>
 {
     public async Task<QualityControlContactHistoryPage?> HandleAsync(
@@ -22,6 +23,6 @@ public sealed class GetQualityControlContactHistoryQueryHandler(
         var isAdmin = user.HasRole(AppRoles.Admin);
         return await repository.GetContactHistoryAsync(query.CustomerId,
             query.IncludeDeleted && isAdmin, query.Start, query.Length,
-            QualityControlAccessPolicy.For(user), isAdmin, ct);
+            await QualityControlAccessPolicy.ForAsync(user, permissions, "View", ct), isAdmin, ct);
     }
 }
