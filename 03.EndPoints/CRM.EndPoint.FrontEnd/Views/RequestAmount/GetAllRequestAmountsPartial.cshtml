@@ -16,6 +16,7 @@
         var canChangeStatus = await DocumentAccess.AllowsRowAsync(reqAmount, "ChangeStatus", ct);
         var canApproveRequest = await DocumentAccess.AllowsRowAsync(reqAmount, "Approve", ct);
         var canPayRequest = await DocumentAccess.AllowsRowAsync(reqAmount, "Pay", ct) && await DocumentAccess.HasAsync("Payment", "Create", ct);
+        var canViewPayment = await DocumentAccess.HasViewAsync("Payment", ct);
         var canSeeDebt = await DocumentAccess.HasAsync("SupplyFactor", "View", ct) && await DocumentAccess.HasAsync("Payment", "View", ct) && await DocumentAccess.HasAsync("RequestAmount", "View", ct);
         var isCreator = reqAmount.UserCreatorID == User.GetUserId();
         var supplyFactorSerials = item.SupplyFactorSerials;
@@ -42,7 +43,7 @@
         };
 
         <div class="layered-card layered-card-pill @(bgCssClass)" data-id="@reqAmount.Id">
-            @if (status == RequestStatusEnum.در_انتظار_پرداخت || (status == RequestStatusEnum.پرداخت_شده && !isFullyPaid)) {
+            @if (canPayRequest && (status == RequestStatusEnum.در_انتظار_پرداخت || (status == RequestStatusEnum.پرداخت_شده && !isFullyPaid))) {
                 <div class="layered-select-box col-auto py-2 px-1 ps-3">
                     <input type="checkbox" class="card-checkbox" />
                 </div>
@@ -162,8 +163,8 @@
                         var percent = reqAmount.AcceptedAmountPercent;
 
                         <div class="input-group">
-                            <input type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
-                            <select class="acceptedAmountPercent form-select form-select-xs" style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount)">
+                            <input disabled="@(!canApproveRequest)" type="text" class="acceptedAmount form-control currencyNumber" min="@item.TotalPaymentAmount" oninput="changeAcceptedRequestAmount(this, @reqAmount.Amount)" value="@(reqAmount.AcceptedAmount > 0 ? $"{reqAmount.AcceptedAmount:n0}" : "")" required data-currency-hint="#reqAmountCurrencyHint@(index)">
+                            <select disabled="@(!canApproveRequest)" class="acceptedAmountPercent form-select form-select-xs" style="@(acceptedAmountPercentList.Contains(percent) ? "background-color: #cef5ce" : "border-color: #b5b5b5");color: #333" onchange="changePercentAcceptedRequestAmount(this, @reqAmount.Amount)">
                                 <option value="" selected="@(percent == 0 ? "selected" : null)">درصد</option>
                                 @foreach (var p in acceptedAmountPercentList) {
                                     <option value="@p" selected="@(percent == p ? "selected" : null)">@p%</option>
@@ -184,7 +185,7 @@
                 @if (item.TotalPaymentAmount > 0) {
                     <div class="w-100 d-flex column-gap-1 flex-row flex-xl-column justify-content-between justify-content-xl-center align-items-center">
                         <span style="font-size: 13px; color: #777">مبلغ پرداخت شده:</span>
-                        <button class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id','@reqAmount.RequestNumber')">
+                        <button disabled="@(!canViewPayment)" data-document-permission="Payment.View" class="fbold flex-center badge badge-green" onclick="ShowModalListPayment('@reqAmount.Id','@reqAmount.RequestNumber')">
                             <span class="d-flex align-items-baseline column-gap-1">
                                 <span style="font-size: 14px;">@($"{item.TotalPaymentAmount:n0}")</span>
                                 <span style="font-size: 10px;">ريال</span>
