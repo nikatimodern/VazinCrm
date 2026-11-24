@@ -111,6 +111,18 @@ public sealed class AccessLiveController(
         var checkbook = await DocumentState("Checkbook", checkbookEnforced, ["View", "Create", "Edit", "Delete"]);
         var checkEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCheckPermissions");
         var check = await DocumentState("Check", checkEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus"]);
+        var transferEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceTransferPermissions");
+        var transfer = await DocumentState("Transfer", transferEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus", "Approve"]);
+        var cashierEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCashierPermissions");
+        var cashier = await DocumentState("Cashier", cashierEnforced, ["View", "Create", "Edit", "Delete"]);
+        var cashEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCashPermissions");
+        var cash = await DocumentState("Cash", cashEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus", "Approve", "ExportExternal"]);
+        var basecashEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceBaseCashPermissions");
+        var basecash = await DocumentState("BaseCash", basecashEnforced, ["View", "Create", "Edit", "Delete"]);
+        var basecentercashEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceBaseCenterCashPermissions");
+        var basecentercash = await DocumentState("BaseCenterCash", basecentercashEnforced, ["View", "Create", "Edit", "Delete"]);
+        var cashgroupEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCashGroupPermissions");
+        var cashgroup = await DocumentState("CashGroup", cashgroupEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Export"]);
         var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
         var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
@@ -119,13 +131,13 @@ public sealed class AccessLiveController(
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced, transfer = transferEnforced, cashier = cashierEnforced, cash = cashEnforced, basecash = basecashEnforced, basecentercash = basecentercashEnforced, cashgroup = cashgroupEnforced },
             customer,
             deal,
             prefactor = preFactor,
             factor,
             cartable,
-            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check
+            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check, transfer, cashier, cash, basecash, basecentercash, cashgroup
         });
     }
 }
