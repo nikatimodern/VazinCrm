@@ -302,6 +302,9 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
                 && request.Status != QualityControlCustomerContactStatus.InvalidNumber))
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
+        if (!await CanAccessSharedCustomerAsync(request.CustomerId, access, cancellationToken))
+            return new(403, "دسترسی کامل به اقلام مشتری برای تغییر وضعیت تماس لازم است.", QualityControlCustomerContactStatus.None);
+
         // Use the same eligibility/role scope as the customer QC queue.
         var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var eligibleItems =
@@ -464,6 +467,8 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         }).FirstOrDefaultAsync(cancellationToken);
         if (totals == null || totals.Total == 0) return null;
 
+        var preFactors = await permissions.PreFactorsAsync(db.PreFactors.AsNoTracking(), "View", cancellationToken);
+        var supplies = await permissions.ApplyAsync(db.Supplies.AsNoTracking(), "View", cancellationToken);
         var filtered = eligible;
         if (request.Status.HasValue)
         {
@@ -483,10 +488,10 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
                 || (row.Item.WeightCount != null && EF.Functions.Like(row.Item.WeightCount, pattern))
                 || (row.Item.SupplierName != null && EF.Functions.Like(row.Item.SupplierName, pattern))
                 || (row.Factor.UserTaminTxt != null && EF.Functions.Like(row.Factor.UserTaminTxt, pattern))
-                || db.PreFactors.AsNoTracking().Any(preFactor =>
+                || preFactors.Any(preFactor =>
                     preFactor.Id == row.Factor.PfactorID
                     && preFactor.UserTaminTxt != null && EF.Functions.Like(preFactor.UserTaminTxt, pattern))
-                || (row.Item.PfItemId.HasValue && db.Supplies.AsNoTracking().Any(supply =>
+                || (row.Item.PfItemId.HasValue && supplies.Any(supply =>
                     supply.PfItemId == row.Item.PfItemId && !supply.IsDeleted
                     && supply.SupplierTxt != null && EF.Functions.Like(supply.SupplierTxt, pattern))));
         }
@@ -568,6 +573,11 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
             return null;
 
         var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
+        var preFactors = await permissions.PreFactorsAsync(db.PreFactors.AsNoTracking(), "View", cancellationToken);
+        var supplies = await permissions.ApplyAsync(db.Supplies.AsNoTracking(), "View", cancellationToken);
+        var heads = await permissions.ApplyAsync(db.OrderHeads.AsNoTracking(), "View", cancellationToken);
+        var supplierInvoices = await permissions.ApplyAsync(db.SupplyFactors.AsNoTracking(), "View", cancellationToken);
+        var warehouseProducts = await permissions.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", cancellationToken);
         var raw = await (
             from item in db.FactorItems.AsNoTracking()
             join factor in visibleFactors on item.factorId equals factor.Id
@@ -584,7 +594,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
                 item.PfItemId, item.SupplierName,
                 DealId = deal.Id, DealSerial = deal.SerialNumber, DealTitle = deal.Title,
                 FactorId = factor.Id, FactorSerial = factor.SerialNumber, FactorDate = factor.Date,
-                PreFactorSupplyExpert = db.PreFactors.Where(preFactor => preFactor.Id == factor.PfactorID)
+                PreFactorSupplyExpert = preFactors.Where(preFactor => preFactor.Id == factor.PfactorID)
                     .Select(preFactor => preFactor.UserTaminTxt).FirstOrDefault(),
                 FactorSupplyExpert = factor.UserTaminTxt
             }).ToListAsync(cancellationToken);
@@ -603,12 +613,12 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
             from allocation in db.SupplyFactorItemAllocations.AsNoTracking()
             where allocation.FactorItemId.HasValue
                 && ids.Contains(allocation.FactorItemId.Value) && allocation.Weight > 0
-            from sourceProduct in db.WarehouseProducts.IgnoreQueryFilters().AsNoTracking()
+            from sourceProduct in warehouseProducts
                 .Where(product => product.Id == allocation.SourceWarehouseProductId).DefaultIfEmpty()
-            from supplyItem in db.SupplyFactorItems.IgnoreQueryFilters().AsNoTracking()
+            from supplyItem in db.SupplyFactorItems.AsNoTracking()
                 .Where(item => (Guid?)item.Id ==
                     (allocation.SupplyFactorItemId ?? sourceProduct.SupplyFactorItemId)).DefaultIfEmpty()
-            from supplyFactor in db.SupplyFactors.IgnoreQueryFilters().AsNoTracking()
+            from supplyFactor in supplierInvoices
                 .Where(factor => supplyItem != null && factor.Id == supplyItem.SupplyFactorId).DefaultIfEmpty()
             where supplyFactor != null && !string.IsNullOrEmpty(supplyFactor.SupplierTxt)
             select new { FactorItemId = allocation.FactorItemId!.Value, supplyFactor.SupplierTxt }
@@ -628,7 +638,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
             ? new List<(Guid PfItemId, string? Expert, string? Supplier)>()
             : (await (
                 from order in db.Orders.AsNoTracking()
-                join head in db.OrderHeads.AsNoTracking() on order.OrderHeadId equals (Guid?)head.Id
+                join head in heads on order.OrderHeadId equals (Guid?)head.Id
                 where order.PreFactorItemId.HasValue && pfItemIds.Contains(order.PreFactorItemId.Value)
                     && !order.IsDeleted && !head.IsDeleted
                 select new { PfItemId = order.PreFactorItemId.Value, Expert = head.UserTaminTxt,
@@ -640,7 +650,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
 
         var pfSupplyLinks = pfItemIds.Length == 0
             ? new List<(Guid PfItemId, string? Supplier)>()
-            : (await db.Supplies.AsNoTracking()
+            : (await supplies
                 .Where(item => item.PfItemId.HasValue && pfItemIds.Contains(item.PfItemId.Value)
                     && !item.IsDeleted && item.SupplierTxt != null)
                 .Select(item => new { PfItemId = item.PfItemId!.Value, Supplier = item.SupplierTxt })
@@ -775,7 +785,9 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
 
         // A successful QC result supersedes a previous unreachable/invalid-number mark.
         // Save both changes in the same EF transaction so the queue never retains both.
-        if (inputs.Any(input => input.Status != QualityControlStatus.NotReviewed))
+        if (inputs.Any(input => input.Status != QualityControlStatus.NotReviewed)
+            && await permissions.HasAsync("QualityControl", "SetContactStatus", cancellationToken)
+            && await CanAccessSharedCustomerAsync(request.CustomerId, access, cancellationToken))
         {
             var contact = await db.QualityControlCustomerContacts
                 .FirstOrDefaultAsync(item => item.CustomerId == request.CustomerId, cancellationToken);
@@ -988,6 +1000,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
     private async Task<bool> IsHistoryCustomerVisibleAsync(Guid customerId, QualityControlAccess access,
         CancellationToken ct)
     {
+        if (!await CanAccessSharedCustomerAsync(customerId, access, ct)) return false;
         var visibleFactors = await VisibleFactorsAsync(access, ct);
         return await (
             from item in db.FactorItems.AsNoTracking()
@@ -1125,6 +1138,23 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         }
 
         return new(200, request.Restore ? "سابقه تماس بازگردانی شد." : "سابقه تماس با حفظ اطلاعات حذف ثبت شد.");
+    }
+
+    // Customer-level history and contact state are shared by all eligible invoices.
+    private async Task<bool> CanAccessSharedCustomerAsync(Guid customerId, QualityControlAccess access, CancellationToken ct)
+    {
+        if (!permissions.IsEnforced("QualityControl")) return true;
+        var visibleFactors = await VisibleFactorsAsync(access, ct);
+        var eligible = from item in db.FactorItems.AsNoTracking()
+                       join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+                       join deal in db.Deals.AsNoTracking() on factor.DealId equals (Guid?)deal.Id
+                       where (factor.CustomerId ?? deal.CustomerId) == customerId
+                           && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
+                           && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
+                           && factor.status == FactorStatus.تایید_شده && !factor.Returned
+                       select factor.Id;
+        return await eligible.AnyAsync(ct)
+            && !await eligible.AnyAsync(id => !visibleFactors.Any(f => f.Id == id), ct);
     }
 
     // Keep all QC entry points on the same parent-record boundary before aggregation or mutation.

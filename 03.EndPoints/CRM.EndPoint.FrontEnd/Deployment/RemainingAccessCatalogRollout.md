@@ -47,3 +47,7 @@ No additional enforcement flags were enabled. Development remains at 25 enabled 
 ## QC parent-scope hardening
 
 All six invoice-item query paths now share a parent visibility filter when QualityControl enforcement is enabled. Customer.View (including exclusions), Deal.View and Factor.View are intersected before list aggregation, item reads, contact eligibility, review writes and note/history eligibility. The existing disabled-flag behavior is preserved. QC roles must be granted the required parent read permissions before enabling this flag; no grants are automatically widened. Shared customer-wide state and supplier enrichment, UI and SQL Server integration tests remain rollout gates. The flag is intentionally unchanged.
+
+## QC related sources and shared state
+
+Supplier enrichment and search use the existing document read filters for pre-invoices, supplies, production heads, supplier invoices and warehouse products. Sales invoice snapshot fields remain visible as part of the authorized sales invoice. Customer-wide notes/history and contact mutations require visibility of every eligible invoice, not merely one. Item review retains its existing per-item eligibility; automatic contact clearing additionally requires SetContactStatus and complete customer eligibility. Queue-level contact metadata remains a separate review item. SQL Server integration checks and activation remain pending.
