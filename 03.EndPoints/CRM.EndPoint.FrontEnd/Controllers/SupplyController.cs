@@ -108,20 +108,42 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
         return parent.HasValue && await CanSupplyFactor(action, parent.Value, ct);
     }
 
+    private async Task<bool> CanAllocationFactor(Guid? itemId, CancellationToken ct)
+    {
+        if (!itemId.HasValue || !documentAccess.IsEnforced("Factor")) return true;
+        var parent = await db.FactorItems.AsNoTracking().Where(x => x.Id == itemId.Value)
+            .Select(x => (Guid?)x.factorId).FirstOrDefaultAsync(ct);
+        return parent.HasValue && await documentAccess.CanAsync("Factor", "Edit", parent.Value, ct);
+    }
+
+    private async Task<bool> CanAllocationWarehouse(Guid? warehouseId, Guid? productId, CancellationToken ct)
+    {
+        if (warehouseId.HasValue && !await documentAccess.CanAsync("Warehouse", "View", warehouseId.Value, ct)) return false;
+        if (productId.HasValue && !await documentAccess.CanAsync("WarehouseProduct", "View", productId.Value, ct)) return false;
+        return true;
+    }
+
     private async Task<bool> CanAllocation(SupplyFactorAllocationRequest model, CancellationToken ct)
     {
         if (model == null) return false;
-        if (!await CanSupplyItem("ManageAllocations", model.SupplyFactorItemId, ct)) return false;
-        if (model.FactorItemId.HasValue && documentAccess.IsEnforced("Factor"))
+        if (!await CanAllocationWarehouse(model.WarehouseId, model.SourceWarehouseProductId, ct) ||
+            !await CanAllocationFactor(model.FactorItemId, ct)) return false;
+        if (model.SupplyFactorItemId != Guid.Empty && !await CanSupplyItem("ManageAllocations", model.SupplyFactorItemId, ct)) return false;
+        if (model.SourceWarehouseProductId.HasValue)
         {
-            var parent = await db.FactorItems.AsNoTracking().Where(x => x.Id == model.FactorItemId).Select(x => (Guid?)x.factorId).FirstOrDefaultAsync(ct);
-            if (!parent.HasValue || !await documentAccess.CanAsync("Factor", "Edit", parent.Value, ct)) return false;
+            var source = await db.WarehouseProducts.AsNoTracking().Where(p => p.Id == model.SourceWarehouseProductId.Value)
+                .Select(p => p.SupplyFactorItemId).FirstOrDefaultAsync(ct);
+            if (!source.HasValue || !await CanSupplyItem("ManageAllocations", source.Value, ct)) return false;
         }
-        if (model.Id != Guid.Empty && documentAccess.IsEnforced("SupplyFactor"))
+        if (model.Id != Guid.Empty)
         {
             var old = await db.SupplyFactorItemAllocations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
-            if (old == null || !old.SupplyFactorItemId.HasValue || !await CanSupplyItem("ManageAllocations", old.SupplyFactorItemId.Value, ct)) return false;
+            if (old == null || !old.SupplyFactorItemId.HasValue ||
+                !await CanSupplyItem("ManageAllocations", old.SupplyFactorItemId.Value, ct) ||
+                !await CanAllocationFactor(old.FactorItemId, ct) ||
+                !await CanAllocationWarehouse(old.WarehouseId, old.SourceWarehouseProductId, ct)) return false;
         }
+        else if (model.SupplyFactorItemId == Guid.Empty && !model.SourceWarehouseProductId.HasValue) return false;
         return true;
     }
 
