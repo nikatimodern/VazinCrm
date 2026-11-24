@@ -96,6 +96,13 @@ public sealed class DocumentAccessPolicy(
         return await query.AnyAsync(ct);
     }
 
+    public async Task<bool> CanChatAsync(Guid id, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(UserId) || !await HasAsync("Chat", "View", ct)) return false;
+        return await db.Chats.AsNoTracking().AnyAsync(m => m.Id == id &&
+            db.MainChats.Any(c => c.Id == m.MainChatId && (c.FromUserId == UserId || c.ToUserId == UserId)), ct);
+    }
+
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
     {
         if (!IsEnforced(entity)) return true;
