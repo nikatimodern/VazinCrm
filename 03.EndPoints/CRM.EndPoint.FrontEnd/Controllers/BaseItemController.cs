@@ -35,6 +35,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [Authorize(Roles = "مدیر ارشد, مدیر فروش, مدیر تامین, مدیر مالی")]
+        [CatalogPermission("BaseItem", "View")]
         public IActionResult Index()
         {
             return View();
@@ -55,12 +56,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return View(model);
         }
 
+        [CatalogPermission("Company", "View")]
         public async Task<IActionResult> getCompany()
         {
             var data = await db.Companies.Include(f => f.CompanyFiles).FirstOrDefaultAsync();
             return Ok(data);
         }
 
+        [CatalogPermission("Company", "Edit")]
         public async Task<IActionResult> addCompany(Company model)
         {
             db.CompanyFile.RemoveRange(db.CompanyFile.ToList());
@@ -74,6 +77,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok();
         }
 
+        [CatalogPermission("BaseItem", "View")]
         public async Task<IActionResult> GetItemsOp(int typeCode)
         {
             var data = await db.BaseItems
@@ -87,6 +91,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
+        [CatalogPermission("Product", "View")]
         public async Task<IActionResult> getAllProduct()
         {
             try
@@ -150,6 +155,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [CatalogPermission("BaseItem", "View")]
         public async Task<IActionResult> GetAllFamillyWay()
         {
             try
@@ -213,6 +219,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [CatalogPermission("BaseItem", "View")]
         public async Task<IActionResult> GetAllSenf()
         {
             try
@@ -276,6 +283,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [CatalogPermission("BaseItem", "Create")]
         public async Task<IActionResult> AddItem(BaseItem model)
         {
             using var transaction = db.Database.BeginTransaction();
@@ -295,6 +303,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [HttpPost]
+        [CatalogPermission("Product", "Create")]
         public async Task<IActionResult> AddProduct(Product model)
         {
             db.Products.Add(model);
