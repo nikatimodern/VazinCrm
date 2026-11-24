@@ -5,14 +5,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSmsTabs();
     initSmsReportsTable();
     initSmsReceivesTable();
-    await loadSmsDashboard();
+    if (!document.querySelector('[data-sms-dashboard]')?.classList.contains('d-none')) await loadSmsDashboard();
     
-    document.getElementById("patternTypeFilter").addEventListener("change", () => {
-        $("#smsReportsTable").DataTable().ajax.reload();
+    document.getElementById("patternTypeFilter")?.addEventListener("change", () => {
+        if ($.fn.DataTable.isDataTable("#smsReportsTable")) $("#smsReportsTable").DataTable().ajax.reload();
     });
 });
 
-syncReceivesBtn.addEventListener("click", async () => {
+syncReceivesBtn?.addEventListener("click", async () => {
+    if (window.AccessLive?.can("ReceivedSms", "sync") === false || syncReceivesBtn.classList.contains("d-none")) return;
     const spinner = syncReceivesBtn.querySelector(".spinner-border");
     const syncIcon = syncReceivesBtn.querySelector(".sync-icon");
     
@@ -36,7 +37,8 @@ syncReceivesBtn.addEventListener("click", async () => {
 });
 
 
-syncSentSmsBtn.addEventListener("click", async () => {
+syncSentSmsBtn?.addEventListener("click", async () => {
+    if (window.AccessLive?.can("SentSms", "sync") === false || syncSentSmsBtn.classList.contains("d-none")) return;
     const spinner = syncSentSmsBtn.querySelector(".spinner-border");
     const syncIcon = syncSentSmsBtn.querySelector(".sync-icon");
     
@@ -63,6 +65,7 @@ syncSentSmsBtn.addEventListener("click", async () => {
 function initSmsTabs() {
     document.querySelectorAll(".sms-tab").forEach(tab => {
         tab.addEventListener("click", () => {
+            if (document.getElementById(tab.dataset.target)?.dataset.smsCanView !== "true") return;
             document.querySelectorAll(".sms-tab").forEach(x => x.classList.remove("active"));
             document.querySelectorAll(".sms-tab-content").forEach(x => x.classList.add("d-none"));
             
@@ -104,6 +107,7 @@ function initSmsTabTable(target) {
 
 
 function initSmsReportsTable() {
+    if (document.getElementById("reportsTab")?.dataset.smsCanView !== "true") return;
     if ($.fn.DataTable.isDataTable("#smsReportsTable"))
         return;
     
@@ -155,6 +159,7 @@ function initSmsReportsTable() {
 
 
 function initSmsReceivesTable() {
+    if (document.getElementById("receivesTab")?.dataset.smsCanView !== "true") return;
     if ($.fn.DataTable.isDataTable("#smsReceivesTable"))
         return;
     
