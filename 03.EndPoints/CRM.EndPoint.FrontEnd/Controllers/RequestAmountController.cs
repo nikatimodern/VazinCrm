@@ -120,8 +120,19 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         }
         if (access.IsEnforced("Payment"))
         {
+            // Do not allow the request-payment workflow to take over a legacy supply payment.
+            if (model.PaymentSupplyFactors?.Any() == true ||
+                (model.Id != Guid.Empty && await db.PaymentSupplyFactors.AnyAsync(x => x.PaymentId == model.Id, ct))) return false;
+            if (model.Id != Guid.Empty)
+            {
+                var old = await db.Payments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
+                if (old == null) return false;
+                model.UserCreatorID = old.UserCreatorID;
+                model.UserCreator = old.UserCreator;
+                model.IsDeleted = old.IsDeleted;
+            }
+            else model.IsDeleted = false;
             model.PaymentSupplyFactors = null;
-            model.IsDeleted = false;
             foreach (var attachment in model.Attachments ?? [])
                 if (attachment.Id != Guid.Empty && !await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == attachment.Id && x.EntityId == model.Id, ct)) return false;
         }
@@ -196,6 +207,8 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     public async Task<IActionResult> DeletePayment(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Payment", "Delete", id, ct)) return Forbid();
+        if (access.IsEnforced("Payment") && (!await db.RequestAmountPayments.AnyAsync(x => x.PaymentId == id, ct) ||
+            await db.PaymentSupplyFactors.AnyAsync(x => x.PaymentId == id, ct))) return Forbid();
         foreach (var requestId in await db.RequestAmountPayments.Where(x => x.PaymentId == id).Select(x => x.RequestAmountId).ToListAsync(ct))
             if (!await Can("Pay", requestId, ct)) return Forbid();
         return Map(await dispatcher.CommandAsync(new DeletePaymentCommand(id), ct));
@@ -208,7 +221,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     [HttpPost]
     public async Task<IActionResult> GetAllPaymentsByRequestAmount([FromQuery] Guid id, CancellationToken ct)
     {
-        if (!await Can("View", id, ct)) return Forbid();
+        if (!await Can("View", id, ct) || !await access.HasViewAsync("Payment", ct)) return Forbid();
         return Json(await dispatcher.QueryAsync(new GetRequestPaymentsTableQuery(id, await ReadTableAsync(ct)), ct));
     }
     public async Task<IActionResult> GetAllRequestAmountsPartial(int type = -1, string search = "", Guid? orderHeadId = null, CancellationToken ct = default)
@@ -227,9 +240,9 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     public async Task<IActionResult> GetRequestsAmountByFilteredIds([FromBody] GetAllBySelectedVModel model, CancellationToken ct)
     {
         if (model == null) return BadRequest();
-        if (!await access.HasViewAsync("RequestAmount", ct)) return Forbid();
+        if (!await access.HasViewAsync("RequestAmount", ct) || !await access.HasAsync("Payment", "Create", ct)) return Forbid();
         foreach (var id in model.FilterIds ?? [])
-            if (!await Can("View", id, ct)) return Forbid();
+            if (!await Can("Pay", id, ct)) return Forbid();
         var data = await dispatcher.QueryAsync(new GetSelectedRequestsQuery(model.FilterIds ?? []), ct);
         return data.Error == null ? Ok(data.Data) : BadRequest(data.Error);
     }
