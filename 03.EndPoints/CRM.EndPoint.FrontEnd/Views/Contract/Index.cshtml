@@ -34,6 +34,7 @@
             </div>
             <div class=" modal-body" style=" display:flex;flex-direction:column; justify-content:center;align-items:center; width:100% !important;">
                 <form class=" InfoData row col-md-12" id="FormContractId" style="justify-content:center; padding:10px; ">
+                    @Html.AntiForgeryToken()
                     <div class="form-group col-md-4">
                         <label>عنوان قرارداد</label>
                         <input class=" form-control" type="text" name="cTitle" required />
@@ -192,6 +193,27 @@
     <script data-page-bindings="upCont,Attachments,Contract,delContract,editContract,showModalAdd,SubmitContract,GetCustomersOpId,GetAllContract,UpSubmitContract">
         var upCont = null;
         var Attachments = [];
+        let contractBusy = false;
+        let contractGeneration = 0;
+        let contractInvalidated = false;
+        const canContract = action => !contractInvalidated && window.AccessLive?.can("Contract", action) !== false;
+        const contractToken = () => document.querySelector("#FormContractId [name=__RequestVerificationToken]").value;
+        const setContractReadOnly = readOnly => {
+            document.querySelectorAll("#upFormContractId input, #upFormContractId textarea, #upFormContractId select").forEach(input => input.disabled = readOnly);
+            document.querySelector("[onclick='UpSubmitContract()']").hidden = readOnly;
+            const label = document.querySelector("label[for=ContractAtID]");
+            if (label) label.hidden = readOnly;
+        };
+        const invalidateContract = () => {
+            if (!document.getElementById("ContractsId")) return;
+            contractInvalidated = true;
+            contractGeneration++;
+            document.getElementById("ContractsId")?.replaceChildren();
+            setContractReadOnly(true);
+            document.querySelectorAll("#FormContractId input, #FormContractId textarea, #FormContractId select, [onclick='SubmitContract()']").forEach(input => input.disabled = true);
+            document.querySelectorAll("#imageDisplayContract .deleteBtn, #AddimageDisplayContract .deleteBtn").forEach(button => button.remove());
+        };
+        window.addEventListener("erp:access-state", invalidateContract, { signal: window.PageRuntime?.current?.signal });
        
         $(document).ready(() => {
             GetAllContract();
@@ -201,190 +223,93 @@
         })
 
         class Contract {
-            constructor() {
-
-            }
-
             async getContract(id) {
-                return new Promise((resolve, reject) => {
-
-                    document.getElementById("FLshowLoading").style.display = "";
-
-                    $.get(baseUrl + `Contract/GetContract/${id}`, (res) => {
-                        document.getElementById("FLshowLoading").style.display = "none";
-                        Attachments = res.attachments;
-                        document.querySelector("[onclick='UpSubmitContract()']").hidden = res.canEdit === false;
-                        resolve(res);
-                    })
-
-
-                })
+                if (!canContract("View")) return null;
+                const generation = contractGeneration;
+                const data = await sendApiRequest({ url: "/Contract/GetContract/" + encodeURIComponent(id) });
+                return generation === contractGeneration && canContract("View") ? data : null;
             }
             ShowContract(con) {
+                if (!con) return;
+                Attachments = con.attachments || [];
                 mySer.convertJsonToForm(con, "upFormContractId");
-
+                setContractReadOnly(con.canEdit !== true || !canContract("Edit"));
                 FileUpReload("ContractAtID");
-
-                $('#upContractModal').modal('toggle');
-
+                ModalToggle("upContractModal", "show");
             }
-
-
-
-            async del(cid) {
-                return new Promise(async (resolve, reject) => {
-
-                    document.getElementById("FLshowLoading").style.display = "";
-
-                    $.get(baseUrl + `contract/delContract/${cid}`, (res) => {
-
-                        GetAllContract();
-                        resolve()
-
-                    })
-                        .fail(async () => {
-                           
-                            document.getElementById("FLshowLoading").style.display = "none";
-                            toastifyError("حذف قرارداد انجام نشد");
-                            resolve(null);
-                        })
-
-
-
-                })
+            async del(id) {
+                if (!canContract("Delete") || contractBusy) return;
+                contractBusy = true;
+                try {
+                    const response = await sendApiRequest({
+                        url: "/Contract/delContract/" + encodeURIComponent(id), method: "POST",
+                        headers: { RequestVerificationToken: contractToken() }, returnFullResponse: true,
+                        successMsg: "قرارداد حذف شد"
+                    });
+                    if (response) await GetAllContract();
+                } finally { contractBusy = false; }
             }
-
         }
 
-
-        const delContract = (id) => {
-
-            Swal.fire({
-                title: "حذف!",
-                text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
-                icon: "warning",
-                showCancelButton: true,
-                cancelButtonColor: "#adadad",
-                confirmButtonColor: "#e64942",
-                cancelButtonText: "انصراف",
-                confirmButtonText: "بله، حذف شود",
-            })
-                .then(async (willDelete) => {
-
-                    if (willDelete.isConfirmed) {
-                        var co = new Contract();
-                        upCont = await co.del(id)
-                    }
-
-                });
-
-
-
-
-        }
-
-        const editContract = async (id) => {
-
-
-            var co = new Contract();
-            upCont = await co.getContract(id)
-            await co.ShowContract(upCont)
-
-        }
+        const delContract = async id => {
+            if (!canContract("Delete") || contractBusy) return;
+            const result = await Swal.fire({
+                title: "حذف!", text: "آیا مطمئن هستید که میخواهید حذف کنید؟",
+                icon: "warning", showCancelButton: true, confirmButtonText: "بله، حذف شود", cancelButtonText: "انصراف"
+            });
+            if (result.isConfirmed && canContract("Delete")) await new Contract().del(id);
+        };
+        const editContract = async id => {
+            if (contractBusy || !canContract("View")) return;
+            const co = new Contract();
+            const data = await co.getContract(id);
+            if (!data || !canContract("View")) return;
+            upCont = data;
+            co.ShowContract(data);
+        };
         const showModalAdd = () => {
+            if (!canContract("Create") || contractBusy) return;
+            Attachments = [];
             mySer.emptyForm("FormContractId");
-            $("#AddContractModal").modal('show')
-
-        }
-        const SubmitContract = async () => {
-
-
-
-            if (await mySer.CheckValidForm("#FormContractId")) {
-
-                document.getElementById("FLshowLoading").style.display = "";
-                var data = mySer.convertFormToJSON("#FormContractId");
+            FileUpReload("AddContractAtID");
+            ModalToggle("AddContractModal", "show");
+        };
+        const saveContract = async (formId, edit) => {
+            const action = edit ? "Edit" : "Create";
+            if (!canContract(action) || contractBusy || (edit && upCont?.canEdit !== true)) return;
+            if (!await mySer.CheckValidForm("#" + formId) || !canContract(action) || contractBusy) return;
+            contractBusy = true;
+            try {
+                const data = mySer.convertFormToJSON("#" + formId);
+                delete data.__RequestVerificationToken;
+                if (edit) data.id = upCont.id;
                 data.Attachments = Attachments;
-
-                $.post(baseUrl + "Contract/AddContract", data, (res) => {
-                    document.getElementById("FLshowLoading").style.display = "none";
-                    if (res.status) {
-                        toastifySuccess("ثبت شد")
-                        mySer.emptyForm("FormContractId");
-                        Attachments = [];
-                        $('#AddContractModal').modal('toggle')
-                        document.getElementById("imageDisplayContract").innerHTML = "";
-                        GetAllContract();
-                    }
-                    else {
-                        toastifyError("مقادیر اجباری را وارد کنید")
-                    }
-                })
-                    .fail(() => {
-                        document.getElementById("FLshowLoading").style.display = "none";
-                        toastifyError("ثبت قرارداد انجام نشد");
-                    })
-            }
-        }
-        const GetCustomersOpId = () => {
-            $.get(baseUrl + "order/GetCustomersOpId", (res) => {
-                $("#customer").select2({
-                    data: res,
-                    dir: "rtl",
-                    placeholder: "انتخاب",
-                    selectionCssClass: "form-control"
+                const response = await new Promise(resolve => {
+                    $.ajax({
+                        url: "/Contract/AddContract", method: "POST", data,
+                        headers: { RequestVerificationToken: contractToken() }
+                    }).done(resolve).fail(() => resolve(null));
                 });
-                $("#customer").val(null).trigger('change');
-            })
-        }
-        const GetAllContract = () => {
-
-            document.getElementById("FLshowLoading").style.display = "";
-
-
-            document.getElementById("ContractsId").innerHTML = "";
-
-            $.get(baseUrl + "contract/GetAllContract", (res) => {
-
-
-                $("#ContractsId").append(res);
-                document.getElementById("FLshowLoading").style.display = "none";
-
-            })
-
-
-
-        }
-
-        const UpSubmitContract =async () => {
-
-            if (await mySer.CheckValidForm("#upFormContractId")) {
-                document.getElementById("FLshowLoading").style.display = "";
-                var data = mySer.convertFormToJSON("#upFormContractId");
-                data.id = upCont.id;
-                data.Attachments = Attachments;
-
-                $.post(baseUrl + "Contract/AddContract", data, (res) => {
-                    document.getElementById("FLshowLoading").style.display = "none";
-                    if (res.status) {
-                        toastifySuccess("ویرایش انجام شد")
-                        mySer.emptyForm("upFormContractId");
-                        $('#upContractModal').modal('toggle')
-                        GetAllContract();
-                    }
-                    else {
-                        toastifyError("مقادیر اجباری را وارد کنید")
-                    }
-                })
-                    .fail(() => {
-                        document.getElementById("FLshowLoading").style.display = "none";
-                        toastifyError("ویرایش قرارداد انجام نشد");
-                    })
-
+                if (response?.status === true) {
+                    toastifySuccess(edit ? "ویرایش انجام شد" : "ثبت شد");
+                    Attachments = [];
+                    ModalToggle(edit ? "upContractModal" : "AddContractModal", "hide");
+                    await GetAllContract();
+                } else toastifyError("ثبت قرارداد انجام نشد");
+            } finally { contractBusy = false; }
+        };
+        const SubmitContract = () => saveContract("FormContractId", false);
+        const UpSubmitContract = () => saveContract("upFormContractId", true);
+        const GetCustomersOpId = () => {};
+        const GetAllContract = async () => {
+            if (!canContract("View")) return;
+            const generation = contractGeneration;
+            const html = await sendApiRequest({ url: "/Contract/GetAllContract", responseType: "text" });
+            if (html != null && generation === contractGeneration && canContract("View")) {
+                const container = document.getElementById("ContractsId");
+                if (container) container.innerHTML = html;
             }
-
-
-        }
+        };
 
 
     </script>

@@ -69,6 +69,7 @@ async function processUploadFiles(files, listName, previewIndex, containerUpload
     if (!files?.length) return;
     
     const input = uploadButtons[previewIndex];
+    if (!input || input.disabled) return;
     const isMultiple = input?.multiple;
     if (!isMultiple) {
         const list = window[listName];
@@ -129,7 +130,7 @@ const ShowPreview = (indexEle) => {
     previewContainer.innerHTML = "";
     ListAttach.forEach((fileItem, key) => {
         if (!fileItem.isDeleted) {
-            const showDelete = !fileItem.filename.includes("_AcPfactorByCustomer_")
+            const showDelete = !item.disabled && !fileItem.filename.includes("_AcPfactorByCustomer_")
                 && !(fileItem.filename.includes("_AcPfactorBySalesExpert_") && listName === "paymentReceiptList")
                 && !(fileItem.filename.includes("_APayPrefactor_") && listName === "paymentReceiptList");
             const showWatermark =
@@ -354,6 +355,7 @@ function createImageBox(fileItem, key = null, indexEle = null, showDelete = fals
 
 const delFile = (index, indexEle) => {
     const item = uploadButtons[indexEle];
+    if (!item || item.disabled) return;
     const listName = item.getAttribute("data-varList");
     const list = window[listName];
     if (!list) return;

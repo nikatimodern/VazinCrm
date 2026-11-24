@@ -31,19 +31,20 @@ public sealed class PrivateAttachmentAccessMiddleware(RequestDelegate next)
         var type = isChat ? _AttachType.Chat : _AttachType.ContractAttach;
         var ct = context.RequestAborted;
         var candidates = await db.Attachments.AsNoTracking()
-            .Where(x => x._AttachType == type && x.EntityId.HasValue && x.Url != null &&
+            .Where(x => !x.IsDeleted && x._AttachType == type && x.EntityId.HasValue && x.Url != null &&
                 (x.Url.Replace("\\", "/") == path || x.Url.Replace("\\", "/") == path.Substring(1)))
             .Select(x => x.EntityId.Value).Distinct().Take(2).ToListAsync(ct);
         var permitted = candidates.Count == 1 && (isChat
             ? await access.CanChatAsync(candidates[0], ct)
             : !context.User.IsInRole("مشتری") && await access.CanAsync("Contract", "View", candidates[0], ct)
-                && await db.Contracts.AsNoTracking().AnyAsync(c => c.Id == candidates[0], ct));
+                && await db.Contracts.AsNoTracking().AnyAsync(c => c.Id == candidates[0] && !c.IsDeleted, ct));
         if (!permitted)
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
 
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         await next(context);
     }
 }
