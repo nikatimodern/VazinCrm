@@ -546,9 +546,13 @@ const callBackCashFilter = () => {
 
 
 const initCashierBalanceUI = (data) => {
-    if (!data) return;
-    
     const container = document.getElementById("cashBalanceContainer");
+    if (!container) return;
+    if (!data) { container.replaceChildren(); return; }
+    if (data.totalCredit == null || data.totalDebit == null) {
+        container.textContent = "دسترسی به مانده کامل تنخواه ندارید.";
+        return;
+    }
     
     const balance = data.totalCredit - data.totalDebit;
     let statusClass = "";
