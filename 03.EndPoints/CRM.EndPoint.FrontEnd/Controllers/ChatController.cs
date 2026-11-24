@@ -24,6 +24,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
+[Authorize]
 [CatalogPermission("Chat")]
 public class ChatController : Controller {
     private readonly DateTimeServices dtService;
@@ -266,8 +267,10 @@ public class ChatController : Controller {
             var text = model.Chat?.Text?.Trim();
             var chats = new List<Chat>();
 
-            if (model.Attachments.Any())
+            if (model.Attachments?.Any() == true)
             {
+                // New messages may upload new files only, never mutate existing attachment IDs.
+                if (model.Attachments.Any(a => a.Id != Guid.Empty || a.IsDeleted)) return BadRequest();
                 var attachments = fileSaver.SaveAttachments(model.Attachments, _AttachType.Chat);
 
                 foreach (var att in attachments ?? [])
