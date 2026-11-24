@@ -63,9 +63,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             return Ok(data);
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
         [CatalogPermission("Company", "Edit")]
-        public async Task<IActionResult> addCompany(Company model)
+        public async Task<IActionResult> addCompany([FromBody] Company model)
         {
+            if (model == null || !ModelState.IsValid) return BadRequest();
+            var current = await db.Companies.AsNoTracking().Select(x => x.Id).Take(2).ToListAsync();
+            if (current.Count != 1 || current[0] != model.Id) return Conflict("اطلاعات شرکت تغییر کرده است؛ صفحه را تازه‌سازی کنید.");
             db.CompanyFile.RemoveRange(db.CompanyFile.ToList());
             foreach (var item in model.CompanyFiles ?? Enumerable.Empty<CompanyFile>())
             {
@@ -291,9 +295,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
         [CatalogPermission("BaseItem", "Create")]
         public async Task<IActionResult> AddItem(BaseItem model)
         {
+            if (model == null || !ModelState.IsValid || string.IsNullOrWhiteSpace(model.Title) || !Enum.IsDefined(model.TypeCode)) return BadRequest();
+            model.Id = Guid.NewGuid();
+            model.Title = model.Title.Trim();
+            model.TypeTxt = model.TypeCode.ToString().Replace("_", " ");
             using var transaction = db.Database.BeginTransaction();
             try
             {

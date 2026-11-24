@@ -1,13 +1,19 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy ExternalAccess
 @{
     ViewData["Title"] = "مدیریت نرم‌افزارهای مالی";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var create = await ExternalAccess.HasAsync("ExternalSoftware", "Create", Context.RequestAborted);
+    var edit = await ExternalAccess.HasAsync("ExternalSoftware", "Edit", Context.RequestAborted);
+    var delete = await ExternalAccess.HasAsync("ExternalSoftware", "Delete", Context.RequestAborted);
+    var settings = await ExternalAccess.HasAsync("ExternalSoftware", "ManageSettings", Context.RequestAborted);
+    var mapping = User.IsInRole("مدیر ارشد") && await ExternalAccess.HasAsync("ExternalMapping", "View", Context.RequestAborted);
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.14" asp-append-version="true" />
 }
 
-<section id="settingsConnectionsWorkspace" class="crm-settings-theme crm-operations-theme" dir="rtl">
+<section id="settingsConnectionsWorkspace" data-create="@create.ToString().ToLowerInvariant()" data-edit="@edit.ToString().ToLowerInvariant()" data-delete="@delete.ToString().ToLowerInvariant()" data-manage-settings="@settings.ToString().ToLowerInvariant()" data-mapping="@mapping.ToString().ToLowerInvariant()" class="crm-settings-theme crm-operations-theme" dir="rtl">
     @Html.AntiForgeryToken()
 
     <header class="esw-page-header">
@@ -17,10 +23,12 @@
                 <h1>مدیریت نرم‌افزارهای مالی</h1>
             </div>
         </div>
+        @if (create) {
         <button id="addExternalSoftwareBtn" type="button" class="esw-btn esw-btn-primary">
             <i class="fas fa-plus-circle" aria-hidden="true"></i>
             افزودن نرم‌افزار
         </button>
+        }
     </header>
 
     <section class="esw-workspace" aria-labelledby="eswSoftwareHeading">
@@ -160,6 +168,7 @@
             const root = document.getElementById("settingsConnectionsWorkspace");
             if (!root || root.dataset.initialized) return;
             root.dataset.initialized = "1";
+            const can = key => root.dataset[key[0].toLowerCase() + key.slice(1)] === "true" && window.AccessLive?.can("ExternalSoftware", key) !== false;
 
             const get = id => document.getElementById(id);
             const list = get("managedExternalSoftwareList");
@@ -278,10 +287,8 @@
                 footer.className = "esw-card-footer";
                 const cardTools = document.createElement("div");
                 cardTools.className = "esw-card-tools";
-                cardTools.append(
-                    makeButton("edit", "ویرایش", "esw-btn-edit", "fas fa-edit", item),
-                    makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item)
-                );
+                if (can("Edit")) cardTools.append(makeButton("edit", "ویرایش", "esw-btn-edit", "fas fa-edit", item));
+                if (can("Delete")) cardTools.append(makeButton("delete", "حذف", "esw-btn-danger", "fas fa-trash-alt", item));
                 const navigation = document.createElement("div");
                 navigation.className = "esw-card-navigation";
                 const settingsLink = document.createElement("a");
@@ -289,8 +296,8 @@
                 settingsLink.href = "/ExternalSoftware/Settings?softwareId=" + encodeURIComponent(item.id);
                 settingsLink.append(icon("fas fa-cogs"), document.createTextNode("تنظیمات نرم‌افزار"));
                 settingsLink.setAttribute("aria-label", "تنظیمات نرم‌افزار " + (item.title || ""));
-                navigation.append(settingsLink);
-                if (item.canMap) {
+                if (can("ManageSettings")) navigation.append(settingsLink);
+                if (item.canMap && root.dataset.mapping === "true" && window.AccessLive?.can("ExternalMapping", "View") !== false) {
                     const link = document.createElement("a");
                     link.className = "esw-btn esw-btn-primary esw-card-link";
                     link.href = "/ExternalSoftware/Mapping?softwareId=" + encodeURIComponent(item.id);
@@ -409,14 +416,14 @@
                 bootstrap.Modal.getOrCreateInstance(deleteModal).show();
             }
 
-            root.querySelector("#addExternalSoftwareBtn").addEventListener("click", () => openEditor(null));
+            root.querySelector("#addExternalSoftwareBtn")?.addEventListener("click", () => { if (can("Create")) openEditor(null); });
             list.addEventListener("click", event => {
                 const button = event.target.closest("button[data-action][data-software-id]");
                 if (!button) return;
                 const item = itemsById.get(String(button.dataset.softwareId).toLowerCase());
                 if (!item) return;
-                if (button.dataset.action === "edit") openEditor(item);
-                if (button.dataset.action === "delete") openDelete(item);
+                if (button.dataset.action === "edit" && can("Edit")) openEditor(item);
+                if (button.dataset.action === "delete" && can("Delete")) openDelete(item);
             });
             typeSelect.addEventListener("change", updateBaseField);
             form.addEventListener("change", event => {
@@ -441,7 +448,7 @@
 
             form.addEventListener("submit", async event => {
                 event.preventDefault();
-                if (busy || !form.reportValidity()) return;
+                if (busy || !can(editingItem ? "Edit" : "Create") || !form.reportValidity()) return;
                 busy = true;
                 submit.disabled = true;
                 setMessage(formFeedback, "");
@@ -480,7 +487,7 @@
             });
             deleteForm.addEventListener("submit", async event => {
                 event.preventDefault();
-                if (busy || deleteSubmit.disabled || !deletingItem) return;
+                if (busy || !can("Delete") || deleteSubmit.disabled || !deletingItem) return;
                 busy = true;
                 deleteSubmit.disabled = true;
                 setMessage(deleteFeedback, "");

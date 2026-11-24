@@ -10,6 +10,8 @@
 ﻿@{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var canEditCompany = await DocumentAccess.HasAsync("Company", "Edit", Context.RequestAborted) && await DocumentAccess.HasAsync("Company", "View", Context.RequestAborted);
+    var canCreateBaseItems = await DocumentAccess.HasAsync("BaseItem", "Create", Context.RequestAborted);
     var canManageBankAccounts = User.IsAdmin() || User.IsManagingDirector() || User.IsFinancialAdmin() || User.IsFinancialExpert();
     var canViewProducts = await DocumentAccess.HasAsync("Product", "View", Context.RequestAborted);
     var canCreateProducts = canViewProducts && await DocumentAccess.HasAsync("Product", "Create", Context.RequestAborted);
@@ -19,6 +21,7 @@
 }
 
 <div id="settingsCompanyWorkspace" class="crm-settings-theme crm-operations-theme">
+    @Html.AntiForgeryToken()
     <div class="col-12" style="display:flex; flex-flow:wrap">
         <div class="col-12 col-xl-4 pt-0" style="padding:4px">
             <label style="font-family:IRANSansBold!important;font-size:large">اصناف</label>
@@ -26,7 +29,7 @@
 
                 <form id="formSenfId" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
                     <input class="form-control w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت صنف" required />
-                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formSenfSubmit()">ثبت</span>
+                    @if (canCreateBaseItems) { <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" data-document-permission="BaseItem.Create" onclick="formSenfSubmit()">ثبت</span> }
                 </form>
 
                 <div class="line my-3" style="border-bottom-color: #aaa"></div>
@@ -50,7 +53,7 @@
             <div class="InfoData base-item-list-panel" style="width:100%;min-height:430px;">
                 <form id="formFamilyWay" class="flex-grow-1 w-100 mt-2 d-flex gap-2">
                     <input class="form-control  w-auto flex-grow-1" type="text" name="Title" placeholder="ثبت طریقه آشنایی" required />
-                    <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" onclick="formFamilyWaySubmit()">ثبت</span>
+                    @if (canCreateBaseItems) { <span class="buttonGreen2 d-flex align-items-center justify-content-center" style="width: 3rem" data-document-permission="BaseItem.Create" onclick="formFamilyWaySubmit()">ثبت</span> }
                 </form>
 
                 <div class="line my-3" style="border-bottom-color: #aaa"></div>
@@ -245,7 +248,7 @@
                 </form>
 
                 <div style="width:100%; display:flex;flex-direction:column;justify-content:center;align-items:end;padding-inline: 5px">
-                    <button class="buttonGreen2" style="border-radius:5px;height: 2rem;width: 4rem" onclick="submitCompanyForm()">ثبت</button>
+                    @if (canEditCompany) { <button class="buttonGreen2" style="border-radius:5px;height: 2rem;width: 4rem" data-document-permission="Company.Edit" onclick="submitCompanyForm()">ثبت</button> }
                 </div>
 
             </div>
@@ -688,43 +691,43 @@
             } finally { delete form.dataset.submitting; }
         };
 
-        const formSenfSubmit = () => {
-            if (document.querySelector("#formSenfId input").value.trim()) {
-                let model = mySer.convertFormToJSON("#formSenfId");
+        const formSenfSubmit = async () => {
+            if (!@(canCreateBaseItems ? "true" : "false") || window.AccessLive?.can("BaseItem", "Create") === false) return;
+            const form = document.getElementById("formSenfId");
+            if (!form.querySelector("[name=Title]").value.trim() || form.dataset.submitting === "true") return;
+            form.dataset.submitting = "true";
+            try {
+                const model = mySer.convertFormToJSON("#formSenfId");
                 model.TypeCode = 1;
                 model.TypeTxt = "صنف";
-                $.post(baseUrl + "BaseItem/AddItem", model, (res) => {
-                    AllSenfTbl.ajax.reload(null, false);
-                    mySer.emptyForm("formSenfId");
-
-                })
-                 .fail(() => {
-                     setTimeout(() => {
-                         formSenfSubmit();
-                     }, 1000);
-                 });
-            }
+                const response = await sendApiRequest({ url: "/BaseItem/AddItem", method: "POST",
+                    data: new URLSearchParams(model), returnFullResponse: true,
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": document.querySelector("#settingsCompanyWorkspace [name=__RequestVerificationToken]").value } });
+                if (response) { AllSenfTbl.ajax.reload(null, false); mySer.emptyForm("formSenfId"); }
+            } finally { delete form.dataset.submitting; }
         };
 
 
-        const formFamilyWaySubmit = () => {
-            if (document.querySelector("#formFamilyWay input").value.trim()) {
-                let model = mySer.convertFormToJSON("#formFamilyWay");
+        const formFamilyWaySubmit = async () => {
+            if (!@(canCreateBaseItems ? "true" : "false") || window.AccessLive?.can("BaseItem", "Create") === false) return;
+            const form = document.getElementById("formFamilyWay");
+            if (!form.querySelector("[name=Title]").value.trim() || form.dataset.submitting === "true") return;
+            form.dataset.submitting = "true";
+            try {
+                const model = mySer.convertFormToJSON("#formFamilyWay");
                 model.TypeCode = 2;
                 model.TypeTxt = "طریقه آشنایی";
-                $.post(baseUrl + "BaseItem/AddItem", model, (res) => {
-                    AllFamilyTbl.ajax.reload(null, false);
-                    mySer.emptyForm("formFamilyWay");
-                })
-                 .fail(() => {
-                     setTimeout(() => {
-                         formFamilyWaySubmit();
-                     }, 1000);
-                 });
-            }
+                const response = await sendApiRequest({ url: "/BaseItem/AddItem", method: "POST",
+                    data: new URLSearchParams(model), returnFullResponse: true,
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": document.querySelector("#settingsCompanyWorkspace [name=__RequestVerificationToken]").value } });
+                if (response) { AllFamilyTbl.ajax.reload(null, false); mySer.emptyForm("formFamilyWay"); }
+            } finally { delete form.dataset.submitting; }
         };
 
-        const submitCompanyForm = () => {
+        const submitCompanyForm = async () => {
+            if (!@(canEditCompany ? "true" : "false") || !companyId || window.AccessLive?.can("Company", "Edit") === false) return;
+            const form = document.getElementById("companyForm");
+            if (form.dataset.submitting === "true") return;
             AllImageUp = [];
             if (logo.length != 0) {
                 logo[0].filename = "Logo";
@@ -743,15 +746,12 @@
             var model = mySer.convertFormToJSON("#companyForm");
             model.CompanyFiles = AllImageUp;
             model.id = companyId;
-            document.getElementById("FLshowLoading").style.display = "";
-
-            $.post(baseUrl + "baseItem/addCompany", model, () => {
-                toastifySuccess("ثبت انجام شد");
-                document.getElementById("FLshowLoading").style.display = "none";
-            })
-             .fail(() => {
-                 submitCompanyForm();
-             });
+            form.dataset.submitting = "true";
+            try {
+                await sendApiRequest({ url: "/BaseItem/addCompany", method: "POST", data: model,
+                    headers: { "Content-Type": "application/json", "RequestVerificationToken": document.querySelector("#settingsCompanyWorkspace [name=__RequestVerificationToken]").value },
+                    successMsg: "ثبت انجام شد" });
+            } finally { delete form.dataset.submitting; }
         };
 
         const refreshBankAccountTable = () => AllBankAccountTbl?.ajax.reload(null, false);

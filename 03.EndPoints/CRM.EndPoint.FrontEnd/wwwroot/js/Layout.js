@@ -1383,9 +1383,10 @@ const AcceptSetting = async () => {
         setting = await GetSetting();
     }
     
+    if (!setting) return;
     if (setting.smallOffice) {
         //document.getElementById("divReciveAmountId").style.display = "flex";
-        document.getElementById("PfPrintableAlertId").innerHTML = "";
+        document.getElementById("PfPrintableAlertId")?.replaceChildren();
     }
     
     if (setting.setAmountByRoleType === 2) {
@@ -1400,16 +1401,12 @@ const AcceptSetting = async () => {
 
 
 const GetSetting = async () => {
-    return new Promise((resolve) => {
-        $.get("/ASetting/GetSetting", (res) => {
-            setting = res;
-            document.dispatchEvent(new CustomEvent("settingReady"));
-            resolve(res);
-        })
-         .fail(async () => {
-             setTimeout(async () => await GetSetting(), 3000);
-         });
-    });
+    const result = await sendApiRequest({ url: "/ASetting/GetOperationalSetting", showLoading: false });
+    if (result) {
+        setting = result;
+        document.dispatchEvent(new CustomEvent("settingReady"));
+    }
+    return result;
 };
 
 

@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy SettingAccess
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -6,11 +7,13 @@
 
 ﻿@{
     Layout = "_Layout";
+    var canEdit = await SettingAccess.HasAsync("ASetting", "Edit", Context.RequestAborted);
 }
 
 <div id="settingsBaseWorkspace" class="crm-settings-theme crm-operations-theme d-flex justify-content-center">
     <div class="InfoData col-12 col-md-8 col-xl-6">
         <form id="SettingFormId" class="mx-2 mx-md-3 my-3" style="display:flex;justify-content:end;flex-direction:column;align-items:start;gap:8px;font-size: clamp(14px,1.6vw,16px)">
+            @Html.AntiForgeryToken()
             <div class="d-flex align-items-center gap-1">
                 <input type="checkbox" id="smallOffice" name="smallOffice" value="true" />
                 <label style="cursor:pointer;" for="smallOffice">سازمان کوچک</label>
@@ -108,7 +111,7 @@
         </form>
         
         <div style="display:flex;justify-content:end">
-            <buttom class="buttonGreen3" style="line-height: 1" onclick="submitSetting()">ثبت</buttom>
+            @if (canEdit) { <buttom class="buttonGreen3" data-document-permission="ASetting.Edit" style="line-height: 1" onclick="submitSetting()">ثبت</buttom> }
         </div>
     </div>
 </div>
@@ -117,36 +120,38 @@
 @section Scripts{
     <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("settingsBaseWorkspace")));</script>
 
-    <script data-page-bindings="submitSetting,getSmsService">
+    <script data-page-bindings="submitSetting,getSmsService,managementSetting">
+        let managementSetting = null;
         document.addEventListener("DOMContentLoaded", async () => {
             FLshowLoading();
-            await getSmsService();
-            setting = await GetSetting();
-            mySer.convertJsonToForm(setting, "SettingFormId");
-            FLshowLoading(false);
+            try {
+                await getSmsService();
+                managementSetting = await sendApiRequest({ url: "/ASetting/GetSetting", showLoading: false });
+                if (managementSetting) mySer.convertJsonToForm(managementSetting, "SettingFormId");
+            } finally { FLshowLoading(false); }
         });
 
 
         const submitSetting = async () => {
-            if (!await mySer.CheckValidForm("SettingFormId")) return;
-
-            const data = mySer.convertFormToJSON("SettingFormId");
-
-            if (setting != null) {
-                data.id = setting.id;
-            }
-
-            document.getElementById("FLshowLoading").style.display = "";
-
-            FLshowLoading();
-            $.post(baseUrl + "ASetting/upSetting", data, async (res) => {
-
-                setting = await GetSetting();
-
-                toastifySuccess("عملیات با موفقیت انجام شد");
-                FLshowLoading(false);
-            });
-
+            if (!managementSetting || window.AccessLive?.can("ASetting", "Edit") === false ||
+                !await mySer.CheckValidForm("SettingFormId")) return;
+            const form = document.getElementById("SettingFormId");
+            if (form.dataset.submitting === "true") return;
+            form.dataset.submitting = "true";
+            try {
+                const data = mySer.convertFormToJSON("SettingFormId");
+                data.id = managementSetting.id;
+                const response = await sendApiRequest({
+                    url: "/ASetting/upSetting", method: "POST",
+                    data: new URLSearchParams(data),
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", "RequestVerificationToken": form.querySelector("[name=__RequestVerificationToken]").value },
+                    returnFullResponse: true, successMsg: "عملیات با موفقیت انجام شد"
+                });
+                if (response) {
+                    managementSetting = await sendApiRequest({ url: "/ASetting/GetSetting", showLoading: false });
+                    await GetSetting();
+                }
+            } finally { delete form.dataset.submitting; }
         };
 
         const getSmsService = async () => {
@@ -156,7 +161,7 @@
                 params: { typeCode: 7 },
             });
 
-            smsServiceData = smsServiceData.map((item) => ({ ...item, value: item.id }));
+            smsServiceData = (smsServiceData || []).map((item) => ({ ...item, value: item.id }));
 
             createOption("SmsServiceCodeId", smsServiceData);
         };

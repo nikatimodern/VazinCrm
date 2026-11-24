@@ -18,7 +18,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers
 {
-    [Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Policy = "NotCustomerOnly")]
+    [LegacyCatalogRoles("ExternalSoftware", AppRoles.Admin)]
     public sealed class ExternalSoftwareController : Controller
     {
         private readonly ExternalMappingService mappings;
@@ -37,6 +38,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         // The URL identifies the destination; no client-side software switch is allowed.
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> Mapping(Guid softwareId, CancellationToken ct)
         {
@@ -435,12 +437,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingWorkspaceOptions(CancellationToken ct)
             => Ok(await mappings.GetExternalMappingWorkspaceOptions(ct));
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingReview(Guid softwareId, CancellationToken ct)
         {
@@ -456,6 +460,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetSavedExternalMappings(
             Guid softwareId, int? mapType = null, string search = "",
@@ -474,6 +479,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "Edit")]
         public async Task<IActionResult> GetExternalMappingForEdit(
             Guid softwareId, Guid mappingId, CancellationToken ct)
@@ -494,6 +500,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetManualMappingOptions(
             Guid softwareId, int mapType, string side, string search = "",
@@ -513,6 +520,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpGet]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingTargetDetails(
             Guid softwareId, int mapType, int targetId, string targetEntity = null,
@@ -542,6 +550,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "Delete")]
         public async Task<IActionResult> DeleteExternalMapping(
             [FromBody] DeleteExternalMappingRequest request, CancellationToken ct)
@@ -572,6 +581,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "Edit")]
         public async Task<IActionResult> UpdateExternalMapping(
             [FromBody] ExternalMappingService.UpdateExternalMappingRequest request,
@@ -603,6 +613,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CatalogPermission("ExternalSoftware", "View")]
+        [Authorize(Roles = AppRoles.Admin)]
         [CatalogPermission("ExternalMapping", "Create")]
         public async Task<IActionResult> SaveSelectedExternalMappings(
             [FromBody] ExternalMappingService.SaveExternalMappingsRequest request,

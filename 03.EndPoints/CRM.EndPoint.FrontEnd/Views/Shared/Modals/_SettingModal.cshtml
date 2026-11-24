@@ -2,6 +2,9 @@
 @{
     var canManageReleaseNotes = SettingAccess.IsEnforced("ReleaseNote")
         ? !User.IsCustomer() && await SettingAccess.HasAsync("ReleaseNote", "View", Context.RequestAborted) : User.IsAdmin();
+    var canViewBaseItem = SettingAccess.IsEnforced("BaseItem") ? !User.IsCustomer() && await SettingAccess.HasAsync("BaseItem", "View", Context.RequestAborted) : User.IsAdmin() || User.IsTaminAdmin() || User.IsSalesAdmin() || User.IsFinancialAdmin();
+    var canViewASetting = SettingAccess.IsEnforced("ASetting") ? !User.IsCustomer() && await SettingAccess.HasAsync("ASetting", "View", Context.RequestAborted) : User.IsAdmin();
+    var canViewExternal = SettingAccess.IsEnforced("ExternalSoftware") ? !User.IsCustomer() && await SettingAccess.HasAsync("ExternalSoftware", "View", Context.RequestAborted) : User.IsAdmin();
     var canViewBaseCash = SettingAccess.IsEnforced("BaseCash")
         ? await SettingAccess.HasViewAsync("BaseCash", Context.RequestAborted) : User.IsAdmin() || User.IsFinancial();
     var canViewSentSms = SettingAccess.IsEnforced("SentSms")
@@ -32,7 +35,7 @@
                             کاربران
                         </a>
                     }
-                    @if (User.IsAdmin() || User.IsTaminAdmin() || User.IsSalesAdmin() || User.IsFinancialAdmin()) {
+                    @if (canViewBaseItem) {
                         <a class="buttonGreen-wide" asp-controller="BaseItem" asp-action="Index">
                             <i class="fa fa-building"></i>
                             اطلاعات پایه شرکت
@@ -44,7 +47,7 @@
                             اطلاعات پایه مالی
                         </a>
                     }
-                    @if (User.IsAdmin()) {
+                    @if (canViewASetting) {
                         <a class="buttonGreen-wide" asp-controller="Asetting" asp-action="Index">
                             <i class="fa fa-cog"></i>
                             تنظیمات پایه
@@ -68,7 +71,7 @@
                             مدیریت پیامک
                         </a>
                     }
-                    @if (User.IsAdmin()) {
+                    @if (canViewExternal) {
                         <a class="buttonGreen-wide" asp-controller="ExternalSoftware" asp-action="Index">
                             <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                             مدیریت ارتباطات

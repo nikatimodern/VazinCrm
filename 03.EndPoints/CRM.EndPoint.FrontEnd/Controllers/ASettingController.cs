@@ -44,7 +44,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.documentAccess = documentAccess;
         }
 
-        [Authorize(Roles = "مدیر ارشد")]
+        [LegacyCatalogRoles("ASetting", "مدیر ارشد")]
         [CatalogPermission("ASetting", "View")]
         public IActionResult Index()
         {
@@ -593,14 +593,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
 
-        [Authorize(Roles = "مدیر ارشد")]
+        [LegacyCatalogRoles("ASetting", "مدیر ارشد")]
         [CatalogPermission("ASetting", "Edit")]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> upSetting(ASetting model)
         {
             try
             {
-                db.ASettings.Update(model);
-                await db.SaveChangesAsync();
+                if (model == null || !ModelState.IsValid || model.TaxPercent is < 0 or > 99 ||
+                    !Enum.IsDefined(model.SetAmountByRoleType)) return BadRequest();
+                var current = await db.ASettings.Take(2).ToListAsync();
+                if (current.Count != 1 || current[0].Id != model.Id) return Conflict("تنظیمات تغییر کرده است؛ صفحه را تازه‌سازی کنید.");
+                db.Entry(current[0]).CurrentValues.SetValues(model);
+                await db.SaveChangesAsync(HttpContext.RequestAborted);
                 return Ok();
             }
             catch (Exception)
@@ -609,6 +614,20 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             }
         }
 
+        // Shared operational flags used by the authenticated client; no management row ID or SMS provider.
+        [HttpGet]
+        public async Task<IActionResult> GetOperationalSetting()
+        {
+            return Ok(await db.ASettings.AsNoTracking().Select(x => new {
+                x.SmallOffice, x.SetAmountByRoleType, x.AttAcceptHanding, x.AttPfPayment, x.AttFPayment,
+                x.Sepidar, x.CrmFactors, x.FactorTowStep, x.FinancialConfirm, x.AccountancyRequired,
+                x.CustomerCanChooseInvoiceType, x.SetSupplyAmountByTamin, x.SetSupplyByTamin,
+                x.MultiSelectOrderHeadsInRequestAmount, x.CustomerAssignExpert, x.TaxPercent, x.TaxAfterDiscount
+            }).FirstOrDefaultAsync(HttpContext.RequestAborted));
+        }
+
+        [HttpGet]
+        [LegacyCatalogRoles("ASetting", "مدیر ارشد")]
         [CatalogPermission("ASetting", "View")]
         public async Task<IActionResult> GetSetting()
         {
