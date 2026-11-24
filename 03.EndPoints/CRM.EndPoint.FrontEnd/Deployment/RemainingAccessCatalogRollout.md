@@ -43,3 +43,7 @@ Only SentSms and ReceivedSms are enabled in Development in this batch. The earli
 - Added tests/CRM.AccessCatalog.Checks and .github/workflows/access-catalog-checks.yml. On workflow run 45370240764, architecture and coding-standard checks passed; build and scope execution had not yet been confirmed at the time of this review. JavaScript syntax checks passed for accessLive.js, sms.js, chat.js and the contract inline script. These checks do not establish runtime database authorization or live revocation correctness.
 
 No additional enforcement flags were enabled. Development remains at 25 enabled entities out of 47. Do not merge into main or enable the remaining flags until the remaining implementation and integration checks pass. No production database operations have been performed.
+
+## QC parent-scope hardening
+
+All six invoice-item query paths now share a parent visibility filter when QualityControl enforcement is enabled. Customer.View (including exclusions), Deal.View and Factor.View are intersected before list aggregation, item reads, contact eligibility, review writes and note/history eligibility. The existing disabled-flag behavior is preserved. QC roles must be granted the required parent read permissions before enabling this flag; no grants are automatically widened. Shared customer-wide state and supplier enrichment, UI and SQL Server integration tests remain rollout gates. The flag is intentionally unchanged.

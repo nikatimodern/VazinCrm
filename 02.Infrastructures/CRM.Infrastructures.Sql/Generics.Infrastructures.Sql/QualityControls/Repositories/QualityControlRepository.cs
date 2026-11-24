@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Deals.Entities;
+using CRM.Core.Domain.Factors.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.Domain.Deals.Enums;
 using CRM.Core.Domain.QualityControls.Entities;
 using CRM.Core.Domain.QualityControls.Models;
@@ -16,7 +18,7 @@ using CRM.Core.Domain.Factors.Enum;
 
 namespace CRM.Infrastructures.Sql.QualityControls.Repositories;
 
-public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlRepository
+public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAccess permissions, IAccessScopeService scopes) : IQualityControlRepository
 {
     private const int NoResponseCooldownSeconds = 60;
 
@@ -52,9 +54,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     public async Task<QualityControlCustomerListResult> GetCustomersAsync(
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken)
     {
+        var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var eligible =
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId).HasValue
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
@@ -300,9 +303,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
             return new(400, "مشتری یا وضعیت تماس نامعتبر است.", QualityControlCustomerContactStatus.None);
 
         // Use the same eligibility/role scope as the customer QC queue.
+        var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var eligibleItems =
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             join customer in db.Customers.AsNoTracking()
                 on (factor.CustomerId ?? deal.CustomerId) equals (Guid?)customer.Id
@@ -432,9 +436,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         Guid customerId, QualityControlItemPageRequest request, QualityControlAccess access,
         CancellationToken cancellationToken)
     {
+        var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var eligible =
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             join saved in db.QualityControlItemReviews.AsNoTracking()
                 on item.Id equals saved.FactorItemId into itemReviews
@@ -562,9 +567,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (customer == null)
             return null;
 
+        var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var raw = await (
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == customerId
                 && selectedIds.Contains(item.Id)
@@ -706,9 +712,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         if (!request.SaveAll && inputs.Count != 1)
             return new(400, "برای ثبت یک قلم فقط یک آیتم ارسال کنید.");
 
+        var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
         var allowedIds = await (
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             where (factor.CustomerId ?? deal.CustomerId) == request.CustomerId
                 && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
@@ -981,9 +988,10 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
     private async Task<bool> IsHistoryCustomerVisibleAsync(Guid customerId, QualityControlAccess access,
         CancellationToken ct)
     {
+        var visibleFactors = await VisibleFactorsAsync(access, ct);
         return await (
             from item in db.FactorItems.AsNoTracking()
-            join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
+            join factor in visibleFactors on item.factorId equals factor.Id
             join deal in VisibleDeals(access) on factor.DealId equals (Guid?)deal.Id
             join customer in db.Customers.AsNoTracking()
                 on (factor.CustomerId ?? deal.CustomerId) equals (Guid?)customer.Id
@@ -1117,6 +1125,43 @@ public sealed class QualityControlRepository(CRMContextDb db) : IQualityControlR
         }
 
         return new(200, request.Restore ? "سابقه تماس بازگردانی شد." : "سابقه تماس با حفظ اطلاعات حذف ثبت شد.");
+    }
+
+    // Keep all QC entry points on the same parent-record boundary before aggregation or mutation.
+    private async Task<IQueryable<Factor>> VisibleFactorsAsync(QualityControlAccess access, CancellationToken ct)
+    {
+        var factors = db.Factors.AsNoTracking();
+        if (!permissions.IsEnforced("QualityControl")) return factors;
+
+        var customers = db.Customers.AsNoTracking().Where(c => !c.IsDeleted);
+        var customerScope = await scopes.GetCustomerOwnerAccessAsync(access.UserId, "Customer.View", ct);
+        if (customerScope.AllowedOwnerIds is { } allowedCustomers)
+            customers = customers.Where(c => db.UserCustomers.Any(u =>
+                u.CustomerId == c.Id && allowedCustomers.Contains(u.UserId)));
+        if (customerScope.ExcludedOwnerIds.Length > 0)
+        {
+            var excludedCustomers = customerScope.ExcludedOwnerIds;
+            customers = customers.Where(c => !db.UserCustomers.Any(u =>
+                u.CustomerId == c.Id && excludedCustomers.Contains(u.UserId)));
+        }
+
+        var deals = VisibleDeals(access).Where(d => !d.IsDeleted);
+        var dealScope = await scopes.GetDealOwnerAccessAsync(access.UserId, "Deal.View", ct);
+        if (dealScope.AllowedOwnerIds is { } allowedDeals)
+            deals = deals.Where(d => allowedDeals.Contains(d.UserCreatorID));
+        if (dealScope.ExcludedOwnerIds.Length > 0)
+        {
+            var excludedDeals = dealScope.ExcludedOwnerIds;
+            deals = deals.Where(d => !excludedDeals.Contains(d.UserCreatorID));
+        }
+
+        factors = await permissions.FactorsAsync(factors, "View", ct);
+        return from factor in factors
+               join deal in deals on factor.DealId equals (Guid?)deal.Id
+               where !factor.IsDeleted
+                   && customers.Any(c => c.Id == (factor.CustomerId ?? deal.CustomerId))
+                   && (!deal.CustomerId.HasValue || customers.Any(c => c.Id == deal.CustomerId))
+               select factor;
     }
 
     private IQueryable<Deal> VisibleDeals(QualityControlAccess access) => db.Deals.AsNoTracking()
