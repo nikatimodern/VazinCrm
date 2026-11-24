@@ -18,6 +18,11 @@ public sealed class SaveTaxPreviewCommandHandler(ITaxationRepository repository)
         var preview = InvoicePreview.Build(source, export: export);
         if (string.IsNullOrWhiteSpace(version) || !string.Equals(version, preview.Version, StringComparison.Ordinal))
             throw new TaxPreviewConflictException();
+        return SerializeReady(preview);
+    }
+
+    internal static string SerializeReady(InvoicePreview preview)
+    {
         if (preview.Errors.Count != 0 || preview.MemoryId is null)
             throw new ArgumentException("ابتدا خطاهای پیش‌نمایش را برطرف کنید.");
         return JsonSerializer.Serialize(preview);

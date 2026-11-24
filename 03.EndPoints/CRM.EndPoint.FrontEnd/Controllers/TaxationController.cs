@@ -2,6 +2,8 @@ using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
+using CRM.Core.ApplicationServices.Taxation.Commands.DeactivateTaxMemory;
 using CRM.Core.ApplicationServices.Security;
 using CRM.EndPoint.FrontEnd.Composition;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -50,6 +52,10 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> Activate(Guid id, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(new ActivateTaxMemoryCommand(id), ct));
 
+    [HttpPost("memories/{id:guid}/deactivate")]
+    public Task<IActionResult> Deactivate(Guid id, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new DeactivateTaxMemoryCommand(id), ct));
+
     [HttpPost("product-mappings")]
     public Task<IActionResult> MapProduct(SetTaxProductMappingCommand command, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(command, ct));
@@ -73,6 +79,10 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     [HttpPost("invoices/{id:guid}/queue")]
     public Task<IActionResult> Enqueue(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version, body.Export), ct));
+
+    [HttpPost("invoices/batch/queue")]
+    public Task<IActionResult> EnqueueBatch([FromBody] IReadOnlyList<Guid> factorIds, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceBatchCommand(factorIds, User.FindFirstValue(ClaimTypes.NameIdentifier)), ct));
 
     [HttpPost("dispatches/{id:guid}/references")]
     public Task<IActionResult> EnqueueReference(Guid id, TaxReferenceRequest body, CancellationToken ct) =>

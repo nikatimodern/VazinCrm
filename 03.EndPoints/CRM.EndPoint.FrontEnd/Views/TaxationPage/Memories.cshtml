@@ -1,0 +1,45 @@
+@model IReadOnlyList<CRM.EndPoint.FrontEnd.Models.Taxation.TaxMemoryRow>
+@{
+    ViewData["Title"] = "حافظه‌های مالیاتی";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/taxation.css" asp-append-version="true" />
+}
+<section class="taxation-page" id="taxationAdmin" dir="rtl">
+    <header class="taxation-heading">
+        <h1>حافظه‌های مالیاتی</h1>
+        <a asp-action="Index">بازگشت به فهرست</a>
+    </header>
+    <p>وضعیت گواهی برای Sandbox بررسی می‌شود. ارتباط محیط عملیاتی در این صفحه در دسترس نیست.</p>
+    @Html.AntiForgeryToken()
+    <p data-admin-status role="status"></p>
+    <form method="post" class="taxation-workflow taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
+        <label>شناسه حافظه <input class="form-control form-control-sm" name="fiscalId" required maxlength="6" pattern="[A-Za-z0-9]{6}" dir="ltr" /></label>
+        <label>عنوان حافظه <input class="form-control form-control-sm" name="title" required maxlength="120" /></label>
+        <button type="submit" class="btn btn-sm taxation-action">افزودن حافظه</button>
+    </form>
+    @if (Model.Count == 0)
+    {
+        <p>حافظه‌ای ثبت نشده است.</p>
+    }
+    @foreach (var entry in Model)
+    {
+        var memory = entry.Memory;
+        <article class="taxation-workflow">
+            <h2><bdi dir="ltr">@memory.FiscalId</bdi> · @(memory.IsActive ? "فعال" : "غیرفعال")</h2>
+            <p>@entry.SandboxReadiness</p>
+            <form method="post" class="taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
+                <input type="hidden" name="id" value="@memory.Id" />
+                <input type="hidden" name="fiscalId" value="@memory.FiscalId" />
+                <label>عنوان حافظه <input class="form-control form-control-sm" name="title" value="@memory.Title" maxlength="120" required /></label>
+                <button type="submit" class="btn btn-sm taxation-validate">ذخیره عنوان</button>
+            </form>
+            <form method="post" data-admin-action="state" data-url="@Url.Action(memory.IsActive ? "Deactivate" : "Activate", "Taxation", new { id = memory.Id })">
+                <button type="submit" class="btn btn-sm taxation-validate">@(memory.IsActive ? "غیرفعال کردن" : "فعال کردن")</button>
+            </form>
+        </article>
+    }
+</section>
+@section Scripts {
+    <script src="~/js/taxation-admin.js" asp-append-version="true"></script>
+}

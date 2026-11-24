@@ -48,6 +48,16 @@ public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProte
         await tx.CommitAsync(ct);
     }
 
+    public async Task DeactivateAsync(Guid id, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        await LockAsync(db, "tax-memory-activation", ct);
+        if (!await db.TaxMemories.AnyAsync(x => x.Id == id, ct)) throw new KeyNotFoundException();
+        await db.TaxMemories.Where(x => x.Id == id && x.IsActive).ExecuteUpdateAsync(s =>
+            s.SetProperty(x => x.IsActive, false).SetProperty(x => x.UpdatedUtc, DateTime.UtcNow), ct);
+        await tx.CommitAsync(ct);
+    }
+
     public async Task<TaxPreviewSource> GetPreviewSourceAsync(Guid factorId, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
@@ -70,8 +80,13 @@ public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProte
     public async Task SetMappingAsync(Guid productId, int unit, string goodsId, string taxUnit, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        await LockAsync(db, $"tax-product-mapping:{productId:D}:{unit}", ct);
         if (!await db.Products.AnyAsync(x => x.Id == productId && !x.IsDeleted, ct)) throw new KeyNotFoundException();
         var group = db.TaxProductMappings.Where(x => x.ProductId == productId && x.Unit == unit);
+        if (!await group.AnyAsync(ct) &&
+            !await db.ProductAmounts.AnyAsync(x => x.ProductId == productId && x.Unit == unit && !x.IsDeleted, ct) &&
+            !await db.FactorItems.AnyAsync(x => x.ProductCode == productId && x.Unit == unit && !x.IsDeleted, ct))
+            throw new ArgumentException("واحد انتخابی برای این محصول در ERP ثبت نشده است.");
         await group.Where(x => x.IsDefault && x.GoodsId != goodsId)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsDefault, false), ct);
         var mapping = await group.SingleOrDefaultAsync(x => x.GoodsId == goodsId, ct);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,8 +11,11 @@ using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
 using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Submission;
+using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxMemories;
+using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxProducts;
 using CRM.Core.Domain.Taxation;
 using CRM.EndPoint.FrontEnd.Composition;
+using CRM.EndPoint.FrontEnd.Integrations.Moadian;
 using CRM.EndPoint.FrontEnd.Models.Taxation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -52,6 +56,24 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
         {
             return InvalidFilters(search, export, state);
         }
+    }
+
+    [HttpGet("memories")]
+    public async Task<IActionResult> Memories([FromServices] ITaxMemoryReadiness readiness, CancellationToken ct)
+    {
+        if (!TaxationAvailability.IsLocalEnabled(environment, configuration)) return NotFound();
+        var memories = await dispatcher.QueryAsync(new ListTaxMemoriesQuery(), ct);
+        return View(memories.Select(memory => new TaxMemoryRow(memory, readiness.DescribeSandbox(memory.Id))).ToArray());
+    }
+
+    [HttpGet("products")]
+    public async Task<IActionResult> Products(string search, bool unmapped = false, int page = 1, CancellationToken ct = default)
+    {
+        if (!TaxationAvailability.IsLocalEnabled(environment, configuration)) return NotFound();
+        if (!ModelState.IsValid || search?.Length > 100)
+            return BadRequest("فیلتر کالا معتبر نیست.");
+        var products = await dispatcher.QueryAsync(new ListTaxProductsQuery(search, unmapped, page), ct);
+        return View(new TaxProductListModel(products, search, unmapped));
     }
 
     [HttpGet("invoices/{id:guid}/preview")]

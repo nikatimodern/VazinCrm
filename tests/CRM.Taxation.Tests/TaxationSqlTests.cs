@@ -5,6 +5,9 @@ using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
+using CRM.Core.ApplicationServices.Taxation.Commands.SetTaxProductMapping;
+using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxProducts;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -699,6 +702,58 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         var stored = await db.TaxPaymentDispatches.AsNoTracking().SingleAsync();
         Assert.StartsWith("test:", stored.ProtectedResponse);
         Assert.Equal(state, await payments.GetStateAsync(id, Ct));
+    }
+
+    [TaxationSqlFact]
+    public async Task BatchKeepsSuccessfulRowsAndRetriesWithoutDuplicatingOriginalSnapshots()
+    {
+        await using var db = Open();
+        var (valid, memory) = await SeedAsync(db, FactorStatus.تایید_شده);
+        var invalid = await AddCandidateAsync(db, valid, 1, null, FactorStatus.در_دست_تایید);
+        var repository = new TaxationRepository(db, protection);
+        var handler = new EnqueueTaxInvoiceBatchCommandHandler(repository);
+        var command = new EnqueueTaxInvoiceBatchCommand([valid, invalid, valid], "tester");
+        var first = await handler.HandleAsync(command, Ct);
+        Assert.Equal(2, first.Count);
+        Assert.NotNull(first[0].DispatchId);
+        Assert.Null(first[1].DispatchId);
+        Assert.NotEmpty(first[1].Errors);
+        await repository.DeactivateAsync(memory, Ct);
+        var second = await handler.HandleAsync(command, Ct);
+        Assert.Equal(first[0].DispatchId, second[0].DispatchId);
+        Assert.Null(second[1].DispatchId);
+        Assert.Single(await db.TaxInvoiceSnapshots.AsNoTracking().ToListAsync(Ct));
+        Assert.Empty(await db.TaxMemories.AsNoTracking().Where(x => x.IsActive).ToListAsync(Ct));
+        var dispatch = await db.TaxDispatches.AsNoTracking().SingleAsync(Ct);
+        Assert.Equal(memory, dispatch.MemoryId);
+        Assert.True(dispatch.MemoryWasActive);
+    }
+
+    [TaxationSqlFact]
+    public async Task ProductListingShowsMissingUnitsAndMappingChangesPreserveFrozenPreview()
+    {
+        await using var db = Open();
+        var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
+        var product = await db.FactorItems.Where(x => x.factorId == factor).Select(x => x.ProductCode.Value).SingleAsync(Ct);
+        await db.Products.Where(x => x.Id == product).ExecuteUpdateAsync(s => s.SetProperty(x => x.Title, "Tax product"), Ct);
+        db.ProductAmounts.Add(new ProductAmount { Id = Guid.NewGuid(), ProductId = product, Unit = 2, UnitTxt = "کیلوگرم" });
+        await db.SaveChangesAsync(Ct);
+        var repository = new TaxationRepository(db, protection);
+        var listing = new ListTaxProductsQueryHandler(repository);
+        var row = Assert.Single((await listing.HandleAsync(new("Tax product", true), Ct)).Items);
+        Assert.Contains(row.Units, x => x.Code == 0 && x.GoodsId == "1234567890123");
+        Assert.Contains(row.Units, x => x.Code == 2 && x.GoodsId == null);
+
+        var snapshot = await new SaveTaxPreviewCommandHandler(repository)
+            .HandleAsync(new(factor, "tester", await PreviewVersion(repository, factor)), Ct);
+        var frozen = await repository.ReadSnapshotAsync(snapshot, Ct);
+        var update = new SetTaxProductMappingCommandHandler(repository);
+        Assert.True(await update.HandleAsync(new(product, 2, "2222222222222", "17"), Ct));
+        Assert.True(await update.HandleAsync(new(product, 0, "1111111111111", "164"), Ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => update.HandleAsync(new(product, 99, "1111111111111", "164"), Ct));
+        Assert.Empty((await listing.HandleAsync(new("Tax product", true), Ct)).Items);
+        Assert.Single((await listing.HandleAsync(new("1111111111111", false), Ct)).Items);
+        Assert.Equal(frozen, await repository.ReadSnapshotAsync(snapshot, Ct));
     }
 
     [TaxationSqlFact]

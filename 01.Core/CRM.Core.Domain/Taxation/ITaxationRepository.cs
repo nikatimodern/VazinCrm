@@ -31,6 +31,8 @@ public interface ITaxationRepository
     Task<Guid> SaveMemoryAsync(Guid? id, string fiscalId, string title, CancellationToken ct);
     Task SetMappingAsync(Guid productId, int unit, string goodsId, string taxUnit, CancellationToken ct);
     Task ActivateAsync(Guid id, CancellationToken ct);
+    Task DeactivateAsync(Guid id, CancellationToken ct);
+    Task<TaxProductPage> ListProductsAsync(string search, bool unmapped, int page, int size, CancellationToken ct);
     Task<TaxPreviewSource> GetPreviewSourceAsync(Guid factorId, CancellationToken ct);
     Task<string> ReadSnapshotAsync(Guid id, CancellationToken ct);
     Task<Guid> SaveSnapshotAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
