@@ -84,7 +84,6 @@ public static class TaskModelPreparation
             model.ShareTaskId = preTaskUp.ShareTaskId;
         }
 
-        model.ShareTaskId = model.Id;
         return model;
     }
 }

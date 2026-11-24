@@ -15,6 +15,7 @@ public sealed class GetTaskQueryHandler(ICarizoRepository repository) : IQueryHa
 {
     public async Task<Carizo?> HandleAsync(GetTaskQuery request, CancellationToken ct)
     {
+        if (!await repository.CanAccessAsync(request.Id, "View", ct)) return null;
         return await repository.GetAsync(request.Id, false, ct);
     }
 }

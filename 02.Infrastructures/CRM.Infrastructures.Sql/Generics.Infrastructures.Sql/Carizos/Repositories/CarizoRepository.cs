@@ -12,11 +12,27 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.Infrastructures.Sql.Carizos.Repositories;
 public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access) : ICarizoRepository
 {
+    public async Task<bool> CanAccessAsync(Guid id, string action, CancellationToken ct)
+    {
+        var query = await access.ApplyAsync(db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && t.Id == id), "View", ct);
+        if (action != "View") query = await access.ApplyAsync(query, action, ct);
+        return await query.AnyAsync(ct);
+    }
+
+    public async Task<bool> CanMutateSharedAsync(Guid? shareId, string action, CancellationToken ct)
+    {
+        if (!access.IsEnforced("Carizo")) return true;
+        if (!shareId.HasValue || shareId.Value == Guid.Empty) return false;
+        var all = db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && (t.ShareTaskId == shareId || t.Id == shareId));
+        var visible = await access.ApplyAsync(all, "View", ct);
+        visible = await access.ApplyAsync(visible, action, ct);
+        return !await all.AnyAsync(t => !visible.Any(v => v.Id == t.Id), ct);
+    }
+
     public async Task<Carizo?> GetAsync(Guid? id, bool tracking, CancellationToken ct)
     {
         var query = tracking ? db.Carizos.AsQueryable() : db.Carizos.AsNoTracking();
-        // Non-tracked queries also serve shared task workflows; retain the existing mutation contract.
-        return await query.Include(t => t.TaskUsers).FirstOrDefaultAsync(t => t.Id == id, ct);
+        return await query.Include(t => t.TaskUsers.Where(u => !u.IsDeleted)).FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
     }
     public Task<List<Carizo>> GetSharedAsync(Guid? id, Guid? except, CancellationToken ct) => db.Carizos.Include(t => t.TaskUsers).Where(t => t.ShareTaskId == id && (!except.HasValue || t.Id != except)).ToListAsync(ct);
     public Task<Carizo?> GetAssignedAsync(Guid? id, string userId, CancellationToken ct) => db.Carizos.FirstOrDefaultAsync(t => t.ShareTaskId == id && t.AssignUserId == userId, ct);
@@ -44,7 +60,8 @@ public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access
 
     public async Task<TaskCardChanges> GetCardChangesAsync(Guid id, string userId, CancellationToken ct)
     {
-        var root = await db.Carizos.IgnoreQueryFilters().AsNoTracking().Where(t => t.Id == id).Select(t => new { t.Id, t.ShareTaskId }).FirstOrDefaultAsync(ct);
+        var roots = await access.ApplyAsync(db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && t.Id == id), "View", ct);
+        var root = await roots.Select(t => new { t.Id, t.ShareTaskId }).FirstOrDefaultAsync(ct);
         var group = root?.ShareTaskId is Guid share && share != Guid.Empty ? share : id;
         var tasks = await (await access.ApplyAsync(db.Carizos.AsNoTracking(), "View", ct)).Include(t => t.TaskUsers).Where(t => t.AssignUserId == userId && (t.Id == id || t.Id == group || t.ShareTaskId == group)).ToListAsync(ct);
         return new(group, tasks);

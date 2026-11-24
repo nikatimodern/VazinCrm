@@ -57,6 +57,9 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
     public async Task<IActionResult> AddTask([FromBody] Carizo _model, CancellationToken ct)
     {
         if (_model == null) return BadRequest();
+        if (!await access.HasViewAsync("Carizo", ct)) return Forbid();
+        if (access.IsEnforced("Carizo") && _model.EntityId.HasValue && _model.EntityType == "Deal" &&
+            !await access.CanDealAsync(_model.EntityId.Value, "View", ct)) return Forbid();
         if (_model.Id == Guid.Empty ? !await access.HasAsync("Carizo", "Create", ct) : !await access.CanAsync("Carizo", "Edit", _model.Id, ct)) return Forbid();
         return Ok(await dispatcher.CommandAsync(new SaveTaskCommand(_model), ct));
     }

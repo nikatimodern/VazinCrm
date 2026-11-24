@@ -110,3 +110,7 @@ Contract implementation builds ebb7b0a8 and e48f91ec succeeded. RegisterContract
 ## Contract Development activation
 
 The user confirmed RegisterContractAccessCatalog.sql was executed. Contract enforcement is enabled in Development only (31/47 flags). Existing explicit overrides remain intact. Actual SQL grant results, legacy attachment association checks and runtime browser/SQL authorization tests were not independently observed. The staged Admin initial grants are unchanged; additional users require approved grants. Production configuration and main are unchanged.
+
+## Entities 30–35: Carizo first hardening batch
+
+Task repository now exposes per-row and shared mutation scope checks and active task queries. Save/delete and direct task reads apply additional CQRS guards, prevent ownership/system/status overposting and reject foreign participant IDs. Shared edit/delete conservatively require scope over every affected row; assigned-user status propagation, manual linked tasks, notifications, UI and all runtime compatibility checks are still outstanding. No flags or final registration SQL are delivered in this incomplete batch.

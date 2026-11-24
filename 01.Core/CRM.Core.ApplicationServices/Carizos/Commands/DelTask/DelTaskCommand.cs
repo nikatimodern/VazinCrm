@@ -17,7 +17,11 @@ public sealed class DelTaskCommandHandler(ICarizoRepository repository, CurrentA
     {
         var id = request.Id;
         var user = (await actor.GetAsync(ct)).User;
+        if (!await repository.CanAccessAsync(id, "Delete", ct)) return 403;
         var data = await repository.GetAsync(id, true, ct);
+        if (data == null) return 404;
+        if (data.TaskType != TaskTypeEnum.تکی && data.UserCreatorID == user.Id &&
+            !await repository.CanMutateSharedAsync(data.ShareTaskId ?? data.Id, "Delete", ct)) return 403;
         await audit.LogAsync(data, null, LogActionEnum.حذف, user, ct);
         if (data.TaskType != TaskTypeEnum.تکی && data.UserCreatorID == user.Id)
         {

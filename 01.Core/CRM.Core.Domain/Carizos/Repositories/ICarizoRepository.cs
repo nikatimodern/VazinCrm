@@ -9,6 +9,8 @@ namespace CRM.Core.Domain.Carizos.Repositories;
 public sealed record TaskCardChanges(Guid GroupId, List<Carizo> Tasks);
 public interface ICarizoRepository
 {
+    Task<bool> CanAccessAsync(Guid id, string action, CancellationToken ct);
+    Task<bool> CanMutateSharedAsync(Guid? shareId, string action, CancellationToken ct);
     Task<Carizo?> GetAsync(Guid? id, bool tracking, CancellationToken ct);
     Task<List<Carizo>> GetSharedAsync(Guid? shareId, Guid? exceptId, CancellationToken ct);
     Task<Carizo?> GetAssignedAsync(Guid? shareId, string userId, CancellationToken ct);

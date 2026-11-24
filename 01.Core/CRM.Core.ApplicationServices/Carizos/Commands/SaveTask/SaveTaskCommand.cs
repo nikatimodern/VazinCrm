@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -11,7 +12,7 @@ using CRM.Core.ApplicationServices.Carizos.Services;
 
 namespace CRM.Core.ApplicationServices.Carizos.Commands.SaveTask;
 public sealed record SaveTaskCommand(Carizo Task) : ICommand<object>;
-public sealed class SaveTaskCommandHandler(ICarizoRepository repository, CurrentActor actor, IApplicationDates dates, IApplicationAudit audit, ICarizoEffects effects) : ICommandHandler<SaveTaskCommand, object>
+public sealed class SaveTaskCommandHandler(ICarizoRepository repository, CurrentActor actor, IApplicationDates dates, IApplicationAudit audit, ICarizoEffects effects, IDocumentReadAccess access) : ICommandHandler<SaveTaskCommand, object>
 {
     public async Task<object> HandleAsync(SaveTaskCommand request, CancellationToken ct)
     {
@@ -19,7 +20,51 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
         try
         {
             var _user = (await actor.GetAsync(ct)).User;
-            if (_model.EntityType == "Deal")
+            if (_model == null) return new { status = "400", error = "Invalid task." };
+            if (access.IsEnforced("Carizo"))
+            {
+                if (_model.Id == Guid.Empty)
+                {
+                    if (!await access.HasAsync("Carizo", "Create", ct))
+                        return new { status = "403", error = "Access denied." };
+                    _model.IsDeleted = false;
+                    _model.Systematic = false;
+                    _model.TaskStatus = false;
+                    _model.TaskHide = false;
+                    _model.CompleteTaskUser = null;
+                    _model.CompleteTaskUserId = null;
+                    // Manual tasks cannot impersonate a system-generated document task.
+                    if (_model.EntityId.HasValue || !string.IsNullOrEmpty(_model.EntityType))
+                        return new { status = "403", error = "Linked task creation requires separate authorization." };
+                }
+                else
+                {
+                    if (!await repository.CanAccessAsync(_model.Id, "Edit", ct))
+                        return new { status = "403", error = "Access denied." };
+                    var original = await repository.GetAsync(_model.Id, false, ct);
+                    if (original == null) return new { status = "404", error = "Task not found." };
+                    if (original.TaskType != TaskTypeEnum.تکی && original.UserCreatorID == _user.Id &&
+                        !await repository.CanMutateSharedAsync(original.ShareTaskId ?? original.Id, "Edit", ct))
+                        return new { status = "403", error = "Shared task scope denied." };
+                    if (original.UserCreatorID != _user.Id &&
+                        (_model.TaskUsers?.Count > 0 || _model.TaskType != original.TaskType))
+                        return new { status = "403", error = "Assignment change denied." };
+                    _model.IsDeleted = original.IsDeleted;
+                    _model.Systematic = original.Systematic;
+                    _model.EntityType = original.EntityType;
+                    _model.EntityId = original.EntityId;
+                    _model.TaskStatus = original.TaskStatus;
+                    _model.TaskHide = original.TaskHide;
+                    _model.CompleteTaskUser = original.CompleteTaskUser;
+                    _model.CompleteTaskUserId = original.CompleteTaskUserId;
+                    _model.CreateDate = original.CreateDate;
+                    _model.CreateDateTxt = original.CreateDateTxt;
+                    if (_model.TaskUsers != null && _model.TaskUsers.Any(u => u.Id != Guid.Empty &&
+                        !(original.TaskUsers ?? new List<TaskUser>()).Any(x => x.Id == u.Id && x.UserId == u.UserId)))
+                        return new { status = "403", error = "Invalid task participant." };
+                }
+            }
+            if (_model.EntityType == "Deal" && !access.IsEnforced("Carizo"))
                 await repository.TouchDealAsync(_model.EntityId, DateTime.Now, dates.PersianNow(), ct);
             var _GenModel = await TaskModelPreparation.PrepareAsync(_model, _user, repository, dates, ct);
             if (_model.Id == Guid.Empty)
