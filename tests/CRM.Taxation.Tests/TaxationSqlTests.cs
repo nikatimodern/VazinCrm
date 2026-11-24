@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxPreview;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -11,6 +12,8 @@ using CRM.Infrastructures.Sql;
 using CRM.Infrastructures.Sql.Taxation;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Xunit;
 
 namespace CRM.Taxation.Tests;
@@ -38,7 +41,14 @@ public sealed class TaxationSqlTests : IAsyncLifetime
     {
         if (Environment.GetEnvironmentVariable("VAZIN_TAX_LOCALDB_TESTS") != "1") return;
         await using var db = Open();
-        Assert.True(await db.Database.EnsureCreatedAsync());
+        var foundation = db.Database.GetMigrations().Single(x => x.EndsWith("_AddTaxationFoundation", StringComparison.Ordinal));
+        await db.GetService<IMigrator>().MigrateAsync(foundation);
+        var memory = new TaxMemory { Id = Guid.NewGuid(), FiscalId = "KEEP01", Title = "Before queue", UpdatedUtc = DateTime.UtcNow };
+        db.TaxMemories.Add(memory);
+        await db.SaveChangesAsync();
+        await db.Database.MigrateAsync();
+        Assert.Equal("Before queue", await db.TaxMemories.Where(x => x.Id == memory.Id).Select(x => x.Title).SingleAsync());
+        Assert.Empty(await db.Database.GetPendingMigrationsAsync());
     }
 
     public async Task DisposeAsync()
@@ -139,8 +149,8 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.True(stored.MemoryWasActive);
         Assert.Equal("Original", stored.MemoryTitle);
         var claim = await Task.WhenAll(
-            new TaxDispatchQueue(firstProcess, protection).ClaimAsync(TimeSpan.FromMinutes(1), Ct),
-            new TaxDispatchQueue(secondProcess, protection).ClaimAsync(TimeSpan.FromMinutes(1), Ct));
+            new TaxDispatchQueue(firstProcess, protection).ClaimAsync(ids[0], TimeSpan.FromMinutes(1), Ct),
+            new TaxDispatchQueue(secondProcess, protection).ClaimAsync(ids[0], TimeSpan.FromMinutes(1), Ct));
         var attempt = Assert.Single(claim.OfType<TaxDispatchAttempt>());
         Assert.Equal(memory, attempt.MemoryId);
         Assert.Equal("ABC123", attempt.FiscalId);
@@ -149,11 +159,15 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         await secondProcess.TaxDispatches.ExecuteUpdateAsync(s => s.SetProperty(x => x.LeaseUntilUtc, DateTime.UtcNow.AddMinutes(-1)));
         await using var restarted = Open();
         var queue = new TaxDispatchQueue(restarted, protection);
-        Assert.Null(await queue.ClaimAsync(TimeSpan.FromMinutes(1), Ct));
-        Assert.Equal(TaxDispatchStatus.Unknown, await restarted.TaxDispatches.Select(x => x.Status).SingleAsync());
+        Assert.Equal(new TaxDispatchState(ids[0], attempt.AttemptId, TaxDispatchStatus.Unknown),
+            await queue.GetStateAsync(ids[0], Ct));
+        Assert.Null(await queue.ClaimAsync(ids[0], TimeSpan.FromMinutes(1), Ct));
         Assert.False(await queue.CompleteAsync(attempt.DispatchId, Guid.NewGuid(), TaxDispatchStatus.Accepted, Ct));
+        Assert.False(await queue.CompleteAsync(attempt.DispatchId, attempt.AttemptId, TaxDispatchStatus.Unknown, Ct));
         Assert.True(await queue.CompleteAsync(attempt.DispatchId, attempt.AttemptId, TaxDispatchStatus.Accepted, Ct));
-        Assert.Null(await queue.ClaimAsync(TimeSpan.FromMinutes(1), Ct));
+        Assert.False(await queue.CompleteAsync(attempt.DispatchId, attempt.AttemptId, TaxDispatchStatus.Rejected, Ct));
+        Assert.Equal(TaxDispatchStatus.Accepted, (await queue.GetStateAsync(attempt.DispatchId, Ct)).Status);
+        Assert.Null(await queue.ClaimAsync(ids[0], TimeSpan.FromMinutes(1), Ct));
     }
 
     [TaxationSqlFact]
@@ -190,6 +204,66 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         verify.TaxProductMappings.Add(mapping);
         var fk = await Assert.ThrowsAsync<DbUpdateException>(() => verify.SaveChangesAsync());
         Assert.Equal(547, Assert.IsType<SqlException>(fk.InnerException).Number);
+    }
+
+    [TaxationSqlFact]
+    public async Task OriginalUniquenessDoesNotBlockReferencedDocuments()
+    {
+        await using var db = Open();
+        var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
+        var repo = new TaxationRepository(db, protection);
+        var version = await PreviewVersion(repo, factor);
+        var originalId = await new EnqueueTaxInvoiceCommandHandler(repo).HandleAsync(new(factor, "tester", version), Ct);
+        var original = await db.TaxDispatches.AsNoTracking().SingleAsync();
+        var snapshot = await new SaveTaxPreviewCommandHandler(repo).HandleAsync(new(factor, "tester", version), Ct);
+        var candidate = new TaxDispatch
+        {
+            Id = Guid.NewGuid(), FactorId = factor, SnapshotId = snapshot, MemoryId = original.MemoryId,
+            FiscalId = original.FiscalId, MemoryTitle = original.MemoryTitle, MemoryUpdatedUtc = original.MemoryUpdatedUtc,
+            MemoryWasActive = original.MemoryWasActive, QueuedUtc = DateTime.UtcNow
+        };
+        db.TaxDispatches.Add(candidate);
+        var duplicate = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal(2601, Assert.IsType<SqlException>(duplicate.InnerException).Number);
+        candidate.Kind = TaxDispatchKind.Correction;
+        var missingReference = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal(547, Assert.IsType<SqlException>(missingReference.InnerException).Number);
+        candidate.ReferencedDispatchId = originalId;
+        await db.SaveChangesAsync();
+        Assert.Equal(2, await db.TaxDispatches.CountAsync());
+    }
+
+    [TaxationSqlFact]
+    public async Task PendingDispatchSurvivesLocalDbRestart()
+    {
+        Guid dispatchId;
+        await using (var db = Open())
+        {
+            var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
+            var repo = new TaxationRepository(db, protection);
+            dispatchId = await new EnqueueTaxInvoiceCommandHandler(repo)
+                .HandleAsync(new(factor, "tester", await PreviewVersion(repo, factor)), Ct);
+        }
+
+        SqlConnection.ClearAllPools();
+        await RunLocalDbAsync("stop");
+        await RunLocalDbAsync("start");
+
+        await using var restarted = Open();
+        var queue = new TaxDispatchQueue(restarted, protection);
+        Assert.Equal(TaxDispatchStatus.Pending, (await queue.GetStateAsync(dispatchId, Ct)).Status);
+        Assert.NotNull(await queue.ClaimAsync(dispatchId, TimeSpan.FromMinutes(1), Ct));
+    }
+
+    private static async Task RunLocalDbAsync(string action)
+    {
+        var startInfo = new ProcessStartInfo("SqlLocalDB.exe") { UseShellExecute = false, CreateNoWindow = true };
+        startInfo.ArgumentList.Add(action);
+        startInfo.ArgumentList.Add("VazinTaxationStage2Tests");
+        using var process = Process.Start(startInfo);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+        await process.WaitForExitAsync(timeout.Token);
+        Assert.Equal(0, process.ExitCode);
     }
 
     private async Task<(Guid Factor, Guid Memory)> SeedAsync(CRMContextDb db, FactorStatus status)

@@ -107,7 +107,7 @@ public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector pro
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         await LockAsync(db, $"tax-dispatch:{factorId:D}", ct);
-        var existing = await db.TaxDispatches.AsNoTracking().Where(x => x.FactorId == factorId)
+        var existing = await db.TaxDispatches.AsNoTracking().Where(x => x.FactorId == factorId && x.Kind == TaxDispatchKind.Original)
             .Select(x => (Guid?)x.Id).SingleOrDefaultAsync(ct);
         if (existing.HasValue)
         {
@@ -126,7 +126,7 @@ public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector pro
             Id = Guid.NewGuid(), FactorId = factorId, SnapshotId = snapshot.Id,
             MemoryId = memory.Id, FiscalId = memory.FiscalId, MemoryTitle = memory.Title,
             MemoryUpdatedUtc = memory.UpdatedUtc, MemoryWasActive = memory.IsActive,
-            QueuedUtc = snapshot.CreatedUtc, Status = TaxDispatchStatus.Pending
+            Kind = TaxDispatchKind.Original, QueuedUtc = snapshot.CreatedUtc, Status = TaxDispatchStatus.Pending
         };
         db.TaxInvoiceSnapshots.Add(snapshot);
         db.TaxDispatches.Add(entry);

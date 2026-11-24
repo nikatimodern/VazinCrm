@@ -4,12 +4,16 @@ using System.Threading.Tasks;
 
 namespace CRM.Core.Domain.Taxation;
 
-public enum TaxDispatchStatus { Pending, InFlight, Unknown, Accepted, Rejected }
+public enum TaxDispatchStatus { Pending = 0, InFlight = 1, Unknown = 2, Accepted = 3, Rejected = 4 }
+
+public enum TaxDispatchKind { Original = 0, Correction = 1, Cancellation = 2 }
 
 public sealed class TaxDispatch
 {
     public Guid Id { get; set; }
     public Guid FactorId { get; set; }
+    public TaxDispatchKind Kind { get; set; }
+    public Guid? ReferencedDispatchId { get; set; }
     public Guid SnapshotId { get; set; }
     public Guid MemoryId { get; set; }
     public string FiscalId { get; set; }
@@ -24,8 +28,13 @@ public sealed class TaxDispatch
 
 public sealed record TaxDispatchAttempt(Guid DispatchId, Guid AttemptId, Guid MemoryId, string FiscalId, string Preview);
 
+public sealed record TaxDispatchState(Guid DispatchId, Guid? AttemptId, TaxDispatchStatus Status);
+
 public interface ITaxDispatchQueue
 {
-    Task<TaxDispatchAttempt> ClaimAsync(TimeSpan lease, CancellationToken ct);
+    Task<TaxDispatchAttempt> ClaimAsync(Guid dispatchId, TimeSpan lease, CancellationToken ct);
+    Task<TaxDispatchState> GetStateAsync(Guid dispatchId, CancellationToken ct);
+    // Accepted and Rejected require a definitive outcome from the tax authority.
+    // Unknown is eligible for inquiry and cannot be claimed again.
     Task<bool> CompleteAsync(Guid dispatchId, Guid attemptId, TaxDispatchStatus status, CancellationToken ct);
 }

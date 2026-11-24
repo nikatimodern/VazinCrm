@@ -6977,6 +6977,76 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.ToTable("SystemWarnings");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FiscalId")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MemoryTitle")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("MemoryUpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("MemoryWasActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("QueuedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReferencedDispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SnapshotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactorId")
+                        .IsUnique()
+                        .HasFilter("[Kind] = 0");
+
+                    b.HasIndex("ReferencedDispatchId");
+
+                    b.HasIndex("SnapshotId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "QueuedUtc");
+
+                    b.ToTable("TaxDispatches", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TaxDispatches_Reference", "([Kind] = 0 AND [ReferencedDispatchId] IS NULL) OR ([Kind] IN (1, 2) AND [ReferencedDispatchId] IS NOT NULL AND [ReferencedDispatchId] <> [Id])");
+
+                            t.HasCheckConstraint("CK_TaxDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR ([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR ([Status] IN (2, 3, 4) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8353,6 +8423,20 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .WithMany("SupplyFactorOrderHeads")
                         .HasForeignKey("SupplyFactorId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatch", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("ReferencedDispatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

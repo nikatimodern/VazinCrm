@@ -9,34 +9,38 @@ namespace CRM.Infrastructures.Sql.Taxation;
 
 public sealed class TaxDispatchQueue(CRMContextDb db, ITaxPreviewProtector protection) : ITaxDispatchQueue
 {
-    public async Task<TaxDispatchAttempt> ClaimAsync(TimeSpan lease, CancellationToken ct)
+    public async Task<TaxDispatchAttempt> ClaimAsync(Guid dispatchId, TimeSpan lease, CancellationToken ct)
     {
         if (lease <= TimeSpan.Zero || lease > TimeSpan.FromHours(1))
             throw new ArgumentOutOfRangeException(nameof(lease));
 
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
-        await TaxationRepository.LockAsync(db, "tax-dispatch-claim", ct);
         var now = DateTime.UtcNow;
-        await db.TaxDispatches.Where(x => x.Status == TaxDispatchStatus.InFlight && x.LeaseUntilUtc <= now)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, TaxDispatchStatus.Unknown)
-                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct);
-        var entry = await db.TaxDispatches.AsNoTracking().Where(x => x.Status == TaxDispatchStatus.Pending)
-            .OrderBy(x => x.QueuedUtc).ThenBy(x => x.Id).FirstOrDefaultAsync(ct);
-        if (entry is null)
+        await ExpireAsync(dispatchId, now, ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var attempt = Guid.NewGuid();
+        var claimed = await db.TaxDispatches.Where(x => x.Id == dispatchId && x.Status == TaxDispatchStatus.Pending)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.AttemptId, attempt)
+                .SetProperty(x => x.LeaseUntilUtc, now + lease)
+                .SetProperty(x => x.Status, TaxDispatchStatus.InFlight), ct);
+        if (claimed == 0)
         {
             await tx.CommitAsync(ct);
             return null;
         }
 
-        var payload = await db.TaxInvoiceSnapshots.AsNoTracking().Where(x => x.Id == entry.SnapshotId)
-            .Select(x => x.ProtectedPreview).SingleAsync(ct);
-        var attempt = Guid.NewGuid();
-        await db.TaxDispatches.Where(x => x.Id == entry.Id)
-            .ExecuteUpdateAsync(s => s.SetProperty(x => x.AttemptId, attempt)
-                .SetProperty(x => x.LeaseUntilUtc, now + lease)
-                .SetProperty(x => x.Status, TaxDispatchStatus.InFlight), ct);
+        var work = await (from entry in db.TaxDispatches
+                          join snapshot in db.TaxInvoiceSnapshots on entry.SnapshotId equals snapshot.Id
+                          where entry.Id == dispatchId
+                          select new { entry.MemoryId, entry.FiscalId, snapshot.ProtectedPreview }).SingleAsync(ct);
         await tx.CommitAsync(ct);
-        return new(entry.Id, attempt, entry.MemoryId, entry.FiscalId, protection.Unprotect(payload));
+        return new(dispatchId, attempt, work.MemoryId, work.FiscalId, protection.Unprotect(work.ProtectedPreview));
+    }
+
+    public async Task<TaxDispatchState> GetStateAsync(Guid dispatchId, CancellationToken ct)
+    {
+        await ExpireAsync(dispatchId, DateTime.UtcNow, ct);
+        return await db.TaxDispatches.Where(x => x.Id == dispatchId)
+            .Select(x => new TaxDispatchState(x.Id, x.AttemptId, x.Status)).SingleOrDefaultAsync(ct);
     }
 
     public async Task<bool> CompleteAsync(Guid dispatchId, Guid attemptId, TaxDispatchStatus status, CancellationToken ct)
@@ -45,9 +49,15 @@ public sealed class TaxDispatchQueue(CRMContextDb db, ITaxPreviewProtector prote
             throw new ArgumentOutOfRangeException(nameof(status));
 
         var affected = await db.TaxDispatches.Where(x => x.Id == dispatchId && x.AttemptId == attemptId &&
-                (x.Status == TaxDispatchStatus.InFlight || x.Status == TaxDispatchStatus.Unknown))
+                (x.Status == TaxDispatchStatus.InFlight ||
+                 (x.Status == TaxDispatchStatus.Unknown && status != TaxDispatchStatus.Unknown)))
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, status)
                 .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct);
         return affected == 1;
     }
+
+    private Task ExpireAsync(Guid dispatchId, DateTime utcNow, CancellationToken ct) =>
+        db.TaxDispatches.Where(x => x.Id == dispatchId && x.Status == TaxDispatchStatus.InFlight && x.LeaseUntilUtc <= utcNow)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, TaxDispatchStatus.Unknown)
+                .SetProperty(x => x.LeaseUntilUtc, (DateTime?)null), ct);
 }
