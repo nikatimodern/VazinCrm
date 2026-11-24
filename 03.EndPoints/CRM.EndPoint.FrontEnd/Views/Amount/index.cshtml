@@ -98,7 +98,7 @@
         let isEditAmountModal;
         let priceSubmitting = false;
         const priceToken = () => document.querySelector("#formAmount [name=__RequestVerificationToken]").value;
-        const canPrice = action => !window.AccessLive || window.AccessLive.can("ProductAmount", action);
+        const canPrice = action => canViewPriceCatalog() && (!window.AccessLive || window.AccessLive.can("ProductAmount", action));
 
         document.addEventListener("DOMContentLoaded", async () => {
             //await Promise.all([getAndSetAllProduct("amountIndex"),GetUserLogin()]);

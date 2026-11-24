@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy SharedPriceAccess
 ﻿<!DOCTYPE html>
 <html lang="fa">
 
@@ -154,7 +155,9 @@
 <partial name="~/Views/Report/Modals/_ReportModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_ShowPaymentModal.cshtml" />
 <partial name="~/Views/Accountancy/Modals/_AddBankAccountModal.cshtml" />
-<partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />
+@if (await SharedPriceAccess.HasAsync("Product", "View", Context.RequestAborted) && await SharedPriceAccess.HasAsync("ProductAmount", "View", Context.RequestAborted)) {
+    <partial name="~/Views/Amount/Modals/_ListAmountModal.cshtml" />
+}
 
 
 <div id="overlay"></div>

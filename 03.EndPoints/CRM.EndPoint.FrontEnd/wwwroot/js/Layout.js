@@ -893,7 +893,22 @@ const Mask = () => {
 
 /////////////////////////////
 
+let priceAccessGeneration = 0;
+let priceAccessInvalidated = false;
+const canViewPriceCatalog = () => !priceAccessInvalidated && window.AccessLive?.can("Product", "View") !== false && window.AccessLive?.can("ProductAmount", "View") !== false;
+function invalidatePriceCatalog() {
+    priceAccessInvalidated = true;
+    priceAccessGeneration++;
+    document.getElementById("ListAmountBodyId")?.replaceChildren();
+    document.getElementById("ListProductId")?.replaceChildren();
+    document.querySelectorAll("[onclick*=showModalAmount]").forEach(button => button.setAttribute("aria-disabled", "true"));
+}
+window.addEventListener("erp:access-changed", invalidatePriceCatalog);
+window.addEventListener("erp:access-reconnected", invalidatePriceCatalog);
+window.addEventListener("erp:access-state", invalidatePriceCatalog);
+
 const getAllProduct = async (searchValue = "", from) => {
+    if (!canViewPriceCatalog()) return null;
     return await sendApiRequest({
         url: "/Amount/ListProduct",
         skeleton: from === "amountIndex" ? { target: "#ListProductId", retry: () => getAndSetAllProduct(from, searchValue) } : null,
@@ -902,10 +917,12 @@ const getAllProduct = async (searchValue = "", from) => {
 };
 
 const getAndSetAllProduct = async (from, searchValue = "") => {
+    const generation = priceAccessGeneration;
     const AllProduct = await getAllProduct(searchValue, from);
-    if (AllProduct == null) return;
+    if (AllProduct == null || generation !== priceAccessGeneration || !canViewPriceCatalog()) return;
     const containerId = from === "amountIndex" ? "ListProductId" : "ListAmountBodyId";
-    document.getElementById(containerId).innerHTML = AllProduct;
+    const container = document.getElementById(containerId);
+    if (container) container.innerHTML = AllProduct;
 };
 
 
@@ -917,13 +934,16 @@ const searchProduct = async (e, from) => {
 
 
 const showModalAmount = async () => {
-    $("#ListAmount").modal("toggle");
+    if (!canViewPriceCatalog() || !document.getElementById("ListAmount")) return;
+    document.getElementById("ListAmountBodyId")?.replaceChildren();
+    ModalToggle("ListAmount", "show");
     await getAndSetAllProduct("amountModal");
 };
 
 
 const closeModalAmount = () => {
-    $("#ListAmount").modal("toggle");
+    ModalToggle("ListAmount", "hide");
+    document.getElementById("ListAmountBodyId")?.replaceChildren();
 };
 
 

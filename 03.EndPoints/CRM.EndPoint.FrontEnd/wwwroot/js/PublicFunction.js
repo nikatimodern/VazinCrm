@@ -86,35 +86,56 @@ const Unit = (type, formId, defaultValueId) => {
 
 
 let allProductPromise = null;
+let productAccessGeneration = 0;
+let productAccessInvalidated = false;
+const productSelectors = new Set();
+
+function invalidateProductSelectors() {
+    productAccessInvalidated = true;
+    productAccessGeneration++;
+    allProductPromise = null;
+    for (const select of productSelectors) {
+        if (!select.isConnected) continue;
+        // Retain the selected value as a draft but remove other catalog choices.
+        select.tomselect?.clearOptions();
+        select.tomselect?.disable();
+        select.disabled = true;
+    }
+    productSelectors.clear();
+}
+window.addEventListener("erp:access-changed", invalidateProductSelectors);
+window.addEventListener("erp:access-reconnected", invalidateProductSelectors);
+window.addEventListener("erp:access-state", invalidateProductSelectors);
 
 const getAllProductOp = async (form) => {
     const formElement = resolveElement(form);
     if (!formElement) return;
-    
     const productCodeElement = formElement.querySelector("select[name='productCode']");
     if (!productCodeElement) return;
-    
+    if (productAccessInvalidated || window.AccessLive?.can("Product", "View") === false) {
+        productCodeElement.tomselect?.disable();
+        productCodeElement.disabled = true;
+        return;
+    }
+    const generation = productAccessGeneration;
     if (!allProductPromise) {
         allProductPromise = sendApiRequest({ url: "/Product/GetAllProduct" }).then(products => {
-            if (!products) allProductPromise = null;
+            if (!products && generation === productAccessGeneration) allProductPromise = null;
             return products;
         });
     }
-    
     const products = await allProductPromise;
-    if (!products || !productCodeElement.isConnected) return;
-    
-    if (productCodeElement.tomselect) {
-        return productCodeElement.tomselect;
-    }
-    
+    if (!products || !productCodeElement.isConnected || generation !== productAccessGeneration
+        || productAccessInvalidated || window.AccessLive?.can("Product", "View") === false) return;
+    for (const select of productSelectors) if (!select.isConnected) productSelectors.delete(select);
+    productSelectors.add(productCodeElement);
+    if (productCodeElement.tomselect) return productCodeElement.tomselect;
     return new TomSelect(productCodeElement, {
         options: products,
         valueField: "id",
         placeholder: "انتخاب",
         maxItems: 1,
-        selectOnTab: true,
-        // dropdownParent
+        selectOnTab: true
     });
 };
 

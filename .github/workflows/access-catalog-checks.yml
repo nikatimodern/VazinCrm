@@ -22,6 +22,8 @@ jobs:
         run: |
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/qualityControlCustomer.js
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/accessLive.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/PublicFunction.js
+          node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/Layout.js
       - name: Build solution and Razor views
         run: dotnet build VazinProject.sln -p:MvcRazorCompileOnBuild=true
       - name: Access scope checks

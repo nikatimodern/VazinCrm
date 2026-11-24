@@ -2632,10 +2632,44 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 PreFactor oldModel = null;
 
 
-                foreach (var item in model.PreFactorItems)
+                // Existing document snapshots remain editable with document permissions.
+                // New or changed catalog links require the corresponding catalog view grant.
+                var activeItems = model.PreFactorItems.Where(item => !item.IsDeleted).ToList();
+                var existingItems = model.Id == Guid.Empty
+                    ? new System.Collections.Generic.Dictionary<Guid, PreFactorItem>()
+                    : await db.PreFactorItems.AsNoTracking().Where(item => item.PrefactorId == model.Id && !item.IsDeleted)
+                        .ToDictionaryAsync(item => item.Id, AccessCt);
+                var canSelectProduct = await HasDocument("Product", "View");
+                var canSelectGroup = await HasDocument("ProductGroup", "View");
+                var productIds = activeItems.Where(item => item.ProductCode.HasValue)
+                    .Select(item => item.ProductCode.Value).Distinct().ToArray();
+                var groupIds = activeItems.Where(item => item.ProductGroup.HasValue)
+                    .Select(item => item.ProductGroup.Value).Distinct().ToArray();
+                var products = await db.Products.AsNoTracking().Where(product => !product.IsDeleted && productIds.Contains(product.Id))
+                    .Select(product => new { product.Id, product.IsInProduction }).ToDictionaryAsync(product => product.Id, AccessCt);
+                var groups = await db.ProductGroups.AsNoTracking().Where(group => groupIds.Contains(group.Id))
+                    .Select(group => new { group.Id, group.GroupName }).ToDictionaryAsync(group => group.Id, AccessCt);
+                foreach (var item in activeItems)
                 {
-                    var product = await db.Products.AsNoTracking().Where(f => f.Id == item.ProductCode).FirstOrDefaultAsync();
-                    item.IsInProduction = product.IsInProduction;
+                    existingItems.TryGetValue(item.Id, out var previous);
+                    var changedProduct = previous == null || previous.ProductCode != item.ProductCode;
+                    var changedGroup = previous == null || previous.ProductGroup != item.ProductGroup;
+                    if (changedProduct && item.ProductCode.HasValue && !canSelectProduct) return Forbid();
+                    if (changedGroup && item.ProductGroup.HasValue && !canSelectGroup) return Forbid();
+                    if (item.ProductCode.HasValue && products.TryGetValue(item.ProductCode.Value, out var product))
+                        item.IsInProduction = !canSelectProduct && previous != null ? previous.IsInProduction : product.IsInProduction;
+                    else if (!changedProduct && previous != null)
+                        item.IsInProduction = previous.IsInProduction;
+                    else
+                        return BadRequest("کالای انتخاب‌شده معتبر نیست.");
+                    if (item.ProductGroup.HasValue && canSelectGroup && groups.TryGetValue(item.ProductGroup.Value, out var group))
+                        item.ProductGroupTxt = group.GroupName;
+                    else if (!changedGroup && previous != null)
+                        item.ProductGroupTxt = previous.ProductGroupTxt;
+                    else if (item.ProductGroup.HasValue)
+                        return BadRequest("گروه کالای انتخاب‌شده معتبر نیست.");
+                    else
+                        item.ProductGroupTxt = null;
                 }
 
 
