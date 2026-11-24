@@ -24,3 +24,5 @@ Primary integration: OrderController, SupplyController (including financial expo
 - Development config flags are present but default to false until these checks pass. Set individually to true in Development for controlled testing after the catalog exists. Do not activate in production before full review.
 
 No database, build, browser or production verification was performed by the source-only change.
+
+Development follow-up: all four enforcement flags are now true in Development only; runtime verification remains pending. Cash and transfer integration checks have progressed in the subsequent rollout.
