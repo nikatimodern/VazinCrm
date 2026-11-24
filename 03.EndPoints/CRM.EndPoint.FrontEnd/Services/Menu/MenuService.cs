@@ -74,7 +74,9 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 (Entity: "Transfer", Url: "/Transfer/Index"),
                 (Entity: "Cash", Url: "/Cash/Index"),
                 (Entity: "Cashier", Url: "/Cash/Cashier"),
-                (Entity: "BaseCash", Url: "/BaseItem/Financial")
+                (Entity: "BaseCash", Url: "/BaseItem/Financial"),
+                (Entity: "Warehouse", Url: "/Warehouse/Index"),
+                (Entity: "WarehouseVoucher", Url: "/Warehouse/Voucher")
             })
                 if (settings.GetValue<bool>("AccessCatalog:Enforce" + entry.Entity + "Permissions") &&
                     await scopes.GetEffectiveScopeAsync(userId, entry.Entity + ".View", default) == AccessScopes.None)
