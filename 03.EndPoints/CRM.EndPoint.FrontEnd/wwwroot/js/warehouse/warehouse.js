@@ -91,6 +91,9 @@ async function showWarehouseModal(isEdit = false) {
     if (!warehouseCan("Warehouse", isEdit ? "edit" : "create")) return;
     ModalToggle(warehouseModal, "show");
     await initWarehouseUsers();
+    const select = warehouseModal.querySelector("#warehouseUsers")?.tomselect;
+    if (!isEdit && !warehouseCan("Warehouse", "manageUsers")) select?.disable();
+    else select?.enable();
 }
 function cancelWarehouseModal() {
     warehouseData = {};
@@ -130,6 +133,8 @@ warehouseFormElm?.addEventListener("submit", async (e) => {
         ...mySer.convertFormToJSON("warehouseForm"),
         isMain: warehouseFormElm.querySelector("#warehouseIsMain")?.checked ?? false,
     };
+    if (warehouseData.id && warehouseData.canManageUsers === false) model.userIds = warehouseData.userIds;
+    if (!warehouseData.id && !warehouseCan("Warehouse", "manageUsers")) model.userIds = [];
     
     await sendApiRequest({
         url: "/Warehouse/AddWarehouse",
@@ -170,6 +175,7 @@ async function editWarehouse(id) {
         onSuccess: (res) => {
             warehouseData = res.data;
             mySer.convertJsonToForm(warehouseData, "warehouseForm");
+            if (warehouseData.canManageUsers === false) warehouseModal.querySelector("#warehouseUsers")?.tomselect?.disable();
             const mainCheckbox = warehouseFormElm.querySelector("#warehouseIsMain");
             if (mainCheckbox) mainCheckbox.checked = warehouseData.isMain === true;
         },
