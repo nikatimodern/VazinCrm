@@ -23,6 +23,7 @@ using CRM.Core.Domain.SystemWarnings.Enums;
 using CRM.Core.Domain.Transfers.Entities;
 using FactorEntity = CRM.Core.Domain.Factors.Entities.Factor;
 using CRM.EndPoint.FrontEnd.Models.Cartable;
+using CRM.EndPoint.FrontEnd.Security;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.Infrastructures.Sql;
@@ -40,8 +41,9 @@ namespace CRM.EndPoint.FrontEnd.Services {
         private readonly UserManager<AppUser> userManager;
         private readonly TimedHostedService hostService;
         private readonly DateTimeServices dtService;
+        private readonly DocumentAccessPolicy documentAccess;
 
-        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService, DateTimeServices dtService, IAccessScopeService accessScopes, IConfiguration configuration)
+        public Service(CRMContextDb db, UserManager<AppUser> userManager, TimedHostedService hostService, DateTimeServices dtService, IAccessScopeService accessScopes, IConfiguration configuration, DocumentAccessPolicy documentAccess)
         {
             this.db = db;
             this.userManager = userManager;
@@ -49,6 +51,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
             this.dtService = dtService;
             this.accessScopes = accessScopes;
             this.configuration = configuration;
+            this.documentAccess = documentAccess;
         }
 
 
@@ -473,24 +476,36 @@ namespace CRM.EndPoint.FrontEnd.Services {
             });
         }
 
+        private async Task<IQueryable<SystemWarning>> VisibleWarningsAsync(ClaimsPrincipal user, CancellationToken ct)
+        {
+            var query = db.SystemWarnings.AsNoTracking().Where(w => !w.IsDeleted);
+            if (!documentAccess.IsEnforced("SystemWarning"))
+                return user.IsAdmin() ? query : query.Where(w => w.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
+
+            if (!await documentAccess.HasAsync("SystemWarning", "View", ct) ||
+                !documentAccess.IsEnforced("Factor")) return query.Where(w => false);
+            var factors = await documentAccess.FactorsAsync(db.Factors.AsNoTracking(), "View", ct);
+            var canQualityWarnings = await documentAccess.HasAsync("SystemWarning", "ViewQualityControl", ct);
+            return query.Where(w => w.EntityType == EntityTypeEnum.Factor && factors.Any(f => f.Id == w.EntityId) &&
+                (w.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار ||
+                (canQualityWarnings && w.WarningType == WarningTypeEnum.عدم_ارسال_پیامک_کنترل_کیفیت)));
+        }
+
+        public async Task<bool> CanReadWarningAsync(SystemWarning warning, ClaimsPrincipal user, CancellationToken ct) =>
+            await (await VisibleWarningsAsync(user, ct)).AnyAsync(w => w.Id == warning.Id, ct);
+
         public async Task<List<SystemWarning>> GetAllWarnings(ClaimsPrincipal user, bool isRefresh = false)
         {
-            if (isRefresh)
-            {
+            var ct = CancellationToken.None;
+            if (documentAccess.IsEnforced("SystemWarning") && !await documentAccess.HasAsync("SystemWarning", "View", ct))
+                return [];
+            if (isRefresh && (!documentAccess.IsEnforced("SystemWarning") ||
+                (await documentAccess.HasAsync("SystemWarning", "Refresh", ct) &&
+                documentAccess.IsEnforced("Factor") && await documentAccess.HasAsync("Factor", "View", ct))))
                 await hostService.CompareSepidarCrmFactors();
-            }
 
-            var query = db.SystemWarnings.OrderByDescending(f => f.CreateDate).AsQueryable();
-
-            if (!user.IsAdmin())
-            {
-                query = query.Where(f => f.WarningType == WarningTypeEnum.مغایرت_مبلغ_فاکتور_با_فاکتور_سپیدار);
-            }
-
-            var warnings = await query.ToListAsync();
-
-            return warnings;
+            var query = await VisibleWarningsAsync(user, ct);
+            return await query.OrderByDescending(w => w.CreateDate).ToListAsync(ct);
         }
-        
     }
 }

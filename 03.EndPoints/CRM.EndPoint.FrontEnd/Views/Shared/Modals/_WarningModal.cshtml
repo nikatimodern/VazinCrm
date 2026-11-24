@@ -1,3 +1,11 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy WarningAccess
+@{
+    var canDelete = await WarningAccess.HasAsync("SystemWarning", "Delete", Context.RequestAborted);
+    var canRefresh = await WarningAccess.HasAsync("SystemWarning", "Refresh", Context.RequestAborted);
+    if (WarningAccess.IsEnforced("SystemWarning"))
+        canRefresh = canRefresh && WarningAccess.IsEnforced("Factor") &&
+            await WarningAccess.HasAsync("Factor", "View", Context.RequestAborted);
+}
 <!-- Modal Warning -->
 <div class="modal fade" dir="rtl" id="warningModal" tabindex="-1" role="dialog" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
@@ -5,13 +13,15 @@
             <div class="modal-header" style="background-color: #f1f1f1;">
                 <div class="d-flex align-items-center gap-3">
                     <h1 class="modal-title fs-5" style="color: #333">هشدارها</h1>
+                    @if (canRefresh) {
                     <span class="flex-center" onclick="getAllWarnings(true)">
                         <svg style="width: 18px;color: #555" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                     </span>
+                    }
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body d-flex flex-column gap-2" id="warningContainer" style="max-height: calc(100dvh - 300px);overflow: auto;">
+            <div class="modal-body d-flex flex-column gap-2" id="warningContainer" data-can-delete="@canDelete.ToString().ToLowerInvariant()" style="max-height: calc(100dvh - 300px);overflow: auto;">
             </div>
         </div>
     </div>

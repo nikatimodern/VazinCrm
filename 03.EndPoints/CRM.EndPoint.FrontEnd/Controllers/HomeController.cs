@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using CRM.Core.Domain.SystemWarnings.Enums;
+using CRM.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -50,16 +52,18 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly Sepidar2ContextDb s2Db;
         private readonly ExternalTransferOptionsService externalTransferOptions;
         private readonly ISmsIrService smsIrService;
+        private readonly DocumentAccessPolicy documentAccess;
 
         public HomeController(IWebHostEnvironment appEnvironment,
             IConfiguration conf,
             UserManager<AppUser> userManager, ILogger<HomeController> logger, CRMContextDb db, DateTimeServices dts,
             Sepidar1ContextDb sdb, Service genService, UserContextDb udb, Sepidar1ContextDb S1db, ISmsQueue smsQueue, IssabelService issabelService,
             AiPrompts aiPrompts, ViraAi viraAi, GapgptAi gapgptAi, LogSystemService logSystemService, TaskServices ts, SmsService smsService,
-            Sepidar2ContextDb s2db, ExternalTransferOptionsService externalTransferOptions)
+            Sepidar2ContextDb s2db, ExternalTransferOptionsService externalTransferOptions, DocumentAccessPolicy documentAccess)
         {
             this.appEnvironment = appEnvironment;
             this.conf = conf;
+            this.documentAccess = documentAccess;
             this.userManager = userManager;
             _logger = logger;
             this.db = db;
@@ -152,10 +156,21 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         {
             try
             {
-                var isAdmin = User.IsAdmin();
+                var ct = HttpContext.RequestAborted;
+                var enforced = documentAccess.IsEnforced("LogSystem");
+                if (enforced && (!await documentAccess.HasAsync("LogSystem", "View", ct) ||
+                    !await AuditLogAccess.CanReadRecordAsync(documentAccess, entityName, entityId, ct))) return Forbid();
 
-                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId, isAdmin);
-                return Ok(logs);
+                var details = enforced ? await documentAccess.HasAsync("LogSystem", "ViewDetails", ct) : User.IsAdmin();
+                var logs = await logSystemService.GetEntityLogSystemAsync(entityName, entityId, details);
+                if (!enforced) return Ok(logs);
+                var visible = new List<CRM.Core.Domain.LogSystems.Entities.LogSystem>();
+                foreach (var log in logs)
+                    if (await AuditLogAccess.CanReadAsync(documentAccess, log, ct)) visible.Add(log);
+                return Ok(visible.Select(log => new { log.Id, log.EntityName, log.EntityId, log.EntitySerialNumber,
+                    log.ParentEntityId, log.ParentEntityName, log.ChangeTime, log.ChangeTimeTxt, log.ChangedBy,
+                    log.ChangedById, log.ActionType, log.ActionTypeTxt, log.Description,
+                    ChangeDetails = details ? log.ChangeDetails : null, CommentTxt = details ? log.CommentTxt : null }));
             }
             catch (Exception ex)
             {
@@ -168,15 +183,24 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         /* ----------------------------------------------- System Warnings ----------------------------------------------- */
 
         [HttpGet]
+        [LegacyCatalogRoles("SystemWarning", "مدیر ارشد,مدیر مالی,کارشناس مالی")]
         [CatalogPermission("SystemWarning", "View")]
         public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
         {
-            var warnings = await genService.GetAllWarnings(User, isRefresh);
-
-            return Ok(warnings);
+            if (isRefresh) return BadRequest();
+            return Ok(await genService.GetAllWarnings(User));
         }
 
-        [HttpGet]
+        [HttpPost, ValidateAntiForgeryToken]
+        [LegacyCatalogRoles("SystemWarning", "مدیر ارشد,مدیر مالی,کارشناس مالی")]
+        [CatalogPermission("SystemWarning", "Refresh")]
+        public async Task<IActionResult> RefreshSystemWarnings()
+        {
+            return Ok(await genService.GetAllWarnings(User, true));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        [LegacyCatalogRoles("SystemWarning", "مدیر ارشد,مدیر مالی,کارشناس مالی")]
         [CatalogPermission("SystemWarning", "Delete")]
         public async Task<IActionResult> DeleteSystemWarning(Guid id)
         {
@@ -184,8 +208,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 var user = await userManager.GetUserAsync(HttpContext.User);
                 var item = await db.SystemWarnings.Where(f => f.Id == id).FirstOrDefaultAsync();
-                if (item == null)
-                    return BadRequest("مقداری برای حذف یافت نشد");
+                if (item == null || !await genService.CanReadWarningAsync(item, User, HttpContext.RequestAborted))
+                    return NotFound();
 
 
                 item.IsDeleted = true;

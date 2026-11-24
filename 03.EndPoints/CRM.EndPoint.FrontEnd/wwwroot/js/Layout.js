@@ -3040,6 +3040,13 @@ function sortableMobileMenu() {
 sortableMobileMenu();
 
 let warningData = [];
+let warningAccessGeneration = 0;
+window.addEventListener("erp:access-state", () => {
+    warningAccessGeneration++;
+    warningData = [];
+    document.getElementById("warningContainer")?.replaceChildren();
+    document.querySelectorAll(".logSystem-container").forEach(el => el.replaceChildren());
+});
 async function showModalWarnings() {
     await getAllWarnings();
     toggleMobileDrawer(false);
@@ -3069,16 +3076,20 @@ function updateWarningMenu(warnings) {
 }
 async function getAllWarnings(isRefresh = false) {
     const warningElmBtns = document.querySelectorAll(".menu-item.warning");
-    if (!warningElmBtns.length) return;
+    if (!warningElmBtns.length || window.AccessLive?.can("SystemWarning", "View") === false) return;
+    if (isRefresh && window.AccessLive?.can("SystemWarning", "Refresh") === false) return;
+    const generation = warningAccessGeneration;
     
     if (!warningContainer) return;
     warningContainer.innerHTML = "";
     
     await sendApiRequest({
-        url: "/Home/GetAllSystemWarnings",
-        params: { isRefresh },
+        url: isRefresh ? "/Home/RefreshSystemWarnings" : "/Home/GetAllSystemWarnings",
+        method: isRefresh ? "POST" : "GET",
+        headers: isRefresh ? accessMutationHeaders() : undefined,
         showLoading: isRefresh,
         onSuccess: (res) => {
+            if (generation !== warningAccessGeneration) return;
             warningData = res.data;
             
             updateWarningMenu(warningData);
@@ -3096,7 +3107,7 @@ function initDomWarningsModal() {
             div.innerHTML = `
                 <div class="d-flex align-items-center gap-2">
                     <svg style="width: 18px;flex-shrink: 0; color: #EF5350;" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
-                    <span style="color: #444;">${item.message}</span>
+                    <span style="color: #444;" data-warning-message></span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <button class="flex-center showDetails">
@@ -3107,7 +3118,10 @@ function initDomWarningsModal() {
                     </button>
                 </div>
             `;
-            div.querySelector(".deleteWarning").addEventListener("click", () => removeWarning(item.id));
+            div.querySelector("[data-warning-message]").textContent = item.message || "";
+            const deleteButton = div.querySelector(".deleteWarning");
+            if (warningContainer.dataset.canDelete === "false" || window.AccessLive?.can("SystemWarning", "Delete") === false) deleteButton.remove();
+            else deleteButton.addEventListener("click", () => removeWarning(item.id));
             div.querySelector(".showDetails").addEventListener("click", () => showDetailsWarning(item.entityId, item.entityType));
             
             warningContainer.appendChild(div);
@@ -3122,8 +3136,11 @@ function initDomWarningsModal() {
     }
 }
 async function removeWarning(id) {
+    if (warningContainer?.dataset.canDelete === "false" || window.AccessLive?.can("SystemWarning", "Delete") === false) return;
     await sendApiRequest({
         url: "/Home/DeleteSystemWarning",
+        method: "POST",
+        headers: accessMutationHeaders(),
         params: { id },
         successMsg: "با موفقیت حذف شد!",
         onSuccess: getAllWarnings,
@@ -3337,9 +3354,9 @@ function createDomLogSystem(data) {
         const li = document.createElement("li");
         li.classList.add(`logAction-${item.actionType}`);
         li.innerHTML = `
-            <span class="logSystem-time">${item.changeTimeTxt.split(" ").join(" | ")}</span>
+            <span class="logSystem-time"></span>
             <p class="logSystem-desc">
-                <span>${item.description || ""}</span>
+                <span data-log-description></span>
                 ${(item.changeDetails || item.commentTxt) ? `
                     <span class="showDetailLog-icon">
                         <svg style="width: 14px" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clip-rule="evenodd" /></svg>
@@ -3347,6 +3364,8 @@ function createDomLogSystem(data) {
                 ` : ""}
             </p>
         `;
+        li.querySelector(".logSystem-time").textContent = (item.changeTimeTxt || "").split(" ").join(" | ");
+        li.querySelector("[data-log-description]").textContent = item.description || "";
         li.querySelector(".showDetailLog-icon")?.addEventListener("click", () => showDetailsLog(item.changeDetails, item.commentTxt));
         ul.appendChild(li);
     });

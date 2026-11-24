@@ -11,7 +11,7 @@ public static class AccessScopes
     public const byte AllExceptSelectedUsers = 4;
     // Only entities with an implemented owner resolver may use member selection.
     public static bool SupportsDocumentOwners(string entity) =>
-        entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Contact" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "Dashboard";
+        entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Contact" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "Dashboard" or "Agent";
     public static bool SupportsSelectedOwners(string entity) =>
         entity is "Customer" or "Deal" || SupportsDocumentOwners(entity);
 

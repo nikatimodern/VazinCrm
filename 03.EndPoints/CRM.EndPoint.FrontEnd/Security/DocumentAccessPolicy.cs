@@ -315,14 +315,23 @@ public sealed class DocumentAccessPolicy(
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
         var allowed = owners.AllowedOwnerIds;
         var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(Agent))
+        {
+            var agents = (IQueryable<Agent>)(object)query;
+            var customers = await CustomersAsync(db.Customers.AsNoTracking().Where(c => !c.IsDeleted), "View", ct);
+            agents = agents.Where(a => !a.IsDeleted && a.CustomerId.HasValue &&
+                customers.Any(c => c.Id == a.CustomerId.Value));
+            query = (IQueryable<T>)(object)agents;
+        }
         if (typeof(T) == typeof(Contact))
         {
             var contacts = (IQueryable<Contact>)(object)query;
             var customers = await CustomersAsync(db.Customers.AsNoTracking().Where(c => !c.IsDeleted), "View", ct);
+            var agents = await ApplyAsync(db.Agents.AsNoTracking(), "View", ct);
             // EntityId is the polymorphic parent. Require the owning customer even for an agent contact.
             contacts = contacts.Where(c => !c.IsDeleted && c.EntityId.HasValue &&
                 ((c.ContactType == ContactTypeEnum.Customer && customers.Any(p => p.Id == c.EntityId.Value)) ||
-                 (c.ContactType == ContactTypeEnum.Agent && db.Agents.Any(a => !a.IsDeleted && a.Id == c.EntityId.Value &&
+                 (c.ContactType == ContactTypeEnum.Agent && agents.Any(a => !a.IsDeleted && a.Id == c.EntityId.Value &&
                      a.CustomerId.HasValue && customers.Any(p => p.Id == a.CustomerId.Value)))));
             query = (IQueryable<T>)(object)contacts;
         }
@@ -418,7 +427,7 @@ public sealed class DocumentAccessPolicy(
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
         if (WarehouseEnforced && IsWarehouseEntity(entity))
             return await CanAsync(entity, action, row.Id, ct);
-        if (row is Carizo || row is CallRecording || row is Contact || row is Report)
+        if (row is Carizo || row is CallRecording || row is Contact || row is Agent || row is Report)
             return await CanAsync(entity, action, row.Id, ct);
         if (row is Cashier cashier)
         {
@@ -479,6 +488,7 @@ public sealed class DocumentAccessPolicy(
             "WarehouseProduct" => await CanRowAsync(db.WarehouseProducts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseTransaction" => await CanRowAsync(db.WarehouseTransactions.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseVoucher" => await CanRowAsync(db.WarehouseVouchers.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Agent" => await CanRowAsync(db.Agents.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Contact" => await CanRowAsync(db.Contacts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Contract" => await CanRowAsync(db.Contracts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "Carizo" => await CanRowAsync(db.Carizos.AsNoTracking().Where(x => x.Id == id), action, ct),

@@ -162,7 +162,7 @@ public sealed class AccessLiveController(
         var logsystemEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceLogSystemPermissions");
         var logsystem = await DocumentState("LogSystem", logsystemEnforced, ["View", "ViewDetails"]);
         var systemwarningEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceSystemWarningPermissions");
-        var systemwarning = await DocumentState("SystemWarning", systemwarningEnforced, ["View", "Delete"]);
+        var systemwarning = await DocumentState("SystemWarning", systemwarningEnforced, ["View", "Delete", "Refresh", "ViewQualityControl"]);
         var companyEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCompanyPermissions");
         var company = await DocumentState("Company", companyEnforced, ["View", "Create", "Edit", "Delete"]);
         var asettingEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceASettingPermissions");

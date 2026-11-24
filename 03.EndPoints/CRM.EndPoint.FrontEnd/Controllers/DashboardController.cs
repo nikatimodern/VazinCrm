@@ -160,7 +160,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             var rols = await userManager.GetRolesAsync(user);
             if (!await Can("ViewLogs")) return Forbid();
             var canDetails = Enforced ? await Can("ViewLogDetails") :
-                rols.Contains("مدیر ارشد") && await documentAccess.HasAsync("LogSystem", "ViewDetails", Ct);
+                documentAccess.IsEnforced("LogSystem") ? await documentAccess.HasAsync("LogSystem", "ViewDetails", Ct) :
+                rols.Contains("مدیر ارشد");
             var logSystem = db.logSystems.Where(f => !string.IsNullOrEmpty(f.Description)).AsQueryable();
 
             if (model?.filt != null)
@@ -168,6 +169,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 logSystem = logSystem.ApplyFilter(model, null, f => f.ChangeTime, f => f.ChangedById);
             }
 
+            if (documentAccess.IsEnforced("LogSystem"))
+            {
+                // Bounded candidate window; apply parent checks before sending any row to the browser.
+                var candidates = await logSystem.AsNoTracking().OrderByDescending(f => f.ChangeTime).Take(100).ToListAsync(Ct);
+                var visible = new List<CRM.Core.Domain.LogSystems.Entities.LogSystem>();
+                foreach (var log in candidates)
+                    if (await AuditLogAccess.CanReadAsync(documentAccess, log, Ct)) visible.Add(log);
+                return Ok(visible.Select(f => new { f.Description, f.ChangeTimeTxt, f.ActionType,
+                    ChangeDetails = canDetails ? f.ChangeDetails : null,
+                    CommentTxt = canDetails ? f.CommentTxt : null }));
+            }
             var data = logSystem
                 .OrderByDescending(f => f.ChangeTime)
                 .Take(100)
