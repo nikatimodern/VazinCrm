@@ -196,10 +196,11 @@
                             `;
                         },
                     },
-                    { data: "totalCredit", render: data => renderMoneyHtml(data, { className: "fbold" }) },
+                    { data: "totalCredit", render: (data, _, row) => row.hasFullBalanceAccess === false ? "—" : renderMoneyHtml(data, { className: "fbold" }) },
                     {
                         data: "totalDebit",
                         render: (data, _, row) => {
+                            if (row.hasFullBalanceAccess === false) return "—";
                             return `
                             <span class="d-inline-flex align-items-center gap-2">
                                 ${renderMoneyHtml(data, { className: "fbold" })}
@@ -213,7 +214,8 @@
                     },
                     {
                         data: "balance",
-                        render: data => {
+                        render: (data, _, row) => {
+                            if (row.hasFullBalanceAccess === false) return "دسترسی محدود";
                             let classBadge = data > 0 ? "badge-green" : data < 0 ? "badge-red" : "badge-gray";
                             return `
                             <span class="fbold fs-6 badge ${classBadge}">
