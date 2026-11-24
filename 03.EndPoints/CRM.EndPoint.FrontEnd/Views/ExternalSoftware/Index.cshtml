@@ -6,7 +6,7 @@
     var edit = await ExternalAccess.HasAsync("ExternalSoftware", "Edit", Context.RequestAborted);
     var delete = await ExternalAccess.HasAsync("ExternalSoftware", "Delete", Context.RequestAborted);
     var settings = await ExternalAccess.HasAsync("ExternalSoftware", "ManageSettings", Context.RequestAborted);
-    var mapping = User.IsInRole("مدیر ارشد") && await ExternalAccess.HasAsync("ExternalMapping", "View", Context.RequestAborted);
+    var mapping = await ExternalAccess.CanUseMappingWorkspaceAsync(Context.RequestAborted);
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />

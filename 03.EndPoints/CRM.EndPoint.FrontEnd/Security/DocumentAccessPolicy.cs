@@ -118,6 +118,24 @@ public sealed class DocumentAccessPolicy(
         return owners.AllowedOwnerIds is not { Length: 0 };
     }
 
+    // The mixed workspace returns unfiltered cross-document suggestions, totals and mapping user metadata.
+    public async Task<bool> CanUseMappingWorkspaceAsync(CancellationToken ct)
+    {
+        if (!IsEnforced("ExternalSoftware") || !IsEnforced("ExternalMapping"))
+            return context.HttpContext?.User.IsInRole("مدیر ارشد") == true;
+
+        if (!await HasAsync("ExternalSoftware", "View", ct) ||
+            !await HasAsync("ExternalMapping", "View", ct)) return false;
+        foreach (var entity in new[] { "Customer", "PreFactor", "Factor", "SupplyFactor",
+                     "Cash", "BaseCenterCash", "Accountancy", "BankAccount" })
+        {
+            if (!configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions") ||
+                await scopes.GetEffectiveScopeAsync(UserId, entity + ".View", ct) != AccessScopes.All)
+                return false;
+        }
+        return true;
+    }
+
     public async Task<bool> HasDashboardSourceViewAsync(string entity, CancellationToken ct)
     {
         if (entity is "Customer" or "Deal")
