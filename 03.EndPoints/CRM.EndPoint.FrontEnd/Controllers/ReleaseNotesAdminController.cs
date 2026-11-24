@@ -18,7 +18,8 @@ using CRM.Core.ApplicationServices.ReleaseNotes.Queries.GetReleaseNoteAdminPage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace CRM.EndPoint.FrontEnd.Controllers;
-[Authorize(Roles = AppRoles.Admin)]
+[Authorize(Policy = "NotCustomerOnly")]
+[LegacyCatalogRoles("ReleaseNote", AppRoles.Admin)]
 [CRM.EndPoint.FrontEnd.Filters.ReleaseNoteAccess]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class ReleaseNotesAdminController(ICqrsDispatcher dispatcher) : Controller

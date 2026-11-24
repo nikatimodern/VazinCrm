@@ -2,6 +2,7 @@
     "use strict";
     const root = document.getElementById("releaseNotesAdmin");
     if (!root) return;
+    const can = action => root.dataset[action.toLowerCase()] === "true" && window.AccessLive?.can("ReleaseNote", action) !== false && !window.AccessLive?.isEditingLocked();
     const page = typeof PageRuntime !== "undefined" ? PageRuntime.current : null;
     const lifetime = new AbortController(), signal = lifetime.signal;
     const editor = root.querySelector("[data-editor]"), editorModal = root.querySelector("#releaseNoteEditor"), items = root.querySelector("[data-items]");
@@ -70,14 +71,18 @@
             info.append(node("p", (note.items?.length || 0).toLocaleString("fa-IR") + " تغییر · " + ["همه کاربران","کاربران داخلی","مشتریان","نقش‌های انتخابی"][note.audience] + (note.isImportant ? " · مهم" : ""), "rn-muted"));
             if (note.publishDate) { const date = new Date(note.publishDate.endsWith("Z") ? note.publishDate : note.publishDate+"Z"); info.append(node("p", date.toLocaleString("fa-IR") + (date > new Date() ? " — زمان‌بندی‌شده" : ""),"rn-muted")); }
             actions.append(button("پیش‌نمایش","preview",note.id));
-            if (note.status === 0) actions.append(button("ویرایش","edit",note.id),button("انتشار","publish",note.id),button("حذف پیش‌نویس","delete",note.id,true));
-            if (note.status === 1) actions.append(button("بایگانی","archive",note.id));
+            if (note.status === 0) {
+                if (can("Edit")) actions.append(button("ویرایش","edit",note.id));
+                if (can("Publish")) actions.append(button("انتشار","publish",note.id));
+                if (can("Delete")) actions.append(button("حذف پیش‌نویس","delete",note.id,true));
+            }
+            if (note.status === 1 && can("Archive")) actions.append(button("بایگانی","archive",note.id));
             row.append(info,actions); fragment.append(row);
         }
         list.replaceChildren(fragment);
     }
     editor.addEventListener("submit", async event => {
-        event.preventDefault(); if (saving || !editor.reportValidity()) return;
+        event.preventDefault(); if (saving || !can(current ? "Edit" : "Create") || !editor.reportValidity()) return;
         saving = true; const submit = editor.querySelector("[type=submit]"); submit.disabled = true; formError.hidden = true;
         try {
             const result = await request(current ? "Update" : "Create", payload(), current?.id);
@@ -87,7 +92,7 @@
     editorModal.addEventListener("hide.bs.modal", event => { if (saving) event.preventDefault(); },{ signal });
     root.addEventListener("click", async event => {
         const target = event.target.closest("button"); if (!target || saving) return;
-        if (target.matches("[data-new]")) { showEditor(); return; }
+        if (target.matches("[data-new]")) { if (can("Create")) showEditor(); return; }
         if (target.matches("[data-refresh]")) { load(); return; }
         if (target.matches("[data-add-item]")) { if (items.children.length < 100) addItem(); return; }
         if (target.matches("[data-preview]")) {
@@ -108,7 +113,7 @@
             if (action === "down" && item.nextElementSibling) items.insertBefore(item.nextElementSibling,item);
             reorderButtons(); return;
         }
-        if (!id) return;
+        if (!id || (action !== "preview" && !can(action))) return;
         target.disabled = true;
         try {
             if (["edit","preview"].includes(action)) {

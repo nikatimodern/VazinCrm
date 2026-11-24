@@ -8,7 +8,7 @@ public sealed class ReleaseNoteAdministration(ReleaseNoteAccess access, IRelease
 {
     public async Task<ReleaseNoteResult> SaveAsync(ReleaseNoteDraft input, Guid? id, CancellationToken ct)
     {
-        await access.DemandAdminAsync(ct);
+        await access.DemandAdminAsync(ct, id.HasValue ? "Edit" : "Create");
         if (input is null || !Regex.IsMatch(input.Version ?? "", @"^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[A-Za-z0-9.-]{1,32})?$"))
             return new(400, "شماره نسخه باید مانند 7.0.5 باشد.");
         if (string.IsNullOrWhiteSpace(input.Title) || input.Title.Length > 200 || input.Description?.Length > 4000 ||

@@ -9,7 +9,7 @@ public sealed class ArchiveReleaseNoteCommandHandler(ReleaseNoteAccess access, I
 {
     public async Task<ReleaseNoteResult> HandleAsync(ArchiveReleaseNoteCommand command, CancellationToken ct)
     {
-        await access.DemandAdminAsync(ct);
+        await access.DemandAdminAsync(ct, "Archive");
         return ReleaseNoteAdministration.Map(await repository.ChangeStatusAsync(command.Id, ReleaseNoteStatus.Archived, DateTime.UtcNow, ct));
     }
 }

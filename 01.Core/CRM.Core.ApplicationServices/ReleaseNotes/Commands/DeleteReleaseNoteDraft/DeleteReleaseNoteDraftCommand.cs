@@ -9,7 +9,7 @@ public sealed class DeleteReleaseNoteDraftCommandHandler(ReleaseNoteAccess acces
 {
     public async Task<ReleaseNoteResult> HandleAsync(DeleteReleaseNoteDraftCommand command, CancellationToken ct)
     {
-        await access.DemandAdminAsync(ct);
+        await access.DemandAdminAsync(ct, "Delete");
         return ReleaseNoteAdministration.Map(await repository.DeleteDraftAsync(command.Id, ct));
     }
 }

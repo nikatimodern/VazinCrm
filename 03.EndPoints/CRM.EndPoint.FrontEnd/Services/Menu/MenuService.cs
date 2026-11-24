@@ -78,6 +78,11 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 if (settings.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions") &&
                     await scopes.GetEffectiveScopeAsync(userId, entity + ".View", default) == AccessScopes.All)
                     canOpenSettings = true;
+            if (settings.GetValue<bool>("AccessCatalog:EnforceReleaseNotePermissions") &&
+                await scopes.GetEffectiveScopeAsync(userId, "ReleaseNote.View", default) == AccessScopes.All &&
+                !user.IsInRole(AppRoles.Customer)) canOpenSettings = true;
+            if (settings.GetValue<bool>("AccessCatalog:EnforceSystemWarningPermissions"))
+                catalogViews["#warnings"] = await scopes.GetEffectiveScopeAsync(userId, "SystemWarning.View", default) == AccessScopes.All;
             if (canOpenSettings) catalogViews["#settings"] = true;
 
             if (settings.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions") &&

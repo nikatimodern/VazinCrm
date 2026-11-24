@@ -1,6 +1,14 @@
 @model CRM.Core.ApplicationServices.ReleaseNotes.Dtos.ReleaseNoteAdminPage
-<section class="rn rn-page" id="releaseNotesAdmin">
-    <header class="rn-toolbar"><h1>مدیریت تغییرات نسخه‌ها</h1><button type="button" class="rn-button rn-primary" data-new>ثبت نسخه جدید</button></header>
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy ReleaseAccess
+@{
+    var create = await ReleaseAccess.HasAsync("ReleaseNote", "Create", Context.RequestAborted);
+    var edit = await ReleaseAccess.HasAsync("ReleaseNote", "Edit", Context.RequestAborted);
+    var publish = await ReleaseAccess.HasAsync("ReleaseNote", "Publish", Context.RequestAborted);
+    var archive = await ReleaseAccess.HasAsync("ReleaseNote", "Archive", Context.RequestAborted);
+    var delete = await ReleaseAccess.HasAsync("ReleaseNote", "Delete", Context.RequestAborted);
+}
+<section class="rn rn-page" id="releaseNotesAdmin" data-create="@create.ToString().ToLowerInvariant()" data-edit="@edit.ToString().ToLowerInvariant()" data-publish="@publish.ToString().ToLowerInvariant()" data-archive="@archive.ToString().ToLowerInvariant()" data-delete="@delete.ToString().ToLowerInvariant()">
+    <header class="rn-toolbar"><h1>مدیریت تغییرات نسخه‌ها</h1>@if (create) { <button type="button" class="rn-button rn-primary" data-new>ثبت نسخه جدید</button> }</header>
     <div class="rn-toolbar"><label class="rn-search"><span>جستجو</span><input type="search" data-search placeholder="عنوان یا شماره نسخه…" maxlength="200" /></label><label>وضعیت <select data-status><option value="">همه</option><option value="0">پیش‌نویس</option><option value="1">منتشرشده</option><option value="2">بایگانی</option></select></label><button type="button" class="rn-button" data-refresh>تازه‌سازی</button></div>
     <p role="status" data-list-status></p><div class="rn-list" data-list></div>
     <div class="modal fade rn" id="releaseNoteEditor" tabindex="-1" aria-labelledby="releaseEditorTitle" aria-hidden="true">
