@@ -88,7 +88,7 @@
 
     const hasOpenEditor = () =>
         formDirty ||
-        !!document.querySelector(".modal.show form, #dealModal.show, #updateCustomerModal.show") ||
+        !!document.querySelector(".modal.show form, #dealModal.show, #updateCustomerModal.show, #qcCustomerNotesModal.show, #qcContactHistoryModal.show") ||
         (document.getElementById("formAddCustom")?.style.display !== "none" &&
          !!document.getElementById("formAddCustom"));
 

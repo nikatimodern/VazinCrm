@@ -59,3 +59,12 @@ The queue now filters shared contact records, note-existence markers and contact
 ## QC UI permission wiring
 
 Queue responses now include the same complete-customer capability used by shared contact operations. Razor exposes current catalog grants to the QC page; JavaScript hides unauthorized controls, prevents stale writes and invalidates pending reads after live access changes. History management additionally requires the exact catalog grant, not just the admin role. Question viewing is required for opening the review form and saving reviews. Browser and SQL integration validation remain prerequisites for enabling the QC flags.
+
+### QC activation acceptance checks
+
+- Apply the catalog registration on a non-production UserContextDb and verify the QC role has the required parent read permissions; do not automatically grant broad Customer/Deal/Factor access.
+- On a non-production CRM SQL Server, verify a customer with mixed visible/hidden invoices: item list and counts include only visible invoices; contact/notes/history metadata and shared operations are denied; date filters cannot expand the scope.
+- Verify selected and excluded parent owners, foreign item/note/history IDs, deleted rows, contact updates, and supplier enrichment (direct and warehouse allocation).
+- Verify separate View/Create/Edit/Delete/SetContactStatus/ManageContactHistory/QualityControlQuestion.View grants, including admin without ManageContactHistory. Verify view-only buttons, note editor, pending bulk review, revoked permissions during open dialogs and failed state refresh.
+- Review whether there is an existing question administration entry point beyond the seeded questions; no new question CRUD workflow is introduced by this permission change.
+- Confirm CI and real browser/SQL integration tests before enabling both flags. JS syntax is checked in CI; syntax alone does not establish authorization.

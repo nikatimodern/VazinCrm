@@ -343,6 +343,7 @@
         }
 
         async function loadReviewPage(reset = false) {
+            if (!can("qcQuestions")) return;
             if (!canReview() || !review || !isActive() || hasUnsavedWork() || issueItemId) return;
             if (reset) itemPageStart = 0;
             formController?.abort();
@@ -725,6 +726,7 @@
         }
 
         async function loadContactHistory() {
+            if (accessInvalidated) return;
             cancelHistoryDeleteHold();
             if (!historyCustomerId || !isActive()) return;
             historyController?.abort();
@@ -760,6 +762,7 @@
         }
 
         function openContactHistory(customerId) {
+            if (accessInvalidated) return;
             cancelHistoryDeleteHold();
             if (!customerId || !isActive()) return;
             historyCustomerId = customerId;
@@ -849,7 +852,7 @@
 
         // Notes are customer-level history; they never mutate invoice-item QC results.
         async function loadCustomerNotes(reset = true) {
-            if (!notesCustomerId || !isActive() || customerNotesLoading) return;
+            if (accessInvalidated || !notesCustomerId || !isActive() || customerNotesLoading) return;
             const customerId = notesCustomerId;
             const generation = notesGeneration;
             if (reset) {
@@ -929,6 +932,9 @@
             customerNoteCancelEdit.hidden = true;
             customerNotesList.querySelectorAll(".is-editing").forEach(entry => entry.classList.remove("is-editing"));
             customerNoteText.readOnly = !can("qcCreate");
+            showControl(customerNoteLabel, can("qcCreate") || can("qcEdit"));
+            showControl(customerNoteText, can("qcCreate") || can("qcEdit"));
+            showControl(customerNoteClear, can("qcCreate") || can("qcEdit"));
             showControl(customerNoteSave, can("qcCreate") || can("qcEdit"));
             customerNoteText.dispatchEvent(new Event("input"));
         }
@@ -1061,7 +1067,7 @@
             } finally {
                 customerNoteSaving = false;
                 if (generation === notesGeneration && isActive()) {
-                    customerNoteText.disabled = false;
+                    customerNoteText.disabled = accessInvalidated;
                     const filled = Boolean(customerNoteText.value.trim());
                     customerNoteSave.disabled = !can(editingCustomerNote ? "qcEdit" : "qcCreate") || !filled || !notesCustomerId;
                     customerNoteClear.disabled = !filled;
@@ -1070,6 +1076,7 @@
         });
 
         function openCustomerNotes(customerId, customerName) {
+            if (accessInvalidated) return;
             if (!customerId || !isActive() || customerNoteSaving || customerNoteDeleting) return;
             customerNotesController?.abort();
             notesCustomerId = customerId;
@@ -1942,7 +1949,7 @@
                 }
                 card.dataset.qcComplete = String(complete);
                 const button = card.querySelector("[data-qc-customer]");
-                if (button) button.innerHTML = complete
+                if (button) button.innerHTML = !canReview() ? "مشاهده کنترل کیفیت" : complete
                     ? '<i class="fa fa-check-circle" aria-hidden="true"></i> مشاهده / ویرایش'
                     : '<i class="fa fa-check-circle" aria-hidden="true"></i> کنترل کیفیت';
                 // Reviewing an item does not reset the customer's recorded contact state.
