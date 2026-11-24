@@ -195,14 +195,14 @@ public sealed class TaxProtocolTests
         Assert.Equal(expected, (await client.SubmitPaymentAsync(request, CancellationToken.None)).Status);
     }
 
-    private static X509Certificate2 Certificate(RSA key, DateTimeOffset now) =>
+    internal static X509Certificate2 Certificate(RSA key, DateTimeOffset now) =>
         new CertificateRequest("CN=Mock only", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
             .CreateSelfSigned(now.AddDays(-1), now.AddDays(1));
 
-    private static HttpResponseMessage Response(object response) =>
+    internal static HttpResponseMessage Response(object response) =>
         new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(response), Encoding.UTF8, "application/json") };
 
-    private static string Decrypt(string compact, RSA key)
+    internal static string Decrypt(string compact, RSA key)
     {
         var parts = compact.Split('.');
         using var header = JsonDocument.Parse(Decode(parts[0]));
@@ -219,12 +219,12 @@ public sealed class TaxProtocolTests
     private static byte[] Decode(string text) =>
         Convert.FromBase64String(text.Replace('-', '+').Replace('_', '/').PadRight((text.Length + 3) / 4 * 4, '='));
 
-    private sealed class TestCertificates(X509Certificate2 certificate) : ITaxCertificateStore
+    internal sealed class TestCertificates(X509Certificate2 certificate) : ITaxCertificateStore
     {
         public X509Certificate2 Open(string sha256) => new(certificate);
     }
 
-    private sealed class Stub(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback) : HttpMessageHandler
+    internal sealed class Stub(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             callback(request, cancellationToken);

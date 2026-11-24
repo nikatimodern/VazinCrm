@@ -47,7 +47,7 @@ public sealed class TaxationSqlFactAttribute : FactAttribute
     }
 }
 
-public sealed class TaxationSqlTests : IAsyncLifetime
+public sealed partial class TaxationSqlTests : IAsyncLifetime
 {
     private static readonly CancellationToken Ct = CancellationToken.None;
     private readonly DbContextOptions<CRMContextDb> options = new DbContextOptionsBuilder<CRMContextDb>()
