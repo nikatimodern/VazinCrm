@@ -131,6 +131,55 @@ public sealed class AccessLiveController(
         var warehousetransaction = await DocumentState("WarehouseTransaction", warehousetransactionEnforced, ["View", "Create", "Edit", "Delete"]);
         var warehousevoucherEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceWarehouseVoucherPermissions");
         var warehousevoucher = await DocumentState("WarehouseVoucher", warehousevoucherEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Deliver"]);
+        var qualitycontrolEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceQualityControlPermissions");
+        var qualitycontrol = await DocumentState("QualityControl", qualitycontrolEnforced, ["View", "Create", "Edit", "Delete", "SetContactStatus", "ManageContactHistory"]);
+        var qualitycontrolquestionEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceQualityControlQuestionPermissions");
+        var qualitycontrolquestion = await DocumentState("QualityControlQuestion", qualitycontrolquestionEnforced, ["View", "Create", "Edit", "Delete"]);
+        var productEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceProductPermissions");
+        var product = await DocumentState("Product", productEnforced, ["View", "Create", "Edit", "Delete"]);
+        var productgroupEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceProductGroupPermissions");
+        var productgroup = await DocumentState("ProductGroup", productgroupEnforced, ["View", "Create", "Edit", "Delete"]);
+        var productamountEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceProductAmountPermissions");
+        var productamount = await DocumentState("ProductAmount", productamountEnforced, ["View", "Create", "Edit", "Delete"]);
+        var contractEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceContractPermissions");
+        var contract = await DocumentState("Contract", contractEnforced, ["View", "Create", "Edit", "Delete"]);
+        var carizoEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions");
+        var carizo = await DocumentState("Carizo", carizoEnforced, ["View", "Create", "Edit", "Delete", "ChangeStatus"]);
+        var reportEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceReportPermissions");
+        var report = await DocumentState("Report", reportEnforced, ["View", "Create", "Edit", "Delete", "Export"]);
+        var callrecordingEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCallRecordingPermissions");
+        var callrecording = await DocumentState("CallRecording", callrecordingEnforced, ["View", "Listen"]);
+        var chatEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions");
+        var chat = await DocumentState("Chat", chatEnforced, ["View", "Create", "Edit", "Delete"]);
+        var emailEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceEmailPermissions");
+        var email = await DocumentState("Email", emailEnforced, ["View", "MarkRead"]);
+        var contactEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceContactPermissions");
+        var contact = await DocumentState("Contact", contactEnforced, ["View", "Create", "Edit", "Delete"]);
+        var agentEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceAgentPermissions");
+        var agent = await DocumentState("Agent", agentEnforced, ["View", "Create", "Edit", "Delete"]);
+        var releasenoteEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceReleaseNotePermissions");
+        var releasenote = await DocumentState("ReleaseNote", releasenoteEnforced, ["View", "Create", "Edit", "Delete", "Publish", "Archive"]);
+        var logsystemEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceLogSystemPermissions");
+        var logsystem = await DocumentState("LogSystem", logsystemEnforced, ["View", "ViewDetails"]);
+        var systemwarningEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceSystemWarningPermissions");
+        var systemwarning = await DocumentState("SystemWarning", systemwarningEnforced, ["View", "Delete"]);
+        var companyEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCompanyPermissions");
+        var company = await DocumentState("Company", companyEnforced, ["View", "Create", "Edit", "Delete"]);
+        var asettingEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceASettingPermissions");
+        var asetting = await DocumentState("ASetting", asettingEnforced, ["View", "Edit"]);
+        var baseitemEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceBaseItemPermissions");
+        var baseitem = await DocumentState("BaseItem", baseitemEnforced, ["View", "Create", "Edit", "Delete"]);
+        var basedescriptionEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceBaseDescriptionPermissions");
+        var basedescription = await DocumentState("BaseDescription", basedescriptionEnforced, ["View", "Create", "Edit", "Delete"]);
+        var externalsoftwareEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceExternalSoftwarePermissions");
+        var externalsoftware = await DocumentState("ExternalSoftware", externalsoftwareEnforced, ["View", "Create", "Edit", "Delete", "ManageSettings"]);
+        var externalmappingEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceExternalMappingPermissions");
+        var externalmapping = await DocumentState("ExternalMapping", externalmappingEnforced, ["View", "Create", "Edit", "Delete"]);
+        var sentsmsEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceSentSmsPermissions");
+        var sentsms = await DocumentState("SentSms", sentsmsEnforced, ["View", "Sync"]);
+        var receivedsmsEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceReceivedSmsPermissions");
+        var receivedsms = await DocumentState("ReceivedSms", receivedsmsEnforced, ["View", "Sync"]);
+        var sms = new { view = (byte)(sentsms["view"] > 0 || receivedsms["view"] > 0 ? 2 : 0) };
         var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
         var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
@@ -139,13 +188,14 @@ public sealed class AccessLiveController(
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced, transfer = transferEnforced, cashier = cashierEnforced, cash = cashEnforced, basecash = basecashEnforced, basecentercash = basecentercashEnforced, cashgroup = cashgroupEnforced, warehouse = warehouseEnforced, warehouseproduct = warehouseproductEnforced, warehousetransaction = warehousetransactionEnforced, warehousevoucher = warehousevoucherEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced, transfer = transferEnforced, cashier = cashierEnforced, cash = cashEnforced, basecash = basecashEnforced, basecentercash = basecentercashEnforced, cashgroup = cashgroupEnforced, warehouse = warehouseEnforced, warehouseproduct = warehouseproductEnforced, warehousetransaction = warehousetransactionEnforced, warehousevoucher = warehousevoucherEnforced, qualitycontrol = qualitycontrolEnforced, qualitycontrolquestion = qualitycontrolquestionEnforced, product = productEnforced, productgroup = productgroupEnforced, productamount = productamountEnforced, contract = contractEnforced, carizo = carizoEnforced, report = reportEnforced, callrecording = callrecordingEnforced, chat = chatEnforced, email = emailEnforced, contact = contactEnforced, agent = agentEnforced, releasenote = releasenoteEnforced, logsystem = logsystemEnforced, systemwarning = systemwarningEnforced, company = companyEnforced, asetting = asettingEnforced, baseitem = baseitemEnforced, basedescription = basedescriptionEnforced, externalsoftware = externalsoftwareEnforced, externalmapping = externalmappingEnforced, sentsms = sentsmsEnforced, receivedsms = receivedsmsEnforced },
             customer,
             deal,
             prefactor = preFactor,
             factor,
             cartable,
-            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check, transfer, cashier, cash, basecash, basecentercash, cashgroup, warehouse, warehouseproduct, warehousetransaction, warehousevoucher
+            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check, transfer, cashier, cash, basecash, basecentercash, cashgroup, warehouse, warehouseproduct, warehousetransaction, warehousevoucher,
+            qualitycontrol, qualitycontrolquestion, product, productgroup, productamount, contract, carizo, report, callrecording, chat, email, contact, agent, releasenote, logsystem, systemwarning, company, asetting, baseitem, basedescription, externalsoftware, externalmapping, sentsms, receivedsms, sms
         });
     }
 }
