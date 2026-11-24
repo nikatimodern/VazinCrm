@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.Domain.Deals.Repositories;
 using CRM.Core.Domain.Reports.Enum;
@@ -10,12 +11,19 @@ namespace CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 public sealed class AddReportCommandHandler(
     IReportRepository reports,
     IDealRepository deals,
-    IReportAuditLogger auditLogger) : ICommandHandler<AddReportCommand, AddReportResult>
+    IReportAuditLogger auditLogger, IDocumentReadAccess access) : ICommandHandler<AddReportCommand, AddReportResult>
 {
     public async Task<AddReportResult> HandleAsync(AddReportCommand command, CancellationToken cancellationToken)
     {
         var model = command.Report;
         var isNew = model.Id == Guid.Empty;
+        if (access.IsEnforced("Report"))
+        {
+            if (isNew && !await access.HasAsync("Report", "Create", cancellationToken))
+                return AddReportResult.Forbidden;
+            if (!isNew && !await reports.CanMutateAsync(model.Id, "Edit", cancellationToken))
+                return AddReportResult.Forbidden;
+        }
         var original = isNew ? null : await reports.GetForUpdateAsync(model.Id, cancellationToken);
 
         if (!isNew)
@@ -25,6 +33,15 @@ public sealed class AddReportCommandHandler(
                 return AddReportResult.Forbidden;
         }
 
+        if (access.IsEnforced("Report"))
+        {
+            model.IsDeleted = original?.IsDeleted ?? false;
+            model.AI = original?.AI ?? false;
+            model.CallRecordingId = original?.CallRecordingId;
+            model.CallRecording = null;
+            model.Deal = null;
+            model.Participants = null;
+        }
         model.ReportTypeTxt = Enum.GetValues<ReportTypeEnum>()
             .FirstOrDefault(type => type == model.ReportType).ToString().Replace("_", " ");
 

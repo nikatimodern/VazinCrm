@@ -88,6 +88,7 @@ public class ReportController(ICqrsDispatcher requests, DocumentAccessPolicy acc
     public async Task<IActionResult> AddReport(Report model, CancellationToken cancellationToken)
     {
         if (model == null) return BadRequest();
+        if (!await access.HasViewAsync("Report", cancellationToken)) return Forbid();
         if (model.Id == Guid.Empty ? !await access.HasAsync("Report", "Create", cancellationToken) :
             !await access.CanAsync("Report", "Edit", model.Id, cancellationToken)) return Forbid();
         if (access.IsEnforced("Report"))

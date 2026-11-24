@@ -114,3 +114,7 @@ The user confirmed RegisterContractAccessCatalog.sql was executed. Contract enfo
 ## Entities 30–35: Carizo first hardening batch
 
 Task repository now exposes per-row and shared mutation scope checks and active task queries. Save/delete and direct task reads apply additional CQRS guards, prevent ownership/system/status overposting and reject foreign participant IDs. Shared edit/delete conservatively require scope over every affected row; assigned-user status propagation, manual linked tasks, notifications, UI and all runtime compatibility checks are still outstanding. No flags or final registration SQL are delivered in this incomplete batch.
+
+## Report / CallRecording follow-up
+
+Report CQRS update/delete now intersects visible report and action scopes; report edits preserve AI/call linkage and prevent graph overposting under enforcement. Report cards check action scope and the audio endpoint's Listen grant. Existing linked manual Deal/Report task creation remains supported at the controller with parent visibility checks; unrecognized linked types are denied. Remaining issues include direct background report commands and call event notifications, participant display, legacy role mapping, shared form/live UI and runtime integration. No new flags enabled.

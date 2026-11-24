@@ -46,9 +46,17 @@ public sealed class ReportRepository : IReportRepository
         return await query.FirstOrDefaultAsync(report => report.Id == id, cancellationToken);
     }
 
-    public Task<Report?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<Report?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken)
     {
-        return _db.Reports.FirstOrDefaultAsync(report => report.Id == id, cancellationToken);
+        var visible = await VisibleReportsAsync(cancellationToken);
+        return await _db.Reports.FirstOrDefaultAsync(report => report.Id == id && !report.IsDeleted &&
+            visible.Any(v => v.Id == report.Id), cancellationToken);
+    }
+    public async Task<bool> CanMutateAsync(Guid id, string action, CancellationToken ct)
+    {
+        var visible = await VisibleReportsAsync(ct);
+        visible = await _access.ApplyAsync(visible, action, ct);
+        return await visible.AnyAsync(r => r.Id == id && !r.IsDeleted, ct);
     }
 
 

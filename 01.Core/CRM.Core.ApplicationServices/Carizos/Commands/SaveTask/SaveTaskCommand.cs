@@ -33,9 +33,8 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
                     _model.TaskHide = false;
                     _model.CompleteTaskUser = null;
                     _model.CompleteTaskUserId = null;
-                    // Manual tasks cannot impersonate a system-generated document task.
-                    if (_model.EntityId.HasValue || !string.IsNullOrEmpty(_model.EntityType))
-                        return new { status = "403", error = "Linked task creation requires separate authorization." };
+                    if (_model.EntityId.HasValue && _model.EntityType is not ("Deal" or "Report"))
+                        return new { status = "403", error = "Invalid linked task." };
                 }
                 else
                 {

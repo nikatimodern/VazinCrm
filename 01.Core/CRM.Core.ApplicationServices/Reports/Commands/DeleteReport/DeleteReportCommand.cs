@@ -11,6 +11,7 @@ public sealed class DeleteReportCommandHandler(IReportRepository repository, IRe
     {
         var user = await users.GetAsync(cancellationToken);
         if (user is null) return DeleteReportResult.NotFound;
+        if (!await repository.CanMutateAsync(request.Id, "Delete", cancellationToken)) return DeleteReportResult.Forbidden;
         var report = await repository.GetForUpdateAsync(request.Id, cancellationToken);
         if (report is null) return DeleteReportResult.NotFound;
         if (!user.CanEditOthers && report.UserCreatorID != user.User.Id) return DeleteReportResult.Forbidden;

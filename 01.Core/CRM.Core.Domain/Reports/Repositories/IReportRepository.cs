@@ -11,6 +11,7 @@ namespace CRM.Core.Domain.Reports.Repositories;
 public interface IReportRepository
 {
     Task<Report?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<bool> CanMutateAsync(Guid id, string action, CancellationToken ct);
     Task<Report?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken);
     Task<List<Report>> SearchAsync(ReportSearch search, Guid? dealId, string userId, bool canReadAllSatisfaction, CancellationToken cancellationToken);
     Task<List<Report>> GetByPhoneAsync(string phone, CancellationToken cancellationToken);
