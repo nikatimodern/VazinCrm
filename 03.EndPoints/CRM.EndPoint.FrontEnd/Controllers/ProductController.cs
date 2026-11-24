@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CRM.EndPoint.FrontEnd.Security;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
+        [CatalogPermission("Product", "View")]
         public async Task<IActionResult> GetAllProduct()
         {
             var pr = await db.Products.Select(f => new SelectOptionIdDto() {
