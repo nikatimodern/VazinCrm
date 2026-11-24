@@ -43,7 +43,9 @@ namespace CRM.EndPoint.FrontEnd.Services.ViewRender
 
                 using (var sw = new StringWriter())
                 {
-                    var viewResult = _viewEngine.FindView(actionContext, viewName, false);
+                    var viewResult = viewName.StartsWith("~/", StringComparison.Ordinal) || viewName.StartsWith("/", StringComparison.Ordinal)
+                        ? _viewEngine.GetView(null, viewName, false)
+                        : _viewEngine.FindView(actionContext, viewName, false);
 
                     if (!viewResult.Success)
                     {

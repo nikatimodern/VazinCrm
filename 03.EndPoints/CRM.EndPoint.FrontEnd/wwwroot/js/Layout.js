@@ -2815,13 +2815,21 @@ async function refreshTaskCards(id) {
 window.addEventListener("pagehide", () => carizoCardReads.forEach(request => request.abort()));
 
 async function getAllTask(type, systematic = 0, loc = 1) {
-    if (!canCarizoAction("View")) return;
+    const isDashboard = loc === 2;
+    const canRead = () => canCarizoAction("View") &&
+        (!isDashboard || window.AccessLive?.can("Dashboard", "ViewTasks") !== false);
+    if (!isDashboard && !canRead()) return;
     const containerName = type === 0 ? "todoTask" : type === 1 ? (loc === 1 ? "todayTask" : "todayTaskDash") : "finishedTask";
     const containerElm = document.getElementById(containerName + "Id");
     const countElm = document.getElementById(containerName + "Count");
     const noTaskImgDash = document.getElementById("noTaskImg");
+    if (isDashboard && !containerElm) return;
     const load = async () => {
         try {
+            if (!canRead()) {
+                if (isDashboard) throw new Error("Dashboard task access unavailable");
+                return;
+            }
             const res = await sendApiRequest({
                 url: "/Carizo/GetAllTask",
                 params: { type, loc, systematic },
@@ -2834,7 +2842,12 @@ async function getAllTask(type, systematic = 0, loc = 1) {
                 return;
             }
             if (res.status === 200) {
-                if (!canCarizoAction("View")) return;
+                if (!canRead()) {
+                    if (isDashboard) throw new Error("Dashboard task access changed");
+                    return;
+                }
+                if (isDashboard && typeof res.data?.html !== "string")
+                    throw new Error("Invalid dashboard task response");
                 if (containerElm) {
                     disposeDateTimePickers(containerElm);
                     containerElm.innerHTML = res.data.html;

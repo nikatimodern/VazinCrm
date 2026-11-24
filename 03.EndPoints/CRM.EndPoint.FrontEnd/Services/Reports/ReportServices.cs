@@ -45,7 +45,7 @@ public sealed class ReportPresentation(IViewRenderService renderer) : IReportPre
     public Task<string> RenderAsync(ReportListResult result, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return renderer.RenderToStringAsync("GetAllReportPartial", result.Reports, new Dictionary<string, object>
+        return renderer.RenderToStringAsync("~/Views/Report/GetAllReportPartial.cshtml", result.Reports, new Dictionary<string, object>
         {
             ["PassType"] = result.PassType, ["IsManager"] = result.IsManager, ["CurrentUserId"] = result.CurrentUserId
         });

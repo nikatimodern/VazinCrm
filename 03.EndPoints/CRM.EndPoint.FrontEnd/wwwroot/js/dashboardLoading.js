@@ -15,7 +15,10 @@ const dashboardLoading = (() => {
             card?.setAttribute('aria-busy', 'true');
             card?.querySelector('.dashboard-load-error')?.remove();
             if (isList) target.innerHTML = skeleton;
-            if (id === 'todayTaskDashId') document.getElementById('noTaskImg').style.display = 'none';
+            if (id === 'todayTaskDashId') {
+                const empty = document.getElementById('noTaskImg');
+                if (empty) empty.style.display = 'none';
+            }
             if (id === 'LogSystemId') document.getElementById('noSysActionImg')?.classList.add('d-none');
             try {
                 await load();

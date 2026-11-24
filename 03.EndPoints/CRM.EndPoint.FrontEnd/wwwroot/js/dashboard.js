@@ -121,10 +121,18 @@ const getDashReports = async () => {
         const reportContainer = document.getElementById("allReportsDashboardId");
         try {
             const model = { ...modelDash, count: 50, _type: -1 };
-            const res = await axios.post("/Dashboard/GetDashboardReports", model);
-            if (res.status === 200) {
-                reportContainer.innerHTML = res.data.html;
-            }
+            const res = await sendApiRequest({
+                url: "/Dashboard/GetDashboardReports",
+                method: "POST",
+                data: model,
+                returnFullResponse: true,
+                showLoading: false,
+                showError: false,
+                successMsg: null
+            });
+            if (res?.status !== 200 || typeof res.data?.html !== "string")
+                throw new Error("Dashboard reports request failed");
+            reportContainer.innerHTML = res.data.html;
         } catch (err) {
             console.error(err);
             throw err;

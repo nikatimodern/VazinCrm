@@ -19,7 +19,7 @@ namespace CRM.EndPoint.FrontEnd.Services.Carizos;
 public sealed class CarizoEffects(IHubContext<TaskHub> hub, IPushQueue push, IViewRenderService views, IAccessScopeService scopes, IConfiguration configuration) : ICarizoEffects
 {
     public Task RefreshAsync(CancellationToken ct, Guid? taskId = null) => hub.Clients.All.SendAsync("RefreshTasks", ct);
-    public Task<string> RenderCardsAsync(List<CRM.Core.Domain.Carizos.Entities.Carizo> tasks, AppUser user, int type, int location, CancellationToken ct) => views.RenderToStringAsync("GetAllTask", new CarizoViewModel { CurrentUser = user, Data = tasks, _Type = type, loc = location });
+    public Task<string> RenderCardsAsync(List<CRM.Core.Domain.Carizos.Entities.Carizo> tasks, AppUser user, int type, int location, CancellationToken ct) => views.RenderToStringAsync("~/Views/Carizo/GetAllTask.cshtml", new CarizoViewModel { CurrentUser = user, Data = tasks, _Type = type, loc = location });
     public async Task NotifyAsync(string userId, string message, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userId)) return;
