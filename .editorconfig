@@ -1,0 +1,9 @@
+# Conservative defaults; do not mass-format legacy files.
+root = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+[*.{js,ts,jsx,tsx,css,scss,cshtml}]
+indent_style = space
