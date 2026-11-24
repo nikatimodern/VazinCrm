@@ -19,6 +19,8 @@ using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.Contracts.Entities;
+using CRM.Core.Domain.Customers.Entities;
+using CRM.Core.Domain.Deals.Entities;
 using CRM.Core.Domain.Carizos.Entities;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.CallRecordings.Entities;
@@ -50,6 +52,49 @@ public sealed class DocumentAccessPolicy(
     public bool IsEnforced(string entity) =>
         (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher" or "QualityControl" or "QualityControlQuestion" or "Product" or "ProductGroup" or "ProductAmount" or "Contract" or "Carizo" or "Report" or "CallRecording" or "Chat" or "Email" or "Contact" or "Agent" or "ReleaseNote" or "LogSystem" or "SystemWarning" or "Company" or "ASetting" or "BaseItem" or "BaseDescription" or "ExternalSoftware" or "ExternalMapping" or "SentSms" or "ReceivedSms") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
+
+    public async Task<IQueryable<Customer>> CustomersAsync(IQueryable<Customer> query, string action, CancellationToken ct)
+    {
+        if (!configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions")) return query;
+        var filter = await scopes.GetCustomerOwnerAccessAsync(UserId, "Customer." + action, ct);
+        if (filter.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        if (filter.AllowedOwnerIds is { } allowed)
+            query = query.Where(x => db.UserCustomers.Any(u => u.CustomerId == x.Id && allowed.Contains(u.UserId)));
+        if (filter.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = filter.ExcludedOwnerIds;
+            query = query.Where(x => !db.UserCustomers.Any(u => u.CustomerId == x.Id && excluded.Contains(u.UserId)));
+        }
+        return query;
+    }
+
+    public async Task<IQueryable<Deal>> DealsAsync(IQueryable<Deal> query, string action, CancellationToken ct)
+    {
+        if (!configuration.GetValue<bool>("AccessCatalog:EnforceDealPermissions")) return query;
+        var filter = await scopes.GetDealOwnerAccessAsync(UserId, "Deal." + action, ct);
+        if (filter.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        if (filter.AllowedOwnerIds is { } allowed) query = query.Where(x => allowed.Contains(x.UserCreatorID));
+        if (filter.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = filter.ExcludedOwnerIds;
+            query = query.Where(x => !excluded.Contains(x.UserCreatorID));
+        }
+        return query;
+    }
+
+    public async Task<bool> CanCustomerAsync(Guid id, string action, CancellationToken ct)
+    {
+        var query = await CustomersAsync(db.Customers.IgnoreQueryFilters().AsNoTracking().Where(x => x.Id == id), "View", ct);
+        if (action != "View") query = await CustomersAsync(query, action, ct);
+        return await query.AnyAsync(ct);
+    }
+
+    public async Task<bool> CanDealAsync(Guid id, string action, CancellationToken ct)
+    {
+        var query = await DealsAsync(db.Deals.AsNoTracking().Where(x => x.Id == id), "View", ct);
+        if (action != "View") query = await DealsAsync(query, action, ct);
+        return await query.AnyAsync(ct);
+    }
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
     {
@@ -236,6 +281,15 @@ public sealed class DocumentAccessPolicy(
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
         var allowed = owners.AllowedOwnerIds;
         var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(Report))
+        {
+            var rows = (IQueryable<Report>)(object)query;
+            var customers = await CustomersAsync(db.Customers.AsNoTracking(), "View", ct);
+            var deals = await DealsAsync(db.Deals.AsNoTracking(), "View", ct);
+            rows = rows.Where(r => (!r.CustomerId.HasValue || customers.Any(c => c.Id == r.CustomerId.Value))
+                && (!r.DealId.HasValue || deals.Any(d => d.Id == r.DealId.Value)));
+            query = (IQueryable<T>)(object)rows;
+        }
         if (typeof(T) == typeof(Carizo))
         {
             var rows = (IQueryable<Carizo>)(object)query;
