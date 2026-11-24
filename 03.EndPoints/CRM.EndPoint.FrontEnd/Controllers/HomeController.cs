@@ -1,4 +1,5 @@
-﻿using CRM.Core.Domain.AppUsers.Entities;
+﻿using CRM.EndPoint.FrontEnd.Security;
+using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -167,6 +168,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         /* ----------------------------------------------- System Warnings ----------------------------------------------- */
 
         [HttpGet]
+        [CatalogPermission("SystemWarning", "View")]
         public async Task<IActionResult> GetAllSystemWarnings(bool isRefresh = false)
         {
             var warnings = await genService.GetAllWarnings(User, isRefresh);
@@ -175,6 +177,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         }
 
         [HttpGet]
+        [CatalogPermission("SystemWarning", "Delete")]
         public async Task<IActionResult> DeleteSystemWarning(Guid id)
         {
             try
