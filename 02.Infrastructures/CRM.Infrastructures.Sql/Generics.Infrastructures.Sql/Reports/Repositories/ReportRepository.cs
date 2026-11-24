@@ -54,7 +54,9 @@ public sealed class ReportRepository : IReportRepository
 
     public async Task<List<Report>> SearchAsync(ReportSearch search, Guid? dealId, string userId, bool canReadAllSatisfaction, CancellationToken cancellationToken)
     {
-        var qData = (await VisibleReportsAsync(cancellationToken)).Include(r => r.CallRecording.Participants)
+        var visible = await VisibleReportsAsync(cancellationToken);
+        if (search.ForExport) visible = await _access.ApplyAsync(visible, "Export", cancellationToken);
+        var qData = visible.Include(r => r.CallRecording.Participants)
             .OrderByDescending(r => r.RegDate).AsQueryable();
         if (dealId != null)
         {
