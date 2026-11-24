@@ -1,3 +1,4 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
@@ -8,11 +9,18 @@ using CRM.Core.Domain.Products.Repositories;
 
 namespace CRM.Core.ApplicationServices.Amounts.Commands.DeleteProductPrice;
 public sealed record DeleteProductPriceCommand(Guid Id) : ICommand<int>;
-public sealed class DeleteProductPriceCommandHandler(IProductPriceRepository repository, CurrentActor actor, IApplicationAudit audit, IApplicationDates dates) : ICommandHandler<DeleteProductPriceCommand, int>
+public sealed class DeleteProductPriceCommandHandler(IProductPriceRepository repository, CurrentActor actor, IDocumentReadAccess permissions, IApplicationAudit audit, IApplicationDates dates) : ICommandHandler<DeleteProductPriceCommand, int>
 {
     public async Task<int> HandleAsync(DeleteProductPriceCommand request, CancellationToken ct)
     {
-        var user = (await actor.GetAsync(ct)).User;
+        var current = await actor.GetAsync(ct);
+        if (!current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"))
+            return 403;
+        var user = current.User;
+        if (!await permissions.HasAsync("Product", "View", ct) ||
+            !await permissions.HasAsync("ProductAmount", "View", ct) ||
+            !await permissions.HasAsync("ProductAmount", "Delete", ct))
+            return 403;
         var price = await repository.GetAsync(request.Id, true, ct);
         if (price == null)
             return 404;

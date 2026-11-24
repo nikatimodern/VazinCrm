@@ -8,6 +8,7 @@ using CRM.Core.Domain.Products.Entities;
 namespace CRM.Core.Domain.Products.Repositories;
 public interface IProductPriceRepository
 {
+    Task<bool> ProductExistsAsync(Guid id, CancellationToken cancellationToken);
     Task<List<Product>> SearchAsync(string? search, CancellationToken cancellationToken);
     Task<ProductAmount?> GetAsync(Guid id, bool tracking, CancellationToken cancellationToken);
     Task SaveAsync(ProductAmount price, bool create, CancellationToken cancellationToken);

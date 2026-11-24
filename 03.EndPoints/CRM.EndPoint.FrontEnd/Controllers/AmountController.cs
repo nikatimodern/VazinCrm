@@ -37,7 +37,7 @@ public sealed class AmountController(ICqrsDispatcher requests, DocumentAccessPol
         }
     }
 
-    [HttpPost]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddAmount([FromBody] ProductAmount model, CancellationToken ct)
     {
         if (model == null) return BadRequest();
@@ -45,7 +45,8 @@ public sealed class AmountController(ICqrsDispatcher requests, DocumentAccessPol
             !await access.HasAsync("ProductAmount", model.Id == Guid.Empty ? "Create" : "Edit", ct)) return Forbid();
         return StatusCode(await requests.CommandAsync(new SaveProductPriceCommand(model), ct));
     }
-    [HttpGet]
+    [HttpPost, ValidateAntiForgeryToken]
+    [CatalogPermission("Product", "View")]
     [CatalogPermission("ProductAmount", "Delete")]
     public async Task<IActionResult> DelAmount(Guid id, CancellationToken ct) => StatusCode(await requests.CommandAsync(new DeleteProductPriceCommand(id), ct));
 }

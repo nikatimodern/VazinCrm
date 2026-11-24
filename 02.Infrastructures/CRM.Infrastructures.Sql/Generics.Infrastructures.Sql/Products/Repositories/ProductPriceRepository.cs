@@ -11,8 +11,9 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.Infrastructures.Sql.Products.Repositories;
 public sealed class ProductPriceRepository(CRMContextDb db) : IProductPriceRepository
 {
-    public Task<List<Product>> SearchAsync(string? search, CancellationToken ct) => db.Products.AsNoTracking().Where(p => EF.Functions.Like(p.Title, "%" + search + "%")).Include(p => p.ProductAmounts).ToListAsync(ct);
-    public Task<ProductAmount?> GetAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.ProductAmounts : db.ProductAmounts.AsNoTracking()).FirstOrDefaultAsync(p => p.Id == id, ct);
+    public Task<bool> ProductExistsAsync(Guid id, CancellationToken ct) => db.Products.AsNoTracking().AnyAsync(p => p.Id == id && !p.IsDeleted, ct);
+    public Task<List<Product>> SearchAsync(string? search, CancellationToken ct) => db.Products.AsNoTracking().Where(p => !p.IsDeleted && EF.Functions.Like(p.Title, "%" + search + "%")).Include(p => p.ProductAmounts.Where(price => !price.IsDeleted)).ToListAsync(ct);
+    public Task<ProductAmount?> GetAsync(Guid id, bool tracking, CancellationToken ct) => (tracking ? db.ProductAmounts : db.ProductAmounts.AsNoTracking()).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted && db.Products.Any(product => product.Id == p.ProductId && !product.IsDeleted), ct);
     public async Task SaveAsync(ProductAmount price, bool create, CancellationToken ct)
     {
         if (create)
@@ -21,7 +22,16 @@ public sealed class ProductPriceRepository(CRMContextDb db) : IProductPriceRepos
         {
             var current = await db.ProductAmounts.FirstAsync(p => p.Id == price.Id, ct);
             var entry = db.Entry(current);
-            entry.CurrentValues.SetValues(price);
+            current.From = price.From;
+            current.To = price.To;
+            current.Unit = price.Unit;
+            current.UnitTxt = price.UnitTxt;
+            current.RasmiAmount = price.RasmiAmount;
+            current.NonRasmiAmount = price.NonRasmiAmount;
+            current.ModifyDate = price.ModifyDate;
+            current.ModifyDateTxt = price.ModifyDateTxt;
+            current.UserModify = price.UserModify;
+            current.UserModifyID = price.UserModifyID;
             foreach (var property in new[]
             {
                 "CreateDate",
