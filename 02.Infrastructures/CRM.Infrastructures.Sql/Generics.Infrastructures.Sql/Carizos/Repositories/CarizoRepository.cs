@@ -40,7 +40,8 @@ public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access
         await (await access.ApplyAsync(db.Carizos.AsNoTracking(), "View", ct)).Include(t => t.TaskUsers).Where(t => t.AssignUserId == userId && !t.TaskStatus && t.Remind == true && t.DateMiladi <= now).ToListAsync(ct);
     public async Task<List<Carizo>> GetTasksAsync(string userId, int type, int systematic, DateTime now, CancellationToken ct)
     {
-        var query = (await access.ApplyAsync(db.Carizos.AsNoTracking(), "View", ct)).Include(t => t.TaskUsers).Where(t => t.AssignUserId == userId);
+        var query = (await access.ApplyAsync(db.Carizos.AsNoTracking().Where(t => !t.IsDeleted), "View", ct)).Include(t => t.TaskUsers.Where(u => !u.IsDeleted)).AsQueryable();
+        if (!access.IsEnforced("Carizo")) query = query.Where(t => t.AssignUserId == userId);
         if (systematic == 1)
             query = query.Where(t => t.Systematic);
         if (systematic == 2)
@@ -63,7 +64,9 @@ public sealed class CarizoRepository(CRMContextDb db, IDocumentReadAccess access
         var roots = await access.ApplyAsync(db.Carizos.AsNoTracking().Where(t => !t.IsDeleted && t.Id == id), "View", ct);
         var root = await roots.Select(t => new { t.Id, t.ShareTaskId }).FirstOrDefaultAsync(ct);
         var group = root?.ShareTaskId is Guid share && share != Guid.Empty ? share : id;
-        var tasks = await (await access.ApplyAsync(db.Carizos.AsNoTracking(), "View", ct)).Include(t => t.TaskUsers).Where(t => t.AssignUserId == userId && (t.Id == id || t.Id == group || t.ShareTaskId == group)).ToListAsync(ct);
+        var query = (await access.ApplyAsync(db.Carizos.AsNoTracking().Where(t => !t.IsDeleted), "View", ct)).Include(t => t.TaskUsers.Where(u => !u.IsDeleted)).Where(t => t.Id == id || t.Id == group || t.ShareTaskId == group);
+        if (!access.IsEnforced("Carizo")) query = query.Where(t => t.AssignUserId == userId);
+        var tasks = await query.ToListAsync(ct);
         return new(group, tasks);
     }
 

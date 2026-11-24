@@ -20,13 +20,13 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
         try
         {
             var _user = (await actor.GetAsync(ct)).User;
-            if (_model == null) return new { status = "400", error = "Invalid task." };
+            if (_model == null) return 400;
             if (access.IsEnforced("Carizo"))
             {
                 if (_model.Id == Guid.Empty)
                 {
                     if (!await access.HasAsync("Carizo", "Create", ct))
-                        return new { status = "403", error = "Access denied." };
+                        return 403;
                     _model.IsDeleted = false;
                     _model.Systematic = false;
                     _model.TaskStatus = false;
@@ -34,20 +34,20 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
                     _model.CompleteTaskUser = null;
                     _model.CompleteTaskUserId = null;
                     if (_model.EntityId.HasValue && _model.EntityType is not ("Deal" or "Report"))
-                        return new { status = "403", error = "Invalid linked task." };
+                        return 403;
                 }
                 else
                 {
                     if (!await repository.CanAccessAsync(_model.Id, "Edit", ct))
-                        return new { status = "403", error = "Access denied." };
+                        return 403;
                     var original = await repository.GetAsync(_model.Id, false, ct);
-                    if (original == null) return new { status = "404", error = "Task not found." };
+                    if (original == null) return 404;
                     if (original.TaskType != TaskTypeEnum.تکی && original.UserCreatorID == _user.Id &&
                         !await repository.CanMutateSharedAsync(original.ShareTaskId ?? original.Id, "Edit", ct))
-                        return new { status = "403", error = "Shared task scope denied." };
+                        return 403;
                     if (original.UserCreatorID != _user.Id &&
                         (_model.TaskUsers?.Count > 0 || _model.TaskType != original.TaskType))
-                        return new { status = "403", error = "Assignment change denied." };
+                        return 403;
                     _model.IsDeleted = original.IsDeleted;
                     _model.Systematic = original.Systematic;
                     _model.EntityType = original.EntityType;
@@ -60,7 +60,7 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
                     _model.CreateDateTxt = original.CreateDateTxt;
                     if (_model.TaskUsers != null && _model.TaskUsers.Any(u => u.Id != Guid.Empty &&
                         !(original.TaskUsers ?? new List<TaskUser>()).Any(x => x.Id == u.Id && x.UserId == u.UserId)))
-                        return new { status = "403", error = "Invalid task participant." };
+                        return 403;
                 }
             }
             if (_model.EntityType == "Deal" && !access.IsEnforced("Carizo"))
@@ -189,12 +189,7 @@ public sealed class SaveTaskCommandHandler(ICarizoRepository repository, Current
         }
         catch (Exception e)
         {
-            return new
-            {
-                Status = "500",
-                error = e.Message,
-                data = ""
-            };
+            return 500;
         }
     }
 }

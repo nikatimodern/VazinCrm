@@ -65,7 +65,8 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
             if (_model.Id == Guid.Empty && _model.EntityType is not ("Deal" or "Report")) return BadRequest();
         }
         if (_model.Id == Guid.Empty ? !await access.HasAsync("Carizo", "Create", ct) : !await access.CanAsync("Carizo", "Edit", _model.Id, ct)) return Forbid();
-        return Ok(await dispatcher.CommandAsync(new SaveTaskCommand(_model), ct));
+        var result = await dispatcher.CommandAsync(new SaveTaskCommand(_model), ct);
+        return result is int status ? StatusCode(status) : Ok(result);
     }
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateTaskTime(Guid id, string _Time, CancellationToken ct)
