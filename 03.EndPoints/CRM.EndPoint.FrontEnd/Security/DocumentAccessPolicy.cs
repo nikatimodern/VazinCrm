@@ -17,6 +17,7 @@ using CRM.Core.Domain.Payments.Entities;
 using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Transfers.Entities;
+using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -43,7 +44,7 @@ public sealed class DocumentAccessPolicy(
 
     private string UserId => context.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     public bool IsEnforced(string entity) =>
-        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup") &&
+        (entity is "PreFactor" or "Factor" or "OrderHead" or "Supply" or "SupplyFactor" or "Accountancy" or "RequestAmount" or "Payment" or "BankAccount" or "Checkbook" or "Check" or "Transfer" or "Cashier" or "Cash" or "BaseCash" or "BaseCenterCash" or "CashGroup" or "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher") &&
         configuration.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions");
 
     public async Task<bool> HasAsync(string entity, string action, CancellationToken ct)
@@ -161,9 +162,58 @@ public sealed class DocumentAccessPolicy(
         return query;
     }
 
+    // Warehouse scope is shared by its ledger, products and vouchers. A warehouse's
+    // creator and assigned employees are its owners; an exclusion wins over inclusion.
+    private async Task<IQueryable<Warehouse>> WarehouseOwnersAsync(string entity, string action, CancellationToken ct)
+    {
+        var query = db.Warehouses.AsNoTracking();
+        if (!IsEnforced(entity)) return query;
+        var owners = await OwnersAsync(entity + "." + action, ct);
+        if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        if (owners.AllowedOwnerIds is { } allowed)
+            query = query.Where(x => allowed.Contains(x.UserCreatorID) || x.WarehouseUsers.Any(u => allowed.Contains(u.UserId)));
+        if (owners.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = owners.ExcludedOwnerIds;
+            query = query.Where(x => !excluded.Contains(x.UserCreatorID) && !x.WarehouseUsers.Any(u => excluded.Contains(u.UserId)));
+        }
+        return query;
+    }
+
+    private async Task<IQueryable<T>> WarehouseScopeAsync<T>(IQueryable<T> query, string entity, string action, CancellationToken ct) where T : BaseEntity
+    {
+        var warehouses = await WarehouseOwnersAsync("Warehouse", "View", ct);
+        var actionWarehouses = await WarehouseOwnersAsync(entity, action, ct);
+        warehouses = warehouses.Where(w => actionWarehouses.Any(a => a.Id == w.Id));
+        if (entity == "Warehouse")
+        {
+            var rows = (IQueryable<Warehouse>)(object)query;
+            return (IQueryable<T>)(object)rows.Where(w => warehouses.Any(a => a.Id == w.Id));
+        }
+        if (entity == "WarehouseProduct")
+        {
+            var rows = (IQueryable<WarehouseProduct>)(object)query;
+            return (IQueryable<T>)(object)rows.Where(p => warehouses.Any(w => w.Id == p.WarehouseId));
+        }
+        var productWarehouses = await WarehouseOwnersAsync("WarehouseProduct", "View", ct);
+        var products = db.WarehouseProducts.AsNoTracking().Where(p => warehouses.Any(w => w.Id == p.WarehouseId) && productWarehouses.Any(w => w.Id == p.WarehouseId));
+        if (entity == "WarehouseTransaction")
+        {
+            var rows = (IQueryable<WarehouseTransaction>)(object)query;
+            var voucherWarehouses = await WarehouseOwnersAsync("WarehouseVoucher", "View", ct);
+            return (IQueryable<T>)(object)rows.Where(t => products.Any(p => p.Id == t.WarehouseProductId) &&
+                (!t.WarehouseVoucherId.HasValue || db.WarehouseVouchers.Any(v => v.Id == t.WarehouseVoucherId.Value && warehouses.Any(w => w.Id == v.WarehouseId) && voucherWarehouses.Any(w => w.Id == v.WarehouseId))));
+        }
+        var vouchers = (IQueryable<WarehouseVoucher>)(object)query;
+        return (IQueryable<T>)(object)vouchers.Where(v => warehouses.Any(w => w.Id == v.WarehouseId) &&
+            !v.WarehouseProductVouchers.Any(p => !products.Any(a => a.Id == p.WarehouseProductId && a.WarehouseId == v.WarehouseId)));
+    }
+
     public async Task<IQueryable<T>> ApplyAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
     {
         var entity = typeof(T).Name;
+        if (entity is "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher")
+            return await WarehouseScopeAsync(query, entity, action, ct);
         if (!IsEnforced(entity)) return query;
         var owners = await OwnersAsync(entity + "." + action, ct);
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
@@ -224,6 +274,8 @@ public sealed class DocumentAccessPolicy(
         var entity = typeof(T).Name;
         if (!IsEnforced(entity)) return true;
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
+        if (entity is "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher")
+            return await CanAsync(entity, action, row.Id, ct);
         if (row is Cashier cashier)
         {
             var owner = new string?[] { cashier.UserId.ToString() };
@@ -279,6 +331,10 @@ public sealed class DocumentAccessPolicy(
             "BaseCash" => await CanRowAsync(db.BaseCashes.AsNoTracking().Where(x => x.Id == id), action, ct),
             "BaseCenterCash" => await CanRowAsync(db.BaseCenterCashes.AsNoTracking().Where(x => x.Id == id), action, ct),
             "CashGroup" => await CanRowAsync(db.CashGroups.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Warehouse" => await CanRowAsync(db.Warehouses.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "WarehouseProduct" => await CanRowAsync(db.WarehouseProducts.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "WarehouseTransaction" => await CanRowAsync(db.WarehouseTransactions.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "WarehouseVoucher" => await CanRowAsync(db.WarehouseVouchers.AsNoTracking().Where(x => x.Id == id), action, ct),
             _ => false
         };
     }
