@@ -166,6 +166,9 @@ public sealed class AccountancyRepository(CRMContextDb db, CRM.Core.Domain.Acces
     public async Task<AccountancyCartable> GetCartableAsync(string? serVal, int searchNumber, CartableEnum cartable, int type, PayTypeEnum? payType, CancellationToken ct)
     {
         var baseQuery = await access.ApplyAsync(db.Accountancies.AsNoTracking().Include(x => x.Deal).Include(x => x.AccountancyTransfer).ForPreFactor().OrderByDescending(x => x.CreateDate), "View", ct);
+        // Received checks use accountancy records rather than issued-check entities.
+        if ((int)cartable == 7)
+            baseQuery = await access.ReceivedChecksAsync(baseQuery.Where(x => x.PayType == PayTypeEnum.چکی), ct);
         if (cartable == CartableEnum.کارشناس_تامین)
         {
             baseQuery = baseQuery.OnlyTamin();
