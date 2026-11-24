@@ -37,6 +37,11 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
     private Task<bool> Can(string key, Guid id, CancellationToken ct) => access.CanAsync("RequestAmount", key, id, ct);
     private async Task<bool> CanReadLinks(Guid id, CancellationToken ct)
     {
+        if (access.IsEnforced("Cashier"))
+        {
+            var row = await db.RequestAmounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (row == null || !await CanReadCashierTarget(row, ct)) return false;
+        }
         var orders = await db.RequestAmountOrderHeads.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.OrderHeadId).ToListAsync(ct);
         foreach (var order in orders) if (!await access.CanAsync("OrderHead", "View", order, ct)) return false;
         var invoices = await db.RequestAmountSupplyFactor.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.SupplyFactorId).ToListAsync(ct);
@@ -44,9 +49,15 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         return true;
     }
 
+    private async Task<bool> CanReadCashierTarget(RequestAmount row, CancellationToken ct)
+    {
+        if (!access.IsEnforced("Cashier") || row.RequestAmountType != RequestAmountTypeEnum.تنخواه) return true;
+        return row.TargetPersonId.HasValue && await access.CanAsync("Cashier", "View", row.TargetPersonId.Value, ct);
+    }
+
     private async Task<bool> ValidateRequest(RequestAmount model, bool create, CancellationToken ct)
     {
-        if (model == null) return false;
+        if (model == null || !await CanReadCashierTarget(model, ct)) return false;
         if (create)
         {
             if (!await access.HasAsync("RequestAmount", "Create", ct)) return false;
@@ -67,7 +78,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
             if (access.IsEnforced("RequestAmount"))
             {
                 var old = await db.RequestAmounts.AsNoTracking().SingleOrDefaultAsync(x => x.Id == model.Id, ct);
-                if (old == null) return false;
+                if (old == null || !await CanReadCashierTarget(old, ct)) return false;
                 model.UserCreatorID = old.UserCreatorID;
                 model.UserCreator = old.UserCreator;
                 model.RequestStatus = old.RequestStatus;
@@ -115,6 +126,13 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         }
         if (model.Id != Guid.Empty)
         {
+            if (access.IsEnforced("BankAccount"))
+            {
+                var previous = await db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
+                if (previous == null ||
+                    !await access.CanAsync("BankAccount", "View", previous.FromAccountId, ct) ||
+                    !await access.CanAsync("BankAccount", "View", previous.ToAccountId, ct)) return false;
+            }
             var oldIds = await db.RequestAmountPayments.Where(x => x.PaymentId == model.Id).Select(x => x.RequestAmountId).ToListAsync(ct);
             foreach (var id in oldIds) if (!await Can("Pay", id, ct)) return false;
         }
