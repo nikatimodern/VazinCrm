@@ -1,10 +1,12 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{ var canCreateCashier = await DocumentAccess.HasAsync("Cashier", "Create", Context.RequestAborted); }
 @model IList<CRM.EndPoint.FrontEnd.Models.Cash.CashierDto>
 
 
 <div class="w-100">
     <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
         <div class="d-flex col-lg-3">
-            <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showCashierModal()">
+            <button hidden="@(!canCreateCashier)" data-document-permission="Cashier.Create" class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showCashierModal()">
                 <span style="line-height: 1">ثبت تنخواه دار</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
@@ -55,7 +57,8 @@
         });
 
         let selectTomLoaded = false;
-        async function showCashierModal() {
+        async function showCashierModal(isEdit = false) {
+            if (window.AccessLive?.can("Cashier", isEdit ? "edit" : "create") === false) { toastifyError("مجوز این عملیات را ندارید."); return; }
             if (!selectTomLoaded) {
                 await initSelectTomCashier();
                 selectTomLoaded = true;
@@ -91,7 +94,8 @@
         };
 
         async function showEditCashierModal(id) {
-            await showCashierModal();
+            if (window.AccessLive?.can("Cashier", "edit") === false) return;
+            await showCashierModal(true);
 
             await sendApiRequest({
                 url: "/Cash/GetCashier",
@@ -111,6 +115,7 @@
         }
 
         const deleteCashier = async (id) => {
+            if (window.AccessLive?.can("Cashier", "delete") === false) return;
             await deleteItem({
                 url: `/Cash/DeleteCashier/${id}`,
                 callback: () => cashierTbl.ajax.reload(),
@@ -118,6 +123,7 @@
         };
 
         async function submitCashierModal() {
+            if (window.AccessLive?.can("Cashier", cashierData.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
             if (!await mySer.CheckValidForm("cashierForm")) return;
             const cashierUserElm = cashierModal.querySelector("#cashierUser");
 
@@ -164,6 +170,7 @@
                 ajax: {
                     url: `/Cash/GetAllCashiersDt`,
                     type: "POST",
+                    dataSrc: json => (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.cashier.id] })),
                 },
                 language: languageDatatable,
                 columns: [
@@ -217,11 +224,11 @@
                     {
                         data: "cashier.id",
                         orderable: false,
-                        render: function (data) {
+                        render: function (data, type, row) {
                             return `
                                 <div class="inline-flex-center gap-1">
-                                    <button type="button" class="icon-button icon-button--red" onclick="deleteCashier('${data}')"><i class="fa fa-trash"></i></button>
-                                    <button type="button" class="icon-button icon-button--green" " onclick="showEditCashierModal('${data}')"><i class="fa fa-pencil"></i></button>
+                                    ${row.actionRights?.canDelete ? `<button type="button" data-document-permission="Cashier.Delete" class="icon-button icon-button--red" onclick="deleteCashier('${data}')"><i class="fa fa-trash"></i></button>` : ""}
+                                    ${row.actionRights?.canEdit ? `<button type="button" data-document-permission="Cashier.Edit" class="icon-button icon-button--green" onclick="showEditCashierModal('${data}')"><i class="fa fa-pencil"></i></button>` : ""}
                                 </div>
                             `;
                         },
