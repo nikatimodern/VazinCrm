@@ -5,7 +5,8 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.Core.ApplicationServices.Taxation.Submission;
 
-public sealed record TaxFilingDetails(long Serial, DateTimeOffset IssuedAt, int BuyerType, int Settlement);
+public sealed record TaxFilingDetails(long Serial, DateTimeOffset IssuedAt, int BuyerType, int Settlement,
+    TaxSettlementShares? Shares = null);
 
 public static class TaxInvoicePayload
 {
@@ -57,7 +58,7 @@ public static class TaxInvoicePayload
             referenceTaxId is not { Length: 22 }))
             throw Invalid();
         if (preview.Errors.Count != 0 || preview.FiscalId is null || preview.Lines.Count == 0 ||
-            (original && filing.BuyerType is not (1 or 2)) || filing.Settlement is not (1 or 2) ||
+            (original && filing.BuyerType is not (1 or 2)) ||
             filing.IssuedAt.Offset != TimeSpan.FromMinutes(210) ||
             filing.IssuedAt.Date != preview.InvoiceDate?.Date ||
             !Digits(binding.SellerEconomicCode, 11, 14) || !Digits(preview.BuyerEconomicCode, 11, 14) ||
@@ -82,6 +83,7 @@ public static class TaxInvoicePayload
         if (!TaxInvoiceAmounts.TotalsMatch(preview, body.Sum(x => x.prdis), body.Sum(x => x.dis),
             body.Sum(x => x.vam), body.Sum(x => x.tsstam)))
             throw new ArgumentException("جمع ردیف‌های مالیاتی با مبالغ Snapshot مطابقت ندارد.");
+        var shares = TaxInvoiceSettlement.Validate(filing.Settlement, preview.Gross - preview.Discount, filing.Shares);
         return (taxId, JsonSerializer.Serialize(new
         {
             header = new
@@ -93,7 +95,8 @@ public static class TaxInvoicePayload
                 tinb = original ? preview.BuyerEconomicCode : null,
                 bpc = original && !string.IsNullOrEmpty(preview.BuyerPostalCode) ? preview.BuyerPostalCode : null,
                 tprdis = preview.Gross, tdis = preview.Discount, tadis = preview.Gross - preview.Discount,
-                tvam = preview.Vat, todam = 0, tbill = preview.Total, setm = filing.Settlement
+                tvam = preview.Vat, todam = 0, tbill = preview.Total, setm = filing.Settlement,
+                cap = shares?.Cash, insp = shares?.Credit
             },
             body,
             payments = Array.Empty<object>()

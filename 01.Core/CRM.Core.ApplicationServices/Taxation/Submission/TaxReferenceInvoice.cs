@@ -43,7 +43,7 @@ internal static class TaxReferenceInvoice
         if (request.Kind == TaxDispatchKind.Cancellation)
         {
             if (request.CancellationReason is not { } reason || !Enum.IsDefined(reason) ||
-                request.Settlement.HasValue || request.CorrectsQuantityError || request.Export is not null)
+                request.Settlement.HasValue || request.CorrectsQuantityError || request.Export is not null || request.Shares is not null)
                 throw Invalid("برای ابطال، علت مستند و معتبر مشخص کنید.");
             var cancellation = JsonSerializer.Serialize(new
             {
@@ -69,7 +69,7 @@ internal static class TaxReferenceInvoice
 
         var priorSettlement = header.GetProperty("setm").GetInt32();
         if (request.Kind == TaxDispatchKind.Correction)
-            ValidateCorrection(prior, candidate, request, priorSettlement);
+            ValidateCorrection(prior, candidate, request, priorSettlement, header);
         else
         {
             if (request.CorrectsQuantityError || (request.Settlement.HasValue && request.Settlement != priorSettlement))
@@ -77,7 +77,7 @@ internal static class TaxReferenceInvoice
             candidate = SubtractReturn(prior, candidate);
         }
 
-        var filing = new TaxFilingDetails(request.Serial, request.IssuedAt, 0, request.Settlement ?? priorSettlement);
+        var filing = new TaxFilingDetails(request.Serial, request.IssuedAt, 0, request.Settlement ?? priorSettlement, request.Shares);
         var (_, json) = TaxInvoicePayload.Build(candidate, binding, filing, request.Kind, reference.TaxId);
         return Freeze(candidate, json, request.CorrectsQuantityError ? "QuantityEntryError" : null);
 
@@ -106,10 +106,14 @@ internal static class TaxReferenceInvoice
             throw Invalid("وضعیت کارپوشهٔ مرجع برای این نوع سند ارجاعی مجاز نیست.");
     }
 
-    private static void ValidateCorrection(InvoicePreview prior, InvoicePreview candidate, TaxReferenceRequest request, int settlement)
+    private static void ValidateCorrection(InvoicePreview prior, InvoicePreview candidate, TaxReferenceRequest request,
+        int settlement, JsonElement referenceHeader)
     {
         var previous = Index(prior.Lines);
         var changed = (request.Settlement.HasValue && request.Settlement != settlement) ||
+            (request.Shares is { } shares && settlement == 3 &&
+                (shares.Cash != referenceHeader.GetProperty("cap").GetDecimal() ||
+                 shares.Credit != referenceHeader.GetProperty("insp").GetDecimal())) ||
             (prior.Pattern == TaxInvoicePattern.Export && ExportChanged(prior, candidate, previous));
         if (Index(candidate.Lines).Count != previous.Count)
             throw Invalid("در اصلاحیه شناسهٔ کالا یا واحد مرجع نباید اضافه یا حذف شود.");

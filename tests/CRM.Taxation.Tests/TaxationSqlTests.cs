@@ -589,6 +589,32 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         return factor.Id;
     }
 
+    [TaxationSqlFact]
+    public async Task MixedSettlementIsPinnedBeforeSubmitAndReusedAfterLocalFailure()
+    {
+        await using var db = Open();
+        var id = await QueueSubmissionAsync(db);
+        var gateway = new TestGateway { FailPrepare = true };
+        var repository = new TaxSubmissionRepository(db, protection);
+        var queue = new TaxDispatchQueue(db, protection);
+        var submit = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
+        var mixed = Filing() with { Settlement = 3, Shares = new(60, 40) };
+        await Assert.ThrowsAsync<CryptographicException>(() => submit.HandleAsync(new(id, mixed), Ct));
+        var pinned = await repository.FindAsync(id, Ct);
+        Assert.Equal(TaxDispatchStatus.Pending, pinned.Status);
+        using var first = JsonDocument.Parse(pinned.Payload);
+        Assert.Equal(60m, first.RootElement.GetProperty("header").GetProperty("cap").GetDecimal());
+
+        gateway.FailPrepare = false;
+        var state = await submit.HandleAsync(new(id, mixed with { Shares = new(70, 30) }), Ct);
+        Assert.Equal(TaxDispatchStatus.Submitted, state.Status);
+        using var submitted = JsonDocument.Parse(gateway.PreparedPayload);
+        var header = submitted.RootElement.GetProperty("header");
+        Assert.Equal(60m, header.GetProperty("cap").GetDecimal());
+        Assert.Equal(40m, header.GetProperty("insp").GetDecimal());
+        Assert.Equal(1, gateway.Sends);
+    }
+
     private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)
     {
         var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);

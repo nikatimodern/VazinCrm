@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -97,7 +97,6 @@ internal static class TaxExportInvoice
     {
         if (preview.InvoiceType != 1 || preview.FiscalId is null || preview.Lines.Count == 0 ||
             filing.IssuedAt.Offset != IranOffset || filing.IssuedAt.Date != preview.InvoiceDate?.Date ||
-            filing.Settlement is not (1 or 2) ||
             binding.SellerEconomicCode is not { Length: 11 or 14 } || !binding.SellerEconomicCode.All(char.IsAsciiDigit) ||
             (kind == TaxDispatchKind.Original ? referenceTaxId is not null :
                 kind != TaxDispatchKind.Correction || referenceTaxId is not { Length: 22 }))
@@ -124,6 +123,7 @@ internal static class TaxExportInvoice
         }).ToArray();
 
         var totalRial = body.Sum(x => x.ssrv);
+        var shares = TaxInvoiceSettlement.Validate(filing.Settlement, totalRial, filing.Shares);
         var id = TaxInvoicePayload.TaxId(preview.FiscalId, filing.Serial, filing.IssuedAt);
         return (id, JsonSerializer.Serialize(new
         {
@@ -135,7 +135,7 @@ internal static class TaxExportInvoice
                 scc = details.CustomsOffice, cdcn = details.CustomsDeclarationNumber,
                 cdcd = details.CustomsDeclarationDate is { } customsDate ? (int?)EpochDay(customsDate) : null,
                 tonw = body.Sum(x => x.nw), torv = totalRial, tocv = body.Sum(x => x.sscv),
-                tvam = 0, todam = 0, tbill = totalRial, setm = filing.Settlement
+                tvam = 0, todam = 0, tbill = totalRial, setm = filing.Settlement, cap = shares?.Cash, insp = shares?.Credit
             },
             body,
             payments = Array.Empty<object>()

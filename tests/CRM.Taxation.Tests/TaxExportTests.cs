@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
 using CRM.Core.ApplicationServices.Taxation.Submission;
@@ -46,6 +46,20 @@ public sealed class TaxExportTests
         Assert.Equal(700001, line.GetProperty("tsstam").GetInt32());
         Assert.False(line.TryGetProperty("fee", out _));
         Assert.False(line.TryGetProperty("adis", out _));
+    }
+
+    [Fact]
+    public void ExportMixedSettlementUsesCustomsRialValue()
+    {
+        var (source, details) = Fixture();
+        var preview = InvoicePreview.Build(source, export: details);
+        var filing = new TaxFilingDetails(2, Issued, 0, 3, new(250000, 450001));
+        using var document = JsonDocument.Parse(TaxInvoicePayload.Build(preview, Binding, filing).Json);
+        var header = document.RootElement.GetProperty("header");
+        Assert.Equal(3, header.GetProperty("setm").GetInt32());
+        Assert.Equal(250000m, header.GetProperty("cap").GetDecimal());
+        Assert.Equal(450001m, header.GetProperty("insp").GetDecimal());
+        Assert.Throws<ArgumentException>(() => TaxInvoicePayload.Build(preview, Binding, filing with { Shares = new(35, 35) }));
     }
 
     [Theory]

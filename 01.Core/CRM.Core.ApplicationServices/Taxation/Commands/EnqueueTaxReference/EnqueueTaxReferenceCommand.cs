@@ -15,7 +15,7 @@ public enum TaxCancellationReason
 
 public sealed record TaxReferenceRequest(Guid? FactorId, TaxDispatchKind Kind, long Serial,
     DateTimeOffset IssuedAt, int? Settlement, bool CorrectsQuantityError, TaxCancellationReason? CancellationReason,
-    ExportTaxDetails? Export = null);
+    ExportTaxDetails? Export = null, TaxSettlementShares? Shares = null);
 
 public sealed record EnqueueTaxReferenceCommand(Guid ReferenceId, string ActorId, TaxReferenceRequest Reference) : ICommand<Guid>;
 

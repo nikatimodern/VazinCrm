@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -135,6 +135,24 @@ public sealed class TaxReferenceTests
         Assert.Throws<ArgumentException>(() => TaxReferenceInvoice.Build(source, filing with { CancellationReason = null }, Binding));
         source.Reference.Kind = TaxDispatchKind.Cancellation;
         Assert.Throws<ArgumentException>(() => TaxReferenceInvoice.Build(source, filing, Binding));
+    }
+
+    [Fact]
+    public void MixedReturnRequiresFreshSharesForTheRemainingPrincipal()
+    {
+        var (source, filing) = Fixture(TaxDispatchKind.Return);
+        var payload = System.Text.Json.Nodes.JsonNode.Parse(source.Payload)!;
+        var header = payload["header"]!;
+        header["setm"] = 3;
+        header["cap"] = 9000;
+        header["insp"] = 10400;
+        source = source with { Payload = payload.ToJsonString() };
+        Assert.Throws<ArgumentException>(() => TaxReferenceInvoice.Build(source, filing, Binding));
+        using var result = JsonDocument.Parse(TaxReferenceInvoice.Build(source, filing with { Shares = new(4000, 5700) }, Binding).Payload);
+        var remaining = result.RootElement.GetProperty("header");
+        Assert.Equal(3, remaining.GetProperty("setm").GetInt32());
+        Assert.Equal(4000m, remaining.GetProperty("cap").GetDecimal());
+        Assert.Equal(5700m, remaining.GetProperty("insp").GetDecimal());
     }
 
     private static (TaxReferenceSource, TaxReferenceRequest) Fixture(TaxDispatchKind kind)
