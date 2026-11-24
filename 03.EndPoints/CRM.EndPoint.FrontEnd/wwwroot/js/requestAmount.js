@@ -135,10 +135,10 @@ const initPaymentTable = () => {
                     return `
                         <div class="inline-flex-center gap-1">
                             <button type="button" class="icon-button icon-button--gray" onclick="showAttachments('${row.payment.id}', 9)"><i class="fa fa-paperclip"></i></button>
-                          ${canEditPaymentTable
-                        ? ` <button type="button" class="icon-button icon-button--green" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>
-                            <button type="button" class="icon-button icon-button--red" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>`
-                        : ""}
+                          ${canEditPaymentTable && row.canEdit === true && window.AccessLive?.can("Payment", "edit") !== false
+                        ? `<button type="button" data-document-permission="Payment.Edit" class="icon-button icon-button--green" onclick="showEditPaymentModal('${row.payment.id}')"><i class="fa fa-pencil"></i></button>` : ""}
+                          ${canEditPaymentTable && row.canDelete === true && window.AccessLive?.can("Payment", "delete") !== false
+                        ? `<button type="button" data-document-permission="Payment.Delete" class="icon-button icon-button--red" onclick="deletePayment('${row.payment.id}')"><i class="fa fa-trash"></i></button>` : ""}
                             
                         </div>
                     `;
@@ -221,6 +221,7 @@ let reqAmountPaymentModal = document.getElementById("requestAmountPaymentModal")
 
 let isGroupPayment = false;
 async function showSetAmountPaymentItemModal(filterIds) {
+    if (window.AccessLive?.can("RequestAmount", "pay") === false || window.AccessLive?.can("Payment", "create") === false) { toastifyError("مجوز پرداخت گروهی را ندارید."); return; }
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/GetRequestsAmountByFilteredIds",
@@ -426,6 +427,8 @@ const openNewRequestAmountBankAccount = () => {
 };
 
 const showAttachReqAmount = async (id) => {
+    const edit = paymentData.id && paymentData.id !== "00000000-0000-0000-0000-000000000000";
+    if (window.AccessLive?.can("RequestAmount", "pay") === false || window.AccessLive?.can("Payment", edit ? "edit" : "create") === false) { toastifyError("مجوز ثبت پرداخت را ندارید."); return; }
     if (id) reqAmountId = id;
 
     if (!isLoadedBankAccounts) {
@@ -488,7 +491,7 @@ const submitReqAmountAttach = async () => {
     };
     
     
-    if (window.AccessLive?.can("Payment", model.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
+    if (window.AccessLive?.can("Payment", model.id && model.id !== "00000000-0000-0000-0000-000000000000" ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
     await sendApiRequest({
         method: "POST",
         url: "/RequestAmount/AddPaymentByRequestAmount",
