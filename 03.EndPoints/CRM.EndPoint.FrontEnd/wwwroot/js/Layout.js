@@ -114,6 +114,7 @@ connection.on("RefreshTasks", async () => {
     if (typeof systematicTask !== "undefined") {
         await Promise.all([getAllTask(0, systematicTask), getAllTask(1, systematicTask), getAllTask(1, systematicTask, 2), getAllTask(2, systematicTask)]);
     }
+    await getRemind();
 });
 
 
@@ -2311,10 +2312,12 @@ function showTaminDropdown() {
 }
 /////////
 
+const accessMutationHeaders = () => ({ RequestVerificationToken: document.querySelector("#accessLiveToken [name=__RequestVerificationToken]")?.value || "" });
+const canCarizoAction = action => window.AccessLive?.can("Carizo", action) !== false && !window.AccessLive?.isEditingLocked();
 const notificationDropdown = document.getElementById("notification-dropdown");
 const notificationIconBadge = document.getElementById("notificationIconBadge");
 async function getRemind() {
-    if (!notificationDropdown || !notificationIconBadge) return;
+    if (!notificationDropdown || !notificationIconBadge || !canCarizoAction("View")) return;
     axios.get(`/Carizo/GetRemind`).then(res => {
         if (res.status === 200) {
             return res.data;
@@ -2343,12 +2346,13 @@ async function getTask(id) {
 
 
 async function handleNotifAction(id, isRemindOff) {
+    if (!canCarizoAction("ChangeStatus")) return;
     const idx = taskList.findIndex(f => f === id);
     if (idx !== -1) taskList.splice(idx, 1);
     
     const url = isRemindOff ? `Carizo/ShowTask?id=${id}` : `Carizo/DismissTask?id=${id}`;
     try {
-        const res = await fetch(baseUrl + url);
+        const res = await fetch(baseUrl + url, { method: "POST", headers: accessMutationHeaders() });
         
         if (res.ok) {
             await getRemind();
@@ -2399,10 +2403,11 @@ async function dismissNotif(id = null, btn) {
 }
 
 async function snoozeNotif(id, btn) {
+    if (!canCarizoAction("ChangeStatus")) return;
     const indexid = taskList.findIndex(f => f === id);
     if (indexid !== -1) taskList.splice(indexid, 1);
     try {
-        const res = await fetch(baseUrl + `Carizo/AddSnooze?id=${id}`);
+        const res = await fetch(baseUrl + `Carizo/AddSnooze?id=${id}`, { method: "POST", headers: accessMutationHeaders() });
         
         if (res.ok) {
             await getRemind();
@@ -2445,6 +2450,8 @@ let dataTask;
 let editSelectedCustomRepeat = [];
 
 const showTaskModal = async (entityId, entityType) => {
+    if (!canCarizoAction("Create")) return;
+    dataTask = null;
     document.getElementById("FLshowLoading").style.display = "";
     const apiUrl = entityType === "Report" ? `/Report/GetReport/${entityId}` : `/Deal/GetDeal/${entityId}`;
     const data = (await axios(apiUrl)).data;
@@ -2497,6 +2504,7 @@ const showTaskModal = async (entityId, entityType) => {
 };
 
 async function updateTask() {
+    if (!canCarizoAction(dataTask ? "Edit" : "Create")) return;
     if (!await mySer.CheckValidForm("formEditTask")) return;
     
     const model = mySer.convertFormToJSON("formEditTask");
@@ -2556,7 +2564,7 @@ async function updateTask() {
     try {
         const res = await fetch(baseUrl + "Carizo/AddTask", {
             method: "POST", headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json", ...accessMutationHeaders()
             }, body: JSON.stringify(model),
         });
         
@@ -2797,6 +2805,7 @@ async function refreshTaskCards(id) {
 window.addEventListener("pagehide", () => carizoCardReads.forEach(request => request.abort()));
 
 async function getAllTask(type, systematic = 0, loc = 1) {
+    if (!canCarizoAction("View")) return;
     const containerName = type === 0 ? "todoTask" : type === 1 ? (loc === 1 ? "todayTask" : "todayTaskDash") : "finishedTask";
     const containerElm = document.getElementById(containerName + "Id");
     const countElm = document.getElementById(containerName + "Count");
@@ -2842,13 +2851,13 @@ async function getAllTask(type, systematic = 0, loc = 1) {
 }
 
 async function finishTask(id, type, thisBtn, loc = 1) {
-    if (thisBtn.disabled) return;
+    if (!canCarizoAction("ChangeStatus") || thisBtn.disabled) return;
     thisBtn.disabled = true;
     const finishProgress = beginTaskCardUpdate(id);
     const spinner = thisBtn.querySelector(".spinner-border");
     if (spinner) spinner.style.display = "inline-block";
     try {
-        const res = await axios(`/Carizo/finishTask/${id}`);
+        const res = await axios.post(`/Carizo/finishTask/${id}`, null, { headers: accessMutationHeaders() });
         if (res.status !== 200) throw new Error("Task completion failed.");
         if (res.data?.status === 201) {
             toastifyError(res.data.error);

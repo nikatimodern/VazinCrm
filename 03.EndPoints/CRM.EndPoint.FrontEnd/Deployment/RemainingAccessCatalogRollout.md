@@ -130,3 +130,7 @@ All seven remaining manual command handlers recheck action scope. Shared complet
 ## Contact scope and notification review
 
 Contact is a distinct Customer/Agent-linked model. The owner resolver supports Contact and intersects contact creator scope with active parent customer visibility, including agent-owned contacts. Existing customer creation strips Contacts and update maps scalar values only; no independent Contact endpoint/UI has been verified. Carizo visibility intersects known linked Deal/Report/Accountancy access; timed reminders and deferred pushes avoid exposing cross-document text. Asterisk call notifications target the destination user rather than broadcasting call IDs, and under CallRecording enforcement check that recipient's view scope before displaying an incoming call. Queue-level delivery and call lifecycle correlation still require integration tests. No flags or final SQL delivered in this batch.
+
+## Carizo and Report shared UI/mutation paths
+
+Shared task and report mutation paths now send antiforgery tokens and use POST/DELETE; report automatic mutation retries removed. Task cards use scoped edit/delete/status capabilities, shared JS guards, and report create/export buttons use exact catalog grants. Report central visibility intersects CallRecording.View when enabled. Full browser and SQL tests and final grant mapping remain open; no final SQL handoff or activation in this batch.

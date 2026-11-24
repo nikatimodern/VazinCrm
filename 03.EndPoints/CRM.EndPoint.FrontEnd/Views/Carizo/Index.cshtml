@@ -160,12 +160,13 @@
         });
 
         async function handleNotifAndBellIcon(id, type, typeToggle) {
+            if (!canCarizoAction("ChangeStatus")) return;
             const indexId = taskList.findIndex(f => f === id);
             if (indexId !== -1) taskList.splice(indexId, 1);
 
             const finishProgress = beginTaskCardUpdate(id);
             try {
-                const res = await axios(`/Carizo/TaskToggle?id=${id}&btnC=${typeToggle}`);
+                const res = await axios.post("/Carizo/TaskToggle", null, { params: { id, btnC: typeToggle }, headers: accessMutationHeaders() });
 
                 if (res.status === 200) {
                     await refreshTaskCards(id);
@@ -183,6 +184,7 @@
 
 
         window.onSelectEditTaskDate = async function (pickerInstance, id) {
+            if (!canCarizoAction("Edit")) return;
             const newDate = pickerInstance.model.inputElement.value;
 
             if (pickerInstance && id) {
@@ -195,7 +197,7 @@
                     const res = await fetch(baseUrl + "Carizo/AddTask", {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json",
+                            "Content-Type": "application/json", ...accessMutationHeaders(),
                         },
                         body: JSON.stringify(model),
                     });
@@ -222,6 +224,7 @@
         };
 
         async function saveTaskCardTime(id, input) {
+            if (!canCarizoAction("Edit")) return;
             const value = toEnglishDigits(input.value).trim();
             input.value = value;
             if (value === (input.dataset.originalText ?? "") || input.dataset.savingTaskTime === "true") return;
@@ -233,7 +236,7 @@
             const finishProgress = beginTaskCardUpdate(id);
             try {
                 const params = new URLSearchParams({ id, _Time: value });
-                const response = await fetch(baseUrl + "Carizo/UpdateTaskTime?" + params);
+                const response = await fetch(baseUrl + "Carizo/UpdateTaskTime?" + params, { method: "POST", headers: accessMutationHeaders() });
                 if (!response.ok) throw new Error("Task time update failed.");
                 input.dataset.originalText = value;
                 if (connection.state !== "Connected") await refreshTaskCards(id);
@@ -314,6 +317,7 @@
         }
 
         addTaskPlusIcon.addEventListener("click", () => {
+            if (!canCarizoAction("Create")) return;
             addTaskPlusIcon.style.display = "none";
             taskFormContainer.classList.add("focused");
             taskTitleInput.style.display = "inline-block";
@@ -578,6 +582,7 @@
         }
 
         async function showEditTaskModal(id, editFullAccess) {
+            if (!canCarizoAction("Edit")) return;
             openTaskDropdownToggle.dropdownInstance.close();
 
             if (editFullAccess === "0") {
@@ -660,6 +665,7 @@
         }
 
         async function handleBlurEditable(id, elm, updatedFieldName, type = "") {
+            if (!canCarizoAction("Edit")) return;
             if (updatedFieldName === "remindTime") return;
             const originalText = elm.dataset.originalText;
             const currentText = (updatedFieldName === "remindTime" || updatedFieldName === "date") ? elm.value : elm.innerText.trim();
@@ -680,7 +686,7 @@
                             const res = await fetch(baseUrl + "Carizo/AddTask", {
                                 method: "POST",
                                 headers: {
-                                    "Content-Type": "application/json",
+                                    "Content-Type": "application/json", ...accessMutationHeaders(),
                                 },
                                 body: JSON.stringify(model),
                             });
@@ -703,7 +709,7 @@
                             const res = await fetch(baseUrl + "Carizo/AddTask", {
                                 method: "POST",
                                 headers: {
-                                    "Content-Type": "application/json",
+                                    "Content-Type": "application/json", ...accessMutationHeaders(),
                                 },
                                 body: JSON.stringify(model),
                             });
@@ -726,6 +732,7 @@
 
 
         async function submitTask() {
+            if (!canCarizoAction("Create")) return;
             const button = document.getElementById("submitTask-btn");
             button.setAttribute("disabled", "true");
 
@@ -767,7 +774,7 @@
                     const res = await fetch(baseUrl + "Carizo/AddTask", {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json",
+                            "Content-Type": "application/json", ...accessMutationHeaders(),
                         },
                         body: JSON.stringify(model),
                     });
@@ -803,11 +810,12 @@
 
 
         async function unCheckTask(id, button) {
+            if (!canCarizoAction("ChangeStatus")) return;
             if (button.disabled) return;
             button.disabled = true;
             const finishProgress = beginTaskCardUpdate(id);
             try {
-                const res = await axios(`/Carizo/unCheckTask/${id}`);
+                const res = await axios.post(`/Carizo/unCheckTask/${id}`, null, { headers: accessMutationHeaders() });
                 if (res.data.status === 200) {
                     toastifySuccess("تسک به انجام نشده ها منتقل شد!");
                     if (connection.state !== "Connected") await refreshTaskCards(id);
@@ -842,10 +850,11 @@
         }
 
         async function delTaskOk(id, type) {
+            if (!canCarizoAction("Delete")) return;
             document.getElementById("FLshowLoading").style.display = "";
 
             try {
-                const res = await axios.delete(`/Carizo/delTask/${id}`);
+                const res = await axios.delete(`/Carizo/delTask/${id}`, { headers: accessMutationHeaders() });
 
                 if (res.status === 200) {
                     document.getElementById("FLshowLoading").style.display = "none";

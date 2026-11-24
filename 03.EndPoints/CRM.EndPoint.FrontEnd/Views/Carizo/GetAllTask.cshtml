@@ -1,20 +1,24 @@
 ﻿@using CRM.Core.Domain.Carizos.Enum
 @model CRM.EndPoint.FrontEnd.Models.Carizo.CarizoViewModel
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy Access
 @{
     Layout = null;
 }
 @foreach (var item in Model.Data) {
+    var canEdit = await Access.AllowsRowAsync(item, "Edit", Context.RequestAborted);
+    var canDelete = await Access.AllowsRowAsync(item, "Delete", Context.RequestAborted);
+    var canStatus = await Access.AllowsRowAsync(item, "ChangeStatus", Context.RequestAborted);
     <div data-task-id="@item.Id" data-task-group="@(item.ShareTaskId.HasValue && item.ShareTaskId != Guid.Empty ? item.ShareTaskId : item.Id)" data-task-date="@(item.DateMiladi?.ToString("O"))" data-task-created="@item.CreateDate.ToString("O")" class="w-100 py-2 px-lg-3" style="padding-inline:10px;border-radius:8px;background-color:@(Model._Type < 2 ? "var(--dashboard-secondary-light, rgba(128,128,255,.15))" : Model._Type == 2 ? "rgba(0,0,0,.10)" : "rgba(0,0,0,.20)") ;border:1px solid @(Model._Type < 2 ? "var(--dashboard-task-border, rgba(128,128,255,.2))" : Model._Type == 2 ? "rgba(0,0,0,.08)" : "rgba(0,0,0,.18)");border-right:4px solid @(Model._Type < 2 ? "var(--dashboard-secondary, rgb(128,128,255))" : Model._Type == 2 ? "rgb(140,140,140)" : "rgb(70,70,70)"); box-shadow:-1px 2px 8px rgba(10, 10, 10, .1);">
         <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
 
-            @if (item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
+            @if (canEdit && item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
                 <span class="carizo-title fbold" style="font-size:clamp(13px, 2vw, 14px)" contenteditable="true" onfocus="handleFocusEditable(this)" onblur="handleBlurEditable('@item.Id',this,'title')">@item.Title</span>
             } else {
                 <span class="carizo-title fbold" style="font-size:clamp(13px, 2vw, 14px)">@item.Title</span>
             }
 
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                @if (Model._Type < 2 && Model.loc != 2) {
+                @if (canEdit && Model._Type < 2 && Model.loc != 2) {
                     <div class="d-flex align-items-center gap-1">
                         @if (item.RemindTime?.Length > 0) {
                             <span class="d-flex align-items-center justify-content-center">
@@ -34,14 +38,14 @@
                         <svg style="width: 16px; height: 16px" fill=@(Model._Type < 2 && item.Remind == true ? "gold" : "rgba(0,0,0,.15)") stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" ><path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </div>
                 }
-                @if (Model._Type < 2 && Model.loc != 2) {
+                @if (canEdit && Model._Type < 2 && Model.loc != 2) {
                     <input class="input-date fbold sdate" data-onSelect="onSelectEditTaskDate" data-id="@item.Id" value="@(item.Date != null && item.Date.Length > 0 ? item.Date : "")" placeholder="تاریخ" data-mask-date onfocus="handleFocusEditable(this, from = 'date')" onblur="handleBlurEditable('@item.Id',this,'date', '@Model._Type')" autocomplete="off" />
                 } else {
                     <span class="fbold">@item.Date</span>
                 }
             </div>
         </div>
-        @if (item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
+        @if (canEdit && item.UserCreatorID == Model.CurrentUser.Id && Model._Type < 2 && Model.loc != 2 && !item.Systematic) {
             <p class="carizo-desc" style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;white-space: pre-line;" contenteditable="true" onfocus="handleFocusEditable(this)" onblur="handleBlurEditable('@item.Id',this,'description')">@item.Description</p>
         } else {
             <p class="carizo-desc" style="font-size:clamp(12px, 2vw, 13px);color:gray;min-height:12px;white-space: pre-line;">@Html.Raw(item.Description)</p>
@@ -99,14 +103,14 @@
                                     <svg style="width:18px;height:18px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" /></svg>
                                 </div>
                                 <div class="task-dropdown">
-                                    @if (Model._Type < 2) {
-                                        <div class="dropdown-item itemGray" onclick="showEditTaskModal('@item.Id', '@((item.UserCreatorID == Model.CurrentUser.Id && !item.Systematic) ? 1 : 0)')">
+                                    @if (canEdit && Model._Type < 2) {
+                                        <div data-document-permission="Carizo.Edit" class="dropdown-item itemGray" onclick="showEditTaskModal('@item.Id', '@((item.UserCreatorID == Model.CurrentUser.Id && !item.Systematic) ? 1 : 0)')">
                                             <svg style="width:16px;height:16px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                                             <span>ویرایش</span>
                                         </div>
                                     }
-                                    @if (item.UserCreatorID == Model.CurrentUser.Id || Model._Type == 2) {
-                                        <div class="dropdown-item itemRed" style="color:darkred" onclick="delTask('@item.Id','@Model._Type')">
+                                    @if (canDelete && (item.UserCreatorID == Model.CurrentUser.Id || Model._Type == 2)) {
+                                        <div data-document-permission="Carizo.Delete" class="dropdown-item itemRed" style="color:darkred" onclick="delTask('@item.Id','@Model._Type')">
                                             <svg style="width:16px;height:16px"  fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                                             <span>حذف</span>
                                         </div>
@@ -116,8 +120,8 @@
                         }
 
                         @if (item.TaskStatus) {
-                            if (item.CompleteTaskUserId == Model.CurrentUser.Id || item.UserCreatorID == Model.CurrentUser.Id) {
-                                <button onclick="unCheckTask('@item.Id',this)" style="border: none;background: none;padding: 0;">
+                            if (canStatus && (item.CompleteTaskUserId == Model.CurrentUser.Id || item.UserCreatorID == Model.CurrentUser.Id)) {
+                                <button data-document-permission="Carizo.ChangeStatus" onclick="unCheckTask('@item.Id',this)" style="border: none;background: none;padding: 0;">
                                     <svg class="unCheckTaskIcon"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                                 </button>
                             } else {
@@ -131,10 +135,12 @@
                                 @if (item.EntityType == "Acc") {
                                     <button class="buttonGray" onclick="readNotifAction('@item.Id', '', '@item.EntityType', '@item.EntityId')">مشاهده</button>
                                 }
-                                <button class="buttonGreen2 d-flex align-items-center" onclick="finishTask('@item.Id','@Model._Type',this,'@Model.loc')">
+                                @if (canStatus) {
+                                <button data-document-permission="Carizo.ChangeStatus" class="buttonGreen2 d-flex align-items-center" onclick="finishTask('@item.Id','@Model._Type',this,'@Model.loc')">
                                     <sapn>انجام شد</sapn>
                                     <div style="display:none" class="spinner-border spinner-border-sm ms-2" role="status"></div>
                                 </button>
+                                }
                             </div>
                         }
                     </div>

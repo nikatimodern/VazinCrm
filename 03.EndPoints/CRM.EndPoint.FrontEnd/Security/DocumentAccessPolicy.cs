@@ -308,6 +308,11 @@ public sealed class DocumentAccessPolicy(
             var deals = await DealsAsync(db.Deals.AsNoTracking(), "View", ct);
             rows = rows.Where(r => (!r.CustomerId.HasValue || customers.Any(c => c.Id == r.CustomerId.Value))
                 && (!r.DealId.HasValue || deals.Any(d => d.Id == r.DealId.Value)));
+            if (IsEnforced("CallRecording"))
+            {
+                var calls = await ApplyAsync(db.CallRecordings.AsNoTracking(), "View", ct);
+                rows = rows.Where(r => !r.CallRecordingId.HasValue || calls.Any(c => c.Id == r.CallRecordingId.Value));
+            }
             query = (IQueryable<T>)(object)rows;
         }
         if (typeof(T) == typeof(Carizo))

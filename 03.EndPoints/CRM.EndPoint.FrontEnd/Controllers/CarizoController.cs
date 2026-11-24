@@ -53,7 +53,7 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
         if (!await access.CanAsync("Carizo", "View", id, ct)) return Forbid();
         return Ok(await dispatcher.QueryAsync(new GetTaskQuery(id), ct));
     }
-    [HttpPost]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddTask([FromBody] Carizo _model, CancellationToken ct)
     {
         if (_model == null) return BadRequest();
@@ -67,36 +67,42 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
         if (_model.Id == Guid.Empty ? !await access.HasAsync("Carizo", "Create", ct) : !await access.CanAsync("Carizo", "Edit", _model.Id, ct)) return Forbid();
         return Ok(await dispatcher.CommandAsync(new SaveTaskCommand(_model), ct));
     }
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateTaskTime(Guid id, string _Time, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "Edit", id, ct)) return Forbid();
         return StatusCode(await dispatcher.CommandAsync(new UpdateTaskTimeCommand(id, _Time), ct));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddSnooze(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
         return StatusCode(await dispatcher.CommandAsync(new AddSnoozeCommand(id), ct));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskToggle(Guid id, int btnC, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
         return StatusCode(await dispatcher.CommandAsync(new TaskToggleCommand(id, btnC), ct));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> DismissTask(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
         return StatusCode(await dispatcher.CommandAsync(new DismissTaskCommand(id), ct));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ShowTask(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
         return StatusCode(await dispatcher.CommandAsync(new ShowTaskCommand(id), ct));
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> UnCheckTask(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
@@ -104,6 +110,7 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
         return result is int status ? StatusCode(status) : Ok(result);
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> FinishTask(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "ChangeStatus", id, ct)) return Forbid();
@@ -111,6 +118,7 @@ public class CarizoController(ICqrsDispatcher dispatcher, DocumentAccessPolicy a
         return result is int status ? StatusCode(status) : Ok(result);
     }
 
+    [HttpDelete, ValidateAntiForgeryToken]
     public async Task<IActionResult> DelTask(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Carizo", "Delete", id, ct)) return Forbid();

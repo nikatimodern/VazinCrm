@@ -2541,7 +2541,7 @@ function initEyeToggle({ selector, onShow, onHide, showTitle = "نمایش", hid
  * @returns {Promise<boolean>}
  */
 async function deleteItem(options) {
-    const { url, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
+    const { url, headers, callback = null, title = "حذف!", text = "آیا مطمئن هستید که میخواهید حذف کنید؟" } = options;
     
     return await confirmAlert({
         title,
@@ -2552,7 +2552,7 @@ async function deleteItem(options) {
         onConfirm: async () => {
             await sendApiRequest({
                 method: "DELETE",
-                url,
+                url, headers,
                 onSuccess: async (res) => await callback?.(res),
             });
         },

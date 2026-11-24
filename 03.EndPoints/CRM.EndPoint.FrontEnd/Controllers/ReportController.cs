@@ -49,6 +49,7 @@ public class ReportController(ICqrsDispatcher requests, DocumentAccessPolicy acc
         catch { return BadRequest(); }
     }
 
+    [HttpDelete, ValidateAntiForgeryToken]
     public async Task<IActionResult> DelReport(Guid id, CancellationToken cancellationToken)
     {
         if (!await access.CanAsync("Report", "Delete", id, cancellationToken)) return Forbid();
@@ -84,7 +85,7 @@ public class ReportController(ICqrsDispatcher requests, DocumentAccessPolicy acc
         return Ok(new { count = result.Count, html = result.Html });
     }
 
-    [HttpPost]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> AddReport(Report model, CancellationToken cancellationToken)
     {
         if (model == null) return BadRequest();

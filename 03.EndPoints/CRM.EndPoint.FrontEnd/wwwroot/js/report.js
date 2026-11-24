@@ -7,6 +7,7 @@ var filterReportConfig = {};
 
 /** Expand a native audio player in the report card without opening a modal. */
 function toggleReportAudio(button) {
+    if (window.AccessLive?.can("CallRecording", "Listen") === false) return;
     const card = button.closest(".report-box");
     if (!card || !button.dataset.audioSrc) return;
 
@@ -83,7 +84,9 @@ function toggleReportAudio(button) {
     }
 }
 
+const canReportAction = action => window.AccessLive?.can("Report", action) !== false && !window.AccessLive?.isEditingLocked();
 const SubmitReportForm = async () => {
+    if (!canReportAction(oldReport ? "Edit" : "Create")) return;
     if (await mySer.CheckValidForm("#ReportFormId")) {
         let data = mySer.convertFormToJSON("#ReportFormId");
         const el = document.getElementById("repCustomerTxt");
@@ -95,7 +98,6 @@ const SubmitReportForm = async () => {
         
         if (oldReport != null) {
             data = { ...oldReport, ...data };
-            oldReport = null;
         }
         
         const resultCall = document.getElementById("resultCall");
@@ -107,7 +109,7 @@ const SubmitReportForm = async () => {
         
         
         FLshowLoading();
-        $.post(`/Report/AddReport`, data, async (res) => {
+        $.ajax({ url: "/Report/AddReport", method: "POST", data, headers: accessMutationHeaders() }).done(async (res) => {
             if (res.status === 200) {
                 if (typeReportSubmit === 0) {
                     const currentPath = window.location.pathname.toLowerCase();
@@ -130,7 +132,8 @@ const SubmitReportForm = async () => {
             FLshowLoading(false);
             closeModalReport();
         }).fail(() => {
-            setTimeout(async () => await SubmitReportForm(), 3000);
+            FLshowLoading(false);
+            toastifyError("ثبت گزارش انجام نشد.");
         });
     }
     
@@ -283,6 +286,7 @@ const initCustomerOpReport = async () => {
 
 let reportModalLoaded = false;
 const ShowModalReport = async (model = null, passType = 0, dealId = null, dealSerialNumber = null) => {
+    if (!canReportAction("Create")) return;
     const repTelElm = document.getElementById("repTel");
     const selectElm = document.getElementById("repCustomerTxt");
     
@@ -394,6 +398,7 @@ async function getReport(id) {
 }
 
 const ShowUpdateReport = async (id, passType = 0) => {
+    if (!canReportAction("Edit")) return;
     if (!reportModalLoaded) {
         await initReportModal();
         await initCustomerOpReport();
@@ -424,7 +429,9 @@ const ShowUpdateReport = async (id, passType = 0) => {
 
 
 const DelReport = async (id, passType = 0) => {
+    if (!canReportAction("Delete")) return;
     await deleteItem({
+        headers: accessMutationHeaders(),
         url: `/Report/DelReport/${id}`,
         callback: async () => {
             if (passType === 0) {
