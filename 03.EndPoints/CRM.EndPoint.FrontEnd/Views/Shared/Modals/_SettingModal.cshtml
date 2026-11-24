@@ -1,3 +1,12 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy SettingAccess
+@{
+    var canViewBaseCash = SettingAccess.IsEnforced("BaseCash")
+        ? await SettingAccess.HasViewAsync("BaseCash", Context.RequestAborted) : User.IsAdmin() || User.IsFinancial();
+    var canViewSentSms = SettingAccess.IsEnforced("SentSms")
+        ? await SettingAccess.HasAsync("SentSms", "View", Context.RequestAborted) : User.IsAdmin();
+    var canViewReceivedSms = SettingAccess.IsEnforced("ReceivedSms")
+        ? await SettingAccess.HasAsync("ReceivedSms", "View", Context.RequestAborted) : User.IsAdmin();
+}
 <!-- Modal BaseSetting -->
 <div class="modal fade" id="BaseSetting" tabindex="-1" role="dialog" aria-labelledby="baseSettingTitle" data-bs-focus="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -27,7 +36,7 @@
                             اطلاعات پایه شرکت
                         </a>
                     }
-                    @if (User.IsAdmin() || User.IsFinancial()) {
+                    @if (canViewBaseCash) {
                         <a class="buttonGreen-wide" asp-controller="BaseItem" asp-action="Financial">
                             <svg style="width: 16px" viewBox="0 0 24 24" fill="currentColor"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17.997 4.17a3 3 0 0 1 2.003 2.83v12a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 2.003 -2.83a4 4 0 0 0 3.997 3.83h4a4 4 0 0 0 3.98 -3.597zm-5.997 5.83a1 1 0 0 0 -1 1v.05a2.5 2.5 0 0 0 .5 4.95h1a.5 .5 0 1 1 0 1h-2.5a1 1 0 0 0 0 2h1a1 1 0 0 0 2 0v-.05a2.5 2.5 0 0 0 -.5 -4.95h-1a.5 .5 0 1 1 0 -1h2.5a1 1 0 0 0 0 -2h-1a1 1 0 0 0 -1 -1m2 -8a2 2 0 1 1 0 4h-4a2 2 0 1 1 0 -4z" /></svg>
                             اطلاعات پایه مالی
@@ -51,7 +60,7 @@
                             دفترچه تلفن
                         </button>
                     }
-                    @if (User.IsAdmin()) {
+                    @if (canViewSentSms || canViewReceivedSms) {
                         <a class="buttonGreen-wide" asp-controller="Sms" asp-action="Index">
                             <svg style="width: 16px" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 4.014 1 5.426v5.148c0 1.413.993 2.67 2.43 2.902 1.168.188 2.352.327 3.55.414.28.02.521.18.642.413l1.713 3.293a.75.75 0 0 0 1.33 0l1.713-3.293a.783.783 0 0 1 .642-.413 41.102 41.102 0 0 0 3.55-.414c1.437-.231 2.43-1.49 2.43-2.902V5.426c0-1.413-.993-2.67-2.43-2.902A41.289 41.289 0 0 0 10 2ZM6.75 6a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clip-rule="evenodd" /></svg>
                             مدیریت پیامک

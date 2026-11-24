@@ -71,6 +71,14 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 catalogViews[entry.Url] = allowed && catalogViews.GetValueOrDefault(entry.Url, true);
             }
 
+            // Settings is an action-only group; a delegated child must not be hidden by its role list.
+            var canOpenSettings = catalogViews.GetValueOrDefault("/BaseItem/Financial");
+            foreach (var entity in new[] { "SentSms", "ReceivedSms" })
+                if (settings.GetValue<bool>("AccessCatalog:Enforce" + entity + "Permissions") &&
+                    await scopes.GetEffectiveScopeAsync(userId, entity + ".View", default) == AccessScopes.All)
+                    canOpenSettings = true;
+            if (canOpenSettings) catalogViews["#settings"] = true;
+
             if (settings.GetValue<bool>("AccessCatalog:EnforcePreFactorPermissions") &&
                 settings.GetValue<bool>("AccessCatalog:EnforceFactorPermissions") &&
                 await scopes.GetEffectiveScopeAsync(userId, "PreFactor.View", default) == AccessScopes.None &&
@@ -649,8 +657,8 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         {
             var effectiveRoles = item.Roles.Count > 0 ? item.Roles : parentRoles;
             var legacyAllowed = parentLegacyAllowed && (effectiveRoles.Count == 0 || effectiveRoles.Any(userRoles.Contains));
-            var hasCatalog = !string.IsNullOrEmpty(item.Url) && catalogViews.ContainsKey(item.Url);
-            var allowed = hasCatalog ? catalogViews[item.Url] : legacyAllowed;
+            var catalogKey = string.IsNullOrEmpty(item.Url) ? "#" + item.Id : item.Url;
+            var allowed = catalogViews.TryGetValue(catalogKey, out var granted) ? granted : legacyAllowed;
             var children = FilterItems(item.SubItems, userRoles, effectiveRoles, catalogViews, legacyAllowed);
             item.SubItems = children;
 

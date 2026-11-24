@@ -18,6 +18,8 @@ jobs:
         run: python scripts/check-onion-architecture.py
       - name: Check coding standards structure
         run: python scripts/check-coding-standards.py
+      - name: Audit remaining role-dependent authorization candidates
+        run: python scripts/audit-role-authority.py
       - name: Check quality control and live access JavaScript syntax
         run: |
           node --check 03.EndPoints/CRM.EndPoint.FrontEnd/wwwroot/js/qualityControlCustomer.js

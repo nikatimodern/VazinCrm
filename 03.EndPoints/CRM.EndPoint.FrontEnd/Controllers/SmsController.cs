@@ -14,15 +14,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[Authorize(Roles = AppRoles.Admin)]
+[Authorize]
 public class SmsController(SmsService smsService, CRMContextDb db, DocumentAccessPolicy access) : Controller {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        if (!await access.HasAsync("SentSms", "View", ct) && !await access.HasAsync("ReceivedSms", "View", ct)) return Forbid();
+        if (!await CanViewAsync("SentSms", ct) && !await CanViewAsync("ReceivedSms", ct)) return Forbid();
         return View();
     }
 
+    private Task<bool> CanViewAsync(string entity, CancellationToken ct) => access.IsEnforced(entity)
+        ? access.HasAsync(entity, "View", ct)
+        : Task.FromResult(User.IsInRole(AppRoles.Admin));
+
     [HttpGet]
+    [LegacyCatalogRoles("SentSms", AppRoles.Admin)]
+    [LegacyCatalogRoles("ReceivedSms", AppRoles.Admin)]
     [CatalogPermission("SentSms", "View")]
     [CatalogPermission("ReceivedSms", "View")]
     public async Task<IActionResult> Dashboard()
@@ -31,6 +37,7 @@ public class SmsController(SmsService smsService, CRMContextDb db, DocumentAcces
     }
 
     [HttpPost]
+    [LegacyCatalogRoles("SentSms", AppRoles.Admin)]
     [CatalogPermission("SentSms", "View")]
     public async Task<IActionResult> GetReportsDt()
     {
@@ -99,6 +106,7 @@ public class SmsController(SmsService smsService, CRMContextDb db, DocumentAcces
     }
 
     [HttpPost]
+    [LegacyCatalogRoles("ReceivedSms", AppRoles.Admin)]
     [CatalogPermission("ReceivedSms", "View")]
     public async Task<IActionResult> GetReceivesDt()
     {
@@ -162,6 +170,7 @@ public class SmsController(SmsService smsService, CRMContextDb db, DocumentAcces
 
 
     [HttpPost]
+    [LegacyCatalogRoles("ReceivedSms", AppRoles.Admin)]
     [CatalogPermission("ReceivedSms", "Sync")]
     public async Task<IActionResult> SyncReceives(CancellationToken cancellationToken)
     {
@@ -179,6 +188,7 @@ public class SmsController(SmsService smsService, CRMContextDb db, DocumentAcces
 
 
     [HttpPost]
+    [LegacyCatalogRoles("SentSms", AppRoles.Admin)]
     [CatalogPermission("SentSms", "Sync")]
     public async Task<IActionResult> SyncSents(CancellationToken cancellationToken)
     {

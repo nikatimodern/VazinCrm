@@ -1,8 +1,10 @@
 @using CRM.Core.Domain.Sms.Enums
 @inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @{
-    var canReceive = await DocumentAccess.HasAsync("ReceivedSms", "View", Context.RequestAborted);
-    var canSent = await DocumentAccess.HasAsync("SentSms", "View", Context.RequestAborted);
+    var canReceive = DocumentAccess.IsEnforced("ReceivedSms")
+        ? await DocumentAccess.HasAsync("ReceivedSms", "View", Context.RequestAborted) : User.IsInRole("مدیر ارشد");
+    var canSent = DocumentAccess.IsEnforced("SentSms")
+        ? await DocumentAccess.HasAsync("SentSms", "View", Context.RequestAborted) : User.IsInRole("مدیر ارشد");
     var canSyncReceive = canReceive && await DocumentAccess.HasAsync("ReceivedSms", "Sync", Context.RequestAborted);
     var canSyncSent = canSent && await DocumentAccess.HasAsync("SentSms", "Sync", Context.RequestAborted);
 }
