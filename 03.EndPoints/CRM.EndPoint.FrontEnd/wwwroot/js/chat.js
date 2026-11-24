@@ -5,6 +5,18 @@ const chatContainerElm = document.getElementById("chatContainer");
 const chatListElm = document.getElementById("chatList");
 const otherInputElm = document.getElementById("otherInput");
 const addChatModal = document.getElementById("addChatModal");
+let chatAccessInvalidated = false;
+const canChatAction = action => !chatAccessInvalidated && document.getElementById("chatAccessRights")?.dataset[action.toLowerCase()] === "true";
+const chatHeaders = () => ({ RequestVerificationToken: document.querySelector("#chatAccessToken [name=__RequestVerificationToken]").value });
+function invalidateChatAccess() {
+    chatAccessInvalidated = true;
+    chatContainerElm?.replaceChildren();
+    document.getElementById("chatListContainer")?.replaceChildren();
+    chatAttachment = [];
+    location.reload();
+}
+window.addEventListener("erp:access-changed", invalidateChatAccess);
+window.addEventListener("erp:access-reconnected", invalidateChatAccess);
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -13,7 +25,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (mci) {
         promises.push(showChat(mci));
     }
-    promises.push(getSalesExpertUsers(), showListChats());
+    if (canChatAction("Create")) promises.push(getSalesExpertUsers());
+    promises.push(showListChats());
     FLshowLoading();
     await Promise.all(promises);
     FLshowLoading(false);
@@ -53,6 +66,7 @@ function backChatList() {
 }
 
 function showUsersModal() {
+    if (!canChatAction("Create")) return;
     ModalToggle(addChatModal);
 }
 
@@ -135,8 +149,9 @@ async function showChat(mainChatId, showLoading = true) {
 
 
 async function createMainChat(userId, userTxt = "") {
+    if (!canChatAction("Create")) return;
     FLshowLoading();
-    const res = await axios(`/Chat/CreateMainChat?toUserId=${userId}&toUserTxt=${userTxt}`);
+    const res = await axios.post("/Chat/CreateMainChat", null, { params: { toUserId: userId, toUserTxt: userTxt }, headers: chatHeaders() });
     if (res.status === 200) {
         await showChat(res.data);
         await showListChats();
@@ -148,9 +163,10 @@ async function createMainChat(userId, userTxt = "") {
 
 
 async function sendChat() {
+    if (!canChatAction(editingChatId ? "Edit" : "Create")) return;
     const chatInput = chatContainerElm.querySelector("#chatInput");
     const chatSendBtn = chatContainerElm.querySelector("#chatSendBtn");
-    if (!chatInput.value.trim() && !chatAttachment.length) return;
+    if (!chatInput || !chatSendBtn || (!chatInput.value.trim() && !chatAttachment.length)) return;
     toggleElementsDisabled(chatSendBtn);
     const model = {
         chat: {
@@ -160,7 +176,7 @@ async function sendChat() {
         attachments: chatAttachment,
     };
     
-    const res = await axios.post(`/Chat/SendChat`, model);
+    const res = await axios.post(`/Chat/SendChat`, model, { headers: chatHeaders() });
     if (res.status === 200) {
         chatInput.value = "";
         removeChatAttach();
@@ -280,6 +296,7 @@ const chatDropdown = Dropdown.setupDelegate({
 });
 
 function deleteChat(id) {
+    if (!canChatAction("Delete")) return;
     chatDropdown.close();
     Swal.fire({
         //title: "حذف!",
@@ -293,7 +310,8 @@ function deleteChat(id) {
     }).then(async (willDelete) => {
         if (willDelete.isConfirmed) {
             FLshowLoading();
-            const res = await axios(`/Chat/DeleteChat/${id}`);
+            if (!canChatAction("Delete")) return;
+            const res = await axios.post(`/Chat/DeleteChat/${encodeURIComponent(id)}`, null, { headers: chatHeaders() });
             if (res.status === 200) {
                 toastifySuccess("با موفقیت حذف شد");
                 await showChat(currentMainChatId);
@@ -305,6 +323,7 @@ function deleteChat(id) {
 
 
 function editChat(id) {
+    if (!canChatAction("Edit")) return;
     chatDropdown.close();
     const box = chatContainerElm.querySelector(`.report-box[data-chat-id="${id}"]`);
     if (!box) return;

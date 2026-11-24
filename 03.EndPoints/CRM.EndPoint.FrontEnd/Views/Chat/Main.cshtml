@@ -1,13 +1,17 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy Access
 @{
     Layout = "_ChatLayout";
+    var canCreate = await Access.HasAsync("Chat", "Create", Context.RequestAborted);
 }
 
 
+<div id="chatAccessToken" hidden>@Html.AntiForgeryToken()</div>
+<div id="chatAccessRights" hidden data-create="@(canCreate ? "true" : "false")" data-edit="@((await Access.HasAsync("Chat", "Edit", Context.RequestAborted)) ? "true" : "false")" data-delete="@((await Access.HasAsync("Chat", "Delete", Context.RequestAborted)) ? "true" : "false")"></div>
 <div style="padding-bottom: 10px;height: 100%">
     <div class="email-container">
         <div id="chatList" class="email-list d-md-block" style="min-height: calc(100dvh - 90px);">
             <div class="p-2 ps-1 ps-xl-2 border-bottom d-flex align-items-center justify-content-center">
-                <button class="buttonGreen1" onclick="showUsersModal()">پیام جدید</button>
+                @if (canCreate) { <button class="buttonGreen1" data-document-permission="Chat.Create" onclick="showUsersModal()">پیام جدید</button> }
             </div>
             <div id="chatListContainer" style="max-height: calc(100dvh - 160px);"></div>
         </div>

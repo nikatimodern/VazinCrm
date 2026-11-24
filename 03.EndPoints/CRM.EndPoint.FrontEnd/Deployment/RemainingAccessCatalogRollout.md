@@ -118,3 +118,7 @@ Task repository now exposes per-row and shared mutation scope checks and active 
 ## Report / CallRecording follow-up
 
 Report CQRS update/delete now intersects visible report and action scopes; report edits preserve AI/call linkage and prevent graph overposting under enforcement. Report cards check action scope and the audio endpoint's Listen grant. Existing linked manual Deal/Report task creation remains supported at the controller with parent visibility checks; unrecognized linked types are denied. Remaining issues include direct background report commands and call event notifications, participant display, legacy role mapping, shared form/live UI and runtime integration. No new flags enabled.
+
+## Chat / Email follow-up
+
+Chat mutations and email detail/mark-read POST now use antiforgery. Chat UI uses action-specific grants and reloads on permission invalidation; attachment uploads accept only fresh whitelisted files and deletion is soft. Recipient Chat.View is checked before chat push and reminder delivery. Email returns actual seen state and retains sender/recipient isolation. Shared counters, queued notifications, other callers, browser/runtime compatibility and linked records remain to review. Contact is a separate entity with Customer/Agent type and EntityId; no standalone Contact CRUD was identified in the reviewed files. No flags enabled and no final SQL handoff yet.

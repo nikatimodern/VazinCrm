@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Sms.Enums;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using Microsoft.Extensions.Configuration;
 using CRM.EndPoint.FrontEnd.IServices.Sms;
 using CRM.EndPoint.FrontEnd.Models.Sms;
 using CRM.Infrastructures.Sql;
@@ -13,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CRM.EndPoint.FrontEnd.Services.Chat;
 
-public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue smsQueue, ILogger<ChatReminderService> logger) {
+public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue smsQueue, ILogger<ChatReminderService> logger, IAccessScopeService scopes, IConfiguration configuration) {
     public async Task CheckUnreadChats(CancellationToken cancellationToken = default)
     {
         try
@@ -71,6 +74,8 @@ public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue s
                 }
 
                 if (!shouldSendSms) continue;
+                if (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions") &&
+                    await scopes.GetEffectiveScopeAsync(targetUserId, "Chat.View", cancellationToken) != AccessScopes.All) continue;
 
                 userIdsToFetch.Add(targetUserId);
 
@@ -89,7 +94,9 @@ public class ChatReminderService(CRMContextDb db, UserContextDb udb, ISmsQueue s
             foreach (var mainChat in pendingMainChats)
             {
                 var targetId = mainChat.ReminderSentUserId;
-                if (string.IsNullOrEmpty(targetId)) continue;
+                if (string.IsNullOrEmpty(targetId) || !userIdsToFetch.Contains(targetId)) continue;
+                if (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions") &&
+                    await scopes.GetEffectiveScopeAsync(targetId, "Chat.View", cancellationToken) != AccessScopes.All) continue;
 
                 if (usersPhones.TryGetValue(targetId, out var phone) && TextService.IsValidPhoneNumber(phone))
                 {

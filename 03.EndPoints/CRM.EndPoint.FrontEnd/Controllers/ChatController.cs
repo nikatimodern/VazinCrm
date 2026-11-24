@@ -5,6 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Attachments.Enum;
+using CRM.Core.Domain.Attachments.Entities;
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using Microsoft.Extensions.Configuration;
 using CRM.Core.Domain.Chats.Entities;
 using CRM.EndPoint.FrontEnd.IServices.PushNotification;
 using CRM.EndPoint.FrontEnd.Models.Chat;
@@ -35,9 +39,13 @@ public class ChatController : Controller {
     private readonly IHubContext<TaskHub> hub;
     private readonly IPushQueue pushQueue;
     private readonly DocumentAccessPolicy access;
+    private readonly IAccessScopeService scopes;
+    private readonly IConfiguration configuration;
+    private static readonly HashSet<string> AllowedAttachmentExtensions = new(StringComparer.OrdinalIgnoreCase)
+    { "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "jpg", "jpeg", "png", "gif", "webp", "jfif", "zip", "rar", "7z", "sql", "csv" };
 
     public ChatController(DateTimeServices dtService, CRMContextDb db, UserContextDb udb, UserManager<AppUser> userManager, FileSaver fileSaver,
-        IHubContext<TaskHub> hub, IPushQueue pushQueue, DocumentAccessPolicy access)
+        IHubContext<TaskHub> hub, IPushQueue pushQueue, DocumentAccessPolicy access, IAccessScopeService scopes, IConfiguration configuration)
     {
         this.dtService = dtService;
         this.db = db;
@@ -47,6 +55,8 @@ public class ChatController : Controller {
         this.hub = hub;
         this.pushQueue = pushQueue;
         this.access = access;
+        this.scopes = scopes;
+        this.configuration = configuration;
     }
 
 
@@ -58,6 +68,7 @@ public class ChatController : Controller {
     }
 
 
+    [CatalogPermission("Chat", "Create")]
     public async Task<IActionResult> GetSalesExperts(string mobile)
     {
         var salesExpert = (await userManager.GetUsersInRoleAsync("کارشناس فروش")).Select(u => new {
@@ -119,7 +130,7 @@ public class ChatController : Controller {
             .ToDictionaryAsync(x => x.Id, x => x.PersonImageUrl);
 
         var chatIds = mainChat.Chats.Select(x => x.Id).ToList();
-        var attachments = await db.Attachments.Where(x => chatIds.Contains(x.EntityId.Value))
+        var attachments = await db.Attachments.AsNoTracking().Where(x => !x.IsDeleted && x._AttachType == _AttachType.Chat && x.EntityId.HasValue && chatIds.Contains(x.EntityId.Value))
             .Select(x => new {
                 x.EntityId,
                 x.OriginalFilename,
@@ -202,6 +213,7 @@ public class ChatController : Controller {
 
     [Authorize]
     [CatalogPermission("Chat", "Create")]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateMainChat(string toUserId, string toUserTxt)
     {
         var user = await udb.Users.Where(f => f.PhoneNumber == toUserId).AsNoTracking().FirstOrDefaultAsync();
@@ -239,7 +251,7 @@ public class ChatController : Controller {
 
 
     [Authorize]
-    [HttpPost]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> SendChat([FromBody] SendChatVModel model)
     {
         if (model == null) return BadRequest();
@@ -270,8 +282,16 @@ public class ChatController : Controller {
             if (model.Attachments?.Any() == true)
             {
                 // New messages may upload new files only, never mutate existing attachment IDs.
-                if (model.Attachments.Any(a => a.Id != Guid.Empty || a.IsDeleted)) return BadRequest();
-                var attachments = fileSaver.SaveAttachments(model.Attachments, _AttachType.Chat);
+                var uploads = new List<Attachment>();
+                foreach (var a in model.Attachments)
+                {
+                    if (a == null || a.Id != Guid.Empty || a.IsDeleted) return BadRequest();
+                    var extension = a.fileExten?.TrimStart('.').ToLowerInvariant();
+                    if (string.IsNullOrWhiteSpace(extension) || !AllowedAttachmentExtensions.Contains(extension) ||
+                        a.File == null || a.File.Length == 0 || a.File.LongLength > 20L * 1024 * 1024) return BadRequest("نوع یا حجم فایل مجاز نیست.");
+                    uploads.Add(new Attachment { Filename = Path.GetFileName(a.Filename ?? "file"), fileExten = extension, File = a.File });
+                }
+                var attachments = fileSaver.SaveAttachments(uploads, _AttachType.Chat);
 
                 foreach (var att in attachments ?? [])
                 {
@@ -355,6 +375,9 @@ public class ChatController : Controller {
         if (mainChat == null) return;
         var notifUserId = mainChat.FromUserId == fromUser?.Id ? mainChat.ToUserId : mainChat.FromUserId;
 
+        if (string.IsNullOrWhiteSpace(notifUserId) || (configuration.GetValue<bool>("AccessCatalog:EnforceChatPermissions") &&
+            await scopes.GetEffectiveScopeAsync(notifUserId, "Chat.View", HttpContext.RequestAborted) != AccessScopes.All)) return;
+
         const int maxLength = 50;
         var displayText = "";
         if (!string.IsNullOrEmpty(text))
@@ -378,6 +401,7 @@ public class ChatController : Controller {
 
     [Authorize]
     [CatalogPermission("Chat", "Delete")]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteChat(Guid id)
     {
         try
@@ -397,10 +421,10 @@ public class ChatController : Controller {
 
             if (item.FileAddress != null)
             {
-                var att = await db.Attachments.FirstOrDefaultAsync(f => f.EntityId == item.Id);
+                var att = await db.Attachments.FirstOrDefaultAsync(f => !f.IsDeleted && f._AttachType == _AttachType.Chat && f.EntityId == item.Id);
                 if (att != null)
                 {
-                    fileSaver.DeleteFile(att.Url);
+                    // Retain the physical file for recovery; private delivery checks its deleted flag.
                     att.IsDeleted = true;
                     att.ModifyDate = DateTime.Now;
                     att.ModifyDateTxt = dtService.GetDateTimePersian();

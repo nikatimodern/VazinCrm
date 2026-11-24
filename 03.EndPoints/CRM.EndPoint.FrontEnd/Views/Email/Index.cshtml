@@ -137,7 +137,10 @@
             wrapper.classList.add("email-content-wrapper");
             try {
                 FLshowLoading();
-                const data = (await axios(`/Email/GetEmail?id=${id}&type=${type}`)).data;
+                if (window.AccessLive?.can("Email", "View") === false) return false;
+                const token = document.querySelector("#accessLiveToken [name=__RequestVerificationToken]").value;
+                const data = (await axios.post("/Email/GetEmail", null, { params: { id, type }, headers: { RequestVerificationToken: token } })).data;
+                if (window.AccessLive?.can("Email", "View") === false) return false;
                 const email = data.email;
                 setCountNotSeen(data.countNotSeen);
 
@@ -165,7 +168,7 @@
                     await showEmailDetailsModal(email.entityId, email.entityName);
                 });
 
-                return true;
+                return email.seen === true;
             } catch (err) {
                 console.log(err);
                 wrapper.innerHTML = `

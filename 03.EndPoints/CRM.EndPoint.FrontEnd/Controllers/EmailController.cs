@@ -28,7 +28,7 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
         {
             if (type is not (1 or 2)) return BadRequest();
             if (!Guid.TryParse(userManager.GetUserId(HttpContext.User), out var userId)) return Unauthorized();
-            var emailsQuery = db.Emails.AsNoTracking().AsQueryable();
+            var emailsQuery = db.Emails.AsNoTracking().Where(e => !e.IsDeleted);
             var emailsCount = await emailsQuery.Where(e => e.ToId == userId && !e.Seen).CountAsync();
 
             emailsQuery = type switch {
@@ -73,6 +73,7 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
         }
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> GetEmail(Guid id, int type)
     {
         try
@@ -80,7 +81,7 @@ public class EmailController(CRMContextDb db, UserManager<AppUser> userManager, 
             var user = await userManager.GetUserAsync(HttpContext.User);
             if (type is not (1 or 2)) return BadRequest();
             if (user == null || !Guid.TryParse(user.Id, out var userId)) return Unauthorized();
-            var email = await db.Emails.Where(e => e.Id == id &&
+            var email = await db.Emails.Where(e => !e.IsDeleted && e.Id == id &&
                 (type == 1 ? e.ToId == userId : e.FromId == userId)).FirstOrDefaultAsync();
             if (email == null) return NotFound("رکوردی یافت نشد!");
 
