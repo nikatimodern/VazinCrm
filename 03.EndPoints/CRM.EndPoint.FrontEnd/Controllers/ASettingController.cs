@@ -1,6 +1,7 @@
 ﻿using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -29,9 +30,10 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         private readonly DateTimeServices dtService;
         private readonly CRMContextDb db;
         private readonly LogSystemService _logSystemService;
+        private readonly DocumentAccessPolicy documentAccess;
 
         public ASettingController(UserManager<AppUser> userManager, Service GenService, FileSaver fileSaver,
-            DateTimeServices dtService, CRMContextDb db, LogSystemService logSystemService)
+            DateTimeServices dtService, CRMContextDb db, LogSystemService logSystemService, DocumentAccessPolicy documentAccess)
         {
             this.userManager = userManager;
             genService = GenService;
@@ -39,6 +41,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             this.dtService = dtService;
             this.db = db;
             _logSystemService = logSystemService;
+            this.documentAccess = documentAccess;
         }
 
         [Authorize(Roles = "مدیر ارشد")]
@@ -350,7 +353,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Payment)
                 {
-                    var query = db.Payments.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.ApplyAsync(db.Payments.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -382,7 +385,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.RequestAmount)
                 {
-                    var query = db.RequestAmounts.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.ApplyAsync(db.RequestAmounts.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         var searchNumber = TextService.convertToInt(search);
@@ -546,7 +549,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.Payment:
                 {
-                    var payment = await db.Payments.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var payment = await db.Payments.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (payment == null) return NotFound();
+                    if (!await documentAccess.AllowsRowAsync(payment, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(payment, null, LogActionEnum.بازیابی, user);
                     SetMainFields(payment);
 
@@ -555,7 +560,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.RequestAmount:
                 {
-                    var requestAmount = await db.RequestAmounts.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var requestAmount = await db.RequestAmounts.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (requestAmount == null) return NotFound();
+                    if (!await documentAccess.AllowsRowAsync(requestAmount, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(requestAmount, null, LogActionEnum.بازیابی, user);
                     SetMainFields(requestAmount);
 
