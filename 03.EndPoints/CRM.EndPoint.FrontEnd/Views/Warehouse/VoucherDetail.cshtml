@@ -1,3 +1,4 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
 @using CRM.Core.Domain.Warehouses.Enums
 @model CRM.Core.Domain.Warehouses.Entities.WarehouseVoucher
 
@@ -43,13 +44,13 @@
                 <span class="status-text">@Model.StatusTxt</span>
             </div>
 
-            @*@if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
-                <button type="button" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
+            @*@if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین && await DocumentAccess.CanAsync("WarehouseVoucher", "Approve", Model.Id, Context.RequestAborted)) {
+                <button type="button" data-document-permission="WarehouseVoucher.Approve" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                     تایید حواله
                 </button>
-            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
-                <button type="button" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
+            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل && await DocumentAccess.CanAsync("WarehouseVoucher", "Deliver", Model.Id, Context.RequestAborted) && await DocumentAccess.HasAsync("WarehouseTransaction", "Create", Context.RequestAborted)) {
+                <button type="button" data-document-permission="WarehouseVoucher.Deliver" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
                     <i class="fas fa-box-check"></i>
                     تحویل شد
                 </button>
@@ -272,13 +273,13 @@
         </div>
 
         <div class="d-flex align-items-center">
-            @if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین) {
-                <button type="button" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
+            @if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تایید_تامین && await DocumentAccess.CanAsync("WarehouseVoucher", "Approve", Model.Id, Context.RequestAborted)) {
+                <button type="button" data-document-permission="WarehouseVoucher.Approve" class="voucher-action-btn voucher-action-confirm" onclick="confirmWarehouseVoucher('@Model.Id')">
                     <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" /></svg>
                     تایید حواله
                 </button>
-            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل) {
-                <button type="button" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
+            } else if ((User.IsAdmin() || Model.Warehouse?.IsMain == false) && Model.Status == WarehouseVoucherStatusEnum.در_انتظار_تحویل && await DocumentAccess.CanAsync("WarehouseVoucher", "Deliver", Model.Id, Context.RequestAborted) && await DocumentAccess.HasAsync("WarehouseTransaction", "Create", Context.RequestAborted)) {
+                <button type="button" data-document-permission="WarehouseVoucher.Deliver" class="voucher-action-btn voucher-action-deliver" onclick="deliverWarehouseVoucher('@Model.Id')">
                     <i class="fas fa-box-check"></i>
                     تحویل شد
                 </button>
