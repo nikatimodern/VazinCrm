@@ -357,6 +357,9 @@
 	border-radius: 9px 0 0 9px;
 	background: var(--pf-card-background);
 }
+.pf-accepted-card__content.InfoDataItem_Prefactor:has(> .pf-accepted-card__workflow:not(:empty)) {
+	grid-template-areas: "facts" "body" "progress" "actions" "workflow" "description";
+}
 .pf-accepted-card__facts {
 	--pf-wide-fact-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(100px, .7fr) minmax(100px, .7fr);
 	grid-area: facts;
@@ -622,9 +625,11 @@
 	gap: 5px;
 }
 .pf-accepted-card__workflow {
+	grid-area: workflow;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
+	justify-content: flex-end;
 	gap: 6px;
 	color: var(--pf-operation-accent);
 }
@@ -648,6 +653,25 @@
 	background: var(--pf-operation-accent);
 	color: #fff;
 	font: 11px/1.5 IRANSansMedium !important;
+}
+.pf-accepted-card__workflow > .pf-accepted-card__deposit-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: var(--pf-action);
+	border-color: var(--pf-action);
+}
+.pf-accepted-card__workflow > .pf-accepted-card__deposit-btn:hover {
+	background: var(--pf-primary);
+	border-color: var(--pf-primary);
+}
+@media (max-width: 767px) {
+	.pf-accepted-card__workflow > .pf-accepted-card__deposit-btn {
+		min-height: 23px;
+		padding: 1px 5px !important;
+		font-size: 11px !important;
+		margin-block: 0;
+	}
 }
 .pf-accepted-card__workflow select {
 	min-height: 30px;
@@ -846,6 +870,9 @@
 	.pf-accepted-card__content.InfoDataItem_Prefactor {
 		grid-template-columns: minmax(0, 1fr) 32px;
 		grid-template-areas: "facts actions" "body actions" "progress actions" "description description";
+	}
+	.pf-accepted-card__content.InfoDataItem_Prefactor:has(> .pf-accepted-card__workflow:not(:empty)) {
+		grid-template-areas: "facts actions" "body actions" "progress actions" "workflow workflow" "description description";
 	}
 	.pf-accepted-card__action-list {
 		height: auto;
