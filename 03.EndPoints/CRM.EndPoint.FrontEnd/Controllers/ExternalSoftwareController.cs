@@ -1,3 +1,4 @@
+using CRM.EndPoint.FrontEnd.Security;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -30,10 +31,13 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
         public IActionResult Index() => View();
 
         // The URL identifies the destination; no client-side software switch is allowed.
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> Mapping(Guid softwareId, CancellationToken ct)
         {
             if (softwareId == Guid.Empty || !mappings.SupportsMapping(softwareId)
@@ -52,6 +56,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         // Settings belong to a specific software and are keyed by the enum, not a user-supplied title.
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "ManageSettings")]
         public async Task<IActionResult> Settings(Guid softwareId, CancellationToken ct)
         {
             if (softwareId == Guid.Empty) return NotFound();
@@ -67,6 +72,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "ManageSettings")]
         public async Task<IActionResult> GetExternalSoftwareSettings(Guid softwareId, CancellationToken ct)
         {
             if (softwareId == Guid.Empty) return BadRequest("شناسه نرم‌افزار معتبر نیست.");
@@ -107,6 +113,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "ManageSettings")]
         public async Task<IActionResult> SaveExternalSoftwareSetting(
             [FromBody] ExternalSoftwareSettingRequest request, CancellationToken ct)
         {
@@ -153,6 +160,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "ManageSettings")]
         public async Task<IActionResult> DeleteExternalSoftwareSetting(
             [FromBody] ExternalSoftwareSettingRequest request, CancellationToken ct)
         {
@@ -207,6 +215,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
         public async Task<IActionResult> GetExternalSoftwareFormOptions(CancellationToken ct)
         {
             var softwareTypes = Enum.GetValues<SoftwareTypeEnum>()
@@ -273,6 +282,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "Create")]
         public async Task<IActionResult> AddExternalSoftware(
             [FromBody] SaveExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -310,6 +320,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "Edit")]
         public async Task<IActionResult> UpdateExternalSoftware(
             [FromBody] SaveExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -346,6 +357,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "Delete")]
         public async Task<IActionResult> DeleteExternalSoftware(
             [FromBody] DeleteExternalSoftwareRequest request, CancellationToken ct)
         {
@@ -392,6 +404,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
         public async Task<IActionResult> GetExternalSoftwares(CancellationToken ct)
         {
             var software = await db.ExternalSoftwares.AsNoTracking()
@@ -421,10 +434,14 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingWorkspaceOptions(CancellationToken ct)
             => Ok(await mappings.GetExternalMappingWorkspaceOptions(ct));
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingReview(Guid softwareId, CancellationToken ct)
         {
             try
@@ -438,6 +455,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetSavedExternalMappings(
             Guid softwareId, int? mapType = null, string search = "",
             int page = 1, int pageSize = 12, CancellationToken ct = default)
@@ -454,6 +473,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "Edit")]
         public async Task<IActionResult> GetExternalMappingForEdit(
             Guid softwareId, Guid mappingId, CancellationToken ct)
         {
@@ -472,6 +493,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetManualMappingOptions(
             Guid softwareId, int mapType, string side, string search = "",
             string sourceEntity = null, string targetEntity = null,
@@ -489,6 +512,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
         }
 
         [HttpGet]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "View")]
         public async Task<IActionResult> GetExternalMappingTargetDetails(
             Guid softwareId, int mapType, int targetId, string targetEntity = null,
             CancellationToken ct = default)
@@ -516,6 +541,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "Delete")]
         public async Task<IActionResult> DeleteExternalMapping(
             [FromBody] DeleteExternalMappingRequest request, CancellationToken ct)
         {
@@ -544,6 +571,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "Edit")]
         public async Task<IActionResult> UpdateExternalMapping(
             [FromBody] ExternalMappingService.UpdateExternalMappingRequest request,
             CancellationToken ct)
@@ -573,6 +602,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CatalogPermission("ExternalSoftware", "View")]
+        [CatalogPermission("ExternalMapping", "Create")]
         public async Task<IActionResult> SaveSelectedExternalMappings(
             [FromBody] ExternalMappingService.SaveExternalMappingsRequest request,
             CancellationToken ct)
