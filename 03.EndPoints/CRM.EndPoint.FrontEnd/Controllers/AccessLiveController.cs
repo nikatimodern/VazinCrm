@@ -123,6 +123,14 @@ public sealed class AccessLiveController(
         var basecentercash = await DocumentState("BaseCenterCash", basecentercashEnforced, ["View", "Create", "Edit", "Delete"]);
         var cashgroupEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceCashGroupPermissions");
         var cashgroup = await DocumentState("CashGroup", cashgroupEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Export"]);
+        var warehouseEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceWarehousePermissions");
+        var warehouse = await DocumentState("Warehouse", warehouseEnforced, ["View", "Create", "Edit", "Delete", "ManageUsers"]);
+        var warehouseproductEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceWarehouseProductPermissions");
+        var warehouseproduct = await DocumentState("WarehouseProduct", warehouseproductEnforced, ["View", "Create", "Edit", "Delete"]);
+        var warehousetransactionEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceWarehouseTransactionPermissions");
+        var warehousetransaction = await DocumentState("WarehouseTransaction", warehousetransactionEnforced, ["View", "Create", "Edit", "Delete"]);
+        var warehousevoucherEnforced = configuration.GetValue<bool>("AccessCatalog:EnforceWarehouseVoucherPermissions");
+        var warehousevoucher = await DocumentState("WarehouseVoucher", warehousevoucherEnforced, ["View", "Create", "Edit", "Delete", "Approve", "Deliver"]);
         var independentCartable = User.IsInRole("مدیر ارشد") || User.IsInRole("کارشناس مالی") || User.IsInRole("مدیر تامین") || User.IsInRole("کارشناس تامین") || User.IsInRole("مدیر عامل");
         var cartable = new { view = (byte)(preFactor["view"] > 0 || factor["view"] > 0 || independentCartable ? 2 : 0) };
 
@@ -131,13 +139,13 @@ public sealed class AccessLiveController(
         return Json(new
         {
             roles,
-            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced, transfer = transferEnforced, cashier = cashierEnforced, cash = cashEnforced, basecash = basecashEnforced, basecentercash = basecentercashEnforced, cashgroup = cashgroupEnforced },
+            enforced = new { customer = customerEnforced, deal = dealEnforced, prefactor = pfEnforced, factor = factorEnforced, orderhead = orderheadEnforced, supply = supplyEnforced, supplyfactor = supplyfactorEnforced, accountancy = accountancyEnforced, requestamount = requestamountEnforced, payment = paymentEnforced, bankaccount = bankaccountEnforced, checkbook = checkbookEnforced, check = checkEnforced, transfer = transferEnforced, cashier = cashierEnforced, cash = cashEnforced, basecash = basecashEnforced, basecentercash = basecentercashEnforced, cashgroup = cashgroupEnforced, warehouse = warehouseEnforced, warehouseproduct = warehouseproductEnforced, warehousetransaction = warehousetransactionEnforced, warehousevoucher = warehousevoucherEnforced },
             customer,
             deal,
             prefactor = preFactor,
             factor,
             cartable,
-            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check, transfer, cashier, cash, basecash, basecentercash, cashgroup
+            orderhead, supply, supplyfactor, accountancy, requestamount, payment, bankaccount, checkbook, check, transfer, cashier, cash, basecash, basecentercash, cashgroup, warehouse, warehouseproduct, warehousetransaction, warehousevoucher
         });
     }
 }
