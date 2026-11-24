@@ -1,3 +1,5 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
+using CRM.Core.Domain.Taxation;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
 using Microsoft.AspNetCore.Authorization;
@@ -47,14 +49,21 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         Run(() => dispatcher.QueryAsync(new GetTaxPreviewSnapshotQuery(id), ct));
 
     [HttpPost("invoices/{id:guid}/snapshots")]
-    public Task<IActionResult> Snapshot(Guid id, CancellationToken ct) =>
-        Run(() => dispatcher.CommandAsync(new SaveTaxPreviewCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier)), ct));
+    public Task<IActionResult> Snapshot(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new SaveTaxPreviewCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
+
+    [HttpPost("invoices/{id:guid}/queue")]
+    public Task<IActionResult> Enqueue(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
+
+    public sealed record TaxPreviewVersion(string Version);
 
     private async Task<IActionResult> Run<T>(Func<Task<T>> action)
     {
         if (!environment.IsDevelopment() || !config.GetValue<bool>("Taxation:EnableLocalPreview")) return NotFound();
         try { return Ok(await action()); }
         catch (KeyNotFoundException) { return NotFound(); }
+        catch (TaxPreviewConflictException ex) { return Conflict(ex.Message); }
         catch (ArgumentException ex) { return BadRequest(ex.Message); }
     }
 }

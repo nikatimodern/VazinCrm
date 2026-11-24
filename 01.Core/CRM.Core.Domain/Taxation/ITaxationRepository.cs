@@ -6,7 +6,12 @@ using CRM.Core.Domain.Factors.Entities;
 
 namespace CRM.Core.Domain.Taxation;
 
-public sealed record TaxPreviewSource(Factor Factor, TaxMemory ActiveMemory, IReadOnlyList<TaxProductMapping> Mappings);
+public sealed record TaxPreviewSource(Factor Factor, TaxMemory ActiveMemory, IReadOnlyList<TaxProductMapping> Mappings, bool? TaxAfterDiscount);
+
+public sealed class TaxPreviewConflictException : InvalidOperationException
+{
+    public TaxPreviewConflictException() : base("اطلاعات پیش‌نمایش تغییر کرده است. پیش‌نمایش جدید دریافت کنید.") { }
+}
 
 public interface ITaxPreviewProtector
 {
@@ -22,5 +27,6 @@ public interface ITaxationRepository
     Task ActivateAsync(Guid id, CancellationToken ct);
     Task<TaxPreviewSource> GetPreviewSourceAsync(Guid factorId, CancellationToken ct);
     Task<string> ReadSnapshotAsync(Guid id, CancellationToken ct);
-    Task<Guid> SaveSnapshotAsync(Guid factorId, Guid memoryId, string preview, string actorId, CancellationToken ct);
+    Task<Guid> SaveSnapshotAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
+    Task<Guid> EnqueueAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
 }

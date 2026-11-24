@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text.Json;
+using CRM.Core.Domain.Factors;
 using CRM.Core.Domain.Taxation;
 
 namespace CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -14,12 +17,15 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
     public string? BuyerNationalId { get; init; }
     public string? BuyerPostalCode { get; init; }
     public int VatPercent { get; init; }
+    public bool? TaxAfterDiscount { get; init; }
+    public string? Version { get; init; }
 
     public static InvoicePreview Build(TaxPreviewSource source)
     {
         var factor = source.Factor;
         var errors = new List<string>();
         var lines = new List<PreviewLine>();
+        if (!source.TaxAfterDiscount.HasValue) errors.Add("تنظیم مبنای مالیات ERP مشخص نیست.");
         if (source.ActiveMemory is null) errors.Add("حافظه فعال انتخاب نشده است.");
         if (factor.DateMiladi is null) errors.Add("تاریخ فاکتور مشخص نیست.");
         if (factor.CustomerId is null || string.IsNullOrWhiteSpace(factor.Cus_EghtesadiCode))
@@ -47,7 +53,7 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
                 errors.Add(label + "مقدار یا مبلغ خارج از محدوده است.");
                 continue;
             }
-            var baseAmount = quantity * item.UnitAmount;
+            var baseAmount = InvoiceAmounts.Gross(quantity, item.UnitAmount);
             if (baseAmount > 999999999999999999m)
             {
                 errors.Add(label + "مبلغ پایه بیش از حد مجاز است.");
@@ -55,7 +61,8 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
             }
             var net = baseAmount - item.Discount;
             if (item.UnitAmount <= 0 || item.Discount < 0 || net < 0 || item.TaxAmount < 0 ||
-                factor.PercentTax < 0 || item.TaxAmount != net * factor.PercentTax / 100m ||
+                factor.PercentTax < 0 || item.Discount != Math.Round(item.Discount) ||
+                item.TaxAmount != InvoiceAmounts.Tax(baseAmount, item.Discount, factor.PercentTax, source.TaxAfterDiscount.GetValueOrDefault()) ||
                 item.TotalAmount != net + item.TaxAmount)
                 errors.Add(label + "مبالغ یا مالیات نیازمند تطبیق است.");
             gross += baseAmount;
@@ -68,12 +75,19 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
         if (lines.Count == 0) errors.Add("فاکتور ردیف فعال ندارد.");
         if (gross != factor.SumTotalAmount || discount != factor.Discount || vat != factor.TotalTax || total != factor.PaymentAmount)
             errors.Add("جمع ردیف‌ها با مبالغ فاکتور یکسان نیست.");
-        return new(factor.Id, source.ActiveMemory?.Id, source.ActiveMemory?.FiscalId, factor.DateMiladi,
+        var preview = new InvoicePreview(factor.Id, source.ActiveMemory?.Id, source.ActiveMemory?.FiscalId, factor.DateMiladi,
             factor.Customer, factor.Cus_EghtesadiCode, factor.CurrencyType.ToString(), gross, discount, vat, total, lines, errors)
         {
             BuyerNationalId = factor.Cus_ShenaseMeli,
             BuyerPostalCode = factor.Cus_PostalCode,
-            VatPercent = factor.PercentTax
+            VatPercent = factor.PercentTax,
+            TaxAfterDiscount = source.TaxAfterDiscount
         };
+        var revision = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            Preview = preview, factor.SerialNumber, factor.ModifyDate, Status = factor.status,
+            MemoryUpdatedUtc = source.ActiveMemory?.UpdatedUtc
+        });
+        return preview with { Version = Convert.ToHexString(SHA256.HashData(revision)) };
     }
 }

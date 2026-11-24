@@ -1,0 +1,23 @@
+using CRM.Core.Domain.Taxation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace CRM.Infrastructures.Sql.Taxation.Configs;
+
+internal sealed class TaxDispatchConfig : IEntityTypeConfiguration<TaxDispatch>
+{
+    public void Configure(EntityTypeBuilder<TaxDispatch> builder)
+    {
+        builder.HasIndex(x => x.FactorId).IsUnique();
+        builder.HasIndex(x => x.SnapshotId).IsUnique();
+        builder.HasIndex(x => new { x.Status, x.QueuedUtc });
+        builder.HasOne<TaxInvoiceSnapshot>().WithMany().HasForeignKey(x => x.SnapshotId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.FiscalId).IsRequired().HasMaxLength(6);
+        builder.Property(x => x.MemoryTitle).IsRequired().HasMaxLength(120);
+        builder.ToTable("TaxDispatches", table => table.HasCheckConstraint("CK_TaxDispatches_State",
+            "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR " +
+            "([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR " +
+            "([Status] IN (2, 3, 4) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)"));
+    }
+}

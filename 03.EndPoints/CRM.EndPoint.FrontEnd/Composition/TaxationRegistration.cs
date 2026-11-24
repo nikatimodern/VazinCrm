@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoice;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -21,6 +22,8 @@ internal static class TaxationRegistration
     {
         services.AddScoped<IQueryHandler<GetTaxPreviewSnapshotQuery, InvoicePreview>, GetTaxPreviewSnapshotQueryHandler>();
         services.AddScoped<ITaxPreviewProtector, TaxPreviewProtector>();
+        services.AddScoped<ITaxDispatchQueue, TaxDispatchQueue>();
+        services.AddScoped<ICommandHandler<EnqueueTaxInvoiceCommand, Guid>, EnqueueTaxInvoiceCommandHandler>();
         services.AddScoped<ITaxationRepository, TaxationRepository>();
         services.AddScoped<ICommandHandler<SaveTaxMemoryCommand, Guid>, SaveTaxMemoryCommandHandler>();
         services.AddScoped<ICommandHandler<ActivateTaxMemoryCommand, bool>, ActivateTaxMemoryCommandHandler>();
