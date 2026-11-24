@@ -123,6 +123,12 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (model.Id == Guid.Empty ? !await Has("Warehouse", "Create") : !await Can("Warehouse", "Edit", model.Id)) return Forbid();
         if (model == null) return BadRequest();
         if (!CanManageWarehouses()) return Forbid();
+        if (access.IsEnforced("Warehouse"))
+        {
+            model.UserIds = (model.UserIds ?? []).Distinct().ToList();
+            if (model.UserIds.Count != await userManager.Users.CountAsync(u => model.UserIds.Contains(u.Id) && u.IsEmployee, Ct))
+                return BadRequest("کاربران انبار باید از کارکنان معتبر انتخاب شوند.");
+        }
         if (model.IsMain && !User.IsAdmin()) return Forbid();
 
         Warehouse warehouse = null;
@@ -159,7 +165,16 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             warehouse.UserModify = user.FullName;
             warehouse.UserModifyID = user.Id;
 
-            warehouse.WarehouseUsers = model.UserIds?.ConvertAll(userId => new WarehouseUser { WarehouseId = warehouse.Id, UserId = userId });
+            if (access.IsEnforced("Warehouse"))
+            {
+                var requested = (model.UserIds ?? []).ToHashSet();
+                foreach (var existing in warehouse.WarehouseUsers.Where(u => !requested.Contains(u.UserId)).ToList())
+                    warehouse.WarehouseUsers.Remove(existing);
+                var existingIds = warehouse.WarehouseUsers.Select(u => u.UserId).ToHashSet();
+                foreach (var userId in requested.Where(id => !existingIds.Contains(id)))
+                    warehouse.WarehouseUsers.Add(new WarehouseUser { WarehouseId = warehouse.Id, UserId = userId });
+            }
+            else warehouse.WarehouseUsers = model.UserIds?.ConvertAll(userId => new WarehouseUser { WarehouseId = warehouse.Id, UserId = userId });
 
             var oldWarehouse = await db.Warehouses.AsNoTracking().Include(w => w.WarehouseUsers).FirstOrDefaultAsync(x => x.Id == model.Id);
             await logSystemService.LogChange(oldWarehouse, warehouse, LogActionEnum.ویرایش, user, ["WarehouseUsers"]);
@@ -187,7 +202,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             if (item == null) return NotFound("رکوردی یافت نشد!");
 
-            return Ok(item);
+            return Ok(new { item.Id, item.Title, item.IsMain, item.UserIds, canManageUsers = await Can("Warehouse", "ManageUsers", item.Id) });
         }
         catch (Exception)
         {
@@ -1081,7 +1096,18 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 await ValidateStock(warehouseProduct, item.Weight, voucher.Id);
             }
 
-            voucher.WarehouseProductVouchers = model.WarehouseProductVouchers;
+            if (access.IsEnforced("WarehouseVoucher"))
+            {
+                var requested = model.WarehouseProductVouchers.ToDictionary(p => p.WarehouseProductId, p => p.Weight);
+                foreach (var existing in voucher.WarehouseProductVouchers.ToList())
+                {
+                    if (requested.Remove(existing.WarehouseProductId, out var weight)) existing.Weight = weight;
+                    else voucher.WarehouseProductVouchers.Remove(existing);
+                }
+                foreach (var (productId, weight) in requested)
+                    voucher.WarehouseProductVouchers.Add(new WarehouseProductVoucher { WarehouseVoucherId = voucher.Id, WarehouseProductId = productId, Weight = weight });
+            }
+            else voucher.WarehouseProductVouchers = model.WarehouseProductVouchers;
 
             voucher.UserModifyID = user.Id;
             voucher.UserModify = user.FullName;
@@ -1145,12 +1171,14 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (await IsManualWriteBlockedAsync(voucherId: id))
             return BadRequest(SystemWarehouseMessage);
 
+        await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, Ct);
         var voucher = await db.WarehouseVouchers
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (voucher is null) return NotFound();
+        if (!await access.CanWarehouseScopeAsync("WarehouseTransaction", "View", voucher.WarehouseId, Ct)) return Forbid();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
 
@@ -1159,9 +1187,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return BadRequest("این حواله در وضعیت قابل تحویل قرار ندارد.");
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync();
         try
         {
+            if (access.IsEnforced("WarehouseVoucher"))
+                foreach (var item in voucher.WarehouseProductVouchers)
+                    await ValidateStock(item.WarehouseProduct, item.Weight, voucher.Id);
             voucher.Status = WarehouseVoucherStatusEnum.تحویل_شده;
 
             voucher.UserModify = user.FullName;
