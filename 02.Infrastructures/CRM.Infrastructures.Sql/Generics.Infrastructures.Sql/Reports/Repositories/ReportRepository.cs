@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Reports.Entities;
 using CRM.Core.Domain.Reports.Repositories;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Reports.Repositories;
@@ -19,16 +20,30 @@ public sealed class ReportRepository : IReportRepository
     private readonly CRMContextDb _db;
     private readonly UserContextDb _users;
 
-    public ReportRepository(CRMContextDb db, UserContextDb users)
+    private readonly IDocumentReadAccess _access;
+
+    public ReportRepository(CRMContextDb db, UserContextDb users, IDocumentReadAccess access)
     {
         _db = db;
         _users = users;
+        _access = access;
     }
 
-    public Task<Report?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    private async Task<IQueryable<Report>> VisibleReportsAsync(CancellationToken ct)
     {
-        return _db.Reports.AsNoTracking()
-            .FirstOrDefaultAsync(report => report.Id == id, cancellationToken);
+        var reports = await _access.ApplyAsync(_db.Reports.AsNoTracking(), "View", ct);
+        if (_access.IsEnforced("CallRecording"))
+        {
+            var calls = await _access.ApplyAsync(_db.CallRecordings.AsNoTracking(), "View", ct);
+            reports = reports.Where(r => !r.CallRecordingId.HasValue || calls.Any(c => c.Id == r.CallRecordingId.Value));
+        }
+        return reports;
+    }
+
+    public async Task<Report?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var query = await VisibleReportsAsync(cancellationToken);
+        return await query.FirstOrDefaultAsync(report => report.Id == id, cancellationToken);
     }
 
     public Task<Report?> GetForUpdateAsync(Guid id, CancellationToken cancellationToken)
@@ -39,7 +54,7 @@ public sealed class ReportRepository : IReportRepository
 
     public async Task<List<Report>> SearchAsync(ReportSearch search, Guid? dealId, string userId, bool canReadAllSatisfaction, CancellationToken cancellationToken)
     {
-        var qData = _db.Reports.AsNoTracking().Include(r => r.CallRecording.Participants)
+        var qData = (await VisibleReportsAsync(cancellationToken)).Include(r => r.CallRecording.Participants)
             .OrderByDescending(r => r.RegDate).AsQueryable();
         if (dealId != null)
         {
@@ -100,8 +115,8 @@ public sealed class ReportRepository : IReportRepository
         return await qData.ToListAsync(cancellationToken);
     }
 
-    public Task<List<Report>> GetByPhoneAsync(string phone, CancellationToken cancellationToken) =>
-        _db.Reports.AsNoTracking().Where(r => r.RepTel == phone).Include(r => r.CallRecording.Participants)
+    public async Task<List<Report>> GetByPhoneAsync(string phone, CancellationToken cancellationToken) =>
+        await (await VisibleReportsAsync(cancellationToken)).Where(r => r.RepTel == phone).Include(r => r.CallRecording.Participants)
             .OrderByDescending(r => r.CreateDate).ToListAsync(cancellationToken);
 
     public async Task PopulateUserImagesAsync(List<Report> qData, CancellationToken cancellationToken)
@@ -141,8 +156,12 @@ public sealed class ReportRepository : IReportRepository
         return new(Select(BaseItemEnum.نتیجه_تماس), Select(BaseItemEnum.نتیجه_نهایی), Select(BaseItemEnum.علت_انصراف));
     }
 
-    public Task<string?> GetCallRecordingPathAsync(Guid callId, CancellationToken cancellationToken) =>
-        _db.CallRecordings.AsNoTracking().Where(x => x.Id == callId).Select(x => x.RecordingFilePath).FirstOrDefaultAsync(cancellationToken);
+    public async Task<string?> GetCallRecordingPathAsync(Guid callId, CancellationToken cancellationToken)
+    {
+        var query = await _access.ApplyAsync(_db.CallRecordings.AsNoTracking(), "View", cancellationToken);
+        query = await _access.ApplyAsync(query, "Listen", cancellationToken);
+        return await query.Where(x => x.Id == callId).Select(x => x.RecordingFilePath).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public void Add(Report report)
     {
