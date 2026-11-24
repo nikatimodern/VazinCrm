@@ -1,3 +1,5 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{ var canCreateTransfer = await DocumentAccess.HasAsync("Transfer", "Create", Context.RequestAborted); }
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -13,10 +15,10 @@
 <div id="transferWorkspace" class="crm-operations-theme">
     <div class="d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-1 mb-3">
-            <button class="buttonGreen0 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(1)">
+            <button hidden="@(!canCreateTransfer)" data-document-permission="Transfer.Create" class="buttonGreen0 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(1)">
                 ثبت واریز
             </button>
-            <button class="buttonCancel2 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(2)">
+            <button hidden="@(!canCreateTransfer)" data-document-permission="Transfer.Create" class="buttonCancel2 py-1 px-2" style="font-size: 12px" onclick="showModalTransfer(2)">
                 ثبت برداشت
             </button>
         </div>
