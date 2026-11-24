@@ -1817,6 +1817,9 @@ const GoToCarEnvelope = () => {
 
 
 const bankAccountsCache = {};
+window.addEventListener("erp:access-state", () => {
+    Object.keys(bankAccountsCache).forEach(key => delete bankAccountsCache[key]);
+});
 const getAllBankAccountsJson = async (rerender, type) => {
     const key = type ?? "all";
     
@@ -2139,6 +2142,7 @@ async function toggleAddBankAccountModal(options = {}) {
         return;
     }
     const { id = null, bankAccountType = null, customerId = null, customerText = null, onSaved = null } = options || {};
+    if (window.AccessLive?.can("BankAccount", id ? "edit" : "create") === false) { toastifyError("مجوز این عملیات روی حساب بانکی را ندارید."); return; }
     const original = id ? await sendApiRequest({
         url: "/Accountancy/GetBankAccount",
         params: { id },
@@ -2223,6 +2227,7 @@ async function submitAddBankAccount() {
         shebaNumber: shebaNumber ? `IR ${shebaNumber}` : "",
     };
     const isEdit = !!bankAccountModalState.original;
+    if (window.AccessLive?.can("BankAccount", isEdit ? "edit" : "create") === false) { toastifyError("مجوز ثبت حساب بانکی را ندارید."); return; }
     const submitButton = modal.querySelector("#bankAccountModalSubmitBtn");
     bankAccountModalState.saving = true;
     submitButton.disabled = true;
