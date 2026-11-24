@@ -78,7 +78,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var model = new List<AllDeletedVModel>();
 
                 /// customer
-                var Qcus = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted == true).AsQueryable();
+                var Qcus = await documentAccess.CustomersAsync(db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted == true).AsQueryable(), "View", HttpContext.RequestAborted);
                 recordsTotal += Qcus.Count();
 
 
@@ -189,7 +189,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Customer)
                 {
-                    var query = db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.CustomersAsync(db.Customers.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -220,7 +220,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.PreFactor)
                 {
-                    var query = db.PreFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.PreFactorsAsync(db.PreFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -256,7 +256,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.Factor)
                 {
-                    var query = db.Factors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.FactorsAsync(db.Factors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -289,7 +289,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.OrderHead)
                 {
-                    var query = db.OrderHeads.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.ApplyAsync(db.OrderHeads.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -322,7 +322,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 if (recycleType == -1 || recycleType == (int)EntityTypeEnum.SupplyFactor)
                 {
-                    var query = db.SupplyFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted);
+                    var query = await documentAccess.ApplyAsync(db.SupplyFactors.IgnoreQueryFilters().AsNoTracking().Where(f => f.IsDeleted), "View", HttpContext.RequestAborted);
                     if (!string.IsNullOrWhiteSpace(search))
                     {
                         query = query.Where(f =>
@@ -457,7 +457,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             {
                 case EntityTypeEnum.Customer:
                 {
-                    var customer = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var customer = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (customer == null) return NotFound();
+                    if (!await documentAccess.CanCustomerAsync(customer.Id, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(customer, null, LogActionEnum.بازیابی, user);
                     SetMainFields(customer);
 
@@ -466,7 +468,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.PreFactor:
                 {
-                    var preF = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var preF = await db.PreFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (preF == null) return NotFound();
+                    if (!await documentAccess.AllowsPreFactorAsync(preF, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(preF, null, LogActionEnum.بازیابی, user);
                     SetMainFields(preF);
                     preF.CommentText = null;
@@ -476,6 +480,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (preF.CustomerId != null)
                     {
                         var cus = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == preF.CustomerId);
+                        if (cus == null || !await documentAccess.CanCustomerAsync(cus.Id, "View", HttpContext.RequestAborted)) return Forbid();
+                        if (cus.IsDeleted && !await documentAccess.CanCustomerAsync(cus.Id, "Edit", HttpContext.RequestAborted)) return Forbid();
                         if (cus.IsDeleted)
                         {
                             await _logSystemService.LogChange(cus, null, LogActionEnum.بازیابی, user);
@@ -492,6 +498,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     ).ToListAsync();
 
                     foreach (var acc in accS)
+                        if (!await documentAccess.AllowsRowAsync(acc, "Edit", HttpContext.RequestAborted)) return Forbid();
+                    foreach (var acc in accS)
                         acc.Wallet = false;
 
                     await db.SaveChangesAsync();
@@ -499,13 +507,17 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.Factor:
                 {
-                    var fac = await db.Factors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var fac = await db.Factors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (fac == null) return NotFound();
+                    if (!await documentAccess.AllowsFactorAsync(fac, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(fac, null, LogActionEnum.بازیابی, user);
                     SetMainFields(fac);
 
                     if (fac.CustomerId != null)
                     {
                         var cusf = await db.Customers.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == fac.CustomerId);
+                        if (cusf == null || !await documentAccess.CanCustomerAsync(cusf.Id, "View", HttpContext.RequestAborted)) return Forbid();
+                        if (cusf.IsDeleted && !await documentAccess.CanCustomerAsync(cusf.Id, "Edit", HttpContext.RequestAborted)) return Forbid();
                         if (cusf.IsDeleted)
                         {
                             await _logSystemService.LogChange(cusf, null, LogActionEnum.بازیابی, user);
@@ -518,7 +530,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     if (fac.ParentReturnedId != null)
                     {
                         var returnedF = await db.Factors.FirstOrDefaultAsync(f => f.Id == fac.ParentReturnedId);
-                        returnedF?.Returned = true;
+                        if (returnedF == null || !await documentAccess.AllowsFactorAsync(returnedF, "Edit", HttpContext.RequestAborted)) return Forbid();
+                        returnedF.Returned = true;
                     }
                     /*
                     var ac = await db.Accountancies.IgnoreQueryFilters().Where(f => f.fid == EId).FirstOrDefaultAsync();
@@ -531,7 +544,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 }
                 case EntityTypeEnum.OrderHead:
                 {
-                    var orderH = await db.OrderHeads.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var orderH = await db.OrderHeads.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (orderH == null) return NotFound();
+                    if (!await documentAccess.AllowsRowAsync(orderH, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(orderH, null, LogActionEnum.بازیابی, user);
                     SetMainFields(orderH);
 
@@ -541,7 +556,9 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 case EntityTypeEnum.SupplyFactor:
                 {
-                    var supplyFactor = await db.SupplyFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId);
+                    var supplyFactor = await db.SupplyFactors.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Id == eId && f.IsDeleted);
+                    if (supplyFactor == null) return NotFound();
+                    if (!await documentAccess.AllowsRowAsync(supplyFactor, "Edit", HttpContext.RequestAborted)) return Forbid();
                     await _logSystemService.LogChange(supplyFactor, null, LogActionEnum.بازیابی, user);
                     SetMainFields(supplyFactor);
 
