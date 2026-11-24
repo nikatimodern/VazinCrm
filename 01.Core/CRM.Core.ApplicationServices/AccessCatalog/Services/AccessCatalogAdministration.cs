@@ -355,6 +355,13 @@ public sealed class AccessCatalogAdministration(IAccessCatalogRepository reposit
 
         var parent = await repository.FindEntityAsync(draft.AccessEntityId, ct);
         if (parent is null) return new(404, "انتیتی مربوط پیدا نشد.");
+        if (parent.Key == "Dashboard")
+        {
+            var scoped = CRM.Core.Domain.AccessCatalog.Modules.Dashboard.SupportsScope(draft.Key);
+            if ((!scoped && !CRM.Core.Domain.AccessCatalog.Modules.Dashboard.GlobalKeys.Contains(draft.Key)) ||
+                draft.SupportsScope.Value != scoped)
+                return new(400, "کلید یا محدوده دسترسی داشبورد معتبر نیست.");
+        }
 
         AccessPermission? permission = null;
         if (id.HasValue)

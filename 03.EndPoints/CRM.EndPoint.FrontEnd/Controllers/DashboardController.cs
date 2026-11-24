@@ -129,7 +129,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             if (Enforced)
             {
-                var permitted = new Dictionary<string, decimal>();
+                var permitted = new Dictionary<string, decimal?>();
                 if (showBank) permitted["bankBalance"] = bankBalance;
                 if (showReceivables) permitted["demands"] = factorAmount - (bankBalance + tahatori);
                 if (showPayables) permitted["debit"] = supplyFactorAmount - (paymentAmount + tahatori);
@@ -396,7 +396,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             // Require full dashboard grants for both aggregates; source record scopes still apply.
             if (Enforced && (!await documentAccess.HasAsync("Dashboard", "ViewCustomers", Ct) ||
                 !await documentAccess.HasAsync("Dashboard", "ViewSales", Ct) ||
-                !await documentAccess.HasViewAsync("PreFactor", Ct))) return Forbid();
+                !await documentAccess.HasDashboardSourceViewAsync("PreFactor", Ct))) return Forbid();
             if (_filter == null) return BadRequest();
             var visibleCustomers = await documentAccess.CustomersAsync(db.Customers.AsNoTracking(), "View", Ct);
             IList<Customer> data;

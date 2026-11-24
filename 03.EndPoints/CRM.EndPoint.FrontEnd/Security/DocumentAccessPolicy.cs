@@ -121,9 +121,9 @@ public sealed class DocumentAccessPolicy(
     public async Task<bool> HasDashboardSourceViewAsync(string entity, CancellationToken ct)
     {
         if (entity == "Customer")
-            return !configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") ||
+            return configuration.GetValue<bool>("AccessCatalog:EnforceCustomerPermissions") &&
                 await scopes.GetEffectiveScopeAsync(UserId, "Customer.View", ct) != AccessScopes.None;
-        return await HasViewAsync(entity, ct);
+        return IsEnforced(entity) && await HasViewAsync(entity, ct);
     }
 
     public async Task<IQueryable<T>> ApplyDashboardOwnersAsync<T>(IQueryable<T> query, string action, string ownerProperty, CancellationToken ct)

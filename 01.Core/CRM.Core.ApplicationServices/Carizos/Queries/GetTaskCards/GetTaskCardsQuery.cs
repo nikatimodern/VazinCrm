@@ -1,4 +1,5 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.Domain.AccessCatalog.Repositories;
 using CRM.Core.ApplicationServices.Abstractions.Identity;
 using CRM.Core.ApplicationServices.Abstractions.Services;
 using CRM.Core.Domain.LogSystems.Entities;
@@ -10,10 +11,13 @@ namespace CRM.Core.ApplicationServices.Carizos.Queries.GetTaskCards;
 public sealed record TaskCardResult(Guid Id, int Column, string Html);
 public sealed record TaskCardsResult(Guid Id, Guid GroupId, List<TaskCardResult> Cards);
 public sealed record GetTaskCardsQuery(Guid Id, int Systematic = 0, int Location = 1) : IQuery<TaskCardsResult>;
-public sealed class GetTaskCardsQueryHandler(ICarizoRepository repository, CurrentActor actor, ICarizoEffects effects) : IQueryHandler<GetTaskCardsQuery, TaskCardsResult>
+public sealed class GetTaskCardsQueryHandler(ICarizoRepository repository, CurrentActor actor, ICarizoEffects effects, IDocumentReadAccess access) : IQueryHandler<GetTaskCardsQuery, TaskCardsResult>
 {
     public async Task<TaskCardsResult> HandleAsync(GetTaskCardsQuery request, CancellationToken ct)
     {
+        if (request.Location == 2 && access.IsEnforced("Dashboard") &&
+            (!await access.HasAsync("Dashboard", "View", ct) || !await access.HasAsync("Dashboard", "ViewTasks", ct)))
+            throw new UnauthorizedAccessException();
         var current = await actor.GetAsync(ct);
         var changes = await repository.GetCardChangesAsync(request.Id, current.User.Id, ct);
         var now = DateTime.Now.Date;

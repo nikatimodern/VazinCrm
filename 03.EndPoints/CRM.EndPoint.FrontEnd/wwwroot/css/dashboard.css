@@ -738,3 +738,19 @@ html:has(#dashboardWorkspace) {
 .popover-financial b {
 	font-size: 14px;
 }
+
+/* Permission-filtered dashboards reflow without reserved role-specific positions. */
+#dashboardWorkspace[data-dashboard-enforced="true"] .dashGridContainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+#dashboardWorkspace[data-dashboard-enforced="true"] .dashGridContainer > .dashGridItem {
+    flex: 1 1 230px;
+    min-width: 0;
+}
+#dashboardWorkspace[data-dashboard-enforced="true"] .dashGridContainer > :is(.gridItemReports, .gridItemTasks) {
+    flex-basis: 420px;
+}
+#dashboardWorkspace[data-dashboard-enforced="true"] .dashGridContainer > .gridItemLogs {
+    flex-basis: 100%;
+}

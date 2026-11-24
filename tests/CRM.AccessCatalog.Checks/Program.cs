@@ -39,11 +39,18 @@ Check(!own.Allows(null), "Own denies missing owner");
 foreach (var entity in new[] { "PreFactor", "Factor", "OrderHead", "Supply", "SupplyFactor", "Accountancy",
     "RequestAmount", "Payment", "BankAccount", "Checkbook", "Check", "Transfer", "Cashier", "Cash", "BaseCash",
     "BaseCenterCash", "CashGroup", "Warehouse", "WarehouseProduct", "WarehouseTransaction", "WarehouseVoucher",
-    "Contract", "Carizo", "Report", "CallRecording", "Contact" })
+    "Contract", "Carizo", "Report", "CallRecording", "Contact", "Dashboard" })
     Check(AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " owner resolver registered");
 foreach (var entity in new[] { "Customer", "Deal" })
     Check(!AccessScopes.SupportsDocumentOwners(entity) && AccessScopes.SupportsSelectedOwners(entity), entity + " uses its dedicated owner resolver");
 foreach (var entity in new[] { "QualityControl", "QualityControlQuestion", "Product", "ProductGroup", "ASetting", "Chat", "Email", "SentSms", "ReceivedSms", "Unknown" })
     Check(!AccessScopes.SupportsSelectedOwners(entity), entity + " cannot use arbitrary owner scopes");
+
+var dashboardKeys = CRM.Core.Domain.AccessCatalog.Modules.Dashboard.ScopedKeys
+    .Concat(CRM.Core.Domain.AccessCatalog.Modules.Dashboard.GlobalKeys).ToArray();
+Check(dashboardKeys.Length == 13 && dashboardKeys.Distinct().Count() == 13, "Dashboard has 13 unique permission keys");
+Check(CRM.Core.Domain.AccessCatalog.Modules.Dashboard.SupportsScope("ViewSales") &&
+    !CRM.Core.Domain.AccessCatalog.Modules.Dashboard.SupportsScope("ViewBankBalance") &&
+    !CRM.Core.Domain.AccessCatalog.Modules.Dashboard.SupportsScope("View"), "Dashboard scope rules distinguish aggregates and global gates");
 
 Console.WriteLine($"{checks} access catalog domain checks passed. Database, endpoints and live revocation require integration tests.");

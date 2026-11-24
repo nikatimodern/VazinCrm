@@ -34,7 +34,7 @@
     </div>
 }
 
-<div id="dashboardWorkspace" class="dashboard-theme pb-3">
+<div id="dashboardWorkspace" class="dashboard-theme pb-3" data-dashboard-enforced="@enabled.ToString().ToLowerInvariant()">
     <div class="mb-3 d-flex align-items-center gap-2">
         <button class="gap-2 dashGridItem" style="padding: 5px 14px;color: #333;border-radius: 4px;border:none" onclick="ShowFilterPopup(this, ['cusFilterItem'])" data-filterVarConfig="filterDashboardConfig" data-filterCallBack="callbackFilterDashboard" data-filterContentId="ContentDashboardFilterId">
             <span>فیلتر</span>
@@ -88,7 +88,7 @@
             <div class="dashGridItem gridItemFinancial"><partial name="_DashboardTargetPartial" /></div>
         }
 
-@if (reports) {
+        @if (reports) {
             <div class="dashGridItem gridItemReports"><partial name="_DashboardReportPartial" /></div>
         }
 

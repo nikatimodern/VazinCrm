@@ -2,6 +2,11 @@
 var systematicTask = 0;
 var filterDashboardConfig = { filterVar: {} };
 
+window.addEventListener("erp:access-state", () => {
+    const workspace = document.getElementById("dashboardWorkspace");
+    if (workspace) { workspace.hidden = true; workspace.replaceChildren(); }
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
     enableMomentumScrollScope(document.getElementById("dashboardWorkspace"));
     enableMomentumScroll(document.scrollingElement);
@@ -135,7 +140,8 @@ async function getInfoFactors() {
     const data = res.data;
 
     const infoFactorsDropdown = document.getElementById("infoFactors-dropdown");
-    infoFactorsDropdown.innerHTML = "";
+    if (!infoFactorsDropdown) return;
+    infoFactorsDropdown.replaceChildren();
     const container = document.createElement("div");
     data.forEach((item, index) => {
         const wrapper = document.createElement("div");
@@ -143,18 +149,23 @@ async function getInfoFactors() {
 
         wrapper.innerHTML = `
             <div class="d-flex align-items-center gap-2 ${index === 0 ? "infoFactors-firstItem" : ""}">
-                <img class="profile-image" style="width:36px;" src="${item.userImage || "/Img/User.png"}" alt="">
-                <span style="font-size:13px">${item.sellerName}</span>
+                <img class="profile-image" style="width:36px;" alt="">
+                <span style="font-size:13px" data-seller-name></span>
             </div>
             <div style="display:flex;gap:2px;font-size:13px">
-                <button class="badge badge-gray" onclick="redirectFromDashboard('Cartable', '${item.sellerId}', '${item.sellerName}')" style="border-end-end-radius:0;border-start-end-radius:0">
-                    <span class="fbold" style="font-size:13px;">${item.factorCount}</span> فاکتور
+                <button class="badge badge-gray" style="border-end-end-radius:0;border-start-end-radius:0">
+                    <span class="fbold" style="font-size:13px" data-factor-count></span> فاکتور
                 </button>
                 <div class="badge badge-green" style="border-end-start-radius:0;border-start-start-radius:0">
-                    <span class="fbold direction-ltr" style="font-size:13px;">${item.totalAmount.toLocaleString()}</span> ريال
+                    <span class="fbold direction-ltr" style="font-size:13px" data-total-amount></span> ريال
                 </div>
             </div>
         `;
+        wrapper.querySelector("img").src = item.userImage || "/Img/User.png";
+        wrapper.querySelector("[data-seller-name]").textContent = item.sellerName || "";
+        wrapper.querySelector("[data-factor-count]").textContent = item.factorCount;
+        wrapper.querySelector("[data-total-amount]").textContent = Number(item.totalAmount).toLocaleString();
+        wrapper.querySelector("button").addEventListener("click", () => redirectFromDashboard("Cartable", item.sellerId, item.sellerName));
 
         container.appendChild(wrapper);
     });
