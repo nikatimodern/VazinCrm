@@ -18,7 +18,7 @@ public sealed class TransferRepository(CRMContextDb db, CRM.Core.Domain.AccessCa
     private IDbContextTransaction? transaction;
     public async Task<TransferTableResult> GetTableAsync(TransferTableRequest request, CancellationToken ct)
     {
-        var query = db.Transfers.AsNoTracking();
+        var query = await access.ApplyAsync(db.Transfers.AsNoTracking(), "View", ct);
         if (access.IsEnforced("BankAccount"))
         {
             var banks = await access.ApplyAsync(db.BankAccounts.AsNoTracking(), "View", ct);
