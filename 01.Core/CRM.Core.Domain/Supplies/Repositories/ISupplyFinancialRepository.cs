@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using CRM.Core.Domain.ASettings.Enums;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Supplies.Entities;
 
 namespace CRM.Core.Domain.Supplies.Repositories;
@@ -16,5 +16,8 @@ public interface ISupplyFinancialRepository
     Task<ExternalMapping> GetMappingAsync(Guid sourceId, Guid destinationId, ExternalMappingTypeEnum type, CancellationToken ct);
     Task SaveMappingAsync(ExternalMapping mapping, CancellationToken ct);
     Task DeleteMappingAsync(ExternalMapping mapping, CancellationToken ct);
+    Task DeleteDestinationMappingAsync(ExternalMapping mapping, CancellationToken ct);
+    Task<bool> HasOtherDocumentMappingAsync(Guid destinationId, string entityName, int documentId,
+        Guid? mappingId, CancellationToken ct);
     Task<IAsyncDisposable> LockAsync(Guid sourceId, CancellationToken ct);
 }

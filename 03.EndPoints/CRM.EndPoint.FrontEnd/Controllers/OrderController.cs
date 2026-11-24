@@ -166,7 +166,7 @@ public class OrderController(ICqrsDispatcher dispatcher, DocumentAccessPolicy ac
 
         if (data.PreFactor == null)
             return NotFound("پیش فاکتور حذف شده است");
-        return View(new OrderPrintViewModel { Company = data.Company, OrderHead = data.OrderHead, OfficialType = data.PreFactor.OfficialType, SalesExpert = data.PreFactor.UserCreator, Logo = data.Company?.CompanyFiles?.FirstOrDefault(f => f.Filename == "logo")?.FileUrl });
+        return View(new OrderPrintViewModel { PreFactorSerialNumber = data.PreFactor.SerialNumber, Company = data.Company, OrderHead = data.OrderHead, OfficialType = data.PreFactor.OfficialType, SalesExpert = data.PreFactor.UserCreator, Logo = data.Company?.CompanyFiles?.FirstOrDefault(f => f.Filename == "logo")?.FileUrl });
     }
 
     public async Task<IActionResult> DownloadOrderPdf(Guid id, CancellationToken ct)

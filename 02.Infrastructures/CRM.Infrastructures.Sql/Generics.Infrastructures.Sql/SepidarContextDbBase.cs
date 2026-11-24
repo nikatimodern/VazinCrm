@@ -1,3 +1,4 @@
+using CRM.Core.Domain.Sepidar.Deposits.Entities;
 using CRM.Core.Domain.Sepidar.Accounts.Entites;
 using CRM.Core.Domain.Sepidar.Banks.Entites;
 using CRM.Core.Domain.Sepidar.Cashes.Entities;
@@ -44,6 +45,15 @@ public abstract class SepidarContextDbBase : DbContext {
     public DbSet<Currency> Currencies { get; set; }
     public DbSet<DL> DLs { get; set; }
     public DbSet<Account> Accounts { get; set; }
+    public DbSet<ReceiptHeader> ReceiptHeaders { get; set; }
+    public DbSet<ReceiptDraft> ReceiptDrafts { get; set; }
+    public DbSet<ReceiptCheque> ReceiptCheques { get; set; }
+    public DbSet<ReceiptChequeHistory> ReceiptChequeHistory { get; set; }
+    public DbSet<ReceiptChequeBanking> ReceiptChequeBankings { get; set; }
+    public DbSet<ReceiptChequeBankingItem> ReceiptChequeBankingItems { get; set; }
+    public DbSet<PaymentChequeOther> PaymentChequeOthers { get; set; }
+    public DbSet<DebitCreditNote> DebitCreditNotes { get; set; }
+    public DbSet<DebitCreditNoteItem> DebitCreditNoteItems { get; set; }
     public DbSet<PaymentDraft> PaymentDrafts { get; set; }
     public DbSet<SepidarBankAccount> SepidarBankAccounts { get; set; }
     public DbSet<Voucher> Vouchers { get; set; }

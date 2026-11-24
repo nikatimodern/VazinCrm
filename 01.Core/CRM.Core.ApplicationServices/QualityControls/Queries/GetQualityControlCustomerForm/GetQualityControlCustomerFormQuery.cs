@@ -6,12 +6,13 @@ using CRM.Core.Domain.QualityControls.Repositories;
 
 namespace CRM.Core.ApplicationServices.QualityControls.Queries.GetQualityControlCustomerForm;
 
-public sealed record GetQualityControlCustomerFormQuery(Guid CustomerId) : IQuery<QualityControlCustomerForm?>;
+public sealed record GetQualityControlCustomerFormQuery(Guid CustomerId, QualityControlItemPageRequest Page)
+    : IQuery<QualityControlCustomerForm?>;
 
 public sealed class GetQualityControlCustomerFormQueryHandler(IQualityControlRepository repository, CurrentActor actor)
     : IQueryHandler<GetQualityControlCustomerFormQuery, QualityControlCustomerForm?>
 {
     public async Task<QualityControlCustomerForm?> HandleAsync(GetQualityControlCustomerFormQuery query, CancellationToken ct)
-        => await repository.GetCustomerFormAsync(query.CustomerId,
+        => await repository.GetCustomerFormAsync(query.CustomerId, query.Page,
             QualityControlAccessPolicy.For(await actor.GetAsync(ct)), ct);
 }

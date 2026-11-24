@@ -11,7 +11,8 @@ public interface IQualityControlRepository
     Task<QualityControlCustomerListResult> GetCustomersAsync(
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken);
     Task<QualityControlCustomerForm?> GetCustomerFormAsync(
-        Guid customerId, QualityControlAccess access, CancellationToken cancellationToken);
+        Guid customerId, QualityControlItemPageRequest request,
+        QualityControlAccess access, CancellationToken cancellationToken);
     Task<QualityControlCustomerNotesPage?> GetCustomerNotesAsync(
         Guid customerId, int start, int length, QualityControlAccess access, CancellationToken cancellationToken);
     Task<AddQualityControlCustomerNoteResult> AddCustomerNoteAsync(

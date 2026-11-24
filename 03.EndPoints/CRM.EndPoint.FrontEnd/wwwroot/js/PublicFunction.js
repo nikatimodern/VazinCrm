@@ -243,14 +243,44 @@ function createExternalItemMatching() {
     toolbar.className = "external-item-match-toolbar";
     const add = document.createElement("button");
     add.type = "button";
-    add.className = "link-green text-decoration-none";
-    add.textContent = "افزودن کالای جدید";
-    toolbar.append(add);
+    add.className = "external-item-match-add";
+    add.title = "باز کردن فرم ثبت کالای جدید در نرم‌افزار مقصد";
+    const addIcon = document.createElement("i");
+    addIcon.className = "fas fa-plus";
+    addIcon.setAttribute("aria-hidden", "true");
+    const addLabel = document.createElement("span");
+    addLabel.textContent = "افزودن کالای جدید";
+    add.append(addIcon, addLabel);
+
+    const refresh = document.createElement("button");
+    refresh.type = "button";
+    refresh.className = "external-item-match-refresh";
+    refresh.title = "دریافت دوباره فهرست کالاها از نرم‌افزار مقصد";
+    const refreshIcon = document.createElement("i");
+    refreshIcon.className = "fas fa-sync-alt";
+    refreshIcon.setAttribute("aria-hidden", "true");
+    const refreshLabel = document.createElement("span");
+    refreshLabel.textContent = "بروزرسانی کالاها";
+    refresh.append(refreshIcon, refreshLabel);
+    toolbar.append(refresh, add);
 
     const list = document.createElement("div");
     list.className = "external-item-match-list";
     content.append(toolbar, list);
-    return { content, toolbar, add, list };
+    return { content, toolbar, add, refresh, list };
+}
+
+async function refreshExternalItemMatching(button, reload) {
+    if (button.disabled) return;
+    button.disabled = true;
+    const icon = button.querySelector("i");
+    icon?.classList.add("fa-spin");
+    try {
+        if (await reload()) toastifySuccess("فهرست کالاهای نرم‌افزار مقصد بروزرسانی شد.");
+    } finally {
+        icon?.classList.remove("fa-spin");
+        button.disabled = false;
+    }
 }
 
 function appendExternalItemMatchRow(list, title, quantity, unit, quantityLabel) {
@@ -270,6 +300,14 @@ function appendExternalItemMatchRow(list, title, quantity, unit, quantityLabel) 
     target.className = "external-item-match-target";
     row.append(source, target);
     list.append(row);
+    return target;
+}
+
+function appendExternalItemEditRow(list, row) {
+    const target = appendExternalItemMatchRow(list, row.itemTitle);
+    const caption = document.createElement("small");
+    caption.textContent = `ردیف ${row.row} · مقدار ${row.quantity} · قیمت واحد ${Number(row.fee).toLocaleString()} ریال`;
+    target.previousElementSibling.append(caption);
     return target;
 }
 
@@ -389,7 +427,7 @@ function renderExternalFinancialStage(modal, container, { destination, position,
     modal.querySelector(".external-mapping-subtitle").textContent = position;
     modal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
     container.innerHTML = `
-        <div class="external-mapping-card">
+        <div class="external-mapping-card required-mark">
             <div class="external-mapping-stage-info">
                 <div class="external-mapping-stage-icon">${icon}</div>
                 <div class="external-mapping-stage-content">
@@ -403,23 +441,27 @@ function renderExternalFinancialStage(modal, container, { destination, position,
     if (content instanceof Node) container.firstElementChild.append(content);
 }
 
-function renderExternalFinancialPreview({ fields, columns, rows, totals }) {
+function renderExternalFinancialPreviewTable(columns, rows) {
+    return `<div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
+                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
+                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+        </div>`;
+}
+
+function renderExternalFinancialPreview({ fields, columns, rows, totals, detailsHtml }) {
     return `<div class="external-prefactor-preview">
         <div class="ex-preview-summary">${fields.map(({ label, value, wide, accent }) => `
             <div class="ex-preview-field${wide ? " ex-preview-customer" : ""}">
                 <span class="ex-preview-label">${escapeHtml(label)}:</span>
                 <strong${accent ? ' class="ex-preview-software"' : ""}>${escapeHtml(value ?? "—")}</strong>
             </div>`).join("")}</div>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
-                <thead><tr>${columns.map(label => `<th scope="col">${escapeHtml(label)}</th>`).join("")}</tr></thead>
-                <tbody>${rows.map(row => `<tr>${row.map((value, index) =>
-                    `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
-            </table>
-        </div>
+        ${detailsHtml ?? renderExternalFinancialPreviewTable(columns, rows)}
         <div class="external-mapping-entity mt-3">${totals.map(([label, value], index) => {
             const last = index === totals.length - 1;
-            return `${last ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
+            return `${last && totals.length > 1 ? "<hr>" : ""}<div class="d-flex justify-content-between${last ? "" : " mb-1"}">
                 ${last ? `<strong>${escapeHtml(label)}</strong>` : `<span>${escapeHtml(label)}</span>`}
                 <strong>${renderMoneyHtml(value)}</strong>
             </div>`;

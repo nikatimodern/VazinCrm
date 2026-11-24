@@ -33,41 +33,324 @@ async function loadFactorExternalSoftwares(factorId) {
 }
 
 function renderExternalSoftwareFactors(items = []) {
-    getFactorFinancialHistory().render(items, {
+    const history = getFactorFinancialHistory();
+    const sourceId = externalFactorHistory.factorId;
+    const ui = ExternalFinancialHistory;
+    history.render(items, {
         emptyText: "این فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
-        cardClass: item => item.isMissing ? "external-pf-missing" : "",
-        statusMessage: item => item.isMissing
-            ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
-        fields: item => [
-            ["نرم‌افزار", item.externalSoftwareTitle, true],
-            ["تاریخ ثبت", item.creationDate],
-            ["شماره فاکتور", item.externalFactorNumber],
-            ["مشتری", item.customerName],
-        ],
-        actions: item => {
-            if (item.isMissing) {
-                if (!item.mappingId || !item.canDeleteMissing) return [];
-                return [ExternalFinancialHistory.missingMappingAction({
-                    modal: document.getElementById("externalSoftwareFactorsModal"),
-                    sourceId: externalFactorHistory.factorId,
+        card: item => ({
+            title: item.externalSoftwareTitle,
+            missing: item.isMissing,
+            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
+            fields: [
+                ["شماره فاکتور", item.externalFactorNumber],
+                ["مشتری", item.customerName],
+            ],
+            registration: { date: item.creationDate, by: item.registeredBy },
+            view: !item.isMissing && item.viewUrl
+                ? ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" }) : null,
+            operations: !item.isMissing && item.canMaintainDestination && item.mappingId
+                ? factorDestinationOperations(history, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId })
+                : [],
+            action: item.isMissing && item.mappingId && item.canDeleteMissing
+                ? ui.missingMappingAction({
+                    modal: history.modal,
+                    sourceId,
                     softwareId: item.externalSoftwareId,
                     mappingId: item.mappingId,
                     softwareTitle: item.externalSoftwareTitle,
                     url: "/Factor/DeleteMissingExternalFactorMapping",
-                    onDeleted: () => loadFactorExternalSoftwares(externalFactorHistory.factorId),
-                })];
-            }
-            if (!item.viewUrl) return [];
-            const link = document.createElement("a");
-            link.className = "external-pf-action external-pf-view";
-            link.href = item.viewUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.setAttribute("aria-label", "مشاهده فاکتور ثبت شده");
-            link.innerHTML = '<i class="fa fa-eye" aria-hidden="true"></i> مشاهده';
-            return [link];
-        },
+                    onDeleted: () => loadFactorExternalSoftwares(sourceId),
+                }) : null,
+        }),
     });
+}
+
+function factorDestinationOperations(history, key) {
+    const ui = ExternalFinancialHistory;
+    const edit = ui.action("ویرایش انتقال", { icon: "fa-pencil-alt",
+        onClick: event => openFactorDestinationEdit(event.currentTarget, key, history.modal) });
+    const remove = ui.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
+        onClick: event => deleteFactorDestination(event.currentTarget, key, history.modal) });
+    return [edit, remove];
+}
+
+async function openFactorDestinationEdit(button, key, historyModal) {
+    const wizard = getFactorFinancialWizard();
+    if (button.disabled || externalFactorExportState || isModalOpen(wizard.modal)) return;
+    button.disabled = true;
+    const lifetime = new AbortController();
+    const { signal } = lifetime;
+    let opened = false, busy = false, closing = false;
+    try {
+        const data = await sendApiRequest({ url: "/Factor/GetExternalFactorEdit", params: key, showLoading: false });
+        if (!data || !button.isConnected || !isModalOpen(historyModal) || externalFactorExportState || isModalOpen(wizard.modal)) return;
+        const ui = ExternalFinancialHistory;
+        const { impact } = data;
+        const locked = impact.blockers.length > 0;
+        const direct = data.quotationId == null;
+        const { content, toolbar, list } = createExternalItemMatching();
+        toolbar.remove();
+        const general = ui.element("div", "d-grid gap-2");
+        content.prepend(general);
+
+        const field = (parent, caption, control, id) => {
+            const group = ui.element("div");
+            const label = ui.element("label", "form-label mb-0", caption);
+            control.id = id;
+            label.htmlFor = id;
+            group.append(label, control);
+            parent.append(group);
+            return control;
+        };
+        const options = (control, choices, selected, fallback) => {
+            control.append(new Option("", ""));
+            for (const option of choices)
+                control.append(new Option([option.code, option.title].filter(Boolean).join(" - "), option.id));
+            if (!choices.some(option => option.id === selected))
+                control.append(new Option(fallback || String(selected), selected));
+            control.value = String(selected);
+            return control;
+        };
+        const invoiceFields = ui.element("div", "row row-cols-2 gx-2 mb-2");
+        general.append(invoiceFields);
+        const number = field(invoiceFields, "شماره فاکتور", ui.element("input", "form-control form-control-sm"), "editFactorNumber");
+        number.inputMode = "numeric";
+        number.dir = "ltr";
+        number.value = String(impact.number);
+        number.disabled = locked;
+        const date = field(invoiceFields, "تاریخ فاکتور", ui.element("input", "sdate form-control form-control-sm"), "editFactorDate");
+        date.dir = "ltr";
+        date.autocomplete = "off";
+        date.maxLength = 10;
+        date.value = data.dateText;
+        date.disabled = locked;
+        date.setAttribute("data-datepicker-change", "");
+        const customer = direct && !locked ? options(field(general, "مشتری مقصد",
+            ui.element("select", "show-dropdown-arrow"), "editFactorCustomer"), data.customers, data.customerId, data.customerName) : null;
+        const saleType = direct && !locked ? options(field(general, "نوع فروش",
+            ui.element("select", "show-dropdown-arrow"), "editFactorSaleType"), data.saleTypes, data.saleTypeId) : null;
+        const brokerHost = ui.element("div");
+        general.append(brokerHost);
+        let includeBroker = data.includeBroker, broker = null, brokerPending = false;
+        const renderBroker = () => {
+            brokerHost.innerHTML = renderFactorBroker({
+                id: "editFactorBroker", salespersonName: data.salespersonName, includeBroker, broker,
+                disabled: locked || busy || brokerPending,
+            });
+        };
+        renderBroker();
+        const rows = data.rows.map(row => {
+            const target = appendExternalItemEditRow(list, row);
+            if (locked) {
+                target.append(ui.element("p", "small mb-0", row.stockTitle));
+                return { row };
+            }
+            const item = options(field(target, "کالای معادل", ui.element("select", "show-dropdown-arrow"),
+                "editFactorItem_" + row.id), data.items, row.itemId, row.itemTitle);
+            return { row, target, item, stock: null };
+        });
+
+        const getDate = () => toEnglishDigits(date.value.trim());
+        const getNumber = () => Number(toEnglishDigits(number.value.trim()));
+        const validNumber = () => /^[0-9]+$/.test(toEnglishDigits(number.value.trim())) &&
+            getNumber() > 0 && getNumber() <= 2147483647;
+        const ready = () => !locked && !busy && !brokerPending && (!includeBroker || broker != null) &&
+            validNumber() && /^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(getDate()) &&
+            (!direct || (customer?.value && saleType?.value)) && rows.length > 0 &&
+            rows.every(x => x.item.value && x.stock?.select.value && !x.stock.select.disabled);
+        const update = () => wizard.setActions({ backDisabled: busy, confirmDisabled: !ready() });
+        const checkBroker = async (keepSelection = false) => {
+            brokerPending = true;
+            renderBroker();
+            update();
+            try {
+                const result = await sendApiRequest({
+                    url: "/Factor/GetExternalFactorEditBroker", params: { ...key, token: impact.token },
+                    showLoading: false, successMsg: null, signal,
+                });
+                if (signal.aborted) return;
+                broker = result?.broker ?? null;
+                if (!broker && !keepSelection) includeBroker = false;
+            } catch {
+                if (signal.aborted) return;
+                if (!keepSelection) includeBroker = false;
+                toastifyError("دریافت اطلاعات واسط امکان‌پذیر نیست.");
+            } finally {
+                brokerPending = false;
+                if (!signal.aborted) {
+                    renderBroker();
+                    update();
+                }
+            }
+        };
+        brokerHost.addEventListener("change", event => {
+            if (event.target.id !== "editFactorBroker" || busy || brokerPending) return;
+            includeBroker = event.target.checked;
+            broker = null;
+            if (includeBroker) void checkBroker();
+            else {
+                renderBroker();
+                update();
+            }
+        }, { signal });
+        wizard.render({
+            destination: impact.softwareTitle, position: "نرم‌افزار ۱ از ۱",
+            title: "ویرایش انتقال فاکتور فروش",
+            subtitle: locked ? impact.blockers.join(" ") : "اطلاعات انتقال فاکتور را در همان سال مالی بررسی کنید.",
+            icon: '<i class="fas fa-pencil-alt" aria-hidden="true"></i>', step: "فاکتور شماره " + impact.number,
+            content, large: true,
+        });
+        wizard.setActions({ backHidden: false, backText: locked ? "بستن" : "انصراف", confirmText: "ذخیره تغییرات" });
+        content.addEventListener("input", update, { signal });
+        content.addEventListener("change", update, { signal });
+        wizard.back.addEventListener("click", () => ModalToggle(wizard.modal, "hide"), { signal });
+        wizard.modal.addEventListener("hide.bs.modal", event => {
+            if (busy && !closing) event.preventDefault();
+        }, { signal });
+        wizard.modal.addEventListener("hidden.bs.modal", () => {
+            disposeDateTimePickers(wizard.container);
+            lifetime.abort();
+            button.disabled = false;
+        }, { once: true, signal });
+        historyModal.addEventListener("hidden.bs.modal", () => {
+            closing = true;
+            if (isModalOpen(wizard.modal)) ModalToggle(wizard.modal, "hide");
+            lifetime.abort();
+            button.disabled = false;
+        }, { once: true, signal });
+
+        if (!locked) {
+            for (const select of [customer, saleType].filter(Boolean))
+                new TomSelect(select, { placeholder: "جستجو و انتخاب", onChange: update });
+            const cache = new Map();
+            for (const entry of rows) {
+                const { row, target, item } = entry;
+                entry.stock = ExternalFinancialWizard.linkedStockField(target, {
+                    id: "editFactorStock_" + row.id, softwareId: key.externalSoftwareId, cache,
+                    retainedStock: { itemId: row.itemId, stockId: row.stockId, title: row.stockTitle },
+                    isCurrent: () => !signal.aborted && content.isConnected,
+                    onChange: update, onLoading: update,
+                });
+                const loadStock = async value => {
+                    await entry.stock.update(value, Number(value) === row.itemId ? row.stockId : "");
+                    if (!signal.aborted) update();
+                };
+                new TomSelect(item, { placeholder: "جستجو و انتخاب کالا", onChange: loadStock });
+                void loadStock(row.itemId);
+            }
+            dateTimePicker(wizard.container);
+        }
+
+        wizard.confirm.addEventListener("click", async () => {
+            if (!ready()) return;
+            busy = true;
+            renderBroker();
+            update();
+            try {
+                const items = rows.map(({ row, item, stock }) => ({
+                    id: row.id, itemId: Number(item.value), stockId: Number(stock.select.value),
+                }));
+                const details = getSalesEditImpactDetails(impact, data.autoVoucher, data.autoDelivery);
+                if (rows.some(({ row }, i) => row.linkedToQuotation &&
+                    (row.itemId !== items[i].itemId || row.stockId !== items[i].stockId)))
+                    details.push("ارتباط ردیف‌هایی که کالا یا انبارشان تغییر کرده با اقلام پیش‌فاکتور قطع می‌شود.");
+                if (!await ui.confirmEdit(wizard.modal, "تغییرات فاکتور فروش شماره " + impact.number + " ذخیره شود؟", details)
+                    || signal.aborted) return;
+                const saved = await sendApiRequest({
+                    url: "/Factor/EditExternalFactor", method: "POST", showLoading: false, signal,
+                    headers: ExternalFinancialWizard.antiforgeryHeaders(wizard.modal),
+                    data: {
+                        key, token: impact.token, dateText: getDate(), number: getNumber(), includeBroker, items,
+                        previewBrokerPartyId: broker?.partyId ?? null,
+                        autoVoucher: data.autoVoucher, autoDelivery: data.autoDelivery,
+                        ...(direct && { customerId: Number(customer.value), saleTypeId: Number(saleType.value) }),
+                    },
+                });
+                if (!saved?.saved) return;
+                toastifySuccess("تغییرات فاکتور فروش در نرم‌افزار مقصد ذخیره شد.");
+                closing = true;
+                ModalToggle(wizard.modal, "hide");
+                if (externalFactorHistory.factorId === key.sourceId)
+                    await loadFactorExternalSoftwares(key.sourceId);
+            } finally {
+                busy = false;
+                if (!signal.aborted) {
+                    renderBroker();
+                    update();
+                }
+            }
+        }, { signal });
+        update();
+        ModalToggle(wizard.modal, "show");
+        opened = true;
+        if (!locked && includeBroker) void checkBroker(true);
+    } finally {
+        if (!opened) {
+            lifetime.abort();
+            button.disabled = false;
+        }
+    }
+}
+
+function getSalesEditImpactDetails(impact, autoVoucher, autoDelivery) {
+    const vouchers = impact.voucherNumbers.map(number => "سند حسابداری شماره " + number);
+    const deliveries = impact.deliveries.map(row => `خروج انبار شماره ${row.number} (انبار ${row.stockCode})`);
+    const rebuild = [...(autoVoucher ? vouchers : []), ...(autoDelivery ? deliveries : [])];
+    const remove = [...(!autoVoucher ? vouchers : []), ...(!autoDelivery ? deliveries : [])];
+    const create = [autoVoucher && !vouchers.length ? "سند حسابداری" : "",
+        autoDelivery && !deliveries.length ? "خروج انبار" : ""].filter(Boolean);
+    const details = [];
+    if (rebuild.length) details.push(rebuild.join(" و ") + (rebuild.length === 1 ? " بازسازی می‌شود." : " بازسازی می‌شوند."));
+    if (remove.length) details.push(remove.join(" و ") + (remove.length === 1 ? " حذف می‌شود." : " حذف می‌شوند."));
+    if (create.length) details.push(create.join(" و ") + (create.length === 1 ? " صادر می‌شود." : " صادر می‌شوند."));
+    if (deliveries.length || autoDelivery)
+        details[details.length - 1] = details.at(-1).slice(0, -1) + " و موجودی انبار به‌روز می‌شود.";
+    return details;
+}
+
+async function deleteFactorDestination(button, key, historyModal) {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+        const plan = await sendApiRequest({ url: "/Factor/PreviewExternalFactorDeletion", params: key, showLoading: false });
+        if (!plan || !button.isConnected || !isModalOpen(historyModal)) return;
+
+        const ui = ExternalFinancialHistory;
+        const content = ui.element("div", "text-start");
+        const blocked = plan.blockers.length > 0;
+        content.append(ui.element("p", "mb-2", blocked
+            ? `فاکتور شماره ${plan.number} در «${plan.softwareTitle}» قابل حذف نیست.`
+            : `فاکتور فروش شماره ${plan.number} از «${plan.softwareTitle}» حذف شود؟`));
+        const entries = blocked ? plan.blockers : [
+            ...plan.voucherNumbers.map(number => `سند حسابداری فروش شماره ${number}`),
+            ...plan.deliveries.map(item => `خروج انبار شماره ${item.number} (انبار ${item.stockCode})`),
+        ];
+        if (entries.length) {
+            if (!blocked) content.append(ui.element("p", "mb-1 small", "این اسناد هم همراه فاکتور حذف می‌شوند:"));
+            const list = ui.element("ul", "mb-2 small");
+            for (const entry of entries) list.append(ui.element("li", null, entry));
+            content.append(list);
+        }
+        if (!blocked && plan.deliveries.length)
+            content.append(ui.element("p", "mb-0 small", "موجودی انبار پس از حذف به‌روزرسانی می‌شود."));
+
+        const answer = await Swal.fire({
+            target: historyModal, title: "حذف فاکتور فروش از مقصد", html: content, icon: "warning",
+            showCancelButton: !blocked, focusCancel: true,
+            confirmButtonText: blocked ? "بستن" : "حذف فاکتور", cancelButtonText: "انصراف",
+        });
+        if (blocked || !answer.isConfirmed || !button.isConnected || !isModalOpen(historyModal)) return;
+        try {
+            await sendApiRequest({
+                url: "/Factor/DeleteExternalFactor", method: "POST", showLoading: false,
+                headers: ExternalFinancialWizard.antiforgeryHeaders(historyModal), data: { key, token: plan.token },
+                successMsg: "فاکتور فروش از نرم‌افزار مقصد حذف شد.",
+            });
+        } finally {
+            if (externalFactorHistory.factorId === key.sourceId) await loadFactorExternalSoftwares(key.sourceId);
+        }
+    } finally { button.disabled = false; }
 }
 
 document.addEventListener("click", async event => {
@@ -270,6 +553,42 @@ document.addEventListener("change", async event => {
     }
 });
 
+function renderFactorBroker({ id, salespersonName, includeBroker, broker, disabled = false }) {
+    const escape = value => escapeHtml(String(value ?? "-"));
+    const number = value => Number(value ?? 0).toLocaleString("fa-IR", { maximumFractionDigits: 4 });
+    return `
+    <section class="external-factor-broker" aria-label="تنظیمات واسط فروش">
+        <label for="${escape(id)}" class="external-factor-broker-toggle ${includeBroker ? "is-active" : ""}">
+            <input id="${escape(id)}" type="checkbox" role="switch"
+                   class="external-factor-broker-input" ${includeBroker ? "checked" : ""} ${disabled ? "disabled" : ""}>
+            <span class="external-factor-broker-switch" aria-hidden="true"></span>
+            <span class="external-factor-broker-toggle-text">
+                <span class="external-factor-broker-title">ثبت واسط برای این فاکتور</span>
+                <span class="external-factor-broker-seller">
+                    کارشناس فروش: <strong>${escape(salespersonName || "نامشخص")}</strong>
+                </span>
+            </span>
+            <i class="fas fa-user-tie external-factor-broker-icon" aria-hidden="true"></i>
+        </label>
+        ${includeBroker && broker ? `
+            <div class="external-factor-broker-details">
+                <div class="external-factor-broker-detail">
+                    <span>واسط سپیدار</span>
+                    <strong>${escape(broker.fullName)}</strong>
+                </div>
+                <div class="external-factor-broker-detail">
+                    <span>نرخ پورسانت</span>
+                    <strong>${number(broker.commissionRate)}٪</strong>
+                </div>
+                <div class="external-factor-broker-detail">
+                    <span>مبلغ پورسانت</span>
+                    <strong>${number(broker.commission)} ریال</strong>
+                </div>
+            </div>
+        ` : ""}
+    </section>`;
+}
+
 function renderExternalFactorPreview(data, state) {
     const preview = data.preview;
     const escape = value => escapeHtml(String(value ?? "-"));
@@ -295,7 +614,7 @@ function renderExternalFactorPreview(data, state) {
                 <div class="ex-preview-field">
                     <label class="ex-preview-label" for="externalFactorInvoiceDate">تاریخ:</label>
                     <input id="externalFactorInvoiceDate" type="text" dir="ltr" autocomplete="off"
-                           maxlength="10" class="sdate ex-preview-invoice-number" value="${escape(date)}">
+                           maxlength="10" class="sdate ex-preview-invoice-number" value="${escape(date)}" required>
                 </div>
                 <div class="ex-preview-field ex-preview-customer">
                     <span class="ex-preview-label">مشتری:</span>
@@ -306,42 +625,16 @@ function renderExternalFactorPreview(data, state) {
                     <strong class="ex-preview-software">${escape(data.softwareTitle)}</strong>
                 </div>
             </div>
-            <section class="external-factor-broker" aria-label="تنظیمات واسط فروش">
-                <label for="externalFactorIncludeBroker" class="external-factor-broker-toggle ${state.request.includeBroker ? "is-active" : ""}">
-                    <input id="externalFactorIncludeBroker" type="checkbox" role="switch"
-                           class="external-factor-broker-input" ${state.request.includeBroker ? "checked" : ""}>
-                    <span class="external-factor-broker-switch" aria-hidden="true"></span>
-                    <span class="external-factor-broker-toggle-text">
-                        <span class="external-factor-broker-title">ثبت واسط برای این فاکتور</span>
-                        <span class="external-factor-broker-seller">
-                            کارشناس فروش: <strong>${escape(data.salespersonName || "نامشخص")}</strong>
-                        </span>
-                    </span>
-                    <i class="fas fa-user-tie external-factor-broker-icon" aria-hidden="true"></i>
-                </label>
-                ${state.request.includeBroker && data.broker ? `
-                    <div class="external-factor-broker-details">
-                        <div class="external-factor-broker-detail">
-                            <span>واسط سپیدار</span>
-                            <strong>${escape(data.broker.fullName)}</strong>
-                        </div>
-                        <div class="external-factor-broker-detail">
-                            <span>نرخ پورسانت</span>
-                            <strong>${number(data.broker.commissionRate)}٪</strong>
-                        </div>
-                        <div class="external-factor-broker-detail">
-                            <span>مبلغ پورسانت</span>
-                            <strong>${money(data.broker.commission)}</strong>
-                        </div>
-                    </div>
-                ` : ""}
-            </section>
+            ${renderFactorBroker({
+                id: "externalFactorIncludeBroker", salespersonName: data.salespersonName,
+                includeBroker: state.request.includeBroker, broker: data.broker,
+            })}
                         <div class="table-responsive">
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
                             <th>ردیف</th>
-                            <th>محصول CRM</th>
+                            <th>محصول ERP</th>
                             <th>کالای مقصد</th>
                             <th>انبار</th>
                             <th>تعداد</th>
@@ -604,7 +897,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         }
         stage(state, "mode", "روش صدور فاکتور", "روش ثبت فاکتور در نرم‌افزار مالی را انتخاب کنید",
             '<i class="fas fa-file-invoice"></i>', "انتخاب روش", `
-            <div class="factor-export-source-options">
+            <div class="factor-export-source-options" role="radiogroup" aria-required="true" aria-label="روش صدور فاکتور">
                 <label class="factor-export-source">
                     <input type="radio" name="factorExportSource" value="quotation"
                            ${!state.hasQuotation ? "disabled" : state.sourceChoice === "quotation" ? "checked" : ""}>
@@ -645,6 +938,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             ExternalFinancialWizard.selectField({
                 id: "factorDirectSaleType",
                 label: "نوع فروش",
+                required: true,
                 placeholder: "انتخاب کنید",
                 selected: state.direct.saleTypeId,
                 options: state.saleTypes.map(x => ({
@@ -673,12 +967,13 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     }
     function renderCustomer(state) {
         const data = state.customerData;
-        stage(state, "customer", "تطبیق مشتری", "مشتری CRM را به شخص متناظر در نرم‌افزار مالی متصل کنید",
+        stage(state, "customer", "تطبیق مشتری", "مشتری ERP را به شخص متناظر در نرم‌افزار مالی متصل کنید",
             '<i class="fas fa-users"></i>', "مرحله ۲ از ۴",
             ExternalFinancialWizard.crmCustomer(data.crmCustomerTitle || "—") +
             ExternalFinancialWizard.selectField({
                 id: "factorDirectCustomer",
                 label: "مشتری معادل در نرم‌افزار مالی",
+                required: true,
                 placeholder: "جستجو و انتخاب مشتری",
                 selected: state.direct.customerId,
                 options: (data.customers || []).map(x => ({
@@ -696,16 +991,17 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
     async function loadItems(state, refresh = false) {
         if (refresh || !state.items || !state.sepidarItems) {
             const data = await query("PrepareExternalFactorItems", state.request);
-            if (!data?.items?.length || !get(state)) return;
+            if (!data?.items?.length || !get(state)) return false;
             state.items = data.items;
             state.sepidarItems = data.sepidarItems || [];
         }
         renderItems(state);
+        return true;
     }
     async function loadQuotationItems(state, refresh = false) {
         if (refresh || !state.quotation?.sourceItems) {
             const data = await query("PrepareExternalFactorQuotationItems", state.request);
-            if (!data?.items?.length || !get(state)) return;
+            if (!data?.items?.length || !get(state)) return false;
             const previous = state.quotation;
             const selections = previous?.items ?? {};
             for (const item of data.items) {
@@ -723,6 +1019,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
             };
         }
         renderItems(state);
+        return true;
     }
 
     function renderItems(state) {
@@ -732,7 +1029,9 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         const externalItems = quotationBased ? source?.sepidarItems : state.sepidarItems;
         if (!source || !items?.length || !externalItems) return;
 
-        const { content, add, list } = createExternalItemMatching();
+        const { content, add, refresh, list } = createExternalItemMatching();
+        refresh.addEventListener("click", () => refreshExternalItemMatching(refresh, () =>
+            quotationBased ? loadQuotationItems(state, true) : loadItems(state, true)));
         const rows = [];
         source.stockPending = new Set();
         source.stockCache ??= new Map();
@@ -765,6 +1064,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
 
             const select = document.createElement("select");
             select.id = label.htmlFor;
+            select.required = true;
             select.dataset.itemId = itemId;
             select.className = "factor-direct-item-select show-dropdown-arrow";
             select.append(new Option("", ""));
@@ -794,6 +1094,7 @@ const factorDirectWizard = (function buildFactorDirectWizard() {
         for (const { itemId, target, select, item } of rows) {
             const stock = ExternalFinancialWizard.linkedStockField(target, {
                 id: "factorMappedStock_" + itemId,
+                required: true,
                 softwareId: state.request.externalSoftwareId,
                 cache: source.stockCache,
                 retainedStock: quotationBased ? {

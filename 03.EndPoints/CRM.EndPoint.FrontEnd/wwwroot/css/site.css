@@ -7159,6 +7159,12 @@ table tr.payment-vosoled > td {
 	white-space: nowrap;
 }
 
+#depositFinancialWizard .bank-option .title,
+#depositFinancialWizard .bank-option .details {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
 
 /* badge */
 .bank-badge {
@@ -7591,7 +7597,8 @@ table tr.payment-vosoled > td {
 
 /*  */
 
-.required-mark label:has(+ :is(input, textarea, select)[required])::after {
+.required-mark label:has(+ :is(input, textarea, select)[required])::after,
+.required-mark .required-label::after {
 	content: " *";
 	color: #dc3545;
 }
@@ -8693,7 +8700,6 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	font-family: IRANSansMedium;
 }
 
-
 .external-item-mapping-row {
 	padding-bottom: 18px;
 	margin-bottom: 18px;
@@ -8793,7 +8799,7 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	overflow-wrap: anywhere;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number {
 	box-sizing: border-box;
 	width: 86px;
 	min-width: 0;
@@ -8810,12 +8816,12 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 	box-shadow: none;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number::placeholder {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number::placeholder {
 	color: #788781;
 	opacity: 1;
 }
 
-:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal) .ex-preview-invoice-number:focus {
+:is(#sendFactorToExternalSoftwareModal, #sendSupplyToExternalSoftwareModal, #depositFinancialWizard) .ex-preview-invoice-number:focus {
 	border-color: #04857c;
 	box-shadow: 0 0 0 1px rgba(4, 133, 124, .12);
 }
@@ -8842,6 +8848,48 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 
 .ex-preview-software i {
 	font-size: 12px;
+}
+
+.deposit-note-preview .external-prefactor-preview > .ex-preview-summary > .ex-preview-field {
+	border-bottom: 0;
+}
+
+.deposit-note-sides {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.deposit-note-sides .table {
+	table-layout: fixed;
+}
+
+.deposit-note-sides .table thead th:first-child {
+	width: 30%;
+}
+
+.deposit-note-sides .table :is(th, td) {
+	overflow-wrap: anywhere;
+}
+
+#depositFinancialWizard .external-prefactor-preview :is(strong, th, .fbold) {
+	font-family: 'IRANSansBold';
+	font-synthesis: none;
+}
+
+@media (max-width: 576px) {
+	.deposit-note-sides .table thead th:first-child {
+		width: 42%;
+	}
+
+	.deposit-note-preview .external-prefactor-preview > .ex-preview-summary {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.deposit-note-preview .external-prefactor-preview > .ex-preview-summary > .ex-preview-field {
+		flex-direction: column;
+		align-items: flex-start;
+	}
 }
 
 

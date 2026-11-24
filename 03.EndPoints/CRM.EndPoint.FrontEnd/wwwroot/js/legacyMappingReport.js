@@ -16,7 +16,7 @@
         const proposalReason = get("lmrProposalReason");
         const token = page.querySelector('input[name="__RequestVerificationToken"]')?.value;
         const format = new Intl.NumberFormat("fa-IR");
-        const escape = value => escapeHtml(String(value ?? ""));
+        const escape = value => escapeHtml(String(value ?? "").replace(/\bCRM\b/g, "ERP"));
         const show = value => value === null || value === undefined || value === "" ? "—" : String(value);
         const money = value => value == null ? "—" : Number(value).toLocaleString("en-US");
         const validId = value => /^[1-9]\d*$/.test(String(value || ""));
@@ -67,52 +67,52 @@
             ambiguous:"تطبیق مبهم", blocked:"متوقف", notMatched:"بدون تطبیق قطعی"
         };
         const reasonNames = {
-            MultipleSepidarParties:["چند مشتری سپیدار برای یک مشتری CRM","پیش‌فاکتورها یا فاکتورهای این مشتری به اشخاص متفاوت سپیدار اشاره دارند. در ارتباط‌های پایین مشخص است هر کدام متعلق به کدام مشتری است."],
-            DuplicateCrmCustomersForParty:["چند مشتری CRM برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در CRM به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود ارتباط مربوط به کدام مشتری CRM است."],
-            PartyAlreadyMappedToAnotherCustomer:["ارتباط مشتری سپیدار قبلاً ثبت شده","این مشتری سپیدار به مشتری دیگری در CRM متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
-            ExistingDuplicateCustomerParty:["ارتباط تکراری مشتری ثبت شده است","در ارتباط‌های ثبت‌شده چند مشتری CRM به یک مشتری سپیدار متصل‌اند."],
+            MultipleSepidarParties:["چند مشتری سپیدار برای یک مشتری ERP","پیش‌فاکتورها یا فاکتورهای این مشتری به اشخاص متفاوت سپیدار اشاره دارند. در ارتباط‌های پایین مشخص است هر کدام متعلق به کدام مشتری است."],
+            DuplicateCrmCustomersForParty:["چند مشتری ERP برای یک مشتری سپیدار","چند مشتری با کدهای جداگانه در ERP به یک مشتری سپیدار اشاره می‌کنند. باید مشخص شود ارتباط مربوط به کدام مشتری ERP است."],
+            PartyAlreadyMappedToAnotherCustomer:["ارتباط مشتری سپیدار قبلاً ثبت شده","این مشتری سپیدار به مشتری دیگری در ERP متصل شده است؛ ابتدا رابطه ثبت‌شده را بررسی کنید."],
+            ExistingDuplicateCustomerParty:["ارتباط تکراری مشتری ثبت شده است","در ارتباط‌های ثبت‌شده چند مشتری ERP به یک مشتری سپیدار متصل‌اند."],
             ExistingCustomerMappingMismatch:["ارتباط مشتری با اطلاعات فعلی مغایر است","مشتری قبلاً به شخص دیگری در سپیدار وصل شده است."],
-            LegacyFinancialCustomerIdMismatch:["کد مالی قدیمی با سپیدار متفاوت است","کد مشتری قدیمی CRM با مشتری ثبت‌شده در سپیدار یکسان نیست."],
+            LegacyFinancialCustomerIdMismatch:["کد مالی قدیمی با سپیدار متفاوت است","کد مشتری قدیمی ERP با مشتری ثبت‌شده در سپیدار یکسان نیست."],
             PartyNotFoundOrNotCustomer:["معادل سپیدار معتبر نیست","این شخص در نرم‌افزار مقصد پیدا نشده یا مشتری محسوب نمی‌شود."],
             CustomerHasConflict:["ابتدا تعارض مشتری را تعیین تکلیف کنید","تا زمانی که ارتباط مشتری مشخص نباشد، ارتباط پیش‌فاکتور یا فاکتور قابل ثبت نیست."],
-            CustomerMappingPendingApproval:["ارتباط مشتری هنوز ثبت نشده","ارتباط پیشنهادی مشتری آماده است اما هنوز در CRM ثبت نشده است."],
+            CustomerMappingPendingApproval:["ارتباط مشتری هنوز ثبت نشده","ارتباط پیشنهادی مشتری آماده است اما هنوز در ERP ثبت نشده است."],
             CustomerNotMapped:["ابتدا ارتباط مشتری را ثبت کنید","ارتباط پیش‌فاکتور یا فاکتور فقط بعد از ثبت ارتباط مشتری در همین نرم‌افزار قابل ثبت است."],
-            DocumentCustomerMissing:["مشتری CRM مشخص نیست","ابتدا مشتری این پیش‌فاکتور یا فاکتور را در CRM مشخص کنید."],
-            DocumentCrmCustomerMismatch:["مشتری فاکتور و پیش‌فاکتور CRM فرق دارد","مشتری ثبت‌شده در فاکتور با پیش‌فاکتور مرتبط یکسان نیست."],
-            DocumentSepidarCustomerMismatch:["مشتری سپیدار با ارتباط ثبت‌شده متفاوت است","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده CRM مطابقت ندارد."],
-            DuplicateProposedTarget:["چند مورد CRM برای یک مورد سپیدار","چند پیش‌فاکتور یا فاکتور CRM برای یک معادل سپیدار پیشنهاد شده‌اند. فقط ارتباط صحیح را انتخاب کنید."],
-            ExternalTargetAlreadyMapped:["این معادل قبلاً استفاده شده","این مورد سپیدار قبلاً به یک مورد دیگر CRM وصل شده است."],
-            QuotationNumberNotFound:["شماره پیش‌فاکتور یافت نشد","شماره پیش‌فاکتور CRM در سپیدار پیدا نشد."],
-            QuotationAmountMismatch:["مبلغ پیش‌فاکتور متفاوت است","مبالغ CRM و سپیدار را قبل از انتخاب معادل بررسی کنید."],
+            DocumentCustomerMissing:["مشتری ERP مشخص نیست","ابتدا مشتری این پیش‌فاکتور یا فاکتور را در ERP مشخص کنید."],
+            DocumentCrmCustomerMismatch:["مشتری فاکتور و پیش‌فاکتور ERP فرق دارد","مشتری ثبت‌شده در فاکتور با پیش‌فاکتور مرتبط یکسان نیست."],
+            DocumentSepidarCustomerMismatch:["مشتری سپیدار با ارتباط ثبت‌شده متفاوت است","کد مشتری این پیش‌فاکتور یا فاکتور با مشتری تأییدشده ERP مطابقت ندارد."],
+            DuplicateProposedTarget:["چند مورد ERP برای یک مورد سپیدار","چند پیش‌فاکتور یا فاکتور ERP برای یک معادل سپیدار پیشنهاد شده‌اند. فقط ارتباط صحیح را انتخاب کنید."],
+            ExternalTargetAlreadyMapped:["این معادل قبلاً استفاده شده","این مورد سپیدار قبلاً به یک مورد دیگر ERP وصل شده است."],
+            QuotationNumberNotFound:["شماره پیش‌فاکتور یافت نشد","شماره پیش‌فاکتور ERP در سپیدار پیدا نشد."],
+            QuotationAmountMismatch:["مبلغ پیش‌فاکتور متفاوت است","مبالغ ERP و سپیدار را قبل از انتخاب معادل بررسی کنید."],
             QuotationFiscalYearMismatch:["سال مالی پیش‌فاکتور فرق دارد","سال مالی دو طرف یکسان نیست؛ روز دقیق تاریخ مبنای تطبیق نیست."],
             QuotationCustomerMismatch:["مشتری پیش‌فاکتور فرق دارد","پیش‌فاکتور احتمالی سپیدار برای مشتری متفاوتی ثبت شده است."],
             QuotationMultipleFieldMismatch:["چند اختلاف در پیش‌فاکتور","مشتری، مبلغ، شماره و سال مالی را بررسی کنید."],
             MultipleMatchingQuotations:["چند پیش‌فاکتور احتمالی","چند پیش‌فاکتور مشابه پیدا شده؛ معادل درست را انتخاب کنید."],
-            RelatedQuotationNotMapped:["ارتباط پیش‌فاکتور مرتبط ثبت نشده","معادل پیش‌فاکتور مرتبط با فاکتور CRM هنوز پیدا نشده است."],
+            RelatedQuotationNotMapped:["ارتباط پیش‌فاکتور مرتبط ثبت نشده","معادل پیش‌فاکتور مرتبط با فاکتور ERP هنوز پیدا نشده است."],
             InvoiceIdNotFound:["شناسه فاکتور قدیمی پیدا نشد","شناسه قبلی فاکتور در سپیدار وجود ندارد."],
             InvoiceForQuotationNotFound:["فاکتور پیش‌فاکتور مرتبط پیدا نشد","در سپیدار برای پیش‌فاکتور مرتبط فاکتوری پیدا نشده است."],
-            InvoiceAmountMismatch:["مبلغ فاکتور فرق دارد","مبلغ فاکتور CRM با معادل احتمالی سپیدار فرق دارد."],
-            InvoiceCustomerMismatch:["مشتری فاکتور فرق دارد","مشتری فاکتور CRM با مشتری فاکتور احتمالی سپیدار یکسان نیست."],
-            InvoiceFinancialNumberMismatch:["شماره مالی فاکتور فرق دارد","شماره مالی CRM با شماره فاکتور سپیدار یکسان نیست."],
+            InvoiceAmountMismatch:["مبلغ فاکتور فرق دارد","مبلغ فاکتور ERP با معادل احتمالی سپیدار فرق دارد."],
+            InvoiceCustomerMismatch:["مشتری فاکتور فرق دارد","مشتری فاکتور ERP با مشتری فاکتور احتمالی سپیدار یکسان نیست."],
+            InvoiceFinancialNumberMismatch:["شماره مالی فاکتور فرق دارد","شماره مالی ERP با شماره فاکتور سپیدار یکسان نیست."],
             InvoiceFiscalYearMismatch:["سال مالی فاکتور فرق دارد","سال مالی دو طرف متفاوت است."],
             InvoiceQuotationMismatch:["پیش‌فاکتور فاکتور فرق دارد","فاکتور سپیدار به پیش‌فاکتور دیگری مرتبط است."],
             InvoiceMultipleFieldMismatch:["چند اختلاف در فاکتور","مشتری، مبلغ، شماره مالی و سال مالی را بررسی کنید."],
             MultipleMatchingInvoices:["چند فاکتور احتمالی","چند فاکتور مشابه پیدا شده؛ معادل درست را دستی انتخاب کنید."],
-            UserExpertExactMatch:["تطبیق نام کارشناس و شخص","نام کارشناس CRM با شخص متناظر در نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserExpertExactMatch:["تطبیق نام کارشناس و شخص","نام کارشناس ERP با شخص متناظر در نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
             UserExpertMultipleMatches:["چند شخص هم‌نام","چند شخص با همین نام در نرم‌افزار مالی پیدا شده‌اند؛ معادل درست کارشناس را انتخاب کنید."],
-            UserExpertMultipleCrmUsers:["چند کارشناس CRM هم‌نام","چند کارشناس CRM نام یکسان دارند؛ ارتباط درست را پس از بررسی هویت، دستی ثبت کنید."],
+            UserExpertMultipleCrmUsers:["چند کارشناس ERP هم‌نام","چند کارشناس ERP نام یکسان دارند؛ ارتباط درست را پس از بررسی هویت، دستی ثبت کنید."],
             UserExpertNoMatch:["شخص هم‌نام یافت نشد","شخص متناظر قطعی پیدا نشده است؛ ارتباط کارشناس را دستی ثبت کنید."],
             UserExpertAlreadyMapped:["ارتباط شخص قبلاً ثبت شده","شخص مشابه در نرم‌افزار مالی به کارشناس دیگری متصل شده است."],
-            UserAccountExactMatch:["نام کاربری یکسان","نام کاربری CRM و کاربر نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
+            UserAccountExactMatch:["نام کاربری یکسان","نام کاربری ERP و کاربر نرم‌افزار مالی یکسان است؛ قبل از ثبت بررسی کنید."],
             UserAccountMultipleMatches:["چند کاربر با نام کاربری مشابه","تطبیق قطعی نیست؛ کاربر مقصد را بررسی و انتخاب کنید."],
             UserAccountAlreadyMapped:["کاربر مقصد قبلاً مرتبط شده","این حساب در نرم‌افزار مقصد قبلاً به کاربر دیگری متصل شده است."],
-            UserAccountNoMatch:["نام کاربری متناظر پیدا نشد","برای این کاربر CRM معادل قطعی در نرم‌افزار مالی پیدا نشده است؛ ارتباط را دستی ثبت کنید."],
+            UserAccountNoMatch:["نام کاربری متناظر پیدا نشد","برای این کاربر ERP معادل قطعی در نرم‌افزار مالی پیدا نشده است؛ ارتباط را دستی ثبت کنید."],
             SupplyInvoiceNumberNotNumeric:["شماره فاکتور تأمین قابل تطبیق نیست","شماره صادرشده توسط تأمین‌کننده باید عددی باشد تا با شماره فاکتور تأمین‌کننده در سپیدار تطبیق شود."],
             SupplierPurchaseNotMatched:["فاکتور خرید مرتبط پیدا نشد","برای این تأمین‌کننده هنوز فاکتور خرید دارای معادل قطعی پیدا نشده است."],
             SupplierVendorNotFound:["تأمین‌کننده سپیدار معتبر نیست","فاکتور خرید پیدا شد اما شخص تأمین‌کننده فعال با نقش تأمین‌کننده در سپیدار شناسایی نشد."],
             SupplierMultipleParties:["چند تأمین‌کننده سپیدار","فاکتورهای خرید این تأمین‌کننده به اشخاص متفاوتی در سپیدار اشاره دارند؛ معادل صحیح را بررسی کنید."],
-            SupplierPartyUsedByMultipleCrmSuppliers:["چند تأمین‌کننده CRM برای یک شخص","این شخص سپیدار برای بیش از یک تأمین‌کننده CRM پیشنهاد شده است؛ ارتباط صحیح را تعیین کنید."],
-            SupplierPartyAlreadyMapped:["شخص سپیدار قبلاً مرتبط شده","این شخص به تأمین‌کننده دیگری در CRM متصل شده است؛ ارتباط قبلی را بررسی کنید."],
+            SupplierPartyUsedByMultipleCrmSuppliers:["چند تأمین‌کننده ERP برای یک شخص","این شخص سپیدار برای بیش از یک تأمین‌کننده ERP پیشنهاد شده است؛ ارتباط صحیح را تعیین کنید."],
+            SupplierPartyAlreadyMapped:["شخص سپیدار قبلاً مرتبط شده","این شخص به تأمین‌کننده دیگری در ERP متصل شده است؛ ارتباط قبلی را بررسی کنید."],
             SupplierExistingMappingMismatch:["مغایرت در ارتباط تأمین‌کننده","شخص ثبت‌شده برای این تأمین‌کننده با اطلاعات فاکتورهای خرید تطبیق ندارد؛ ارتباط ثبت‌شده را بررسی کنید."],
             SupplyPurchaseNoMatch:["فاکتور خرید مطابق پیدا نشد","شماره فاکتور تأمین‌کننده، مبلغ، سال مالی و تأمین‌کننده را بررسی کنید."],
             SupplyPurchaseAmbiguous:["چند فاکتور خرید احتمالی","چند فاکتور خرید با اطلاعات مشابه وجود دارد؛ معادل درست را مشخص کنید."],
@@ -122,8 +122,18 @@
             SupplyReceiptNotFound:["رسید انبار یافت نشد","برای فاکتور خرید متناظر، رسید انبار غیرمرجوعی وجود ندارد."],
             SupplyReceiptAlreadyMapped:["رسید انبار قبلاً ارتباط داده شده","رسید مرتبط با این فاکتور خرید به فاکتور تأمین دیگری متصل است."],
             SupplyReceiptAmbiguous:["چند رسید مرتبط وجود دارد","چند رسید به این فاکتور خرید متصل هستند؛ رسید درست را انتخاب کنید."],
+            DepositNeedCustomer:["ارتباط مشتری ثبت نشده","ابتدا مشتری متناظر را ثبت و پیشنهادها را دوباره محاسبه کنید."],
+            DepositNeedBank:["ارتباط حساب بانکی ثبت نشده","ابتدا حساب بانکی متناظر را ثبت و پیشنهادها را دوباره محاسبه کنید."],
+            DepositCollectedCheque:["گردش یا مبلغ اولیه چک نیازمند بررسی است","تطبیق قطعی چک وصول‌شده از مبلغ، تاریخ و گردش بانکی ممکن نشد؛ سند درست را دستی انتخاب کنید."],
+            DepositNoMatch:["سند واریزی متناظر پیدا نشد","نوع، تاریخ، مبلغ، مشتری و اطلاعات بانکی سند را بررسی کنید."],
+            DepositAmbiguous:["چند سند واریزی مطابق","معادل قطعی نیست؛ سند صحیح را انتخاب کنید."],
+            DepositUsed:["سند قبلاً ارتباط داده شده","این سند در نرم‌افزار مقصد به واریزی دیگری متصل است یا چند واریزی برای آن پیشنهاد شده‌اند."],
+            BankNoMatch:["حساب بانکی متناظر پیدا نشد","شماره حساب، شبا، کارت یا بانک را بررسی کنید."],
+            BankAmbiguous:["چند حساب بانکی احتمالی","اطلاعات یا شواهد واریزی به چند حساب اشاره می‌کنند؛ حساب درست را بررسی کنید."],
+            BankUsed:["حساب بانکی قبلاً ارتباط داده شده","این حساب مقصد برای یک حساب دیگر ERP استفاده شده یا چند حساب ERP به آن اشاره دارند."],
+            BankEvidenceConflict:["مغایرت ارتباط حساب بانکی","ارتباط ثبت‌شده با اطلاعات رسیدهای مرتبط سازگار نیست؛ سابقه را بررسی کنید."],
             ReadyForReview:["آماده ثبت",""],
-            AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در CRM ثبت شده است."]
+            AlreadyMapped:["ارتباط ثبت‌شده","این ارتباط قبلاً در ERP ثبت شده است."]
         };
 
         const state = {
@@ -159,9 +169,9 @@
             return row.status !== "saved" && row.status !== "blocked" &&
                 !["PartyAlreadyMappedToAnotherCustomer", "ExistingDuplicateCustomerParty",
                     "ExistingCustomerMappingMismatch"].includes(row.reason) &&
-                // Duplicate-party conflicts must be resolved by selecting one CRM customer.
+                // Duplicate-party conflicts must be resolved by selecting one ERP customer.
                 (row.reason !== "DuplicateCrmCustomersForParty" || !!row.crmCandidates?.length) &&
-                [2,3,5,6,7,8,9,10].includes(Number(row.mapType)) &&
+                [2,3,5,6,7,8,9,10,11,12].includes(Number(row.mapType)) &&
                 state.manualIds.includes(state.softwareId);
         }
 
@@ -169,7 +179,7 @@
             if (!row.crmCandidates?.length) return row.crm;
             const selected = state.crmTargets.get(row.key);
             return row.crmCandidates.find(item => item.id === selected)?.crm ||
-                { title: "مشتری CRM را انتخاب کنید", id: "", customer: "", number: "" };
+                { title: "مشتری ERP را انتخاب کنید", id: "", customer: "", number: "" };
         }
 
         function consolidateDuplicateParties(rows) {
@@ -204,8 +214,8 @@
                     key: "duplicate-party-" + partyId,
                     crmCandidates: [...uniqueCrm.values()],
                     sources: [...new Set(matches.flatMap(row => row.sources || []))],
-                    details: "برای این مشتری نرم‌افزار مالی، چند مشتری CRM پیدا شده است. " +
-                        "یک مشتری CRM را انتخاب کنید؛ برای سایر مشتریان ارتباطی ثبت نمی‌شود."
+                    details: "برای این مشتری نرم‌افزار مالی، چند مشتری ERP پیدا شده است. " +
+                        "یک مشتری ERP را انتخاب کنید؛ برای سایر مشتریان ارتباطی ثبت نمی‌شود."
                 });
             }
             return result;
@@ -227,7 +237,7 @@
                 return !!state.crmTargets.get(row.key) &&
                     row.crmCandidates.some(item => item.id === state.crmTargets.get(row.key))
                     && !!row.sepidar?.customer;
-            const key = state.softwareId+":"+row.mapType+":"+value;
+            const key = state.softwareId+":"+row.mapType+":"+row.targetEntity+":"+value;
             if (state.preview.has(key)) return true;
             return row.status === "pending" && row.options?.length === 1 &&
                 String(row.sepidar?.id) === value &&
@@ -239,7 +249,7 @@
             const value = targetValue(row);
             if (row.status === "saved" || row.status === "pending" && !value) return row.sepidar;
             if (!value) return {title:"معادل انتخاب نشده",number:"",customer:"",id:""};
-            const preview = state.preview.get(state.softwareId+":"+row.mapType+":"+value);
+            const preview = state.preview.get(state.softwareId+":"+row.mapType+":"+row.targetEntity+":"+value);
             if (preview) return preview;
             if (String(row.sepidar?.id) === value) return row.sepidar;
             const option = row.options?.find(x => String(x.id) === value);
@@ -261,6 +271,8 @@
                 case 8: return crm ? "شماره فاکتور تأمین" : "شماره فاکتور خرید";
                 case 9: return crm ? "شماره فاکتور تأمین" : "شماره رسید انبار";
                 case 10: return "نام کاربری";
+                case 11: return crm ? "شماره ثبت" : "شماره سند";
+                case 12: return "شماره حساب";
                 default: return "شماره";
             }
         }
@@ -268,6 +280,8 @@
         function sideDisplayName(row, side, crm) {
             if (!side) return "معادل مشخص نیست";
             const name = show(side.customer || side.title);
+            if (!crm && Number(row.mapType) === 11)
+                return side.title && side.customer ? side.title + " | " + name : name;
             return !crm && [2, 3].includes(Number(row.mapType)) && side.customer
                 ? "مشتری: " + name : name;
         }
@@ -308,7 +322,7 @@
             const details = [];
             if (number) details.push(escape(sideCodeLabel(row, crm, side)) +
                 ': ' + escape(number));
-            // CRM GUIDs are only internal keys, never displayed in cards.
+            // ERP GUIDs are only internal keys, never displayed in cards.
             if (!crm && validId(side.id))
                 details.push('شناسه: ' + escape(side.id));
             const numberText = details.length
@@ -334,7 +348,7 @@
             const codeLabel = sideCodeLabel(row, crmSide);
             const name = (crmSide ? "crm-" : "external-") + row.key;
             return '<div class="lmr-choice-list" role="group" aria-label="' +
-                escape(crmSide ? "انتخاب رکورد CRM" : "انتخاب معادل نرم‌افزار") + '">' +
+                escape(crmSide ? "انتخاب رکورد ERP" : "انتخاب معادل نرم‌افزار") + '">' +
                 candidates.map(item => {
                     const id = String(item.id);
                     const title = crmSide ? item.name : item.title;
@@ -373,7 +387,7 @@
                 row.status !== "saved" &&
                 !(row.status === "pending" && row.options?.length === 1) &&
                 row.options?.length > 0;
-            const heading = crmSide ? "CRM" : state.softwareTitle;
+            const heading = crmSide ? "ERP" : state.softwareTitle;
             const sideContent = isMultiCrm
                 ? candidateChoices(row, "crm")
                 : isMultiExternal
@@ -410,7 +424,7 @@
         }
 
         // Break technical mismatch strings into readable, per-field comparisons.
-        // Example: QuotationId=5: مبلغ ناخالص: CRM=351000000, Sepidar=1900000000/0000
+        // Example: QuotationId=5: مبلغ ناخالص: ERP=351000000, Sepidar=1900000000/0000
         function formatComparisonValue(value) {
             const raw = String(value ?? "").trim();
             // Sepidar's legacy decimal formatting sometimes uses / as separator.
@@ -444,15 +458,15 @@
                 const other = [];
 
                 for (const difference of differences) {
-                    const pair = difference.match(/^(.+?):\s*CRM=([^,;]+),\s*Sepidar=(.+)$/);
-                    const customer = difference.match(/^مشتری:\s*CRM SepidarPartyId=(\d+),\s*Sepidar=(\d+)$/);
+                    const pair = difference.match(/^(.+?):\s*(?:CRM|ERP)=([^,;]+),\s*Sepidar=(.+)$/);
+                    const customer = difference.match(/^مشتری:\s*(?:CRM|ERP) SepidarPartyId=(\d+),\s*Sepidar=(\d+)$/);
                     const related = difference.match(/^QuotationRef:\s*expected=(\d+),\s*actual=(\d+)$/);
                     const text = pair || customer || related;
                     if (!text) {
                         other.push(difference);
                         continue;
                     }
-                    const label = customer ? "کد مشتری سپیدار برای مشتری CRM" :
+                    const label = customer ? "کد مشتری سپیدار برای مشتری ERP" :
                         related ? "پیش‌فاکتور مرتبط" : pair[1].trim();
                     const crmValue = customer || related ? text[1] : pair[2];
                     const sepidarValue = customer || related ? text[2] : pair[3];
@@ -464,7 +478,7 @@
                 }
 
                 if (!tableRows.length && !other.length) return "";
-                const header = '<div class="lmr-compare-headers"><span>مورد اختلاف</span><span>CRM</span><span>' +
+                const header = '<div class="lmr-compare-headers"><span>مورد اختلاف</span><span>ERP</span><span>' +
                     escape(state.softwareTitle) + '</span></div>';
                 return '<section class="lmr-mismatch-candidate">' +
                     '<h5>' + escape(title) + '</h5>' +
@@ -510,7 +524,7 @@
                     ? '<button type="button" class="lmr-btn lmr-btn-primary" data-map-one ' +
                         (!selected ? "disabled" : "") + '>ثبت ارتباط</button>'
                     : "") +
-                (row.status === "saved" && row.mappingId
+                (row.status === "saved" && row.mappingId && manualEntityTypes[Number(row.mapType)]
                     ? '<span class="lmr-saved-actions">' +
                         '<button type="button" class="lmr-btn lmr-btn-soft" ' +
                         'data-edit-mapping><i class="fas fa-pen" aria-hidden="true"></i> ویرایش</button>' +
@@ -603,7 +617,7 @@
             const values = which === "saved"
                 ? new Set(state.counts.filter(x => x.softwareId === state.softwareId)
                     .map(x => Number(x.mapType)))
-                : new Set([2, 3, 5, 6, 7, 8, 9, 10]);
+                : new Set([2, 3, 5, 6, 7, 8, 9, 10, 11, 12]);
             if (which === "proposal" && state.proposal.loaded)
                 state.proposal.rows.forEach(x => values.add(Number(x.mapType)));
             select.replaceChildren(new Option("همه انواع", ""));
@@ -782,8 +796,8 @@
 
             const ok = await confirmAlert({
                 title: "حذف ارتباط",
-                text: "ارتباط «" + typeTitle(row) + "» بین CRM و «" +
-                    state.softwareTitle + "» حذف شود؟ اطلاعات اصلی در CRM و نرم‌افزار مالی حذف نمی‌شوند.",
+                text: "ارتباط «" + typeTitle(row) + "» بین ERP و «" +
+                    state.softwareTitle + "» حذف شود؟ اطلاعات اصلی در ERP و نرم‌افزار مالی حذف نمی‌شوند.",
                 icon: "warning", confirmText: "حذف ارتباط", cancelText: "انصراف"
             });
             if (!ok) return;
@@ -898,7 +912,7 @@
         function payload(row) {
             if (!canMap(row) || !verifiedTarget(row)) return null;
             return { entityId: selectedCrm(row).id, mapType: Number(row.mapType),
-                exEntityId: targetValue(row) };
+                exEntityId: targetValue(row), exEntityName: row.targetEntity || null };
         }
 
         async function save(items) {
@@ -916,9 +930,8 @@
 
             // The server accepts at most 100 mappings per request.
             // Save customers first, then quotations and invoices, in separate batches.
-            const ordered = [
-                ...[5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9].flatMap(type => items.filter(x => x.mapType === type))
-            ];
+            const saveOrder = [5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9, 12, 11];
+            const ordered = saveOrder.flatMap(type => items.filter(x => x.mapType === type));
             if (ordered.length !== items.length) {
                 mappingFailure("دسته‌بندی ثبت ارتباط", new Error("Selected map types are not supported"),
                     "نوع یکی از ارتباط‌های انتخاب‌شده پشتیبانی نمی‌شود.");
@@ -930,7 +943,7 @@
                 text: "ثبت " + format.format(items.length) + " ارتباط در «" +
                     state.softwareTitle + "» انجام شود؟ " +
                     (items.length > 100 ? "ارتباط‌ها در گروه‌های حداکثر ۱۰۰تایی ثبت می‌شوند. " : "") +
-                    "ارتباط‌ها پس از اعتبارسنجی دو رکورد در CRM ثبت می‌شوند.",
+                    "ارتباط‌ها پس از اعتبارسنجی دو رکورد در ERP ثبت می‌شوند.",
                 icon: "question", confirmText: "ثبت ارتباط", cancelText: "انصراف"
             });
             if (!agreed) return null;
@@ -945,7 +958,7 @@
             let savedCount = 0;
             let failed = false;
             try {
-                for (const groupType of [5, 7, 6, 10, 4, 0, 1, 2, 3, 8, 9]) {
+                for (const groupType of saveOrder) {
                     const group = ordered.filter(item => item.mapType === groupType);
                     for (let i = 0; i < group.length; i += 100) {
                         const batch = group.slice(i, i + 100);
@@ -1026,12 +1039,12 @@
 
         async function preview(row, id) {
             if (!validId(id)) return;
-            const key = state.softwareId + ":" + row.mapType + ":" + id;
+            const key = state.softwareId + ":" + row.mapType + ":" + row.targetEntity + ":" + id;
             if (state.preview.has(key)) return;
             const softwareId = state.softwareId;
             const result = await mappingRequest({
                 url: "/ExternalSoftware/GetExternalMappingTargetDetails",
-                params: { softwareId, mapType: row.mapType, targetId: Number(id) },
+                params: { softwareId, mapType: row.mapType, targetId: Number(id), targetEntity: row.targetEntity },
                 showLoading: false, showError: false, timeout: 30000
             }, "بررسی معادل انتخاب‌شده", "اطلاعات معادل انتخاب‌شده دریافت نشد.");
             if (!isActive() || softwareId !== state.softwareId || state.targets.get(row.key) !== id) return;
@@ -1071,7 +1084,7 @@
             const row = state.proposal.visible.find(x => x.key === panel?.dataset.key);
             if (!row) return;
             if (event.target.closest("[data-open-manual]")) {
-                openManualMapping(Number(row.mapType));
+                openManualMapping({ mapType: row.mapType, exEntityName: row.targetEntity });
                 return;
             }
             if (event.target.closest("[data-map-one]")) {
@@ -1200,16 +1213,18 @@
         const manualExternalSelect = get("lmrManualExternalSelect");
         const manualSelects = { crm: null, external: null };
         const manualEntityTypes = {
-            0: { crm: ["Cash", "تنخواه‌های CRM"], external: ["PaymentHeader", "اعلامیه‌های پرداخت"] },
-            2: { crm: ["PreFactor", "پیش‌فاکتورهای CRM"], external: ["Quotation", "پیش‌فاکتورهای مالی"] },
-            3: { crm: ["Factor", "فاکتورهای CRM"], external: ["Invoice", "فاکتورهای مالی"] },
-            4: { crm: ["BaseCenterCash", "مراکز هزینه CRM"], external: ["DL", "حساب‌های تفصیلی"] },
-            5: { crm: ["Customer", "مشتریان CRM"], external: ["Party", "اشخاص مالی"] },
-            6: { crm: ["AppUser", "کارشناسان CRM"], external: ["Party", "کارشناسان در اشخاص مالی"] },
-            7: { crm: ["Customer", "تأمین‌کنندگان CRM"], external: ["Party", "تأمین‌کنندگان نرم‌افزار مالی"] },
-            8: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryPurchaseInvoice", "فاکتورهای خرید"] },
-            9: { crm: ["SupplyFactor", "فاکتورهای تأمین CRM"], external: ["InventoryReceipt", "رسیدهای انبار"] },
-            10: { crm: ["AppUser", "کاربران CRM"], external: ["User", "کاربران نرم‌افزار مالی"] }
+            0: { crm: ["Cash", "تنخواه‌های ERP"], external: ["PaymentHeader", "اعلامیه‌های پرداخت"] },
+            2: { crm: ["PreFactor", "پیش‌فاکتورهای ERP"], external: ["Quotation", "پیش‌فاکتورهای مالی"] },
+            3: { crm: ["Factor", "فاکتورهای ERP"], external: ["Invoice", "فاکتورهای مالی"] },
+            4: { crm: ["BaseCenterCash", "مراکز هزینه ERP"], external: ["DL", "حساب‌های تفصیلی"] },
+            5: { crm: ["Customer", "مشتریان ERP"], external: ["Party", "اشخاص مالی"] },
+            6: { crm: ["AppUser", "کارشناسان ERP"], external: ["Party", "کارشناسان در اشخاص مالی"] },
+            7: { crm: ["Customer", "تأمین‌کنندگان ERP"], external: ["Party", "تأمین‌کنندگان نرم‌افزار مالی"] },
+            8: { crm: ["SupplyFactor", "فاکتورهای تأمین ERP"], external: ["InventoryPurchaseInvoice", "فاکتورهای خرید"] },
+            9: { crm: ["SupplyFactor", "فاکتورهای تأمین ERP"], external: ["InventoryReceipt", "رسیدهای انبار"] },
+            10: { crm: ["AppUser", "کاربران ERP"], external: ["User", "کاربران نرم‌افزار مالی"] },
+            11: { crm: ["Accountancy", "واریزی‌های ERP"], external: ["ReceiptHeader", "رسید دریافت"] },
+            12: { crm: ["BankAccount", "حساب‌های بانکی ERP"], external: ["BankAccount", "حساب‌های بانکی نرم‌افزار مالی"] }
         };
 
         async function editSavedMapping(row) {
@@ -1237,12 +1252,24 @@
             }
         }
 
+        function syncManualTargetKinds(preferred = "") {
+            const type = Number(manualType.value);
+            const select = get("lmrManualTargetKind");
+            const choices = manualType.value !== "" && type === 0
+                ? [["PaymentHeader", "اعلامیه پرداخت"], ["Voucher", "سند حسابداری"]]
+                : type === 11
+                    ? [["ReceiptHeader", "رسید دریافت (نقدی و چکی)"], ["DebitCreditNote", "اعلامیه بدهکار بستانکار (تهاتری)"]]
+                    : [];
+            select.replaceChildren(...choices.map(([value, title]) => new Option(title, value)));
+            if (choices.some(([value]) => value === preferred)) select.value = preferred;
+            get("lmrManualTargetKindBox").hidden = choices.length === 0;
+        }
+
         function manualTypeDetails() {
             const type = manualType.value === "" ? null : Number(manualType.value);
-            get("lmrManualTargetKindBox").hidden = type !== 0;
             return {
                 mapType: type,
-                targetEntity: type === 0 ? get("lmrManualTargetKind").value : ""
+                targetEntity: type === 0 || type === 11 ? get("lmrManualTargetKind").value : ""
             };
         }
 
@@ -1251,7 +1278,9 @@
             const item = manualEntityTypes[type.mapType]?.[side];
             if (!item) return null;
             if (side === "external" && type.targetEntity === "Voucher")
-                return ["Voucher", "Voucher"];
+                return ["Voucher", "سند حسابداری"];
+            if (side === "external" && type.targetEntity === "DebitCreditNote")
+                return ["DebitCreditNote", "اعلامیه بدهکار بستانکار"];
             return item;
         }
 
@@ -1447,20 +1476,19 @@
             state.manualEditing = isEdit ? editing : null;
             state.manualPrefill = isEdit;
             manualType.replaceChildren(new Option("نوع ارتباط را انتخاب کنید", ""));
-            state.types.forEach(item =>
+            state.types.filter(item => manualEntityTypes[Number(item.value)]).forEach(item =>
                 manualType.add(new Option(item.title, String(item.value))));
-            manualType.value = isEdit ? String(editing.mapType) : "";
+            manualType.value = editing?.mapType != null ? String(editing.mapType) : "";
             // Editing changes the CRM/external record, not the mapping's category.
             manualType.disabled = isEdit;
-            get("lmrManualTargetKind").value =
-                isEdit && editing.exEntityName === "Voucher" ? "Voucher" : "PaymentHeader";
+            syncManualTargetKinds(editing?.exEntityName);
             get("lmrManualTitleText").textContent =
                 isEdit ? "ویرایش ارتباط" : "ثبت ارتباط";
             get("lmrManualConfirmText").textContent =
                 isEdit ? "ذخیره تغییرات" : "ثبت ارتباط";
             get("lmrManualDescription").textContent = isEdit
-                ? "رکورد CRM و معادل نرم‌افزار مالی را بررسی و در صورت نیاز اصلاح کنید."
-                : "رکورد CRM و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.";
+                ? "رکورد ERP و معادل نرم‌افزار مالی را بررسی و در صورت نیاز اصلاح کنید."
+                : "رکورد ERP و معادل آن را در نرم‌افزار مالی انتخاب و ثبت کنید.";
             get("lmrManualExternalTitle").textContent = "معادل در " + state.softwareTitle;
             manualReturnFocus = document.activeElement;
             state.manualOpen = true;
@@ -1494,9 +1522,12 @@
             }
             manualReturnFocus = null;
         });
-        manualType.addEventListener("change", () => resetManualOptions());
+        manualType.addEventListener("change", () => {
+            syncManualTargetKinds();
+            resetManualOptions();
+        });
         get("lmrManualTargetKind").addEventListener("change", () =>
-            resetManualOptions({ preserveCrm: true }));
+            resetManualOptions({ preserveCrm: Number(manualType.value) === 0 }));
 
         get("lmrManualConfirm").addEventListener("click", async () => {
             if (state.processing || !state.manualOpen ||

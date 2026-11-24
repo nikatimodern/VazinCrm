@@ -8,5 +8,6 @@ namespace CRM.EndPoint.FrontEnd.Models.Order {
         public Company Company { get; set; }
         public byte OfficialType { get; set; }
         public string SalesExpert { get; set; }
+        public int PreFactorSerialNumber { get; set; }
     }
 }

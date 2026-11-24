@@ -1,5 +1,5 @@
 /**
- * Shared UI shell for CRM -> financial-software transfer wizards.
+ * Shared UI shell for ERP -> financial-software transfer wizards.
  * Feature modules own requests, validation, navigation and persistence.
  */
 class ExternalFinancialWizard {
@@ -23,11 +23,11 @@ class ExternalFinancialWizard {
     }
 
     /** Shared compact field markup for sale type, customer and other lookups. */
-    static selectField({ id, label, options = [], selected = "", placeholder = null }) {
+    static selectField({ id, label, options = [], selected = "", placeholder = null, required = false }) {
         const safe = value => escapeHtml(String(value ?? ""));
         return `<div class="external-financial-field">
             <label for="${safe(id)}" class="form-label mb-1">${safe(label)}</label>
-            <select id="${safe(id)}" class="show-dropdown-arrow">
+            <select id="${safe(id)}" class="show-dropdown-arrow"${required ? " required" : ""}>
                 ${placeholder !== null ? `<option value="">${safe(placeholder)}</option>` : ""}
                 ${options.map(option => `<option value="${safe(option.value)}"
                     ${String(option.value) === String(selected ?? "") ? "selected" : ""}>
@@ -36,10 +36,10 @@ class ExternalFinancialWizard {
         </div>`;
     }
 
-    /** The CRM-side customer identity is intentionally identical across sales documents. */
+    /** The ERP-side customer identity is intentionally identical across sales documents. */
     static crmCustomer(name) {
         return `<div class="external-mapping-entity">
-            <span class="external-mapping-label">مشتری در CRM</span>
+            <span class="external-mapping-label">مشتری در ERP</span>
             <span class="external-mapping-entity-name fbold">${escapeHtml(String(name ?? "—"))}</span>
         </div>`;
     }
@@ -52,7 +52,7 @@ class ExternalFinancialWizard {
     static linkedStockField(target, {
         id, softwareId, cache = new Map(), isCurrent = () => true,
         onChange = () => {}, onLoaded = () => {}, onLoading = () => {},
-        retainedStock = null,
+        retainedStock = null, required = false,
     }) {
         const label = document.createElement("label");
         label.className = "form-label external-item-match-stock-label";
@@ -61,6 +61,7 @@ class ExternalFinancialWizard {
 
         const select = document.createElement("select");
         select.id = id;
+        select.required = required;
         select.className = "external-mapping-stock-select show-dropdown-arrow";
         select.disabled = true;
         select.append(new Option("", ""));

@@ -1285,7 +1285,6 @@ const initDeliverDataTable = (tableId) => {
 /* ----------------------------------------------- sendPreFactorToExternalSoftware ----------------------------------------------- */
 let externalSotwarePfId;
 
-const getExternalSoftwarePreFactorsModal = () => document.getElementById("externalSoftwarePreFactorsModal");
 
 /*renderExternalSoftwarePreFactors([
     {
@@ -1302,12 +1301,12 @@ const getExternalSoftwarePreFactorsModal = () => document.getElementById("extern
 async function showPreFactorExternalSotwaresModal(id, serialNumber) {
     if (window.AccessLive && !window.AccessLive.can("PreFactor", "exportExternal")) { toastifyError("مجوز این عملیات روی پیش‌فاکتور را ندارید."); return; }
     externalSotwarePfId = id;
-    getExternalSoftwarePreFactorsModal().querySelector(".modal-title").textContent = `مدیریت ارسال پیش‌فاکتور ${serialNumber}`;
-    
-    ModalToggle("externalSoftwarePreFactorsModal", "show");
-    
+    const history = new ExternalFinancialHistory({
+        modal: "externalSoftwarePreFactorsModal", list: "externalSoftwarePreFactors",
+    });
+    history.list.replaceChildren();
+    history.show({ title: `مدیریت ارسال پیش‌فاکتور ${serialNumber}` });
     await getPreFactorExternalSotwares(id);
-    
 }
 async function getPreFactorExternalSotwares(id) {
     await sendApiRequest({
@@ -1315,7 +1314,7 @@ async function getPreFactorExternalSotwares(id) {
         params: { preFactorId: id },
         showLoading: false,
         onSuccess: (res) => {
-            renderExternalSoftwarePreFactors(res.data);
+            if (externalSotwarePfId === id) renderExternalSoftwarePreFactors(res.data, id);
         },
     });
 }
@@ -1333,53 +1332,62 @@ document.addEventListener("click", async (event) => {
  * Renders external software pre-factor records.
  */
 
-function renderExternalSoftwarePreFactors(items = []) {
+function renderExternalSoftwarePreFactors(items = [], sourceId = externalSotwarePfId) {
     const history = new ExternalFinancialHistory({
         modal: "externalSoftwarePreFactorsModal",
         list: "externalSoftwarePreFactors",
     });
-    const viewIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>';
-    const invoiceIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 12h-5M15 8h-5M19 17V5a2 2 0 0 0-2-2H4M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 1 1 1h3"/></svg>';
-
+    const ui = ExternalFinancialHistory;
     history.render(items, {
         emptyText: "این پیش‌فاکتور هنوز در نرم‌افزار مالی ثبت نشده است.",
-        cardClass: item => item.isMissing ? "external-pf-missing" : "",
-        statusMessage: item => item.isMissing
-            ? "پیش‌فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
-        fields: item => [
-            ["نرم‌افزار", item.externalSoftwareTitle, true],
-            ["تاریخ ثبت", item.creationDate
-                ? item.creationDate.slice(0, -3).split(" ").join(" | ") : "—", false, true],
-            ["شماره پیش‌فاکتور", item.externalPreFactorNumber],
-            ["مشتری", item.customerName],
-        ],
-        actions: item => {
+        card: item => {
+            const key = { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId };
+            const card = {
+                title: item.externalSoftwareTitle,
+                missing: item.isMissing,
+                fields: [
+                    ["شماره پیش‌فاکتور", item.externalPreFactorNumber],
+                    ["مشتری", item.customerName],
+                ],
+                registration: { date: item.creationDate, by: item.registeredBy },
+            };
             if (item.isMissing) {
-                if (!item.mappingId || !item.canDeleteMissing) return [];
-                return [ExternalFinancialHistory.missingMappingAction({
-                    modal: getExternalSoftwarePreFactorsModal(),
-                    sourceId: externalSotwarePfId,
-                    softwareId: item.externalSoftwareId,
-                    mappingId: item.mappingId,
-                    softwareTitle: item.externalSoftwareTitle,
-                    url: "/Factor/DeleteMissingExternalPreFactorMapping",
-                    onDeleted: () => getPreFactorExternalSotwares(externalSotwarePfId),
-                })];
+                card.status = "پیش‌فاکتور در نرم‌افزار مقصد پیدا نشد.";
+                if (item.mappingId && item.canDeleteMissing) {
+                    card.action = ui.missingMappingAction({
+                        modal: history.modal, sourceId, softwareId: item.externalSoftwareId,
+                        mappingId: item.mappingId, softwareTitle: item.externalSoftwareTitle,
+                        url: "/Factor/DeleteMissingExternalPreFactorMapping",
+                        onDeleted: () => getPreFactorExternalSotwares(sourceId),
+                    });
+                }
+                return card;
             }
-            const view = document.createElement("button");
-            view.type = "button";
-            view.className = "external-pf-action external-pf-view";
-            view.dataset.action = "view";
-            view.dataset.url = item.viewUrl || "";
-            view.innerHTML = viewIcon + " مشاهده";
 
-            const invoices = document.createElement("button");
-            invoices.type = "button";
-            invoices.className = "external-pf-action external-pf-invoices";
-            invoices.dataset.action = "invoices";
-            invoices.dataset.softwareId = item.externalSoftwareId || "";
-            invoices.innerHTML = invoiceIcon + " فاکتورها";
-            return [view, invoices];
+            if (item.viewUrl) card.view = ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" });
+            card.related = {
+                title: "فاکتورهای مرتبط",
+                emptyText: "هنوز فاکتوری صادر نشده است.",
+                load: async () => {
+                    const rows = await sendApiRequest({ url: "/PreFactorDestination/RelatedInvoices",
+                        params: key, showLoading: false, showError: false });
+                    return Array.isArray(rows) ? rows.map(row => ui.relatedItem({
+                        title: "فاکتور فروش",
+                        fields: [["شماره فاکتور", row.number], ["مشتری", row.customerName]],
+                        registration: { date: row.registeredAt, by: row.registeredBy },
+                        view: row.viewUrl ? ui.action("مشاهده سند", { href: row.viewUrl, icon: "fa-eye" }) : null,
+                    })) : null;
+                },
+            };
+            if (item.canMaintainDestination) {
+                card.operations = [
+                    ui.action("ویرایش انتقال", { icon: "fa-pencil-alt",
+                        onClick: event => openPreFactorDestinationEdit(event.currentTarget, key, history.modal) }),
+                    ui.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
+                        onClick: event => deletePreFactorDestination(event.currentTarget, key, history.modal) }),
+                ];
+            }
+            return card;
         },
     });
 }

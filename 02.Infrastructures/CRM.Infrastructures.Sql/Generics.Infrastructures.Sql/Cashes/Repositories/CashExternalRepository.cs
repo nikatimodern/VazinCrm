@@ -8,7 +8,6 @@ using CRM.Core.Domain.Cashes.Repositories;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
-using CRM.Core.Domain.ASettings.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Cashes.Repositories;

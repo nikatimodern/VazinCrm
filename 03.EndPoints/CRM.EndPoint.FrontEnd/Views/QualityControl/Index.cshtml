@@ -111,6 +111,7 @@
     </div>
 
     <div class="qc-client-toolbar">
+        <div class="qc-client-search-filters">
         <form id="qcCustomerSearchForm" role="search" class="qc-client-search">
             <label for="qcCustomerSearch" class="visually-hidden">جستجوی مشتری</label>
             <div class="qc-client-search-group">
@@ -120,6 +121,21 @@
                         title="جستجو" aria-label="جستجو"><i class="fa fa-search" aria-hidden="true"></i></button>
             </div>
         </form>
+        <div class="qc-client-date-filter">
+            <button type="button" id="qcCustomerDateFilterButton" class="btnFilter qc-client-date-filter-toggle"
+                    data-filterVarConfig="qcCustomerDateFilterConfig"
+                    data-filterCallBack="qcCustomerDateFilterChanged"
+                    data-filterContentId="qcCustomerDateFilterChips"
+                    data-filterInpSearchId="qcCustomerSearch"
+                    aria-label="فیلتر تاریخ سفارش‌ها" title="فیلتر تاریخ سفارش‌ها">
+                <i class="fa fa-filter" aria-hidden="true"></i>
+            </button>
+            <div id="qcCustomerDateFilterChips" class="ContentFilter qc-client-date-filter-chips"
+                 aria-live="polite"></div>
+            <span id="qcCustomerDateFilterCount" class="qc-client-date-filter-count"
+                  role="status" aria-live="polite" hidden></span>
+        </div>
+        </div>
         <div class="qc-client-filter">
             <label for="qcCustomerStatus">وضعیت بررسی</label>
             <select id="qcCustomerStatus" class="form-select">
@@ -244,7 +260,7 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
-                    <div>
+                    <div class="qc-client-review-heading">
                         <h2 class="modal-title h5" id="qcCustomerModalTitle">کنترل کیفیت اقلام مشتری</h2>
                         <div id="qcCustomerModalSubtitle" class="qc-client-subtitle"></div>
                     </div>
@@ -254,29 +270,76 @@
                     <form id="qcCustomerReviewForm">
                         @Html.AntiForgeryToken()
                         <div id="qcCustomerFormFeedback" class="qc-client-feedback" role="status" aria-live="polite"></div>
-                        <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
-                        <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
-                            <label for="qcInvoiceItemSearch">جستجو در اقلام فاکتورها</label>
-                            <input id="qcInvoiceItemSearch" type="search" class="form-control"
-                                   placeholder="نام یا مشخصات کالا، مقدار یا تأمین‌کننده..." autocomplete="off" />
-                            <button id="qcInvoiceItemSearchClear" type="button" class="qc-client-button qc-client-secondary" disabled>
-                                پاک کردن
-                            </button>
-                            <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
-                        </div>
-                        <div id="qcInvoiceItemSearchEmpty" class="qc-client-search-empty" role="status" hidden>
-                            قلمی مطابق جستجو پیدا نشد.
+                        <div id="qcCustomerReviewToolbar" class="qc-client-review-toolbar" hidden>
+                            <div id="qcCustomerReviewSummary" class="qc-client-review-summary"></div>
+                            <div class="qc-client-review-filterbar">
+                                <div class="qc-client-filter-controls">
+                                    <span class="qc-client-filter-label"><i class="fa fa-filter" aria-hidden="true"></i> فیلتر وضعیت:</span>
+                                    <div id="qcInvoiceItemStatusFilters" class="qc-client-item-filters" role="group" aria-label="فیلتر وضعیت اقلام">
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="all" aria-pressed="false">همه <span data-qc-filter-count="all">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter is-active" data-qc-item-filter="0" aria-pressed="true">بررسی‌نشده <span data-qc-filter-count="0">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="1" aria-pressed="false">بدون مغایرت <span data-qc-filter-count="1">۰</span></button>
+                                    <button type="button" class="qc-client-item-filter" data-qc-item-filter="2" aria-pressed="false">دارای مغایرت <span data-qc-filter-count="2">۰</span></button>
+                                    </div>
+                                </div>
+                                <div id="qcInvoiceItemSearchBar" class="qc-client-item-search" hidden>
+                                    <label for="qcInvoiceItemSearch" class="visually-hidden">جستجو در اقلام فاکتورها</label>
+                                    <div class="qc-client-item-search-field">
+                                        <span class="qc-client-search-icon" aria-hidden="true"><i class="fa fa-search"></i></span>
+                                        <input id="qcInvoiceItemSearch" type="search" class="form-control" maxlength="200"
+                                               placeholder="جستجوی کالا، سفارش، فاکتور یا تأمین‌کننده..." autocomplete="off" />
+                                    </div>
+                                    <label class="qc-client-review-page-size" for="qcInvoiceItemPageSize">
+                                        تعداد در صفحه
+                                        <select id="qcInvoiceItemPageSize" class="form-select" aria-label="تعداد اقلام هر صفحه">
+                                            <option value="5" selected>۵</option>
+                                            <option value="10">۱۰</option>
+                                            <option value="25">۲۵</option>
+                                            <option value="50">۵۰</option>
+                                            <option value="0">همه</option>
+                                        </select>
+                                    </label>
+                                    <span id="qcInvoiceItemSearchCount" class="qc-client-search-count" aria-live="polite"></span>
+                                </div>
+                            </div>
                         </div>
                         <div id="qcCustomerReviewContent" class="qc-client-review-content"></div>
+                        <div id="qcInvoiceItemPaging" class="qc-client-review-paging" hidden>
+                            <span id="qcInvoiceItemPagingCount" class="qc-client-review-paging-count" aria-live="polite"></span>
+                            <nav id="qcInvoiceItemPages" class="qc-client-review-pages" aria-label="صفحه‌بندی اقلام"></nav>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer qc-client-footer">
                     <span id="qcCustomerSaveHint" class="qc-client-save-hint"></span>
                     <button type="button" id="qcCustomerSaveAll" class="qc-client-button qc-client-primary" disabled>
                         <i class="fa fa-save" aria-hidden="true"></i>
-                        ثبت کلی اقلام بررسی‌نشده بدون مغایرت
+                        ثبت اقلام بررسی‌نشده این صفحه بدون مغایرت
                     </button>
                     <button type="button" class="qc-client-button qc-client-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+                <div id="qcItemDiscrepancyDialog" class="qc-client-issue-overlay" role="dialog"
+                     aria-modal="true" aria-labelledby="qcIssueTitle" tabindex="-1" hidden>
+                    <div class="qc-client-issue-panel">
+                        <form id="qcIssueForm" novalidate>
+                            <div class="qc-client-issue-header">
+                                <div>
+                                    <h3 id="qcIssueTitle">ثبت مغایرت قلم</h3>
+                                    <p id="qcIssueSubtitle"></p>
+                                </div>
+                                <button type="button" class="qc-client-issue-close" data-qc-issue-close
+                                        aria-label="بستن فرم مغایرت"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            </div>
+                            <div id="qcIssueQuestions" class="qc-client-issue-body"></div>
+                            <div id="qcIssueFeedback" class="qc-client-issue-feedback" role="alert" aria-live="polite"></div>
+                            <div class="qc-client-issue-footer">
+                                <button type="button" class="qc-client-button qc-client-secondary" data-qc-issue-close>انصراف</button>
+                                <button type="submit" id="qcIssueSave" class="qc-client-button qc-client-primary">
+                                    <i class="fa fa-save" aria-hidden="true"></i> ثبت مغایرت
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

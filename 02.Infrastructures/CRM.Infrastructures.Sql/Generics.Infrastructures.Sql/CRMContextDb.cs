@@ -138,7 +138,8 @@ namespace CRM.Infrastructures.Sql {
                 // All AccessCatalog mappings belong to UserContextDb (Identity database).
                 // Exclude the namespace so future mappings cannot leak into CRMContextDb.
                 type.Namespace != typeof(AccessEntityConfiguration).Namespace &&
-                type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace);
+                type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace
+                && type.Namespace != typeof(Sepidar.Deposits.Configs.ReceiptHeaderConfig).Namespace);
             
             //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ContractConfig).Assembly);
 
