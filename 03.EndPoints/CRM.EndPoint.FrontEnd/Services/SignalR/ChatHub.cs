@@ -1,26 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 
-namespace CRM.EndPoint.FrontEnd.Services.SignalR
-{
-    public class ChatHub:Hub
-    {
-        public async Task SendMessage(string user,string Message,string id)
-        {
-            try
-            {
-                await Clients.All.SendAsync("ReceiveMessage", user, Message, id);
-                await Clients.All.SendAsync("mo", user, Message, id);
-            }
-            catch
-            {
+namespace CRM.EndPoint.FrontEnd.Services.SignalR;
 
-            }
-
-
-
-        }
-
-
-    }
-}
+// Persisted chat messages are sent by ChatController to verified participants.
+// This legacy hub must not broadcast arbitrary client-supplied messages.
+[Authorize]
+public class ChatHub : Hub;
