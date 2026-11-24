@@ -12,6 +12,9 @@ using CRM.EndPoint.FrontEnd.Models;
 using CRM.EndPoint.FrontEnd.Models.Cash;
 using CRM.EndPoint.FrontEnd.Models.ExternalSoftwares;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Security;
+using CRM.Infrastructures.Sql;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -45,7 +48,7 @@ using CRM.Core.ApplicationServices.Cashes.Queries.GetCashPage;
 using CRM.Core.ApplicationServices.Cashes.Queries.GetCashierPage;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
-public class CashController(ICqrsDispatcher dispatcher) : Controller
+public class CashController(ICqrsDispatcher dispatcher, DocumentAccessPolicy access, CRMContextDb db) : Controller
 {
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -63,12 +66,48 @@ public class CashController(ICqrsDispatcher dispatcher) : Controller
 
     [Authorize(Roles = "مدیر ارشد,تنخواه دار,مدیر مالی,کارشناس مالی")]
     [HttpPost]
-    public async Task<IActionResult> AddCash([FromBody] Cash model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new AddCashCommand(model), ct));
+    public async Task<IActionResult> AddCash([FromBody] Cash model, CancellationToken ct)
+    {
+        if (model == null) return BadRequest();
+        if (!await CanUseBankAccount(model.BankAccountId, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount"))
+        {
+            if (model.Id != Guid.Empty)
+            {
+                var old = await db.Cashes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
+                if (old == null) return NotFound();
+                if (!await CanUseBankAccount(old.BankAccountId, ct)) return Forbid();
+            }
+            model.BankAccount = null;
+        }
+        return Map(await dispatcher.CommandAsync(new AddCashCommand(model), ct));
+    }
+
+    private async Task<bool> CanUseBankAccount(Guid? id, CancellationToken ct) =>
+        !id.HasValue || await access.CanAsync("BankAccount", "View", id.Value, ct);
     [Authorize(Roles = "مدیر ارشد,مدیر مالی,کارشناس مالی")]
     [HttpPost]
-    public async Task<IActionResult> AddCashier([FromBody] Cashier model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new AddCashierCommand(model), ct));
+    public async Task<IActionResult> AddCashier([FromBody] Cashier model, CancellationToken ct)
+    {
+        if (model == null) return BadRequest();
+        if (!await CanUseBankAccount(model.BankAccountId, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount")) model.BankAccount = null;
+        return Map(await dispatcher.CommandAsync(new AddCashierCommand(model), ct));
+    }
     [HttpPost]
-    public async Task<IActionResult> UpdateCashier([FromBody] Cashier model, CancellationToken ct) => Map(await dispatcher.CommandAsync(new UpdateCashierCommand(model), ct));
+    public async Task<IActionResult> UpdateCashier([FromBody] Cashier model, CancellationToken ct)
+    {
+        if (model == null) return BadRequest();
+        if (!await CanUseBankAccount(model.BankAccountId, ct)) return Forbid();
+        if (access.IsEnforced("BankAccount"))
+        {
+            var old = await db.Cashiers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
+            if (old == null) return NotFound();
+            if (!await CanUseBankAccount(old.BankAccountId, ct)) return Forbid();
+            model.BankAccount = null;
+        }
+        return Map(await dispatcher.CommandAsync(new UpdateCashierCommand(model), ct));
+    }
     public async Task<IActionResult> ChangeStatusCash(Guid id, CashStatusEnum status, CancellationToken ct) => Map(await dispatcher.CommandAsync(new ChangeStatusCashCommand(id, status), ct));
     public async Task<IActionResult> ChangeStatusAllCashToPending(CancellationToken ct) => Map(await dispatcher.CommandAsync(new ChangeStatusAllCashToPendingCommand(), ct));
     [HttpPost]
