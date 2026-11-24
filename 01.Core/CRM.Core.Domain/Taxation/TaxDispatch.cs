@@ -6,7 +6,7 @@ namespace CRM.Core.Domain.Taxation;
 
 public enum TaxDispatchStatus { Pending = 0, InFlight = 1, Unknown = 2, Accepted = 3, Rejected = 4, Submitted = 5 }
 
-public enum TaxDispatchKind { Original = 0, Correction = 1, Cancellation = 2 }
+public enum TaxDispatchKind { Original = 0, Correction = 1, Cancellation = 2, Return = 3 }
 
 public sealed class TaxDispatch
 {

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CRM.Core.Domain.Factors;
 using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
@@ -20,8 +21,14 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
     public int VatPercent { get; init; }
     public bool? TaxAfterDiscount { get; init; }
     public string? Version { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ReferenceTaxId { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TaxDispatchKind? DispatchKind { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ReferenceReason { get; init; }
 
-    public static InvoicePreview Build(TaxPreviewSource source)
+    public static InvoicePreview Build(TaxPreviewSource source, bool allowReturn = false)
     {
         var factor = source.Factor;
         var errors = new List<string>();
@@ -31,7 +38,7 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
         if (factor.DateMiladi is null) errors.Add("تاریخ فاکتور مشخص نیست.");
         if (factor.CustomerId is null || string.IsNullOrWhiteSpace(factor.Cus_EghtesadiCode))
             errors.Add("اطلاعات خریدار برای پیش‌نمایش فروش داخلی کامل نیست.");
-        if (factor.Export == true || factor.CurrencyType != 0 || factor.ParentReturnedId.HasValue)
+        if (factor.Export == true || factor.CurrencyType != 0 || (!allowReturn && factor.ParentReturnedId.HasValue))
             errors.Add("این پیش‌نمایش برای فاکتور اصلی فروش داخلی ریالی است.");
         if (factor.status == CRM.Core.Domain.Factors.Enum.FactorStatus.ابطال_شده)
             errors.Add("فاکتور ابطال شده است.");

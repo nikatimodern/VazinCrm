@@ -7077,15 +7077,23 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsUnique()
                         .HasFilter("[TaxId] IS NOT NULL");
 
+                    b.HasIndex("FactorId", "Kind")
+                        .IsUnique()
+                        .HasFilter("[Kind] IN (1, 3)");
+
                     b.HasIndex("Status", "QueuedUtc");
 
                     b.HasIndex("AuthorityEnvironment", "FiscalId", "InvoiceSerial")
                         .IsUnique()
                         .HasFilter("[InvoiceSerial] IS NOT NULL");
 
+                    b.HasIndex(new[] { "ReferencedDispatchId" }, "IX_TaxDispatches_OneCancellation")
+                        .IsUnique()
+                        .HasFilter("[Kind] = 2");
+
                     b.ToTable("TaxDispatches", null, t =>
                         {
-                            t.HasCheckConstraint("CK_TaxDispatches_Reference", "([Kind] = 0 AND [ReferencedDispatchId] IS NULL) OR ([Kind] IN (1, 2) AND [ReferencedDispatchId] IS NOT NULL AND [ReferencedDispatchId] <> [Id])");
+                            t.HasCheckConstraint("CK_TaxDispatches_Reference", "([Kind] = 0 AND [ReferencedDispatchId] IS NULL) OR ([Kind] IN (1, 2, 3) AND [ReferencedDispatchId] IS NOT NULL AND [ReferencedDispatchId] <> [Id])");
 
                             t.HasCheckConstraint("CK_TaxDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR ([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR ([Status] IN (2, 3, 4, 5) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)");
                         });

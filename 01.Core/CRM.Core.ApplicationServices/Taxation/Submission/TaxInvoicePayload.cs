@@ -41,14 +41,22 @@ public static class TaxInvoicePayload
         return TaxId(fiscalId, serial.Value, DateTimeOffset.UnixEpoch.AddDays(days)) == taxId;
     }
 
-    public static (string TaxId, string Json) Build(InvoicePreview preview, TaxSigningBinding binding, TaxFilingDetails filing)
+    public static (string TaxId, string Json) Build(InvoicePreview preview, TaxSigningBinding binding, TaxFilingDetails filing) =>
+        Build(preview, binding, filing, TaxDispatchKind.Original, null);
+
+    internal static (string TaxId, string Json) Build(InvoicePreview preview, TaxSigningBinding binding,
+        TaxFilingDetails filing, TaxDispatchKind kind, string? referenceTaxId)
     {
+        var original = kind == TaxDispatchKind.Original;
+        if (!original && (kind is not (TaxDispatchKind.Correction or TaxDispatchKind.Return) ||
+            referenceTaxId is not { Length: 22 }))
+            throw Invalid();
         if (preview.Errors.Count != 0 || preview.FiscalId is null || preview.Lines.Count == 0 ||
-            filing.BuyerType is not (1 or 2) || filing.Settlement is not (1 or 2) ||
+            (original && filing.BuyerType is not (1 or 2)) || filing.Settlement is not (1 or 2) ||
             filing.IssuedAt.Offset != TimeSpan.FromMinutes(210) ||
             filing.IssuedAt.Date != preview.InvoiceDate?.Date ||
             !Digits(binding.SellerEconomicCode, 11, 14) || !Digits(preview.BuyerEconomicCode, 11, 14) ||
-            !Digits(preview.BuyerNationalId, filing.BuyerType == 1 ? 10 : 11) ||
+            (original && !Digits(preview.BuyerNationalId, filing.BuyerType == 1 ? 10 : 11)) ||
             (!string.IsNullOrEmpty(preview.BuyerPostalCode) && !Digits(preview.BuyerPostalCode, 10)) ||
             preview.VatPercent is < 0 or > 100)
             throw Invalid();
@@ -74,9 +82,11 @@ public static class TaxInvoicePayload
             header = new
             {
                 taxid = taxId, inno = filing.Serial.ToString("X10", CultureInfo.InvariantCulture),
-                indatim = filing.IssuedAt.ToUnixTimeMilliseconds(), inty = 1, inp = 1, ins = 1,
-                tins = binding.SellerEconomicCode, tob = filing.BuyerType, bid = preview.BuyerNationalId,
-                tinb = preview.BuyerEconomicCode, bpc = string.IsNullOrEmpty(preview.BuyerPostalCode) ? null : preview.BuyerPostalCode,
+                indatim = filing.IssuedAt.ToUnixTimeMilliseconds(), inty = 1, inp = 1, ins = (int)kind + 1,
+                irtaxid = referenceTaxId, tins = binding.SellerEconomicCode,
+                tob = original ? (int?)filing.BuyerType : null, bid = original ? preview.BuyerNationalId : null,
+                tinb = original ? preview.BuyerEconomicCode : null,
+                bpc = original && !string.IsNullOrEmpty(preview.BuyerPostalCode) ? preview.BuyerPostalCode : null,
                 tprdis = preview.Gross, tdis = preview.Discount, tadis = preview.Gross - preview.Discount,
                 tvam = preview.Vat, todam = 0, tbill = preview.Total, setm = filing.Settlement
             },

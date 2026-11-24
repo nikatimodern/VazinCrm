@@ -29,9 +29,20 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
             ?? throw new KeyNotFoundException();
         if (!item.AuthorityEnvironment.HasValue)
             return null;
+        TaxSubmissionReference reference = null;
+        if (item.Status == TaxDispatchStatus.Pending && item.ReferencedDispatchId.HasValue)
+        {
+            var previous = await db.TaxDispatches.AsNoTracking().SingleOrDefaultAsync(x =>
+                x.Id == item.ReferencedDispatchId && x.MemoryId == item.MemoryId &&
+                x.AuthorityEnvironment == item.AuthorityEnvironment, ct);
+            if (string.IsNullOrEmpty(previous?.ProtectedWorkFolderEvidence))
+                throw new ArgumentException("مدرک وضعیت کارپوشهٔ مرجع در دسترس نیست.");
+            reference = new(previous.TaxId, previous.Kind, previous.Status,
+                protection.Unprotect(previous.ProtectedWorkFolderEvidence), previous.ProtectedWorkFolderEvidence);
+        }
         return new(item.Id, item.FiscalId, item.AuthorityEnvironment.Value, item.CertificateSha256,
             item.TaxId, item.Status == TaxDispatchStatus.Pending ? protection.Unprotect(item.ProtectedSubmission) : null,
-            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial);
+            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial, item.Kind, reference);
     }
 
     public async Task PinAsync(Guid dispatchId, TaxSigningBinding binding, long serial, string taxId, string payload, CancellationToken ct)
@@ -52,8 +63,12 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
         }
     }
 
-    public async Task<bool> TryStartAsync(Guid dispatchId, Guid attemptId, DateTimeOffset startedAt, CancellationToken ct) =>
-        await db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.Status == TaxDispatchStatus.Pending)
+    public async Task<bool> TryStartAsync(Guid dispatchId, Guid attemptId, DateTimeOffset startedAt, string referenceEvidenceVersion, CancellationToken ct) =>
+        await db.TaxDispatches.Where(x => x.Id == dispatchId && x.TaxId != null && x.Status == TaxDispatchStatus.Pending &&
+                (x.ReferencedDispatchId == null || (referenceEvidenceVersion != null && db.TaxDispatches.Any(reference =>
+                    reference.Id == x.ReferencedDispatchId && reference.Status == TaxDispatchStatus.Accepted &&
+                    reference.Kind != TaxDispatchKind.Cancellation &&
+                    reference.ProtectedWorkFolderEvidence == referenceEvidenceVersion))))
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, TaxDispatchStatus.InFlight)
                 .SetProperty(x => x.AttemptId, attemptId)
                 .SetProperty(x => x.SubmissionStartedAt, startedAt)

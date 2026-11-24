@@ -120,6 +120,10 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
             if (body.RootElement.ValueKind == JsonValueKind.Object &&
                 body.RootElement.TryGetProperty("header", out var header) && header.ValueKind == JsonValueKind.Object &&
                 Text(header, "taxid") == submission.TaxId &&
+                Text(header, "irtaxid") == submission.Reference?.TaxId &&
+                (submission.Reference is null || (header.TryGetProperty("ins", out var subject) &&
+                    subject.ValueKind == JsonValueKind.Number && subject.TryGetInt32(out var code) &&
+                    code == (int)submission.Kind + 1)) &&
                 Text(header, "inno") == submission.InvoiceSerial.Value.ToString("X10", CultureInfo.InvariantCulture) &&
                 header.TryGetProperty("indatim", out var issued) && issued.ValueKind == JsonValueKind.Number &&
                 issued.TryGetInt64(out var ms) && ms is >= 0 and <= 253402300799999 &&

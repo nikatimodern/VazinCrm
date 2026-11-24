@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
@@ -56,6 +57,7 @@ internal static class TaxationRegistration
         services.AddScoped<ICommandHandler<InquireTaxSubmissionCommand, TaxDispatchState>, InquireTaxSubmissionCommandHandler>();
         services.AddScoped<ICommandHandler<InquireTaxWorkFolderCommand, TaxWorkFolderState>, InquireTaxWorkFolderCommandHandler>();
         services.AddScoped<ITaxDispatchQueue, TaxDispatchQueue>();
+        services.AddScoped<ICommandHandler<EnqueueTaxReferenceCommand, Guid>, EnqueueTaxReferenceCommandHandler>();
         services.AddScoped<ICommandHandler<EnqueueTaxInvoiceCommand, Guid>, EnqueueTaxInvoiceCommandHandler>();
         services.AddScoped<ITaxationRepository, TaxationRepository>();
         services.AddScoped<ICommandHandler<SaveTaxMemoryCommand, Guid>, SaveTaxMemoryCommandHandler>();

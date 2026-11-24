@@ -1,3 +1,5 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
+using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
@@ -372,6 +374,146 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.Equal(1, gateway.Sends);
     }
 
+    [TaxationSqlFact]
+    public async Task ConcurrentCancellationCreatesOnlyOneIndependentSnapshotAndUsesExistingSubmit()
+    {
+        await using var db = Open();
+        await using var other = Open();
+        var reference = await SetupReferenceAsync(db, "AWAITING_REACTION");
+        var command = new EnqueueTaxReferenceCommand(reference.Id, "tester",
+            new(null, TaxDispatchKind.Cancellation, 2, Filing().IssuedAt, null, false, TaxCancellationReason.IncorrectTransactionDate));
+        var left = ReferenceHandler(db);
+        var right = ReferenceHandler(other);
+        var ids = await Task.WhenAll(left.HandleAsync(command, Ct), right.HandleAsync(command, Ct));
+        Assert.Equal(ids[0], ids[1]);
+        Assert.Equal(2, await db.TaxInvoiceSnapshots.CountAsync());
+        var original = await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == reference.Id);
+        Assert.Equal(reference.ProtectedSubmission, original.ProtectedSubmission);
+        Assert.Equal(TaxDispatchStatus.Accepted, original.Status);
+        var canceled = await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == ids[0]);
+        Assert.Equal(reference.Id, canceled.ReferencedDispatchId);
+        Assert.Equal(reference.MemoryId, canceled.MemoryId);
+        Assert.NotEqual(reference.SnapshotId, canceled.SnapshotId);
+        var gateway = new TestGateway();
+        var repository = new TaxSubmissionRepository(db, protection);
+        var queue = new TaxDispatchQueue(db, protection);
+        var submit = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
+        Assert.Equal(TaxDispatchStatus.Submitted, (await submit.HandleAsync(new(canceled.Id, null), Ct)).Status);
+        Assert.Equal(1, gateway.Sends);
+        using var payload = JsonDocument.Parse(gateway.PreparedPayload);
+        Assert.Equal(reference.TaxId, payload.RootElement.GetProperty("header").GetProperty("irtaxid").GetString());
+        Assert.Equal(3, payload.RootElement.GetProperty("header").GetProperty("ins").GetInt32());
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            left.HandleAsync(command with { ReferenceId = canceled.Id }, Ct));
+    }
+
+    [TaxationSqlFact]
+    public async Task ReturnRejectsWrongParentAndFreezesRemainderWithReferenceMemory()
+    {
+        await using var db = Open();
+        var reference = await SetupReferenceAsync(db, "APPROVED");
+        var wrong = await AddCandidateAsync(db, reference.FactorId, 0.5m, Guid.NewGuid());
+        var valid = await AddCandidateAsync(db, reference.FactorId, 0.5m, reference.FactorId);
+        var operations = new TaxationRepository(db, protection);
+        var replacement = await operations.SaveMemoryAsync(null, "XYZ123", "Other", Ct);
+        await operations.ActivateAsync(replacement, Ct);
+        var handler = ReferenceHandler(db);
+        var request = new TaxReferenceRequest(wrong, TaxDispatchKind.Return, 2, Filing().IssuedAt, null, false, null);
+        await Assert.ThrowsAsync<ArgumentException>(() => handler.HandleAsync(new(reference.Id, "tester", request), Ct));
+        Assert.Single(await db.TaxInvoiceSnapshots.ToListAsync());
+        var id = await handler.HandleAsync(new(reference.Id, "tester", request with { FactorId = valid }), Ct);
+        var entry = await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == id);
+        Assert.Equal(reference.MemoryId, entry.MemoryId);
+        Assert.False(entry.MemoryWasActive);
+        using var json = JsonDocument.Parse(protection.Unprotect(entry.ProtectedSubmission));
+        Assert.Equal(0.5m, json.RootElement.GetProperty("body")[0].GetProperty("am").GetDecimal());
+        Assert.Equal(55m, json.RootElement.GetProperty("header").GetProperty("tbill").GetDecimal());
+        Assert.Equal(110m, await db.Factors.Where(x => x.Id == reference.FactorId).Select(x => x.PaymentAmount).SingleAsync());
+        await Assert.ThrowsAsync<ArgumentException>(() => handler.HandleAsync(new(reference.Id, "tester",
+            new(null, TaxDispatchKind.Cancellation, 3, Filing().IssuedAt, null, false, TaxCancellationReason.FullReturn)), Ct));
+    }
+
+    [TaxationSqlFact]
+    public async Task CorrectionRequiresApprovalAndSerialIsUniqueInReferenceMemory()
+    {
+        await using var db = Open();
+        var reference = await SetupReferenceAsync(db, "SYSTEMIC_APPROVED");
+        var factor = await AddCandidateAsync(db, reference.FactorId, 2, null, FactorStatus.در_دست_تایید);
+        var handler = ReferenceHandler(db);
+        var request = new TaxReferenceRequest(factor, TaxDispatchKind.Correction, 2, Filing().IssuedAt, null, false, null);
+        await Assert.ThrowsAsync<ArgumentException>(() => handler.HandleAsync(new(reference.Id, "tester", request), Ct));
+        await db.Factors.Where(x => x.Id == factor).ExecuteUpdateAsync(s => s.SetProperty(x => x.status, FactorStatus.تایید_شده));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            handler.HandleAsync(new(reference.Id, "tester", request with { Serial = 1 }), Ct));
+        var id = await handler.HandleAsync(new(reference.Id, "tester", request), Ct);
+        var corrected = await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == id);
+        Assert.Equal(TaxDispatchKind.Correction, corrected.Kind);
+        Assert.Equal(reference.Id, corrected.ReferencedDispatchId);
+        var operations = new TaxationRepository(db, protection);
+        var version = await PreviewVersion(operations, factor);
+        await Assert.ThrowsAsync<ArgumentException>(() => new EnqueueTaxInvoiceCommandHandler(operations)
+            .HandleAsync(new(factor, "tester", version), Ct));
+
+        var duplicateSerial = await Assert.ThrowsAsync<SqlException>(() => db.TaxDispatches.Where(x => x.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.InvoiceSerial, reference.InvoiceSerial)));
+        Assert.Equal(2601, duplicateSerial.Number);
+
+        await using var other = Open();
+        var gateway = new TestGateway { WorkFolderStatus = "CANCELED" };
+        var inquiry = new InquireTaxWorkFolderCommandHandler(new TaxSubmissionRepository(other, protection), gateway);
+        gateway.BeforePrepare = () => inquiry.HandleAsync(new(reference.Id), Ct);
+        var submissions = new TaxSubmissionRepository(db, protection);
+        var submit = new SubmitTaxInvoiceCommandHandler(submissions, new TaxDispatchQueue(db, protection),
+            new TestBindings(), gateway, TimeProvider.System);
+        var blocked = await submit.HandleAsync(new(id, null), Ct);
+        Assert.Equal(TaxDispatchStatus.Pending, blocked.Status);
+        Assert.Null(blocked.AttemptId);
+        await Assert.ThrowsAsync<ArgumentException>(() => submit.HandleAsync(new(id, null), Ct));
+        Assert.Equal(0, gateway.Sends);
+    }
+
+    private EnqueueTaxReferenceCommandHandler ReferenceHandler(CRMContextDb db) =>
+        new(new TaxationRepository(db, protection), new TestBindings(), TimeProvider.System);
+
+    private async Task<TaxDispatch> SetupReferenceAsync(CRMContextDb db, string workFolder)
+    {
+        var id = await QueueSubmissionAsync(db);
+        var gateway = new TestGateway { WorkFolderStatus = workFolder };
+        var queue = new TaxDispatchQueue(db, protection);
+        var repository = new TaxSubmissionRepository(db, protection);
+        var submit = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
+        await submit.HandleAsync(new(id, Filing()), Ct);
+        gateway.Result = new(gateway.Reference, "SUCCESS", """{"sign":"mock"}""");
+        await new InquireTaxSubmissionCommandHandler(repository, queue, gateway).HandleAsync(new(id), Ct);
+        await new InquireTaxWorkFolderCommandHandler(repository, gateway).HandleAsync(new(id), Ct);
+        return await db.TaxDispatches.AsNoTracking().SingleAsync(x => x.Id == id);
+    }
+
+    private static async Task<Guid> AddCandidateAsync(CRMContextDb db, Guid originalId, decimal quantity, Guid? parent,
+        FactorStatus status = FactorStatus.تایید_شده)
+    {
+        var reference = await db.Factors.AsNoTracking().Include(x => x.FactorItems).SingleAsync(x => x.Id == originalId);
+        var gross = quantity * 100;
+        var vat = gross / 10;
+        var factor = new Factor
+        {
+            Id = Guid.NewGuid(), PfactorID = reference.PfactorID, DateMiladi = reference.DateMiladi,
+            CustomerId = reference.CustomerId, Cus_EghtesadiCode = reference.Cus_EghtesadiCode,
+            Cus_ShenaseMeli = reference.Cus_ShenaseMeli, OfficialType = 1, status = status, PercentTax = 10,
+            ParentReturnedId = parent, SumTotalAmount = gross, TotalTax = vat, PaymentAmount = gross + vat,
+            FactorItems = [new FactorItem
+            {
+                Id = Guid.NewGuid(), Row = 1, ProductCode = reference.FactorItems.Single().ProductCode,
+                WeightCount = quantity.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                UnitAmount = 100, TaxAmount = vat, TotalAmount = gross + vat
+            }]
+        };
+        db.Factors.Add(factor);
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        return factor.Id;
+    }
+
     private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)
     {
         var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);
@@ -398,13 +540,19 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         public Guid Reference { get; } = Guid.NewGuid();
         public Guid? InquiredAttempt { get; private set; }
         public string PreparedCertificate { get; private set; }
+        public string PreparedPayload { get; private set; }
+        public string WorkFolderStatus { get; init; } = "REJECTED";
+        public Func<Task> BeforePrepare { get; set; }
         public TaxProcessingResult Result { get; set; }
 
-        public Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
+        public async Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
         {
             if (FailPrepare) throw new CryptographicException();
             PreparedCertificate = submission.CertificateSha256;
-            return Task.FromResult(new PreparedTaxRequest(attemptId, new HttpRequestMessage()));
+            PreparedPayload = submission.Payload;
+            if (BeforePrepare != null)
+                await BeforePrepare();
+            return new PreparedTaxRequest(attemptId, new HttpRequestMessage());
         }
 
         public Task<TaxAcknowledgement> SendAsync(PreparedTaxRequest request, CancellationToken ct)
@@ -421,7 +569,8 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         }
 
         public Task<TaxWorkFolderResult> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct) =>
-            Task.FromResult(new TaxWorkFolderResult("REJECTED", "NOT_EXCEEDED", null, """{"invoiceStatus":"REJECTED"}"""));
+            Task.FromResult(new TaxWorkFolderResult(WorkFolderStatus, "NOT_EXCEEDED", null,
+                JsonSerializer.Serialize(new { taxId = submission.TaxId, invoiceStatus = WorkFolderStatus })));
     }
 
     private sealed class UnreadableProtection : ITaxPreviewProtector

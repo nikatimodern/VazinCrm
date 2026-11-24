@@ -1,3 +1,4 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxWorkFolder;
@@ -10,6 +11,7 @@ using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPreviewSnapshot;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -61,8 +63,13 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> Enqueue(Guid id, [FromBody] TaxPreviewVersion body, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(new EnqueueTaxInvoiceCommand(id, User.FindFirstValue(ClaimTypes.NameIdentifier), body.Version), ct));
 
+    [HttpPost("dispatches/{id:guid}/references")]
+    public Task<IActionResult> EnqueueReference(Guid id, TaxReferenceRequest body, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new EnqueueTaxReferenceCommand(id,
+            User.FindFirstValue(ClaimTypes.NameIdentifier), body), ct));
+
     [HttpPost("dispatches/{id:guid}/submit")]
-    public Task<IActionResult> Submit(Guid id, TaxFilingDetails filing, CancellationToken ct) =>
+    public Task<IActionResult> Submit(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] TaxFilingDetails filing, CancellationToken ct) =>
         RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct));
 
     [HttpPost("dispatches/{id:guid}/inquire")]

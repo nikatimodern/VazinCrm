@@ -8,6 +8,12 @@ namespace CRM.Core.Domain.Taxation;
 
 public sealed record TaxPreviewSource(Factor Factor, TaxMemory ActiveMemory, IReadOnlyList<TaxProductMapping> Mappings, bool? TaxAfterDiscount);
 
+public sealed record TaxReferenceSource(TaxDispatch Reference, string Preview,
+    string Payload, string WorkFolderEvidence, TaxPreviewSource Candidate);
+
+public sealed record TaxReferenceRegistration(string Preview, string Payload, string TaxId,
+    long Serial, TaxSigningBinding Binding);
+
 public sealed class TaxPreviewConflictException : InvalidOperationException
 {
     public TaxPreviewConflictException() : base("اطلاعات پیش‌نمایش تغییر کرده است. پیش‌نمایش جدید دریافت کنید.") { }
@@ -28,5 +34,7 @@ public interface ITaxationRepository
     Task<TaxPreviewSource> GetPreviewSourceAsync(Guid factorId, CancellationToken ct);
     Task<string> ReadSnapshotAsync(Guid id, CancellationToken ct);
     Task<Guid> SaveSnapshotAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
+    Task<Guid> EnqueueReferenceAsync(Guid referenceId, Guid? factorId, TaxDispatchKind kind, string actorId,
+        Func<TaxReferenceSource, TaxReferenceRegistration> register, CancellationToken ct);
     Task<Guid> EnqueueAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
 }

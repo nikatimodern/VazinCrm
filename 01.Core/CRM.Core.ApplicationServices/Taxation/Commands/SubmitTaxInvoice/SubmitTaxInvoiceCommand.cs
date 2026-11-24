@@ -8,7 +8,7 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 
-public sealed record SubmitTaxInvoiceCommand(Guid DispatchId, TaxFilingDetails Filing) : ICommand<TaxDispatchState>;
+public sealed record SubmitTaxInvoiceCommand(Guid DispatchId, TaxFilingDetails? Filing) : ICommand<TaxDispatchState>;
 
 public sealed class SubmitTaxInvoiceCommandHandler(ITaxSubmissionRepository repository, ITaxDispatchQueue queue,
     ITaxSigningBindings bindings, ITaxAuthorityClient client, TimeProvider clock)
@@ -23,26 +23,35 @@ public sealed class SubmitTaxInvoiceCommandHandler(ITaxSubmissionRepository repo
         var submission = await repository.FindAsync(request.DispatchId, ct);
         if (submission is null)
         {
+            var filing = request.Filing ?? throw new ArgumentException("اطلاعات صدور صورتحساب اصلی لازم است.");
             var draft = await repository.ReadDraftAsync(request.DispatchId, ct);
             var profile = bindings.Get(draft.MemoryId);
             var preview = JsonSerializer.Deserialize<InvoicePreview>(draft.Snapshot);
             if (preview is null || preview.FiscalId != draft.FiscalId || preview.MemoryId != draft.MemoryId)
                 throw new CryptographicException("Frozen tax snapshot does not match the dispatch.");
-            if (request.Filing.IssuedAt > clock.GetUtcNow())
+            if (filing.IssuedAt > clock.GetUtcNow())
                 throw new ArgumentException("زمان صدور صورتحساب نمی‌تواند در آینده باشد.");
-            var (taxId, payload) = TaxInvoicePayload.Build(preview, profile, request.Filing);
-            await repository.PinAsync(request.DispatchId, profile, request.Filing.Serial, taxId, payload, ct);
+            var (taxId, payload) = TaxInvoicePayload.Build(preview, profile, filing);
+            await repository.PinAsync(request.DispatchId, profile, filing.Serial, taxId, payload, ct);
             submission = await repository.FindAsync(request.DispatchId, ct);
         }
 
         if (submission.Status != TaxDispatchStatus.Pending)
             return new(submission.DispatchId, submission.AttemptId, submission.Status, submission.TaxId, submission.ReferenceNumber);
 
+        if (submission.Reference is { } reference)
+        {
+            if (reference.Status != TaxDispatchStatus.Accepted || reference.Kind == TaxDispatchKind.Cancellation)
+                throw new ArgumentException("سند مرجع دیگر قابل استفاده نیست.");
+            TaxReferenceInvoice.ValidateWorkFolder(reference.WorkFolderEvidence, reference.TaxId, reference.Kind, submission.Kind);
+        }
+
         var attempt = Guid.NewGuid();
         // Decryption, validation, certificate access and nonce requests run before any send attempt is recorded.
         using var prepared = await client.PrepareAsync(submission, attempt, ct);
         ct.ThrowIfCancellationRequested();
-        if (!await repository.TryStartAsync(request.DispatchId, attempt, clock.GetUtcNow(), ct))
+        if (!await repository.TryStartAsync(request.DispatchId, attempt, clock.GetUtcNow(),
+            submission.Reference?.EvidenceVersion, ct))
             return await queue.GetStateAsync(request.DispatchId, ct);
 
         TaxAcknowledgement acknowledgement;

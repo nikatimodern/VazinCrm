@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Taxation;
 
-public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector protection) : ITaxationRepository
+public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProtector protection) : ITaxationRepository
 {
     public async Task<IReadOnlyList<TaxMemory>> ListMemoriesAsync(CancellationToken ct) =>
         await db.TaxMemories.AsNoTracking().OrderByDescending(x => x.IsActive).ThenBy(x => x.FiscalId).ToListAsync(ct);
@@ -56,13 +56,13 @@ public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector pro
         return source;
     }
 
-    private async Task<TaxPreviewSource> ReadSourceAsync(Guid factorId, CancellationToken ct)
+    private async Task<TaxPreviewSource> ReadSourceAsync(Guid factorId, CancellationToken ct, Guid? memoryId = null)
     {
         var factor = await db.Factors.AsNoTracking().Include(x => x.FactorItems)
             .SingleOrDefaultAsync(x => x.Id == factorId && !x.IsDeleted, ct) ?? throw new KeyNotFoundException();
         var ids = factor.FactorItems.Where(x => x.ProductCode.HasValue).Select(x => x.ProductCode.Value).Distinct().ToArray();
         var mappings = await db.TaxProductMappings.AsNoTracking().Where(x => x.IsDefault && ids.Contains(x.ProductId)).ToListAsync(ct);
-        var memory = await db.TaxMemories.AsNoTracking().SingleOrDefaultAsync(x => x.IsActive, ct);
+        var memory = await db.TaxMemories.AsNoTracking().SingleOrDefaultAsync(x => memoryId.HasValue ? x.Id == memoryId : x.IsActive, ct);
         var afterDiscount = await db.ASettings.AsNoTracking().Select(x => (bool?)x.TaxAfterDiscount).FirstOrDefaultAsync(ct);
         return new(factor, memory, mappings, afterDiscount);
     }
@@ -115,19 +115,15 @@ public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector pro
             return existing.Value;
         }
 
+        if (await db.TaxDispatches.AnyAsync(x => x.FactorId == factorId &&
+            (x.Kind == TaxDispatchKind.Correction || x.Kind == TaxDispatchKind.Return), ct))
+            throw new ArgumentException("این فاکتور قبلاً به عنوان سند ارجاعی ثبت شده است.");
         var source = await ReadSourceAsync(factorId, ct);
         if (source.Factor.status != CRM.Core.Domain.Factors.Enum.FactorStatus.تایید_شده)
             throw new ArgumentException("فقط فاکتور تاییدشده وارد صف می‌شود.");
 
         var snapshot = CreateSnapshot(source, actorId, validate);
-        var memory = source.ActiveMemory;
-        var entry = new TaxDispatch
-        {
-            Id = Guid.NewGuid(), FactorId = factorId, SnapshotId = snapshot.Id,
-            MemoryId = memory.Id, FiscalId = memory.FiscalId, MemoryTitle = memory.Title,
-            MemoryUpdatedUtc = memory.UpdatedUtc, MemoryWasActive = memory.IsActive,
-            Kind = TaxDispatchKind.Original, QueuedUtc = snapshot.CreatedUtc, Status = TaxDispatchStatus.Pending
-        };
+        var entry = CreateDispatch(snapshot, source.ActiveMemory, TaxDispatchKind.Original);
         db.TaxInvoiceSnapshots.Add(snapshot);
         db.TaxDispatches.Add(entry);
         await db.SaveChangesAsync(ct);
@@ -145,6 +141,15 @@ public sealed class TaxationRepository(CRMContextDb db, ITaxPreviewProtector pro
             ProtectedPreview = protection.Protect(preview)
         };
     }
+
+    private static TaxDispatch CreateDispatch(TaxInvoiceSnapshot snapshot, TaxMemory memory, TaxDispatchKind kind) =>
+        new()
+        {
+            Id = Guid.NewGuid(), FactorId = snapshot.FactorId, SnapshotId = snapshot.Id,
+            MemoryId = memory.Id, FiscalId = memory.FiscalId, MemoryTitle = memory.Title,
+            MemoryUpdatedUtc = memory.UpdatedUtc, MemoryWasActive = memory.IsActive,
+            Kind = kind, QueuedUtc = snapshot.CreatedUtc, Status = TaxDispatchStatus.Pending
+        };
 
     internal static Task LockAsync(CRMContextDb context, string resource, CancellationToken ct) =>
         context.Database.ExecuteSqlInterpolatedAsync($"""
