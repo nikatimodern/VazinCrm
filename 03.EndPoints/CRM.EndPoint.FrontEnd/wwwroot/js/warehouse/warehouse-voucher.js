@@ -45,6 +45,7 @@ async function refreshWarehouseVouchers() {
 
 let warehouseProductListData = [];
 async function showWarehouseVoucherModal(filterIds) {
+    if (window.AccessLive?.can("WarehouseVoucher", "create") === false) return;
     await sendApiRequest({
         method: "POST",
         url: "/Warehouse/GetWarehouseProductByFilteredIds",
@@ -62,6 +63,7 @@ async function showWarehouseVoucherModal(filterIds) {
 
 
 async function editWarehouseVoucher(id) {
+    if (window.AccessLive?.can("WarehouseVoucher", "edit") === false) return;
     await sendApiRequest({
         url: "/Warehouse/GetWarehouseVoucher",
         params: { id },
@@ -140,6 +142,7 @@ function createSetVoucherItem() {
     });
 }
 async function submitWarehouseVoucherModal() {
+    if (window.AccessLive?.can("WarehouseVoucher", warehouseVoucherId ? "edit" : "create") === false) return;
     if (!await mySer.CheckValidForm("warehouseVoucherForm")) return;
     
     const allItemsArray = Array.from(warehouseVoucherModal.querySelectorAll("fieldset"));
@@ -197,6 +200,7 @@ async function submitWarehouseVoucherModal() {
 
 
 async function confirmWarehouseVoucher(id) {
+    if (window.AccessLive?.can("WarehouseVoucher", "approve") === false) return;
     await confirmAlert({
         icon: "question",
         confirmText: "بله، تایید شود",
@@ -211,6 +215,7 @@ async function confirmWarehouseVoucher(id) {
 }
 
 async function deliverWarehouseVoucher(id) {
+    if (window.AccessLive?.can("WarehouseVoucher", "deliver") === false) return;
     await confirmAlert({
         icon: "question",
         confirmText: "بله، تحویل شود",
@@ -239,6 +244,7 @@ async function deliverWarehouseVoucher(id) {
 }
 
 const deleteWarehouseVoucher = async (id) => {
+    if (window.AccessLive?.can("WarehouseVoucher", "delete") === false) return;
     await deleteItem({
         url: `/Warehouse/DeleteWarehouseVoucher/${id}`,
         callback: refreshWarehouseVouchers,
