@@ -1,4 +1,5 @@
 ﻿@model IList<Contract>
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy Access
 @{
     Layout = null;
 }
@@ -30,7 +31,11 @@
             <div class="col-md-12" style="margin-top:15px; display:flex;justify-content:left;align-items:center">
                 <div style="display:flex;justify-content:space-between; width:30% ;align-items:center;">
                     <button style="   width:48%" class="mp buttonGreen buttonCusPartial " onclick="editContract('@item.Id')"><i class=" fa fa-eye "></i> </button>
-                    <button style="   width:48%" class="mp buttonGreen buttonCusPartial " onclick="delContract('@item.Id')"> <i class=" fa fa-trash"></i> </button>
+                    @if (await Access.AllowsRowAsync(item, "Delete", Context.RequestAborted)) {
+
+                    <button style="   width:48%" class="mp buttonGreen buttonCusPartial " data-document-permission="Contract.Delete" onclick="delContract('@item.Id')"> <i class=" fa fa-trash"></i> </button>
+
+                    }
                 </div>
             </div>
         </div>
