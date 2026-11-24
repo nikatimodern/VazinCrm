@@ -2662,6 +2662,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         item.IsInProduction = previous.IsInProduction;
                     else
                         return BadRequest("کالای انتخاب‌شده معتبر نیست.");
+                    if (!documentAccess.IsEnforced("ProductGroup")) continue;
                     if (item.ProductGroup.HasValue && canSelectGroup && groups.TryGetValue(item.ProductGroup.Value, out var group))
                         item.ProductGroupTxt = group.GroupName;
                     else if (!changedGroup && previous != null)

@@ -96,3 +96,10 @@ For any new or modified button, text action, tab, filter action or modal action 
 
 ### Onion Architecture quality gate
 For every backend, cross-layer or project-reference change, load [rule 34](.agents/skills/erp-clean-code/references/34-onion-architecture.md) and [architecture review](.agents/skills/erp-clean-code/checklists/architecture-review.md). Run the read-only `scripts/check-onion-architecture.py` where possible; it checks direct layer project references only. Inspect source-level dependencies, DI, repository contracts, CQRS dispatcher, and vertical slices separately. API/React migration requires CQRS; existing legacy violations do not authorize new ones. Do not claim architecture compliance from the project-reference check alone. See [quality tooling setup](docs/coding-standards/QUALITY-TOOLS.md) for installation and staged enforcement.
+
+## Access catalog entity acceptance
+- For each entity, identify its real direct and dependent operations, register its entity/model in the access catalog so it appears in the entity administration tab, and define only applicable action keys and ownership scopes.
+- Map grants to existing users through the actual legacy role/access rules, preserving explicit user overrides and recording discrepancies. Do not invent broader parent or write grants to make a feature appear functional.
+- Apply enforcement to controllers/actions, API, application handlers, SQL queries and indirect paths; mirror it in Razor, dynamic controls, shared selectors, forms and live access invalidation. Backend remains authoritative.
+- Supply an idempotent, scoped, preview-first UserConnection SQL registration/grant script and update the consolidated script. Report registration, actual database application, and verification separately.
+- Run build, coding and architecture checks plus relevant authorization/SQL/browser tests before declaring completion. Enable only reviewed flags, keep production configuration/main unchanged unless explicitly authorized, and record unverified items rather than marking them complete. Do not introduce CRUD workflows solely because unused catalog permission keys exist.

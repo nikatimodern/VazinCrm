@@ -13,6 +13,7 @@
     var canManageBankAccounts = User.IsAdmin() || User.IsManagingDirector() || User.IsFinancialAdmin() || User.IsFinancialExpert();
     var canViewProducts = await DocumentAccess.HasAsync("Product", "View", Context.RequestAborted);
     var canCreateProducts = canViewProducts && await DocumentAccess.HasAsync("Product", "Create", Context.RequestAborted);
+    var canViewProductGroups = canViewProducts && await DocumentAccess.HasAsync("ProductGroup", "View", Context.RequestAborted);
     var canViewBankAccounts = await DocumentAccess.HasViewAsync("BankAccount", Context.RequestAborted);
     var canCreateBankAccounts = canManageBankAccounts && await DocumentAccess.HasAsync("BankAccount", "Create", Context.RequestAborted);
 }
@@ -85,7 +86,7 @@
                     <tr>
                         <th style="display: none">id</th>
                         <th>عنوان</th>
-                        <th>عملیات</th>
+                        @if (canViewProductGroups) { <th>گروه کالا</th> }
                     </tr>
                     </thead>
                     <tbody>
@@ -407,25 +408,16 @@
                             visible: false,
                             searchable: false,
                         },
-                        {
-                            targets: 2,
-                            orderable: false,
-                        },
                     ],
 
                     columns: [
 
                         { data: "id", name: "Id", autoWidth: true },
                         { data: "title", name: "Title", autoWidth: true },
-                        {
-                            "render": function (data, type, row) {
-                                var _co = "<span class='d-flex align-items-center justify-content-center'>";
-
-                                _co += "</span>";
-                                return _co;
-
-                            },
-                        },
+                        ...(@(canViewProductGroups ? "true" : "false") ? [{
+                            data: "groupName", name: "GroupName", orderable: false, searchable: false,
+                            defaultContent: "—", render: $.fn.dataTable.render.text()
+                        }] : []),
                     ],
                     layout: {
                         bottomEnd: "info",

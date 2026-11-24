@@ -92,7 +92,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
 
         [CatalogPermission("Product", "View")]
-        public async Task<IActionResult> getAllProduct()
+        public async Task<IActionResult> getAllProduct(CancellationToken ct)
         {
             try
             {
@@ -141,11 +141,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     );
                 }
 
-                // DataTables sends -1 to request all matching rows.
-                var recordsFiltered = await dataF.CountAsync();
-                var data = pageSize == -1
-                    ? await dataF.Select(product => new { product.Id, product.Title }).ToListAsync()
-                    : await dataF.Skip(skip).Take(pageSize).Select(product => new { product.Id, product.Title }).ToListAsync();
+                // Group labels are catalog information, not part of the product-view grant.
+                var canViewGroups = await access.HasAsync("ProductGroup", "View", ct);
+                var recordsFiltered = await dataF.CountAsync(ct);
+                var page = pageSize == -1 ? dataF : dataF.Skip(skip).Take(pageSize);
+                var data = await page.Select(product => new
+                {
+                    product.Id,
+                    product.Title,
+                    GroupName = canViewGroups
+                        ? db.ProductGroups.Where(group => group.Id == product.GroupId)
+                            .Select(group => group.GroupName).FirstOrDefault()
+                        : null
+                }).ToListAsync(ct);
                 var jsonData = new { draw, recordsFiltered, recordsTotal, data };
                 return Ok(jsonData);
             }
