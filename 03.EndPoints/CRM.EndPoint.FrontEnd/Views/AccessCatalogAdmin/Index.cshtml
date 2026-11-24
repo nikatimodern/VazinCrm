@@ -3,6 +3,7 @@
 }
 <section id="accessCatalog" class="ac-page" dir="rtl">
     @Html.AntiForgeryToken()
+    <div class="ac-main-tab-bar">
     <nav class="ac-main-tabs" role="tablist" aria-label="بخش‌های مدیریت سطح دسترسی">
         <button type="button" id="acCatalogTab" data-main-tab="catalog" class="is-active"
                 role="tab" aria-controls="acCatalogPanel" aria-selected="true">انتیتی‌ها و دسترسی‌ها</button>
@@ -13,6 +14,8 @@
         <button type="button" id="acHistoryTab" data-main-tab="history"
                 role="tab" aria-controls="acHistoryPanel" aria-selected="false" tabindex="-1">تاریخچه و بازگردانی</button>
     </nav>
+        <p class="ac-user-save-status" data-user-subtitle role="status" aria-live="polite" hidden></p>
+    </div>
 
     <div id="acCatalogPanel" role="tabpanel" aria-labelledby="acCatalogTab">
     <div class="ac-layout">
@@ -158,10 +161,9 @@
             </aside>
             <section class="ac-panel ac-user-access-panel" aria-label="مجوزهای کاربر">
                 <div class="ac-panel-heading ac-role-detail-heading">
-                    <div>
+                    <div class="ac-user-heading-info">
                         <h2 data-user-title>دسترسی‌های کاربر</h2>
                         <p data-user-position>برای شروع یک کاربر را انتخاب کنید.</p>
-                        <p data-user-subtitle></p>
                     </div>
                     <div class="ac-toolbar-actions ac-user-action-buttons">
                         <button class="ac-btn ac-btn-muted" type="button" data-action="edit-user" disabled>
