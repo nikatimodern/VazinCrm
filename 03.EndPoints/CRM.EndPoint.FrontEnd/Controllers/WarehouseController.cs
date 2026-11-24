@@ -13,6 +13,8 @@ using CRM.EndPoint.FrontEnd.Models.Supply;
 using CRM.EndPoint.FrontEnd.Models.Warehouse;
 using CRM.EndPoint.FrontEnd.Services.Extensions;
 using CRM.EndPoint.FrontEnd.Services;
+using CRM.EndPoint.FrontEnd.Security;
+using System.Threading;
 using CRM.EndPoint.FrontEnd.Services.LogSystem;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
@@ -24,10 +26,31 @@ using Microsoft.EntityFrameworkCore;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Policy = "NotCustomerOnly")]
-public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService, IViewRenderService vrs, IWarehouseRepository warehouseRepository)
+public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManager, LogSystemService logSystemService, IViewRenderService vrs, IWarehouseRepository warehouseRepository, DocumentAccessPolicy access)
     : Controller {
     private bool CanManageWarehouses() =>
         User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin() || User.IsSalesAdmin();
+
+    private CancellationToken Ct => HttpContext.RequestAborted;
+    private Task<bool> Can(string entity, string action, Guid id) => access.CanAsync(entity, action, id, Ct);
+    private Task<bool> Has(string entity, string action) => access.HasAsync(entity, action, Ct);
+
+    private async Task<bool> CanVoucherProducts(Guid warehouseId, IEnumerable<Guid> ids)
+    {
+        var distinct = ids.Distinct().ToArray();
+        if (distinct.Length == 0 || !await Can("Warehouse", "View", warehouseId)) return false;
+        var visible = await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", Ct);
+        return await visible.CountAsync(p => distinct.Contains(p.Id) && p.WarehouseId == warehouseId, Ct) == distinct.Length;
+    }
+
+    private async Task<bool> CanVoucherAction(Guid id, string action)
+    {
+        if (!await Can("WarehouseVoucher", action, id)) return false;
+        var voucher = await db.WarehouseVouchers.AsNoTracking().FirstOrDefaultAsync(v => v.Id == id, Ct);
+        if (voucher == null) return false;
+        var ids = await db.WarehouseProductVouchers.AsNoTracking().Where(p => p.WarehouseVoucherId == id).Select(p => p.WarehouseProductId).ToListAsync(Ct);
+        return await CanVoucherProducts(voucher.WarehouseId, ids);
+    }
 
     private const string SystemWarehouseMessage = "عملیات دستی انبار اصلی فقط برای مدیر ارشد مجاز است.";
 
@@ -41,6 +64,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> Index()
     {
+        if (!await access.HasViewAsync("Warehouse", Ct)) return Forbid();
         var warehouses = await GetAllWarehouses();
         return View(warehouses);
     }
@@ -49,9 +73,10 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     {
         var isManager = User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin() || User.IsSalesAdmin();
 
-        var query = db.Warehouses.AsNoTracking();
+        var query = await access.ApplyAsync(db.Warehouses.AsNoTracking(), "View", Ct);
+        var products = await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", Ct);
 
-        if (!isManager)
+        if (!access.IsEnforced("Warehouse") && !isManager)
         {
             query = query.Where(x => x.WarehouseUsers.Any(u => u.UserId == User.GetUserId()));
         }
@@ -59,7 +84,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         var warehouses = await query
             .Select(x => new WarehouseDataVModel {
                 Warehouse = x,
-                WarehouseProductsCount = x.WarehouseProducts.Count,
+                WarehouseProductsCount = products.Count(p => p.WarehouseId == x.Id),
                 UserIds = x.WarehouseUsers.Select(x => x.UserId).ToList(),
             })
             .ToListAsync();
@@ -85,6 +110,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> GetAllWarehousesPartial()
     {
+        if (!await access.HasViewAsync("Warehouse", Ct)) return Forbid();
         var warehouses = await GetAllWarehouses();
         return PartialView(warehouses);
     }
@@ -94,6 +120,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouse([FromBody] WarehouseVModel model)
     {
         if (model == null) return BadRequest();
+        if (model.Id == Guid.Empty ? !await Has("Warehouse", "Create") : !await Can("Warehouse", "Edit", model.Id)) return Forbid();
+        if (model == null) return BadRequest();
         if (!CanManageWarehouses()) return Forbid();
         if (model.IsMain && !User.IsAdmin()) return Forbid();
 
@@ -102,8 +130,11 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             warehouse = await warehouseRepository.FindAsync(model.Id, HttpContext.RequestAborted);
             if (warehouse == null) return NotFound();
             if (!warehouse.CanManage(User.IsAdmin())) return Forbid();
+            if (access.IsEnforced("Warehouse") && !await Can("Warehouse", "ManageUsers", warehouse.Id) &&
+                !(warehouse.WarehouseUsers ?? []).Select(u => u.UserId).ToHashSet().SetEquals(model.UserIds ?? [])) return Forbid();
         }
 
+        if (access.IsEnforced("Warehouse") && model.Id == Guid.Empty && (model.UserIds?.Count ?? 0) > 0 && !await Has("Warehouse", "ManageUsers")) return Forbid();
         var user = await userManager.GetUserAsync(HttpContext.User);
         if (user == null) return Unauthorized();
 
@@ -141,6 +172,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> GetWarehouse(Guid id)
     {
+        if (!await Can("Warehouse", "View", id)) return Forbid();
         try
         {
             var item = await db.Warehouses.AsNoTracking()
@@ -167,6 +199,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouse(Guid id)
     {
+        if (!await Can("Warehouse", "Delete", id)) return Forbid();
+        if (access.IsEnforced("Warehouse") && (await db.WarehouseProducts.AnyAsync(p => p.WarehouseId == id, Ct) || await db.WarehouseVouchers.AnyAsync(v => v.WarehouseId == id, Ct))) return Conflict("انبار دارای کالا یا حواله است.");
         if (id == Guid.Empty) return BadRequest();
 
         if (!CanManageWarehouses()) return Forbid();
@@ -193,6 +227,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> GetWarehouseProduct(Guid id)
     {
+        if (!await Can("WarehouseProduct", "View", id)) return Forbid();
         try
         {
             var item = await db.WarehouseProducts.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
@@ -210,10 +245,13 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> GetWarehouseProductByFilteredIds([FromBody] GetAllBySelectedVModel model)
     {
+        if (model?.FilterIds == null) return BadRequest();
+        if (!await access.HasViewAsync("WarehouseProduct", Ct)) return Forbid();
+        foreach (var id in model.FilterIds.Distinct())
+            if (!await Can("WarehouseProduct", "View", id)) return Forbid();
         try
         {
-            var data = await db.WarehouseProducts
-                .AsNoTracking()
+            var data = await (await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", Ct))
                 .Where(f => model.FilterIds.Contains(f.Id))
                 .Select(f => new {
                     WarehouseProductId = f.Id,
@@ -243,6 +281,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> GetWarehouseProductsDt(Guid warehouseId)
     {
+        if (!await Can("Warehouse", "View", warehouseId) || !await access.HasViewAsync("WarehouseProduct", Ct)) return Forbid();
         if (warehouseId == Guid.Empty) return BadRequest();
         try
         {
@@ -255,8 +294,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
 //        var model = JsonConvert.DeserializeObject<FilterVModel>(Request.Form["model"].FirstOrDefault());
 
-            var query = db.WarehouseProducts
-                .AsNoTracking()
+            var query = (await access.ApplyAsync(db.WarehouseProducts.AsNoTracking(), "View", Ct))
                 .Where(f => f.WarehouseId == warehouseId)
                 .AsQueryable();
 
@@ -317,12 +355,16 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
                 })
                 .ToListAsync();
 
-            return Json(new {
-                draw,
-                recordsTotal,
-                recordsFiltered = recordsTotal,
-                data,
-            });
+            var permissions = new Dictionary<Guid, object>();
+            foreach (var row in data)
+                permissions[row.Id] = new {
+                    canEdit = await Can("WarehouseProduct", "Edit", row.Id),
+                    canDelete = await Can("WarehouseProduct", "Delete", row.Id),
+                    canHistory = await access.HasAnyAsync("WarehouseTransaction", "View", Ct),
+                    canReceive = await Has("WarehouseTransaction", "Create"),
+                    canIssue = await Has("WarehouseVoucher", "Create")
+                };
+            return Json(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, permissions });
         }
         catch (Exception e)
         {
@@ -334,6 +376,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> UpdateWarehouseProduct([FromBody] WarehouseProduct model)
     {
+        if (model == null) return BadRequest();
+        if (!await Can("WarehouseProduct", "Edit", model.Id) || !await Can("Warehouse", "View", model.WarehouseId)) return Forbid();
         if (model == null) return BadRequest();
         if (await IsManualWriteBlockedAsync(model.WarehouseId, [model.Id]))
             return BadRequest(SystemWarehouseMessage);
@@ -356,6 +400,23 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             if (oldData == null) return NotFound();
             if (oldData?.SupplyFactorItemId != null || oldData?.FactorItemId != null)
                 return BadRequest("محصول مرتبط با تخصیص فقط از فاکتور مربوط قابل ویرایش است.");
+            if (access.IsEnforced("WarehouseProduct"))
+            {
+                if (model.WarehouseId != oldData.WarehouseId) return BadRequest("تغییر انبار کالا مجاز نیست.");
+                model.UserCreatorID = oldData.UserCreatorID;
+                model.UserCreator = oldData.UserCreator;
+                model.CreateDate = oldData.CreateDate;
+                model.CreateDateTxt = oldData.CreateDateTxt;
+                model.IsDeleted = oldData.IsDeleted;
+                model.FactorItemId = oldData.FactorItemId;
+                model.SupplyFactorItemId = oldData.SupplyFactorItemId;
+                model.Warehouse = null;
+                model.Product = null;
+                model.FactorItem = null;
+                model.SupplyFactorItem = null;
+                model.Transactions = null;
+                model.WarehouseProductVouchers = null;
+            }
             await logSystemService.LogChange(oldData, model, LogActionEnum.ویرایش, user);
 
 
@@ -375,6 +436,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseProduct(Guid id)
     {
+        if (!await Can("WarehouseProduct", "Delete", id)) return Forbid();
         if (await IsManualWriteBlockedAsync(productIds: [id]))
             return BadRequest(SystemWarehouseMessage);
 
@@ -413,6 +475,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> GetWarehouseTransaction(Guid id)
     {
+        if (!await Can("WarehouseTransaction", "View", id)) return Forbid();
         try
         {
             var item = await db.WarehouseTransactions.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id);
@@ -429,6 +492,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> GetWarehouseTransactionsDt(Guid productId)
     {
+        if (!await Can("WarehouseProduct", "View", productId) || !await access.HasViewAsync("WarehouseTransaction", Ct)) return Forbid();
         var draw = Request.Form["draw"].FirstOrDefault();
         var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault() ?? "0");
         var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault() ?? "10");
@@ -437,8 +501,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         var sortDirection = Request.Form["order[0][dir]"].FirstOrDefault();
         var sortColumn = Request.Form[$"columns[{sortColumnIndex}][data]"].FirstOrDefault();
 
-        var query = db.WarehouseTransactions
-            .AsNoTracking()
+        var query = (await access.ApplyAsync(db.WarehouseTransactions.AsNoTracking(), "View", Ct))
             .Where(f => f.WarehouseProductId == productId)
             .AsQueryable();
 
@@ -472,14 +535,17 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             query = query.Skip(start).Take(length);
         }
 
-        var data = await query.ToListAsync();
-
-        return Json(new {
-            draw,
-            recordsTotal,
-            recordsFiltered = recordsTotal,
-            data,
-        });
+        var data = await query.ToListAsync(Ct);
+        var permissions = new Dictionary<Guid, object>();
+        foreach (var row in data)
+        {
+            var manual = !row.FactorItemId.HasValue && !row.SupplyFactorItemId.HasValue && !row.WarehouseVoucherId.HasValue;
+            permissions[row.Id] = new {
+                canEdit = manual && await Can("WarehouseTransaction", "Edit", row.Id),
+                canDelete = manual && await Can("WarehouseTransaction", "Delete", row.Id)
+            };
+        }
+        return Json(new { draw, recordsTotal, recordsFiltered = recordsTotal, data, permissions });
     }
 
     private async Task AddTransaction(WarehouseTransactionVModel model, AppUser user)
@@ -495,8 +561,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         if (!User.IsAdmin() && warehouseProduct.WarehouseId == SupplyAllocationRules.CirculationId)
             throw new InvalidOperationException("گردش این انبار به‌صورت خودکار از فاکتور تامین ثبت می‌شود.");
 
-/*        if (model.TransactionType == WarehouseTransactionTypeEnum.خروج)
-            await ValidateStock(warehouseProduct, model.Weight, model.Id);*/
+        if (access.IsEnforced("WarehouseTransaction") && model.TransactionType == WarehouseTransactionTypeEnum.خروج && !model.WarehouseVoucherId.HasValue)
+            await ValidateStock(warehouseProduct, model.Weight);
 
         var warehouseTransaction = new WarehouseTransaction {
             WarehouseProductId = warehouseProduct.Id,
@@ -566,6 +632,17 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> AddWarehouseTransaction([FromBody] WarehouseTransactionVModel model)
     {
         if (model == null) return BadRequest();
+        if (!await Has("WarehouseTransaction", "Create") || !await Can("Warehouse", "View", model.WarehouseId)) return Forbid();
+        if (access.IsEnforced("WarehouseTransaction"))
+        {
+            if (model.Id != Guid.Empty || model.WarehouseVoucherId.HasValue || !Enum.IsDefined(model.TransactionType)) return BadRequest();
+            if (model.WarehouseProductId.HasValue)
+            {
+                if (!await CanVoucherProducts(model.WarehouseId, [model.WarehouseProductId.Value])) return Forbid();
+            }
+            else if (!await Has("WarehouseProduct", "Create") || model.TransactionType != WarehouseTransactionTypeEnum.ورود) return Forbid();
+        }
+        if (model == null) return BadRequest();
         if (await IsManualWriteBlockedAsync(model.WarehouseId,
                 model.WarehouseProductId.HasValue ? [model.WarehouseProductId.Value] : [],
                 model.WarehouseVoucherId))
@@ -607,6 +684,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> UpdateWarehouseTransaction([FromBody] WarehouseTransaction model)
     {
         if (model == null) return BadRequest();
+        if (!await Can("WarehouseTransaction", "Edit", model.Id)) return Forbid();
+        if (model == null) return BadRequest();
         if (await IsManualWriteBlockedAsync(productIds: [model.WarehouseProductId],
                 voucherId: model.WarehouseVoucherId, transactionId: model.Id))
             return BadRequest(SystemWarehouseMessage);
@@ -618,6 +697,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
         {
             var data = await db.WarehouseTransactions.FirstOrDefaultAsync(x => x.Id == model.Id);
             if (data == null) return NotFound();
+            if (access.IsEnforced("WarehouseTransaction") && (data.WarehouseVoucherId.HasValue || model.WarehouseProductId != data.WarehouseProductId || model.TransactionType != data.TransactionType || model.WarehouseVoucherId != data.WarehouseVoucherId)) return BadRequest("تغییر نوع، کالا یا حواله تراکنش مجاز نیست.");
             if (data.SupplyFactorItemId != null || data.FactorItemId != null)
                 return BadRequest("تراکنش خودکار تخصیص فقط از فاکتور مربوط قابل اصلاح است.");
 
@@ -656,6 +736,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseTransaction(Guid id)
     {
+        if (!await Can("WarehouseTransaction", "Delete", id)) return Forbid();
         if (await IsManualWriteBlockedAsync(transactionId: id))
             return BadRequest(SystemWarehouseMessage);
 
@@ -668,6 +749,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
             if (warehouseTransaction == null)
                 return NotFound("رکوردی یافت نشد!");
+            if (access.IsEnforced("WarehouseTransaction") && warehouseTransaction.WarehouseVoucherId.HasValue) return BadRequest("تراکنش حواله قابل حذف مستقل نیست.");
             if (warehouseTransaction.SupplyFactorItemId != null || warehouseTransaction.FactorItemId != null)
                 return BadRequest("تراکنش خودکار تخصیص قابل حذف مستقیم نیست.");
 
@@ -705,6 +787,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> Voucher(Guid? warehouseId = null)
     {
+        if (!await access.HasViewAsync("WarehouseVoucher", Ct) || (warehouseId.HasValue && !await Can("Warehouse", "View", warehouseId.Value))) return Forbid();
         var data = await GetWarehouseVouchersAsync(model: new WarehouseVoucherListVModel(), warehouseId: warehouseId);
         return View(data);
     }
@@ -712,6 +795,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> GetWarehouseVouchers([FromBody] WarehouseVoucherListVModel model, [FromQuery] Guid? warehouseId = null)
     {
+        if (!await access.HasViewAsync("WarehouseVoucher", Ct) || (warehouseId.HasValue && !await Can("Warehouse", "View", warehouseId.Value))) return Forbid();
         var data = await GetWarehouseVouchersAsync(model, warehouseId: warehouseId);
 
         var html = await vrs.RenderToStringAsync("_WarehouseVouchers", data);
@@ -721,6 +805,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpGet]
     public async Task<IActionResult> GetLastWarehouseVouchers(Guid warehouseId)
     {
+        if (!await access.HasViewAsync("WarehouseVoucher", Ct) || !await Can("Warehouse", "View", warehouseId)) return Forbid();
         var model = new WarehouseVoucherListVModel {
             Page = 1,
             PageSize = 6,
@@ -733,8 +818,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     private async Task<WarehouseVoucherListVModel> GetWarehouseVouchersAsync(WarehouseVoucherListVModel model, Guid? warehouseId = null)
     {
-        var query = db.WarehouseVouchers
-            .AsNoTracking()
+        var query = (await access.ApplyAsync(db.WarehouseVouchers.AsNoTracking(), "View", Ct))
             .Include(x => x.Warehouse)
             .Include(x => x.WarehouseProductVouchers)
             .ThenInclude(x => x.WarehouseProduct)
@@ -742,7 +826,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var isManager = User.IsAdmin() || User.IsManagingDirector() || User.IsTaminAdmin() || User.IsSalesAdmin();
 
-        if (!isManager)
+        if (!access.IsEnforced("WarehouseVoucher") && !isManager)
         {
             var userId = User.GetUserId();
 
@@ -811,6 +895,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpGet]
     public async Task<IActionResult> GetWarehouseVoucher(Guid id)
     {
+        if (!await CanVoucherAction(id, "View")) return Forbid();
         if (id == Guid.Empty) return BadRequest();
 
         var warehouseProductVouchers = await db.WarehouseProductVouchers
@@ -842,6 +927,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
     public async Task<IActionResult> VoucherDetail(Guid id)
     {
+        if (!await CanVoucherAction(id, "View")) return Forbid();
         if (id == Guid.Empty) return BadRequest();
 
         var voucher = await db.WarehouseVouchers
@@ -858,6 +944,9 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> AddWarehouseVoucher([FromBody] WarehouseVoucher model)
     {
+        if (model == null) return BadRequest();
+        if (!await Has("WarehouseVoucher", "Create")) return Forbid();
+        if (access.IsEnforced("WarehouseVoucher") && model.Id != Guid.Empty) return BadRequest();
         if (model == null) return BadRequest();
         if (await IsManualWriteBlockedAsync(model.WarehouseId,
                 model.WarehouseProductVouchers?.Select(p => p.WarehouseProductId).Distinct().ToArray() ?? []))
@@ -878,7 +967,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         var warehouseProducts = (await db.WarehouseProducts.Where(x => productIds.Contains(x.Id)).ToListAsync()).ToDictionary(x => x.Id);
 
-        if (warehouseProducts.Count == 0)
+        if (warehouseProducts.Count != productIds.Count)
             return NotFound("محصول مورد نظر یافت نشد.");
 
         var warehouseIds = warehouseProducts.Values.Select(x => x.WarehouseId).Distinct().ToList();
@@ -886,6 +975,16 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
             return BadRequest("محصولات حواله باید متعلق به یک انبار باشند.");
 
         var warehouseId = warehouseIds[0];
+        if (access.IsEnforced("WarehouseVoucher"))
+        {
+            if (model.WarehouseId != Guid.Empty && model.WarehouseId != warehouseId) return BadRequest();
+            if (!await CanVoucherProducts(warehouseId, productIds)) return Forbid();
+            if (model.WarehouseProductVouchers.Count != productIds.Count) return BadRequest("کالای تکراری در حواله مجاز نیست.");
+            model = new WarehouseVoucher {
+                WarehouseId = warehouseId,
+                WarehouseProductVouchers = model.WarehouseProductVouchers.Select(p => new WarehouseProductVoucher { WarehouseProductId = p.WarehouseProductId, Weight = p.Weight }).ToList()
+            };
+        }
         if (!User.IsAdmin() && warehouseId == SupplyAllocationRules.CirculationId)
             return BadRequest("خروج انبار گردشی از طریق تخصیص فاکتور تامین ثبت می‌شود.");
 
@@ -929,6 +1028,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     public async Task<IActionResult> EditWarehouseVoucher([FromBody] WarehouseVoucher model)
     {
         if (model == null) return BadRequest();
+        if (!await CanVoucherAction(model.Id, "Edit")) return Forbid();
+        if (model == null) return BadRequest();
         if (await IsManualWriteBlockedAsync(model.WarehouseId,
                 model.WarehouseProductVouchers?.Select(p => p.WarehouseProductId).Distinct().ToArray() ?? [], model.Id))
             return BadRequest(SystemWarehouseMessage);
@@ -957,6 +1058,15 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
 
         if (voucher.Status == WarehouseVoucherStatusEnum.تحویل_شده)
             return BadRequest("این حواله در وضعیت قابل ویرایش نیست.");
+        if (access.IsEnforced("WarehouseVoucher"))
+        {
+            var ids = model.WarehouseProductVouchers.Select(p => p.WarehouseProductId).ToArray();
+            if (ids.Distinct().Count() != ids.Length || (model.WarehouseId != Guid.Empty && model.WarehouseId != voucher.WarehouseId)) return BadRequest();
+            if (!await CanVoucherProducts(voucher.WarehouseId, ids)) return Forbid();
+            model.WarehouseProductVouchers = model.WarehouseProductVouchers.Select(p => new WarehouseProductVoucher {
+                WarehouseVoucherId = voucher.Id, WarehouseProductId = p.WarehouseProductId, Weight = p.Weight
+            }).ToList();
+        }
 
         await using var transaction = await db.Database.BeginTransactionAsync();
         try
@@ -1002,6 +1112,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> ConfirmWarehouseVoucher(Guid id)
     {
+        if (!await CanVoucherAction(id, "Approve")) return Forbid();
         if (await IsManualWriteBlockedAsync(voucherId: id))
             return BadRequest(SystemWarehouseMessage);
 
@@ -1031,6 +1142,8 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpPost]
     public async Task<IActionResult> DeliverWarehouseVoucher(Guid id)
     {
+        if (!await CanVoucherAction(id, "Deliver")) return Forbid();
+        if (!await Has("WarehouseTransaction", "Create")) return Forbid();
         if (await IsManualWriteBlockedAsync(voucherId: id))
             return BadRequest(SystemWarehouseMessage);
 
@@ -1102,6 +1215,7 @@ public class WarehouseController(CRMContextDb db, UserManager<AppUser> userManag
     [HttpDelete]
     public async Task<IActionResult> DeleteWarehouseVoucher(Guid id)
     {
+        if (!await CanVoucherAction(id, "Delete")) return Forbid();
         if (await IsManualWriteBlockedAsync(voucherId: id))
             return BadRequest(SystemWarehouseMessage);
 
