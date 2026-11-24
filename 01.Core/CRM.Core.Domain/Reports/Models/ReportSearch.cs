@@ -6,4 +6,4 @@ public sealed record ReportSearch(
     Guid? ResultCallId = null, Guid? FinalResultCallId = null, Guid? ReasonCancelId = null,
     bool FilterCustomer = false, Guid? CustomerId = null,
     bool FilterUser = false, string? UserId = null,
-    bool FilterDate = false, DateTime? FromDate = null, DateTime? ToDate = null);
+    bool FilterDate = false, DateTime? FromDate = null, DateTime? ToDate = null, bool ForExport = false);
