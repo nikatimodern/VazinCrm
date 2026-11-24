@@ -18,6 +18,10 @@ using CRM.Core.Domain.Checks.Entities;
 using CRM.Core.Domain.Cashes.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
+using CRM.Core.Domain.Contracts.Entities;
+using CRM.Core.Domain.Carizos.Entities;
+using CRM.Core.Domain.Reports.Entities;
+using CRM.Core.Domain.CallRecordings.Entities;
 using CRM.Framework.Domain;
 using CRM.Infrastructures.Sql;
 using Generics.Infrastructures.Sql;
@@ -232,6 +236,20 @@ public sealed class DocumentAccessPolicy(
         if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
         var allowed = owners.AllowedOwnerIds;
         var excluded = owners.ExcludedOwnerIds;
+        if (typeof(T) == typeof(Carizo))
+        {
+            var rows = (IQueryable<Carizo>)(object)query;
+            if (allowed != null) rows = rows.Where(x => allowed.Contains(x.AssignUserId));
+            if (excluded.Length > 0) rows = rows.Where(x => !excluded.Contains(x.AssignUserId));
+            return (IQueryable<T>)(object)rows;
+        }
+        if (typeof(T) == typeof(CallRecording))
+        {
+            var rows = (IQueryable<CallRecording>)(object)query;
+            if (allowed != null) rows = rows.Where(x => allowed.Contains(x.DestinationUserId) || x.Participants.Any(p => allowed.Contains(p.UserId)));
+            if (excluded.Length > 0) rows = rows.Where(x => !excluded.Contains(x.DestinationUserId) && !x.Participants.Any(p => excluded.Contains(p.UserId)));
+            return (IQueryable<T>)(object)rows;
+        }
         if (typeof(T) == typeof(Cashier))
         {
             var rows = (IQueryable<Cashier>)(object)query;
@@ -288,6 +306,8 @@ public sealed class DocumentAccessPolicy(
         if (!IsEnforced(entity)) return true;
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
         if (WarehouseEnforced && IsWarehouseEntity(entity))
+            return await CanAsync(entity, action, row.Id, ct);
+        if (row is Carizo || row is CallRecording)
             return await CanAsync(entity, action, row.Id, ct);
         if (row is Cashier cashier)
         {
@@ -348,6 +368,10 @@ public sealed class DocumentAccessPolicy(
             "WarehouseProduct" => await CanRowAsync(db.WarehouseProducts.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseTransaction" => await CanRowAsync(db.WarehouseTransactions.AsNoTracking().Where(x => x.Id == id), action, ct),
             "WarehouseVoucher" => await CanRowAsync(db.WarehouseVouchers.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Contract" => await CanRowAsync(db.Contracts.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Carizo" => await CanRowAsync(db.Carizos.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "Report" => await CanRowAsync(db.Reports.AsNoTracking().Where(x => x.Id == id), action, ct),
+            "CallRecording" => await CanRowAsync(db.CallRecordings.AsNoTracking().Where(x => x.Id == id), action, ct),
             _ => false
         };
     }
