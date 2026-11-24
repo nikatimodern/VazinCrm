@@ -6,6 +6,7 @@ using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.DeactivateTaxMemory;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxProducts;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxReport;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
@@ -72,6 +73,8 @@ internal static class TaxationRegistration
             EnqueueTaxInvoiceBatchCommandHandler>();
         services.AddScoped<ITaxationRepository, TaxationRepository>();
         services.AddScoped<ITaxInvoiceListing, TaxInvoiceListing>();
+        services.AddScoped<ITaxReportRepository, TaxReportRepository>();
+        services.AddScoped<IQueryHandler<GetTaxReportQuery, TaxReportData>, GetTaxReportQueryHandler>();
         services.AddScoped<IQueryHandler<ListTaxInvoicesQuery, TaxInvoicePage>, ListTaxInvoicesQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaxDispatchQuery, TaxDispatchDetails>, GetTaxDispatchQueryHandler>();
         services.AddScoped<ICommandHandler<SaveTaxMemoryCommand, Guid>, SaveTaxMemoryCommandHandler>();

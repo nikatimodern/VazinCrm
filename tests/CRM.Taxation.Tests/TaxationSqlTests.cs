@@ -8,6 +8,7 @@ using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.SetTaxProductMapping;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxProducts;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxReport;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -702,6 +703,48 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         var stored = await db.TaxPaymentDispatches.AsNoTracking().SingleAsync();
         Assert.StartsWith("test:", stored.ProtectedResponse);
         Assert.Equal(state, await payments.GetStateAsync(id, Ct));
+    }
+
+    [TaxationSqlFact]
+    public async Task ReportsSeparateEnvironmentsAndCountFilteredDocumentsAndPayments()
+    {
+        await using var db = Open();
+        var invoice = await SetupReferenceAsync(db, "AWAITING_REACTION");
+        await ReferenceHandler(db).HandleAsync(new(invoice.Id, "tester",
+            new(null, TaxDispatchKind.Cancellation, 2, Filing().IssuedAt, null, false,
+                TaxCancellationReason.IncorrectTransactionDate)), Ct);
+        var exportFactor = await AddCandidateAsync(db, invoice.FactorId, 1, null);
+        await db.Factors.Where(x => x.Id == exportFactor).ExecuteUpdateAsync(s => s.SetProperty(x => x.Export, true), Ct);
+        var paidAt = Filing().IssuedAt.AddMinutes(1);
+        var receipt = new Accountancy
+        {
+            Id = Guid.NewGuid(), fid = invoice.FactorId, InvoiceType = InvoiceTypeEnum.فاکتور,
+            AccType = AcEnum.واریزی, Status = AccStatusEnum.تایید_شده, PayType = PayTypeEnum.نقدی,
+            CurrencyType = CurrencyTypeEnum.ریال, date = paidAt.Date, credit = 40
+        };
+        db.Accountancies.Add(receipt);
+        await db.SaveChangesAsync(Ct);
+        await new EnqueueTaxPaymentCommandHandler(new TaxPaymentRepository(db, protection), TimeProvider.System).HandleAsync(
+            new(invoice.Id, "tester", new(receipt.Id, TaxReceiptMethod.Transfer, paidAt, "report-1", null)), Ct);
+
+        var query = new GetTaxReportQueryHandler(new TaxReportRepository(db));
+        var filter = new TaxReportFilter(DateTime.Today, DateTime.Today, "", null, null, null, TaxReportScope.Local);
+        var local = await query.HandleAsync(new(filter), Ct);
+        Assert.Equal(TaxReportStatus.NeedsData, Assert.Single(local.Rows).Status);
+        Assert.Equal(0, local.Acknowledged);
+        Assert.Equal(0, local.Payments);
+
+        var sandboxFilter = filter with { Scope = TaxReportScope.Sandbox, Customer = "Original buyer", MemoryId = invoice.MemoryId };
+        var sandbox = await query.HandleAsync(new(sandboxFilter), Ct);
+        Assert.Equal(2, sandbox.Total);
+        Assert.Equal(1, sandbox.Acknowledged);
+        Assert.Equal(1, sandbox.References);
+        Assert.Equal(1, sandbox.Payments);
+        Assert.Contains(sandbox.Statuses, x => x is { Status: TaxReportStatus.Ready, Count: 1 });
+        var accepted = await query.HandleAsync(new(sandboxFilter with { Kind = TaxDispatchKind.Original,
+            Status = TaxReportStatus.Accepted }, Export: true), Ct);
+        Assert.Equal(invoice.TaxId, Assert.Single(accepted.Rows).TaxId);
+        Assert.Empty((await query.HandleAsync(new(filter with { Scope = TaxReportScope.Production }), Ct)).Rows);
     }
 
     [TaxationSqlFact]

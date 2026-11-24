@@ -123,3 +123,27 @@
 .taxation-page [data-action-message]:empty { display: none; }
 .taxation-row-errors td { color: var(--tax-danger); background: var(--tax-danger-light); }
 .taxation-row-errors ul { margin-block: 0; }
+
+.taxation-report-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: .5rem;
+    margin-block-end: .65rem;
+}
+
+.taxation-report-card {
+    display: grid;
+    gap: .25rem;
+    align-content: start;
+    padding: .55rem .65rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .5rem;
+    background: var(--tax-surface);
+    color: var(--tax-primary);
+}
+
+.taxation-report-card strong { font-size: 1.15rem; }
+.taxation-report-card meter { inline-size: 100%; block-size: .5rem; }
+.taxation-report-card[data-report-status="Unknown"],
+.taxation-report-card[data-report-status="Rejected"],
+.taxation-report-card[data-report-status="NeedsData"] { color: var(--tax-danger); }
