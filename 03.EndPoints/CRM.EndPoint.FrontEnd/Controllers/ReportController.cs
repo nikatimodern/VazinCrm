@@ -16,15 +16,20 @@ using CRM.Core.Domain.Reports.Models;
 using CRM.EndPoint.FrontEnd.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CRM.EndPoint.FrontEnd.Security;
 namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
-public class ReportController(ICqrsDispatcher requests) : Controller
+public class ReportController(ICqrsDispatcher requests, DocumentAccessPolicy access) : Controller
 {
-    public async Task<IActionResult> Index(CancellationToken cancellationToken) =>
-        View(await requests.QueryAsync(new GetReportBaseItemsQuery(), cancellationToken));
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    {
+        if (!await access.HasViewAsync("Report", cancellationToken)) return Forbid();
+        return View(await requests.QueryAsync(new GetReportBaseItemsQuery(), cancellationToken));
+    }
 
     public async Task<IActionResult> GetBaseItemsReport(CancellationToken cancellationToken)
     {
+        if (!await access.HasViewAsync("Report", cancellationToken)) return Forbid();
         try { return Ok(await requests.QueryAsync(new GetReportBaseItemsQuery(), cancellationToken)); }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch { return BadRequest(); }
@@ -34,6 +39,7 @@ public class ReportController(ICqrsDispatcher requests) : Controller
     [Authorize]
     public async Task<IActionResult> ExportExcelReport([FromBody] ReportFilterVModel model, CancellationToken cancellationToken)
     {
+        if (!await access.HasViewAsync("Report", cancellationToken) || !await access.HasAnyAsync("Report", "Export", cancellationToken)) return Forbid();
         try
         {
             var file = await requests.QueryAsync(new ExportReportsQuery(model.ToReportSearch()), cancellationToken);
@@ -45,6 +51,7 @@ public class ReportController(ICqrsDispatcher requests) : Controller
 
     public async Task<IActionResult> DelReport(Guid id, CancellationToken cancellationToken)
     {
+        if (!await access.CanAsync("Report", "Delete", id, cancellationToken)) return Forbid();
         try
         {
             var result = await requests.CommandAsync(new DeleteReportCommand(id), cancellationToken);
@@ -56,18 +63,23 @@ public class ReportController(ICqrsDispatcher requests) : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetReport(Guid Id, CancellationToken cancellationToken) =>
-        Ok(await requests.QueryAsync(new GetReportQuery(Id), cancellationToken));
+    public async Task<IActionResult> GetReport(Guid Id, CancellationToken cancellationToken)
+    {
+        if (!await access.CanAsync("Report", "View", Id, cancellationToken)) return Forbid();
+        return Ok(await requests.QueryAsync(new GetReportQuery(Id), cancellationToken));
+    }
 
     [HttpPost]
     public async Task<IActionResult> GetAllReportPartial([FromBody] ReportFilterVModel model, [FromQuery] Guid? dealId = null, CancellationToken cancellationToken = default)
     {
+        if (!await access.HasViewAsync("Report", cancellationToken)) return Forbid();
         var result = await requests.QueryAsync(new GetReportPartialQuery(dealId.HasValue ? new ReportSearch() : model.ToReportSearch(), dealId), cancellationToken);
         return Ok(new { count = result.Count, html = result.Html });
     }
 
     public async Task<IActionResult> GetCallReport(string mobileNumber, CancellationToken cancellationToken)
     {
+        if (!await access.HasViewAsync("Report", cancellationToken) || !await access.HasViewAsync("CallRecording", cancellationToken)) return Forbid();
         var result = await requests.QueryAsync(new GetCallReportsQuery(mobileNumber), cancellationToken);
         return Ok(new { count = result.Count, html = result.Html });
     }
@@ -75,6 +87,10 @@ public class ReportController(ICqrsDispatcher requests) : Controller
     [HttpPost]
     public async Task<IActionResult> AddReport(Report model, CancellationToken cancellationToken)
     {
+        if (model == null) return BadRequest();
+        if (model.Id == Guid.Empty ? !await access.HasAsync("Report", "Create", cancellationToken) :
+            !await access.CanAsync("Report", "Edit", model.Id, cancellationToken)) return Forbid();
+        if (model.CallRecordingId.HasValue && !await access.CanAsync("CallRecording", "View", model.CallRecordingId.Value, cancellationToken)) return Forbid();
         try
         {
             var result = await requests.CommandAsync(new SaveReportCommand(model), cancellationToken);
@@ -90,6 +106,7 @@ public class ReportController(ICqrsDispatcher requests) : Controller
     [HttpGet]
     public async Task<IActionResult> GetCallAudio(Guid callId, CancellationToken cancellationToken)
     {
+        if (!await access.CanAsync("CallRecording", "Listen", callId, cancellationToken)) return Forbid();
         var file = await requests.QueryAsync(new GetCallAudioQuery(callId), cancellationToken);
         return file is null ? NotFound("رکوردی یافت نشد!") : File(file.Stream, "audio/wav", file.FileName);
     }
