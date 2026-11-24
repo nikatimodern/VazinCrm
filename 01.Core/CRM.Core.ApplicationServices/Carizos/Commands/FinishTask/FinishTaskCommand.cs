@@ -16,9 +16,19 @@ public sealed class FinishTaskCommandHandler(ICarizoRepository repository, Curre
     public async Task<object> HandleAsync(FinishTaskCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "ChangeStatus", ct)) return 403;
         var user = (await actor.GetAsync(ct)).User;
         var oldTa = await repository.GetAsync(id, false, ct);
         var Ta = await repository.GetAsync(id, true, ct);
+        if (Ta == null) return 404;
+        if (Ta.TaskType != TaskTypeEnum.تکی)
+        {
+            var parent = await repository.GetAsync(Ta.ShareTaskId, false, ct);
+            if (parent == null || parent.ShareTaskId != parent.Id ||
+                (parent.UserCreatorID != user.Id && (parent.TaskUsers == null ||
+                 !parent.TaskUsers.Any(member => !member.IsDeleted && member.UserId.ToString() == user.Id))))
+                return 403;
+        }
         if (Ta.TaskType == TaskTypeEnum.تکی)
         {
             Ta.TaskStatus = true;
@@ -62,7 +72,8 @@ public sealed class FinishTaskCommandHandler(ICarizoRepository repository, Curre
                 item.CompleteTaskUserId = user.Id;
                 if (item.TaskUsers.Any()) //کسی که تسک یوزر داره پرند هست و سازنده می باشد
                 {
-                    item.TaskUsers.Where(f => f.UserId == Guid.Parse(user.Id)).FirstOrDefault().completed = true;
+                    var member = item.TaskUsers.FirstOrDefault(f => !f.IsDeleted && f.UserId.ToString() == user.Id);
+                    if (member != null) member.completed = true;
                 }
             }
 

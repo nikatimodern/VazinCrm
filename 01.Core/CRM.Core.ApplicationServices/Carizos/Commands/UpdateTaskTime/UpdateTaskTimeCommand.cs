@@ -16,12 +16,14 @@ public sealed class UpdateTaskTimeCommandHandler(ICarizoRepository repository, C
     public async Task<int> HandleAsync(UpdateTaskTimeCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "Edit", ct)) return 403;
         var _Time = request._Time;
         try
         {
             var _user = (await actor.GetAsync(ct)).User;
             var oldData = await repository.GetAsync(id, false, ct);
             var data = await repository.GetAsync(id, true, ct);
+        if (data == null) return 404;
             if (data.Date == string.Empty)
             {
                 data.Date = dates.PersianToday();

@@ -16,8 +16,11 @@ public sealed class TaskToggleCommandHandler(ICarizoRepository repository, ICari
     public async Task<int> HandleAsync(TaskToggleCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "ChangeStatus", ct)) return 403;
         var btnC = request.BtnC;
+        if (btnC is not (1 or 2)) return 400;
         var data = await repository.GetAsync(id, true, ct);
+        if (data == null) return 404;
         var rem = data.Remind;
         var dismis = data.RemindDismiss;
         if (dismis == true && rem == false && btnC == 1)

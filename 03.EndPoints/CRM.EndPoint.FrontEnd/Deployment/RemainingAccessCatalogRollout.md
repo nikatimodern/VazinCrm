@@ -122,3 +122,7 @@ Report CQRS update/delete now intersects visible report and action scopes; repor
 ## Chat / Email follow-up
 
 Chat mutations and email detail/mark-read POST now use antiforgery. Chat UI uses action-specific grants and reloads on permission invalidation; attachment uploads accept only fresh whitelisted files and deletion is soft. Recipient Chat.View is checked before chat push and reminder delivery. Email returns actual seen state and retains sender/recipient isolation. Shared counters, queued notifications, other callers, browser/runtime compatibility and linked records remain to review. Contact is a separate entity with Customer/Agent type and EntityId; no standalone Contact CRUD was identified in the reviewed files. No flags enabled and no final SQL handoff yet.
+
+## Carizo status and effects
+
+All seven remaining manual command handlers recheck action scope. Shared completion/uncompletion validates the persisted root and current actor membership before modifying group rows; normal assigned-user group side effects are preserved, while arbitrary group mutation is denied. Refresh broadcasts no longer include task IDs; notification content is generic under enforcement, and legacy push details are suppressed until queued-recipient authorization is implemented. Actual browser behavior and shared-task lifecycle tests remain pending.

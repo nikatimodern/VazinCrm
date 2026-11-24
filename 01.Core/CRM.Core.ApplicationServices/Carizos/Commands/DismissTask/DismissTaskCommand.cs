@@ -16,6 +16,7 @@ public sealed class DismissTaskCommandHandler(ICarizoRepository repository, ICar
     public async Task<int> HandleAsync(DismissTaskCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "ChangeStatus", ct)) return 403;
         var data = await repository.GetAsync(id, true, ct);
         if (data != null)
         {

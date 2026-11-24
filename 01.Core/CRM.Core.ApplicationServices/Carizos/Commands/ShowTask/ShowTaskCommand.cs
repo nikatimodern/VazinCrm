@@ -16,7 +16,9 @@ public sealed class ShowTaskCommandHandler(ICarizoRepository repository, ICarizo
     public async Task<int> HandleAsync(ShowTaskCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "ChangeStatus", ct)) return 403;
         var data = await repository.GetAsync(id, true, ct);
+        if (data == null) return 404;
         data.Remind = false;
         data.RemindDismiss = true;
         await repository.SaveAsync(ct);

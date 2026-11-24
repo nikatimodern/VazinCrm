@@ -1,3 +1,6 @@
+using CRM.Core.Domain.AccessCatalog.Repositories;
+using CRM.Core.Domain.AccessCatalog.Entities;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -13,12 +16,25 @@ using CRM.EndPoint.FrontEnd.Services.SignalR;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CRM.EndPoint.FrontEnd.Services.Carizos;
-public sealed class CarizoEffects(IHubContext<TaskHub> hub, IPushQueue push, IViewRenderService views) : ICarizoEffects
+public sealed class CarizoEffects(IHubContext<TaskHub> hub, IPushQueue push, IViewRenderService views, IAccessScopeService scopes, IConfiguration configuration) : ICarizoEffects
 {
-    public Task RefreshAsync(CancellationToken ct, Guid? taskId = null) => taskId.HasValue ? hub.Clients.All.SendAsync("TaskChanged", taskId.Value, ct) : hub.Clients.All.SendAsync("RefreshTasks", ct);
+    public Task RefreshAsync(CancellationToken ct, Guid? taskId = null) => hub.Clients.All.SendAsync("RefreshTasks", ct);
     public Task<string> RenderCardsAsync(List<CRM.Core.Domain.Carizos.Entities.Carizo> tasks, AppUser user, int type, int location, CancellationToken ct) => views.RenderToStringAsync("GetAllTask", new CarizoViewModel { CurrentUser = user, Data = tasks, _Type = type, loc = location });
-    public Task NotifyAsync(string userId, string message, CancellationToken ct) => hub.Clients.User(userId).SendAsync("NotifTask", message, ct);
-    public void Push(string userId, string title, string body, string tag) => push.Enqueue(new PushQueueItem { UserId = userId, Title = title, Body = body, Tag = tag, Url = "/Carizo/Index" });
+    public async Task NotifyAsync(string userId, string message, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) return;
+        if (configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions") &&
+            await scopes.GetEffectiveScopeAsync(userId, "Carizo.View", ct) is not (AccessScopes.Own or AccessScopes.All or AccessScopes.SelectedUsers or AccessScopes.AllExceptSelectedUsers)) return;
+        // A generic notification avoids exposing task text before row-level access is rechecked.
+        await hub.Clients.User(userId).SendAsync("NotifTask",
+            configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions") ? "فعالیت کاریز شما تغییر کرد." : message, ct);
+    }
+    public void Push(string userId, string title, string body, string tag)
+    {
+        // Queue payloads cannot carry task details past a later permission revocation.
+        if (configuration.GetValue<bool>("AccessCatalog:EnforceCarizoPermissions")) return;
+        push.Enqueue(new PushQueueItem { UserId = userId, Title = title, Body = body, Tag = tag, Url = "/Carizo/Index" });
+    }
     public async Task<object> RenderAsync(List<CRM.Core.Domain.Carizos.Entities.Carizo> tasks, AppUser user, int type, int location, bool reminders, CancellationToken ct) => new
     {
         count = tasks.Count,

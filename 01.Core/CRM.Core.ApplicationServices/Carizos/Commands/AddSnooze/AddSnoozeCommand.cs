@@ -16,9 +16,11 @@ public sealed class AddSnoozeCommandHandler(ICarizoRepository repository, ICariz
     public async Task<int> HandleAsync(AddSnoozeCommand request, CancellationToken ct)
     {
         var id = request.Id;
+        if (!await repository.CanAccessAsync(id, "ChangeStatus", ct)) return 403;
         try
         {
             var data = await repository.GetAsync(id, true, ct);
+        if (data == null) return 404;
             data.RemindDismiss = false;
             data.Remind = true;
             data.DateMiladi = DateTime.Now.AddMinutes(10);
