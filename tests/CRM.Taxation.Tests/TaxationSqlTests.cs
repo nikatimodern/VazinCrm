@@ -331,6 +331,47 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.StartsWith("test:", stored.ProtectedWorkFolderEvidence);
     }
 
+    [TaxationSqlFact]
+    public async Task FailedReceiptWriteRecoversByInquiryWithoutRepeatingPost()
+    {
+        await using var db = Open();
+        var id = await QueueSubmissionAsync(db);
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TRIGGER TaxTestRejectAcknowledgement ON TaxDispatches AFTER UPDATE AS
+            BEGIN
+                IF UPDATE(ProtectedAcknowledgement) THROW 50001, 'Mock receipt write failure', 1;
+            END
+            """);
+        var gateway = new TestGateway();
+        var queue = new TaxDispatchQueue(db, protection);
+        var repository = new TaxSubmissionRepository(db, protection);
+        var submission = new SubmitTaxInvoiceCommandHandler(repository, queue, new TestBindings(), gateway, TimeProvider.System);
+        var command = new SubmitTaxInvoiceCommand(id, Filing());
+        var unknown = await submission.HandleAsync(command, Ct);
+        Assert.Equal(TaxDispatchStatus.Unknown, unknown.Status);
+        Assert.NotNull(unknown.AttemptId);
+        Assert.Null(unknown.ReferenceNumber);
+        Assert.Equal(unknown, await submission.HandleAsync(command, Ct));
+
+        await using var restarted = Open();
+        var restoredQueue = new TaxDispatchQueue(restarted, protection);
+        var inquiry = new InquireTaxSubmissionCommandHandler(new TaxSubmissionRepository(restarted, protection), restoredQueue, gateway);
+        Assert.Equal(unknown, await inquiry.HandleAsync(new(id), Ct));
+        Assert.Equal(unknown, await inquiry.HandleAsync(new(id), Ct));
+        Assert.Equal(unknown.AttemptId, gateway.InquiredAttempt);
+        gateway.Result = new(gateway.Reference, "IN_PROGRESS", """{"status":"IN_PROGRESS"}""");
+        Assert.Equal(TaxDispatchStatus.Submitted, (await inquiry.HandleAsync(new(id), Ct)).Status);
+        gateway.Result = new(gateway.Reference, "TIMEOUT", """{"status":"TIMEOUT"}""");
+        Assert.Equal(TaxDispatchStatus.Submitted, (await inquiry.HandleAsync(new(id), Ct)).Status);
+        gateway.Result = new(gateway.Reference, "SUCCESS", """{"status":"SUCCESS","sign":"mock"}""");
+        var accepted = await inquiry.HandleAsync(new(id), Ct);
+        Assert.Equal(TaxDispatchStatus.Accepted, accepted.Status);
+        Assert.Equal(gateway.Reference, accepted.ReferenceNumber);
+        gateway.Result = new(gateway.Reference, "FAILED", """{"status":"FAILED"}""");
+        Assert.Equal(accepted, await inquiry.HandleAsync(new(id), Ct));
+        Assert.Equal(1, gateway.Sends);
+    }
+
     private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)
     {
         var (factor, _) = await SeedAsync(db, FactorStatus.تایید_شده);

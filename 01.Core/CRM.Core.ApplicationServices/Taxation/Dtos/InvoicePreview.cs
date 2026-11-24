@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CRM.Core.Domain.Factors;
+using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
 
 namespace CRM.Core.ApplicationServices.Taxation.Dtos;
@@ -37,6 +38,8 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
         if (factor.OfficialType != 1) errors.Add("فاکتور رسمی نیست.");
         var mappings = source.Mappings.Where(x => x.IsDefault).ToDictionary(x => (x.ProductId, x.Unit));
         decimal gross = 0, discount = 0, vat = 0, total = 0;
+        var matchesBeforeDiscount = true;
+        var matchesAfterDiscount = true;
         foreach (var item in factor.FactorItems.Where(x => !x.IsDeleted).OrderBy(x => x.Row).ThenBy(x => x.Id))
         {
             var label = $"ردیف {item.Row} ";
@@ -60,21 +63,31 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
                 continue;
             }
             var net = baseAmount - item.Discount;
-            if (item.UnitAmount <= 0 || item.Discount < 0 || net < 0 || item.TaxAmount < 0 ||
-                factor.PercentTax < 0 || item.Discount != Math.Round(item.Discount) ||
-                item.TaxAmount != InvoiceAmounts.Tax(baseAmount, item.Discount, factor.PercentTax, source.TaxAfterDiscount.GetValueOrDefault()) ||
-                item.TotalAmount != net + item.TaxAmount)
-                errors.Add(label + "مبالغ یا مالیات نیازمند تطبیق است.");
+            if (item.Discount < 0 || net < 0 || item.TaxAmount < 0 || factor.PercentTax < 0 ||
+                item.Discount != Math.Round(item.Discount) || item.TotalAmount != net + item.TaxAmount)
+                errors.Add(label + "مبالغ ثبت‌شده در ERP نیازمند تطبیق است.");
+            matchesBeforeDiscount &= item.TaxAmount == InvoiceAmounts.Tax(baseAmount, item.Discount, factor.PercentTax, false);
+            matchesAfterDiscount &= item.TaxAmount == InvoiceAmounts.Tax(baseAmount, item.Discount, factor.PercentTax, true);
             gross += baseAmount;
             discount += item.Discount;
             vat += item.TaxAmount;
             total += item.TotalAmount;
-            lines.Add(new(item.Row, item.ProductCode, item.Product, quantity, mapping?.GoodsId, mapping?.TaxUnit,
-                item.UnitAmount, item.Discount, item.TaxAmount, item.TotalAmount));
+            var line = new PreviewLine(item.Row, item.ProductCode, item.Product, quantity, mapping?.GoodsId, mapping?.TaxUnit,
+                item.UnitAmount, item.Discount, item.TaxAmount, item.TotalAmount);
+            lines.Add(line);
+            if (TaxInvoiceAmounts.ValidateLine(line, factor.PercentTax, out _, out _) is { } mismatch)
+                errors.Add(label + mismatch);
         }
+        // The setting is current, so an older invoice can match the other ERP basis.
+        // The same basis must explain every line, and the independent V7.9 check still applies.
+        if (!matchesBeforeDiscount && !matchesAfterDiscount)
+            errors.Add("مالیات ردیف‌ها با هیچ مبنای یکسانی در ERP تطبیق ندارد.");
         if (lines.Count == 0) errors.Add("فاکتور ردیف فعال ندارد.");
         if (gross != factor.SumTotalAmount || discount != factor.Discount || vat != factor.TotalTax || total != factor.PaymentAmount)
             errors.Add("جمع ردیف‌ها با مبالغ فاکتور یکسان نیست.");
+        else if (!TaxInvoiceAmounts.IsRial(gross) || !TaxInvoiceAmounts.IsRial(discount) ||
+            !TaxInvoiceAmounts.IsRial(vat) || !TaxInvoiceAmounts.IsRial(total))
+            errors.Add("جمع مبالغ ثبت‌شده در دامنهٔ ریالی V7.9 نیست.");
         var preview = new InvoicePreview(factor.Id, source.ActiveMemory?.Id, source.ActiveMemory?.FiscalId, factor.DateMiladi,
             factor.Customer, factor.Cus_EghtesadiCode, factor.CurrencyType.ToString(), gross, discount, vat, total, lines, errors)
         {

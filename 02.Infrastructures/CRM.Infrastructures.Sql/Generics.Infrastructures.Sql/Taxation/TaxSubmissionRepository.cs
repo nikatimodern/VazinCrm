@@ -14,7 +14,8 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
     {
         var draft = await (from item in db.TaxDispatches
                            join snapshot in db.TaxInvoiceSnapshots on item.SnapshotId equals snapshot.Id
-                           where item.Id == dispatchId && item.Kind == TaxDispatchKind.Original
+                           where item.Id == dispatchId && item.Kind == TaxDispatchKind.Original &&
+                               item.MemoryId == snapshot.TaxMemoryId && item.FactorId == snapshot.FactorId
                            select new { item.Id, item.MemoryId, item.FiscalId, snapshot.ProtectedPreview })
             .SingleOrDefaultAsync(ct) ?? throw new KeyNotFoundException();
         return new(draft.Id, draft.MemoryId, draft.FiscalId, protection.Unprotect(draft.ProtectedPreview));
@@ -22,13 +23,15 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
 
     public async Task<TaxSubmission> FindAsync(Guid dispatchId, CancellationToken ct)
     {
-        var item = await db.TaxDispatches.AsNoTracking().SingleOrDefaultAsync(x => x.Id == dispatchId, ct)
+        var item = await db.TaxDispatches.AsNoTracking().SingleOrDefaultAsync(x => x.Id == dispatchId &&
+            db.TaxInvoiceSnapshots.Any(snapshot => snapshot.Id == x.SnapshotId &&
+                snapshot.TaxMemoryId == x.MemoryId && snapshot.FactorId == x.FactorId), ct)
             ?? throw new KeyNotFoundException();
         if (!item.AuthorityEnvironment.HasValue)
             return null;
         return new(item.Id, item.FiscalId, item.AuthorityEnvironment.Value, item.CertificateSha256,
             item.TaxId, item.Status == TaxDispatchStatus.Pending ? protection.Unprotect(item.ProtectedSubmission) : null,
-            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status);
+            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial);
     }
 
     public async Task PinAsync(Guid dispatchId, TaxSigningBinding binding, long serial, string taxId, string payload, CancellationToken ct)
@@ -83,7 +86,8 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.AuthorityReference, x => reference ?? x.AuthorityReference)
                 .SetProperty(x => x.AuthorityProcessingStatus, status)
                 .SetProperty(x => x.ProtectedProcessingEvidence, encrypted)
-                .SetProperty(x => x.Status, next), ct);
+                .SetProperty(x => x.Status, x => next == TaxDispatchStatus.Unknown &&
+                    x.Status == TaxDispatchStatus.Submitted ? x.Status : next), ct);
     }
 
     public async Task RecordWorkFolderAsync(Guid dispatchId, Guid attemptId, string evidence, CancellationToken ct)

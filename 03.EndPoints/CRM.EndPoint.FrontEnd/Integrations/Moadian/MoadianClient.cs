@@ -19,7 +19,8 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
 {
     public async Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
     {
-        using var cert = certificates.Open(submission.CertificateSha256);
+        using var cert = OpenCertificate(submission);
+        ValidatePayloadIdentity(submission);
         using var server = await GetAsync(submission, cert, "server-information", ct);
         var keys = server.RootElement.GetProperty("publicKeys").EnumerateArray()
             .Where(k => Text(k, "algorithm") == "RSA" && k.GetProperty("purpose").GetInt32() == 1).ToArray();
@@ -67,18 +68,18 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         var upper = started.AddDays(1);
         var end = (now < upper ? now : upper).ToString("O", CultureInfo.InvariantCulture);
         query += $"&start={Uri.EscapeDataString(start)}&end={Uri.EscapeDataString(end)}";
-        using var cert = certificates.Open(submission.CertificateSha256);
+        using var cert = OpenCertificate(submission);
         using var body = await GetAsync(submission, cert, query, ct);
         var matched = Match(body.RootElement, x => Id(x, "uid") == submission.AttemptId &&
             Text(x, "fiscalId") == submission.FiscalId);
         if (matched is not { } entry)
             return null;
-        var reference = Id(entry, "referenceNumber");
-        if (submission.ReferenceNumber.HasValue && reference != submission.ReferenceNumber)
-            throw InvalidResponse();
         var status = Text(entry, "status");
         if (status == "NOT_FOUND")
             return null;
+        var reference = Id(entry, "referenceNumber");
+        if (submission.ReferenceNumber.HasValue && reference != submission.ReferenceNumber)
+            throw InvalidResponse();
         if (status == "SUCCESS")
             await VerifyReceiptAsync(submission, cert, entry, reference, ct);
         if (status is not ("SUCCESS" or "FAILED" or "IN_PROGRESS" or "TIMEOUT"))
@@ -88,13 +89,49 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
 
     public async Task<TaxWorkFolderResult> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct)
     {
-        using var cert = certificates.Open(submission.CertificateSha256);
+        using var cert = OpenCertificate(submission);
         using var body = await GetAsync(submission, cert,
             $"inquiry-invoice-status?taxIds={Uri.EscapeDataString(submission.TaxId)}", ct);
         var matched = Match(body.RootElement, x => Text(x, "taxId") == submission.TaxId);
         return matched is { } entry
             ? new TaxWorkFolderResult(Text(entry, "invoiceStatus"), Text(entry, "article6Status"), Text(entry, "error"), entry.GetRawText())
             : null;
+    }
+
+    private X509Certificate2 OpenCertificate(TaxSubmission submission)
+    {
+        if (!TaxInvoicePayload.MatchesTaxId(submission.FiscalId, submission.TaxId, submission.InvoiceSerial))
+            throw new CryptographicException("Pinned tax invoice identity is invalid.");
+        var certificate = certificates.Open(submission.CertificateSha256);
+        var now = clock.GetUtcNow();
+        if (certificate.HasPrivateKey &&
+            string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), submission.CertificateSha256, StringComparison.Ordinal) &&
+            now >= certificate.NotBefore.ToUniversalTime() && now <= certificate.NotAfter.ToUniversalTime())
+            return certificate;
+        certificate.Dispose();
+        throw new CryptographicException("Pinned tax signing certificate is invalid or expired.");
+    }
+
+    private static void ValidatePayloadIdentity(TaxSubmission submission)
+    {
+        try
+        {
+            using var body = JsonDocument.Parse(submission.Payload);
+            if (body.RootElement.ValueKind == JsonValueKind.Object &&
+                body.RootElement.TryGetProperty("header", out var header) && header.ValueKind == JsonValueKind.Object &&
+                Text(header, "taxid") == submission.TaxId &&
+                Text(header, "inno") == submission.InvoiceSerial.Value.ToString("X10", CultureInfo.InvariantCulture) &&
+                header.TryGetProperty("indatim", out var issued) && issued.ValueKind == JsonValueKind.Number &&
+                issued.TryGetInt64(out var ms) && ms is >= 0 and <= 253402300799999 &&
+                TaxInvoicePayload.TaxId(submission.FiscalId, submission.InvoiceSerial.Value,
+                    DateTimeOffset.FromUnixTimeMilliseconds(ms)) == submission.TaxId)
+                return;
+        }
+        catch (JsonException)
+        {
+            throw new CryptographicException("Pinned tax payload is unreadable.");
+        }
+        throw new CryptographicException("Pinned tax payload does not match the submission.");
     }
 
     private async Task VerifyReceiptAsync(TaxSubmission submission, X509Certificate2 certificate,
@@ -139,7 +176,10 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
             !DateTimeOffset.TryParse(Text(body.RootElement, "expDate"), CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind, out var expires) || expires <= clock.GetUtcNow())
             throw InvalidResponse();
-        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = submission.FiscalId }), cert, clock.GetUtcNow());
+        var now = clock.GetUtcNow();
+        if (now > cert.NotAfter.ToUniversalTime())
+            throw new CryptographicException("Pinned tax signing certificate expired before authentication.");
+        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = submission.FiscalId }), cert, now);
     }
 
     private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct)

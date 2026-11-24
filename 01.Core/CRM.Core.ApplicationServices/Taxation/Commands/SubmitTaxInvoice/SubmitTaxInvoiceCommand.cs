@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
@@ -53,15 +54,30 @@ public sealed class SubmitTaxInvoiceCommandHandler(ITaxSubmissionRepository repo
         }
         catch (Exception ex) when (ex is TaxTransportException or OperationCanceledException)
         {
-            using var write = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await queue.MarkSubmissionUnknownAsync(request.DispatchId, attempt, write.Token);
-            return new(request.DispatchId, attempt, TaxDispatchStatus.Unknown, submission.TaxId);
+            return await RecoverByInquiryAsync(request.DispatchId, attempt);
         }
 
-        // Use a separate deadline after a POST so a disconnected operator does not lose its response.
-        using var save = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        await repository.RecordAcknowledgementAsync(request.DispatchId, attempt, acknowledgement.ReferenceNumber,
-            acknowledgement.Evidence, save.Token);
-        return new(request.DispatchId, attempt, TaxDispatchStatus.Submitted, submission.TaxId, acknowledgement.ReferenceNumber);
+        // Preserve the attempt even when the response cannot be persisted.
+        try
+        {
+            using var save = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await repository.RecordAcknowledgementAsync(request.DispatchId, attempt, acknowledgement.ReferenceNumber,
+                acknowledgement.Evidence, save.Token);
+        }
+        catch (Exception ex) when (ex is DbException or TimeoutException or OperationCanceledException or CryptographicException)
+        {
+            return await RecoverByInquiryAsync(request.DispatchId, attempt);
+        }
+
+        using var read = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        return await queue.GetStateAsync(request.DispatchId, read.Token);
+    }
+
+    private async Task<TaxDispatchState> RecoverByInquiryAsync(Guid id, Guid attempt)
+    {
+        // If SQL is unavailable, the committed reservation expires into Unknown.
+        using var write = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await queue.MarkSubmissionUnknownAsync(id, attempt, write.Token);
+        return await queue.GetStateAsync(id, write.Token);
     }
 }

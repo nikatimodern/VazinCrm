@@ -9,7 +9,6 @@ public sealed record TaxFilingDetails(long Serial, DateTimeOffset IssuedAt, int 
 
 public static class TaxInvoicePayload
 {
-    private const decimal MaximumMoney = 999999999999999999m;
     private static readonly string[] Multiplication =
         ["0123456789", "1234067895", "2340178956", "3401289567", "4012395678",
          "5987604321", "6598710432", "7659821043", "8765932104", "9876543210"];
@@ -32,6 +31,16 @@ public static class TaxInvoicePayload
         return FormattableString.Invariant($"{fiscalId}{days:X5}{serial:X10}{"0432156789"[check]}");
     }
 
+    public static bool MatchesTaxId(string fiscalId, string taxId, long? serial)
+    {
+        if (fiscalId is not { Length: 6 } || !fiscalId.All(c => char.IsAsciiDigit(c) || char.IsAsciiLetterUpper(c)) ||
+            serial is not (> 0 and <= 0xffffffffff) || taxId is not { Length: 22 } ||
+            !taxId.StartsWith(fiscalId, StringComparison.Ordinal) ||
+            !int.TryParse(taxId.AsSpan(6, 5), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var days))
+            return false;
+        return TaxId(fiscalId, serial.Value, DateTimeOffset.UnixEpoch.AddDays(days)) == taxId;
+    }
+
     public static (string TaxId, string Json) Build(InvoicePreview preview, TaxSigningBinding binding, TaxFilingDetails filing)
     {
         if (preview.Errors.Count != 0 || preview.FiscalId is null || preview.Lines.Count == 0 ||
@@ -47,30 +56,19 @@ public static class TaxInvoicePayload
         var taxId = TaxId(preview.FiscalId, filing.Serial, filing.IssuedAt);
         var body = preview.Lines.Select(line =>
         {
-            if (line.Quantity <= 0 || line.Quantity > MaximumMoney ||
-                decimal.Round(line.Quantity, 8) != line.Quantity ||
-                line.UnitPrice <= 0 || line.UnitPrice > MaximumMoney || decimal.Round(line.UnitPrice, 8) != line.UnitPrice ||
-                !Money(line.Discount) ||
-                !Money(line.Vat) || !Money(line.Total) || !Digits(line.GoodsId, 13) ||
-                line.TaxUnit is not { Length: > 0 and <= 8 } || !line.TaxUnit.All(char.IsAsciiDigit) ||
-                line.Description is { Length: > 400 })
+            if (!Digits(line.GoodsId, 13) || line.TaxUnit is not { Length: > 0 and <= 8 } ||
+                !line.TaxUnit.All(char.IsAsciiDigit) || line.Description is { Length: > 400 })
                 throw Invalid();
-            if (line.Quantity > decimal.MaxValue / Math.Max(1, line.UnitPrice))
-                throw Invalid();
-            var gross = line.Quantity * line.UnitPrice;
-            var net = gross - line.Discount;
-            if (gross == 0 || !Money(gross) || !Money(net) || line.Vat != net * preview.VatPercent / 100m ||
-                line.Total != net + line.Vat)
-                throw Invalid();
+            if (TaxInvoiceAmounts.ValidateLine(line, preview.VatPercent, out var gross, out var net) is { } mismatch)
+                throw new ArgumentException($"ردیف {line.Row} {mismatch}");
             return new { sstid = line.GoodsId, sstt = line.Description, mu = line.TaxUnit, am = line.Quantity,
                 fee = line.UnitPrice, prdis = gross, dis = line.Discount, adis = net, vra = preview.VatPercent,
                 vam = line.Vat, tsstam = line.Total };
         }).ToArray();
 
-        if (!Money(preview.Gross) || !Money(preview.Discount) || !Money(preview.Vat) || !Money(preview.Total) ||
-            body.Sum(x => x.prdis) != preview.Gross || body.Sum(x => x.dis) != preview.Discount ||
-            body.Sum(x => x.vam) != preview.Vat || body.Sum(x => x.tsstam) != preview.Total)
-            throw Invalid();
+        if (!TaxInvoiceAmounts.TotalsMatch(preview, body.Sum(x => x.prdis), body.Sum(x => x.dis),
+            body.Sum(x => x.vam), body.Sum(x => x.tsstam)))
+            throw new ArgumentException("جمع ردیف‌های مالیاتی با مبالغ Snapshot مطابقت ندارد.");
         return (taxId, JsonSerializer.Serialize(new
         {
             header = new
@@ -89,8 +87,6 @@ public static class TaxInvoicePayload
 
     private static bool Digits(string? value, params int[] lengths) =>
         value is not null && lengths.Contains(value.Length) && value.All(char.IsAsciiDigit);
-
-    private static bool Money(decimal amount) => amount >= 0 && amount <= MaximumMoney && decimal.Truncate(amount) == amount;
 
     private static ArgumentException Invalid() => new("اطلاعات صورتحساب با الگوی فروش داخلی پشتیبانی‌شده تطبیق ندارد.");
 }

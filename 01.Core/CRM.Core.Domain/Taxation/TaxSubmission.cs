@@ -10,7 +10,7 @@ public sealed record TaxSigningBinding(TaxAuthorityEnvironment Environment, stri
 public sealed record TaxSubmissionDraft(Guid DispatchId, Guid MemoryId, string FiscalId, string Snapshot);
 public sealed record TaxSubmission(Guid DispatchId, string FiscalId, TaxAuthorityEnvironment Environment,
     string CertificateSha256, string TaxId, string Payload, Guid? AttemptId, DateTimeOffset? StartedAt,
-    Guid? ReferenceNumber, TaxDispatchStatus Status);
+    Guid? ReferenceNumber, TaxDispatchStatus Status, long? InvoiceSerial = null);
 
 public interface ITaxSubmissionRepository
 {

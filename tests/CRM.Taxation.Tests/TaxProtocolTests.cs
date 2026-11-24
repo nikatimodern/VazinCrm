@@ -86,7 +86,7 @@ public sealed class TaxProtocolTests
                 var signed = Decrypt(packet.GetProperty("payload").GetString()!, authorityKey);
                 using var invoice = TaxJose.Verify(signed, taxpayerKey);
                 Assert.NotNull(invoice);
-                Assert.Equal(taxId, invoice.RootElement.GetProperty("taxid").GetString());
+                Assert.Equal(taxId, invoice.RootElement.GetProperty("header").GetProperty("taxid").GetString());
                 return Response(new { result = new[] { new { uid = attempt, referenceNumber = reference } } });
             }
             if (path == "inquiry-by-uid")
@@ -106,8 +106,9 @@ public sealed class TaxProtocolTests
         });
         using var http = new HttpClient(handler) { BaseAddress = new("https://mock.invalid/requestsmanager/api/v2/") };
         var client = new MoadianClient(http, new TestCertificates(certificate), TimeProvider.System);
-        var submission = new TaxSubmission(Guid.NewGuid(), "A11216", TaxAuthorityEnvironment.Sandbox, "test", taxId,
-            """{"taxid":"A1121604C220002F095011"}""", attempt, now, null, TaxDispatchStatus.Pending);
+        var submission = new TaxSubmission(Guid.NewGuid(), "A11216", TaxAuthorityEnvironment.Sandbox, certificate.GetCertHashString(HashAlgorithmName.SHA256), taxId,
+            """{"header":{"taxid":"A1121604C220002F095011","inno":"0002F09501","indatim":1683997837988}}""",
+            attempt, now, null, TaxDispatchStatus.Pending, 49321217);
         using var prepared = await client.PrepareAsync(submission, attempt, CancellationToken.None);
         var receipt = await client.SendAsync(prepared, CancellationToken.None);
         Assert.Equal(reference, receipt.ReferenceNumber);
@@ -116,6 +117,53 @@ public sealed class TaxProtocolTests
         Assert.Equal("SUCCESS", (await client.InquireAsync(withReference, CancellationToken.None)).Status);
         Assert.Equal("AWAITING_REACTION", (await client.GetWorkFolderAsync(withReference, CancellationToken.None)).InvoiceStatus);
         Assert.Equal(paths.Count / 2, nonce);
+    }
+
+    [Theory]
+    [InlineData("expired")]
+    [InlineData("thumbprint")]
+    [InlineData("memory")]
+    [InlineData("tax-id")]
+    [InlineData("payload")]
+    public async Task InvalidFrozenIdentityNeverContactsAuthority(string mismatch)
+    {
+        using var rsa = RSA.Create(2048);
+        var now = DateTimeOffset.UtcNow;
+        using var cert = Certificate(rsa, mismatch == "expired" ? now.AddDays(-2) : now);
+        using var http = new HttpClient(new Stub((_, _) => throw new InvalidOperationException("Network must not be used.")))
+            { BaseAddress = new("https://mock.invalid/") };
+        var client = new MoadianClient(http, new TestCertificates(cert), TimeProvider.System);
+        var submission = new TaxSubmission(Guid.NewGuid(), mismatch == "memory" ? "B11216" : "A11216",
+            TaxAuthorityEnvironment.Sandbox,
+            mismatch == "thumbprint" ? new string('0', 64) : cert.GetCertHashString(HashAlgorithmName.SHA256),
+            mismatch == "tax-id" ? "A1121604C220002F095012" : "A1121604C220002F095011",
+            mismatch == "payload" ? "{}" : """{"header":{"taxid":"A1121604C220002F095011","inno":"0002F09501","indatim":1683997837988}}""",
+            Guid.NewGuid(), now, null, TaxDispatchStatus.Pending, 49321217);
+        await Assert.ThrowsAsync<CryptographicException>(() =>
+            client.PrepareAsync(submission, submission.AttemptId!.Value, CancellationToken.None));
+        if (mismatch != "payload")
+            await Assert.ThrowsAsync<CryptographicException>(() => client.InquireAsync(submission, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData("disconnect")]
+    [InlineData("invalid-json")]
+    [InlineData("unmatched")]
+    public async Task PostWithoutTrustworthyAcknowledgementFailsAsTransportError(string scenario)
+    {
+        using var http = new HttpClient(new Stub((request, _) =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            return scenario switch
+            {
+                "disconnect" => throw new HttpRequestException("Mock disconnect after reading POST"),
+                "invalid-json" => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{") }),
+                _ => Task.FromResult(Response(new { result = new[] { new { uid = Guid.NewGuid(), referenceNumber = Guid.NewGuid() } } }))
+            };
+        })) { BaseAddress = new("https://mock.invalid/") };
+        var client = new MoadianClient(http, null, TimeProvider.System);
+        using var prepared = new PreparedTaxRequest(Guid.NewGuid(), new HttpRequestMessage(HttpMethod.Post, "invoice"));
+        await Assert.ThrowsAsync<TaxTransportException>(() => client.SendAsync(prepared, CancellationToken.None));
     }
 
     private static X509Certificate2 Certificate(RSA key, DateTimeOffset now) =>
