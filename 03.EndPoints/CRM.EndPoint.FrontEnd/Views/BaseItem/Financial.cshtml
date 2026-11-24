@@ -1,3 +1,5 @@
+@inject CRM.EndPoint.FrontEnd.Security.DocumentAccessPolicy DocumentAccess
+@{ var canCreateBaseCash = await DocumentAccess.HasAsync("BaseCash", "Create", Context.RequestAborted); }
 @section Styles {
 
     <link rel="stylesheet" href="~/css/operationsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -43,7 +45,7 @@
                 </div>
 
                 <div class="col-12 col-lg-auto d-flex justify-content-center align-items-end p-1">
-                    <span id="submitBaseCashFormId" class="buttonGreen2 flex-center" style="height: 2rem;width: 3rem" type="button" onclick="submitBaseCashForm()">ثبت</span>
+                    <span hidden="@(!canCreateBaseCash)" data-document-permission="BaseCash.Create" id="submitBaseCashFormId" class="buttonGreen2 flex-center" style="height: 2rem;width: 3rem" type="button" onclick="submitBaseCashForm()">ثبت</span>
                     <div id="UpBaseCashFormId" class="d-flex flex-lg-column gap-1 gap-lg-0 d-none">
                         <button class="buttonGreen2 flex-center" onclick="submitBaseCashForm()" type="button" style="height: 24px;padding-inline: 10px">
                             <svg style="width: 18px;height: 18px" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
@@ -100,6 +102,7 @@
                 ajax: {
                     url: "/Cash/GetAllBaseCashesDt",
                     type: "POST",
+                    dataSrc: json => (json.data || []).map(row => ({ ...row, actionRights: json.permissions?.[row.id] })),
                 },
                 language: languageDatatable,
                 columns: [
@@ -111,11 +114,11 @@
                     {
                         data: "id",
                         orderable: false,
-                        render: function (data) {
+                        render: function (data, type, row) {
                             return `
                                 <div class="inline-flex-center gap-1">
-                                    <button type="button" class="icon-button icon-button--green" onclick='ShowUpdateBaseCash("${data}")'><i class="fa fa-pencil"></i></button>
-                                    <button type="button" class="icon-button icon-button--red" onclick='DelBaseCashItem("${data}")'><i class="fa fa-trash"></i></button>
+                                    ${row.actionRights?.canEdit ? `<button type="button" data-document-permission="BaseCash.Edit" class="icon-button icon-button--green" onclick='ShowUpdateBaseCash("${data}")'><i class="fa fa-pencil"></i></button>` : ""}
+                                    ${row.actionRights?.canDelete ? `<button type="button" data-document-permission="BaseCash.Delete" class="icon-button icon-button--red" onclick='DelBaseCashItem("${data}")'><i class="fa fa-trash"></i></button>` : ""}
                                 </div>
                             `;
                         },
@@ -136,6 +139,7 @@
 
 
         const submitBaseCashForm = async () => {
+            if (window.AccessLive?.can("BaseCash", baseCashData.id ? "edit" : "create") === false) { toastifyError("مجوز ثبت را ندارید."); return; }
             if (!await mySer.CheckValidForm("baseCashForm")) return;
 
             const model = { ...baseCashData, ...mySer.convertFormToJSON("baseCashForm") };
@@ -158,6 +162,7 @@
         };
 
         const DelBaseCashItem = async (id) => {
+            if (window.AccessLive?.can("BaseCash", "delete") === false) return;
             await deleteItem({
                 url: `/Cash/DeleteBaseCash/${id}`,
                 callback: () => {
@@ -167,6 +172,7 @@
         };
 
         const ShowUpdateBaseCash = async (id) => {
+            if (window.AccessLive?.can("BaseCash", "edit") === false) return;
             FLshowLoading();
             const res = await axios(`/Cash/GetBaseCash/${id}`);
             if (res.status === 200) {
