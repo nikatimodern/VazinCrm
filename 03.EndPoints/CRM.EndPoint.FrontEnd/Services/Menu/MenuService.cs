@@ -80,7 +80,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 catalogViews["/Cartable/Index"] = false;
         }
 
-        var filteredMenus = FilterItems(menus, roles, [], catalogViews);
+        var filteredMenus = FilterItems(menus, roles, [], catalogViews, true);
 
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
@@ -642,16 +642,16 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     }
 
     private static List<MenuItem> FilterItems(List<MenuItem> items, HashSet<string> userRoles,
-        List<string> parentRoles, IReadOnlyDictionary<string, bool> catalogViews)
+        List<string> parentRoles, IReadOnlyDictionary<string, bool> catalogViews, bool parentLegacyAllowed)
     {
         var result = new List<MenuItem>();
         foreach (var item in items ?? [])
         {
             var effectiveRoles = item.Roles.Count > 0 ? item.Roles : parentRoles;
-            var legacyAllowed = effectiveRoles.Count == 0 || effectiveRoles.Any(userRoles.Contains);
+            var legacyAllowed = parentLegacyAllowed && (effectiveRoles.Count == 0 || effectiveRoles.Any(userRoles.Contains));
             var hasCatalog = !string.IsNullOrEmpty(item.Url) && catalogViews.ContainsKey(item.Url);
             var allowed = hasCatalog ? catalogViews[item.Url] : legacyAllowed;
-            var children = FilterItems(item.SubItems, userRoles, effectiveRoles, catalogViews);
+            var children = FilterItems(item.SubItems, userRoles, effectiveRoles, catalogViews, legacyAllowed);
             item.SubItems = children;
 
             // A denied direct action must not be reintroduced by an allowed descendant.

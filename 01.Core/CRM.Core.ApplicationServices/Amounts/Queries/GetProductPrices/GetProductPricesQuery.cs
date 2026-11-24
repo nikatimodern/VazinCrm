@@ -22,6 +22,11 @@ public sealed class GetProductPricesQueryHandler(IProductPriceRepository reposit
         foreach (var product in products)
             foreach (var price in product.ProductAmounts ?? [])
                 price.ElapsTime = dates.Elapsed(price.ModifyDate ?? price.CreateDate);
-        return new(products, current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"), request.From);
+        var canManage = permissions.IsEnforced("ProductAmount")
+            ? await permissions.HasAsync("ProductAmount", "Create", ct) ||
+              await permissions.HasAsync("ProductAmount", "Edit", ct) ||
+              await permissions.HasAsync("ProductAmount", "Delete", ct)
+            : current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین");
+        return new(products, canManage, request.From);
     }
 }

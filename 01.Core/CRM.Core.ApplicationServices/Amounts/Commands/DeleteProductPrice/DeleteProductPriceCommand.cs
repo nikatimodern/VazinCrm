@@ -14,7 +14,8 @@ public sealed class DeleteProductPriceCommandHandler(IProductPriceRepository rep
     public async Task<int> HandleAsync(DeleteProductPriceCommand request, CancellationToken ct)
     {
         var current = await actor.GetAsync(ct);
-        if (!current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"))
+        if (!permissions.IsEnforced("ProductAmount") &&
+            !current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"))
             return 403;
         var user = current.User;
         if (!await permissions.HasAsync("Product", "View", ct) ||

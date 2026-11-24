@@ -14,7 +14,8 @@ public sealed class SaveProductPriceCommandHandler(IProductPriceRepository repos
     public async Task<int> HandleAsync(SaveProductPriceCommand request, CancellationToken ct)
     {
         var current = await actor.GetAsync(ct);
-        if (!current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"))
+        if (!permissions.IsEnforced("ProductAmount") &&
+            !current.HasRole("مدیر ارشد", "مدیر فروش", "مدیر تامین", "کارشناس تامین"))
             return 403;
         var user = current.User;
         var model = request.Model;
