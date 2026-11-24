@@ -111,11 +111,13 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
         new(await dispatcher.QueryAsync(new PreviewTaxInvoiceQuery(id), ct), null, false));
 
     [HttpGet("dispatches/{id:guid}")]
-    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct) => ShowPreviewAsync(async () =>
+    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct, long? historyBefore = null, bool cancelFullReturn = false) => ShowPreviewAsync(async () =>
     {
-        var item = await dispatcher.QueryAsync(new GetTaxDispatchQuery(id), ct);
+        var item = await dispatcher.QueryAsync(new GetTaxDispatchQuery(id, historyBefore), ct);
         var snapshot = await dispatcher.QueryAsync(new GetTaxPreviewSnapshotQuery(item.SnapshotId), ct);
-        return new(snapshot, item, HasSandboxBinding(item.MemoryId));
+        return new(snapshot, item, HasSandboxBinding(item.MemoryId), HistoryBefore: historyBefore,
+            CancelFullReturn: cancelFullReturn && item.Status == TaxDispatchStatus.Accepted &&
+                item.Kind == TaxDispatchKind.Original && item.HasWorkFolderEvidence);
     });
 
     private async Task<IActionResult> ShowPreviewAsync(Func<Task<TaxationPreviewModel>> load)

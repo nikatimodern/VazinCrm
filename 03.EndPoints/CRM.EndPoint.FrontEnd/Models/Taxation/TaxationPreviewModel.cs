@@ -4,4 +4,4 @@ using CRM.Core.Domain.Taxation;
 namespace CRM.EndPoint.FrontEnd.Models.Taxation;
 
 public sealed record TaxationPreviewModel(InvoicePreview Preview, TaxDispatchDetails Dispatch, bool CanContactSandbox,
-    string Error = null);
+    string Error = null, long? HistoryBefore = null, bool CancelFullReturn = false);

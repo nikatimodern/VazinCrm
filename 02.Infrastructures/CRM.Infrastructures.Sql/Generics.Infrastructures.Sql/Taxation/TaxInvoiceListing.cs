@@ -12,7 +12,7 @@ namespace CRM.Infrastructures.Sql.Taxation;
 
 public sealed class TaxInvoiceListing(CRMContextDb db, ITaxPreviewProtector protection = null) : ITaxInvoiceListing
 {
-    public async Task<TaxDispatchDetails> ReadDispatchAsync(Guid id, CancellationToken ct)
+    public async Task<TaxDispatchDetails> ReadDispatchAsync(Guid id, CancellationToken ct, long? historyBefore = null)
     {
         var now = DateTime.UtcNow;
         var dispatch = await db.TaxDispatches.AsNoTracking().Where(x => x.Id == id)
@@ -25,14 +25,24 @@ public sealed class TaxInvoiceListing(CRMContextDb db, ITaxPreviewProtector prot
                 HasAcknowledgement = x.ProtectedAcknowledgement != null,
                 x.ProtectedWorkFolderEvidence
             }).SingleOrDefaultAsync(ct) ?? throw new KeyNotFoundException();
-        var history = await db.TaxDispatchEvents.AsNoTracking().Where(x => x.DispatchId == id)
-            .OrderByDescending(x => x.Id).Take(50).ToListAsync(ct);
+        const int historyPageSize = 50;
+        var events = db.TaxDispatchEvents.AsNoTracking().Where(x => x.DispatchId == id);
+        if (historyBefore is long before)
+            events = events.Where(x => x.Id < before);
+        var history = await events
+            .OrderByDescending(x => x.Id).Take(historyPageSize + 1).ToListAsync(ct);
+        long? olderBefore = null;
+        if (history.Count > historyPageSize)
+        {
+            history.RemoveAt(historyPageSize);
+            olderBefore = history[^1].Id;
+        }
         using var workFolder = dispatch.ProtectedWorkFolderEvidence == null || protection == null ? null :
             JsonDocument.Parse(protection.Unprotect(dispatch.ProtectedWorkFolderEvidence));
         return new(dispatch.Id, dispatch.SnapshotId, dispatch.MemoryId, dispatch.Kind, dispatch.Status, dispatch.TaxId,
             dispatch.AttemptId, dispatch.AuthorityReference, dispatch.HasAcknowledgement, dispatch.QueuedUtc,
             dispatch.SubmissionStartedAt, dispatch.AuthorityProcessingStatus, dispatch.ProtectedWorkFolderEvidence != null,
-            ReadStatus(workFolder, "invoiceStatus"), ReadStatus(workFolder, "article6Status"), history);
+            ReadStatus(workFolder, "invoiceStatus"), ReadStatus(workFolder, "article6Status"), history, olderBefore);
     }
 
     private static string ReadStatus(JsonDocument evidence, string key) =>

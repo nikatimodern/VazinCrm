@@ -19,6 +19,12 @@ public sealed class TaxPreviewConflictException : InvalidOperationException
     public TaxPreviewConflictException() : base("اطلاعات پیش‌نمایش تغییر کرده است. پیش‌نمایش جدید دریافت کنید.") { }
 }
 
+public sealed class TaxFullReturnRequiresCancellationException(Guid referenceId)
+    : ArgumentException("برای برگشت تمام اقلام باید سند ابطالی صادر شود.")
+{
+    public Guid ReferenceId { get; } = referenceId;
+}
+
 public interface ITaxPreviewProtector
 {
     string Protect(string preview);

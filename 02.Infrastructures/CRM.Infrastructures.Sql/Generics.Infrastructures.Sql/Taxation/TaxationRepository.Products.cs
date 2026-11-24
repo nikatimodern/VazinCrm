@@ -12,6 +12,9 @@ public sealed partial class TaxationRepository
     public async Task<TaxProductPage> ListProductsAsync(string search, bool unmapped, int page, int size, CancellationToken ct)
     {
         var mappings = db.TaxProductMappings.AsNoTracking().Where(x => x.IsDefault);
+        var codes = TaxUnitCatalog.Codes.ToArray();
+        var validMappings = mappings.Where(x => codes.Contains(EF.Functions.Collate(x.TaxUnit, "Latin1_General_100_BIN2")) &&
+            EF.Functions.DataLength(x.TaxUnit) == x.TaxUnit.Length * 2);
         var pricedUnits = db.ProductAmounts.AsNoTracking().Where(x => !x.IsDeleted && x.ProductId != null && x.Unit != null)
             .Select(x => new { ProductId = x.ProductId.Value, Unit = x.Unit.Value, Title = x.UnitTxt });
         var invoicedUnits = db.FactorItems.AsNoTracking().Where(x => !x.IsDeleted && x.ProductCode != null)
@@ -23,9 +26,10 @@ public sealed partial class TaxationRepository
                 mappings.Any(mapping => mapping.ProductId == x.Id && mapping.GoodsId.Contains(search)));
         if (unmapped)
             products = products.Where(product =>
-                !mappings.Any(mapping => mapping.ProductId == product.Id && mapping.TaxUnit.Length <= 8) ||
-                units.Any(unit => unit.ProductId == product.Id && !mappings.Any(mapping =>
-                    mapping.ProductId == product.Id && mapping.Unit == unit.Unit && mapping.TaxUnit.Length <= 8)));
+                !validMappings.Any(mapping => mapping.ProductId == product.Id) ||
+                units.Any(unit => unit.ProductId == product.Id && !validMappings.Any(mapping =>
+                    mapping.ProductId == product.Id && mapping.Unit == unit.Unit)) ||
+                mappings.Any(mapping => mapping.ProductId == product.Id && !validMappings.Any(valid => valid.Id == mapping.Id)));
 
         var count = await products.CountAsync(ct);
         var pageCount = Math.Max(1, (int)Math.Ceiling(count / (decimal)size));

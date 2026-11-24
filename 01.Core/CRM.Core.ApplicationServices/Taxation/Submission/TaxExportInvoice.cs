@@ -65,7 +65,7 @@ internal static class TaxExportInvoice
 
             if (!Positive(line.Quantity, TaxInvoiceAmounts.Maximum, 8) ||
                 line.GoodsId is not { Length: 13 } || !line.GoodsId.All(char.IsAsciiDigit) ||
-                line.TaxUnit is not { Length: > 0 and <= 8 } || !line.TaxUnit.All(char.IsAsciiDigit) ||
+                !TaxUnitCatalog.Contains(line.TaxUnit) ||
                 line.Description is { Length: > 400 })
                 yield return $"ردیف {line.Row} مقدار، شناسه کالا، واحد یا شرح معتبر ندارد.";
             if (item.CurrencyCode is not ("USD" or "EUR") || (expectedCode is not null && item.CurrencyCode != expectedCode))

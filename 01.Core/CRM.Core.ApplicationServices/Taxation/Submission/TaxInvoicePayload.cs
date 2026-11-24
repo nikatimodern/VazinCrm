@@ -70,8 +70,7 @@ public static class TaxInvoicePayload
         var taxId = TaxId(preview.FiscalId, filing.Serial, filing.IssuedAt);
         var body = preview.Lines.Select(line =>
         {
-            if (!Digits(line.GoodsId, 13) || line.TaxUnit is not { Length: > 0 and <= 8 } ||
-                !line.TaxUnit.All(char.IsAsciiDigit) || line.Description is { Length: > 400 })
+            if (!Digits(line.GoodsId, 13) || !TaxUnitCatalog.Contains(line.TaxUnit) || line.Description is { Length: > 400 })
                 throw Invalid();
             if (TaxInvoiceAmounts.ValidateLine(line, preview.VatPercent, out var gross, out var net) is { } mismatch)
                 throw new ArgumentException($"ردیف {line.Row} {mismatch}");

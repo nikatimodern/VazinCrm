@@ -1,3 +1,4 @@
+@using CRM.Core.Domain.Taxation
 @model CRM.EndPoint.FrontEnd.Models.Taxation.TaxProductListModel
 @{
     ViewData["Title"] = "تطبیق کالاها";
@@ -12,7 +13,7 @@
     </header>
     <form class="taxation-filters" method="get" asp-action="Products">
         <label>نام یا شناسه مالیاتی کالا <input class="form-control form-control-sm" name="search" value="@Model.Search" maxlength="100" type="search" /></label>
-        <label class="form-check"><input class="form-check-input" type="checkbox" name="unmapped" value="true" checked="@Model.Unmapped" /> فقط کالاهای فاقد تطبیق کامل</label>
+        <label class="form-check"><input class="form-check-input" type="checkbox" name="unmapped" value="true" checked="@Model.Unmapped" /> فقط تطبیق‌های ناقص یا نامعتبر</label>
         <button type="submit" class="btn btn-sm taxation-action">جستجو</button>
     </form>
     @Html.AntiForgeryToken()
@@ -31,15 +32,26 @@
             }
             @foreach (var unit in product.Units)
             {
+                var invalidCode = unit.TaxUnit is not null && !TaxUnitCatalog.Contains(unit.TaxUnit);
                 <form method="post" class="taxation-fields" data-admin-action="mapping" data-url="@Url.Action("MapProduct", "Taxation")">
                     <input type="hidden" name="productId" value="@product.Id" />
                     <input type="hidden" name="unit" value="@unit.Code" />
-                    <label>واحد ERP <span class="d-block">@(unit.Title ?? unit.Code.ToString())</span></label>
+                    <div>واحد فروش ERP <span class="d-block">@(unit.Title ?? unit.Code.ToString())</span></div>
                     <label>شناسه کالا یا خدمت
                         <input class="form-control form-control-sm" name="goodsId" value="@unit.GoodsId" dir="ltr" inputmode="numeric" required maxlength="13" pattern="[0-9]{13}" />
                     </label>
-                    <label>کد واحد مالیاتی
-                        <input class="form-control form-control-sm" name="taxUnit" value="@unit.TaxUnit" dir="ltr" inputmode="numeric" required maxlength="8" pattern="[0-9]{1,8}" />
+                    <label>واحد مالیاتی هم‌ارز با واحد فروش
+                        <select class="form-select form-select-sm" name="taxUnit" required>
+                            <option value="" selected="@(invalidCode || unit.TaxUnit is null)">انتخاب از فهرست رسمی</option>
+                            @foreach (var option in TaxUnitCatalog.Units)
+                            {
+                                <option value="@option.Code" selected="@(unit.TaxUnit == option.Code)">@option.Title (@option.Code)</option>
+                            }
+                        </select>
+                        @if (invalidCode)
+                        {
+                            <span class="taxation-error">کد ثبت‌شده <bdi dir="ltr">@unit.TaxUnit</bdi> در فهرست رسمی نیست.</span>
+                        }
                     </label>
                     <button type="submit" class="btn btn-sm taxation-action">ذخیره تطبیق</button>
                 </form>

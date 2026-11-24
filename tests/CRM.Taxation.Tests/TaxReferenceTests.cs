@@ -120,12 +120,18 @@ public sealed class TaxReferenceTests
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
-    public void FullOrExcessReturnIsRejected(int amount)
+    public void FullReturnRequiresCancellationAndExcessReturnRemainsInvalid(int amount)
     {
         var (source, filing) = Fixture(TaxDispatchKind.Return);
         if (amount == 2) UpdateAmounts(source.Candidate.Factor, 2, 600, 1746);
         else UpdateAmounts(source.Candidate.Factor, 3, 600, 2646);
-        Assert.Throws<ArgumentException>(() => TaxReferenceInvoice.Build(source, filing, Binding));
+        if (amount == 2)
+        {
+            var result = Assert.Throws<TaxFullReturnRequiresCancellationException>(() => TaxReferenceInvoice.Build(source, filing, Binding));
+            Assert.Equal(source.Reference.Id, result.ReferenceId);
+        }
+        else
+            Assert.Throws<ArgumentException>(() => TaxReferenceInvoice.Build(source, filing, Binding));
     }
 
     [Fact]

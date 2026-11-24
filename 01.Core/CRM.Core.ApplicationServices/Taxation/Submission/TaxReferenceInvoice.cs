@@ -74,7 +74,7 @@ internal static class TaxReferenceInvoice
         {
             if (request.CorrectsQuantityError || (request.Settlement.HasValue && request.Settlement != priorSettlement))
                 throw Invalid("در برگشت از فروش روش تسویه و مبنای سند مرجع حفظ می‌شود.");
-            candidate = SubtractReturn(prior, candidate);
+            candidate = SubtractReturn(prior, candidate, reference);
         }
 
         var filing = new TaxFilingDetails(request.Serial, request.IssuedAt, 0, request.Settlement ?? priorSettlement, request.Shares);
@@ -154,7 +154,7 @@ internal static class TaxReferenceInvoice
         return false;
     }
 
-    private static InvoicePreview SubtractReturn(InvoicePreview prior, InvoicePreview returned)
+    private static InvoicePreview SubtractReturn(InvoicePreview prior, InvoicePreview returned, TaxDispatch reference)
     {
         var remaining = Index(prior.Lines);
         foreach (var line in Index(returned.Lines).Values)
@@ -176,7 +176,11 @@ internal static class TaxReferenceInvoice
             };
         }
         if (remaining.Count == 0)
-            throw Invalid("برای برگشت تمام اقلام باید سند ابطالی صادر شود.");
+        {
+            if (reference.Kind == TaxDispatchKind.Original)
+                throw new TaxFullReturnRequiresCancellationException(reference.Id);
+            throw Invalid("برگشت تمام اقلام به سند ابطالی نیاز دارد. وضعیت فعلی کارپوشهٔ این سند ارجاعی برای ابطال مجاز نیست.");
+        }
         var lines = remaining.Values.OrderBy(x => x.Row).ToArray();
         return returned with
         {

@@ -73,9 +73,10 @@ public sealed record InvoicePreview(Guid FactorId, Guid? MemoryId, string? Fisca
                     out var quantity) || quantity <= 0)
                 errors.Add(label + "مقدار کالا معتبر نیست.");
             mappings.TryGetValue((item.ProductCode.GetValueOrDefault(), item.Unit), out var mapping);
-            if (mapping?.GoodsId is not { Length: 13 } || !mapping.GoodsId.All(char.IsAsciiDigit)
-                || string.IsNullOrWhiteSpace(mapping.TaxUnit))
+            if (mapping?.GoodsId is not { Length: 13 } || !mapping.GoodsId.All(char.IsAsciiDigit))
                 errors.Add(label + "شناسه کالا یا واحد مالیاتی معتبر ندارد.");
+            else if (!TaxUnitCatalog.Contains(mapping.TaxUnit))
+                errors.Add(label + "کد واحد مالیاتی در فهرست رسمی نیست. تطبیق کالا را بررسی کنید.");
             if (item.UnitAmount <= 0 || quantity > 999999999999999m || item.UnitAmount > 999999999999999999m ||
                 item.UnitAmount > decimal.MaxValue / Math.Max(1m, quantity))
             {

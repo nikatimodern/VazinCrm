@@ -108,8 +108,8 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct));
 
     [HttpGet("dispatches/{id:guid}")]
-    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct) =>
-        Run(() => dispatcher.QueryAsync(new GetTaxDispatchQuery(id), ct));
+    public Task<IActionResult> Dispatch(Guid id, CancellationToken ct, long? historyBefore = null) =>
+        Run(() => dispatcher.QueryAsync(new GetTaxDispatchQuery(id, historyBefore), ct));
 
     [HttpPost("dispatches/{id:guid}/inquire")]
     public Task<IActionResult> Inquire(Guid id, CancellationToken ct) =>
@@ -130,6 +130,15 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         try { return Ok(await action()); }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (TaxPreviewConflictException ex) { return Conflict(ex.Message); }
+        catch (TaxFullReturnRequiresCancellationException ex)
+        {
+            return BadRequest(new
+            {
+                code = "full_return_requires_cancellation", message = ex.Message,
+                cancellationUrl = Url.Action("Dispatch", "TaxationPage",
+                    new { id = ex.ReferenceId, cancelFullReturn = true }, protocol: null, host: null, fragment: "full-return-cancellation")
+            });
+        }
         catch (TaxTransportException) { return StatusCode(502, "پاسخ معتبر از محیط آزمایشی دریافت نشد."); }
         catch (CryptographicException) { return StatusCode(503, "گواهی یا اطلاعات رمزگذاری‌شده در دسترس نیست."); }
         catch (ArgumentException ex) { return BadRequest(ex.Message); }

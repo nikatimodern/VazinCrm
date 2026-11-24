@@ -9,9 +9,10 @@ public sealed class SetTaxProductMappingCommandHandler(ITaxationRepository repos
 {
     public async Task<bool> HandleAsync(SetTaxProductMappingCommand request, CancellationToken ct)
     {
-        if (request.GoodsId is not { Length: 13 } || !request.GoodsId.All(char.IsAsciiDigit) ||
-            request.Unit < 0 || request.TaxUnit is not { Length: > 0 and <= 8 } || !request.TaxUnit.All(char.IsAsciiDigit))
-            throw new ArgumentException("کد کالا یا واحد مالیاتی نامعتبر است.");
+        if (request.GoodsId is not { Length: 13 } || !request.GoodsId.All(char.IsAsciiDigit) || request.Unit < 0)
+            throw new ArgumentException("شناسه کالا یا واحد فروش ERP معتبر نیست.");
+        if (!TaxUnitCatalog.Contains(request.TaxUnit))
+            throw new ArgumentException("واحد مالیاتی را از فهرست رسمی انتخاب کنید.");
         await repository.SetMappingAsync(request.ProductId, request.Unit, request.GoodsId, request.TaxUnit, ct);
         return true;
     }

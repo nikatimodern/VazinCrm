@@ -147,6 +147,15 @@
                 } else {
                     message.textContent = "Snapshot ذخیره شد.";
                 }
+            } else if (form.dataset.dispatchAction === "cancel-full-return") {
+                const id = await post(form.dataset.url, {
+                    kind: Number(form.dataset.cancellationKind),
+                    serial: valueOf(form, "serial"),
+                    issuedAt: atIranTime(valueOf(form, "issuedAt")),
+                    cancellationReason: Number(form.dataset.cancellationReason)
+                });
+                if (id && !signal.aborted)
+                    window.location.assign(form.dataset.dispatchUrl.replace("00000000-0000-0000-0000-000000000000", id));
             } else {
                 const result = await post(form.dataset.url, form.dataset.dispatchAction === "submit" ? filingDetails() : null);
                 if (result && !signal.aborted) window.location.reload();

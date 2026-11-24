@@ -791,7 +791,7 @@ public sealed partial class TaxationSqlTests : IAsyncLifetime
             .HandleAsync(new(factor, "tester", await PreviewVersion(repository, factor)), Ct);
         var frozen = await repository.ReadSnapshotAsync(snapshot, Ct);
         var update = new SetTaxProductMappingCommandHandler(repository);
-        Assert.True(await update.HandleAsync(new(product, 2, "2222222222222", "17"), Ct));
+        Assert.True(await update.HandleAsync(new(product, 2, "2222222222222", "164"), Ct));
         Assert.True(await update.HandleAsync(new(product, 0, "1111111111111", "164"), Ct));
         await Assert.ThrowsAsync<ArgumentException>(() => update.HandleAsync(new(product, 99, "1111111111111", "164"), Ct));
         Assert.Empty((await listing.HandleAsync(new("Tax product", true), Ct)).Items);
