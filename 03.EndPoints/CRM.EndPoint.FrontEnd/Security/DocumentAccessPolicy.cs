@@ -162,6 +162,19 @@ public sealed class DocumentAccessPolicy(
         return query;
     }
 
+    private static bool IsWarehouseEntity(string entity) => entity is "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher";
+    private bool WarehouseEnforced => IsEnforced("Warehouse") || IsEnforced("WarehouseProduct") || IsEnforced("WarehouseTransaction") || IsEnforced("WarehouseVoucher");
+
+    public async Task<bool> CanWarehouseScopeAsync(string entity, string action, Guid warehouseId, CancellationToken ct)
+    {
+        if (!WarehouseEnforced) return true;
+        if (!IsWarehouseEntity(entity) || warehouseId == Guid.Empty) return false;
+        var visible = await WarehouseOwnersAsync("Warehouse", "View", ct);
+        var entityView = await WarehouseOwnersAsync(entity, "View", ct);
+        var actionScope = await WarehouseOwnersAsync(entity, action, ct);
+        return await visible.AnyAsync(w => w.Id == warehouseId && entityView.Any(v => v.Id == w.Id) && actionScope.Any(v => v.Id == w.Id), ct);
+    }
+
     // Warehouse scope is shared by its ledger, products and vouchers. A warehouse's
     // creator and assigned employees are its owners; an exclusion wins over inclusion.
     private async Task<IQueryable<Warehouse>> WarehouseOwnersAsync(string entity, string action, CancellationToken ct)
@@ -212,7 +225,7 @@ public sealed class DocumentAccessPolicy(
     public async Task<IQueryable<T>> ApplyAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
     {
         var entity = typeof(T).Name;
-        if (entity is "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher")
+        if (WarehouseEnforced && IsWarehouseEntity(entity))
             return await WarehouseScopeAsync(query, entity, action, ct);
         if (!IsEnforced(entity)) return query;
         var owners = await OwnersAsync(entity + "." + action, ct);
@@ -274,7 +287,7 @@ public sealed class DocumentAccessPolicy(
         var entity = typeof(T).Name;
         if (!IsEnforced(entity)) return true;
         if (action != "View" && !await AllowsRowAsync(row, "View", ct)) return false;
-        if (entity is "Warehouse" or "WarehouseProduct" or "WarehouseTransaction" or "WarehouseVoucher")
+        if (WarehouseEnforced && IsWarehouseEntity(entity))
             return await CanAsync(entity, action, row.Id, ct);
         if (row is Cashier cashier)
         {
@@ -300,7 +313,7 @@ public sealed class DocumentAccessPolicy(
 
     public async Task<bool> CanAsync(string entity, string action, Guid id, CancellationToken ct)
     {
-        if (!IsEnforced(entity)) return true;
+        if (!IsEnforced(entity) && !(WarehouseEnforced && IsWarehouseEntity(entity))) return true;
         if (id == Guid.Empty) return false;
         if (entity == "PreFactor")
         {
