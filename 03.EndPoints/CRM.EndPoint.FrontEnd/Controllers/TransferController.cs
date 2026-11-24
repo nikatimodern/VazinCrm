@@ -53,7 +53,17 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
             search = model?.serVal;
         var column = form["order[0][column]"].FirstOrDefault();
         var filter = new TransferTableRequest(form["draw"].FirstOrDefault(), Convert.ToInt32(form["start"].FirstOrDefault() ?? "0"), Convert.ToInt32(form["length"].FirstOrDefault() ?? "10"), search, 0, form[$"columns[{column}][data]"].FirstOrDefault(), form["order[0][dir]"] == "asc", model?._type);
-        return Json(await requests.QueryAsync(new GetTransfersTableQuery(filter), ct));
+        var result = await requests.QueryAsync(new GetTransfersTableQuery(filter), ct);
+        var permissions = new System.Collections.Generic.Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+            permissions[row.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row, "Delete", ct),
+                canChangeStatus = await access.AllowsRowAsync(row, "ChangeStatus", ct),
+                canApprove = await access.AllowsRowAsync(row, "Approve", ct)
+            };
+        return Json(new { result.Draw, result.RecordsTotal, result.RecordsFiltered, result.Data, result.FilterCounts, permissions });
     }
 
     [HttpPost]
@@ -131,7 +141,13 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
             return BadRequest();
         if (!await access.CanAsync("Transfer", "ChangeStatus", id, ct) || !await CanUseExistingAccounts(id, ct)) return Forbid();
         if (!Enum.IsDefined(request.Status)) return BadRequest();
-        if (access.IsEnforced("Transfer") && request.Status != TransferStatusEnum.در_دست_تایید && !await access.CanAsync("Transfer", "Approve", id, ct)) return Forbid();
+        if (access.IsEnforced("Transfer"))
+        {
+            var row = await db.Transfers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (row == null) return NotFound();
+            if ((row.Status != TransferStatusEnum.ثبت_اولیه || request.Status != TransferStatusEnum.در_دست_تایید)
+                && !await access.CanAsync("Transfer", "Approve", id, ct)) return Forbid();
+        }
         var status = await requests.CommandAsync(new ChangeTransferStatusCommand(id, request.Status), ct);
         return status == 404 ? NotFound("نقل و انتقال مورد نظر یافت نشد.") : StatusCode(status);
     }
