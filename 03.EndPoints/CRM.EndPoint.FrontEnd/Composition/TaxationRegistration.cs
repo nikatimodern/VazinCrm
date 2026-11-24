@@ -1,3 +1,6 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.InquireTaxSubmission;
@@ -35,6 +38,9 @@ internal static class TaxationRegistration
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ITaxCertificateStore, TaxCertificateStore>();
         services.AddScoped<ITaxSigningBindings, SandboxTaxSigningBindings>();
+        services.AddScoped<ITaxPaymentRepository, TaxPaymentRepository>();
+        services.AddScoped<ICommandHandler<EnqueueTaxPaymentCommand, Guid>, EnqueueTaxPaymentCommandHandler>();
+        services.AddScoped<IQueryHandler<GetTaxPaymentQuery, TaxPaymentState>, GetTaxPaymentQueryHandler>();
         services.AddScoped<ITaxSubmissionRepository, TaxSubmissionRepository>();
         services.AddSingleton<ITaxAuthorityClient>(sp =>
         {
@@ -53,6 +59,8 @@ internal static class TaxationRegistration
                 MaxResponseContentBufferSize = 1024 * 1024
             }, sp.GetRequiredService<ITaxCertificateStore>(), sp.GetRequiredService<TimeProvider>());
         });
+        services.AddSingleton<ITaxPaymentTransport>(sp => (ITaxPaymentTransport)sp.GetRequiredService<ITaxAuthorityClient>());
+        services.AddScoped<ICommandHandler<SubmitTaxPaymentCommand, TaxPaymentState>, SubmitTaxPaymentCommandHandler>();
         services.AddScoped<ICommandHandler<SubmitTaxInvoiceCommand, TaxDispatchState>, SubmitTaxInvoiceCommandHandler>();
         services.AddScoped<ICommandHandler<InquireTaxSubmissionCommand, TaxDispatchState>, InquireTaxSubmissionCommandHandler>();
         services.AddScoped<ICommandHandler<InquireTaxWorkFolderCommand, TaxWorkFolderState>, InquireTaxWorkFolderCommandHandler>();

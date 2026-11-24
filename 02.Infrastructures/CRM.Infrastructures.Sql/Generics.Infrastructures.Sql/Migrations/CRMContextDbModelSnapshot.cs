@@ -7166,6 +7166,70 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.ToTable("TaxMemories");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxPaymentDispatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountancyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AttemptStartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("InvoiceDispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProtectedRequest")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReferenceHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountancyId")
+                        .IsUnique();
+
+                    b.HasIndex("InvoiceDispatchId", "ReferenceHash")
+                        .IsUnique();
+
+                    b.ToTable("TaxPaymentDispatches", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TaxPaymentDispatches_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_TaxPaymentDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [AttemptStartedAt] IS NULL AND [ResolvedAt] IS NULL) OR ([Status] IN (1, 2) AND [AttemptId] IS NOT NULL AND [AttemptStartedAt] IS NOT NULL AND [ResolvedAt] IS NULL) OR ([Status] IN (3, 4) AND [AttemptId] IS NOT NULL AND [AttemptStartedAt] IS NOT NULL AND [ResolvedAt] IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxProductMapping", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8503,6 +8567,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasOne("CRM.Core.Domain.Taxation.TaxMemory", null)
                         .WithMany()
                         .HasForeignKey("TaxMemoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxPaymentDispatch", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceDispatchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

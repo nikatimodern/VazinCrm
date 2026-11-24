@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certificates, TimeProvider clock) : ITaxAuthorityClient
+internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certificates, TimeProvider clock) : ITaxAuthorityClient, ITaxPaymentTransport
 {
     public async Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
     {
@@ -43,6 +43,35 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
                 payload = encrypted
             } })
         });
+    }
+
+    public async Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload,
+        CancellationToken ct)
+    {
+        using var content = JsonDocument.Parse(payload);
+        if (Text(content.RootElement, "taxId") != invoice.TaxId)
+            throw new CryptographicException("Frozen payment does not match the invoice.");
+        using var certificate = OpenCertificate(invoice);
+        var token = await AuthenticateAsync(invoice, certificate, ct);
+        var message = new HttpRequestMessage(HttpMethod.Post, "invoice-payment")
+        {
+            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) },
+            Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
+        };
+        return new PreparedTaxRequest(attemptId, message);
+    }
+
+    public async Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct)
+    {
+        using var content = await ExchangeAsync(request.Message, ct);
+        var response = content.RootElement;
+        var state = Text(response, "requestStatus") switch
+        {
+            "SUCCESS" => TaxPaymentStatus.Accepted,
+            "FAILED" => TaxPaymentStatus.Rejected,
+            _ => throw InvalidResponse()
+        };
+        return new TaxPaymentReply(state, response.GetRawText());
     }
 
     public async Task<TaxAcknowledgement> SendAsync(PreparedTaxRequest request, CancellationToken ct)

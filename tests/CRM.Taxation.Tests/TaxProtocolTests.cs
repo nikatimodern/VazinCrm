@@ -166,6 +166,35 @@ public sealed class TaxProtocolTests
         await Assert.ThrowsAsync<TaxTransportException>(() => client.SendAsync(prepared, CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData("SUCCESS", TaxPaymentStatus.Accepted)]
+    [InlineData("FAILED", TaxPaymentStatus.Rejected)]
+    public async Task PaymentReadsDefinitiveStatusFromOfficialResponse(string response, TaxPaymentStatus expected)
+    {
+        using var taxpayer = RSA.Create(2048);
+        var now = DateTimeOffset.UtcNow;
+        using var cert = Certificate(taxpayer, now);
+        var taxId = TaxInvoicePayload.TaxId("A11216", 12, Issued);
+        using var http = new HttpClient(new Stub(async (request, ct) =>
+        {
+            Assert.Equal("mock.invalid", request.RequestUri!.Host);
+            if (request.RequestUri.AbsolutePath.EndsWith("/nonce", StringComparison.Ordinal))
+                return Response(new { nonce = "mock", expDate = now.AddMinutes(1) });
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.EndsWith("/invoice-payment", request.RequestUri.AbsolutePath, StringComparison.Ordinal);
+            using var bearer = TaxJose.Verify(request.Headers.Authorization!.Parameter!, taxpayer);
+            Assert.NotNull(bearer);
+            using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+            Assert.Equal(taxId, body.RootElement.GetProperty("taxId").GetString());
+            return Response(new { requestStatus = response, error = Array.Empty<object>() });
+        })) { BaseAddress = new("https://mock.invalid/requestsmanager/api/v2/") };
+        var client = new MoadianClient(http, new TestCertificates(cert), TimeProvider.System);
+        var invoice = new TaxSubmission(Guid.NewGuid(), "A11216", TaxAuthorityEnvironment.Sandbox,
+            cert.GetCertHashString(HashAlgorithmName.SHA256), taxId, null, null, null, null, TaxDispatchStatus.Accepted, 12);
+        using var request = await client.PreparePaymentAsync(invoice, Guid.NewGuid(), JsonSerializer.Serialize(new { taxId }), CancellationToken.None);
+        Assert.Equal(expected, (await client.SubmitPaymentAsync(request, CancellationToken.None)).Status);
+    }
+
     private static X509Certificate2 Certificate(RSA key, DateTimeOffset now) =>
         new CertificateRequest("CN=Mock only", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1)
             .CreateSelfSigned(now.AddDays(-1), now.AddDays(1));

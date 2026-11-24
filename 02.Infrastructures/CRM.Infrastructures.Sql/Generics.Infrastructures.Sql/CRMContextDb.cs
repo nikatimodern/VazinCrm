@@ -38,6 +38,7 @@ namespace CRM.Infrastructures.Sql {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
         public DbSet<CRM.Core.Domain.Taxation.TaxDispatch> TaxDispatches { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxPaymentDispatch> TaxPaymentDispatches { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxMemory> TaxMemories { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxInvoiceSnapshot> TaxInvoiceSnapshots { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxProductMapping> TaxProductMappings { get; set; }

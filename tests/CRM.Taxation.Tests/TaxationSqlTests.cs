@@ -1,3 +1,7 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
@@ -613,6 +617,90 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         Assert.Equal(60m, header.GetProperty("cap").GetDecimal());
         Assert.Equal(40m, header.GetProperty("insp").GetDecimal());
         Assert.Equal(1, gateway.Sends);
+    }
+
+    [TaxationSqlFact]
+    public async Task ApprovedPaymentIsFrozenOnceAndAmbiguousPaymentIsNeverRepeated()
+    {
+        await using var db = Open();
+        await using var other = Open();
+        var invoice = await SetupReferenceAsync(db, "APPROVED");
+        var paidAt = Filing().IssuedAt.AddMinutes(1);
+        var receipt = new Accountancy
+        {
+            Id = Guid.NewGuid(), fid = invoice.FactorId, InvoiceType = InvoiceTypeEnum.فاکتور,
+            AccType = AcEnum.واریزی, Status = AccStatusEnum.تایید_شده, PayType = PayTypeEnum.چکی,
+            CurrencyType = CurrencyTypeEnum.ریال, Vosoled = true, VosolDateM = paidAt.Date, credit = 40
+        };
+        db.Accountancies.Add(receipt);
+        await db.SaveChangesAsync();
+        var payments = new TaxPaymentRepository(db, protection);
+        var enqueue = new EnqueueTaxPaymentCommandHandler(payments, TimeProvider.System);
+        var command = new EnqueueTaxPaymentCommand(invoice.Id, "tester", new(receipt.Id, TaxReceiptMethod.Cheque, paidAt, "ref-001", null));
+        var ids = await Task.WhenAll(enqueue.HandleAsync(command, Ct),
+            new EnqueueTaxPaymentCommandHandler(new TaxPaymentRepository(other, protection), TimeProvider.System)
+                .HandleAsync(command, Ct));
+        Assert.Equal(ids[0], ids[1]);
+        Assert.Single(await db.TaxPaymentDispatches.AsNoTracking().ToListAsync());
+        var pending = await payments.ReadPendingAsync(ids[0], Ct);
+        using var posted = JsonDocument.Parse(pending.Payload);
+        Assert.Equal(40, posted.RootElement.GetProperty("paidAmount").GetInt32());
+        Assert.Equal(paidAt.ToUnixTimeMilliseconds(), posted.RootElement.GetProperty("paymentDate").GetInt64());
+
+        var mock = new MockPaymentTransport { Timeout = true };
+        var submit = new SubmitTaxPaymentCommandHandler(payments, new TaxSubmissionRepository(db, protection), mock, TimeProvider.System);
+        var submitOther = new SubmitTaxPaymentCommandHandler(new TaxPaymentRepository(other, protection),
+            new TaxSubmissionRepository(other, protection), mock, TimeProvider.System);
+        await Task.WhenAll(submit.HandleAsync(new(ids[0]), Ct), submitOther.HandleAsync(new(ids[0]), Ct));
+        var state = await payments.GetStateAsync(ids[0], Ct);
+        Assert.Equal(TaxPaymentStatus.Unknown, state.Status);
+        Assert.NotNull(state.AttemptId);
+        Assert.Equal(state, await submitOther.HandleAsync(new(ids[0]), Ct));
+        Assert.Equal(1, mock.Calls);
+    }
+
+    [TaxationSqlFact]
+    public async Task DefinitivePaymentResponseIsProtectedAndReadableAsLocalStatus()
+    {
+        await using var db = Open();
+        var invoice = await SetupReferenceAsync(db, "APPROVED");
+        var paidAt = Filing().IssuedAt.AddMinutes(1);
+        var receipt = new Accountancy
+        {
+            Id = Guid.NewGuid(), fid = invoice.FactorId, InvoiceType = InvoiceTypeEnum.فاکتور,
+            AccType = AcEnum.واریزی, Status = AccStatusEnum.تایید_شده, PayType = PayTypeEnum.نقدی,
+            CurrencyType = CurrencyTypeEnum.ریال, date = paidAt.Date, credit = 40
+        };
+        db.Accountancies.Add(receipt);
+        await db.SaveChangesAsync();
+        var payments = new TaxPaymentRepository(db, protection);
+        var id = await new EnqueueTaxPaymentCommandHandler(payments, TimeProvider.System).HandleAsync(
+            new(invoice.Id, "tester", new(receipt.Id, TaxReceiptMethod.Transfer, paidAt, "ref-002", null)), Ct);
+        var mock = new MockPaymentTransport();
+        var state = await new SubmitTaxPaymentCommandHandler(payments, new TaxSubmissionRepository(db, protection),
+            mock, TimeProvider.System).HandleAsync(new(id), Ct);
+        Assert.Equal(TaxPaymentStatus.Accepted, state.Status);
+        Assert.NotNull(state.ResolvedAt);
+        var stored = await db.TaxPaymentDispatches.AsNoTracking().SingleAsync();
+        Assert.StartsWith("test:", stored.ProtectedResponse);
+        Assert.Equal(state, await payments.GetStateAsync(id, Ct));
+    }
+
+    private sealed class MockPaymentTransport : ITaxPaymentTransport
+    {
+        private int calls;
+        public int Calls => calls;
+        public bool Timeout { get; init; }
+
+        public Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload, CancellationToken ct) =>
+            Task.FromResult(new PreparedTaxRequest(attemptId, new HttpRequestMessage()));
+
+        public Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct)
+        {
+            Interlocked.Increment(ref calls);
+            if (Timeout) throw new TaskCanceledException();
+            return Task.FromResult(new TaxPaymentReply(TaxPaymentStatus.Accepted, """{"requestStatus":"SUCCESS"}"""));
+        }
     }
 
     private async Task<Guid> QueueSubmissionAsync(CRMContextDb db)

@@ -1,3 +1,6 @@
+using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -72,6 +75,19 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     public Task<IActionResult> EnqueueReference(Guid id, TaxReferenceRequest body, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(new EnqueueTaxReferenceCommand(id,
             User.FindFirstValue(ClaimTypes.NameIdentifier), body), ct));
+
+    [HttpPost("dispatches/{id:guid}/payments")]
+    public Task<IActionResult> EnqueuePayment(Guid id, TaxPaymentDetails details, CancellationToken ct) =>
+        Run(() => dispatcher.CommandAsync(new EnqueueTaxPaymentCommand(id,
+            User.FindFirstValue(ClaimTypes.NameIdentifier), details), ct));
+
+    [HttpPost("payments/{id:guid}/submit")]
+    public Task<IActionResult> SubmitPayment(Guid id, CancellationToken ct) =>
+        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxPaymentCommand(id), ct));
+
+    [HttpGet("payments/{id:guid}")]
+    public Task<IActionResult> PaymentState(Guid id, CancellationToken ct) =>
+        Run(() => dispatcher.QueryAsync(new GetTaxPaymentQuery(id), ct));
 
     [HttpPost("dispatches/{id:guid}/submit")]
     public Task<IActionResult> Submit(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] TaxFilingDetails filing, CancellationToken ct) =>
