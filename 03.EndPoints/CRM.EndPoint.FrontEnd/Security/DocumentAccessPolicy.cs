@@ -145,6 +145,20 @@ public sealed class DocumentAccessPolicy(
         return AllowsOwners(await OwnersAsync("Factor." + action, ct), include, all);
     }
 
+    public async Task<IQueryable<Accountancy>> ReceivedChecksAsync(IQueryable<Accountancy> query, CancellationToken ct)
+    {
+        if (!IsEnforced("Check")) return query;
+        var owners = await OwnersAsync("Check.View", ct);
+        if (owners.AllowedOwnerIds is { Length: 0 }) return query.Where(x => false);
+        if (owners.AllowedOwnerIds is { } allowed) query = query.Where(x => allowed.Contains(x.UserCreatorID));
+        if (owners.ExcludedOwnerIds.Length > 0)
+        {
+            var excluded = owners.ExcludedOwnerIds;
+            query = query.Where(x => !excluded.Contains(x.UserCreatorID));
+        }
+        return query;
+    }
+
     public async Task<IQueryable<T>> ApplyAsync<T>(IQueryable<T> query, string action, CancellationToken ct) where T : BaseEntity
     {
         var entity = typeof(T).Name;
