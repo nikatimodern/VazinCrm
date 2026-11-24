@@ -88,7 +88,7 @@
         return sendApiRequest({
             url, data, method: "POST", signal,
             headers: { RequestVerificationToken: token },
-            showLoading: false, showError: false, successMsg: null,
+            showLoading: false, showError: false, logError: false, successMsg: null,
             onError: error => {
                 if (signal.aborted) return;
                 const response = error.response?.data;

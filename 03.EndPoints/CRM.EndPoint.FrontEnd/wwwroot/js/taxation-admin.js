@@ -31,7 +31,7 @@
         try {
             const result = await sendApiRequest({
                 url: form.dataset.url, method: "POST", data, headers: { RequestVerificationToken: token },
-                showLoading: false, showError: false, successMsg: null, signal,
+                showLoading: false, showError: false, logError: false, successMsg: null, signal,
                 onError: error => {
                     if (signal.aborted) return;
                     const response = error.response?.data;

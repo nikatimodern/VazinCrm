@@ -38,6 +38,7 @@ internal static class TaxationRegistration
 {
     internal static void AddTaxation(this IServiceCollection services)
     {
+        services.AddScoped<TaxationAuditFilter>();
         services.AddScoped<IQueryHandler<GetTaxPreviewSnapshotQuery, InvoicePreview>, GetTaxPreviewSnapshotQueryHandler>();
         services.AddScoped<ITaxPreviewProtector, TaxPreviewProtector>();
         services.AddSingleton(TimeProvider.System);

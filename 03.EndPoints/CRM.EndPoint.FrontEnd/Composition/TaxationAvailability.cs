@@ -13,7 +13,7 @@ internal static class TaxationAvailability
     internal static bool TryGetSandboxAddress(IWebHostEnvironment environment, IConfiguration configuration, out Uri address)
     {
         address = null;
-        return environment.IsDevelopment() && configuration.GetValue<bool>("Taxation:Sandbox:Enabled") &&
+        return IsLocalEnabled(environment, configuration) && configuration.GetValue<bool>("Taxation:Sandbox:Enabled") &&
             Uri.TryCreate(configuration["Taxation:Sandbox:BaseAddress"], UriKind.Absolute, out address) &&
             address.Scheme == Uri.UriSchemeHttps && address.IsDefaultPort &&
             address.Host == "sandboxrc.tax.gov.ir" && address.AbsolutePath == "/requestsmanager/api/v2/" &&

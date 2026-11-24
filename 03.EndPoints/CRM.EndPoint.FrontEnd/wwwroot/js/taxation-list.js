@@ -38,7 +38,7 @@
             const response = await sendApiRequest({
                 url: batch.dataset.url, method: "POST", data: Array.from(selected.keys()),
                 headers: { RequestVerificationToken: root.querySelector("[name=__RequestVerificationToken]").value },
-                showLoading: false, showError: false, successMsg: null, signal: lifetime.signal
+                showLoading: false, showError: false, logError: false, successMsg: null, signal: lifetime.signal
             });
             if (lifetime.signal.aborted) return;
             if (!Array.isArray(response)) {
@@ -76,6 +76,7 @@
                 url: button.dataset.previewUrl,
                 showLoading: false,
                 showError: false,
+                logError: false,
                 signal: lifetime.signal
             });
             if (lifetime.signal.aborted) return;

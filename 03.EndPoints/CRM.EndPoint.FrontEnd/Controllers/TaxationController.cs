@@ -38,6 +38,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [ApiController, Route("api/taxation"), Authorize(Roles = AppRoles.Admin), AutoValidateAntiforgeryToken]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+[ServiceFilter(typeof(TaxationAuditFilter))]
 public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration config) : ControllerBase
 {
     [HttpGet("memories")]

@@ -28,6 +28,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Authorize(Roles = AppRoles.Admin), Route("Taxation")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+[ServiceFilter(typeof(TaxationAuditFilter))]
 public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration configuration,
     ITaxSigningBindings bindings)
     : Controller

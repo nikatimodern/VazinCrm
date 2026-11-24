@@ -26,7 +26,7 @@ namespace CRM.Taxation.Tests;
 internal static class TaxationHttpTestHost
 {
     internal static async Task<WebApplication> StartAsync(DbContextOptions<CRMContextDb> options,
-        DirectoryInfo keyRing, TaxationMockAuthority authority, CancellationToken ct)
+        DirectoryInfo keyRing, TaxationMockAuthority authority, CancellationToken ct, ILoggerProvider audit = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -43,6 +43,7 @@ internal static class TaxationHttpTestHost
             ["Taxation:Sandbox:BaseAddress"] = "https://sandboxrc.tax.gov.ir/requestsmanager/api/v2/"
         });
         builder.Logging.ClearProviders();
+        if (audit is not null) builder.Logging.AddProvider(audit);
         builder.WebHost.ConfigureKestrel(server => server.Listen(IPAddress.Loopback, 0));
 
         var services = builder.Services;

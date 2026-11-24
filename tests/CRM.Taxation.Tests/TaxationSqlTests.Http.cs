@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
@@ -12,6 +13,7 @@ using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.Domain.Taxation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace CRM.Taxation.Tests;
@@ -50,7 +52,8 @@ public sealed partial class TaxationSqlTests
     private async Task<Guid> SendThroughBrowserRoutesAsync(DirectoryInfo keyRing, TaxationMockAuthority mock,
         Guid factor, Guid second)
     {
-        await using var app = await TaxationHttpTestHost.StartAsync(options, keyRing, mock, Ct);
+        using var audit = new TaxationAuditCapture();
+        await using var app = await TaxationHttpTestHost.StartAsync(options, keyRing, mock, Ct, audit);
         using var browser = TaxationHttpTestHost.Connect(app);
         using var unauthorized = TaxationHttpTestHost.Connect(app, "sales");
         using var forbidden = await unauthorized.GetAsync("/Taxation", Ct);
@@ -65,7 +68,10 @@ public sealed partial class TaxationSqlTests
         var preview = await browser.GetFromJsonAsync<InvoicePreview>($"/api/taxation/invoices/{factor:D}/preview", Ct);
         Assert.Empty(preview.Errors);
         var body = new { version = preview.Version };
-        Assert.NotEqual(Guid.Empty, await PostAsync<Guid>(browser, $"/api/taxation/invoices/{factor:D}/snapshots", body));
+        var snapshot = await PostAsync<Guid>(browser, $"/api/taxation/invoices/{factor:D}/snapshots", body);
+        Assert.NotEqual(Guid.Empty, snapshot);
+        using var forbiddenSnapshot = await unauthorized.GetAsync($"/api/taxation/snapshots/{snapshot:D}", Ct);
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenSnapshot.StatusCode);
         var queued = await PostAsync<Guid>(browser, $"/api/taxation/invoices/{factor:D}/queue", body);
         var batch = await PostAsync<TaxInvoiceBatchResult[]>(browser, "/api/taxation/invoices/batch/queue", new[] { factor, second });
         Assert.Equal(queued, batch[0].DispatchId);
@@ -100,6 +106,10 @@ public sealed partial class TaxationSqlTests
         Assert.Equal(TaxDispatchStatus.Unknown, (await PostAsync<TaxDispatchState>(browser, cancelApi + "/submit", null)).Status);
         Assert.Equal(2, mock.InvoicePosts);
         Assert.Contains("داشبورد سامانه مؤدیان", await GetPageAsync(browser, "/Taxation/reports?scope=Sandbox"));
+        Assert.Contains(audit.Records, message => message.Contains($"Taxation.Submit actor admin target {queued:D} HTTP 200"));
+        Assert.Contains(audit.Records, message => message.Contains($"Taxation.EnqueuePayment actor admin target {queued:D} HTTP 200"));
+        Assert.DoesNotContain(audit.Records, message => message.Contains(preview.Version) || message.Contains("http-1") ||
+            message.Contains(preview.BuyerEconomicCode) || message.Contains(submitted.TaxId));
         return cancellation;
     }
 
@@ -139,5 +149,22 @@ public sealed partial class TaxationSqlTests
         using var response = await browser.SendAsync(request, Ct);
         Assert.True(response.IsSuccessStatusCode, $"{url} returned {response.StatusCode}: {await response.Content.ReadAsStringAsync(Ct)}");
         return await response.Content.ReadFromJsonAsync<T>(cancellationToken: Ct);
+    }
+
+    private sealed class TaxationAuditCapture : ILoggerProvider
+    {
+        public ConcurrentQueue<string> Records { get; } = new();
+        public ILogger CreateLogger(string categoryName) => new CaptureLogger(Records);
+        public void Dispose() { }
+
+        private sealed class CaptureLogger(ConcurrentQueue<string> records) : ILogger
+        {
+            public bool IsEnabled(LogLevel level) => level == LogLevel.Information;
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => null;
+            public void Log<TState>(LogLevel level, EventId id, TState state, Exception exception, Func<TState, Exception, string> format)
+            {
+                if (id.Name == "TaxationAudit") records.Enqueue(format(state, exception));
+            }
+        }
     }
 }
