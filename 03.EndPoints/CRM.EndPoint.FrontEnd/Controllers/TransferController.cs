@@ -37,10 +37,15 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
         return row != null && await CanUseAccounts(row, ct);
     }
 
-    public async Task<IActionResult> Index(CancellationToken ct) => View(await requests.QueryAsync(new GetWorkspacePageQuery("Transfer"), ct));
+    public async Task<IActionResult> Index(CancellationToken ct)
+    {
+        if (!await access.HasViewAsync("Transfer", ct)) return Forbid();
+        return View(await requests.QueryAsync(new GetWorkspacePageQuery("Transfer"), ct));
+    }
     [HttpPost]
     public async Task<IActionResult> GetAllTransfersDt(CancellationToken ct)
     {
+        if (!await access.HasViewAsync("Transfer", ct)) return Forbid();
         var form = await Request.ReadFormAsync(ct);
         var model = JsonConvert.DeserializeObject<FilterVModel>(form["model"].FirstOrDefault());
         var search = form["search[value]"].FirstOrDefault();
@@ -56,6 +61,28 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
     {
         if (model == null)
             return BadRequest();
+        if (model.Id == Guid.Empty ? !await access.HasAsync("Transfer", "Create", ct) : !await access.CanAsync("Transfer", "Edit", model.Id, ct)) return Forbid();
+        if (access.IsEnforced("Transfer"))
+        {
+            if (model.Id == Guid.Empty)
+            {
+                model.Status = TransferStatusEnum.ثبت_اولیه;
+                model.IsDeleted = false;
+            }
+            else
+            {
+                var old = await db.Transfers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
+                if (old == null) return NotFound();
+                model.Status = old.Status;
+                model.UserCreatorID = old.UserCreatorID;
+                model.UserCreator = old.UserCreator;
+                model.CreateDate = old.CreateDate;
+                model.CreateDateTxt = old.CreateDateTxt;
+                model.IsDeleted = old.IsDeleted;
+            }
+            foreach (var attachment in model.Attachments ?? [])
+                if (attachment.Id != Guid.Empty && !await db.Attachments.AsNoTracking().AnyAsync(x => x.Id == attachment.Id && x.EntityId == model.Id && x._AttachType == CRM.Core.Domain.Attachments.Enum._AttachType.transfer, ct)) return Forbid();
+        }
         if (!await CanUseAccounts(model, ct) || (model.Id != Guid.Empty && !await CanUseExistingAccounts(model.Id, ct))) return Forbid();
         try
         {
@@ -69,6 +96,7 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
 
     public async Task<IActionResult> GetTransfer(Guid id, CancellationToken ct)
     {
+        if (!await access.CanAsync("Transfer", "View", id, ct)) return Forbid();
         if (!await CanUseExistingAccounts(id, ct)) return Forbid();
         try
         {
@@ -83,6 +111,7 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
 
     public async Task<IActionResult> DeleteTransfer(Guid id, CancellationToken ct)
     {
+        if (!await access.CanAsync("Transfer", "Delete", id, ct)) return Forbid();
         if (!await CanUseExistingAccounts(id, ct)) return Forbid();
         try
         {
@@ -100,7 +129,9 @@ public sealed class TransferController(ICqrsDispatcher requests, DocumentAccessP
     {
         if (request is null)
             return BadRequest();
-        if (!await CanUseExistingAccounts(id, ct)) return Forbid();
+        if (!await access.CanAsync("Transfer", "ChangeStatus", id, ct) || !await CanUseExistingAccounts(id, ct)) return Forbid();
+        if (!Enum.IsDefined(request.Status)) return BadRequest();
+        if (access.IsEnforced("Transfer") && request.Status != TransferStatusEnum.در_دست_تایید && !await access.CanAsync("Transfer", "Approve", id, ct)) return Forbid();
         var status = await requests.CommandAsync(new ChangeTransferStatusCommand(id, request.Status), ct);
         return status == 404 ? NotFound("نقل و انتقال مورد نظر یافت نشد.") : StatusCode(status);
     }
