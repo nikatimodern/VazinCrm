@@ -55,6 +55,13 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         QualityControlCustomerListRequest request, QualityControlAccess access, CancellationToken cancellationToken)
     {
         var visibleFactors = await VisibleFactorsAsync(access, cancellationToken);
+        var sharedCustomers = SharedCustomerIds(visibleFactors);
+        var visibleContacts = db.QualityControlCustomerContacts.AsNoTracking()
+            .Where(contact => sharedCustomers.Contains(contact.CustomerId));
+        var visibleHistory = db.QualityControlContactHistories.AsNoTracking()
+            .Where(entry => sharedCustomers.Contains(entry.CustomerId));
+        var visibleNotes = db.QualityControlCustomerNotes.AsNoTracking()
+            .Where(note => sharedCustomers.Contains(note.CustomerId));
         var eligible =
             from item in db.FactorItems.AsNoTracking()
             join factor in visibleFactors on item.factorId equals factor.Id
@@ -121,7 +128,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
                     where invoiceItem.CustomerId == groupedItem.CustomerId
                     select review.ModifyDate
                 ).Max(),
-                LastContactModified = db.QualityControlCustomerContacts.AsNoTracking()
+                LastContactModified = visibleContacts
                     .Where(contact => contact.CustomerId == groupedItem.CustomerId)
                     .Max(contact => contact.ModifyDate)
             };
@@ -129,7 +136,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         // independently of date, status, search and pagination.
         var total = summaryRows.Count;
         var customerIds = summaryRows.Select(row => row.CustomerId).ToArray();
-        var contacts = await db.QualityControlCustomerContacts.AsNoTracking()
+        var contacts = await visibleContacts
             .Where(contact => customerIds.Contains(contact.CustomerId)
                 && (contact.Status != QualityControlCustomerContactStatus.None
                     || contact.NoResponseAttempts > 0))
@@ -200,7 +207,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         customers = request.Status switch
         {
             0 => customers.Where(row => row.ReviewedItems < row.TotalItems
-                && !db.QualityControlCustomerContacts.Any(contact => contact.CustomerId == row.CustomerId
+                && !visibleContacts.Any(contact => contact.CustomerId == row.CustomerId
                     && ((contact.Status == QualityControlCustomerContactStatus.NoResponse
                             && contact.LastNoResponseAt >= today)
                         || (contact.Status == QualityControlCustomerContactStatus.InvalidNumber
@@ -208,12 +215,12 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
             1 => customers.Where(row => row.ReviewedItems == row.TotalItems),
             2 => customers.Where(row => row.DiscrepancyItems > 0),
             3 => customers.Where(row => row.ReviewedItems < row.TotalItems
-                && db.QualityControlCustomerContacts.Any(contact =>
+                && visibleContacts.Any(contact =>
                     contact.CustomerId == row.CustomerId
                     && contact.Status == QualityControlCustomerContactStatus.NoResponse
                     && contact.LastNoResponseAt >= today)),
             4 => customers.Where(row => row.ReviewedItems < row.TotalItems
-                && db.QualityControlCustomerContacts.Any(contact =>
+                && visibleContacts.Any(contact =>
                     contact.CustomerId == row.CustomerId
                     && contact.Status == QualityControlCustomerContactStatus.InvalidNumber
                     && (contact.InvalidMobileAtMark ?? "").Trim() == (row.Mobile ?? "").Trim())),
@@ -249,7 +256,7 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
         // Fetch for the visible page so large customer sets do not inflate this query.
         var now = DateTime.Now;
         var pageCustomerIds = page.Select(row => row.CustomerId).ToArray();
-        var recentAttempts = await db.QualityControlContactHistories.AsNoTracking()
+        var recentAttempts = await visibleHistory
             .Where(entry => pageCustomerIds.Contains(entry.CustomerId)
                 && entry.UserCreatorID == access.UserId
                 && entry.Status == QualityControlCustomerContactStatus.NoResponse
@@ -261,13 +268,13 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
 
         // Count only active contact-history records for the visible customers.
         // Soft-deleted records are excluded by the history entity's query filter.
-        var historyCounts = await db.QualityControlContactHistories.AsNoTracking()
+        var historyCounts = await visibleHistory
             .Where(entry => pageCustomerIds.Contains(entry.CustomerId))
             .GroupBy(entry => entry.CustomerId)
             .Select(group => new { CustomerId = group.Key, Count = group.Count() })
             .ToDictionaryAsync(entry => entry.CustomerId, entry => entry.Count, cancellationToken);
 
-        var customersWithNotes = await db.QualityControlCustomerNotes.AsNoTracking()
+        var customersWithNotes = await visibleNotes
             .Where(note => pageCustomerIds.Contains(note.CustomerId))
             .Select(note => note.CustomerId).Distinct()
             .ToHashSetAsync(cancellationToken);
@@ -1145,16 +1152,28 @@ public sealed class QualityControlRepository(CRMContextDb db, IDocumentReadAcces
     {
         if (!permissions.IsEnforced("QualityControl")) return true;
         var visibleFactors = await VisibleFactorsAsync(access, ct);
+        return await SharedCustomerIds(visibleFactors).AnyAsync(id => id == customerId, ct);
+    }
+
+    // A customer-wide record belongs to the entire eligible invoice set, not just its visible subset.
+    // Use the same server-side predicate for list metadata and direct shared operations.
+    private IQueryable<Guid> SharedCustomerIds(IQueryable<Factor> visibleFactors)
+    {
         var eligible = from item in db.FactorItems.AsNoTracking()
                        join factor in db.Factors.AsNoTracking() on item.factorId equals factor.Id
                        join deal in db.Deals.AsNoTracking() on factor.DealId equals (Guid?)deal.Id
-                       where (factor.CustomerId ?? deal.CustomerId) == customerId
+                       where (factor.CustomerId ?? deal.CustomerId).HasValue
                            && !item.IsDeleted && !factor.IsDeleted && !deal.IsDeleted
                            && deal.FinancialStatus == DealFinancialStausEnum.تایید_شده
                            && factor.status == FactorStatus.تایید_شده && !factor.Returned
-                       select factor.Id;
-        return await eligible.AnyAsync(ct)
-            && !await eligible.AnyAsync(id => !visibleFactors.Any(f => f.Id == id), ct);
+                       select new { CustomerId = (factor.CustomerId ?? deal.CustomerId)!.Value, FactorId = factor.Id };
+
+        if (!permissions.IsEnforced("QualityControl"))
+            return db.Customers.AsNoTracking().Select(customer => customer.Id);
+
+        var blocked = eligible.Where(row => !visibleFactors.Any(f => f.Id == row.FactorId))
+            .Select(row => row.CustomerId);
+        return eligible.Select(row => row.CustomerId).Distinct().Where(id => !blocked.Contains(id));
     }
 
     // Keep all QC entry points on the same parent-record boundary before aggregation or mutation.

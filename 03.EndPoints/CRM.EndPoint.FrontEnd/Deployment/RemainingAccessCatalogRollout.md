@@ -51,3 +51,7 @@ All six invoice-item query paths now share a parent visibility filter when Quali
 ## QC related sources and shared state
 
 Supplier enrichment and search use the existing document read filters for pre-invoices, supplies, production heads, supplier invoices and warehouse products. Sales invoice snapshot fields remain visible as part of the authorized sales invoice. Customer-wide notes/history and contact mutations require visibility of every eligible invoice, not merely one. Item review retains its existing per-item eligibility; automatic contact clearing additionally requires SetContactStatus and complete customer eligibility. Queue-level contact metadata remains a separate review item. SQL Server integration checks and activation remain pending.
+
+## QC queue shared metadata
+
+The queue now filters shared contact records, note-existence markers and contact history before querying status filters, sorting, dashboard counts, retry cooldowns and page badges. The same complete-customer eligibility predicate is reused for direct shared operations; partially visible customers retain their authorized invoice-item counts but receive no shared contact metadata. No per-customer database queries are introduced. The disabled QC flag retains legacy customer visibility. Verify against SQL Server with mixed visible/hidden invoices, all contact statuses, date filters and direct history requests before activation. Suppressed contact status is represented by the existing neutral value, not a claim that the customer was contacted.
