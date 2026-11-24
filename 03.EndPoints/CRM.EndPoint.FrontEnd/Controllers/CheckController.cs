@@ -24,6 +24,23 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [Authorize(Policy = "NotCustomerOnly")]
 public sealed class CheckController(ICqrsDispatcher requests, DocumentAccessPolicy access, CRMContextDb db) : Controller
 {
+    private async Task<bool> CanReadBook(Guid id, CancellationToken ct)
+    {
+        if (!await access.CanAsync("Checkbook", "View", id, ct)) return false;
+        if (!access.IsEnforced("BankAccount")) return true;
+        var bankId = await db.Checkbooks.AsNoTracking().Where(x => x.Id == id)
+            .Select(x => (Guid?)x.BankAccountId).FirstOrDefaultAsync(ct);
+        return bankId.HasValue && await access.CanAsync("BankAccount", "View", bankId.Value, ct);
+    }
+
+    private async Task<bool> CanReadCheckParent(Guid id, CancellationToken ct)
+    {
+        if (!access.IsEnforced("Checkbook") && !access.IsEnforced("BankAccount")) return true;
+        var parentId = await db.Checks.AsNoTracking().Where(x => x.Id == id)
+            .Select(x => (Guid?)x.CheckbookId).FirstOrDefaultAsync(ct);
+        return parentId.HasValue && await CanReadBook(parentId.Value, ct);
+    }
+
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
@@ -43,8 +60,19 @@ public sealed class CheckController(ICqrsDispatcher requests, DocumentAccessPoli
     [HttpGet]
     public async Task<IActionResult> GetCheckListByCheckbookId(Guid checkbookId, CancellationToken ct)
     {
-        if (!await access.HasViewAsync("Check", ct) || !await access.CanAsync("Checkbook", "View", checkbookId, ct)) return Forbid();
-        return Ok(await requests.QueryAsync(new GetChecksByCheckbookQuery(checkbookId), ct));
+        if (!await access.HasViewAsync("Check", ct) || !await CanReadBook(checkbookId, ct)) return Forbid();
+        var result = await requests.QueryAsync(new GetChecksByCheckbookQuery(checkbookId), ct);
+        var permissions = new System.Collections.Generic.Dictionary<Guid, object>();
+        foreach (var row in result.Data)
+        {
+            permissions[row.Id] = new
+            {
+                canEdit = await access.AllowsRowAsync(row, "Edit", ct),
+                canDelete = await access.AllowsRowAsync(row, "Delete", ct),
+                canChangeStatus = await access.AllowsRowAsync(row, "ChangeStatus", ct)
+            };
+        }
+        return Ok(new { result.Data, result.Statuses, permissions });
     }
     [HttpPost]
     public async Task<IActionResult> AddCheckbook([FromBody] Checkbook model, CancellationToken ct)
@@ -87,38 +115,34 @@ public sealed class CheckController(ICqrsDispatcher requests, DocumentAccessPoli
                 model.IsDeleted = old.IsDeleted;
             }
         }
-        if (!await access.CanAsync("Checkbook", "View", model.CheckbookId, ct)) return Forbid();
+        if (!await CanReadBook(model.CheckbookId, ct)) return Forbid();
         if (access.IsEnforced("Check")) model.Checkbook = null;
         return model == null ? BadRequest() : StatusCode(await requests.CommandAsync(new SaveCheckCommand(model), ct));
     }
     public async Task<IActionResult> ChangeStatus(Guid id, CheckStatus status, CancellationToken ct)
     {
-        if (!await access.CanAsync("Check", "ChangeStatus", id, ct)) return Forbid();
+        if (!await access.CanAsync("Check", "ChangeStatus", id, ct) || !await CanReadCheckParent(id, ct)) return Forbid();
         if (!Enum.IsDefined(status)) return BadRequest();
         return StatusCode(await requests.CommandAsync(new ChangeCheckStatusCommand(id, status), ct));
     }
     public async Task<IActionResult> GetCheck(Guid id, CancellationToken ct)
     {
         if (!await access.CanAsync("Check", "View", id, ct)) return Forbid();
-        if (access.IsEnforced("Checkbook"))
-        {
-            var parentId = await db.Checks.AsNoTracking().Where(x => x.Id == id).Select(x => (Guid?)x.CheckbookId).FirstOrDefaultAsync(ct);
-            if (!parentId.HasValue || !await access.CanAsync("Checkbook", "View", parentId.Value, ct)) return Forbid();
-        }
+        if (!await CanReadCheckParent(id, ct)) return Forbid();
         var item = await requests.QueryAsync(new GetCheckQuery(id), ct);
         return item == null ? NotFound("رکوردی یافت نشد!") : Ok(item);
     }
 
     public async Task<IActionResult> DeleteCheck(Guid id, CancellationToken ct)
     {
-        if (!await access.CanAsync("Check", "Delete", id, ct)) return Forbid();
+        if (!await access.CanAsync("Check", "Delete", id, ct) || !await CanReadCheckParent(id, ct)) return Forbid();
         var status = await requests.CommandAsync(new DeleteCheckCommand(id), ct);
         return status == 404 ? NotFound("رکوردی یافت نشد!") : StatusCode(status);
     }
 
     public async Task<IActionResult> DeleteCheckbook(Guid id, CancellationToken ct)
     {
-        if (!await access.CanAsync("Checkbook", "Delete", id, ct)) return Forbid();
+        if (!await access.CanAsync("Checkbook", "Delete", id, ct) || !await CanReadBook(id, ct)) return Forbid();
         if (access.IsEnforced("Check"))
         {
             var rows = db.Checks.Where(x => x.CheckbookId == id);
