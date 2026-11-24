@@ -4,6 +4,7 @@ using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.PreFactors.Enum;
 using CRM.Core.ApplicationServices.Taxation.Queries.PreviewTaxInvoice;
+using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -687,6 +688,48 @@ public sealed class TaxationSqlTests : IAsyncLifetime
         var stored = await db.TaxPaymentDispatches.AsNoTracking().SingleAsync();
         Assert.StartsWith("test:", stored.ProtectedResponse);
         Assert.Equal(state, await payments.GetStateAsync(id, Ct));
+    }
+
+    [TaxationSqlFact]
+    public async Task InvoiceListingFiltersEligibleFactorsAndKeepsReferenceDetailsAcrossPages()
+    {
+        await using var db = Open();
+        var original = await SetupReferenceAsync(db, "AWAITING_REACTION");
+        await db.Factors.Where(x => x.Id == original.FactorId).ExecuteUpdateAsync(
+            settings => settings.SetProperty(x => x.SerialNumber, 456), Ct);
+        var cancellation = await ReferenceHandler(db).HandleAsync(new(original.Id, "tester",
+            new(null, TaxDispatchKind.Cancellation, 2, Filing().IssuedAt, null, false,
+                TaxCancellationReason.IncorrectTransactionDate)), Ct);
+        var preFactor = await db.Factors.Where(x => x.Id == original.FactorId).Select(x => x.PfactorID).SingleAsync(Ct);
+        db.Factors.AddRange(Enumerable.Range(1, 25).Select(number => new Factor
+        {
+            Id = Guid.NewGuid(), PfactorID = preFactor, OfficialType = 1, status = FactorStatus.تایید_شده,
+            SerialNumber = number, Customer = "Export buyer", Export = true, DateMiladi = DateTime.Today
+        }));
+        db.Factors.AddRange(
+            new Factor { Id = Guid.NewGuid(), PfactorID = preFactor, OfficialType = 1, SerialNumber = 2000 },
+            new Factor { Id = Guid.NewGuid(), PfactorID = preFactor, OfficialType = 0, SerialNumber = 2001,
+                status = FactorStatus.تایید_شده });
+        await db.SaveChangesAsync(Ct);
+
+        var listing = new ListTaxInvoicesQueryHandler(new TaxInvoiceListing(db));
+        var first = await listing.HandleAsync(new(), Ct);
+        Assert.Equal(26, first.Total);
+        Assert.Equal(2, first.PageCount);
+        Assert.Equal(25, first.Items.Count);
+        Assert.Equal(456, first.Items[0].Number);
+        Assert.Equal(1, Assert.Single((await listing.HandleAsync(new(Page: int.MaxValue), Ct)).Items).Number);
+        var source = Assert.Single((await listing.HandleAsync(new(Search: "۴۵۶", Status: TaxDispatchStatus.Accepted), Ct)).Items);
+        Assert.Equal(110m, source.Amount);
+        var related = Assert.Single(source.Documents, x => x.Id == cancellation);
+        Assert.Equal(TaxDispatchKind.Cancellation, related.Kind);
+        Assert.Equal(TaxDispatchStatus.Pending, related.Status);
+        Assert.Equal(456, related.ReferenceInvoiceNumber);
+        Assert.Equal(original.TaxId, related.ReferenceTaxId);
+
+        var exports = await listing.HandleAsync(new(Search: "Export buyer", Export: true, Unqueued: true), Ct);
+        Assert.Equal(25, exports.Total);
+        Assert.All(exports.Items, item => Assert.Empty(item.Documents));
     }
 
     [TaxationSqlFact]

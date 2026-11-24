@@ -1,6 +1,8 @@
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
+using CRM.Core.ApplicationServices.Security;
+using CRM.EndPoint.FrontEnd.Composition;
 using CRM.Core.ApplicationServices.Taxation.Dtos;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference;
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxInvoice;
@@ -17,7 +19,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
@@ -32,7 +33,7 @@ using CRM.Core.ApplicationServices.Taxation.Commands.SetTaxProductMapping;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-[ApiController, Route("api/taxation"), Authorize(Roles = "مدیر ارشد"), AutoValidateAntiforgeryToken]
+[ApiController, Route("api/taxation"), Authorize(Roles = AppRoles.Admin), AutoValidateAntiforgeryToken]
 public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration config) : ControllerBase
 {
     [HttpGet("memories")]
@@ -108,7 +109,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
 
     private async Task<IActionResult> Run<T>(Func<Task<T>> action)
     {
-        if (!environment.IsDevelopment() || !config.GetValue<bool>("Taxation:EnableLocalPreview")) return NotFound();
+        if (!TaxationAvailability.IsLocalEnabled(environment, config)) return NotFound();
         try { return Ok(await action()); }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (TaxPreviewConflictException ex) { return Conflict(ex.Message); }

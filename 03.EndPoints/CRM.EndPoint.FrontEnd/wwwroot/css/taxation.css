@@ -1,0 +1,97 @@
+.taxation-page {
+    --tax-primary: var(--color-primary, #004944);
+    --tax-action: var(--color-primary-action, #00665c);
+    --tax-secondary-light: var(--color-secondary-light, #f3edfc);
+    --tax-success-light: var(--color-primary-light, #e7f3f0);
+    --tax-danger: var(--color-danger, #c2185b);
+    --tax-danger-light: var(--color-danger-light, #fce8f0);
+    --tax-muted: var(--color-text-muted, #545961);
+    --tax-border: var(--color-border, #dde1e8);
+    --tax-surface: var(--color-surface, #fff);
+    padding: .75rem;
+}
+
+.taxation-heading, .taxation-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
+    margin-block-end: .65rem;
+}
+
+.taxation-heading h1 {
+    font-size: 1.25rem;
+    color: var(--tax-primary);
+    margin: 0;
+}
+
+.taxation-heading span, .taxation-table small, .taxation-empty {
+    color: var(--tax-muted);
+}
+
+.taxation-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: .5rem .75rem;
+    padding: .65rem;
+    margin-block-end: .65rem;
+    background: var(--tax-surface);
+    border: 1px solid var(--tax-border);
+    border-radius: .5rem;
+}
+
+.taxation-filters label {
+    display: grid;
+    flex: 1 1 9rem;
+    gap: .25rem;
+    max-inline-size: 18rem;
+    font-size: .87rem;
+}
+
+.taxation-action {
+    background-color: var(--tax-action);
+    color: var(--tax-surface);
+}
+
+.taxation-action:hover, .taxation-action:focus-visible {
+    background-color: var(--tax-primary);
+    color: var(--tax-surface);
+}
+
+.taxation-validate, .taxation-pagination a {
+    color: var(--tax-action);
+    border-color: var(--tax-border);
+}
+
+.taxation-table {
+    margin: 0;
+    min-inline-size: 42rem;
+    font-size: .9rem;
+}
+
+.taxation-table small { display: block; }
+.taxation-table summary { cursor: pointer; }
+
+.taxation-documents, .taxation-result ul {
+    padding-inline-start: 1rem;
+    margin-block: .25rem 0;
+}
+
+.taxation-documents li + li { margin-block-start: .35rem; }
+
+.taxation-status {
+    display: inline-block;
+    padding: .1rem .35rem;
+    border-radius: .35rem;
+    background: var(--tax-secondary-light);
+}
+
+.taxation-status[data-status="Accepted"] { background: var(--tax-success-light); }
+.taxation-status[data-status="Unknown"], .taxation-status[data-status="Rejected"], .taxation-error {
+    background: var(--tax-danger-light);
+    color: var(--tax-danger);
+}
+
+.taxation-error, .taxation-empty { padding: .65rem; }
+.taxation-pagination { justify-content: center; margin-block: .65rem; }
