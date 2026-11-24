@@ -68,17 +68,52 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
         public async Task<IActionResult> addCompany([FromBody] Company model)
         {
             if (model == null || !ModelState.IsValid) return BadRequest();
-            var current = await db.Companies.AsNoTracking().Select(x => x.Id).Take(2).ToListAsync();
-            if (current.Count != 1 || current[0] != model.Id) return Conflict("اطلاعات شرکت تغییر کرده است؛ صفحه را تازه‌سازی کنید.");
-            db.CompanyFile.RemoveRange(db.CompanyFile.ToList());
-            foreach (var item in model.CompanyFiles ?? Enumerable.Empty<CompanyFile>())
-            {
-                item.FileUrl = fileSaver.SaveBaseItemImage(item.file, item.Filename, item.fileExten);
-            }
+            var current = await db.Companies.Include(x => x.CompanyFiles).Take(2).ToListAsync();
+            if (current.Count != 1 || current[0].Id != model.Id) return Conflict("اطلاعات شرکت تغییر کرده است؛ صفحه را تازه‌سازی کنید.");
+            var files = (model.CompanyFiles ?? Array.Empty<CompanyFile>()).ToList();
+            if (files.Count > 3 || files.Any(x => !ValidCompanyImage(x)) ||
+                files.Select(x => x.Filename).Distinct(StringComparer.Ordinal).Count() != files.Count)
+                return BadRequest("تصاویر لوگو و مهر معتبر نیستند.");
 
-            db.Companies.Update(model);
-            await db.SaveChangesAsync();
+            var company = current[0];
+            company.CompanyName = model.CompanyName;
+            company.CompanyBrandName = model.CompanyBrandName;
+            company.ShenaseMeli = model.ShenaseMeli;
+            company.EghtesadiCode = model.EghtesadiCode;
+            company.NumberRegister = model.NumberRegister;
+            company.Tel = model.Tel;
+            company.Mobile = model.Mobile;
+            company.Address = model.Address;
+            company.PostalCode = model.PostalCode;
+
+            db.CompanyFile.RemoveRange(company.CompanyFiles ?? Array.Empty<CompanyFile>());
+            company.CompanyFiles = files.Select(item => new CompanyFile {
+                Id = Guid.NewGuid(), Filename = item.Filename,
+                fileExten = item.fileExten.ToLowerInvariant(), filetype = item.filetype,
+                file = item.file,
+                FileUrl = fileSaver.SaveBaseItemImage(item.file, item.Filename, item.fileExten.ToLowerInvariant())
+            }).ToList();
+            await db.SaveChangesAsync(HttpContext.RequestAborted);
             return Ok();
+        }
+
+        // Restrict names and extensions before the legacy file saver constructs a physical path.
+        private static bool ValidCompanyImage(CompanyFile item)
+        {
+            if (item == null || item.Filename is not ("Logo" or "Mohr" or "MohrR") ||
+                item.file is not { Length: >= 12 and <= 20971520 }) return false;
+            var bytes = item.file;
+            return item.fileExten?.ToLowerInvariant() switch
+            {
+                "png" => bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71 &&
+                         bytes[4] == 13 && bytes[5] == 10 && bytes[6] == 26 && bytes[7] == 10,
+                "jpg" or "jpeg" => bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255,
+                "gif" => bytes[0] == 71 && bytes[1] == 73 && bytes[2] == 70,
+                "bmp" => bytes[0] == 66 && bytes[1] == 77,
+                "webp" => bytes[0] == 82 && bytes[1] == 73 && bytes[2] == 70 && bytes[3] == 70 &&
+                          bytes[8] == 87 && bytes[9] == 69 && bytes[10] == 66 && bytes[11] == 80,
+                _ => false
+            };
         }
 
         [CatalogPermission("BaseItem", "View")]

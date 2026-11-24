@@ -729,16 +729,16 @@
             const form = document.getElementById("companyForm");
             if (form.dataset.submitting === "true") return;
             AllImageUp = [];
-            if (logo.length != 0) {
+            if (logo?.length) {
                 logo[0].filename = "Logo";
                 AllImageUp.push(logo[0]);
             }
-            if (Mohr.length != 0) {
+            if (Mohr?.length) {
                 Mohr[0].filename = "Mohr";
                 AllImageUp.push(Mohr[0]);
             }
 
-            if (MohrR.length != 0) {
+            if (MohrR?.length) {
                 MohrR[0].filename = "MohrR";
                 AllImageUp.push(MohrR[0]);
             }
