@@ -69,6 +69,20 @@ public partial class SupplyController(ICqrsDispatcher requests, DocumentAccessPo
         }
         if (!create)
         {
+            if (documentAccess.IsEnforced("Payment") || documentAccess.IsEnforced("BankAccount"))
+            {
+                var previous = await db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id, ct);
+                if (previous == null ||
+                    !await documentAccess.CanAsync("BankAccount", "View", previous.FromAccountId, ct) ||
+                    !await documentAccess.CanAsync("BankAccount", "View", previous.ToAccountId, ct)) return false;
+                if (documentAccess.IsEnforced("Payment"))
+                {
+                    model.UserCreatorID = previous.UserCreatorID;
+                    model.UserCreator = previous.UserCreator;
+                    model.CreateDate = previous.CreateDate;
+                    model.CreateDateTxt = previous.CreateDateTxt;
+                }
+            }
             var previousIds = await db.PaymentSupplyFactors.AsNoTracking().Where(x => x.PaymentId == model.Id).Select(x => x.SupplyFactorId).ToListAsync(ct);
             foreach (var id in previousIds)
                 if (!await documentAccess.CanAsync("SupplyFactor", "View", id, ct)) return false;
