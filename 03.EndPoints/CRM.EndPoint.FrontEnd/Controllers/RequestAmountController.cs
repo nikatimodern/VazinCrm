@@ -44,7 +44,7 @@ public class RequestAmountController(ICqrsDispatcher dispatcher, DocumentAccessP
         }
         var orders = await db.RequestAmountOrderHeads.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.OrderHeadId).ToListAsync(ct);
         foreach (var order in orders) if (!await access.CanAsync("OrderHead", "View", order, ct)) return false;
-        var invoices = await db.RequestAmountSupplyFactor.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.SupplyFactorId).ToListAsync(ct);
+        var invoices = await db.RequestAmountSupplyFactors.AsNoTracking().Where(x => x.RequestAmountId == id).Select(x => x.SupplyFactorId).ToListAsync(ct);
         foreach (var invoice in invoices) if (!await access.CanAsync("SupplyFactor", "View", invoice, ct)) return false;
         return true;
     }
