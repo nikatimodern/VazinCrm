@@ -1659,6 +1659,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
             if (documentAccess.IsEnforced("Accountancy") && await db.Accountancies.IgnoreQueryFilters().AnyAsync(a => a.Id == id, AccessCt) && !await documentAccess.CanAsync("Accountancy", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("OrderHead") && await db.OrderHeads.IgnoreQueryFilters().AnyAsync(h => h.Id == id, AccessCt) && !await documentAccess.CanAsync("OrderHead", "View", id, AccessCt)) return Forbid();
             if (documentAccess.IsEnforced("Payment") && await db.Payments.IgnoreQueryFilters().AnyAsync(p => p.Id == id, AccessCt) && !await documentAccess.CanAsync("Payment", "View", id, AccessCt)) return Forbid();
+            if (documentAccess.IsEnforced("Transfer") && await db.Transfers.IgnoreQueryFilters().AnyAsync(x => x.Id == id, AccessCt) && !await documentAccess.CanAsync("Transfer", "View", id, AccessCt)) return Forbid();
+            if (documentAccess.IsEnforced("Cash") && await db.Cashes.IgnoreQueryFilters().AnyAsync(x => x.Id == id, AccessCt) && !await documentAccess.CanAsync("Cash", "View", id, AccessCt)) return Forbid();
             var query = db.Attachments.Where(f => f.EntityId == id);
 
             if (type.HasValue)
