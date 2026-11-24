@@ -1248,9 +1248,14 @@
         root.querySelector("[data-user-position]").textContent = person ?
             "سمت کاری: " + (person.position || "ثبت نشده") : "برای شروع یک کاربر انتخاب کنید.";
         const saveStatus = root.querySelector("[data-user-subtitle]");
-        saveStatus.textContent = !person ? "" :
-            !userReady ? "در حال دریافت تنظیمات..." :
-            userDirty() ? "تغییرات ذخیره‌نشده" : "تغییرات ذخیره شده‌اند.";
+        const status = !userReady ? "loading" : userDirty() ? "dirty" : "saved";
+        const statusLabel = status === "loading" ? "در حال دریافت تنظیمات..." :
+            status === "dirty" ? "تغییرات ذخیره‌نشده" : "تغییرات ذخیره شده‌اند.";
+        const statusIcon = text("i", null, status === "loading" ? "fas fa-spinner fa-spin" :
+            status === "dirty" ? "fas fa-exclamation-circle" : "fas fa-check-circle");
+        statusIcon.setAttribute("aria-hidden", "true");
+        saveStatus.dataset.state = status;
+        saveStatus.replaceChildren(statusIcon, text("span", person ? statusLabel : ""));
         saveStatus.hidden = activeTab !== "users" || !person;
         root.querySelector("[data-user-roles-count]").textContent = userRoleIds.size + " نقش";
         root.querySelector("[data-user-summary-roles]").textContent = userRoleIds.size + " نقش";
