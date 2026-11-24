@@ -40,6 +40,7 @@ public class CashierRow
     public Cashier Cashier { get; set; }
     public List<CashierMappingRow> CashierMappings { get; set; } = [];
     public bool IsAccepted { get; set; }
+    public bool HasFullBalanceAccess { get; set; } = true;
     public decimal TotalCredit { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal Balance { get; set; }
