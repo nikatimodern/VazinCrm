@@ -199,6 +199,20 @@ public sealed class RequestAmountRepository(CRMContextDb db, CRM.Core.Domain.Acc
         if (length != -1)
             query = query.Skip(start).Take(length);
         var data = await query.ToListAsync(ct);
+        var ids = data.Select(x => x.Payment.Id).ToArray();
+        var editable = await access.ApplyAsync(visiblePayments, "Edit", ct);
+        var deletable = await access.ApplyAsync(visiblePayments, "Delete", ct);
+        var editableIds = (await editable.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct)).ToHashSet();
+        var deletableIds = (await deletable.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToListAsync(ct)).ToHashSet();
+        var payableRequests = await access.ApplyAsync(await access.ApplyAsync(db.RequestAmounts.AsNoTracking(), "View", ct), "Pay", ct);
+        var blockedIds = (await db.RequestAmountPayments.AsNoTracking()
+            .Where(link => ids.Contains(link.PaymentId) && !payableRequests.Any(r => r.Id == link.RequestAmountId))
+            .Select(link => link.PaymentId).Distinct().ToListAsync(ct)).ToHashSet();
+        foreach (var row in data)
+        {
+            row.CanEdit = editableIds.Contains(row.Payment.Id) && !blockedIds.Contains(row.Payment.Id);
+            row.CanDelete = deletableIds.Contains(row.Payment.Id) && !blockedIds.Contains(row.Payment.Id);
+        }
         return new(draw, recordsTotal, recordsTotal, data);
     }
 
