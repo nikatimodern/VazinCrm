@@ -1,4 +1,5 @@
 @model CRM.EndPoint.FrontEnd.Models.Setting.PrefactorTermsPageModel
+@inject CRM.EndPoint.FrontEnd.Services.DateTimeServices DateTimeService
 @{
     Layout = "_Layout";
     ViewData["Title"] = "شرایط قرارداد در پیش فاکتور";
@@ -22,12 +23,13 @@
         }
         <div class="terms-toolbar d-flex flex-wrap align-items-center gap-2">
             <button id="termsAdd" type="button" class="terms-button terms-primary" data-bs-toggle="modal" data-bs-target="#prefactorTermEditor"><i class="fa fa-plus" aria-hidden="true"></i> افزودن بند جدید</button>
-            <input id="prefactorTermSearch" type="search" class="form-control flex-grow-1" style="width:auto" aria-label="جستجو" placeholder="جستجو در متن بند یا اولویت..." />
+            <input id="prefactorTermSearch" type="search" class="form-control flex-grow-1" style="width:auto" aria-label="جستجو" placeholder="جستجو در متن، اولویت یا ثبت‌کننده..." />
             <select id="termsSort" class="form-select" style="width:auto" aria-label="مرتب‌سازی">
                 <option value="asc">اولویت: صعودی</option>
                 <option value="desc">اولویت: نزولی</option>
                 <option value="text">متن بند</option>
-                <option value="new">جدیدترین بند</option>
+                <option value="new">جدیدترین تاریخ ثبت</option>
+                <option value="old">قدیمی‌ترین تاریخ ثبت</option>
             </select>
             <button type="button" id="termsReset" class="terms-button" title="بازنشانی جستجو و مرتب‌سازی"><i class="fa fa-times" aria-hidden="true"></i> بازنشانی</button>
             <a asp-action="Index" class="terms-button" title="به‌روزرسانی" aria-label="به‌روزرسانی"><i class="fa fa-sync-alt" aria-hidden="true"></i></a>
@@ -36,13 +38,17 @@
         <p id="termsDragHint" class="small text-muted mb-2">برای تغییر اولویت، دستگیره کنار هر بند را بکشید. ترتیب جدید خودکار ذخیره می‌شود.</p>
         <div class="table-responsive terms-table-wrap">
             <table class="table mb-0 align-middle terms-table">
-                <thead><tr><th scope="col" class="terms-number">ردیف</th><th scope="col">متن بند</th><th scope="col" class="terms-number">اولویت</th><th scope="col" class="terms-actions">عملیات</th></tr></thead>
+                <thead><tr><th scope="col" class="terms-number">ردیف</th><th scope="col">متن بند</th><th scope="col" class="terms-number">اولویت</th><th scope="col" class="terms-created">اطلاعات ثبت</th><th scope="col" class="terms-actions">عملیات</th></tr></thead>
                 <tbody id="prefactorTermList">
                 @foreach (var term in Model.Terms) {
-                    <tr class="prefactor-term-row" data-id="@term.Id" data-order="@term.Order">
+                    <tr class="prefactor-term-row" data-id="@term.Id" data-order="@term.Order" data-created="@(term.CreateDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffffff", System.Globalization.CultureInfo.InvariantCulture))">
                         <td class="terms-row-number text-center"></td>
                         <td class="prefactor-term-text">@term.Text</td>
                         <td class="text-center"><span class="terms-priority">@term.Order</span></td>
+                        <td class="terms-created small">
+                            <div class="terms-creator">@(string.IsNullOrWhiteSpace(term.CreatedByName) ? (string.IsNullOrWhiteSpace(term.UserId) ? "نامشخص" : "کاربر یافت نشد") : term.CreatedByName)</div>
+                            <div class="text-muted terms-created-date" dir="ltr">@(term.CreateDate.HasValue ? DateTimeService.GetDateTimePersian(term.CreateDate.Value) : "ثبت نشده")</div>
+                        </td>
                         <td><div class="d-flex justify-content-center align-items-center gap-1">
                             <button type="button" class="terms-button terms-handle crm-mobile-density-exempt" title="جابه‌جایی (کلیدهای بالا و پایین)" aria-label="جابه‌جایی بند"><i class="fa fa-grip-vertical" aria-hidden="true"></i></button>
                             <a asp-action="Index" asp-route-editId="@term.Id" class="terms-button terms-edit" title="ویرایش" aria-label="ویرایش بند"><i class="fa fa-pen" aria-hidden="true"></i></a>
