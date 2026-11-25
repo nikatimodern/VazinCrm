@@ -1,10 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CRM.Core.Domain.PreFactors.Repositories;
 
-public sealed record PrefactorTerm(int Id, int Order, string Text);
+public sealed record PrefactorTerm(int Id, int Order, string Text, string UserId, DateTime? CreateDate, string CreatedByName);
 
 public interface IPrefactorTermsRepository
 {
