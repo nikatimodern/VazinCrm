@@ -19,15 +19,13 @@ The existing five mobile bottom navigation shortcuts are preserved; mobile drawe
 
 ## Interaction and implementation
 
-- `MenuService.OrganizeMenus` rearranges existing menu items and preserves roles; `GetMenusAsync` reads current role memberships.
+- `MenuService` evaluates the previous role and parent conditions on the original menu tree *before* reorganizing it. Role claims and effective visibility remain as in the pre-redesign menu.
 - `menuNavigation.js` owns independent accordion state persisted in per-user `localStorage`; it does not open new groups on virtual-page navigation.
 - `pageNavigation.js` calls `erpMenu.highlight(url)` instead of rebuilding the sidebar.
 - Header search lists permitted menu links and matching settings-modal destinations with category paths.
 - Favorite stars are on links and settings modal entries. Desktop stars appear on hover/focus; touch shows them continuously.
 - `MenuController` validates antiforgery tokens and current permitted menu IDs for favorite/reorder requests.
 - `MenuFavorites` rows are scoped by authenticated `UserId`; hidden/no-longer-allowed items remain in database, and are not rendered.
-- `TaskHub` publishes `MenuAccessChanged` from account role editing. The already-open page is retained if its View permission remains; page-level operations can listen for `erp:permissions-changed`.
-- Account deactivation is posted with antiforgery and admin authorization, revokes the account server-side and broadcasts `AccountDeactivated` to all live SignalR connections. A non-dismissible 3-second notice is shown and the client navigates to logout. The timer is presentation only; server checks the disabled flag on subsequent authentication requests.
 
 ## Database migration (required)
 
@@ -44,13 +42,16 @@ Before deploying this branch, apply `20261122130000_AddMenuFavorites` to the **U
 7. Add/remove favorites, reorder via drag/drop on desktop and mobile, exceed five favorites, and log in from another device. Revoke and then restore role access and check hidden favorites.
 8. On small screens, verify that all five bottom shortcuts and the refreshed 'More' button still work.
 9. In collapsed desktop mode, verify that flyouts are keyboard/touch accessible and neither hidden nor cut off.
-10. Change a role during an active session. Verify SignalR updates menu and removes a revoked page. Check login and role access after reconnect.
-11. Disable an account while logged in on multiple devices: show a non-dismissable message, 3-second countdown and server-enforced denial. Reactivate, verify full authentication is required. Test disconnect/offline fallback.
-12. Confirm current workflows preserve unsaved form values when permissions change; pages with module-specific CUD authorization must attach to `erp:permissions-changed` to update their operation buttons.
+10. Verify the same roles and multi-role combinations see exactly the same existing destinations as before.
+11. Confirm that the original authentication and account-management workflows are unchanged.
+12. Verify search, favorites, settings, and mobile navigation only list previously authorized links.
 
 ## Integration limitations / follow-up
 
 - A complete .NET Build, live browser UI testing, and applying the migration **were not performed** by the GitHub connector-based edit environment.
-- The existing project does not expose a uniform client-side Create/Edit/Delete access contract for every page. The event `erp:permissions-changed` is emitted, but each page with action-specific access must reconcile its own buttons without destroying unsaved form content. **Do not consider all action-level live updates tested or completed yet.**
-- The SignalR notice is best-effort when the device is connected. Account denial is enforced server-side even when the socket disconnects.
+- Entity-level authorization and live permission update integration are owned by the separate access-control work, not this branch.
 - Collapsed-sidebar flyouts and long-menu scrolling require browser QA across screen sizes.
+
+## Access-control isolation
+
+This branch changes navigation presentation only. Its original authentication, role-management, OTP and SignalR handlers were restored from the branch's original `main` base. Menu filtering uses the original hierarchy and role claims before placing already-authorized entries into the new category layout. Do not use this branch as an implementation of new entity-based permissions.
