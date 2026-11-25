@@ -19,6 +19,13 @@
     const id = row => Number(row.dataset.id);
     const order = row => Number(row.dataset.order);
     const text = row => row.querySelector(".prefactor-term-text").textContent;
+    const creator = row => row.querySelector(".terms-creator").textContent;
+    const date = row => row.querySelector(".terms-created-date").textContent;
+    const compareDate = (a, b, descending) => {
+        const first = a.dataset.created, second = b.dataset.created;
+        if (!first || !second) return Number(!first) - Number(!second) || id(b) - id(a);
+        return (descending ? second.localeCompare(first) : first.localeCompare(second)) || id(b) - id(a);
+    };
     let canonical = Array.from(list.rows);
     let visible = [];
     let page = 0;
@@ -31,10 +38,10 @@
 
     function render() {
         const query = normalize(search.value);
-        const rows = canonical.filter(row => normalize(order(row) + " " + text(row)).includes(query));
+        const rows = canonical.filter(row => normalize(order(row) + " " + text(row) + " " + creator(row) + " " + date(row)).includes(query));
         if (sort.value === "desc") rows.sort((a, b) => order(b) - order(a) || id(b) - id(a));
         if (sort.value === "text") rows.sort((a, b) => normalize(text(a)).localeCompare(normalize(text(b)), "fa"));
-        if (sort.value === "new") rows.sort((a, b) => id(b) - id(a));
+        if (sort.value === "new" || sort.value === "old") rows.sort((a, b) => compareDate(a, b, sort.value === "new"));
         const limit = Number(size.value) || rows.length || 1;
         const pages = Math.max(1, Math.ceil(rows.length / limit));
         page = Math.min(page, pages - 1);
