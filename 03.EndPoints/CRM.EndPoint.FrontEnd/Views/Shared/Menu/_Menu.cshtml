@@ -21,6 +21,31 @@
     <partial name="Menu/_MenuHeader" model="false" />
     <nav id="desktopNavbar" class="menu-nav" aria-label="منوی اصلی">
         <div class="menu-list">
+            <div class="menu-search-row" data-menu-search-row>
+    <button type="button" class="menu-item menu-search-trigger" data-menu-search-toggle
+            data-tooltip-left="جستجوی صفحات" title="جستجوی صفحات"
+            aria-label="جستجوی صفحات" aria-expanded="false">
+        <span class="menu-icon-frame" aria-hidden="true">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+        </span>
+        <span class="menu-item-title">جستجو</span>
+    </button>
+    <div class="menu-search-panel" data-menu-search-panel>
+        <div class="menu-search-field">
+            <svg class="menu-search-field-icon" viewBox="0 0 24 24" width="17" height="17"
+                 fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+            <input type="search" data-menu-search-input placeholder="جستجو در منو..."
+                   autocomplete="off" aria-label="جستجو در صفحات منو" />
+            <button type="button" data-menu-search-close title="پاک کردن جستجو" aria-label="پاک کردن جستجو">×</button>
+        </div>
+        <div class="menu-search-results" data-menu-search-results aria-live="polite" hidden></div>
+    </div>
+</div>
             @foreach (var item in desktopMain) {
                 <partial name="Menu/_MenuItem" model="item" />
             }
@@ -62,6 +87,31 @@
     <partial name="Menu/_MenuHeader" model="true" />
     <nav id="mobileDrawerNavbar" class="menu-nav" aria-label="منوی بیشتر">
         <div class="menu-list">
+            <div class="menu-search-row" data-menu-search-row>
+    <button type="button" class="menu-item menu-search-trigger" data-menu-search-toggle
+            data-tooltip-left="جستجوی صفحات" title="جستجوی صفحات"
+            aria-label="جستجوی صفحات" aria-expanded="false">
+        <span class="menu-icon-frame" aria-hidden="true">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+        </span>
+        <span class="menu-item-title">جستجو</span>
+    </button>
+    <div class="menu-search-panel" data-menu-search-panel>
+        <div class="menu-search-field">
+            <svg class="menu-search-field-icon" viewBox="0 0 24 24" width="17" height="17"
+                 fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+            <input type="search" data-menu-search-input placeholder="جستجو در منو..."
+                   autocomplete="off" aria-label="جستجو در صفحات منو" />
+            <button type="button" data-menu-search-close title="پاک کردن جستجو" aria-label="پاک کردن جستجو">×</button>
+        </div>
+        <div class="menu-search-results" data-menu-search-results aria-live="polite" hidden></div>
+    </div>
+</div>
             @foreach (var item in mobileMain) {
                 <partial name="Menu/_MenuItem" model="item" />
             }

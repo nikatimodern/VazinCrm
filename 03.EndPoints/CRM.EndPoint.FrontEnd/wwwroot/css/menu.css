@@ -506,3 +506,145 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 #mobileDrawerFixedActions .menu-item-title > span:first-child {
     text-align: right;
 }
+
+
+/* Sidebar search is the first NAV item, not a header action. */
+#desktopNavbar .menu-search-row,
+#mobileDrawerNavbar .menu-search-row {
+    position: relative;
+    z-index: 20;
+    flex: 0 0 auto;
+    min-width: 0;
+    width: 100%;
+    padding: 3px 1px 8px;
+}
+#desktopNavbar .menu-search-trigger,
+#mobileDrawerNavbar .menu-search-trigger {
+    display: none;
+}
+#desktopNavbar .menu-search-panel,
+#mobileDrawerNavbar .menu-search-panel {
+    position: static;
+    display: block;
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+#desktopNavbar .menu-search-field,
+#mobileDrawerNavbar .menu-search-field {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(174, 235, 218, .24);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .11);
+    color: #e7fff7;
+    padding-inline: 9px 3px;
+    transition: border-color .15s, background-color .15s;
+}
+#desktopNavbar .menu-search-field:focus-within,
+#mobileDrawerNavbar .menu-search-field:focus-within {
+    border-color: #a8f0dd;
+    background: rgba(255,255,255,.15);
+}
+#desktopNavbar .menu-search-field-icon,
+#mobileDrawerNavbar .menu-search-field-icon {
+    flex: 0 0 17px;
+    color: #c9eee4;
+}
+#desktopNavbar .menu-search-field input,
+#mobileDrawerNavbar .menu-search-field input {
+    font: 12px IRANSans, sans-serif;
+    color: #fff;
+    direction: rtl;
+    text-align: right;
+    padding: 7px 2px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    outline: 0;
+    background: transparent;
+    border: 0;
+}
+#desktopNavbar .menu-search-field input::placeholder,
+#mobileDrawerNavbar .menu-search-field input::placeholder { color: #c5e1db; opacity: 1; }
+#desktopNavbar .menu-search-field button,
+#mobileDrawerNavbar .menu-search-field button {
+    width: 24px;
+    height: 27px;
+    flex: 0 0 24px;
+    padding: 0;
+    font-size: 19px;
+    border: 0;
+    background: transparent;
+    color: #bddbd2;
+    cursor: pointer;
+}
+#desktopNavbar .menu-search-results,
+#mobileDrawerNavbar .menu-search-results {
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 5px;
+    padding: 3px;
+    background: rgba(0, 40, 37, .93);
+    border: 1px solid rgba(174, 235, 218, .22);
+    border-radius: 8px;
+}
+#desktopNavbar .menu-search-results[hidden],
+#mobileDrawerNavbar .menu-search-results[hidden] { display: none !important; }
+
+/* Collapsed: search appears as the first icon, aligned exactly like menu icons.
+   Clicking it reveals a compact search popover beside the 64px sidebar. */
+@media (min-width: 768px) {
+    html.sidebar-collapsed #desktopNavbar .menu-search-trigger {
+        display: flex;
+        width: 100%;
+        min-height: 34px;
+        align-items: center;
+        justify-content: flex-start;
+        padding-block: 4px;
+        padding-inline: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-panel {
+        display: none;
+        position: absolute;
+        top: 0;
+        right: calc(100% + 8px);
+        width: 270px;
+        max-width: calc(100vw - 85px);
+        padding: 10px;
+        border: 1px solid rgba(169, 240, 221, .3);
+        border-radius: 10px;
+        background: #004944;
+        box-shadow: 0 12px 25px rgba(0,0,0,.28);
+        z-index: 1200;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-row.is-search-open > .menu-search-panel {
+        display: block;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-results {
+        max-height: 320px;
+    }
+
+    /* Stars are editing affordances for expanded navigation only. In
+       collapsed mode, keep the favorite page links, hide the star controls. */
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-title,
+    html.sidebar-collapsed #desktopSidebar .menu-favorite-toggle,
+    html.sidebar-collapsed #desktopSidebar .menu-favorite-grip,
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-more {
+        display: none !important;
+    }
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-panel {
+        padding-top: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-entry > .menu-item {
+        padding-left: 0;
+    }
+}

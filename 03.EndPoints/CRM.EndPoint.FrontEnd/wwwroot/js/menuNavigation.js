@@ -105,7 +105,9 @@
             highlight();
             initSortable();
             syncSettingsFavorites();
-            for (const panel of document.querySelectorAll("[data-menu-search-panel]:not([hidden])")) renderSearch(panel);
+            // Refresh replaces the navigation subtree; the expanded textbox
+            // stays visible by CSS and the results start closed.
+            document.querySelectorAll("[data-menu-search-row]").forEach(row => row.classList.remove("is-search-open"));
         })().finally(() => { refreshing = null; });
         return refreshing;
     }
@@ -138,12 +140,16 @@
         });
     }
     function renderSearch(panel) {
-        const results = panel.querySelector("[data-menu-search-results]");
-        const query = normalizeText(panel.querySelector("[data-menu-search-input]")?.value);
+        const results = panel?.querySelector("[data-menu-search-results]");
+        const query = normalizeText(panel?.querySelector("[data-menu-search-input]")?.value);
         if (!results) return;
         results.replaceChildren();
-        let candidates = buildCandidates(panel);
-        if (query) candidates = candidates.filter(x => normalizeText(x.title + " " + x.route).includes(query));
+        // The textbox is always visible in expanded mode, but search results
+        // are shown only for an actual search term.
+        results.hidden = !query;
+        if (!query) return;
+        const candidates = buildCandidates(panel)
+            .filter(x => normalizeText(x.title + " " + x.route).includes(query));
         if (!candidates.length) {
             const empty = document.createElement("div");
             empty.className = "menu-search-empty";
@@ -163,22 +169,24 @@
             results.append(link);
         }
     }
-    const closePanel = panel => {
-        panel.hidden = true;
-        const toggle = panel.closest(".menuHeader")?.querySelector("[data-menu-search-toggle]");
-        toggle?.setAttribute("aria-expanded", "false");
-    };
+    function closeSearch(row) {
+        if (!row) return;
+        row.classList.remove("is-search-open");
+        row.querySelector("[data-menu-search-toggle]")?.setAttribute("aria-expanded", "false");
+        const results = row.querySelector("[data-menu-search-results]");
+        if (results) results.hidden = true;
+    }
     function toggleSearch(toggle) {
-        const panel = toggle.closest(".menuHeader")?.querySelector("[data-menu-search-panel]");
-        if (!panel) return;
-        const show = panel.hidden;
-        document.querySelectorAll("[data-menu-search-panel]").forEach(closePanel);
-        if (show) {
-            panel.hidden = false;
-            toggle.setAttribute("aria-expanded", "true");
-            renderSearch(panel);
-            panel.querySelector("[data-menu-search-input]")?.focus();
-        }
+        const row = toggle.closest("[data-menu-search-row]");
+        if (!row) return;
+        const shouldOpen = !row.classList.contains("is-search-open");
+        document.querySelectorAll("[data-menu-search-row]").forEach(closeSearch);
+        if (!shouldOpen) return;
+        row.classList.add("is-search-open");
+        toggle.setAttribute("aria-expanded", "true");
+        const input = row.querySelector("[data-menu-search-input]");
+        input?.focus();
+        renderSearch(row.querySelector("[data-menu-search-panel]"));
     }
     function syncSettingsFavorites() {
         const catalog = new Map(Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
@@ -229,7 +237,13 @@
         const toggle = event.target.closest("[data-menu-search-toggle]");
         if (toggle) { event.preventDefault(); toggleSearch(toggle); return; }
         const close = event.target.closest("[data-menu-search-close]");
-        if (close) { closePanel(close.closest("[data-menu-search-panel]")); return; }
+        if (close) {
+            const row = close.closest("[data-menu-search-row]");
+            const input = row?.querySelector("[data-menu-search-input]");
+            if (input) { input.value = ""; input.focus(); }
+            renderSearch(row?.querySelector("[data-menu-search-panel]"));
+            return;
+        }
         const groupButton = event.target.closest(".submenu-toggle");
         if (groupButton) {
             const group = groupButton.closest("[data-menu-group]");
@@ -262,9 +276,9 @@
             return;
         }
         const searchResult = event.target.closest(".menu-search-result");
-        if (searchResult) closePanel(searchResult.closest("[data-menu-search-panel]"));
-        if (!event.target.closest(".menuHeader")) {
-            document.querySelectorAll("[data-menu-search-panel]:not([hidden])").forEach(closePanel);
+        if (searchResult) closeSearch(searchResult.closest("[data-menu-search-row]"));
+        if (!event.target.closest("[data-menu-search-row]")) {
+            document.querySelectorAll("[data-menu-search-row]").forEach(closeSearch);
         }
     });
     document.addEventListener("input", event => {
@@ -274,10 +288,22 @@
     document.addEventListener("keydown", event => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
             event.preventDefault();
-            const toggle = document.querySelector("#desktopSidebar [data-menu-search-toggle]") || document.querySelector("#mobileDrawer [data-menu-search-toggle]");
-            if (toggle) toggleSearch(toggle);
+            const mobile = window.matchMedia("(max-width: 767.98px)").matches;
+            const sidebar = document.querySelector(mobile ? "#mobileDrawer" : "#desktopSidebar");
+            const row = sidebar?.querySelector("[data-menu-search-row]");
+            if (!row) return;
+            if (!mobile && document.documentElement.classList.contains("sidebar-collapsed")) {
+                if (!row.classList.contains("is-search-open")) {
+                    toggleSearch(row.querySelector("[data-menu-search-toggle]"));
+                } else {
+                    row.querySelector("[data-menu-search-input]")?.focus();
+                }
+            } else {
+                row.querySelector("[data-menu-search-input]")?.focus();
+            }
         } else if (event.key === "Escape") {
-            document.querySelectorAll("[data-menu-search-panel]:not([hidden])").forEach(closePanel);
+            document.querySelectorAll("[data-menu-search-row]").forEach(closeSearch);
+            document.activeElement?.blur?.();
         }
     });
     window.erpMenu = Object.freeze({ refresh, highlight });
