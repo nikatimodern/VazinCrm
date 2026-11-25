@@ -9,6 +9,8 @@
     const clearSearch = get("termsClearSearch");
     const sort = get("termsSort");
     const size = get("termsPageSize");
+    const first = get("termsFirst");
+    const last = get("termsLast");
     const prev = get("termsPrev");
     const next = get("termsNext");
     const editor = get("prefactorTermEditor");
@@ -60,14 +62,14 @@
             row.querySelector(".terms-priority").textContent = number(order(row));
             list.append(row);
         });
-        get("prefactorTermCount").textContent = number(rows.length);
+        get("prefactorTermCount").textContent = number(canonical.length);
         get("prefactorTermEmpty").hidden = rows.length !== 0;
         get("termsPageInfo").textContent = rows.length
             ? "نمایش " + number(start + 1) + " تا " + number(start + shown.size) + " از " + number(rows.length) + " بند"
             : "بدون نتیجه";
         get("termsPageNumber").textContent = number(page + 1) + " / " + number(pages);
-        prev.disabled = busy || page === 0;
-        next.disabled = busy || page >= pages - 1;
+        first.disabled = prev.disabled = busy || page === 0;
+        last.disabled = next.disabled = busy || page >= pages - 1;
         for (const control of [search, sort, size, clearSearch, get("termsAdd")]) control.disabled = busy;
         clearSearch.hidden = !search.value;
         get("termsDragHint").textContent = busy ? "در حال ذخیره ترتیب..." :
@@ -132,6 +134,8 @@
     for (const [control, event] of [[search, "input"], [sort, "change"], [size, "change"]]) {
         control.addEventListener(event, () => { page = 0; render(); });
     }
+    first.addEventListener("click", () => { page = 0; render(); });
+    last.addEventListener("click", () => { page = canonical.length; render(); });
     prev.addEventListener("click", () => { page--; render(); });
     next.addEventListener("click", () => { page++; render(); });
     clearSearch.addEventListener("click", () => {
