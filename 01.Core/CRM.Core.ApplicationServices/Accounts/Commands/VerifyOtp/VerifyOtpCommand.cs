@@ -77,8 +77,6 @@ public sealed class VerifyOtpCommandHandler(
                 Accounts: accounts.Select(u => new AccountChoice(u.Id, u.UserName, u.FullName)).ToList());
         }
 
-        if (accounts[0].LockoutEnd > DateTimeOffset.UtcNow)
-            return new(403, "حساب کاربری شما غیرفعال شده است.");
         return new(200, "موفق",
             await login.CompleteOtpAsync(accounts[0], request.Type, mobile, cancellationToken));
     }

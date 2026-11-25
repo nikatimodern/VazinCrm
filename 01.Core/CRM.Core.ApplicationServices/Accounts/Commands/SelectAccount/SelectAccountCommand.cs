@@ -27,8 +27,6 @@ public sealed class SelectAccountCommandHandler(
         if (accounts.Count == 0) accounts = await users.FindByUserNameAsync(mobile, cancellationToken);
         var user = accounts.FirstOrDefault(u => u.Id == request.UserId);
         if (user is null) return new(403, "این حساب به شماره موبایل تأییدشده تعلق ندارد.");
-        if (user.LockoutEnd > DateTimeOffset.UtcNow)
-            return new(403, "حساب کاربری شما غیرفعال شده است.");
 
         context.SetSession("OtpVerifiedMobile", "");
         context.SetSession("OtpVerifiedType", "");

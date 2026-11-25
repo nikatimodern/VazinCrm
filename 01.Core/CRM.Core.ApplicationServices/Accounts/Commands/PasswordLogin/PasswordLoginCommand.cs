@@ -27,8 +27,6 @@ public sealed class PasswordLoginCommandHandler(
 
         var user = await users.FindByNameAsync(request.UserName, cancellationToken);
         if (user is null) return new(404, invalidCredentials);
-        if (user.LockoutEnd > DateTimeOffset.UtcNow)
-            return new(403, "حساب کاربری شما غیرفعال شده است.");
 
         // The account state is persisted by UserId, not by username, phone or browser session.
         var current = await lockouts.GetStatusAsync(user.Id, cancellationToken);

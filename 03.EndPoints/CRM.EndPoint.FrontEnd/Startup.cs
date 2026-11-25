@@ -22,8 +22,6 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 using CRM.EndPoint.FrontEnd.IServices.Ai;
 using CRM.EndPoint.FrontEnd.IServices.DocumentRender;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
@@ -128,7 +126,7 @@ namespace CRM.EndPoint.FrontEnd {
                 .AddDefaultTokenProviders();
 
 
-            services.Configure<SecurityStampValidatorOptions>(options => { options.ValidationInterval = TimeSpan.Zero; });
+            services.Configure<SecurityStampValidatorOptions>(options => { options.ValidationInterval = TimeSpan.FromSeconds(5); });
 
 
             services.AddAuthentication(options => { options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; })
@@ -243,19 +241,6 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.ConfigureApplicationCookie(options => {
                 options.Events = new CookieAuthenticationEvents {
-                    // Authorize the current account, not a stale cookie, on every request.
-                    OnValidatePrincipal = async context => {
-                        var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-                        var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
-                        var account = string.IsNullOrWhiteSpace(userId) ? null : await users.FindByIdAsync(userId);
-                        if (account == null || account.LockoutEnd > DateTimeOffset.UtcNow)
-                        {
-                            context.RejectPrincipal();
-                            await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-                            return;
-                        }
-                        await SecurityStampValidator.ValidatePrincipalAsync(context);
-                    },
                     OnRedirectToAccessDenied = context => {
                         context.Response.StatusCode = StatusCodes.Status403Forbidden;
                         return Task.CompletedTask;
