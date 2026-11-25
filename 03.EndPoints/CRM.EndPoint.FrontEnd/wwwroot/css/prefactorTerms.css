@@ -30,3 +30,7 @@
     .crm-terms-page .terms-table { min-width:410px; }
     .crm-terms-page .terms-number { width:42px; }
 }
+
+.crm-terms-page .terms-created { width:155px; min-width:130px; text-align:center; }
+.crm-terms-page .terms-created-date { white-space:nowrap; font-size:11px; }
+.crm-terms-page .terms-creator { overflow-wrap:anywhere; }
