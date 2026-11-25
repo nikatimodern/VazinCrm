@@ -49,6 +49,21 @@ public sealed class PrefactorTermsController(IPrefactorTermsRepository repositor
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> Reorder([FromBody] PrefactorTermsReorderInput input, CancellationToken ct)
+    {
+        if (input?.OriginalIds == null || input.OrderedIds == null ||
+            input.OriginalIds.Length != input.OrderedIds.Length ||
+            input.OriginalIds.Distinct().Count() != input.OriginalIds.Length ||
+            input.OrderedIds.Distinct().Count() != input.OrderedIds.Length)
+            return BadRequest("ترتیب بندها نامعتبر است.");
+
+        if (!await repository.ReorderAsync(input.OriginalIds, input.OrderedIds, ct))
+            return Conflict("فهرست بندها تغییر کرده است. صفحه را به‌روزرسانی کنید.");
+
+        return Ok(new { success = true });
+    }
+
     [HttpGet]
     public async Task<IActionResult> ConfirmDelete(int id, CancellationToken ct)
     {
