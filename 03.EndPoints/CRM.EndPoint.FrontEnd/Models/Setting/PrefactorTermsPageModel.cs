@@ -20,3 +20,9 @@ public sealed class PrefactorTermsPageModel
     public List<PrefactorTerm> Terms { get; init; }
     public PrefactorTermInput Input { get; init; }
 }
+
+public sealed class PrefactorTermsReorderInput
+{
+    public int[] OriginalIds { get; set; }
+    public int[] OrderedIds { get; set; }
+}
