@@ -1,4 +1,5 @@
 @using System.Globalization
+@using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxReport
 @using CRM.Core.Domain.Taxation
 @using CRM.EndPoint.FrontEnd.Models.Taxation
 @using CRM.Framework
@@ -8,6 +9,7 @@
     var filters = Model.Filter;
     var report = Model.Report;
     var counts = report.Statuses.ToDictionary(x => x.Status, x => x.Count);
+    var returnTo = Url.Action("Reports") + Context.Request.QueryString.Value;
     var values = new Dictionary<string, string>
     {
         ["from"] = IsoDate(filters.From), ["through"] = IsoDate(filters.Through), ["customer"] = filters.Customer,
@@ -16,16 +18,18 @@
     };
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/taxation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
 }
 <section class="taxation-page" dir="rtl">
     <header class="taxation-heading">
-        <h1>داشبورد سامانه مؤدیان</h1>
-        <a asp-action="Index">بازگشت به فهرست</a>
+        <div><h1>داشبورد سامانه مؤدیان</h1><p>وضعیت ارسال و پردازش اسناد را به تفکیک محیط بررسی کنید.</p></div><a class="btn btn-sm taxation-action crm-mobile-dense-action" asp-action="ExportReport" asp-all-route-data="values" download><i class="fas fa-download" aria-hidden="true"></i> دریافت Excel</a>
     </header>
-    <form class="taxation-filters" method="get" asp-action="Reports">
-        <label>از تاریخ فاکتور (میلادی) <input name="from" type="date" class="form-control form-control-sm" value="@IsoDate(filters.From)" /></label>
-        <label>تا تاریخ فاکتور (میلادی) <input name="through" type="date" class="form-control form-control-sm" value="@IsoDate(filters.Through)" /></label>
+    <partial name="_TaxationNavigation" />
+    <form class="taxation-filters" method="get" asp-action="Reports" data-taxation-report-dates>
+        <label>از تاریخ فاکتور <input type="text" class="form-control form-control-sm sdate" dir="ltr" autocomplete="off" value="@PersianDate(filters.From)" data-iso-field="from" data-datepicker-change /></label>
+        <label>تا تاریخ فاکتور <input type="text" class="form-control form-control-sm sdate" dir="ltr" autocomplete="off" value="@PersianDate(filters.Through)" data-iso-field="through" data-datepicker-change /></label>
+        <input type="hidden" name="from" value="@IsoDate(filters.From)" />
+        <input type="hidden" name="through" value="@IsoDate(filters.Through)" />
         <label>نام مشتری <input name="customer" type="search" class="form-control form-control-sm" value="@filters.Customer" maxlength="100" /></label>
         <label>نوع سند
             <select name="kind" class="form-select form-select-sm">
@@ -63,9 +67,8 @@
             </select>
         </label>
         <button type="submit" class="btn btn-sm taxation-action">نمایش گزارش</button>
-        <a class="btn btn-sm taxation-validate crm-mobile-dense-action" asp-action="ExportReport" asp-all-route-data="values" download>دریافت Excel</a>
     </form>
-    <p>محیط @TaxReportLabels.Scope(filters.Scope) · @report.Total.ToString("N0") سند</p>
+    <header class="taxation-workflow-heading"><h2>خلاصه گزارش</h2><span class="taxation-status">@TaxReportLabels.Scope(filters.Scope) · @report.Total.ToString("N0") سند</span></header>
     <div class="taxation-report-cards">
         @foreach (var status in Enum.GetValues<TaxReportStatus>())
         {
@@ -82,12 +85,14 @@
     </div>
     @if (report.Rows.Count == 0)
     {
-        <p class="taxation-empty">سندی با این فیلترها پیدا نشد.</p>
+        <div class="taxation-panel taxation-empty"><i class="fas fa-chart-bar" aria-hidden="true"></i><strong>سندی با این فیلترها پیدا نشد.</strong></div>
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table taxation-table align-middle">
+        <div class="taxation-panel taxation-table-shell taxation-report-table">
+            <table class="table taxation-table align-middle"
+                   data-taxation-datatable data-page="@report.Page" data-total="@report.Total"
+                   data-page-size="@GetTaxReportQuery.PageSize">
                 <caption class="visually-hidden">گزارش صورتحساب‌های مالیاتی</caption>
                 <thead>
                     <tr>
@@ -107,11 +112,11 @@
                             <td>
                                 @if (row.DispatchId.HasValue)
                                 {
-                                    <a asp-action="Dispatch" asp-route-id="@row.DispatchId">@TaxReportLabels.Kind(row.Kind)</a>
+                                    <a asp-action="Dispatch" asp-route-id="@row.DispatchId" asp-route-returnTo="@returnTo">@TaxReportLabels.Kind(row.Kind)</a>
                                 }
                                 else
                                 {
-                                    <a asp-action="Preview" asp-route-id="@row.FactorId">پیش‌نمایش</a>
+                                    <a asp-action="Preview" asp-route-id="@row.FactorId" asp-route-returnTo="@returnTo">پیش‌نمایش</a>
                                 }
                             </td>
                             <td><bdi dir="ltr">@(row.FiscalId ?? "ثبت نشده")</bdi></td>
@@ -124,7 +129,7 @@
         </div>
         @if (report.PageCount > 1)
         {
-            <nav class="taxation-pagination" aria-label="صفحه‌بندی گزارش">
+            <nav class="taxation-pagination" data-taxation-fallback-pager aria-label="صفحه‌بندی گزارش">
                 @if (report.Page > 1)
                 {
                     <a asp-action="Reports" asp-all-route-data="values" asp-route-page="@(report.Page - 1)" rel="prev">قبلی</a>
@@ -138,6 +143,11 @@
         }
     }
 </section>
+@section Scripts {
+    <script src="~/js/taxation-table.js" asp-append-version="true"></script>
+    <script src="~/js/taxation-dates.js" asp-append-version="true"></script>
+}
 @functions {
+    private static string PersianDate(DateTime? value) => value.HasValue ? BaseServices.GetDatePersian(value) : null;
     private static string IsoDate(DateTime? value) => value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 }

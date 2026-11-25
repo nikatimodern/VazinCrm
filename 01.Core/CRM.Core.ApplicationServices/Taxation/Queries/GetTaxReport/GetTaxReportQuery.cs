@@ -3,7 +3,10 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.Core.ApplicationServices.Taxation.Queries.GetTaxReport;
 
-public sealed record GetTaxReportQuery(TaxReportFilter Filter, bool Export = false) : IQuery<TaxReportData>;
+public sealed record GetTaxReportQuery(TaxReportFilter Filter, bool Export = false) : IQuery<TaxReportData>
+{
+    public const int PageSize = 25;
+}
 
 public sealed class GetTaxReportQueryHandler(ITaxReportRepository repository) : IQueryHandler<GetTaxReportQuery, TaxReportData>
 {
@@ -17,6 +20,6 @@ public sealed class GetTaxReportQueryHandler(ITaxReportRepository repository) : 
             (filters.Status.HasValue && !Enum.IsDefined(filters.Status.Value)))
             throw new ArgumentException("فیلترهای گزارش معتبر نیستند.");
         return repository.ReadAsync(filters with { Customer = customer, Page = Math.Max(1, filters.Page) },
-            request.Export ? 5000 : 25, request.Export, ct);
+            request.Export ? 5000 : GetTaxReportQuery.PageSize, request.Export, ct);
     }
 }

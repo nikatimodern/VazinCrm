@@ -4,13 +4,13 @@
     ViewData["Title"] = "تطبیق کالاها";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/taxation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
 }
 <section class="taxation-page" id="taxationAdmin" dir="rtl">
     <header class="taxation-heading">
-        <h1>تطبیق کالاها</h1>
-        <a asp-action="Index">بازگشت به فهرست</a>
+        <div><h1>تطبیق کالاها</h1><p>شناسه کالا یا خدمت و واحد مالیاتی هم‌ارز با واحد فروش را ثبت کنید.</p></div>
     </header>
+    <partial name="_TaxationNavigation" />
     <form class="taxation-filters" method="get" asp-action="Products">
         <label>نام یا شناسه مالیاتی کالا <input class="form-control form-control-sm" name="search" value="@Model.Search" maxlength="100" type="search" /></label>
         <label class="form-check"><input class="form-check-input" type="checkbox" name="unmapped" value="true" checked="@Model.Unmapped" /> فقط تطبیق‌های ناقص یا نامعتبر</label>
@@ -20,43 +20,49 @@
     <p data-admin-status role="status"></p>
     @if (Model.Products.Items.Count == 0)
     {
-        <p>کالایی برای نمایش پیدا نشد.</p>
+        <div class="taxation-panel taxation-empty"><i class="fas fa-boxes" aria-hidden="true"></i><strong>کالایی برای نمایش پیدا نشد.</strong></div>
     }
-    @foreach (var product in Model.Products.Items)
+    else
     {
-        <article class="taxation-workflow">
-            <h2>@(product.Title ?? "کالای بدون عنوان")</h2>
-            @if (product.Units.Count == 0)
+        <div class="taxation-product-list">
+            @foreach (var product in Model.Products.Items)
             {
-                <p>واحد فروش در ERP ثبت نشده است.</p>
-            }
-            @foreach (var unit in product.Units)
-            {
-                var invalidCode = unit.TaxUnit is not null && !TaxUnitCatalog.Contains(unit.TaxUnit);
-                <form method="post" class="taxation-fields" data-admin-action="mapping" data-url="@Url.Action("MapProduct", "Taxation")">
-                    <input type="hidden" name="productId" value="@product.Id" />
-                    <input type="hidden" name="unit" value="@unit.Code" />
-                    <div>واحد فروش ERP <span class="d-block">@(unit.Title ?? unit.Code.ToString())</span></div>
-                    <label>شناسه کالا یا خدمت
-                        <input class="form-control form-control-sm" name="goodsId" value="@unit.GoodsId" dir="ltr" inputmode="numeric" required maxlength="13" pattern="[0-9]{13}" />
-                    </label>
-                    <label>واحد مالیاتی هم‌ارز با واحد فروش
-                        <select class="form-select form-select-sm" name="taxUnit" required>
-                            <option value="" selected="@(invalidCode || unit.TaxUnit is null)">انتخاب از فهرست رسمی</option>
-                            @foreach (var option in TaxUnitCatalog.Units)
+                <article class="taxation-panel taxation-product">
+                    <h2><bdi>@(product.Title ?? "کالای بدون عنوان")</bdi></h2>
+                    @if (product.Units.Count == 0)
+                    {
+                        <p>واحد فروش در ERP ثبت نشده است.</p>
+                    }
+                    @foreach (var unit in product.Units)
+                    {
+                        var invalidCode = unit.TaxUnit is not null && !TaxUnitCatalog.Contains(unit.TaxUnit);
+                        var errorId = invalidCode ? $"tax-unit-error-{product.Id:N}-{unit.Code}" : null;
+                        <form method="post" class="taxation-fields taxation-mapping-row" data-admin-action="mapping" data-url="@Url.Action("MapProduct", "Taxation")">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="unit" value="@unit.Code" />
+                            <div class="taxation-product-unit"><span class="taxation-muted">واحد فروش</span><strong>@(unit.Title ?? unit.Code.ToString())</strong></div>
+                            <label>شناسه کالا یا خدمت
+                                <input class="form-control form-control-sm" name="goodsId" value="@unit.GoodsId" dir="ltr" inputmode="numeric" required maxlength="13" pattern="[0-9]{13}" />
+                            </label>
+                            <label>واحد مالیاتی هم‌ارز
+                                <select class="form-select form-select-sm" name="taxUnit" aria-describedby="@errorId" required>
+                                    <option value="" selected="@(invalidCode || unit.TaxUnit is null)">انتخاب از فهرست رسمی</option>
+                                    @foreach (var option in TaxUnitCatalog.Units)
+                                    {
+                                        <option value="@option.Code" selected="@(unit.TaxUnit == option.Code)">@option.Title (@option.Code)</option>
+                                    }
+                                </select>
+                            </label>
+                            <button type="submit" class="btn btn-sm taxation-action">ذخیره تطبیق</button>
+                            @if (invalidCode)
                             {
-                                <option value="@option.Code" selected="@(unit.TaxUnit == option.Code)">@option.Title (@option.Code)</option>
+                                <span id="@errorId" class="taxation-error">کد ثبت‌شده <bdi dir="ltr">@unit.TaxUnit</bdi> در فهرست رسمی نیست.</span>
                             }
-                        </select>
-                        @if (invalidCode)
-                        {
-                            <span class="taxation-error">کد ثبت‌شده <bdi dir="ltr">@unit.TaxUnit</bdi> در فهرست رسمی نیست.</span>
-                        }
-                    </label>
-                    <button type="submit" class="btn btn-sm taxation-action">ذخیره تطبیق</button>
-                </form>
+                        </form>
+                    }
+                </article>
             }
-        </article>
+        </div>
     }
     @if (Model.Products.PageCount > 1)
     {
@@ -76,5 +82,5 @@
     }
 </section>
 @section Scripts {
-    <script src="~/js/taxation-admin.js" asp-append-version="true"></script>
+    <script src="~/js/taxation-admin.js?release=7.0.4" asp-append-version="true"></script>
 }

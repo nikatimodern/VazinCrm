@@ -3,14 +3,13 @@
     ViewData["Title"] = "حافظه‌های مالیاتی";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/taxation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
 }
 <section class="taxation-page" id="taxationAdmin" dir="rtl">
     <header class="taxation-heading">
-        <h1>حافظه‌های مالیاتی</h1>
-        <a asp-action="Index">بازگشت به فهرست</a>
+        <div><h1>حافظه‌های مالیاتی</h1><p>حافظه فعال و آمادگی گواهی برای محیط آزمایشی را بررسی کنید.</p></div><span class="taxation-status">@Model.Count حافظه</span>
     </header>
-    <p>وضعیت گواهی برای Sandbox بررسی می‌شود. ارتباط محیط عملیاتی در این صفحه در دسترس نیست.</p>
+    <partial name="_TaxationNavigation" />
     @Html.AntiForgeryToken()
     <p data-admin-status role="status"></p>
     <form method="post" class="taxation-workflow taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
@@ -20,13 +19,13 @@
     </form>
     @if (Model.Count == 0)
     {
-        <p>حافظه‌ای ثبت نشده است.</p>
+        <div class="taxation-panel taxation-empty"><i class="fas fa-shield-alt" aria-hidden="true"></i><strong>حافظه‌ای ثبت نشده است.</strong></div>
     }
     @foreach (var entry in Model)
     {
         var memory = entry.Memory;
         <article class="taxation-workflow">
-            <h2><bdi dir="ltr">@memory.FiscalId</bdi> · @(memory.IsActive ? "فعال" : "غیرفعال")</h2>
+            <header class="taxation-workflow-heading"><h2><bdi dir="ltr">@memory.FiscalId</bdi></h2><span class="taxation-status" data-status="@(memory.IsActive ? "Active" : null)">@(memory.IsActive ? "فعال" : "غیرفعال")</span></header>
             <p>@entry.SandboxReadiness</p>
             <form method="post" class="taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
                 <input type="hidden" name="id" value="@memory.Id" />
@@ -41,5 +40,5 @@
     }
 </section>
 @section Scripts {
-    <script src="~/js/taxation-admin.js" asp-append-version="true"></script>
+    <script src="~/js/taxation-admin.js?release=7.0.4" asp-append-version="true"></script>
 }

@@ -6,8 +6,7 @@
     const lifetime = new AbortController();
     const { signal } = lifetime;
     const page = typeof PageRuntime !== "undefined" ? PageRuntime.current : null;
-    const releaseScroll = typeof enableMomentumScrollScope === "function" ? enableMomentumScrollScope(root) : null;
-    const dispose = () => { lifetime.abort(); releaseScroll?.(); };
+    const dispose = () => lifetime.abort();
     if (page) page.cleanups.push(dispose);
     else window.addEventListener("pagehide", dispose, { once: true });
 
@@ -50,15 +49,19 @@
         }
     }
 
-    const atIranTime = value => value ? value + ":00+03:30" : null;
+    const dates = window.TaxationDates;
     const valueOf = (scope, name) => scope.querySelector(`[name="${name}"]`).value.trim();
+    const atIranTime = (date, time) => `${date}T${time}:00+03:30`;
+    const issuedAt = scope => atIranTime(dates.toIso(valueOf(scope, "issuedDate")), valueOf(scope, "issuedTime"));
+    dates.clearValidation(root, signal);
 
     function exportDetails() {
         if (!exportForm) return null;
-        const date = valueOf(exportForm, "customsDate");
+        const date = dates.toIso(valueOf(exportForm, "customsDate"));
+        if (date === null) return null;
         return {
             customsDeclarationNumber: valueOf(exportForm, "customsNumber") || null,
-            customsDeclarationDate: date ? atIranTime(date + "T00:00") : null,
+            customsDeclarationDate: date ? atIranTime(date, "00:00") : null,
             customsOffice: valueOf(exportForm, "customsOffice") || null,
             noOtherTaxesOrDuties: exportForm.querySelector("[name=noOtherDuties]").checked,
             lines: Array.from(exportForm.querySelectorAll("[data-export-row]"), row => ({
@@ -77,7 +80,7 @@
         const settlement = Number(valueOf(filing, "settlement"));
         return {
             serial: valueOf(filing, "serial"),
-            issuedAt: atIranTime(valueOf(filing, "issuedAt")),
+            issuedAt: issuedAt(filing),
             buyerType: Number(valueOf(filing, "buyerType")),
             settlement,
             shares: settlement === 3 ? { cash: valueOf(filing, "cash"), credit: valueOf(filing, "credit") } : null
@@ -98,11 +101,14 @@
         });
     }
 
-    exportForm?.addEventListener("input", () => {
+    function invalidateExport() {
         valid = false;
         version = null;
         refreshButtons();
-    }, { signal });
+    }
+
+    exportForm?.addEventListener("input", invalidateExport, { signal });
+    exportForm?.addEventListener("change", invalidateExport, { signal });
 
     if (filing) {
         filing.querySelector("[name=settlement]").addEventListener("change", event => {
@@ -124,7 +130,7 @@
         const action = event.submitter?.dataset.localAction;
         if (form !== localForm && !form.dataset.dispatchAction) return;
         event.preventDefault();
-        if (busy || (form === localForm && !action)) return;
+        if (busy || (form === localForm && !action) || !dates.validate(form)) return;
         busy = true;
         refreshButtons();
         message.textContent = "در حال انجام…";
@@ -151,7 +157,7 @@
                 const id = await post(form.dataset.url, {
                     kind: Number(form.dataset.cancellationKind),
                     serial: valueOf(form, "serial"),
-                    issuedAt: atIranTime(valueOf(form, "issuedAt")),
+                    issuedAt: issuedAt(form),
                     cancellationReason: Number(form.dataset.cancellationReason)
                 });
                 if (id && !signal.aborted)
