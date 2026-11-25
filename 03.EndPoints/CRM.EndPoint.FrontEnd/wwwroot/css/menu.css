@@ -738,6 +738,11 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
 }
 @media (min-width: 768px) {
     /* A collapsed footer needs a short version indicator, not the full text. */
+    /* The expanded footer labels must disappear in the 64px sidebar,
+       despite their more-specific desktop styles above. */
+    html.sidebar-collapsed #desktopFixedActions .menu-item .menu-item-title {
+        display: none;
+    }
     html.sidebar-collapsed #desktopFixedActions .menu-release-compact {
         display: flex;
         width: 100%;
