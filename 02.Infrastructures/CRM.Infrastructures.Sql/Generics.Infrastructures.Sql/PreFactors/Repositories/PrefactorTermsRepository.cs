@@ -44,6 +44,24 @@ public sealed class PrefactorTermsRepository(CRMContextDb db) : IPrefactorTermsR
         return true;
     }
 
+    public async Task<bool> ReorderAsync(int[] originalIds, int[] orderedIds, CancellationToken ct)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct);
+        var terms = await Terms.OrderBy(x => x.Order).ThenBy(x => x.Id).ToListAsync(ct);
+        if (!terms.Select(x => x.Id).SequenceEqual(originalIds) ||
+            orderedIds.Length != terms.Count ||
+            !orderedIds.ToHashSet().SetEquals(originalIds))
+            return false;
+
+        var byId = terms.ToDictionary(x => x.Id);
+        for (var index = 0; index < orderedIds.Length; index++)
+            byId[orderedIds[index]].Order = index + 1;
+
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return true;
+    }
+
     public async Task<bool> DeleteAsync(int id, CancellationToken ct)
     {
         var term = await Terms.SingleOrDefaultAsync(x => x.Id == id, ct);
