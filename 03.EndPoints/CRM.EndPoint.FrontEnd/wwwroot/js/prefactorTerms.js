@@ -6,6 +6,7 @@
 
     const get = id => document.getElementById(id);
     const search = get("prefactorTermSearch");
+    const clearSearch = get("termsClearSearch");
     const sort = get("termsSort");
     const size = get("termsPageSize");
     const prev = get("termsPrev");
@@ -67,7 +68,8 @@
         get("termsPageNumber").textContent = number(page + 1) + " / " + number(pages);
         prev.disabled = busy || page === 0;
         next.disabled = busy || page >= pages - 1;
-        for (const control of [search, sort, size, get("termsReset"), get("termsAdd")]) control.disabled = busy;
+        for (const control of [search, sort, size, clearSearch, get("termsAdd")]) control.disabled = busy;
+        clearSearch.hidden = !search.value;
         get("termsDragHint").textContent = busy ? "در حال ذخیره ترتیب..." :
             canReorder() ? "برای تغییر اولویت، دستگیره را بکشید یا از کلیدهای بالا و پایین استفاده کنید. برای جابه‌جایی بین صفحات، نمایش همه را انتخاب کنید." :
             "برای جابه‌جایی بندها، جستجو را پاک و مرتب‌سازی را روی اولویت صعودی قرار دهید.";
@@ -132,8 +134,11 @@
     }
     prev.addEventListener("click", () => { page--; render(); });
     next.addEventListener("click", () => { page++; render(); });
-    get("termsReset").addEventListener("click", () => {
-        search.value = ""; sort.value = "asc"; page = 0; render();
+    clearSearch.addEventListener("click", () => {
+        search.value = "";
+        page = 0;
+        render();
+        search.focus();
     });
 
     get("termsAdd").addEventListener("click", () => {
