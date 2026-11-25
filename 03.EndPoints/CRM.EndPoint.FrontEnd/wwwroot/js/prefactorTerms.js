@@ -7,10 +7,8 @@
     const rows = Array.from(list.querySelectorAll(".prefactor-term-row"));
     const count = document.getElementById("prefactorTermCount");
     const empty = document.getElementById("prefactorTermEmpty");
-    const normalize = value => value.toLowerCase()
+    const normalize = value => toEnglishDigits(value).toLowerCase()
         .replace(/[يى]/g, "ی").replace(/ك/g, "ک")
-        .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 1776))
-        .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 1632))
         .replace(/\u200c/g, " ").trim();
 
     search.addEventListener("input", () => {
