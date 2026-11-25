@@ -3054,6 +3054,9 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CreateDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Dir")
                         .HasColumnType("nvarchar(max)");
 
