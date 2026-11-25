@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxConnection;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
@@ -62,11 +63,14 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
     }
 
     [HttpGet("memories")]
-    public async Task<IActionResult> Memories([FromServices] ITaxMemoryReadiness readiness, CancellationToken ct)
+    public async Task<IActionResult> Memories([FromServices] ITaxMemoryReadiness readiness, [FromServices] ITaxConnectionSettings settings, CancellationToken ct)
     {
         if (!TaxationAvailability.IsLocalEnabled(environment, configuration)) return NotFound();
         var memories = await dispatcher.QueryAsync(new ListTaxMemoriesQuery(), ct);
-        return View(memories.Select(memory => new TaxMemoryRow(memory, readiness.DescribeSandbox(memory.Id))).ToArray());
+        var protocol = settings.ActiveProtocol;
+        ViewData["TaxAuthorityProtocol"] = protocol;
+        return View(memories.Select(memory => new TaxMemoryRow(memory, readiness.DescribeSandbox(memory.Id),
+            protocol == TaxAuthorityProtocol.V1 && HasV1Binding(memory.Id))).ToArray());
     }
 
     [HttpGet("products")]
@@ -115,7 +119,7 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
     {
         var item = await dispatcher.QueryAsync(new GetTaxDispatchQuery(id, historyBefore), ct);
         var snapshot = await dispatcher.QueryAsync(new GetTaxPreviewSnapshotQuery(item.SnapshotId), ct);
-        return new(snapshot, item, HasSandboxBinding(item.MemoryId), HistoryBefore: historyBefore,
+        return new(snapshot, item, HasSandboxBinding(item), HistoryBefore: historyBefore,
             CancelFullReturn: cancelFullReturn && item.Status == TaxDispatchStatus.Accepted &&
                 item.Kind == TaxDispatchKind.Original && item.HasWorkFolderEvidence);
     });
@@ -132,11 +136,24 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
         }
     }
 
-    private bool HasSandboxBinding(Guid memoryId)
+    private bool HasV1Binding(Guid memoryId)
     {
-        if (!TaxationAvailability.TryGetSandboxAddress(environment, configuration, out _))
+        if (!TaxationAvailability.TryGetSandboxAddress(environment, configuration, TaxAuthorityProtocol.V1, out _))
             return false;
-        try { return !string.IsNullOrWhiteSpace(bindings.Get(memoryId).SellerEconomicCode); }
+        try { return bindings.Get(memoryId).Protocol == TaxAuthorityProtocol.V1; }
+        catch (ArgumentException) { return false; }
+    }
+
+    private bool HasSandboxBinding(TaxDispatchDetails item)
+    {
+        if (item.TaxId is not null)
+            return TaxationAvailability.TryGetSandboxAddress(environment, configuration, item.Protocol, out _);
+        try
+        {
+            var binding = bindings.Get(item.MemoryId);
+            return !string.IsNullOrWhiteSpace(binding.SellerEconomicCode) &&
+                TaxationAvailability.TryGetSandboxAddress(environment, configuration, binding.Protocol, out _);
+        }
         catch (ArgumentException) { return false; }
     }
 

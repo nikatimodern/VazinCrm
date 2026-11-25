@@ -59,6 +59,7 @@ public sealed partial class TaxationRepository
         entry.ReferencedDispatchId = referenceId;
         entry.AuthorityEnvironment = registered.Binding.Environment;
         entry.CertificateSha256 = registered.Binding.CertificateSha256;
+        entry.AuthorityProtocol = registered.Binding.Protocol;
         entry.InvoiceSerial = registered.Serial;
         entry.TaxId = registered.TaxId;
         entry.ProtectedSubmission = protection.Protect(registered.Payload);

@@ -165,6 +165,10 @@
                         <div><dt>وضعیت ماده ۶</dt><dd><bdi>@(dispatch.Article6Status ?? "ثبت نشده")</bdi></dd></div>
                     }
                 </dl>
+                @if (dispatch.Protocol == TaxAuthorityProtocol.V1)
+                {
+                    <p class="taxation-muted">در نسخه ۱ استعلام نتیجه ارسال در دسترس است. استعلام مستقل کارپوشه و ثبت پرداخت در این روش فعال نیست.</p>
+                }
                 @if (dispatch.Status == TaxDispatchStatus.Unknown)
                 {
                     <p class="taxation-error">نتیجه ارسال نامشخص است. برای پیگیری همین درخواست، نتیجه پردازش را استعلام کنید.</p>
@@ -209,7 +213,7 @@
                             <button type="submit" class="btn btn-sm taxation-action">استعلام نتیجه پردازش</button>
                         </form>
                     }
-                    else if (dispatch.Status == TaxDispatchStatus.Accepted)
+                    else if (dispatch.Status == TaxDispatchStatus.Accepted && dispatch.Protocol == TaxAuthorityProtocol.V2)
                     {
                         <form method="post" data-dispatch-action="work-folder" data-url="@Url.Action("WorkFolder", "Taxation", new { id = dispatch.Id })">
                             <button type="submit" class="btn btn-sm taxation-action">استعلام وضعیت کارپوشه</button>

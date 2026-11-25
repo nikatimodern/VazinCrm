@@ -24,6 +24,8 @@ public sealed class TaxDispatch
     public TaxDispatchStatus Status { get; set; }
     public TaxAuthorityEnvironment? AuthorityEnvironment { get; set; }
     public string CertificateSha256 { get; set; }
+    public TaxAuthorityProtocol AuthorityProtocol { get; set; } = TaxAuthorityProtocol.V2;
+    public string V1KeyFingerprint { get; set; }
     public long? InvoiceSerial { get; set; }
     public string TaxId { get; set; }
     public string ProtectedSubmission { get; set; }

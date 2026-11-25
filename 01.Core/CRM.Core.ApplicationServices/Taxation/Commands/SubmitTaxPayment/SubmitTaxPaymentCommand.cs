@@ -20,7 +20,7 @@ public sealed class SubmitTaxPaymentCommandHandler(ITaxPaymentRepository reposit
         if (payment is null)
             return await repository.GetStateAsync(request.PaymentId, ct);
         var invoice = await invoices.FindAsync(payment.InvoiceDispatchId, ct);
-        if (invoice is not { Status: TaxDispatchStatus.Accepted })
+        if (invoice is not { Status: TaxDispatchStatus.Accepted, Protocol: TaxAuthorityProtocol.V2 })
             throw new ArgumentException("صورتحساب مرجع برای ثبت پرداخت پذیرفته‌شده نیست.");
 
         var attempt = Guid.NewGuid();

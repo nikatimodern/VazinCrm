@@ -1,13 +1,15 @@
+@using CRM.Core.Domain.Taxation
 @model IReadOnlyList<CRM.EndPoint.FrontEnd.Models.Taxation.TaxMemoryRow>
 @{
     ViewData["Title"] = "حافظه‌های مالیاتی";
+    var protocol = ViewData["TaxAuthorityProtocol"] is TaxAuthorityProtocol selected ? selected : TaxAuthorityProtocol.V2;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
 }
 <section class="taxation-page" id="taxationAdmin" dir="rtl">
     <header class="taxation-heading">
-        <div><h1>حافظه‌های مالیاتی</h1><p>حافظه فعال و آمادگی گواهی برای محیط آزمایشی را بررسی کنید.</p></div><span class="taxation-status">@Model.Count حافظه</span>
+        <div><h1>حافظه‌های مالیاتی</h1><p>روش ارسال شرکت و آمادگی حافظه برای محیط آزمایشی را بررسی کنید.</p></div><span class="taxation-status">@Model.Count حافظه</span>
     </header>
     <partial name="_TaxationNavigation" />
     @Html.AntiForgeryToken()
@@ -17,6 +19,38 @@
         <label>عنوان حافظه <input class="form-control form-control-sm" name="title" required maxlength="120" /></label>
         <button type="submit" class="btn btn-sm taxation-action">افزودن حافظه</button>
     </form>
+    @if (Model.Count > 0)
+    {
+        <section class="taxation-workflow" aria-labelledby="tax-connection-heading">
+            <h2 id="tax-connection-heading">روش ارسال شرکت</h2>
+            <form method="post" class="taxation-fields" data-admin-action="connection" data-url="@Url.Action("SaveConnection", "Taxation")">
+                <label>روش فعال
+                    <select name="protocol" class="form-select form-select-sm">
+                        <option value="1" selected="@(protocol == TaxAuthorityProtocol.V1)">نسخه ۱ — بدون گواهی امضا</option>
+                        <option value="2" selected="@(protocol == TaxAuthorityProtocol.V2)">نسخه ۲ — با گواهی امضا</option>
+                    </select>
+                </label>
+                <label>حافظه مالیاتی
+                    <select name="memoryId" class="form-select form-select-sm" required>
+                        @foreach (var entry in Model)
+                        {
+                            <option value="@entry.Memory.Id" selected="@entry.Memory.IsActive">@entry.Memory.FiscalId · @entry.Memory.Title</option>
+                        }
+                    </select>
+                </label>
+                <label>شناسه اقتصادی فروشنده
+                    <input type="text" name="sellerEconomicCode" dir="ltr" inputmode="numeric" pattern="[0-9]{11}|[0-9]{14}" maxlength="14" required class="form-control form-control-sm" />
+                </label>
+                <label data-protocol="1" hidden="@(protocol != TaxAuthorityProtocol.V1)">فایل کلید خصوصی RSA (PEM)
+                    <input type="file" name="v1PrivateKeyFile" accept=".pem,.key" class="form-control form-control-sm" />
+                </label>
+                <label data-protocol="2" hidden="@(protocol != TaxAuthorityProtocol.V2)">اثر انگشت SHA-256 گواهی ویندوز
+                    <input type="text" name="certificateSha256" maxlength="64" pattern="[A-Fa-f0-9]{64}" dir="ltr" class="form-control form-control-sm" />
+                </label>
+                <button type="submit" class="btn btn-sm taxation-action">ذخیره روش ارسال</button>
+            </form>
+        </section>
+    }
     @if (Model.Count == 0)
     {
         <div class="taxation-panel taxation-empty"><i class="fas fa-shield-alt" aria-hidden="true"></i><strong>حافظه‌ای ثبت نشده است.</strong></div>
@@ -27,6 +61,12 @@
         <article class="taxation-workflow">
             <header class="taxation-workflow-heading"><h2><bdi dir="ltr">@memory.FiscalId</bdi></h2><span class="taxation-status" data-status="@(memory.IsActive ? "Active" : null)">@(memory.IsActive ? "فعال" : "غیرفعال")</span></header>
             <p>@entry.SandboxReadiness</p>
+            @if (protocol == TaxAuthorityProtocol.V1 && entry.CanCheckV1)
+            {
+                <form method="post" data-admin-action="connection-probe" data-url="@Url.Action("CheckV1", "Taxation", new { id = memory.Id })">
+                    <button type="submit" class="btn btn-sm taxation-validate">بررسی اتصال نسخه ۱ بدون ارسال فاکتور</button>
+                </form>
+            }
             <form method="post" class="taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
                 <input type="hidden" name="id" value="@memory.Id" />
                 <input type="hidden" name="fiscalId" value="@memory.FiscalId" />

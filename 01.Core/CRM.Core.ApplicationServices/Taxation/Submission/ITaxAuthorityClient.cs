@@ -15,8 +15,9 @@ public interface ITaxAuthorityClient
     Task<TaxWorkFolderResult?> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct);
 }
 
-public sealed class PreparedTaxRequest(Guid attemptId, HttpRequestMessage message) : IDisposable
+public sealed class PreparedTaxRequest(Guid attemptId, HttpRequestMessage message, TaxAuthorityProtocol protocol = TaxAuthorityProtocol.V2) : IDisposable
 {
+    public TaxAuthorityProtocol Protocol { get; } = protocol;
     public Guid AttemptId { get; } = attemptId;
     public HttpRequestMessage Message { get; } = message;
     public void Dispose() => Message.Dispose();

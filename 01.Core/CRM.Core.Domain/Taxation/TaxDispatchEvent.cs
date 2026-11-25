@@ -19,4 +19,4 @@ public sealed record TaxDispatchDetails(Guid Id, Guid SnapshotId, Guid MemoryId,
     TaxDispatchStatus Status, string TaxId, Guid? AttemptId, Guid? ReferenceNumber, bool HasAcknowledgement,
     DateTime QueuedUtc, DateTimeOffset? StartedAt, string ProcessingStatus, bool HasWorkFolderEvidence,
     string WorkFolderStatus, string Article6Status,
-    IReadOnlyList<TaxDispatchEvent> History, long? OlderHistoryBefore = null);
+    IReadOnlyList<TaxDispatchEvent> History, long? OlderHistoryBefore = null, TaxAuthorityProtocol Protocol = TaxAuthorityProtocol.V2);

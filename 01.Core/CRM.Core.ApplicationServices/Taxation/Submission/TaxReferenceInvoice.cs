@@ -10,6 +10,8 @@ internal static class TaxReferenceInvoice
 {
     internal static TaxReferenceRegistration Build(TaxReferenceSource source, TaxReferenceRequest request, TaxSigningBinding binding)
     {
+        if (binding.Protocol == TaxAuthorityProtocol.V1)
+            throw new ArgumentException("صدور سند ارجاعی با روش نسخه ۱ در ERP فعال نیست.");
         var reference = source.Reference;
         if (reference.Status != TaxDispatchStatus.Accepted || reference.Kind == TaxDispatchKind.Cancellation ||
             reference.AuthorityEnvironment != binding.Environment ||

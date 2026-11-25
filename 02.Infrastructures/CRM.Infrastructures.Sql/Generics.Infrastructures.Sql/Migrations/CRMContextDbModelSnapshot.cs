@@ -6993,6 +6993,11 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
+                    b.Property<int>("AuthorityProtocol")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
+
                     b.Property<Guid?>("AuthorityReference")
                         .HasColumnType("uniqueidentifier");
 
@@ -7061,6 +7066,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("TaxId")
                         .HasMaxLength(22)
                         .HasColumnType("nvarchar(22)");
+
+                    b.Property<string>("V1KeyFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.HasKey("Id");
 

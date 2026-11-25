@@ -1,6 +1,8 @@
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxConnection;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.CheckTaxV1Connection;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.DeactivateTaxMemory;
@@ -48,6 +50,22 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     [HttpPost("memories")]
     public Task<IActionResult> SaveMemory(SaveTaxMemoryCommand command, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(command, ct));
+
+    [HttpPost("connection")]
+    [RequestSizeLimit(16 * 1024)]
+    public Task<IActionResult> SaveConnection(SaveTaxConnectionCommand command, CancellationToken ct) =>
+        Run(() =>
+        {
+            if (!string.IsNullOrEmpty(command.V1PrivateKey) && !Request.IsHttps)
+                throw new ArgumentException("برای ثبت کلید خصوصی از اتصال HTTPS استفاده کنید.");
+            return dispatcher.CommandAsync(command, ct);
+        });
+
+    [HttpPost("memories/{id:guid}/check-v1")]
+    public Task<IActionResult> CheckV1(Guid id, CancellationToken ct) =>
+        TaxationAvailability.TryGetSandboxAddress(environment, config, TaxAuthorityProtocol.V1, out _)
+            ? Run(() => dispatcher.QueryAsync(new CheckTaxV1ConnectionQuery(id), ct))
+            : Task.FromResult<IActionResult>(NotFound());
 
     [HttpPost("memories/{id:guid}/activate")]
     public Task<IActionResult> Activate(Guid id, CancellationToken ct) =>
@@ -120,7 +138,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
         RunSandbox(() => dispatcher.CommandAsync(new InquireTaxWorkFolderCommand(id), ct));
 
     private Task<IActionResult> RunSandbox<T>(Func<Task<T>> action) =>
-        TaxationAvailability.TryGetSandboxAddress(environment, config, out _) ? Run(action) : Task.FromResult<IActionResult>(NotFound());
+        TaxationAvailability.HasSandboxTransport(environment, config) ? Run(action) : Task.FromResult<IActionResult>(NotFound());
 
     public sealed record TaxPreviewVersion(string Version, ExportTaxDetails Export = null);
 
