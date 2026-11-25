@@ -1,0 +1,20 @@
+@model CRM.Core.Domain.PreFactors.Repositories.PrefactorTerm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "حذف بند پیش‌فاکتور";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+}
+<div class="crm-settings-theme mx-auto p-2" style="max-width:650px" dir="rtl">
+    <div class="InfoData">
+        <h5>حذف بند پیش‌فاکتور</h5>
+        <p>آیا از حذف این بند اطمینان دارید؟ این بند از نمایش پیش‌فاکتورها حذف خواهد شد.</p>
+        <p class="border rounded p-2" style="white-space:pre-wrap;overflow-wrap:anywhere">@Model.Text</p>
+        <form asp-action="Delete" method="post" class="d-flex justify-content-end gap-2">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary crm-mobile-dense-action">انصراف</a>
+            <button type="submit" class="btn btn-sm btn-outline-danger">حذف بند</button>
+        </form>
+    </div>
+</div>
