@@ -197,10 +197,11 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
 
     internal async Task<JsonDocument> CheckServerInformationAsync(TaxMemory memory, Action authenticated, CancellationToken ct)
     {
-        var credentials = new TaxSubmission(Guid.Empty, memory.FiscalId, memory.Environment, memory.CredentialFingerprint,
-            null, null, null, null, null, TaxDispatchStatus.Pending);
         using var certificate = OpenSigningCertificate(memory.CredentialFingerprint);
-        return await GetAsync(credentials, certificate, "server-information", ct, authenticated);
+        var token = await SignChallengeAsync(memory.FiscalId, certificate, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "server-information");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await ExchangeAsync(request, ct, authenticated);
     }
 
     private async Task<JsonDocument> GetAsync(TaxSubmission submission, X509Certificate2 cert, string path, CancellationToken ct, Action onAccepted = null)
@@ -215,6 +216,11 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
     {
         if (submission.Environment != TaxAuthorityEnvironment.Sandbox)
             throw new InvalidOperationException("Only Sandbox credentials are supported for manual dispatch.");
+        return await SignChallengeAsync(submission.FiscalId, cert, ct);
+    }
+
+    private async Task<string> SignChallengeAsync(string fiscalId, X509Certificate2 cert, CancellationToken ct)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Get, "nonce?timeToLive=30");
         using var body = await ExchangeAsync(request, ct);
         var nonce = Text(body.RootElement, "nonce");
@@ -225,7 +231,7 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         var now = clock.GetUtcNow();
         if (now > cert.NotAfter.ToUniversalTime())
             throw new CryptographicException("Pinned tax signing certificate expired before authentication.");
-        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = submission.FiscalId }), cert, now);
+        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = fiscalId }), cert, now);
     }
 
     private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct, Action onAccepted = null)

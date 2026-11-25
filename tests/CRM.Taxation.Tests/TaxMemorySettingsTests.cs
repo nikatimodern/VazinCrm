@@ -15,9 +15,11 @@ public sealed class TaxMemorySettingsTests
     private const string Seller = "12345678901234";
 
     [Theory]
-    [InlineData(TaxAuthorityProtocol.V1)]
-    [InlineData(TaxAuthorityProtocol.V2)]
-    public async Task ConnectionCheckReportsAllStagesWithoutSendingAnInvoice(TaxAuthorityProtocol protocol)
+    [InlineData(TaxAuthorityProtocol.V1, TaxAuthorityEnvironment.Sandbox)]
+    [InlineData(TaxAuthorityProtocol.V2, TaxAuthorityEnvironment.Sandbox)]
+    [InlineData(TaxAuthorityProtocol.V1, TaxAuthorityEnvironment.Production)]
+    [InlineData(TaxAuthorityProtocol.V2, TaxAuthorityEnvironment.Production)]
+    public async Task ConnectionCheckReportsAllStagesWithoutSendingAnInvoice(TaxAuthorityProtocol protocol, TaxAuthorityEnvironment environment)
     {
         using var key = RSA.Create(2048);
         var certificate = new CertificateRequest("CN=Tax test", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -41,34 +43,103 @@ public sealed class TaxMemorySettingsTests
             return Json(new { publicKeys = new[] { new { algorithm = "RSA", id = "mock-key", key = "mock-public-key" } } });
         }
 
-        using var clients = new TaxSandboxClients(Client(Reply), Client(Reply), new MockKey(), new MockCert(cert), TimeProvider.System);
+        var sandbox = environment == TaxAuthorityEnvironment.Sandbox;
+        using var clients = new TaxProtocolClients(Client(sandbox ? Reply : Unexpected), Client(sandbox ? Reply : Unexpected),
+            new MockKey(), new MockCert(cert), TimeProvider.System);
+        using var production = new TaxProtocolClients(ProductionClient(TaxAuthorityProtocol.V1, sandbox ? Unexpected : Reply),
+            ProductionClient(TaxAuthorityProtocol.V2, sandbox ? Unexpected : Reply), new MockKey(), new MockCert(cert), TimeProvider.System);
         var memory = Memory(protocol);
+        memory.Environment = environment;
+        memory.SandboxEnabled = sandbox;
         memory.CredentialFingerprint = cert.GetCertHashString(HashAlgorithmName.SHA256);
-        var results = await new TaxConnectionCheck(clients, new MockCredentials(), new Access(true))
+        var results = await new TaxConnectionCheck(clients, new MockCredentials(), new Access(sandbox), production)
             .CheckAsync(memory, default);
         Assert.Equal(5, results.Count);
         Assert.All(results, step => Assert.Equal("Passed", step.Status));
         Assert.Equal(protocol == TaxAuthorityProtocol.V1 ? 4 : 3, paths.Count);
     }
 
-    [Fact]
-    public async Task ProductionAndDisabledSandboxDoNotContactNetwork()
+    [Theory]
+    [InlineData("token-401", false, "HTTP 401")]
+    [InlineData("token-invalid", false, "پاسخ قابل تأیید")]
+    [InlineData("token-timeout", false, "زمان انتظار")]
+    [InlineData("fiscal-403", true, "HTTP 403")]
+    [InlineData("fiscal-inactive", true, "وضعیت حافظه را فعال اعلام نکرد")]
+    [InlineData("fiscal-mismatch", true, "کد اقتصادی ذخیره‌شده")]
+    public async Task V1ConnectionCheckPinpointsFailureWithoutExposingResponse(string scenario, bool tokenReceived, string reason)
     {
-        using var clients = new TaxSandboxClients(Client(_ => throw new InvalidOperationException("Unexpected network")),
-            Client(_ => throw new InvalidOperationException("Unexpected network")), null!, null!, TimeProvider.System);
-        var check = new TaxConnectionCheck(clients, new MockCredentials(), new Access(false));
+        const string confidential = "sensitive-mock-response-value";
+        HttpResponseMessage Reply(HttpRequestMessage request)
+        {
+            if (request.Method == HttpMethod.Head) return new(HttpStatusCode.MethodNotAllowed);
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/GET_TOKEN"))
+            {
+                return scenario switch
+                {
+                    "token-401" => new(HttpStatusCode.Unauthorized) { Content = new StringContent(confidential) },
+                    "token-invalid" => Json(new { errorDetail = confidential }),
+                    "token-timeout" => throw new TaskCanceledException(),
+                    _ => Json(new { result = new { packetType = "TOKEN_RESULT", data = new { token = confidential } } })
+                };
+            }
+            Assert.EndsWith("/GET_FISCAL_INFORMATION", path);
+            if (scenario == "fiscal-403")
+                return new(HttpStatusCode.Forbidden) { Content = new StringContent(confidential) };
+            return Json(new
+            {
+                result = new
+                {
+                    packetType = "FISCAL_INFORMATION",
+                    data = new
+                    {
+                        fiscalStatus = scenario == "fiscal-inactive" ? "INACTIVE" : "ACTIVE",
+                        economicCode = scenario == "fiscal-mismatch" ? "12345678901235" : Seller
+                    }
+                }
+            });
+        }
+
+        using var production = new TaxProtocolClients(ProductionClient(TaxAuthorityProtocol.V1, Reply),
+            Client(Unexpected), new MockKey(), null!, TimeProvider.System);
+        var memory = Memory(TaxAuthorityProtocol.V1);
+        memory.Environment = TaxAuthorityEnvironment.Production;
+        var results = await new TaxConnectionCheck(null!, new MockCredentials(), new Access(false), production)
+            .CheckAsync(memory, default);
+        Assert.Equal(["Passed", "Passed", "Passed", "Failed", "Skipped"], results.Select(x => x.Status));
+        Assert.Contains(tokenReceived ? "توکن دریافت شد" : "دریافت توکن V1", results[3].Message);
+        Assert.Contains(reason, results[3].Message);
+        Assert.All(results, step => Assert.DoesNotContain(confidential, step.Message));
+    }
+
+    [Fact]
+    public async Task InvalidProductionAndDisabledSandboxDoNotContactNetwork()
+    {
+        using var clients = new TaxProtocolClients(Client(Unexpected), Client(Unexpected), null!, null!, TimeProvider.System);
+        var check = new TaxConnectionCheck(clients, new MockCredentials(), new Access(false), clients);
         var production = Memory(TaxAuthorityProtocol.V2);
         production.Environment = TaxAuthorityEnvironment.Production;
+        production.SellerEconomicCode = "invalid";
         var productionResults = await check.CheckAsync(production, default);
-        Assert.Equal(["Passed", "Passed", "Skipped", "Skipped", "Skipped"], productionResults.Select(x => x.Status));
-        Assert.Contains("عملیاتی", productionResults[2].Message);
+        Assert.Equal(["Failed", "Passed", "Skipped", "Skipped", "Skipped"], productionResults.Select(x => x.Status));
 
         var sandboxResults = await check.CheckAsync(Memory(TaxAuthorityProtocol.V1), default);
         Assert.Equal(["Passed", "Passed", "Skipped", "Skipped", "Skipped"], sandboxResults.Select(x => x.Status));
         Assert.Contains("آزمایشی", sandboxResults[2].Message);
 
-        production.SellerEconomicCode = "invalid";
-        Assert.Equal("Failed", (await check.CheckAsync(production, default))[0].Status);
+    }
+
+    [Theory]
+    [InlineData(TaxAuthorityProtocol.V1, "POST", "api/self-tsp/async/normal-enqueue")]
+    [InlineData(TaxAuthorityProtocol.V1, "POST", "https://example.invalid/req/api/self-tsp/sync/GET_TOKEN")]
+    [InlineData(TaxAuthorityProtocol.V2, "POST", "invoice")]
+    [InlineData(TaxAuthorityProtocol.V2, "POST", "payment")]
+    [InlineData(TaxAuthorityProtocol.V2, "GET", "https://sandboxrc.tax.gov.ir/requestsmanager/api/v2/server-information")]
+    public async Task ProductionCheckBlocksRequestsOutsideReadOnlyContract(TaxAuthorityProtocol protocol, string method, string path)
+    {
+        using var client = ProductionClient(protocol, Unexpected);
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        await Assert.ThrowsAsync<CRM.Core.ApplicationServices.Taxation.Submission.TaxTransportException>(() => client.SendAsync(request));
     }
 
     [Fact]
@@ -101,6 +172,12 @@ public sealed class TaxMemorySettingsTests
     private static HttpResponseMessage Json(object value) => new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
     private static HttpClient Client(Func<HttpRequestMessage, HttpResponseMessage> reply) =>
         new(new MockHandler(reply)) { BaseAddress = new Uri("https://example.invalid/req/") };
+    private static HttpClient ProductionClient(TaxAuthorityProtocol protocol, Func<HttpRequestMessage, HttpResponseMessage> reply) =>
+        new(new TaxProductionConnectionHandler(protocol, new MockHandler(reply)))
+        {
+            BaseAddress = TaxProductionConnectionHandler.Address(protocol)
+        };
+    private static HttpResponseMessage Unexpected(HttpRequestMessage _) => throw new InvalidOperationException("Unexpected network");
 
     private sealed class MockHandler(Func<HttpRequestMessage, HttpResponseMessage> reply) : HttpMessageHandler
     {

@@ -11,12 +11,14 @@ The authority specification is [RC_TICS.IS_V01](https://hpmgroup.co/wp-content/u
 
 ## First actual authentication
 
-1. Confirm the authority's V1 Sandbox URL, identity and matching RSA key pair through the approved channel. The documented production prefix is `https://tp.tax.gov.ir/req/`. ERP does not allow that origin. The application allows only HTTPS on `sandboxrc.tax.gov.ir` with a V1 `/req/` base path. This allowlist is not proof that the authority currently exposes V1 there. If the confirmed test prefix differs, review the allowlist with the official source before enabling it.
+1. Confirm the authority's V1 Sandbox URL, identity and matching RSA key pair through the approved channel. The Sandbox transport allows only HTTPS on `sandboxrc.tax.gov.ir` with a V1 `/req/` base path. This allowlist is not proof that the authority currently exposes V1 there. If the confirmed test prefix differs, review the allowlist with the official source before enabling it.
 2. Apply `PinTaxAuthorityProtocol` and `ManageTaxMemorySettings` to the approved development database. Sign in as an administrator to the Development ERP. An explicit deployment-level disable of the tax module still takes precedence.
 3. On the tax memories page, create or edit a Sandbox memory, select V1 and enter the seller economic code. Import both matching RSA PEM files over HTTPS. The private key is encrypted with Windows DPAPI under the application account and kept outside the project; SQL stores the fingerprint. V2 administrators can select a certificate in `LocalMachine\My` or install a PFX/P12 over HTTPS if the application account has write permission to that store. Keep older signing credentials that are referenced by queued documents.
 4. After the approved Sandbox destination is confirmed, enable Sandbox communication for that memory and select the connection test. The check reports local settings, credentials, HTTPS, authentication and server information. It sends no invoice or payment and does not display tokens. Separately authorize the first actual test or submission.
 
-Each dispatch pins its protocol and a reference to the matching credential. The company has one active sending method. Methods can be changed after open operations are resolved. Reconciliation uses the protocol pinned to the original dispatch. Managed memory metadata and audit events are stored in CRM SQL. The legacy connection file and existing deployment configuration remain fallback sources for unconfigured memories. Production profiles can be saved in Development with network use and activation disabled.
+Each dispatch pins its protocol and a reference to the matching credential. The company has one active sending method. Methods can be changed after open operations are resolved. Reconciliation uses the protocol pinned to the original dispatch. Managed memory metadata and audit events are stored in CRM SQL. The legacy connection file and existing deployment configuration remain fallback sources for unconfigured memories.
+
+In Development, an administrator can save a production memory and run the production connection check from its card. The check uses a separate transport restricted to the authority's production authentication and information endpoints. Production memory activation and submission are disabled.
 
 ## Sepidar cutover
 

@@ -4,7 +4,7 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class TaxSandboxClients(HttpClient legacy, HttpClient modern, ITaxV1SigningKeys keys,
+internal sealed class TaxProtocolClients(HttpClient legacy, HttpClient modern, ITaxV1SigningKeys keys,
     ITaxCertificateStore certs, TimeProvider clock) : IDisposable
 {
     internal MoadianV1Client V1 { get; } = new(legacy, keys, clock);

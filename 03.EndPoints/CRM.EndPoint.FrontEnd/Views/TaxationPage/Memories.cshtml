@@ -64,7 +64,7 @@
             </div>
             <div class="taxation-actions">
                 <form method="post" data-admin-action="memory-check" data-url="@Url.Action("CheckConnection", "Taxation", new { id = memory.Id })">
-                    <button type="submit" class="btn btn-sm taxation-validate"><i class="fas fa-plug" aria-hidden="true"></i> @(sandbox ? "تست اتصال آزمایشی" : "بررسی تنظیمات و کلید یا گواهی")</button>
+                    <button type="submit" class="btn btn-sm taxation-validate"><i class="fas fa-plug" aria-hidden="true"></i> @(sandbox ? "تست اتصال آزمایشی" : "تست اتصال عملیاتی")</button>
                 </form>
                 @if (sandbox || memory.IsActive)
                 {
@@ -79,7 +79,7 @@
             }
             else
             {
-                <p class="taxation-muted">فعال‌سازی و اتصال آنلاین محیط عملیاتی در این نسخه غیرفعال است. بررسی تنظیمات روی سرور ERP انجام می‌شود.</p>
+                <p class="taxation-muted">این تست با سازمان امور مالیاتی تماس می‌گیرد و فقط اتصال و احراز هویت را بررسی می‌کند. حافظه برای ارسال فعال نمی‌شود.</p>
             }
             <p class="taxation-muted" data-connection-feedback role="status" hidden></p>
             <ol class="taxation-connection-check" data-connection-results aria-live="polite" hidden></ol>

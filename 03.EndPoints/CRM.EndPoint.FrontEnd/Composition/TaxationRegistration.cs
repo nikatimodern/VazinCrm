@@ -58,11 +58,10 @@ internal static class TaxationRegistration
         services.AddSingleton<ITaxV1SigningKeys>(sp => sp.GetRequiredService<TaxConnectionSettings>());
         services.AddScoped<ICommandHandler<SaveTaxConnectionCommand, bool>, SaveTaxConnectionCommandHandler>();
         services.AddScoped<IQueryHandler<CheckTaxV1ConnectionQuery, bool>, CheckTaxV1ConnectionQueryHandler>();
-        services.AddSingleton<TaxSandboxClients>(sp => new TaxSandboxClients(
-            CreateHttp(TaxAuthorityProtocol.V1), CreateHttp(TaxAuthorityProtocol.V2),
-            sp.GetRequiredService<ITaxV1SigningKeys>(), sp.GetRequiredService<ITaxCertificateStore>(),
-            sp.GetRequiredService<TimeProvider>()));
-        services.AddSingleton<ITaxV1IdentityProbe>(sp => new TaxV1IdentityProbe(sp.GetRequiredService<TaxSandboxClients>().V1));
+        services.AddSingleton(sp => CreateProtocolClients(sp, productionCheck: false));
+        services.AddKeyedSingleton(TaxProductionConnectionHandler.ClientKey,
+            (sp, _) => CreateProtocolClients(sp, productionCheck: true));
+        services.AddSingleton<ITaxV1IdentityProbe>(sp => new TaxV1IdentityProbe(sp.GetRequiredService<TaxProtocolClients>().V1));
         services.AddScoped<TaxSandboxRouting>();
         services.AddScoped<ITaxSandboxAccess>(sp => sp.GetRequiredService<TaxSandboxRouting>());
         services.AddScoped<ITaxAuthorityClient, TaxAuthorityRouter>();
@@ -98,11 +97,19 @@ internal static class TaxationRegistration
         services.AddScoped<ICommandHandler<SetTaxProductMappingCommand, bool>, SetTaxProductMappingCommandHandler>();
     }
 
-    private static HttpClient CreateHttp(TaxAuthorityProtocol protocol) =>
-        new(new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false })
+    private static TaxProtocolClients CreateProtocolClients(IServiceProvider services, bool productionCheck) =>
+        new(CreateHttp(TaxAuthorityProtocol.V1, productionCheck), CreateHttp(TaxAuthorityProtocol.V2, productionCheck),
+            services.GetRequiredService<ITaxV1SigningKeys>(), services.GetRequiredService<ITaxCertificateStore>(),
+            services.GetRequiredService<TimeProvider>());
+
+    private static HttpClient CreateHttp(TaxAuthorityProtocol protocol, bool productionCheck)
+    {
+        var transport = new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false };
+        return new HttpClient(productionCheck ? new TaxProductionConnectionHandler(protocol, transport) : transport)
         {
-            BaseAddress = TaxSandboxRouting.Address(protocol),
+            BaseAddress = productionCheck ? TaxProductionConnectionHandler.Address(protocol) : TaxSandboxRouting.Address(protocol),
             Timeout = TimeSpan.FromSeconds(20),
             MaxResponseContentBufferSize = 1024 * 1024
         };
+    }
 }

@@ -97,15 +97,22 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
     public Task<TaxWorkFolderResult> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct) =>
         throw new ArgumentException("استعلام مستقل وضعیت کارپوشه با نسخه ۱ در ERP فعال نیست.");
 
-    internal async Task VerifyIdentityAsync(string fiscalId, TaxSigningBinding binding, CancellationToken ct)
+    internal async Task VerifyIdentityAsync(string fiscalId, TaxSigningBinding binding, CancellationToken ct, Action onTokenReceived = null)
     {
         using var key = keys.Open(binding.V1KeyFingerprint);
         var token = await GetTokenAsync(fiscalId, key, ct);
+        onTokenReceived?.Invoke();
         using var response = await SyncAsync("GET_FISCAL_INFORMATION",
             new Packet(null, "GET_FISCAL_INFORMATION", null, FiscalId: fiscalId), token, key, ct);
         var info = GetResultData(response.RootElement, "FISCAL_INFORMATION");
-        if (Text(info, "fiscalStatus") != "ACTIVE" || Text(info, "economicCode") != binding.SellerEconomicCode)
-            throw new ArgumentException("حافظه مالیاتی فعال نیست یا شناسه اقتصادی فروشنده با پاسخ سازمان همخوانی ندارد.");
+        var status = Text(info, "fiscalStatus");
+        var seller = Text(info, "economicCode");
+        if (string.IsNullOrWhiteSpace(status) || string.IsNullOrWhiteSpace(seller))
+            throw InvalidResponse();
+        if (status != "ACTIVE")
+            throw new FiscalIdentityException("سامانه مؤدیان وضعیت حافظه را فعال اعلام نکرد.");
+        if (seller != binding.SellerEconomicCode)
+            throw new FiscalIdentityException("کد اقتصادی ذخیره‌شده با پاسخ سامانه مؤدیان همخوانی ندارد.");
     }
 
     internal Task<JsonDocument> ReadServerInformationAsync(CancellationToken ct) =>
@@ -160,13 +167,13 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         {
             using var response = await http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
-                throw new TaxTransportException($"Tax V1 authority returned HTTP {(int)response.StatusCode}.");
+                throw new TaxTransportException("Tax V1 authority returned an unsuccessful HTTP status.", (int)response.StatusCode);
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw new TaxTransportException("Tax V1 request timed out.");
+            throw new TaxTransportException("Tax V1 request timed out.", timedOut: true);
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException)
         {
@@ -201,6 +208,8 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         Guid.TryParseExact(Text(element, name), "D", out var id) && id != Guid.Empty ? id : null;
 
     private static TaxTransportException InvalidResponse() => new("Tax V1 authority returned an unreadable or unmatched response.");
+
+    internal sealed class FiscalIdentityException(string message) : ArgumentException(message);
 
     private sealed record Packet(Guid? Uid, string PacketType, object Data, string EncryptionKeyId = "",
         string SymmetricKey = "", string Iv = "", string FiscalId = "", string DataSignature = "")

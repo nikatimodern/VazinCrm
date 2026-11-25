@@ -66,9 +66,10 @@ public sealed partial class TaxationSqlTests
             Assert.Contains("انتخاب فایل کلید خصوصی PEM", page);
             Assert.Contains("انتخاب فایل گواهی PFX یا P12", page);
             Assert.Contains("تست اتصال آزمایشی", page);
-            Assert.Contains("بررسی تنظیمات و کلید یا گواهی", page);
+            Assert.Contains("تست اتصال عملیاتی", page);
             var result = await PostAsync<TaxConnectionStep[]>(browser, $"/api/taxation/memories/{productionId:D}/check-connection", null);
             Assert.Equal("Passed", result[0].Status);
+            Assert.Equal("Failed", result[1].Status);
             Assert.Equal("Skipped", result[2].Status);
             Assert.Equal(0, authority.InvoicePosts);
         }

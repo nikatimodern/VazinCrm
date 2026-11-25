@@ -127,6 +127,7 @@
             const result = await sendApiRequest({
                 url: form.dataset.url, method: "POST", data, headers: { RequestVerificationToken: token },
                 showLoading: false, showError: false, logError: false, successMsg: null, signal,
+                timeout: isCheck ? 90000 : 30000,
                 onError: error => {
                     if (signal.aborted) return;
                     const response = error.response?.data;

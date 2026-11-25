@@ -11,11 +11,13 @@ using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxMemorySettings;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxConnectionCheck;
 using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class TaxConnectionCheck(TaxSandboxClients clients, ITaxMemoryCredentials credentials,
-    ITaxSandboxAccess access) : ITaxConnectionCheck
+internal sealed class TaxConnectionCheck(TaxProtocolClients sandboxClients, ITaxMemoryCredentials credentials,
+    ITaxSandboxAccess access, [FromKeyedServices(TaxProductionConnectionHandler.ClientKey)] TaxProtocolClients productionClients)
+    : ITaxConnectionCheck
 {
     public async Task<IReadOnlyList<TaxConnectionStep>> CheckAsync(TaxMemory memory, CancellationToken ct)
     {
@@ -29,36 +31,36 @@ internal sealed class TaxConnectionCheck(TaxSandboxClients clients, ITaxMemoryCr
 
         var credential = credentials.Describe(memory);
         steps.Record(1, credential.Ready, credential.Message);
-        if (!sandbox)
-        {
-            steps.SkipOnline("اتصال آنلاین محیط عملیاتی غیرفعال است.");
-            return steps.Results;
-        }
         if (!configured || !credential.Ready)
             return steps.Results;
 
-        if (!await access.IsAllowedAsync(memory.Id, memory.Protocol, ct))
+        if (sandbox && !await access.IsAllowedAsync(memory.Id, memory.Protocol, ct))
         {
             steps.SkipOnline("این بررسی به اجرای ERP در محیط توسعه و اجازه اتصال آزمایشی این حافظه نیاز دارد.");
             return steps.Results;
         }
 
+        var clients = sandbox ? sandboxClients : productionClients;
+        var v1 = memory.Protocol == TaxAuthorityProtocol.V1;
+        var tokenReceived = false;
         var stage = 2;
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Head, "");
+            using var request = new HttpRequestMessage(HttpMethod.Head,
+                sandbox ? "" : TaxProductionConnectionHandler.ReachabilityPath(memory.Protocol));
             using var response = await clients.For(memory.Protocol).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             if (response.StatusCode >= HttpStatusCode.MultipleChoices && response.StatusCode < HttpStatusCode.BadRequest)
                 throw new TaxTransportException("Unexpected redirect.");
-            steps.Record(stage++, true, "پاسخ HTTPS از نشانی مجاز آزمایشی دریافت شد.");
+            steps.Record(stage++, true, sandbox ? "پاسخ HTTPS از سامانه آزمایشی دریافت شد." :
+                "پاسخ HTTPS از سامانه عملیاتی دریافت شد.");
 
-            using var information = memory.Protocol == TaxAuthorityProtocol.V1
-                ? await CheckV1Async(memory, steps, ct)
+            using var information = v1
+                ? await CheckV1Async(clients.V1, memory, steps, ct, () => tokenReceived = true)
                 : await clients.V2.CheckServerInformationAsync(memory, () =>
                     steps.Record(3, true, "چالش امضا شد و درخواست احراز هویت‌شده پذیرفته شد."), ct);
 
             stage = 4;
-            var hasInformation = memory.Protocol == TaxAuthorityProtocol.V1
+            var hasInformation = v1
                 ? MoadianV1Client.HasServerInformation(information.RootElement)
                 : information.RootElement.ValueKind == JsonValueKind.Object &&
                   information.RootElement.TryGetProperty("publicKeys", out var keys) && keys.ValueKind == JsonValueKind.Array &&
@@ -72,17 +74,34 @@ internal sealed class TaxConnectionCheck(TaxSandboxClients clients, ITaxMemoryCr
         catch (Exception ex) when (!ct.IsCancellationRequested &&
             ex is (HttpRequestException or TaxTransportException or CryptographicException or ArgumentException or OperationCanceledException))
         {
-            steps.Record(steps.Results[3].Status == "Passed" ? 4 : stage, false, "این مرحله با پاسخ معتبر تکمیل نشد.");
+            var failedStage = steps.Results[3].Status == "Passed" ? 4 : stage;
+            var operation = v1 && failedStage == 3
+                ? tokenReceived ? "توکن دریافت شد. استعلام هویت حافظه: " : "دریافت توکن V1: "
+                : "";
+            steps.Record(failedStage, false, operation + DescribeFailure(ex));
         }
         return steps.Results;
     }
 
-    private async Task<JsonDocument> CheckV1Async(TaxMemory memory, ConnectionSteps steps, CancellationToken ct)
+    private static string DescribeFailure(Exception error) => error switch
     {
-        await clients.V1.VerifyIdentityAsync(memory.FiscalId,
-            new(memory.Environment, null, memory.SellerEconomicCode, TaxAuthorityProtocol.V1, memory.CredentialFingerprint), ct);
+        MoadianV1Client.FiscalIdentityException identity => identity.Message,
+        TaxTransportException { HttpStatusCode: 401 } => "سامانه احراز هویت درخواست را نپذیرفت (HTTP 401).",
+        TaxTransportException { HttpStatusCode: 403 } => "سامانه اجازه دسترسی به این عملیات را نداد (HTTP 403).",
+        TaxTransportException { HttpStatusCode: { } status } => $"سامانه پاسخ HTTP {status} برگرداند.",
+        TaxTransportException { TimedOut: true } or OperationCanceledException => "زمان انتظار برای پاسخ سامانه تمام شد.",
+        HttpRequestException => "ارتباط با سامانه برقرار نشد یا قطع شد.",
+        CryptographicException => "دسترسی به کلید امضا یا امضای درخواست ناموفق بود.",
+        _ => "پاسخ قابل تأیید از سامانه دریافت نشد."
+    };
+
+    private static async Task<JsonDocument> CheckV1Async(MoadianV1Client client, TaxMemory memory, ConnectionSteps steps,
+        CancellationToken ct, Action onTokenReceived)
+    {
+        await client.VerifyIdentityAsync(memory.FiscalId,
+            new(memory.Environment, null, memory.SellerEconomicCode, TaxAuthorityProtocol.V1, memory.CredentialFingerprint), ct, onTokenReceived);
         steps.Record(3, true, "توکن دریافت شد و هویت حافظه با اطلاعات سازمان تطبیق داشت.");
-        return await clients.V1.ReadServerInformationAsync(ct);
+        return await client.ReadServerInformationAsync(ct);
     }
 
     private sealed class ConnectionSteps

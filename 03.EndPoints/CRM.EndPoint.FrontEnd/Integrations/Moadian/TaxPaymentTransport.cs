@@ -6,7 +6,7 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class TaxPaymentTransport(TaxSandboxClients clients, TaxSandboxRouting routing) : ITaxPaymentTransport
+internal sealed class TaxPaymentTransport(TaxProtocolClients clients, TaxSandboxRouting routing) : ITaxPaymentTransport
 {
     public async Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload, CancellationToken ct)
     {
