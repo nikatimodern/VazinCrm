@@ -81,7 +81,7 @@ internal static class MenuIcons
             "cashIndex" => Svg("coins", "<circle cx='8' cy='8' r='5'/><path d='M12 13a5 5 0 1 0 0 9M7 18h.01M17 9h.01'/>"),
             "profit" => Svg("chart-column-increasing", "<path d='M3 3v18h18M7 17v-4h3v4M12 17V8h3v9M17 17V5h3v12'/>"),
             "demand" => Svg("receipt-text", "<path d='M4 2h16v20l-4-2-4 2-4-2-4 2z'/><path d='M8 7h8M8 11h8M8 15h5'/>"),
-            "releaseNotes" => Svg("file-clock", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h9M14 2v6h6'/><circle cx='18' cy='17' r='4'/><path d='M18 15v2l1 1'/>"),
+            "releaseNotes" => "", // Version is always text-only (also in collapsed rail).
             "settingsVersions" => Svg("history", "<path d='M3 12a9 9 0 1 1 2.5 6M3 17v-5h5'/><path d='M12 7v5l3 2'/>"),
             "settingsUsers" => Customers,
             "settingsCompany" => Svg("building-2", "<rect x='3' y='2' width='14' height='20' rx='2'/><path d='M17 9h4v13h-4M7 6h2M11 6h2M7 10h2M11 10h2M7 14h2M11 14h2'/>"),
