@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Generics.Infrastructures.Sql;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,15 +11,35 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.PreFactors.Repositories;
 
-public sealed class PrefactorTermsRepository(CRMContextDb db) : IPrefactorTermsRepository
+public sealed class PrefactorTermsRepository(CRMContextDb db, UserContextDb userDb) : IPrefactorTermsRepository
 {
     private IQueryable<BaseDescription> Terms => db.BaseDescriptions
         .Where(x => x.Type == BaseDescriptionTypeEnum.PrefactorTerms);
 
-    public Task<List<PrefactorTerm>> GetAsync(CancellationToken ct) => Terms.AsNoTracking()
-        .OrderBy(x => x.Order).ThenBy(x => x.Id)
-        .Select(x => new PrefactorTerm(x.Id, x.Order, x.Text))
-        .ToListAsync(ct);
+    public async Task<List<PrefactorTerm>> GetAsync(CancellationToken ct)
+    {
+        var terms = await Terms.AsNoTracking()
+            .OrderBy(x => x.Order).ThenBy(x => x.Id)
+            .Select(x => new { x.Id, x.Order, x.Text, x.UserId, x.CreateDate })
+            .ToListAsync(ct);
+
+        var userIds = terms.Select(x => x.UserId)
+            .Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+        var users = await userDb.Users.AsNoTracking()
+            .Where(x => userIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.FirstName, x.LastName, x.UserName })
+            .ToListAsync(ct);
+
+        var names = users.ToDictionary(x => x.Id, x =>
+        {
+            var name = string.Join(" ", new[] { x.FirstName, x.LastName }
+                .Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()));
+            return string.IsNullOrWhiteSpace(name) ? x.UserName : name;
+        });
+
+        return terms.Select(x => new PrefactorTerm(x.Id, x.Order, x.Text, x.UserId, x.CreateDate,
+            x.UserId != null && names.TryGetValue(x.UserId, out var name) ? name : null)).ToList();
+    }
 
     public async Task<bool> SaveAsync(int? id, int order, string text, string userId, CancellationToken ct)
     {
@@ -33,6 +55,7 @@ public sealed class PrefactorTermsRepository(CRMContextDb db) : IPrefactorTermsR
             {
                 Type = BaseDescriptionTypeEnum.PrefactorTerms,
                 UserId = userId,
+                CreateDate = DateTime.Now,
                 Dir = "RTL"
             };
             db.BaseDescriptions.Add(term);
