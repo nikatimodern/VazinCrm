@@ -7,11 +7,16 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Taxation.Submission;
 using CRM.Core.Domain.Taxation;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using JsonConvert = Newtonsoft.Json.JsonConvert;
+using JsonSerializerSettings = Newtonsoft.Json.JsonSerializerSettings;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
@@ -19,6 +24,12 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
 {
     private const string Sync = "api/self-tsp/sync/";
     private const string Enqueue = "api/self-tsp/async/normal-enqueue";
+    private static readonly JsonSerializerSettings TokenJsonSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        Converters = { new StringEnumConverter() },
+        NullValueHandling = Newtonsoft.Json.NullValueHandling.Include
+    };
 
     public async Task<PreparedTaxRequest> PrepareAsync(TaxSubmission submission, Guid attemptId, CancellationToken ct)
     {
@@ -127,10 +138,50 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
 
     internal async Task<string> GetTokenAsync(string fiscalId, RSA key, CancellationToken ct)
     {
-        using var result = await SyncAsync("GET_TOKEN", new Packet(null, "GET_TOKEN", new { username = fiscalId }),
-            null, key, ct);
+        using var request = BuildTokenRequest(fiscalId, key);
+        using var result = await ExchangeAsync(request, ct);
         return Text(GetResultData(result.RootElement, "TOKEN_RESULT"), "token") is { Length: > 0 } token
             ? token : throw InvalidResponse();
+    }
+
+    private HttpRequestMessage BuildTokenRequest(string fiscalId, RSA key)
+    {
+        const string operation = "GET_TOKEN";
+        const string jsonMediaType = "application/json";
+        // The SDK envelope retains null placeholders. Only the header carries the signature.
+        var body = JsonConvert.SerializeObject(new
+        {
+            Signature = (string)null,
+            SignatureKeyId = (string)null,
+            Packet = new
+            {
+                Uid = Guid.NewGuid(),
+                PacketType = operation,
+                FiscalId = fiscalId,
+                Data = new { Username = fiscalId },
+                Retry = true,
+                EncryptionKeyId = (string)null,
+                SymmetricKey = (string)null,
+                Iv = (string)null,
+                DataSignature = (string)null,
+                SignatureKeyId = (string)null
+            }
+        }, Newtonsoft.Json.Formatting.None, TokenJsonSettings);
+        var trace = Guid.NewGuid().ToString("D");
+        var timestamp = clock.GetUtcNow().ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+        var authorization = http.DefaultRequestHeaders.Authorization;
+        var signature = TaxV1Cryptography.SignUtf8(body + authorization?.ToString() + trace + timestamp, key);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, Sync + operation)
+        {
+            Content = new StringContent(body, Encoding.UTF8, jsonMediaType)
+        };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(jsonMediaType));
+        request.Headers.Authorization = authorization;
+        request.Headers.Add("requestTraceId", trace);
+        request.Headers.Add("timestamp", timestamp);
+        request.Headers.Add("signature", signature);
+        return request;
     }
 
     private async Task<JsonDocument> SyncAsync(string operation, Packet packet, string token, RSA key, CancellationToken ct)

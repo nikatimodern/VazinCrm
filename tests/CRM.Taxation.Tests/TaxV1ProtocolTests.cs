@@ -28,7 +28,7 @@ public sealed class TaxV1ProtocolTests
     }
 
     [Fact]
-    public void RequestNormalizationMatchesIndependentOpenSslGetTokenVector()
+    public void LegacyRequestNormalizationMatchesIndependentOpenSslVector()
     {
         using var packet = JsonDocument.Parse("""
             {"uid":null,"packetType":"GET_TOKEN","retry":false,"data":{"username":"ABC123"},
@@ -59,6 +59,51 @@ public sealed class TaxV1ProtocolTests
         VerifySignature(signer, normalized, signature);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Bearer offline-token")]
+    public async Task GetTokenMatchesSepidarSdkWireFormatAndSignsExactUtf8Body(string authorization)
+    {
+        const string timestamp = "1655185848687";
+        using var signer = RSA.Create(2048);
+        using var verifier = RSA.Create();
+        verifier.ImportParameters(signer.ExportParameters(false));
+        var packetIds = new HashSet<Guid>();
+        var traceIds = new HashSet<Guid>();
+        using var http = Http(async request =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal("https://example.invalid/req/api/self-tsp/sync/GET_TOKEN", request.RequestUri!.AbsoluteUri);
+            Assert.Equal("application/json", Assert.Single(request.Headers.Accept).MediaType);
+            Assert.Equal("application/json; charset=utf-8", request.Content!.Headers.ContentType!.ToString());
+            Assert.Equal(authorization, request.Headers.Authorization?.ToString());
+            Assert.Equal(timestamp, Timestamp(request));
+            var trace = Trace(request);
+            Assert.True(Guid.TryParseExact(trace, "D", out var traceId) && traceId != Guid.Empty);
+            Assert.True(traceIds.Add(traceId));
+
+            var body = await request.Content.ReadAsByteArrayAsync();
+            using var json = JsonDocument.Parse(body);
+            var uid = json.RootElement.GetProperty("packet").GetProperty("uid").GetString();
+            Assert.True(Guid.TryParseExact(uid, "D", out var packetId) && packetId != Guid.Empty);
+            Assert.NotEqual(traceId, packetId);
+            Assert.True(packetIds.Add(packetId));
+            // Captured from the Sepidar SDK serializer offline with a fixed UID.
+            var expectedBody = $$$"""{"signature":null,"signatureKeyId":null,"packet":{"uid":"{{{uid}}}","packetType":"GET_TOKEN","fiscalId":"ABC123","data":{"username":"ABC123"},"retry":true,"encryptionKeyId":null,"symmetricKey":null,"iv":null,"dataSignature":null,"signatureKeyId":null}}""";
+            Assert.Equal(Encoding.UTF8.GetBytes(expectedBody), body);
+            Assert.False(request.Headers.Contains("signatureKeyId"));
+            VerifySignature(verifier, expectedBody + authorization + trace + timestamp,
+                Assert.Single(request.Headers.GetValues("signature")));
+            return Token();
+        });
+        if (authorization is not null)
+            http.DefaultRequestHeaders.Authorization = System.Net.Http.Headers.AuthenticationHeaderValue.Parse(authorization);
+        var client = new MoadianV1Client(http, null!, new FixedClock(DateTimeOffset.FromUnixTimeMilliseconds(1655185848687)));
+        Assert.Equal("mock-token", await client.GetTokenAsync(FiscalId, signer, default));
+        Assert.Equal("mock-token", await client.GetTokenAsync(FiscalId, signer, default));
+        Assert.Equal(2, packetIds.Count);
+    }
+
     [Fact]
     public void NormalizationUsesFullPathsAndKeepsTwoDigitArrayIndexesInOrder()
     {
@@ -86,7 +131,7 @@ public sealed class TaxV1ProtocolTests
             {
                 Assert.Equal(FiscalId, body.GetProperty("packet").GetProperty("data").GetProperty("username").GetString());
                 Assert.Null(request.Headers.Authorization);
-                VerifySyncEnvelope(request, body, signer, FiscalId, "");
+                Assert.True(request.Headers.Contains("signature"));
                 return Token();
             }
             if (path.EndsWith("/GET_SERVER_INFORMATION"))
@@ -172,7 +217,7 @@ public sealed class TaxV1ProtocolTests
             using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync());
             if (request.RequestUri!.AbsolutePath.EndsWith("/GET_TOKEN"))
             {
-                VerifySyncEnvelope(request, body.RootElement, signer, FiscalId, "");
+                Assert.True(request.Headers.Contains("signature"));
                 return Token();
             }
             Assert.EndsWith("/GET_FISCAL_INFORMATION", request.RequestUri.AbsolutePath);
@@ -289,6 +334,11 @@ public sealed class TaxV1ProtocolTests
     private sealed class Handler(Func<HttpRequestMessage, Task<HttpResponseMessage>> reply) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => reply(request);
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     private sealed class Keys(RSA signer) : ITaxV1SigningKeys
