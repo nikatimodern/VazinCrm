@@ -42,7 +42,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             });
         }
 
-        var filteredMenus = OrganizeMenus(Filter(BuildMenus(user), roles), roles);
+        var filteredMenus = OrganizeMenus(Filter(menus, roles), roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
             // Match the exact audience/role resolution used by the release history.
@@ -771,7 +771,9 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         // BuildMenus in a later merge; reuse its original URL and role audience.
         // Do not invent its route or grant any new permission in this branch.
         static bool IsMoadian(MenuItem item) =>
+            item.Id == "taxation" ||
             (item.Title?.Contains("مودیان", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Title?.Contains("مؤدیان", StringComparison.OrdinalIgnoreCase) ?? false) ||
             (item.Id?.Contains("moadian", StringComparison.OrdinalIgnoreCase) ?? false) ||
             (item.Id?.Contains("modian", StringComparison.OrdinalIgnoreCase) ?? false);
 
