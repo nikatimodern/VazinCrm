@@ -175,12 +175,12 @@ public partial class SepidarService
             .Select(x => x.CurrencyID).SingleAsync(ct);
 
     public async Task<DepositDraft> PrepareDepositAsync(DepositInput input, decimal amount, DateTime date,
-        DateTime? due, bool validateFiscalYear, CancellationToken ct)
+        DateTime? due, bool validateFiscalYear, CancellationToken ct, int? currentChequeId = null)
     {
         var note = input.Type == 4;
         var cheque = input.Type == 2;
-        if (!note && string.IsNullOrWhiteSpace(input.Description))
-            throw new SepidarTransferValidationException("شرح رسید دریافت را وارد کنید.");
+        if (string.IsNullOrWhiteSpace(input.Description))
+            throw new SepidarTransferValidationException(note ? "شرح قلم اعلامیه را وارد کنید." : "شرح رسید دریافت را وارد کنید.");
 
         var year = validateFiscalYear ? await GetFiscalYearIdAsync(date, ct) : 0;
         var currency = await GetDepositCurrencyAsync(ct);
@@ -209,7 +209,8 @@ public partial class SepidarService
                 throw new SepidarTransferValidationException("شماره چک، بانک، حساب صادرکننده و سررسید را وارد کنید و طول اطلاعات تکمیلی را بررسی کنید.");
             if (input.Sayad.Length > 0 && (input.Sayad.Length != 16 || !input.Sayad.All(ch => ch is >= '0' and <= '9')))
                 throw new SepidarTransferValidationException("شناسه صیادی باید ۱۶ رقم باشد.");
-            if (input.Sayad.Length > 0 && await sepidarContext.ReceiptCheques.AsNoTracking().AnyAsync(x => x.SayadCode == input.Sayad, ct))
+            if (input.Sayad.Length > 0 && await sepidarContext.ReceiptCheques.AsNoTracking()
+                .AnyAsync(x => x.SayadCode == input.Sayad && x.ReceiptChequeId != currentChequeId, ct))
                 throw new SepidarTransferValidationException("چک با این شناسه صیادی قبلاً در سپیدار ثبت شده است.");
             debitDetailForReceipt = customer;
         }

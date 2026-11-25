@@ -15,6 +15,211 @@ async function sendPreFactorToExternalSoftware(id) {
     });
 }
 
+async function deletePreFactorDestination(button, key, historyModal) {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+        const result = await sendApiRequest({
+            url: "/PreFactorDestination/Details", params: key, showLoading: false,
+        });
+        if (!result?.document || !button.isConnected || !isModalOpen(historyModal)) return;
+        const documentState = result.document;
+        const text = ExternalFinancialHistory.element("div");
+        const blockers = [documentState.restriction, ...documentState.deleteBlockers].filter(Boolean);
+        if (blockers.length) {
+            text.append(ExternalFinancialHistory.element("p", null, "این پیش‌فاکتور در مقصد قابل حذف نیست."));
+            const list = ExternalFinancialHistory.element("ul", "text-start mb-0 small");
+            for (const blocker of blockers) list.append(ExternalFinancialHistory.element("li", null, blocker));
+            text.append(list);
+        } else {
+            text.textContent = `پیش‌فاکتور شماره ${documentState.number} و اقلام آن از «${documentState.softwareTitle}» حذف شوند؟`;
+        }
+        const confirmation = await Swal.fire({
+            target: historyModal, title: "حذف پیش‌فاکتور از مقصد", html: text, icon: "warning",
+            showCancelButton: !blockers.length, focusCancel: true,
+            confirmButtonText: blockers.length ? "بستن" : "حذف پیش‌فاکتور", cancelButtonText: "انصراف",
+        });
+        if (blockers.length || !confirmation.isConfirmed || !isModalOpen(historyModal)) return;
+        try {
+            await sendApiRequest({
+                url: "/PreFactorDestination/Delete", method: "POST", showLoading: false,
+                headers: ExternalFinancialWizard.antiforgeryHeaders(historyModal),
+                data: { key, version: documentState.version, lastModificationDate: documentState.lastModificationDate },
+                successMsg: "پیش‌فاکتور از نرم‌افزار مقصد حذف شد.",
+            });
+        } finally {
+            if (externalSotwarePfId === key.sourceId) await getPreFactorExternalSotwares(key.sourceId);
+        }
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function openPreFactorDestinationEdit(button, key, historyModal) {
+    const modal = document.getElementById("preFactorDestinationEditModal");
+    if (!modal || modal.dataset.active || button.disabled) return;
+    modal.dataset.active = "true";
+    button.disabled = true;
+    let opened = false;
+    try {
+        const data = await sendApiRequest({
+            url: "/PreFactorDestination/Details", params: { ...key, editing: true }, showLoading: false,
+        });
+        if (!data?.document || !button.isConnected || !isModalOpen(historyModal)) return;
+        if (data.document.restriction) {
+            toastifyError(data.document.restriction);
+            return;
+        }
+        renderPreFactorDestinationEdit(modal, key, data);
+        opened = true;
+    } finally {
+        if (!opened) {
+            delete modal.dataset.active;
+            button.disabled = false;
+        } else {
+            modal.addEventListener("hidden.bs.modal", () => {
+                delete modal.dataset.active;
+                button.disabled = false;
+                if (button.isConnected)
+                    (button.closest(".external-pf-operations")?.querySelector(".external-pf-operations-toggle") ?? button).focus();
+            }, { once: true });
+        }
+    }
+}
+
+function renderPreFactorDestinationEdit(modal, key, { document: quote, saleTypes, customers, items, stocks }) {
+    const wizard = new ExternalFinancialWizard({
+        modal, container: "preFactorDestinationEditBody", back: "preFactorDestinationEditBack", confirm: "preFactorDestinationEditSave",
+    });
+    const element = ExternalFinancialHistory.element;
+    const content = element("div");
+    const currentOption = (options, value, label) =>
+        options.some(option => option.value === value) ? options : [...options, { value, label }];
+    const saleOptions = saleTypes.map(type => ({ value: type.saleTypeId, label: type.title }));
+    const customerOptions = customers.map(customer => ({
+        value: customer.id, label: [customer.dlCode, customer.fullName].filter(Boolean).join(" - "),
+    }));
+    const itemOptions = items.map(item => ({ value: item.id, label: item.code + " - " + item.title }));
+    const field = (id, label, options, selected, title) => ExternalFinancialWizard.selectField({
+        id, label, options: currentOption(options, selected, title), selected,
+    });
+    content.innerHTML = `<div class="row g-2 mb-3">
+        <div class="col-12 col-sm-6">${field("pfDestinationSaleType", "نوع فروش", saleOptions, quote.saleTypeId, quote.saleTypeId)}</div>
+        <div class="col-12 col-sm-6">
+            ${field("pfDestinationCustomer", "مشتری معادل", customerOptions, quote.customerId, quote.customerName ?? "—")}
+            ${quote.canChangeCustomer ? "" : '<small id="pfDestinationCustomerReason" class="d-block mt-1 text-muted">به‌دلیل وجود سند وابسته، مشتری قابل تغییر نیست.</small>'}
+        </div>
+    </div>`;
+
+    const list = element("div", "external-item-match-list");
+    content.append(list);
+    const rows = quote.items.map(row => {
+        const target = appendExternalItemEditRow(list, row);
+        const source = target.previousElementSibling;
+        if (row.usedQuantity || row.deliveredQuantity) {
+            source.append(element("small", null, `فاکتور شده ${row.usedQuantity} · خروج شده ${row.deliveredQuantity}`));
+        }
+        if (!row.canChangeItem) {
+            target.append(element("small", null, "تغییر کالای معادل برای این ردیف دارای اطلاعات تکمیلی ممکن نیست."));
+        } else {
+            target.innerHTML = field("pfDestinationItem_" + row.id, "کالای معادل", itemOptions, row.itemId, row.itemTitle);
+        }
+        if (!row.canChangeStock) target.append(element("small", null, "انبار مقصد " + row.stockTitle));
+        const notice = element("small", "text-muted", "با تغییر کالا، مقدار فاکتورشده این ردیف صفر می‌شود.");
+        notice.hidden = true;
+        target.append(notice);
+        return { row, target, notice, itemId: row.itemId, stockId: row.stockId, pending: false };
+    });
+
+    wizard.render({
+        destination: quote.softwareTitle, position: `پیش‌فاکتور شماره ${quote.number}`,
+        title: "ویرایش اطلاعات انتقال", subtitle: "نوع فروش، مشتری معادل، کالا و انبار مقصد را بررسی کنید",
+        icon: '<i class="fas fa-pencil-alt" aria-hidden="true"></i>', step: "", content, large: true,
+    });
+    const sale = content.querySelector("#pfDestinationSaleType");
+    const customer = content.querySelector("#pfDestinationCustomer");
+    const customerReason = content.querySelector("#pfDestinationCustomerReason");
+    customer.disabled = !quote.canChangeCustomer;
+    new TomSelect(sale, { create: false });
+    const customerControl = new TomSelect(customer, { create: false });
+    if (customerReason) {
+        customer.setAttribute("aria-describedby", customerReason.id);
+        customerControl.control_input.setAttribute("aria-describedby", customerReason.id);
+    }
+    const getCustomerId = () => quote.canChangeCustomer ? Number(customer.value) : quote.customerId;
+    const stockCache = new Map(stocks.map(entry => [String(entry.itemRef), Promise.resolve(entry.stocks)]));
+    let saving = false;
+    for (const state of rows) {
+        const { row, target, notice } = state;
+        if (!row.canChangeStock) continue;
+        const stock = ExternalFinancialWizard.linkedStockField(target, {
+            id: "pfDestinationStock_" + row.id, softwareId: key.externalSoftwareId, cache: stockCache,
+            retainedStock: { itemId: row.itemId, stockId: row.stockId, title: row.stockTitle },
+            isCurrent: () => content.isConnected,
+            onChange: value => { state.stockId = Number(value); updateActions(); },
+            onLoading: value => { state.pending = value; updateActions(); },
+        });
+        const item = target.querySelector("#pfDestinationItem_" + row.id);
+        if (item) new TomSelect(item, {
+            create: false, onChange: value => {
+                state.itemId = Number(value);
+                state.stockId = state.itemId === row.itemId ? row.stockId : 0;
+                notice.hidden = !row.usedQuantity || !state.itemId || state.itemId === row.itemId;
+                void stock.update(value, state.stockId);
+                updateActions();
+            },
+        });
+        void stock.update(row.itemId, row.stockId);
+    }
+
+    function updateActions() {
+        const changed = Number(sale.value) !== quote.saleTypeId ||
+            getCustomerId() !== quote.customerId ||
+            rows.some(({ row, itemId, stockId }) => itemId !== row.itemId || stockId !== row.stockId);
+        wizard.setActions({ confirmText: "ذخیره تغییرات", backText: "انصراف", backDisabled: saving,
+            confirmDisabled: saving || !changed || !sale.value || !getCustomerId() ||
+                rows.some(row => row.pending || !row.itemId || !row.stockId) });
+    }
+    sale.addEventListener("change", updateActions);
+    if (quote.canChangeCustomer) customer.addEventListener("change", updateActions);
+    wizard.back.onclick = () => ModalToggle(modal, "hide");
+    const close = modal.querySelector(".btn-close");
+    const guardClose = event => { if (saving) event.preventDefault(); };
+    modal.addEventListener("hide.bs.modal", guardClose);
+    modal.addEventListener("hidden.bs.modal", () => {
+        modal.removeEventListener("hide.bs.modal", guardClose);
+        wizard.destroy();
+        wizard.container.replaceChildren();
+        wizard.confirm.onclick = wizard.back.onclick = null;
+    }, { once: true });
+    wizard.confirm.onclick = async () => {
+        if (saving || wizard.confirm.disabled) return;
+        saving = close.disabled = true;
+        updateActions();
+        let result;
+        try {
+            result = await sendApiRequest({
+                url: "/PreFactorDestination/Save", method: "POST", showLoading: false,
+                headers: ExternalFinancialWizard.antiforgeryHeaders(modal),
+                data: {
+                    key, version: quote.version, lastModificationDate: quote.lastModificationDate,
+                    saleTypeId: Number(sale.value), customerId: getCustomerId(),
+                    items: rows.map(({ row, itemId, stockId }) => ({ id: row.id, itemId, stockId })),
+                },
+                successMsg: "اطلاعات انتقال پیش‌فاکتور به‌روزرسانی شد.",
+            });
+        } finally {
+            saving = close.disabled = false;
+            updateActions();
+        }
+        if (!result?.saved) return;
+        ModalToggle(modal, "hide");
+        if (externalSotwarePfId === key.sourceId) await getPreFactorExternalSotwares(key.sourceId);
+    };
+    updateActions();
+    ModalToggle(modal, "show");
+}
+
 
 const getExternalMappingModal = () => document.getElementById("sendPreFactorToExternalSoftwareModal");
 const getExternalMappingList = () => document.querySelector("#sendPreFactorToExternalSoftwareModal #externalMappingList");
@@ -202,6 +407,7 @@ function exSoftwarePreFactorRenderSaleType() {
         content: ExternalFinancialWizard.selectField({
             id: "externalMappingSaleTypeSelect",
             label: "نوع فروش",
+            required: true,
             selected: state.mappings.saleTypeId ?? "2",
             options: (state.software.saleTypes ?? []).map(item => ({
                 value: item.saleTypeId, label: item.title,
@@ -288,6 +494,7 @@ function exSoftwarePreFactorRenderCustomer() {
             ExternalFinancialWizard.selectField({
                 id: "externalMappingCustomerSelect",
                 label: "مشتری معادل در نرم‌افزار مالی",
+                required: true,
                 placeholder: "جستجو و انتخاب مشتری",
                 selected: mappedCustomerId,
                 options: (software.customers ?? []).map(customer => ({
@@ -420,6 +627,7 @@ function exSoftwarePreFactorRenderItems() {
         select.id = label.htmlFor;
         select.dataset.crmItemId = itemId;
         select.className = "external-mapping-item-select show-dropdown-arrow";
+        select.required = true;
         const selected = String(state.mappings.items[itemId]?.externalItemId ?? "");
         select.append(new Option("", ""));
         for (const product of software.sepidarItems ?? []) {
@@ -443,6 +651,7 @@ function exSoftwarePreFactorRenderItems() {
         const linkedStock = ExternalFinancialWizard.linkedStockField(target, {
             id: "externalMappingStock_" + itemId,
             softwareId: software.externalSoftwareId,
+            required: true,
             cache: software.stockCache,
             isCurrent: () => externalSoftwareProcess === state && state.software === software
                 && state.step === "items",

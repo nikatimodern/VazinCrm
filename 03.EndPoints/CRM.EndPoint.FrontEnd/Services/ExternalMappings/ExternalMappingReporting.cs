@@ -440,11 +440,23 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                 : ordered.Skip((page - 1) * pageSize).Take(pageSize);
             var mappings = await selected.Select(x => new {
                     x.Id, x.EntityName, x.EntityId, x.MapType, x.ExEntityName, x.ExEntityId,
-                    x.CreateDate, x.CreateDateTxt, x.UserCreator
+                    x.CreateDate, x.CreateDateTxt, x.UserCreator, x.UserCreatorID
                 }).ToListAsync(ct);
+
+            var missingCreatorIds = mappings.Where(x => string.IsNullOrWhiteSpace(x.UserCreator)
+                    && !string.IsNullOrWhiteSpace(x.UserCreatorID))
+                .Select(x => x.UserCreatorID).Distinct().ToArray();
+            var creators = missingCreatorIds.Length == 0
+                ? new Dictionary<string, string>()
+                : await userManager.Users.AsNoTracking().Where(x => missingCreatorIds.Contains(x.Id))
+                    .Select(x => new AppUser { Id = x.Id, FirstName = x.FirstName, LastName = x.LastName })
+                    .ToDictionaryAsync(x => x.Id, x => x.FullName, ct);
 
             var entries = mappings.Select(x => {
                 int.TryParse(x.ExEntityId, out var externalId);
+                var creator = x.UserCreator;
+                if (string.IsNullOrWhiteSpace(creator) && !string.IsNullOrWhiteSpace(x.UserCreatorID))
+                    creators.TryGetValue(x.UserCreatorID, out creator);
                 return new MappingReportEntry(
                     $"saved-{x.EntityName}-{x.EntityId}-{(int)x.MapType}", x.EntityName,
                     x.EntityId, "saved", "AlreadyMapped",
@@ -455,7 +467,7 @@ namespace CRM.EndPoint.FrontEnd.Services.ExternalMappings
                     !string.IsNullOrWhiteSpace(x.CreateDateTxt)
                         ? x.CreateDateTxt
                         : FormatLegacyPersianDate(x.CreateDate) + " " + x.CreateDate.ToString("HH:mm"),
-                    x.UserCreator);
+                    creator);
             }).ToList();
 
             return new {

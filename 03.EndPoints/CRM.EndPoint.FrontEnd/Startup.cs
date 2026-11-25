@@ -8,6 +8,10 @@ using CRM.EndPoint.FrontEnd.Services.SetInterval;
 using CRM.EndPoint.FrontEnd.Services.SignalR;
 using CRM.Framework;
 using CRM.Infrastructures.Sql;
+using CRM.Core.Domain.PreFactors.Repositories;
+using CRM.Core.Domain.Factors.Repositories;
+using CRM.Infrastructures.Sql.Factors.Repositories;
+using CRM.Infrastructures.Sql.PreFactors.Repositories;
 using Generics.Infrastructures.Sql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -192,6 +196,8 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Sepidar1InvoiceExportRepository>();
             services.AddScoped<Sepidar2InvoiceExportRepository>();
             services.AddScoped<SepidarUserResolver>();
+            services.AddScoped<IPreFactorDestinationRepository, PreFactorDestinationRepository>();
+            services.AddScoped<ISalesInvoiceDestinationRepository, SalesInvoiceDestinationRepository>();
             services.AddTransient<Sepidar1Service>();
             services.AddTransient<Sepidar2Service>();
 
@@ -224,7 +230,7 @@ namespace CRM.EndPoint.FrontEnd {
             });*/
 
             services.AddHttpClient<GapgptAi>(client => {
-                client.BaseAddress = new Uri("https://api.gapgpt.app/v1/");
+                client.BaseAddress = new Uri(Configuration["Gapgpt:Url"]); // new Uri("https://api.gapgpt.ir/v1/");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", "sk-DqOst76fwb3UtC05ZW1mraSTwfsJtz6B8xPpXuWfwCjEm2Uw");
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

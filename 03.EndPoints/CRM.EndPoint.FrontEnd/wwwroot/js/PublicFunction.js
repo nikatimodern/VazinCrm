@@ -303,6 +303,14 @@ function appendExternalItemMatchRow(list, title, quantity, unit, quantityLabel) 
     return target;
 }
 
+function appendExternalItemEditRow(list, row) {
+    const target = appendExternalItemMatchRow(list, row.itemTitle);
+    const caption = document.createElement("small");
+    caption.textContent = `ردیف ${row.row} · مقدار ${row.quantity} · قیمت واحد ${Number(row.fee).toLocaleString()} ریال`;
+    target.previousElementSibling.append(caption);
+    return target;
+}
+
 async function openSepidarItemCreation({ softwareId, softwareTitle, afterCreate, canOpen = () => true }) {
     const modal = document.getElementById("addItemInSepidarModal");
     if (!modal || !softwareId || modal.dataset.active === "true") return;
@@ -419,7 +427,7 @@ function renderExternalFinancialStage(modal, container, { destination, position,
     modal.querySelector(".external-mapping-subtitle").textContent = position;
     modal.querySelector(".modal-dialog").classList.toggle("modal-lg", large);
     container.innerHTML = `
-        <div class="external-mapping-card">
+        <div class="external-mapping-card required-mark">
             <div class="external-mapping-stage-info">
                 <div class="external-mapping-stage-icon">${icon}</div>
                 <div class="external-mapping-stage-content">

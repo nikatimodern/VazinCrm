@@ -1,10 +1,11 @@
 using System;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using CRM.Core.Domain.AppUsers.Entities;
 using CRM.EndPoint.FrontEnd.Services.Accountancies;
 using CRM.EndPoint.FrontEnd.Services.SepidarServices;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -12,7 +13,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 [Route("DepositFinancial/[action]")]
 [Authorize(Roles = "مدیر مالی,کارشناس مالی,مدیر ارشد,مدیر عامل")]
-public sealed class DepositFinancialController(DepositFinancialService service, ILogger<DepositFinancialController> logger) : Controller
+public sealed class DepositFinancialController(DepositFinancialService service, UserManager<AppUser> users,
+    ILogger<DepositFinancialController> logger) : Controller
 {
     [HttpGet]
     public Task<IActionResult> History(Guid id, CancellationToken ct) =>
@@ -29,19 +31,19 @@ public sealed class DepositFinancialController(DepositFinancialService service, 
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> SaveCustomerMapping([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() : RespondAsync(async () => new {
-            Id = await service.SaveCustomerMappingAsync(request, User.FindFirstValue(ClaimTypes.NameIdentifier), ct)
+            Id = await service.SaveCustomerMappingAsync(request, await GetActorAsync(), ct)
         });
 
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> SaveBankMapping([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() : RespondAsync(async () => new {
-            Id = await service.SaveBankMappingAsync(request, User.FindFirstValue(ClaimTypes.NameIdentifier), ct)
+            Id = await service.SaveBankMappingAsync(request, await GetActorAsync(), ct)
         });
 
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> Submit([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() :
-            RespondAsync(async () => await service.SubmitAsync(request, User.FindFirstValue(ClaimTypes.NameIdentifier), ct));
+            RespondAsync(async () => await service.SubmitAsync(request, await GetActorAsync(), ct));
 
     [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> PrepareChequeOperation([FromBody] DepositChequeOperationRequest request, CancellationToken ct) =>
@@ -57,11 +59,23 @@ public sealed class DepositFinancialController(DepositFinancialService service, 
             RespondAsync(async () => await service.SubmitChequeOperationAsync(request, ct));
 
     [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> PreviewMaintenance([FromBody] DepositMaintenanceRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.PreviewMaintenanceAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> SubmitMaintenance([FromBody] DepositMaintenanceRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.SubmitMaintenanceAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> DeleteMissing([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() : RespondAsync(async () => {
             await service.DeleteMissingAsync(request.Id, request.SoftwareId, ct);
             return new { Deleted = true };
         });
+
+    private async Task<AppUser> GetActorAsync() =>
+        await users.GetUserAsync(User)
+        ?? throw new SepidarTransferValidationException("کاربر جاری شناسایی نشد.");
 
     private Task<IActionResult> InvalidRequest() =>
         Task.FromResult<IActionResult>(BadRequest("اطلاعات ارسال واریزی معتبر نیست."));

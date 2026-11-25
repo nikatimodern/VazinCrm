@@ -2,7 +2,12 @@ async function openDepositFinancial(id) {
     const history = document.getElementById("depositFinancialHistory");
     if (!history || history.dataset.active) return;
     history.dataset.active = "true";
+    const historyTitle = history.querySelector("#depositFinancialHistoryTitle");
+    const titleText = "مدیریت ارسال واریزی";
+    historyTitle.textContent = titleText;
     const records = document.getElementById("depositFinancialRecords");
+    const historyCard = ExternalFinancialHistory;
+    const historyUi = new historyCard({ modal: history, list: records });
     const send = document.getElementById("sendDepositFinancial");
     const wizard = new ExternalFinancialWizard({
         modal: "depositFinancialWizard", container: "depositFinancialBody",
@@ -46,66 +51,67 @@ async function openDepositFinancial(id) {
             records.append(make("div", "دریافت سوابق انجام نشد.", "external-pf-empty"));
             return;
         }
+        historyTitle.textContent = result.serialNum ? titleText + " شماره " + result.serialNum : titleText;
         const cheque = result.payType === 2;
         send.querySelector("[data-financial-history-send-label]").textContent =
             cheque ? "ارسال رسید دریافت به نرم‌افزار مالی" : "ارسال به نرم‌افزار مالی";
         const rows = result.entries.filter(row => row.document || row.missing || row.pending);
-        for (const row of rows) {
-            const card = ExternalFinancialHistory.card([
-                ["نرم‌افزار", row.title, true], ["تاریخ ثبت", row.dateText],
-                ["شماره " + label(result.payType), row.document?.number], ["مشتری", result.customerName]
-            ], [], row.missing ? "external-pf-missing" : "");
-            if (row.missing)
-                card.querySelector(".external-pf-info").append(
-                    make("p", "سند در نرم‌افزار مقصد پیدا نشد.", "external-pf-missing-message"));
-            if (row.missing || row.pending) {
-                const button = make("button", row.pending ? "ادامه ثبت" : "حذف سابقه",
-                    "external-pf-action " + (row.missing ? "external-pf-remove" : "external-pf-view"));
-                button.type = "button";
-                button.onclick = async () => {
-                    if (busy || choosing || isModalOpen(wizard.modal)) return;
-                    if (row.pending) {
-                        destinations = [row];
-                        index = 0;
-                        if (row.document) {
-                            busy = true;
-                            try {
-                                if (await api("Submit", { id, softwareId: row.id }, "POST", true)) await refresh();
-                            } finally { busy = false; }
-                        } else {
-                            choosing = true;
-                            try { await prepare(true); }
-                            finally { choosing = false; }
-                        }
-                        return;
-                    }
-                    busy = true;
-                    try {
-                        const answer = await Swal.fire({
-                            target: history, title: "حذف سابقه ارسال", icon: "warning", showCancelButton: true,
-                            confirmButtonText: "حذف سابقه", cancelButtonText: "انصراف", focusCancel: true
-                        });
-                        if (answer.isConfirmed && (await api("DeleteMissing", { id, softwareId: row.id }))?.deleted)
-                            await refresh();
-                    } finally { busy = false; }
+        historyUi.render(rows, {
+            emptyText: "این واریزی هنوز در نرم‌افزار مالی ثبت نشده است.",
+            card: row => {
+                const card = {
+                    title: row.title, missing: row.missing, related: row.cheque ? chequeHistory(row) : null,
+                    fields: [["شماره " + label(result.payType), row.document?.number],
+                        ["مشتری", result.customerName]],
+                    registration: { date: row.registeredAt, by: row.registeredBy },
+                    status: row.missing ? "سند در نرم‌افزار مقصد پیدا نشد." : row.cheque?.message,
+                    operations: row.document && row.mappingId && !row.pending
+                        ? maintenanceActions(row, 0, label(result.payType)) : [],
                 };
-                card.append(ExternalFinancialHistory.actions([button]));
-            }
-            if (row.cheque) appendChequeHistory(card, row);
-            else records.append(card);
-        }
-        if (!rows.length) records.append(make("div", "این واریزی هنوز در نرم‌افزار مالی ثبت نشده است.", "external-pf-empty"));
+                if (row.missing || row.pending) {
+                    const button = historyCard.action(row.pending ? "ادامه ثبت" : "حذف سابقه", { danger: !row.pending });
+                    button.onclick = async () => {
+                        if (busy || choosing || isModalOpen(wizard.modal)) return;
+                        if (row.pending) {
+                            destinations = [row];
+                            index = 0;
+                            if (row.document) {
+                                busy = true;
+                                try {
+                                    if (await api("Submit", { id, softwareId: row.id }, "POST", true)) await refresh();
+                                } finally { busy = false; }
+                            } else {
+                                choosing = true;
+                                try { await prepare(true); }
+                                finally { choosing = false; }
+                            }
+                            return;
+                        }
+                        busy = true;
+                        try {
+                            const answer = await Swal.fire({
+                                target: history, title: "حذف سابقه ارسال", icon: "warning", showCancelButton: true,
+                                confirmButtonText: "حذف سابقه", cancelButtonText: "انصراف", focusCancel: true
+                            });
+                            if (answer.isConfirmed && (await api("DeleteMissing", { id, softwareId: row.id }))?.deleted)
+                                await refresh();
+                        } finally { busy = false; }
+                    };
+                    card.action = button;
+                }
+                return card;
+            },
+        });
         send.disabled = !result.entries.length;
         send.onclick = () => choose(result.entries);
     }
 
-    function appendChequeHistory(card, row) {
-        const group = make("div", null, "deposit-cheque-history");
-        group.append(card);
+    function chequeHistory(row) {
+        const entries = [];
+        let nextAction;
         const actionId = row.cheque.nextAction;
         if (actionId && !row.pending) {
-            const button = make("button", "ثبت " + chequeActionTitle[actionId], "external-pf-action external-pf-view");
-            button.type = "button";
+            const button = historyCard.action("ثبت " + chequeActionTitle[actionId]);
             button.onclick = async () => {
                 if (choosing || busy || isModalOpen(wizard.modal)) return;
                 choosing = true;
@@ -113,26 +119,207 @@ async function openDepositFinancial(id) {
                 try { await prepareChequeOperation(row, actionId); }
                 finally { choosing = false; button.disabled = false; }
             };
-            card.append(ExternalFinancialHistory.actions([button]));
+            nextAction = button;
         }
-        if (row.cheque.message)
-            card.querySelector(".external-pf-info").append(make("p", row.cheque.message, "external-pf-missing-message"));
-        for (const [title, entry, dateLabel, detailLabel, detail] of [
-            ["واگذاری به بانک", row.cheque.assignment, "تاریخ واگذاری", "حساب بانکی", row.cheque.assignment?.bankAccount],
-            ["وصول چک", row.cheque.collection, "تاریخ وصول", "حساب بانکی", row.cheque.collection?.bankAccount],
-            ["اعلامیه پرداخت · خرج کردن چک", row.cheque.payment, "تاریخ اعلامیه", "طرف مقابل", row.cheque.payment?.payee]
+        for (const [operation, title, entry, dateLabel, detailLabel, detail] of [
+            [chequeAction.assign, "واگذاری به بانک", row.cheque.assignment, "تاریخ واگذاری", "حساب بانکی", row.cheque.assignment?.bankAccount],
+            [chequeAction.collect, "وصول چک", row.cheque.collection, "تاریخ وصول", "حساب بانکی", row.cheque.collection?.bankAccount],
+            [chequeAction.spend, "اعلامیه پرداخت · خرج کردن چک", row.cheque.payment, "تاریخ اعلامیه", "طرف مقابل", row.cheque.payment?.payee]
         ]) {
             if (!entry) continue;
-            const panel = make("div", null, "deposit-cheque-history-entry");
-            const fields = [["شماره", entry.number], [dateLabel, entry.dateText]];
-            if (entry.amount != null) fields.push(["مبلغ چک", entry.amount.toLocaleString() + " ریال"]);
-            fields.push([detailLabel, detail]);
-            const info = ExternalFinancialHistory.fields(fields);
-            info.lastElementChild.classList.add("deposit-cheque-history-detail");
-            panel.append(make("div", title, "deposit-cheque-history-title"), info);
-            group.append(panel);
+            const caption = title + " شماره " + entry.number +
+                (entry.amount == null ? "" : " · " + entry.amount.toLocaleString() + " ریال");
+            entries.push(historyCard.relatedItem({
+                title: caption, fields: [[dateLabel, entry.dateText], [detailLabel, detail]],
+                registration: { date: entry.registeredAt },
+                operations: row.mappingId && !row.pending
+                    ? maintenanceActions(row, operation, title) : [],
+            }));
         }
-        records.append(group);
+        return entries.length || nextAction
+            ? { title: "عملیات مرتبط چک", entries, action: nextAction, open: true }
+            : null;
+    }
+
+    function maintenanceActions(row, operation, title) {
+        const actions = [];
+        const add = (edit, caption, icon) => actions.push(historyCard.action(caption, {
+            icon, danger: !edit,
+            onClick: () => openMaintenance(row, operation, title, edit),
+        }));
+        if (operation === 0 || operation === chequeAction.spend)
+            add(true, "ویرایش انتقال", "fa-pencil-alt");
+        add(false, "حذف از مقصد", "fa-trash-alt");
+        return actions;
+    }
+
+    async function openMaintenance(row, operation, title, edit) {
+        if (choosing || busy || isModalOpen(wizard.modal)) return;
+        choosing = true;
+        try {
+            const key = { id, softwareId: row.id, mappingId: row.mappingId, action: operation, edit };
+            const data = await api("PreviewMaintenance", key);
+            if (!data || signal.aborted || !isModalOpen(history)) return;
+            const impact = data.impact;
+            if (impact.blockers.length)
+                return toastifyError(impact.blockers[0]);
+            if (edit) {
+                destinations = [row];
+                index = 0;
+                showMaintenanceEdit(key, title, data);
+                ModalToggle(wizard.modal, "show");
+                return;
+            }
+            const content = make("div", null, "text-start");
+            content.append(make("p", title + " شماره " + impact.number + " از مقصد حذف شود؟", "mb-2"));
+            if (impact.voucherNumber != null)
+                content.append(make("p", "سند حسابداری شماره " + impact.voucherNumber + " هم حذف می‌شود.", "small mb-1"));
+            if (operation)
+                content.append(make("p", operation === chequeAction.collect
+                    ? "چک به وضعیت واگذارشده به بانک برمی‌گردد." : "چک به وضعیت نزد صندوق برمی‌گردد.", "small mb-0"));
+            const answer = await Swal.fire({
+                target: history, title: "حذف سند از مقصد", html: content, icon: "warning", showCancelButton: true,
+                confirmButtonText: "حذف سند", cancelButtonText: "انصراف", focusCancel: true,
+            });
+            if (!answer.isConfirmed || signal.aborted || !isModalOpen(history)) return;
+            if ((await api("SubmitMaintenance", { ...key, token: impact.token }, "POST", true))?.deleted)
+                toastifySuccess(title + " از نرم‌افزار مقصد حذف شد.");
+            if (!signal.aborted) await refresh();
+        } finally { choosing = false; }
+    }
+
+    function showMaintenanceEdit(key, title, data) {
+        const payment = key.action === chequeAction.spend;
+        const note = data.type === 4;
+        const cheque = data.type === 2;
+        const options = data.options;
+        const draftInput = payment ? data.paymentInput : data.input;
+        draft = { ...draftInput, dueText: data.dueText,
+            creditType: draftInput.creditSide?.type, creditAccountId: draftInput.creditSide?.accountId, creditDetailId: draftInput.creditSide?.detailId,
+            debitType: draftInput.debitSide?.type, debitAccountId: draftInput.debitSide?.accountId, debitDetailId: draftInput.debitSide?.detailId };
+        const body = make("div", null, "d-grid gap-2");
+        const summary = historyCard.fields([["تاریخ سند", data.dateText], ["مبلغ", Number(data.amount).toLocaleString() + " ریال"]]);
+        summary.classList.add("external-pf-record-fields", "border", "rounded", "p-2");
+        body.append(summary);
+        let selects = [], fields;
+        if (payment) {
+            const kind = options.paymentTypes.find(type => type.id === draft.paymentType);
+            const box = options.cash.find(item => item.id === draft.cashId);
+            body.append(historyCard.fields([["نوع پرداخت", kind?.title], ["صندوق", box?.title]]));
+            selects = ["payeeId", "accountId"];
+            fields = [...selects, "description"];
+            body.insertAdjacentHTML("beforeend", select("payeeId", "طرف مقابل", options.payees.filter(x => x.paymentTypes.includes(draft.paymentType)))
+                + select("accountId", "معین پرداخت", options.accounts) + input("description", "شرح اعلامیه پرداخت", 250, { required: true }));
+        } else if (note) {
+            selects = ["creditType", "creditAccountId", "debitType", "debitAccountId"];
+            fields = [...selects, "description", "noteDescription"];
+            const sides = make("div", null, "row row-cols-1 row-cols-sm-2 g-2");
+            for (const [side, name] of [["debit", "بدهکار"], ["credit", "بستانکار"]]) {
+                const column = make("div", null, "d-grid");
+                column.innerHTML = maintenanceEditSection(name,
+                    select(side + "Type", "نوع " + name, options.partyTypes)
+                    + select(side + "AccountId", "کد معین " + name, options.subsidiaryAccounts)
+                    + '<div data-deposit-maintenance-detail="' + side + '" hidden></div>', "d-grid gap-2");
+                sides.append(column);
+            }
+            body.append(sides);
+            body.insertAdjacentHTML("beforeend", noteField("description", "شرح قلم", 250, true)
+                + noteField("noteDescription", "شرح اعلامیه", 4000));
+        } else {
+            selects = ["customerId", "creditAccountId", "cashId"];
+            fields = [...selects, "reference", "description"];
+            const receiptFields = select("customerId", "مشتری معادل", options.customers)
+                + select("creditAccountId", "معین دریافت", options.subsidiaryAccounts)
+                + select("cashId", "صندوق", options.cash)
+                + (cheque ? "" : select("bankAccountId", "حساب بانکی مقصد", [])
+                    + input("reference", "شماره پیگیری حواله", 100, { required: true }))
+                + receiptDescriptionField();
+            body.insertAdjacentHTML("beforeend", maintenanceEditSection("اطلاعات رسید دریافت", receiptFields));
+            if (cheque) {
+                selects.push("bankId");
+                fields.push("bankId", "dueText", "sayad", "accountNo", ...chequeExtraKeys);
+                body.insertAdjacentHTML("beforeend", maintenanceEditSection("مشخصات چک",
+                    input("reference", "شماره چک", 50, { required: true })
+                    + input("dueText", "سررسید چک", 10, { date: true, required: true })
+                    + select("bankId", "بانک صادرکننده", options.banks)
+                    + input("accountNo", "شماره حساب صادرکننده", 50, { required: true })
+                    + input("sayad", "شناسه صیادی", 16))
+                    + chequeExtraFields("اطلاعات تکمیلی چک", "row row-cols-1 row-cols-sm-2 g-2 mt-1"));
+            } else {
+                fields.push("bankAccountId");
+            }
+        }
+        stage("ویرایش انتقال " + title, "اطلاعات انتقال را بررسی کنید.", "سند شماره " + data.impact.number,
+            '<i class="fas fa-pencil-alt" aria-hidden="true"></i>', body, "ذخیره تغییرات", async () => {
+                capture(fields);
+                if (note && !draft.description) return toastifyError("شرح قلم اعلامیه را وارد کنید.");
+                const impact = data.impact;
+                const details = [];
+                if (impact.voucherNumber != null)
+                    details.push("سند حسابداری شماره " + impact.voucherNumber + (impact.autoVoucher ? " بازسازی می‌شود." : " حذف می‌شود."));
+                else if (impact.autoVoucher)
+                    details.push("سند حسابداری صادر می‌شود.");
+                if (!impact.autoVoucher)
+                    details.push("صدور خودکار در سپیدار غیرفعال است و سند حسابداری جدید صادر نمی‌شود.");
+                if (!await historyCard.confirmEdit(wizard.modal, "تغییرات " + title + " شماره " + impact.number + " ذخیره شود؟", details)
+                    || signal.aborted) return;
+                const payload = payment ? { payeeId: draft.payeeId, accountId: draft.accountId, description: draft.description }
+                    : { document: draft };
+                const saved = await api("SubmitMaintenance", { ...key, ...payload, token: impact.token }, "POST", true);
+                if (!saved?.saved) return;
+                toastifySuccess(saved.voucherIssued ? "تغییرات سند ذخیره شد."
+                    : "تغییرات ذخیره شد. صدور خودکار در سپیدار غیرفعال است و سند حسابداری جدید صادر نشد.", 6000);
+                close();
+            }, close, true);
+        wizard.setActions({ backText: "انصراف" });
+        enhance(...selects);
+        if (!payment && !note && !cheque)
+            controls.push(createSupplierTomSelect(document.getElementById("deposit-field-bankAccountId"),
+                options.accounts, draft.bankAccountId || null, { showOfficial: false }));
+        if (note)
+            bindMaintenanceNoteDetails(body, options);
+    }
+
+    function maintenanceEditSection(title, fields, layout = "row row-cols-1 row-cols-sm-2 g-2") {
+        return '<section class="border rounded p-2"><h6 class="form-label fbold mb-2">' + title
+            + '</h6><div class="' + layout + '">' + fields + '</div></section>';
+    }
+
+    function bindMaintenanceNoteDetails(body, options) {
+        const choices = { [noteParty.supplier]: options.vendors, [noteParty.customer]: options.customers,
+            [noteParty.other]: options.otherDetails };
+        for (const [side, title] of [["credit", "بستانکار"], ["debit", "بدهکار"]]) {
+            const typeKey = side + "Type", accountKey = side + "AccountId", detailKey = side + "DetailId";
+            const host = body.querySelector('[data-deposit-maintenance-detail="' + side + '"]');
+            const refreshDetail = () => {
+                const old = host.querySelector("select")?.tomselect;
+                if (old) {
+                    controls.splice(controls.indexOf(old), 1);
+                    old.destroy();
+                }
+                const required = options.subsidiaryAccounts.find(x => x.id === draft[accountKey])?.hasDl;
+                host.hidden = !required;
+                if (!required) {
+                    draft[detailKey] = 0;
+                    host.replaceChildren();
+                    return;
+                }
+                host.innerHTML = select(detailKey, "کد تفصیلی " + title, choices[draft[typeKey]]);
+                capture([detailKey]);
+                enhance(detailKey);
+                host.querySelector("select").addEventListener("change", () => capture([detailKey]));
+            };
+            document.getElementById("deposit-field-" + typeKey).addEventListener("change", () => {
+                capture([typeKey]);
+                draft[detailKey] = 0;
+                refreshDetail();
+            });
+            document.getElementById("deposit-field-" + accountKey).addEventListener("change", () => {
+                capture([accountKey]);
+                refreshDetail();
+            });
+            refreshDetail();
+        }
     }
 
     async function choose(entries) {
@@ -175,7 +362,7 @@ async function openDepositFinancial(id) {
             return;
         }
         Object.assign(draft, { customerId: source.customerId, bankAccountId: source.bankAccountId,
-            dueText: source.dueText });
+            dueText: source.dueText, chequeAmount: source.defaultChequeAmount });
         if (source.type === 4) {
             Object.assign(draft, { creditType: noteParty.customer, debitType: noteParty.supplier,
                 creditDetailId: source.customerId });
@@ -191,13 +378,14 @@ async function openDepositFinancial(id) {
         goBack = previous;
         wizard.render({ destination: destinations[index].title, title, subtitle, step, icon, content: body, large,
             position: "نرم‌افزار " + (index + 1) + " از " + destinations.length });
-        wizard.setActions({ confirmText, confirmDisabled: false, backHidden: !previous, backDisabled: false });
+        wizard.setActions({ confirmText, confirmDisabled: false, backText: "برگشت", backHidden: !previous, backDisabled: false });
         dateTimePicker(wizard.container);
     }
-    function select(key, caption, options, valueId = "id", title = item => item.title) {
+    function select(key, caption, options) {
         return ExternalFinancialWizard.selectField({
             id: "deposit-field-" + key, label: caption, placeholder: "جستجو و انتخاب",
-            selected: draft[key], options: (options ?? []).map(item => ({ value: item[valueId], label: title(item) }))
+            required: true, selected: draft[key],
+            options: (options ?? []).map(item => ({ value: item.id, label: item.title })),
         });
     }
     function enhance(...keys) {
@@ -274,23 +462,35 @@ async function openDepositFinancial(id) {
             });
         enhance("cashId");
     }
-    function input(key, caption, max, date = false, required = false) {
+    function input(key, caption, max, { date = false, required = false } = {}) {
         return '<div class="external-financial-field"><label class="form-label mb-1" for="deposit-field-' + key + '">'
             + caption + '</label><input type="text" id="deposit-field-' + key + '" value="' + escapeHtml(draft[key] ?? "")
             + '" maxlength="' + max + '" autocomplete="off" class="form-control form-control-sm' + (date ? " sdate text-center" : "")
             + '"' + (date ? ' dir="ltr" data-datepicker-change' : '') + (required ? ' required' : '') + '></div>';
     }
     function receiptDescriptionField() {
-        return input("description", "شرح رسید دریافت (الزامی)", 250, false, true);
+        return input("description", "شرح رسید دریافت", 250, { required: true });
     }
-    function noteField(key, caption, maxLength) {
+    const chequeExtraKeys = ["secondNumber", "chequeOwner", "branchCode", "branchTitle"];
+    const secondChequeNumberLabel = "شماره دوم چک (پشت نمره)";
+    function chequeExtraFields(title, gridClass) {
+        return '<details class="external-financial-note external-financial-note-panel"'
+            + (chequeExtraKeys.some(key => draft[key]) ? " open" : "") + '>'
+            + '<summary>' + title + '</summary><div class="' + gridClass + '">'
+            + input("secondNumber", secondChequeNumberLabel, 50) + input("chequeOwner", "صاحب چک", 250)
+            + input("branchCode", "کد شعبه", 250) + input("branchTitle", "نام شعبه", 250)
+            + '</div></details>';
+    }
+    function noteField(key, caption, maxLength, required = false) {
         const value = draft[key] ?? "";
         const id = "deposit-field-" + key;
+        const label = '<label class="' + (required ? 'form-label mb-1' : 'visually-hidden') + '" for="' + id + '">' + caption + '</label>';
+        const field = label + '<textarea id="' + id + '" class="form-control form-control-sm" rows="1" maxlength="' + maxLength
+            + '"' + (required ? ' required' : '') + '>' + escapeHtml(value) + '</textarea>';
+        if (required) return '<div class="external-financial-field">' + field + '</div>';
         return '<details class="external-financial-note external-financial-note-panel"' + (value ? " open" : "") + '>'
             + '<summary>' + (value ? "ویرایش " : "افزودن ") + caption + '</summary>'
-            + '<label class="visually-hidden" for="' + id + '">' + caption + '</label>'
-            + '<textarea id="' + id + '" class="form-control form-control-sm" rows="1" maxlength="' + maxLength + '">'
-            + escapeHtml(value) + '</textarea></details>';
+            + field + '</details>';
     }
     function noteSideStage(isCredit) {
         const side = isCredit ? "credit" : "debit";
@@ -312,7 +512,7 @@ async function openDepositFinancial(id) {
             + select(typeKey, "نوع " + title, source.options.partyTypes)
             + select(accountKey, "کد معین " + title, source.options.subsidiaryAccounts)
             + '<div class="deposit-note-detail" hidden></div></div>'
-            + (isCredit ? "" : noteField("description", "شرح قلم", 250)) + '</div>';
+            + (isCredit ? "" : noteField("description", "شرح قلم", 250, true)) + '</div>';
         stage(title + " تهاتر", "نوع و حساب " + title + " را مشخص کنید", step(isCredit ? 1 : 2),
             '<i class="fas fa-user-tag" aria-hidden="true"></i>', body, isCredit ? "تأیید و ادامه" : "پیش‌نمایش", async () => {
                 if (!draft[typeKey] || !account()) return toastifyError("نوع و حساب معین " + title + " را انتخاب کنید.");
@@ -327,6 +527,7 @@ async function openDepositFinancial(id) {
                     return;
                 }
                 capture(["description"]);
+                if (!draft.description) return toastifyError("شرح قلم اعلامیه را وارد کنید.");
                 const preview = await api("Preview", draft);
                 if (preview && !signal.aborted) previewStage(preview);
             }, isCredit ? null : () => {
@@ -372,10 +573,10 @@ async function openDepositFinancial(id) {
         const fields = ["reference", "dueText", "sayad"];
         if (source.needsOriginalChequeAmount) fields.push("chequeAmount");
         const body = '<div class="d-grid gap-2">'
-            + input("reference", "شماره چک", 50)
-            + input("dueText", "سررسید چک", 10, true)
-            + input("sayad", "شناسه صیادی (اختیاری)", 16)
-            + (source.needsOriginalChequeAmount ? input("chequeAmount", "مبلغ اولیه چک (ریال)", 26)
+            + input("reference", "شماره چک", 50, { required: true })
+            + input("dueText", "سررسید چک", 10, { date: true, required: true })
+            + input("sayad", "شناسه صیادی", 16)
+            + (source.needsOriginalChequeAmount ? input("chequeAmount", "مبلغ اولیه چک (ریال)", 26, { required: true })
                 + '<p class="small text-muted mb-0">مبلغ وصول در ERP ' + renderMoneyHtml(source.amount) + ' است.</p>' : "")
             + '</div>';
         stage("مشخصات چک", "شماره و سررسید چک را وارد کنید", step(3),
@@ -396,18 +597,12 @@ async function openDepositFinancial(id) {
             });
     }
     function chequeIssuerStage() {
-        const optionalFields = ["secondNumber", "chequeOwner", "branchCode", "branchTitle"];
-        const fields = ["description", "bankId", "accountNo", ...optionalFields];
+        const fields = ["description", "bankId", "accountNo", ...chequeExtraKeys];
         const body = '<div class="d-grid gap-2">'
             + receiptDescriptionField()
             + select("bankId", "بانک صادرکننده", source.options.banks)
-            + input("accountNo", "شماره حساب صادرکننده", 50)
-            + '<details class="external-financial-note external-financial-note-panel"'
-            + (optionalFields.some(key => draft[key]) ? " open" : "") + '>'
-            + '<summary>اطلاعات تکمیلی (اختیاری)</summary><div class="d-grid gap-2 mt-2">'
-            + input("secondNumber", "شماره دوم چک", 50) + input("chequeOwner", "صاحب چک", 250)
-            + input("branchCode", "کد شعبه", 250) + input("branchTitle", "نام شعبه", 250)
-            + '</div></details></div>';
+            + input("accountNo", "شماره حساب صادرکننده", 50, { required: true })
+            + chequeExtraFields("اطلاعات تکمیلی", "d-grid gap-2 mt-2") + '</div>';
         stage("اطلاعات رسید دریافت", "شرح رسید و حساب صادرکننده چک را وارد کنید", step(4),
             '<i class="fas fa-university" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
                 capture(fields);
@@ -426,7 +621,7 @@ async function openDepositFinancial(id) {
         const fields = [...required, "description"];
         const body = '<div class="d-grid gap-2">'
             + creditAccountField("معین دریافت")
-            + input("reference", "شماره پیگیری حواله", 100)
+            + input("reference", "شماره پیگیری حواله", 100, { required: true })
             + receiptDescriptionField() + '</div>';
         stage("اطلاعات " + label(source.type), "اطلاعات لازم برای ثبت را تکمیل کنید", step(4),
             '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
@@ -478,7 +673,7 @@ async function openDepositFinancial(id) {
                 ["شماره چک", draft.reference], ["سررسید", preview.dueText], ["صندوق", cash],
                 ["بانک صادرکننده", source.options.banks.find(bank => bank.id === draft.bankId)?.title],
                 ["شماره حساب صادرکننده", draft.accountNo], ["شناسه صیادی", draft.sayad],
-                ["شماره دوم چک", draft.secondNumber], ["صاحب چک", draft.chequeOwner],
+                [secondChequeNumberLabel, draft.secondNumber], ["صاحب چک", draft.chequeOwner],
                 ["کد شعبه", draft.branchCode], ["نام شعبه", draft.branchTitle]
             ];
         } else {
@@ -628,8 +823,8 @@ async function openDepositFinancial(id) {
         const body = '<div class="d-grid gap-2">'
             + select("accountId", "معین پرداخت", source.options.accounts)
             + select("cashId", "صندوق", cash)
-            + input("dateText", "تاریخ اعلامیه پرداخت", 10, true)
-            + input("description", "شرح اعلامیه پرداخت", 250) + '</div>';
+            + input("dateText", "تاریخ اعلامیه پرداخت", 10, { date: true, required: true })
+            + input("description", "شرح اعلامیه پرداخت", 250, { required: true }) + '</div>';
         stage("اطلاعات اعلامیه پرداخت", "معین، صندوق و تاریخ خرج کردن چک را مشخص کنید", "مرحله ۲ از ۳",
             '<i class="fas fa-file-invoice" aria-hidden="true"></i>', body, "پیش‌نمایش", async () => {
                 capture(fields);
@@ -724,9 +919,8 @@ async function openDepositFinancial(id) {
         send.onclick = null;
         delete history.dataset.active;
     }, { once: true });
-    enableMomentumScrollScope(history, { signal });
     enableMomentumScrollScope(wizard.modal, { signal });
     records.replaceChildren();
-    ModalToggle(history, "show");
+    historyUi.show();
     await refresh();
 }

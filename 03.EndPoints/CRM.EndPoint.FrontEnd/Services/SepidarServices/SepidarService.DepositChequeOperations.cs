@@ -31,8 +31,8 @@ public partial class SepidarService
     private const string BankingNumberedEntity = "SG.ReceiptAndPayment.ReceiptManagement.Common.ReceiptChequeBankingRow";
     private const string PaymentNumberedEntity = "SG.ReceiptAndPayment.PaymentManagement.Common.PaymentHeaderRow";
 
-    public sealed record ChequeBankingDocument(int ItemId, int Number, DateTime Date, int? BankId);
-    public sealed record ChequePaymentDocument(int Number, DateTime Date, string? Payee);
+    public sealed record ChequeBankingDocument(int ItemId, int Number, DateTime Date, int? BankId, DateTime? CreationDate, int ItemCount);
+    public sealed record ChequePaymentDocument(int Number, DateTime Date, string? Payee, DateTime? CreationDate, int ItemCount);
     public sealed record DepositChequeStatus(int Id, int State, decimal Amount, string Number, DateTime ReceivedDate,
         DateTime? DueDate, int? CashId, ChequeBankingDocument? Assignment, ChequeBankingDocument? Collection,
         ChequePaymentDocument? Payment)
@@ -74,8 +74,10 @@ public partial class SepidarService
                 ((header.Type == AssignmentType && item.State == ChequeAssigned) ||
                  (header.Type == CollectionType && item.State == ChequeCollected))
             orderby header.Date descending, item.ReceiptChequeBankingItemId descending
-            select new { header.Type, item.ReceiptChequeBankingItemId, header.Number, header.Date,
-                BankId = item.BankAccountRef ?? header.BankAccountRef, item.ReceiptChequeBankingItemRef }).ToListAsync(ct);
+            select new { header.Type, item.ReceiptChequeBankingItemId, header.Number, header.Date, header.CreationDate,
+                BankId = item.BankAccountRef ?? header.BankAccountRef, item.ReceiptChequeBankingItemRef,
+                ItemCount = sepidarContext.ReceiptChequeBankingItems.Count(x => x.ReceiptChequeBankingRef == header.ReceiptChequeBankingId)
+            }).ToListAsync(ct);
         var collection = banking.FirstOrDefault(x => x.Type == CollectionType);
         var assignment = collection != null && cheque.State == ChequeCollected
             ? banking.FirstOrDefault(x => x.ReceiptChequeBankingItemId == collection.ReceiptChequeBankingItemRef)
@@ -86,11 +88,15 @@ public partial class SepidarService
             from detail in details.DefaultIfEmpty()
             where item.ReceiptChequeRef == cheque.ReceiptChequeId
             orderby header.Date descending, header.PaymentHeaderId descending
-            select new ChequePaymentDocument(header.Number, header.Date, detail == null ? null : detail.Title)).FirstOrDefaultAsync(ct);
+            select new ChequePaymentDocument(header.Number, header.Date, detail == null ? null : detail.Title,
+                header.CreationDate,
+                sepidarContext.PaymentChequeOthers.Count(x => x.PaymentHeaderRef == header.PaymentHeaderId))).FirstOrDefaultAsync(ct);
         return new(cheque.ReceiptChequeId, cheque.State, cheque.Amount, cheque.Number, cheque.HeaderDate,
             cheque.Date, cheque.CashRef,
-            assignment == null ? null : new(assignment.ReceiptChequeBankingItemId, assignment.Number, assignment.Date, assignment.BankId),
-            collection == null ? null : new(collection.ReceiptChequeBankingItemId, collection.Number, collection.Date, collection.BankId), payment);
+            assignment == null ? null : new(assignment.ReceiptChequeBankingItemId, assignment.Number, assignment.Date,
+                assignment.BankId, assignment.CreationDate, assignment.ItemCount),
+            collection == null ? null : new(collection.ReceiptChequeBankingItemId, collection.Number, collection.Date,
+                collection.BankId, collection.CreationDate, collection.ItemCount), payment);
     }
 
     internal async Task<string?> GetChequeAssignmentBankTitleAsync(int bankId, CancellationToken ct)
@@ -193,10 +199,12 @@ public partial class SepidarService
     }
 
     private async Task<ChequeOperationDraft> BuildChequeOperationAsync(ReceiptCheque cheque, ChequeOperationInput input,
-        bool transferred, bool collected, decimal crmAmount, CancellationToken ct)
+        bool transferred, bool collected, decimal crmAmount, CancellationToken ct, bool editingPayment = false)
     {
         var status = await ReadChequeStatusAsync(cheque, ct);
-        if (input.Action == DepositChequeAction.None || status.Next(transferred, collected) != input.Action)
+        if (input.Action == DepositChequeAction.None ||
+            (!editingPayment && status.Next(transferred, collected) != input.Action) ||
+            (editingPayment && (input.Action != DepositChequeAction.Spend || status.State != ChequeSpent)))
             throw new SepidarTransferValidationException("عملیات با وضعیت فعلی چک در سپیدار سازگار نیست. سوابق را دوباره بررسی کنید.");
         if (input.Date is { } operationDate && operationDate.Date < status.ReceivedDate.Date)
             throw new SepidarTransferValidationException("تاریخ عملیات نمی‌تواند قبل از تاریخ رسید دریافت باشد.");
@@ -368,11 +376,7 @@ public partial class SepidarService
         var id = await GetLockedNextPurchaseIdAsync("RPA.PaymentHeader", 1, ct);
         var itemId = await GetLockedNextPurchaseIdAsync("RPA.PaymentChequeOther", 1, ct);
         var number = await GetChequeOperationNumberAsync(draft, true, ct);
-        var headerText = $"بابت پرداخت طي اعلاميه شماره {number} تاريخ {BaseServices.GetDatePersian(date)}";
-        var debitText = $"واگذاري چك شماره {cheque.Number} تاريخ {BaseServices.GetDatePersian(cheque.Date)}";
-        var creditText = $"{debitText} به {draft.TargetTitle} بابت {input.Description}";
-        var voucherId = draft.AutoVoucher ? await AddChequeOperationVoucherAsync(
-            draft, id, creator, PaymentIssuer, headerText, debitText, creditText, ct) : (int?)null;
+        var voucherId = await PostChequePaymentVoucherAsync(cheque, draft, id, number, creator, ct);
         var payment = new PaymentHeader
         {
             PaymentHeaderId = id, Type = input.PaymentType, AccountSlRef = draft.DebitAccount, DlRef = draft.DebitDl,
@@ -392,6 +396,17 @@ public partial class SepidarService
         });
         await SetChequeOperationHistoryAsync(cheque, draft, ChequeSpent, 23, null, itemId, ct);
         return new(number, date);
+    }
+
+    private async Task<int?> PostChequePaymentVoucherAsync(ReceiptCheque cheque, ChequeOperationDraft draft,
+        int id, int number, int creator, CancellationToken ct)
+    {
+        if (!draft.AutoVoucher)
+            return null;
+        var header = $"بابت پرداخت طي اعلاميه شماره {number} تاريخ {BaseServices.GetDatePersian(draft.Input.Date)}";
+        var debit = $"واگذاري چك شماره {cheque.Number} تاريخ {BaseServices.GetDatePersian(cheque.Date)}";
+        return await AddChequeOperationVoucherAsync(draft, id, creator, PaymentIssuer, header, debit,
+            $"{debit} به {draft.TargetTitle} بابت {draft.Input.Description}", ct);
     }
 
     private async Task SetChequeOperationHistoryAsync(ReceiptCheque cheque, ChequeOperationDraft draft, int state,
