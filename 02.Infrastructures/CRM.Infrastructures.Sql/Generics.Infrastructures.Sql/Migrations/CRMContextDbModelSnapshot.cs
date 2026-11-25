@@ -3704,122 +3704,105 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
                 {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AttemptCount").ValueGeneratedOnAdd().HasColumnType("int").HasDefaultValue(0);
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
-                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("DeletedById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<string>("DeleteReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("DeletedByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt").HasColumnType("datetime2");
+                    b.Property<string>("DeletedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("DeleteReason").HasMaxLength(500).HasColumnType("nvarchar(500)");
+                    b.Property<string>("DeletedByName")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
-                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("nvarchar(500)");
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<bool>("IsDeleted").HasColumnType("bit");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
-                    b.Property<bool>("IsLegacy").HasColumnType("bit");
+                    b.Property<bool>("IsLegacy")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("MobileAtAttempt").HasMaxLength(50).HasColumnType("nvarchar(50)");
+                    b.Property<string>("MobileAtAttempt")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("RestoredAt").HasColumnType("datetime2");
+                    b.Property<DateTime?>("RestoredAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("RestoredById").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                    b.Property<string>("RestoredById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("RestoredByName").HasMaxLength(250).HasColumnType("nvarchar(250)");
+                    b.Property<string>("RestoredByName")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
-                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
-                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
-                    b.Property<byte>("Status").HasColumnType("tinyint");
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
 
-                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId", "CreateDate");
 
-                    b.ToTable("QualityControlContactHistories", t =>
+                    b.ToTable("QualityControlContactHistories", null, t =>
                         {
-                            t.HasCheckConstraint("CK_QcContactHistories_Status", "[Status] IN (0, 1, 2)");
                             t.HasCheckConstraint("CK_QcContactHistories_Attempts", "[AttemptCount] >= 0");
+
+                            t.HasCheckConstraint("CK_QcContactHistories_Status", "[Status] IN (0, 1, 2)");
                         });
                 });
-
-
-            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CallRecordingId").HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CommentText").HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreateDate").HasColumnType("datetime2");
-
-                    b.Property<string>("CreateDateTxt").HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("CustomerId").HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description").IsRequired().HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<bool>("IsDeleted").HasColumnType("bit");
-
-                    b.Property<Guid?>("LegacyQualityControlId").HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ModifyDate").HasColumnType("datetime2");
-
-                    b.Property<string>("ModifyDateTxt").HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OriginalTranscript").HasColumnType("nvarchar(max)");
-
-                    b.Property<byte[]>("RowVersion").IsConcurrencyToken().IsRequired()
-                        .ValueGeneratedOnAddOrUpdate().HasColumnType("rowversion");
-
-                    b.Property<byte>("Source").HasColumnType("tinyint");
-
-                    b.Property<string>("UserCreator").HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserCreatorID").HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserModify").HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserModifyID").HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CallRecordingId").IsUnique()
-                        .HasFilter("[CallRecordingId] IS NOT NULL");
-
-                    b.HasIndex("CustomerId", "CreateDate");
-
-                    b.HasIndex("LegacyQualityControlId").IsUnique()
-                        .HasFilter("[LegacyQualityControlId] IS NOT NULL");
-
-                    b.ToTable("QualityControlCustomerNotes");
-                });
-
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerContact", b =>
                 {
@@ -3886,17 +3869,19 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasIndex("CustomerId")
                         .IsUnique();
 
-                    b.ToTable("QualityControlCustomerContacts", t =>
+                    b.ToTable("QualityControlCustomerContacts", null, t =>
                         {
                             t.HasCheckConstraint("CK_QualityControlCustomerContacts_Status", "[Status] IN (0, 1, 2)");
                         });
                 });
 
-
-            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CallRecordingId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CommentText")
@@ -3908,20 +3893,27 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("CreateDateTxt")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("FactorItemId")
+                    b.Property<Guid>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("LegacyQualityControlId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("ModifyDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalTranscript")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("RowVersion")
@@ -3930,7 +3922,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
-                    b.Property<byte>("Status")
+                    b.Property<byte>("Source")
                         .HasColumnType("tinyint");
 
                     b.Property<string>("UserCreator")
@@ -3947,15 +3939,18 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FactorItemId")
-                        .IsUnique();
+                    b.HasIndex("CallRecordingId")
+                        .IsUnique()
+                        .HasFilter("[CallRecordingId] IS NOT NULL");
 
-                    b.ToTable("QualityControlItemReviews", t =>
-                        {
-                            t.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (0, 1, 2)");
-                        });
+                    b.HasIndex("LegacyQualityControlId")
+                        .IsUnique()
+                        .HasFilter("[LegacyQualityControlId] IS NOT NULL");
+
+                    b.HasIndex("CustomerId", "CreateDate");
+
+                    b.ToTable("QualityControlCustomerNotes", (string)null);
                 });
-
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer", b =>
                 {
@@ -4038,6 +4033,68 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         });
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommentText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("FactorItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifyDateTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("UserCreator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreatorID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModify")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserModifyID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactorItemId")
+                        .IsUnique();
+
+                    b.ToTable("QualityControlItemReviews", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_QualityControlItemReviews_Status", "[Status] IN (0, 1, 2)");
+                        });
+                });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlQuestion", b =>
                 {
@@ -4477,16 +4534,16 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestNumber"));
 
-                    b.Property<Guid?>("TargetPersonId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("TargetPersonTxt")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("RequestStatus")
                         .HasColumnType("int");
 
                     b.Property<string>("RequestStatusTxt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TargetPersonId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TargetPersonTxt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserCreator")
@@ -6920,6 +6977,328 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.ToTable("SystemWarnings");
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("AuthorityEnvironment")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AuthorityProcessingStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid?>("AuthorityReference")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CertificateSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("FactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FiscalId")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<long?>("InvoiceSerial")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LeaseUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MemoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MemoryTitle")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("MemoryUpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("MemoryWasActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ProtectedAcknowledgement")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedProcessingEvidence")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedSubmission")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedWorkFolderEvidence")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("QueuedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReferencedDispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SnapshotId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("SubmissionStartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(22)
+                        .HasColumnType("nvarchar(22)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FactorId")
+                        .IsUnique()
+                        .HasFilter("[Kind] = 0");
+
+                    b.HasIndex("ReferencedDispatchId");
+
+                    b.HasIndex("SnapshotId")
+                        .IsUnique();
+
+                    b.HasIndex("AuthorityEnvironment", "TaxId")
+                        .IsUnique()
+                        .HasFilter("[TaxId] IS NOT NULL");
+
+                    b.HasIndex("FactorId", "Kind")
+                        .IsUnique()
+                        .HasFilter("[Kind] IN (1, 3)");
+
+                    b.HasIndex("Status", "QueuedUtc");
+
+                    b.HasIndex("AuthorityEnvironment", "FiscalId", "InvoiceSerial")
+                        .IsUnique()
+                        .HasFilter("[InvoiceSerial] IS NOT NULL");
+
+                    b.HasIndex(new[] { "ReferencedDispatchId" }, "IX_TaxDispatches_OneCancellation")
+                        .IsUnique()
+                        .HasFilter("[Kind] = 2");
+
+                    b.ToTable("TaxDispatches", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TaxDispatches_Reference", "([Kind] = 0 AND [ReferencedDispatchId] IS NULL) OR ([Kind] IN (1, 2, 3) AND [ReferencedDispatchId] IS NOT NULL AND [ReferencedDispatchId] <> [Id])");
+
+                            t.HasCheckConstraint("CK_TaxDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [LeaseUntilUtc] IS NULL) OR ([Status] = 1 AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NOT NULL) OR ([Status] IN (2, 3, 4, 5) AND [AttemptId] IS NOT NULL AND [LeaseUntilUtc] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatchEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DispatchId", "Id");
+
+                    b.ToTable("TaxDispatchEvents");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FactorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProtectedPreview")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TaxMemoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaxMemoryId");
+
+                    b.HasIndex("FactorId", "CreatedUtc");
+
+                    b.ToTable("TaxInvoiceSnapshots");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxMemory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FiscalId")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FiscalId")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.ToTable("TaxMemories");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxPaymentDispatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AccountancyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18)
+                        .HasColumnType("decimal(18,0)");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AttemptStartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("InvoiceDispatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProtectedRequest")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProtectedResponse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReferenceHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountancyId")
+                        .IsUnique();
+
+                    b.HasIndex("InvoiceDispatchId", "ReferenceHash")
+                        .IsUnique();
+
+                    b.ToTable("TaxPaymentDispatches", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TaxPaymentDispatches_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_TaxPaymentDispatches_State", "([Status] = 0 AND [AttemptId] IS NULL AND [AttemptStartedAt] IS NULL AND [ResolvedAt] IS NULL) OR ([Status] IN (1, 2) AND [AttemptId] IS NOT NULL AND [AttemptStartedAt] IS NOT NULL AND [ResolvedAt] IS NULL) OR ([Status] IN (3, 4) AND [AttemptId] IS NOT NULL AND [AttemptStartedAt] IS NOT NULL AND [ResolvedAt] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxProductMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("GoodsId")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TaxUnit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<int>("Unit")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "Unit")
+                        .IsUnique()
+                        .HasFilter("[IsDefault] = 1");
+
+                    b.HasIndex("ProductId", "Unit", "GoodsId")
+                        .IsUnique();
+
+                    b.ToTable("TaxProductMappings");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.Transfers.Entities.Transfer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7795,17 +8174,7 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Navigation("Question");
                 });
 
-
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlContactHistory", b =>
-                {
-                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
                 {
                     b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany()
@@ -7823,15 +8192,13 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlCustomerNote", b =>
                 {
-                    b.HasOne("CRM.Core.Domain.Factors.Entities.FactorItem", "FactorItem")
+                    b.HasOne("CRM.Core.Domain.Customers.Entities.Customer", null)
                         .WithMany()
-                        .HasForeignKey("FactorItemId")
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("FactorItem");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemAnswer", b =>
@@ -7852,6 +8219,18 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.Navigation("Question");
                 });
+
+            modelBuilder.Entity("CRM.Core.Domain.QualityControls.Entities.QualityControlItemReview", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Factors.Entities.FactorItem", "FactorItem")
+                        .WithMany()
+                        .HasForeignKey("FactorItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FactorItem");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem", b =>
                 {
                     b.HasOne("CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote", "ReleaseNote")
@@ -8192,6 +8571,62 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .WithMany("SupplyFactorOrderHeads")
                         .HasForeignKey("SupplyFactorId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatch", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("ReferencedDispatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxDispatchEvent", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("DispatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxInvoiceSnapshot", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Factors.Entities.Factor", null)
+                        .WithMany()
+                        .HasForeignKey("FactorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxMemory", null)
+                        .WithMany()
+                        .HasForeignKey("TaxMemoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxPaymentDispatch", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceDispatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxProductMapping", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Products.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

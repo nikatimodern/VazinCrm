@@ -37,6 +37,13 @@ namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
 
+        public DbSet<CRM.Core.Domain.Taxation.TaxDispatch> TaxDispatches { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxPaymentDispatch> TaxPaymentDispatches { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxMemory> TaxMemories { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxInvoiceSnapshot> TaxInvoiceSnapshots { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxDispatchEvent> TaxDispatchEvents { get; set; }
+        public DbSet<CRM.Core.Domain.Taxation.TaxProductMapping> TaxProductMappings { get; set; }
+
         public DbSet<Accountancy> Accountancies { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNote> ReleaseNotes { get; set; }
         public DbSet<CRM.Core.Domain.ReleaseNotes.Entities.ReleaseNoteItem> ReleaseNoteItems { get; set; }
@@ -132,6 +139,8 @@ namespace CRM.Infrastructures.Sql {
         {
             //GetEnumerableOfType();
             base.OnModelCreating(modelBuilder);
+            Taxation.Configs.TaxationModel.Configure(modelBuilder);
+            modelBuilder.ApplyConfiguration(new Taxation.Configs.TaxDispatchConfig());
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly,
                 type => type.Namespace != typeof(Sepidar.Purchases.Configs.InventoryPurchaseInvoiceConfig).Namespace
                     && type.Namespace != typeof(Sepidar.Deposits.Configs.ReceiptHeaderConfig).Namespace);

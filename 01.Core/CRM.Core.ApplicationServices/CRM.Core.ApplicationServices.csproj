@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="CRM.Taxation.Tests" />
     <ProjectReference Include="..\CRM.Core.Domain\CRM.Core.Domain.csproj" />
   </ItemGroup>
 </Project>

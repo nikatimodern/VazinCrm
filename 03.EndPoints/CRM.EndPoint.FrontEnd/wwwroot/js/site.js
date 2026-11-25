@@ -14,6 +14,7 @@
  * @param {string|null} [options.successMsg]
  * @param {boolean} [options.showLoading=true]
  * @param {boolean} [options.showError=true]
+ * @param {boolean} [options.logError=true]
  * @param {number} [options.timeout=30000]
  * @param {AbortSignal|null} [options.signal=null]
  * @param {Object|string|null} [options.skeleton=null] Local read-only content loading target.
@@ -36,6 +37,7 @@ async function sendApiRequest(
         successMsg = undefined,
         showLoading = true,
         showError = true,
+        logError = true,
         timeout = 30000,
         signal = null,
         skeleton = null,
@@ -95,7 +97,7 @@ async function sendApiRequest(
             localLoading?.cancel();
             return null;
         }
-        console.error("API Error:", requestError);
+        if (logError) console.error("API Error:", requestError);
         const errorResponse = requestError.response;
         if (errorResponse?.status === 401 && errorResponse.headers?.["x-auth-expired"] === "true") {
             localLoading?.finish();
@@ -106,7 +108,7 @@ async function sendApiRequest(
             if (showError && !localLoading) await handleApiError(requestError);
             if (typeof onError === "function") await onError(requestError);
         } catch (callbackError) {
-            console.error("API Error Callback Error:", callbackError);
+            if (logError) console.error("API Error Callback Error:", callbackError);
         }
         localLoading?.fail(retry);
         return null;
