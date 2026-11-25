@@ -4253,7 +4253,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
-        public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
+        public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId,
+            [FromServices] ISalesInvoiceDestinationRepository destinationRepository, CancellationToken ct)
         {
             if (factorId == Guid.Empty)
                 return BadRequest("شناسه فاکتور معتبر نیست.");
@@ -4291,6 +4292,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var invoice = service != null && invoiceIdValid
                     ? await service.GetInvoiceSummaryAsync(invoiceId)
                     : null;
+                var requiresSynchronization = false;
+                if (invoice != null)
+                {
+                    try
+                    {
+                        requiresSynchronization = await destinationRepository.HasSyncDifferenceAsync(
+                            new(factorId, mapping.ExternalSoftwareId, mapping.MappingId), ct);
+                    }
+                    catch (SalesInvoiceDestinationException)
+                    {
+                        // Preserve the existing history card when the mapping cannot be maintained.
+                    }
+                }
 
                 result.Add(new {
                     mapping.ExternalSoftwareId,
@@ -4299,6 +4313,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     CanDeleteMissing = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
                         User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                     CanMaintainDestination = invoice != null,
+                    RequiresSynchronization = requiresSynchronization,
                     ExternalSoftwareTitle = mapping.SoftwareTitle,
                     ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
                     CreationDate = mapping.CreateDateTxt,

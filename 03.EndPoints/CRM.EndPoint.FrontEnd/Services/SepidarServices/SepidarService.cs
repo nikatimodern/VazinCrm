@@ -2573,7 +2573,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
         return result;
     }
 
-    private async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(int invoiceId, List<SepidarInvoiceExportItemPreview> items,
+    internal async Task<List<SalesInvoiceItemRecord>> GenerateInvoiceItemsAsync(int invoiceId, List<SepidarInvoiceExportItemPreview> items,
         decimal rate,
         CancellationToken ct = default)
     {

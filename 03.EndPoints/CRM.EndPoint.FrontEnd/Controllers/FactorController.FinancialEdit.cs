@@ -16,6 +16,38 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 
 public partial class FactorController
 {
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> GetExternalFactorSync([FromQuery] SalesInvoiceDestinationKey key,
+        [FromServices] ISalesInvoiceDestinationRepository repository, CancellationToken ct) =>
+        RespondToFinancialEditAsync(async () =>
+        {
+            if (!ModelState.IsValid || key == null || key.SourceId == Guid.Empty)
+                return BadRequest("سابقه فاکتور فروش معتبر نیست.");
+            var service = GetSepidarService(key.ExternalSoftwareId)
+                ?? throw new InvalidOperationException("نرم‌افزار مالی مقصد معتبر نیست.");
+            var preview = await repository.GetSyncPreviewAsync(key, ct);
+            var allowed = preview.Impact.Blockers.Count == 0;
+            return Ok(new { preview, items = allowed ? await service.GetSepidarItemsAsync(ct) : [],
+                settings = allowed ? await service.GetSalesEditPostingSettingsAsync(ct) : null });
+        });
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> SynchronizeExternalFactor([FromBody] SalesInvoiceSyncRequest request,
+        [FromServices] ISalesInvoiceDestinationRepository repository, CancellationToken ct) =>
+        RespondToFinancialEditAsync(async () =>
+        {
+            if (!ModelState.IsValid || request?.Key == null || request.Key.SourceId == Guid.Empty ||
+                string.IsNullOrWhiteSpace(request.Token))
+                return BadRequest("اطلاعات همگام‌سازی فاکتور معتبر نیست.");
+            var service = GetSepidarService(request.Key.ExternalSoftwareId)
+                ?? throw new InvalidOperationException("نرم‌افزار مالی مقصد معتبر نیست.");
+            var modifier = await sepidarUsers.GetCurrentExternalUserIdAsync(request.Key.ExternalSoftwareId, service, ct);
+            var settings = new SepidarService.SalesPostingSettings(request.AutoVoucher, request.AutoDelivery);
+            await repository.SynchronizeAsync(request, modifier, service.AcquireSepidarInvoiceExportLockAsync,
+                service.GenerateInvoiceItemsAsync, (posting, token) => service.PostEditedSalesInvoiceAsync(posting, settings, token), ct);
+            return Ok(new { saved = true });
+        });
+
     public sealed record ExternalFactorEditRequest(SalesInvoiceDestinationKey Key, string Token, string DateText,
         int Number, int? CustomerId, int? SaleTypeId, bool IncludeBroker, SalesInvoiceEditSelection[] Items,
         bool AutoVoucher, bool AutoDelivery, int? PreviewBrokerPartyId);
@@ -30,6 +62,8 @@ public partial class FactorController
             var service = GetSepidarService(key.ExternalSoftwareId)
                 ?? throw new InvalidOperationException("نرم‌افزار مالی مقصد معتبر نیست.");
             var state = await repository.GetEditAsync(key, ct);
+            if (state.RequiresSynchronization)
+                return Conflict("ابتدا فاکتور را با ERP همگام‌سازی کنید.");
             var canEdit = state.Impact.Blockers.Count == 0;
             var direct = !state.QuotationId.HasValue && canEdit;
             var customers = direct ? await service.GetSepidarCustomersAsync(ct, activeOnly: true) : [];

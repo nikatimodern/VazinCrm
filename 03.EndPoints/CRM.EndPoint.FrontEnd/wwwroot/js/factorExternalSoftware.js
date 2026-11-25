@@ -41,7 +41,8 @@ function renderExternalSoftwareFactors(items = []) {
         card: item => ({
             title: item.externalSoftwareTitle,
             missing: item.isMissing,
-            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
+            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد."
+                : item.requiresSynchronization ? "اقلام یا مبالغ فاکتور با ERP مغایرت دارد." : "",
             fields: [
                 ["شماره فاکتور", item.externalFactorNumber],
                 ["مشتری", item.customerName],
@@ -50,7 +51,7 @@ function renderExternalSoftwareFactors(items = []) {
             view: !item.isMissing && item.viewUrl
                 ? ui.action("مشاهده سند", { href: item.viewUrl, icon: "fa-eye" }) : null,
             operations: !item.isMissing && item.canMaintainDestination && item.mappingId
-                ? factorDestinationOperations(history, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId })
+                ? factorDestinationOperations(history, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId }, item.requiresSynchronization)
                 : [],
             action: item.isMissing && item.mappingId && item.canDeleteMissing
                 ? ui.missingMappingAction({
@@ -61,18 +62,189 @@ function renderExternalSoftwareFactors(items = []) {
                     softwareTitle: item.externalSoftwareTitle,
                     url: "/Factor/DeleteMissingExternalFactorMapping",
                     onDeleted: () => loadFactorExternalSoftwares(sourceId),
-                }) : null,
+                }) : !item.isMissing && item.canMaintainDestination && item.requiresSynchronization && item.mappingId
+                ? ui.action("همگام‌سازی با ERP", { icon: "fa-sync-alt", onClick: event => openFactorDestinationSync(
+                    event.currentTarget, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId }, history.modal) })
+                : null,
         }),
     });
 }
 
-function factorDestinationOperations(history, key) {
+function factorDestinationOperations(history, key, requiresSynchronization) {
     const ui = ExternalFinancialHistory;
     const edit = ui.action("ویرایش انتقال", { icon: "fa-pencil-alt",
-        onClick: event => openFactorDestinationEdit(event.currentTarget, key, history.modal) });
+        onClick: event => requiresSynchronization ? toastifyError("ابتدا فاکتور را با ERP همگام‌سازی کنید.")
+            : openFactorDestinationEdit(event.currentTarget, key, history.modal) });
     const remove = ui.action("حذف از مقصد", { icon: "fa-trash-alt", danger: true,
         onClick: event => deleteFactorDestination(event.currentTarget, key, history.modal) });
     return [edit, remove];
+}
+
+async function openFactorDestinationSync(button, key, historyModal) {
+    const modal = document.getElementById("factorDestinationSyncModal");
+    if (!modal || modal.dataset.active || button.disabled) return;
+    modal.dataset.active = "true";
+    button.disabled = true;
+    const release = () => {
+        delete modal.dataset.active;
+        button.disabled = false;
+        if (button.isConnected && isModalOpen(historyModal)) button.focus();
+    };
+    let opened = false;
+    try {
+        const data = await sendApiRequest({ url: "/Factor/GetExternalFactorSync", params: key });
+        if (!data?.preview || !button.isConnected || !isModalOpen(historyModal)) return;
+        renderFactorDestinationSync(modal, key, data);
+        modal.addEventListener("hidden.bs.modal", release, { once: true });
+        ModalToggle(modal, "show");
+        opened = true;
+    } finally {
+        if (!opened) release();
+    }
+}
+
+function renderFactorDestinationSync(modal, key, { preview, items, settings }) {
+    const wizard = new ExternalFinancialWizard({ modal, container: "factorDestinationSyncBody",
+        back: "factorDestinationSyncBack", confirm: "factorDestinationSyncSave" });
+    const { impact } = preview;
+    const element = ExternalFinancialHistory.element;
+    const options = items.map(item => ({ value: item.id, label: [item.code, item.title].filter(Boolean).join(" - ") }));
+    const labels = new Map(options.map(item => [item.value, item.label]));
+    const cache = new Map();
+    const rows = preview.sourceRows.map(row => ({ row, itemId: labels.has(row.suggestedItemId) ? row.suggestedItemId : 0,
+        stockId: row.suggestedStockId, stockTitle: row.stockTitle, loading: false }));
+    const close = modal.querySelector(".btn-close");
+    const hide = () => ModalToggle(modal, "hide");
+    const scroll = enableMomentumScrollScope(modal);
+    let saving = false;
+    const guard = event => { if (saving) event.preventDefault(); };
+    modal.addEventListener("hide.bs.modal", guard);
+    modal.addEventListener("hidden.bs.modal", () => {
+        modal.removeEventListener("hide.bs.modal", guard);
+        scroll();
+        wizard.destroy();
+        wizard.container.replaceChildren();
+        wizard.confirm.onclick = wizard.back.onclick = null;
+    }, { once: true });
+
+    const stage = (title, subtitle, step, content) => wizard.render({
+        destination: impact.softwareTitle, position: "فاکتور شماره " + impact.number, large: true, title, subtitle, step,
+        icon: '<i class="fas fa-sync-alt" aria-hidden="true"></i>', content,
+    });
+    if (impact.blockers.length) {
+        const content = element("ul", "ps-4 mb-0");
+        for (const blocker of impact.blockers) content.append(element("li", null, blocker));
+        stage("همگام‌سازی فاکتور", "همگام‌سازی این فاکتور امکان‌پذیر نیست.", "", content);
+        wizard.setActions({ confirmText: "بستن", confirmDisabled: false, backHidden: true });
+        wizard.confirm.onclick = hide;
+        return;
+    }
+
+    function renderItems() {
+        const { content, toolbar, list } = createExternalItemMatching();
+        toolbar.remove();
+        const update = () => wizard.setActions({ confirmDisabled: rows.some(x => x.loading || !x.itemId || !x.stockId) });
+        const targets = rows.map(({ row, itemId }, index) => {
+            const target = appendExternalItemMatchRow(list, row.productTitle, row.quantity, row.unitTxt);
+            target.innerHTML = ExternalFinancialWizard.selectField({
+                id: "factorSyncItem_" + index, label: "کالای معادل در نرم‌افزار مالی", options, selected: itemId,
+                placeholder: "انتخاب کالا", required: true,
+            });
+            return target;
+        });
+        stage("تطبیق کالاها و انبارها", "کالا و انبار مقصد را برای هر قلم بررسی کنید.", "مرحله ۱ از ۲", content);
+        wizard.setActions({ confirmText: "بررسی تغییرات", backText: "انصراف", backHidden: false, backDisabled: false });
+        wizard.confirm.onclick = renderPreview;
+        wizard.back.onclick = hide;
+        for (const [index, state] of rows.entries()) {
+            const target = targets[index];
+            const item = target.querySelector("select");
+            const stock = ExternalFinancialWizard.linkedStockField(target, {
+                id: "factorSyncStock_" + index, softwareId: key.externalSoftwareId, cache, required: true,
+                isCurrent: () => content.isConnected, onChange: readStock,
+                onLoading: loading => { state.loading = loading; update(); },
+            });
+            function readStock() {
+                state.stockId = Number(stock.select.value);
+                state.stockTitle = stock.select.selectedOptions[0]?.textContent ?? "";
+                update();
+            }
+            async function load(preferred) {
+                await stock.update(state.itemId, preferred);
+                if (content.isConnected) readStock();
+            }
+            new TomSelect(item, { create: false, placeholder: "جستجو و انتخاب کالا", onChange: value => {
+                state.itemId = Number(value);
+                state.stockId = 0;
+                void load("");
+            } });
+            void load(state.stockId);
+        }
+        update();
+    }
+
+    function renderPreview() {
+        if (wizard.confirm.disabled) return;
+        const content = element("div", "external-prefactor-preview d-grid gap-3");
+        const format = value => Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 4 });
+        const columns = ["کالا", "انبار", "مقدار", "قیمت واحد", "مبلغ", "تخفیف", "مالیات"];
+        const values = (row, item, stock) => [item || "—", stock || "—",
+            ...[row.quantity, row.fee, row.price, row.discount, row.tax].map(format)];
+        const section = (title, headings, data) => {
+            const node = element("section");
+            node.append(element("h6", "fbold mb-2 external-pf-software", title));
+            node.insertAdjacentHTML("beforeend", renderExternalFinancialPreviewTable(headings, data));
+            content.append(node);
+        };
+        section("اقلام فعلی سپیدار", columns, preview.destinationRows.map(row => values(row, row.itemTitle, row.stockTitle)));
+        section("اقلام جایگزین از ERP", columns, rows.map(state => values(state.row, labels.get(state.itemId), state.stockTitle)));
+        const totals = [["جمع مبلغ کالاها", "price"], ["تخفیف کل", "discount"], ["مالیات کل", "tax"], ["مبلغ نهایی", "total"]];
+        section("مقایسه مبالغ (ریال)", ["عنوان", "سپیدار", "ERP"], totals.map(([label, field]) =>
+            [label, format(preview.destinationAmounts[field]), format(preview.sourceAmounts[field])]));
+        const notes = element("ul", "small ps-4 mb-0");
+        for (const number of impact.voucherNumbers)
+            notes.append(element("li", null, "سند حسابداری شماره " + number + (settings.autoVoucher ? " بازسازی می‌شود." : " حذف می‌شود.")));
+        for (const delivery of impact.deliveries)
+            notes.append(element("li", null, `خروج انبار شماره ${delivery.number} (انبار ${delivery.stockCode}) ${settings.autoDelivery ? "بازسازی می‌شود." : "حذف می‌شود."}`));
+        if (!impact.voucherNumbers.length && settings.autoVoucher)
+            notes.append(element("li", null, "سند حسابداری صادر می‌شود."));
+        if (!impact.deliveries.length && settings.autoDelivery)
+            notes.append(element("li", null, "خروج انبار صادر می‌شود."));
+        if (preview.isQuotationBased) {
+            for (const { row, itemId, stockId } of rows) {
+                if (!row.quotationItemId)
+                    notes.append(element("li", null, `قلم «${row.productTitle}» بدون ارتباط با پیش‌فاکتور ثبت می‌شود.`));
+                else if (itemId !== row.suggestedItemId || stockId !== row.suggestedStockId)
+                    notes.append(element("li", null, `ارتباط قلم «${row.productTitle}» با پیش‌فاکتور قطع می‌شود.`));
+            }
+        }
+        if (notes.childElementCount) content.append(notes);
+        stage("بررسی نهایی همگام‌سازی", "تغییرات روی همان فاکتور سپیدار اعمال می‌شوند.", "مرحله ۲ از ۲", content);
+        wizard.setActions({ confirmText: "تأیید و همگام‌سازی", backText: "برگشت", confirmDisabled: false });
+        wizard.back.onclick = renderItems;
+        wizard.confirm.onclick = async () => {
+            if (saving) return;
+            saving = close.disabled = true;
+            wizard.setActions({ confirmDisabled: true, backDisabled: true });
+            let result;
+            try {
+                result = await sendApiRequest({
+                    url: "/Factor/SynchronizeExternalFactor", method: "POST", successMsg: "فاکتور فروش همگام شد.",
+                    headers: ExternalFinancialWizard.antiforgeryHeaders(modal),
+                    data: { key, token: impact.token, ...settings,
+                        items: rows.map(({ row, itemId, stockId }) => ({ sourceRowId: row.id, itemId, stockId })) },
+                });
+            } finally {
+                saving = close.disabled = false;
+                wizard.setActions({ confirmDisabled: false, backDisabled: false });
+            }
+            if (!result?.saved) return;
+            hide();
+            if (externalFactorHistory.factorId === key.sourceId && isModalOpen("externalSoftwareFactorsModal"))
+                await loadFactorExternalSoftwares(key.sourceId);
+        };
+    }
+    renderItems();
 }
 
 async function openFactorDestinationEdit(button, key, historyModal) {
