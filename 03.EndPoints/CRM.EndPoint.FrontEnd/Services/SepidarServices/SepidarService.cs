@@ -1549,17 +1549,10 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 CurrencyRef = 1, // ریال
                 DeliveryLocationRef = 1, // آدرس مشتری
 
-                Price = request.PreFactor.SumTotalAmount,
-                PriceInBaseCurrency = request.PreFactor.SumTotalAmount,
-                Discount = request.PreFactor.Discount,
-                DiscountInBaseCurrency = request.PreFactor.Discount,
                 Addition = 0,
                 AdditionInBaseCurrency = 0,
-                Tax = request.PreFactor.TotalTax,
-                TaxInBaseCurrency = request.PreFactor.TotalTax,
                 Duty = 0, // احتمالا عوارض گمرکی میشه // فعلا
                 DutyInBaseCurrency = 0,
-                NetPriceInBaseCurrency = request.PreFactor.PaymentAmount,
 
                 Rate = 1,
                 Version = 1,
@@ -1587,6 +1580,7 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
             };
 
 
+            QuotationExportValues.ApplyAmounts(quotation, request.PreFactor);
             quotation.QuotationItems = await GenerateQuotationItemsAsync(quotationId, request.Items, ct);
 
             sepidarContext.Quotations.Add(quotation);
@@ -1634,62 +1628,8 @@ public partial class SepidarService(SepidarContextDbBase sepidarContext) {
                 throw new InvalidOperationException($"تعداد کالا در ردیف {index + 1} باید بیشتر از صفر باشد.");
 
 
-            quotationItems.Add(new QuotationItem {
-                QuotationItemID = firstItemId + index,
-                QuotationRef = quotationId,
-                RowID = index + 1,
-                ItemRef = mappedItem.ItemRef,
-
-                TracingRef = null,
-
-                StockRef = mappedItem.StockRef, // محصولات خريداري شده (انبار)
-
-                Quantity = weight,
-                SecondaryQuantity = null,
-                Fee = item.UnitAmount,
-
-                Price = item.TotalAmount,
-                PriceInBaseCurrency = item.TotalAmount,
-
-                Discount = item.Discount,
-                DiscountInBaseCurrency = item.Discount,
-
-                PriceInfoDiscountRate = 0,
-                PriceInfoPriceDiscount = 0,
-                PriceInfoPercentDiscount = 0,
-                CustomerDiscount = 0,
-                CustomerDiscountRate = 0,
-
-                Addition = 0,
-                AdditionInBaseCurrency = 0,
-                Tax = item.TaxAmount,
-                TaxInBaseCurrency = item.TaxAmount,
-                Duty = 0, // فعلا
-                DutyInBaseCurrency = 0,
-
-                NetPriceInBaseCurrency = item.TotalAmount,
-                Rate = 1,
-                UsedQuantity = 0, // TODO احتمالا مقدار فاکتور شده
-
-                Description = null, // فعلا
-                DiscountQuotationItemRef = null,
-                Description_En = null,
-
-                ProductPackRef = null,
-                ProductPackQuantity = null,
-
-                AggregateAmountDiscountRate = 0,
-                AggregateAmountPriceDiscount = 0,
-                AggregateAmountPercentDiscount = 0,
-
-                AdditionFactor_VatEffective = 0,
-                AdditionFactorInBaseCurrency_VatEffective = 0,
-                AdditionFactor_VatIneffective = 0,
-                AdditionFactorInBaseCurrency_VatIneffective = 0,
-
-                IsAggregateDiscountInvoiceItem = false,
-                IsReadyForProductOrder = true,
-            });
+            quotationItems.Add(QuotationExportValues.CreateItem(firstItemId + index, quotationId, index + 1,
+                mappedItem.ItemRef, mappedItem.StockRef, weight, item));
         }
 
         return quotationItems;

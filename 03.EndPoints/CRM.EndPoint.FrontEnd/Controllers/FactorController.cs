@@ -4416,14 +4416,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
-        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
+        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId,
+            [FromServices] IPreFactorDestinationRepository destinationRepository, CancellationToken ct)
         {
             try
             {
                 if (preFactorId == Guid.Empty)
                     return BadRequest("شناسه پیش‌فاکتور معتبر نیست.");
 
-                var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == preFactorId);
+                var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == preFactorId, ct);
 
                 if (preFactor == null)
                     return NotFound("پیش‌فاکتور پیدا نشد.");
@@ -4443,7 +4444,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         x.UserCreator,
                         x.CreateDateTxt
                     })
-                    .ToListAsync();
+                    .ToListAsync(ct);
 
                 var result = new List<ExternalSoftwarePreFactorDto>();
                 var canMaintain = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
@@ -4456,13 +4457,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
 
                     var validId = int.TryParse(mapping.ExEntityId, out var externalId) && externalId > 0;
-                    var externalPreFactor = validId ? await service.GetQuotationAsync(externalId) : null;
+                    var externalPreFactor = validId ? await service.GetQuotationAsync(externalId, ct) : null;
+                    var canMaintainDestination = canMaintain && mapping.ExEntityName == nameof(Quotation);
+                    var requiresSynchronization = false;
+                    if (externalPreFactor != null && canMaintainDestination)
+                    {
+                        try
+                        {
+                            requiresSynchronization = await destinationRepository.HasSyncDifferenceAsync(
+                                new(preFactorId, mapping.ExternalSoftwareId, mapping.MappingId), ct);
+                        }
+                        catch (PreFactorDestinationException)
+                        {
+                            // A card with an invalid mapping can still display its existing history.
+                        }
+                    }
 
                     result.Add(new ExternalSoftwarePreFactorDto {
                         MappingId = mapping.MappingId,
                         IsMissing = externalPreFactor == null,
                         CanDeleteMissing = canMaintain,
-                        CanMaintainDestination = canMaintain && mapping.ExEntityName == nameof(Quotation),
+                        CanMaintainDestination = canMaintainDestination,
+                        RequiresSynchronization = requiresSynchronization,
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
                         PreFactorNumber = preFactor.SerialNumber.ToString(),
@@ -4480,7 +4496,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(result);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return BadRequest();
             }
