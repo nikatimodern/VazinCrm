@@ -946,3 +946,18 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     width: 15px !important;
     height: 15px;
 }
+
+
+/* Release notes are intentionally text-only in both expanded and collapsed
+   sidebars, even if a previously rendered view still contains old icon markup. */
+#desktopFixedActions .menu-release-notes > .menu-icon-frame,
+#mobileDrawerFixedActions .menu-release-notes > .menu-icon-frame,
+#desktopFixedActions .menu-release-notes > svg,
+#mobileDrawerFixedActions .menu-release-notes > svg {
+    display: none !important;
+}
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    justify-content: center;
+    gap: 0;
+}
