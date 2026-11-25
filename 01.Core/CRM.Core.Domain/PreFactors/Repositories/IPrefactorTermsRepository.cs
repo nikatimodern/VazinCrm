@@ -10,5 +10,6 @@ public interface IPrefactorTermsRepository
 {
     Task<List<PrefactorTerm>> GetAsync(CancellationToken ct);
     Task<bool> SaveAsync(int? id, int order, string text, string userId, CancellationToken ct);
+    Task<bool> ReorderAsync(int[] originalIds, int[] orderedIds, CancellationToken ct);
     Task<bool> DeleteAsync(int id, CancellationToken ct);
 }
