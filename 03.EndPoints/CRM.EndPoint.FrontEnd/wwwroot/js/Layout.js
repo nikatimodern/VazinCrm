@@ -95,13 +95,31 @@ function initTooltipsIfCollapsed() {
     
 }
 
+let menuToggleFrame = null;
 function toggleMenu() {
-    const collapsed = document.documentElement.classList.toggle("sidebar-collapsed");
+    const root = document.documentElement;
+    // Prevent open accordion panels from animating while their parent changes
+    // layout. The sidebar and content width switch together without reflow
+    // animations, which otherwise stutter on dense dashboard pages.
+    root.classList.add("menu-rail-switching");
+    const collapsed = root.classList.toggle("sidebar-collapsed");
     sessionStorage.setItem("sidebar-collapsed", collapsed);
-    
+
     tooltipList.forEach(t => t.dispose());
     tooltipList = [];
-    if (collapsed) initTooltipsIfCollapsed();
+
+    // Defer creation of Bootstrap tooltips until the browser has painted the
+    // final layout. Cancelling a pending frame also handles rapid toggles.
+    if (menuToggleFrame !== null) cancelAnimationFrame(menuToggleFrame);
+    menuToggleFrame = requestAnimationFrame(() => {
+        menuToggleFrame = requestAnimationFrame(() => {
+            menuToggleFrame = null;
+            root.classList.remove("menu-rail-switching");
+            if (root.classList.contains("sidebar-collapsed")) {
+                initTooltipsIfCollapsed();
+            }
+        });
+    });
 }
 
 connection.on("TaskChanged", id => {
