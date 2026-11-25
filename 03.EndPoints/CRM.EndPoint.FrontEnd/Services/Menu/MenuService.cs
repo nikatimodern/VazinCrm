@@ -15,6 +15,9 @@ using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.ReleaseNotes.Repositories;
 using CRM.Core.ApplicationServices.ReleaseNotes.Services;
+using CRM.EndPoint.FrontEnd.Composition;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
@@ -27,6 +30,17 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             .Where(x => x.Type == ClaimTypes.Role)
             .Select(x => x.Value)
             .ToHashSet();
+
+        var menus = BuildMenus(user);
+        if (roles.Contains(AppRoles.Admin) && TaxationAvailability.IsLocalEnabled(
+                serviceProvider.GetRequiredService<IWebHostEnvironment>(), serviceProvider.GetRequiredService<IConfiguration>()))
+        {
+            menus.Add(new MenuItem
+            {
+                Id = "taxation", Title = "سامانه مؤدیان", Url = "/Taxation", IconHtml = MenuIcons.Accounting,
+                Roles = [AppRoles.Admin], DisplayOrder = 21
+            });
+        }
 
         var filteredMenus = OrganizeMenus(Filter(BuildMenus(user), roles), roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");

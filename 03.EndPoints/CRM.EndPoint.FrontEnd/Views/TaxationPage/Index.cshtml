@@ -1,0 +1,253 @@
+@using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices
+@using CRM.Core.Domain.Taxation
+@using CRM.Framework
+@model CRM.EndPoint.FrontEnd.Models.Taxation.TaxationListModel
+
+@{
+    ViewData["Title"] = "سامانه مؤدیان";
+    var invoicePage = Model.Invoices;
+    var hasFilters = !string.IsNullOrWhiteSpace(Model.Search) || Model.Export.HasValue || !string.IsNullOrEmpty(Model.State);
+    var canSelect = invoicePage.Items.Any(IsSelectable);
+    var returnTo = Url.Action("Index", new { search = Model.Search, export = Model.Export, state = Model.State, page = invoicePage.Page });
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
+}
+
+<section class="taxation-page" id="taxationInvoices" dir="rtl">
+    <header class="taxation-heading taxation-hero">
+        <div class="taxation-hero-title">
+            <span class="taxation-hero-icon" aria-hidden="true"><i class="fas fa-file-invoice"></i></span>
+            <div>
+                <h1>سامانه مؤدیان</h1>
+                <p>صورتحساب‌ها را اعتبارسنجی کنید، در صف بگذارید و وضعیتشان را پیگیری کنید.</p>
+            </div>
+        </div>
+        @if (Model.Error is null)
+        {
+            <div class="taxation-hero-count"><strong>@invoicePage.Total.ToString("N0")</strong><span>@(hasFilters ? "فاکتور در نتایج" : "فاکتور در فهرست")</span></div>
+        }
+    </header>
+    <partial name="_TaxationNavigation" />
+
+    <section class="taxation-panel" aria-labelledby="taxation-invoices-heading">
+        <header class="taxation-panel-heading">
+            <h2 id="taxation-invoices-heading">فهرست صورتحساب‌ها</h2>
+        </header>
+        <form asp-action="Index" method="get" class="taxation-filters taxation-invoice-filters" role="search" aria-label="جستجوی صورتحساب‌ها">
+            <label class="taxation-search-field">
+                <span>شماره فاکتور یا نام مشتری</span>
+                <span class="taxation-search-control">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input class="form-control form-control-sm" type="search" name="search" value="@Model.Search" maxlength="100" placeholder="شماره یا نام را وارد کنید" />
+                </span>
+            </label>
+            <label>
+                <span>نوع فروش</span>
+                <select class="form-select form-select-sm" name="export">
+                    <option value="">همه</option>
+                    <option value="false" selected="@(Model.Export == false)">داخلی</option>
+                    <option value="true" selected="@(Model.Export == true)">صادراتی</option>
+                </select>
+            </label>
+            <label>
+                <span>وضعیت مالیاتی</span>
+                <select class="form-select form-select-sm" name="state">
+                    <option value="">همه وضعیت‌ها</option>
+                    <option value="unqueued" selected="@(Model.State == "unqueued")">بدون درخواست</option>
+                    @foreach (var status in Enum.GetValues<TaxDispatchStatus>())
+                    {
+                        <option value="@status" selected="@(Model.State == status.ToString())">@StatusLabel(status)</option>
+                    }
+                </select>
+            </label>
+            <div class="taxation-actions">
+                <button class="btn btn-sm taxation-action" type="submit">اعمال فیلتر</button>
+                @if (hasFilters || Model.Error is not null)
+                {
+                    <a class="btn btn-sm taxation-validate crm-mobile-dense-action" asp-action="Index">پاک کردن</a>
+                }
+            </div>
+        </form>
+
+        @if (Model.Error is not null)
+        {
+            <p class="taxation-error" role="alert">@Model.Error</p>
+        }
+        else if (invoicePage.Items.Count == 0)
+        {
+            <div class="taxation-empty">
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                <strong>@(hasFilters ? "نتیجه‌ای با این فیلترها پیدا نشد" : "فهرست صورتحساب‌ها خالی است")</strong>
+                @if (hasFilters)
+                {
+                    <a asp-action="Index">نمایش همه صورتحساب‌ها</a>
+                }
+            </div>
+        }
+        else
+        {
+            <form id="taxationBatch" method="post" class="taxation-batch"
+                  data-url="@Url.Action("EnqueueBatch", "Taxation")"
+                  data-dispatch-url="@Url.Action("Dispatch", "TaxationPage", new { id = Guid.Empty, returnTo })">
+                @Html.AntiForgeryToken()
+                @if (canSelect)
+                {
+                    <div class="taxation-batch-bar">
+                        <label class="taxation-selection">
+                            <input type="checkbox" class="form-check-input" data-select-page disabled />
+                            <span>انتخاب فاکتورهای این صفحه</span>
+                        </label>
+                        <span class="taxation-selection-count" data-selection-count role="status">۰ انتخاب</span>
+                        <button type="submit" class="btn btn-sm taxation-action" disabled>
+                            <i class="fas fa-inbox" aria-hidden="true"></i> ثبت در صف
+                        </button>
+                    </div>
+                }
+                <p data-batch-status role="status"></p>
+                <ul data-batch-results hidden></ul>
+            </form>
+            <div class="taxation-table-shell">
+                <table class="table taxation-table taxation-invoice-table align-middle" role="table"
+                       data-taxation-datatable data-page="@invoicePage.Page" data-total="@invoicePage.Total"
+                       data-page-size="@ListTaxInvoicesQuery.PageSize">
+                    <caption class="visually-hidden">فهرست فاکتورهای سامانه مؤدیان</caption>
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th scope="col" role="columnheader"><span class="visually-hidden">انتخاب</span></th>
+                            <th scope="col" role="columnheader">صورتحساب</th>
+                            <th scope="col" role="columnheader">مشتری</th>
+                            <th scope="col" role="columnheader">تاریخ</th>
+                            <th scope="col" role="columnheader">مبلغ</th>
+                            <th scope="col" role="columnheader">وضعیت و اسناد</th>
+                            <th scope="col" role="columnheader">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody role="rowgroup">
+                        @foreach (var invoice in invoicePage.Items)
+                        {
+                            var original = invoice.Documents.FirstOrDefault(document => document.Kind == TaxDispatchKind.Original);
+                            <tr role="row">
+                                <td role="cell" class="taxation-invoice-check">
+                                    @if (IsSelectable(invoice))
+                                    {
+                                        <input type="checkbox" class="form-check-input" form="taxationBatch" name="factor"
+                                               value="@invoice.Id" data-invoice-number="@invoice.Number" aria-label="انتخاب فاکتور @invoice.Number" />
+                                    }
+                                </td>
+                                <th scope="row" role="rowheader" class="taxation-invoice-id">
+                                    <strong>فاکتور <bdi>@invoice.Number</bdi></strong>
+                                    <small>@(invoice.IsReturn ? "برگشت از فروش" : invoice.IsExport ? "صادراتی" : "داخلی")</small>
+                                </th>
+                                <td role="cell" data-label="مشتری"><bdi>@(invoice.Customer ?? "ثبت نشده")</bdi></td>
+                                <td role="cell" data-label="تاریخ"><bdi>@(invoice.Date is DateTime date ? BaseServices.GetDatePersian(date) : "ثبت نشده")</bdi></td>
+                                <td role="cell" data-label="مبلغ"><strong>@invoice.Amount.ToString("N0")</strong> <small class="taxation-currency">@invoice.Currency</small></td>
+                                <td role="cell" data-label="وضعیت و اسناد" class="taxation-invoice-state">
+                                    @if (invoice.Documents.Count == 0)
+                                    {
+                                        <span class="taxation-status">بدون درخواست</span>
+                                    }
+                                    else
+                                    {
+                                        <details>
+                                            <summary>
+                                                <span>@invoice.Documents.Count سند</span>
+                                                @foreach (var status in invoice.Documents.Select(x => x.Status).Distinct())
+                                                {
+                                                    <span class="taxation-status" data-status="@status">@StatusLabel(status)</span>
+                                                }
+                                            </summary>
+                                            <ul class="taxation-documents">
+                                                @foreach (var document in invoice.Documents)
+                                                {
+                                                    <li>
+                                                        <a asp-action="Dispatch" asp-route-id="@document.Id" asp-route-returnTo="@returnTo">@KindLabel(document.Kind)</a>
+                                                        <span class="taxation-status" data-status="@document.Status">@StatusLabel(document.Status)</span>
+                                                        @if (!string.IsNullOrEmpty(document.TaxId))
+                                                        {
+                                                            <small>شناسه مالیاتی <bdi dir="ltr">@document.TaxId</bdi></small>
+                                                        }
+                                                        @if (document.ReferenceInvoiceNumber.HasValue)
+                                                        {
+                                                            <small>مرجع فاکتور @document.ReferenceInvoiceNumber <bdi dir="ltr">@document.ReferenceTaxId</bdi></small>
+                                                        }
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </details>
+                                    }
+                                </td>
+                                <td role="cell" class="taxation-invoice-actions" data-taxation-validation>
+                                    @if (original is not null)
+                                    {
+                                        <a class="btn btn-sm taxation-validate crm-mobile-dense-action" asp-action="Dispatch" asp-route-id="@original.Id" asp-route-returnTo="@returnTo">پیگیری سند</a>
+                                    }
+                                    else if (!invoice.IsReturn)
+                                    {
+                                        <a class="btn btn-sm taxation-validate crm-mobile-dense-action" asp-action="Preview" asp-route-id="@invoice.Id" asp-route-returnTo="@returnTo">پیش‌نمایش</a>
+                                    }
+                                    @if (invoice.Documents.Count == 0 && !invoice.IsExport)
+                                    {
+                                        <button class="btn btn-sm taxation-text-action" type="button"
+                                                data-preview-url="@Url.Action("Preview", "Taxation", new { id = invoice.Id })">بررسی اعتبار</button>
+                                        <div class="taxation-result" data-validation-result role="status"></div>
+                                    }
+                                    else if (invoice.Documents.Count == 0)
+                                    {
+                                        <small>نیازمند اطلاعات گمرکی</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (invoicePage.PageCount > 1)
+            {
+                <nav class="taxation-pagination" data-taxation-fallback-pager aria-label="صفحه‌بندی فاکتورها">
+                    @if (invoicePage.Page > 1)
+                    {
+                        <a asp-action="Index" asp-route-search="@Model.Search" asp-route-export="@Model.Export"
+                           asp-route-state="@Model.State" asp-route-page="@(invoicePage.Page - 1)" rel="prev">قبلی</a>
+                    }
+                    <span aria-current="page">صفحه @invoicePage.Page از @invoicePage.PageCount</span>
+                    @if (invoicePage.Page < invoicePage.PageCount)
+                    {
+                        <a asp-action="Index" asp-route-search="@Model.Search" asp-route-export="@Model.Export"
+                           asp-route-state="@Model.State" asp-route-page="@(invoicePage.Page + 1)" rel="next">بعدی</a>
+                    }
+                </nav>
+            }
+        }
+    </section>
+</section>
+
+@section Scripts {
+    <script src="~/js/taxation-table.js" asp-append-version="true"></script>
+    <script src="~/js/taxation-list.js?release=7.0.4" asp-append-version="true"></script>
+}
+
+@functions {
+    private static bool IsSelectable(TaxInvoiceListItem invoice) => !invoice.IsReturn && !invoice.IsExport &&
+        (invoice.Documents.Count == 0 || invoice.Documents.Any(document => document.Kind == TaxDispatchKind.Original));
+
+    private static string StatusLabel(TaxDispatchStatus status) => status switch
+    {
+        TaxDispatchStatus.Pending => "در صف",
+        TaxDispatchStatus.InFlight => "در حال ارسال",
+        TaxDispatchStatus.Submitted => "رسید دریافت شد",
+        TaxDispatchStatus.Unknown => "نامشخص، نیازمند پیگیری",
+        TaxDispatchStatus.Accepted => "پذیرفته‌شده",
+        TaxDispatchStatus.Rejected => "ردشده",
+        _ => "وضعیت ثبت نشده"
+    };
+
+    private static string KindLabel(TaxDispatchKind kind) => kind switch
+    {
+        TaxDispatchKind.Correction => "اصلاحی",
+        TaxDispatchKind.Cancellation => "ابطالی",
+        TaxDispatchKind.Return => "برگشت از فروش",
+        _ => "اصلی"
+    };
+}

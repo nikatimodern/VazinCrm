@@ -1,0 +1,321 @@
+@using System.Globalization
+@using CRM.Core.ApplicationServices.Taxation.Dtos
+@using CRM.Core.Domain.Taxation
+@using CRM.Framework
+@model CRM.EndPoint.FrontEnd.Models.Taxation.TaxationPreviewModel
+@{
+    ViewData["Title"] = "پیش‌نمایش مالیاتی";
+    var preview = Model.Preview;
+    var dispatch = Model.Dispatch;
+    var isExport = preview?.Pattern == TaxInvoicePattern.Export;
+    var issueDate = preview?.InvoiceDate;
+    var listUrl = Url.Action("Index");
+    var reportUrl = Url.Action("Reports");
+    var returnTo = Context.Request.Query["returnTo"].ToString();
+    var returnPath = returnTo.Split('?', 2)[0];
+    if (!Url.IsLocalUrl(returnTo) || (returnPath != listUrl && returnPath != reportUrl))
+        returnTo = listUrl;
+    var returnLabel = returnPath == reportUrl && returnTo != listUrl ? "بازگشت به گزارش‌ها" : "بازگشت به صورتحساب‌ها";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
+}
+<section class="taxation-page" id="taxationPreview" dir="rtl">
+    <header class="taxation-heading">
+        <div>
+            <h1>@(dispatch is null ? "پیش‌نمایش مالیاتی" : "پیگیری صورتحساب مالیاتی")</h1>
+            @if (preview is not null)
+            {
+                <p><bdi>@(preview.Buyer ?? "خریدار ثبت نشده")</bdi> · @(isExport ? "فروش صادراتی" : "فروش داخلی")</p>
+            }
+        </div>
+        <div class="taxation-actions">
+            <a href="@returnTo" class="btn btn-sm taxation-validate crm-mobile-dense-action">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> @returnLabel
+            </a>
+            @if (dispatch is not null)
+            {
+                <a href="#taxation-next-action" class="btn btn-sm taxation-action crm-mobile-dense-action">وضعیت ارسال</a>
+                <a href="#dispatch-history" class="btn btn-sm taxation-validate crm-mobile-dense-action">تاریخچه</a>
+            }
+            else if (preview is not null)
+            {
+                <a href="#taxation-next-action" class="btn btn-sm taxation-action crm-mobile-dense-action">آماده‌سازی صورتحساب</a>
+            }
+        </div>
+    </header>
+    <partial name="_TaxationNavigation" />
+    @if (Model.Error is not null)
+    {
+        <p class="taxation-error" role="alert">@Model.Error</p>
+    }
+    else
+    {
+        @Html.AntiForgeryToken()
+        <dl class="taxation-summary">
+            <div><dt>خریدار</dt><dd>@(preview.Buyer ?? "ثبت نشده")</dd></div>
+            <div><dt>حافظه مالیاتی</dt><dd><bdi dir="ltr">@(preview.FiscalId ?? "ثبت نشده")</bdi></dd></div>
+            <div><dt>مبلغ پایه</dt><dd>@preview.Gross.ToString("N0") @preview.Currency</dd></div>
+            <div><dt>تخفیف</dt><dd>@preview.Discount.ToString("N0")</dd></div>
+            <div><dt>مالیات</dt><dd>@preview.Vat.ToString("N0")</dd></div>
+            <div class="taxation-summary-total"><dt>جمع ERP</dt><dd>@preview.Total.ToString("N0")</dd></div>
+        </dl>
+        <section class="taxation-panel" aria-labelledby="taxation-items-heading">
+            <header class="taxation-panel-heading">
+                <h2 id="taxation-items-heading">اقلام صورتحساب</h2>
+                <span class="taxation-muted">@preview.Lines.Count ردیف</span>
+            </header>
+            <div class="taxation-table-shell">
+                <table class="table taxation-table align-middle">
+                    <caption class="visually-hidden">اقلام پیش‌نمایش مالیاتی</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ردیف</th><th scope="col">شرح</th><th scope="col">شناسه کالا</th>
+                            <th scope="col">واحد مالیاتی</th><th scope="col">مقدار</th><th scope="col">قیمت واحد</th>
+                            <th scope="col">تخفیف</th><th scope="col">مالیات</th><th scope="col">جمع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in preview.Lines)
+                        {
+                            <tr>
+                                <th scope="row">@line.Row</th><td>@line.Description</td>
+                                <td><bdi dir="ltr">@(line.GoodsId ?? "ثبت نشده")</bdi></td>
+                                <td>@(line.TaxUnit ?? "ثبت نشده")</td><td>@line.Quantity.ToString("0.########")</td>
+                                <td>@line.UnitPrice.ToString("#,0.########")</td><td>@line.Discount.ToString("N0")</td>
+                                <td>@line.Vat.ToString("N0")</td><td>@line.Total.ToString("N0")</td>
+                            </tr>
+                            <tr class="taxation-row-errors" data-error-row="@line.Row" hidden>
+                                <td colspan="9"><ul></ul></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <ul class="taxation-error" data-validation-errors role="status" hidden="@(preview.Errors.Count == 0)">
+            @foreach (var error in preview.Errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+        <p data-action-message role="status"></p>
+
+        @if (dispatch is null)
+        {
+            <form method="post" class="taxation-workflow" id="taxation-next-action" data-local-preview
+                  data-version="@preview.Version"
+                  data-snapshot-url="@Url.Action("Snapshot", "Taxation", new { id = preview.FactorId })"
+                  data-queue-url="@Url.Action("Enqueue", "Taxation", new { id = preview.FactorId })"
+                  data-dispatch-url="@Url.Action("Dispatch", "TaxationPage", new { id = Guid.Empty, returnTo })">
+                @if (isExport)
+                {
+                    <fieldset data-export data-preview-url="@Url.Action("PreviewExport", "Taxation", new { id = preview.FactorId })">
+                        <legend>اطلاعات اظهارنامه صادراتی</legend>
+                        <div class="taxation-fields">
+                            <label>شماره کوتاژ <input class="form-control form-control-sm" name="customsNumber" maxlength="14" /></label>
+                            <label>تاریخ کوتاژ <input class="form-control form-control-sm sdate" type="text" name="customsDate" dir="ltr" autocomplete="off" data-datepicker-change /></label>
+                            <label>کد گمرک <input class="form-control form-control-sm" name="customsOffice" inputmode="numeric" pattern="[0-9]{5}" /></label>
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="noOtherDuties" required /> سایر عوارض و وجوه قانونی تعلق ندارد</label>
+                        </div>
+                        @foreach (var line in preview.Lines)
+                        {
+                            <fieldset class="taxation-fields" data-export-row="@line.FactorItemId">
+                                <legend>ردیف @line.Row</legend>
+                                <label>ارز
+                                    <select name="currency" class="form-select form-select-sm" required>
+                                        <option value="">انتخاب کنید</option><option value="USD">دلار</option><option value="EUR">یورو</option>
+                                    </select>
+                                </label>
+                                <label>نرخ ارز به ریال <input required name="rate" class="form-control form-control-sm" inputmode="decimal" pattern="[0-9]+([.][0-9]+)?" /></label>
+                                <label>ارزش ریالی <input required name="rial" class="form-control form-control-sm" inputmode="numeric" pattern="[0-9]+" /></label>
+                                <label>ارزش ارزی <input required name="value" class="form-control form-control-sm" inputmode="decimal" pattern="[0-9]+([.][0-9]+)?" /></label>
+                                <label>وزن خالص (کیلوگرم) <input required name="weight" class="form-control form-control-sm" inputmode="decimal" pattern="[0-9]+([.][0-9]+)?" /></label>
+                            </fieldset>
+                        }
+                    </fieldset>
+
+                }
+                <div class="taxation-actions">
+                    @if (isExport)
+                    {
+                        <button class="btn btn-sm taxation-validate" type="submit" data-local-action="validate">اعتبارسنجی صادرات</button>
+                    }
+                    <button class="btn btn-sm taxation-validate" type="submit" data-local-action="snapshot" disabled="@(preview.Errors.Count != 0)">ذخیره نسخه ثابت</button>
+                    <button class="btn btn-sm taxation-action" type="submit" data-local-action="queue" disabled="@(preview.Errors.Count != 0)">ثبت در صف</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <section class="taxation-workflow" id="taxation-next-action">
+                <h2>وضعیت ارسال</h2>
+                <dl class="taxation-summary">
+                    <div><dt>وضعیت</dt><dd><span class="taxation-status" data-status="@dispatch.Status">@DispatchLabel(dispatch.Status)</span></dd></div>
+                    <div><dt>شناسه مالیاتی</dt><dd><bdi dir="ltr">@(dispatch.TaxId ?? "ثبت نشده")</bdi></dd></div>
+                    <div><dt>شناسه تلاش</dt><dd><bdi dir="ltr">@(dispatch.AttemptId?.ToString("D") ?? "ثبت نشده")</bdi></dd></div>
+                    <div><dt>شناسه پیگیری</dt><dd><bdi dir="ltr">@(dispatch.ReferenceNumber?.ToString("D") ?? "ثبت نشده")</bdi></dd></div>
+                    <div><dt>رسید درخواست</dt><dd>@(dispatch.HasAcknowledgement ? "دریافت و ذخیره شد" : "دریافت نشده")</dd></div>
+                    <div><dt>نتیجه پردازش</dt><dd>@EventResult(dispatch.ProcessingStatus)</dd></div>
+                    <div><dt>استعلام کارپوشه</dt><dd>@(dispatch.HasWorkFolderEvidence ? "پاسخ ذخیره شده" : "پاسخ ذخیره نشده")</dd></div>
+                    @if (dispatch.HasWorkFolderEvidence)
+                    {
+                        <div><dt>وضعیت کارپوشه</dt><dd><bdi>@(dispatch.WorkFolderStatus ?? "ثبت نشده")</bdi></dd></div>
+                        <div><dt>وضعیت ماده ۶</dt><dd><bdi>@(dispatch.Article6Status ?? "ثبت نشده")</bdi></dd></div>
+                    }
+                </dl>
+                @if (dispatch.Status == TaxDispatchStatus.Unknown)
+                {
+                    <p class="taxation-error">نتیجه ارسال نامشخص است. برای پیگیری همین درخواست، نتیجه پردازش را استعلام کنید.</p>
+                }
+                @if (!Model.CanContactSandbox)
+                {
+                    <p>ارسال و استعلام آزمایشی به تنظیمات معتبر Sandbox و گواهی حافظه نیاز دارند.</p>
+                }
+                else
+                {
+                    @if (dispatch.Status == TaxDispatchStatus.Pending)
+                    {
+                        <form method="post" data-dispatch-action="submit" data-url="@Url.Action("Submit", "Taxation", new { id = dispatch.Id })">
+                            @if (dispatch.TaxId is null)
+                            {
+                                <fieldset class="taxation-fields" data-filing>
+                                    <legend>اطلاعات صدور</legend>
+                                    <label>سریال مالیاتی <input name="serial" class="form-control form-control-sm" required inputmode="numeric" pattern="[0-9]{1,13}" /></label>
+                                    <label>تاریخ صدور <input name="issuedDate" type="text" class="form-control form-control-sm sdate" dir="ltr" autocomplete="off" required
+                                        value="@(issueDate.HasValue ? BaseServices.GetDatePersian(issueDate) : null)" data-expected-iso="@issueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" data-datepicker-change /></label>
+                                    <label>ساعت صدور (به وقت ایران) <input name="issuedTime" type="time" class="form-control form-control-sm" required /></label>
+                                    <label>نوع خریدار
+                                        <select name="buyerType" class="form-select form-select-sm" required>
+                                            <option value="">انتخاب کنید</option><option value="1">حقیقی</option><option value="2">حقوقی</option>
+                                        </select>
+                                    </label>
+                                    <label>تسویه
+                                        <select name="settlement" class="form-select form-select-sm" required>
+                                            <option value="">انتخاب کنید</option><option value="1">نقدی</option><option value="2">نسیه</option><option value="3">ترکیبی</option>
+                                        </select>
+                                    </label>
+                                    <label data-share hidden>سهم نقدی پیش از مالیات (ریال) <input name="cash" class="form-control form-control-sm" inputmode="numeric" pattern="[0-9]+" disabled /></label>
+                                    <label data-share hidden>سهم نسیه پیش از مالیات (ریال) <input name="credit" class="form-control form-control-sm" inputmode="numeric" pattern="[0-9]+" disabled /></label>
+                                </fieldset>
+                            }
+                            <button type="submit" class="btn btn-sm taxation-action">ارسال دستی به Sandbox</button>
+                        </form>
+                    }
+                    else if (dispatch.Status is TaxDispatchStatus.Submitted or TaxDispatchStatus.Unknown)
+                    {
+                        <form method="post" data-dispatch-action="inquire" data-url="@Url.Action("Inquire", "Taxation", new { id = dispatch.Id })">
+                            <button type="submit" class="btn btn-sm taxation-action">استعلام نتیجه پردازش</button>
+                        </form>
+                    }
+                    else if (dispatch.Status == TaxDispatchStatus.Accepted)
+                    {
+                        <form method="post" data-dispatch-action="work-folder" data-url="@Url.Action("WorkFolder", "Taxation", new { id = dispatch.Id })">
+                            <button type="submit" class="btn btn-sm taxation-action">استعلام وضعیت کارپوشه</button>
+                        </form>
+                    }
+                }
+            </section>
+            @if (!Model.CancelFullReturn && dispatch.Status == TaxDispatchStatus.Accepted &&
+                 dispatch.Kind == TaxDispatchKind.Original && dispatch.HasWorkFolderEvidence)
+            {
+                <a asp-action="Dispatch" asp-route-id="@dispatch.Id" asp-route-cancelFullReturn="true" asp-route-returnTo="@returnTo"
+                   asp-fragment="full-return-cancellation">ابطال بابت برگشت کامل فروش</a>
+            }
+            @if (Model.CancelFullReturn)
+            {
+                <section class="taxation-workflow" id="full-return-cancellation">
+                    <h2>ابطال بابت برگشت کامل فروش</h2>
+                    <form method="post" data-dispatch-action="cancel-full-return" data-url="@Url.Action("EnqueueReference", "Taxation", new { id = dispatch.Id })"
+                          data-dispatch-url="@Url.Action("Dispatch", "TaxationPage", new { id = Guid.Empty, returnTo })"
+                          data-cancellation-kind="@((int)TaxDispatchKind.Cancellation)"
+                          data-cancellation-reason="@((int)CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxReference.TaxCancellationReason.FullReturn)">
+                        <fieldset class="taxation-fields">
+                            <legend>اطلاعات سند ابطالی</legend>
+                            <label>سریال مستقل سند <input name="serial" class="form-control form-control-sm" required inputmode="numeric" pattern="[0-9]{1,13}" /></label>
+                            <label>تاریخ صدور <input name="issuedDate" type="text" class="form-control form-control-sm sdate" dir="ltr" autocomplete="off" required data-datepicker-change /></label>
+                            <label>ساعت صدور (به وقت ایران) <input name="issuedTime" type="time" class="form-control form-control-sm" required /></label>
+                            <label><input class="form-check-input" type="checkbox" required /> برگشت کامل اقلام را تأیید می‌کنم.</label>
+                        </fieldset>
+                        <button type="submit" class="btn btn-sm taxation-action">ثبت سند ابطالی در صف</button>
+                    </form>
+                </section>
+            }
+            <section class="taxation-workflow" id="dispatch-history">
+                <h2>تاریخچه ارسال و استعلام</h2>
+                <ol class="taxation-history">
+                    @foreach (var entry in dispatch.History)
+                    {
+                        <li><strong>@EventLabel(entry.Kind)</strong><span>@EventResult(entry.Result)</span><time datetime="@entry.OccurredAt.ToString("O")"><bdi dir="ltr">@IranTime(entry.OccurredAt)</bdi></time></li>
+                    }
+                    @if (!Model.HistoryBefore.HasValue && dispatch.History.Count == 0 && dispatch.StartedAt is DateTimeOffset started)
+                    {
+                        <li><bdi dir="ltr">@IranTime(started)</bdi> · شروع ارسال</li>
+                    }
+                    @if (!dispatch.OlderHistoryBefore.HasValue)
+                    {
+                        <li><bdi dir="ltr">@IranTime(new DateTimeOffset(DateTime.SpecifyKind(dispatch.QueuedUtc, DateTimeKind.Utc)))</bdi> · ثبت در صف</li>
+                    }
+                </ol>
+                @if (Model.HistoryBefore.HasValue || dispatch.OlderHistoryBefore.HasValue)
+                {
+                    <nav class="taxation-pagination" aria-label="صفحه‌بندی تاریخچه">
+                        @if (Model.HistoryBefore.HasValue)
+                        {
+                            <a asp-action="Dispatch" asp-route-id="@dispatch.Id" asp-route-returnTo="@returnTo" asp-fragment="dispatch-history">جدیدترین رویدادها</a>
+                        }
+                        @if (dispatch.OlderHistoryBefore is long olderBefore)
+                        {
+                            <a asp-action="Dispatch" asp-route-id="@dispatch.Id" asp-route-historyBefore="@olderBefore"
+                               asp-route-returnTo="@returnTo" asp-fragment="dispatch-history" rel="next">رویدادهای قدیمی‌تر</a>
+                        }
+                    </nav>
+                }
+            </section>
+        }
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/taxation-dates.js" asp-append-version="true"></script>
+    <script src="~/js/taxation-preview.js?release=7.0.4" asp-append-version="true"></script>
+}
+
+@functions {
+    private static string IranTime(DateTimeOffset instant) =>
+        instant.ToOffset(TimeSpan.FromMinutes(210)).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+    private static string DispatchLabel(TaxDispatchStatus status) => status switch
+    {
+        TaxDispatchStatus.Pending => "در صف",
+        TaxDispatchStatus.InFlight => "در حال ارسال",
+        TaxDispatchStatus.Submitted => "رسید دریافت شد",
+        TaxDispatchStatus.Unknown => "نامشخص",
+        TaxDispatchStatus.Accepted => "پذیرفته‌شده",
+        TaxDispatchStatus.Rejected => "ردشده",
+        _ => "ثبت نشده"
+    };
+
+    private static string EventLabel(TaxDispatchEventKind kind) => kind switch
+    {
+        TaxDispatchEventKind.SubmissionStarted => "ارسال",
+        TaxDispatchEventKind.Acknowledgement => "رسید درخواست",
+        TaxDispatchEventKind.Processing => "استعلام پردازش",
+        TaxDispatchEventKind.WorkFolder => "استعلام کارپوشه",
+        TaxDispatchEventKind.Unknown => "نتیجه ارسال",
+        _ => "رویداد مالیاتی"
+    };
+
+    private static string EventResult(string result) => result switch
+    {
+        "Started" => "آغاز شد",
+        "Received" => "پاسخ دریافت شد",
+        "SUCCESS" => "پذیرفته‌شده",
+        "FAILED" => "ردشده",
+        "IN_PROGRESS" => "در حال پردازش",
+        "TIMEOUT" or "Ambiguous" => "نامشخص",
+        "NoResult" => "نتیجه‌ای یافت نشد",
+        _ => "ثبت نشده"
+    };
+}

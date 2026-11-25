@@ -1,0 +1,442 @@
+.taxation-page {
+    --tax-primary: var(--color-primary, #004944);
+    --tax-action: var(--color-primary-action, #00665c);
+    --tax-secondary: var(--color-secondary, #5811b4);
+    --tax-secondary-light: var(--color-secondary-light, #f3edfc);
+    --tax-success-light: var(--color-primary-light, #e7f3f0);
+    --tax-danger: var(--color-danger, #c2185b);
+    --tax-danger-light: var(--color-danger-light, #fce8f0);
+    --tax-text: var(--color-text, #212529);
+    --tax-muted: var(--color-text-muted, #545961);
+    --tax-border: var(--color-border, #dde1e8);
+    --tax-bg: var(--color-background, #f0f1f7);
+    --tax-surface: var(--color-surface, #fff);
+    display: grid;
+    gap: .85rem;
+    align-content: start;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding-block: .25rem .85rem;
+    color: var(--tax-text);
+}
+
+.taxation-page :is(h1, h2, h3, p, dl) { margin: 0; }
+.taxation-page bdi { overflow-wrap: anywhere; }
+.taxation-page [hidden] { display: none !important; }
+
+.taxation-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1.5rem;
+    min-inline-size: 0;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--tax-border);
+    border-radius: 1rem;
+    background: var(--tax-surface);
+}
+
+.taxation-heading h1 {
+    color: var(--tax-primary);
+    font-family: IRANSansBold, IRANSans, sans-serif;
+    font-size: clamp(1.35rem, 2.4vw, 1.95rem);
+    line-height: 1.55;
+}
+
+.taxation-heading p { margin-block-start: .3rem; color: var(--tax-muted); }
+
+.taxation-heading.taxation-hero {
+    border-color: var(--tax-primary);
+    background: linear-gradient(110deg, var(--tax-action) 0%, var(--tax-primary) 75%);
+    color: var(--tax-surface);
+}
+
+.taxation-hero h1, .taxation-hero p { color: inherit; }
+.taxation-hero-title { display: flex; align-items: center; gap: .85rem; }
+.taxation-hero-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 3rem;
+    block-size: 3rem;
+    border: 1px solid #fff5;
+    border-radius: .8rem;
+    background: #fff2;
+    font-size: 1.15rem;
+}
+
+.taxation-hero-count {
+    display: grid;
+    gap: .15rem;
+    min-inline-size: 8.5rem;
+    padding-inline-start: 1.25rem;
+    border-inline-start: 1px solid #fff5;
+}
+
+.taxation-hero-count strong { font-size: 1.9rem; line-height: 1.2; }
+.taxation-hero-count span { font-size: .84rem; }
+
+.taxation-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem .4rem;
+    padding: .35rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .75rem;
+    background: var(--tax-surface);
+}
+
+.taxation-navigation a {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-block-size: 2.35rem;
+    padding: .35rem .85rem;
+    border-radius: .5rem;
+    color: var(--tax-muted);
+    text-decoration: none;
+}
+
+.taxation-navigation a:hover,
+.taxation-navigation a[aria-current="page"] { background: var(--tax-success-light); color: var(--tax-primary); }
+.taxation-navigation a[aria-current="page"] { font-family: IRANSansBold, IRANSans, sans-serif; }
+
+.taxation-panel,
+.taxation-workflow {
+    min-inline-size: 0;
+    border: 1px solid var(--tax-border);
+    border-radius: .85rem;
+    background: var(--tax-surface);
+}
+
+.taxation-panel-heading, .taxation-workflow-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+}
+
+.taxation-panel-heading { padding: .85rem 1rem; }
+.taxation-page :is(h2, h3) { color: var(--tax-primary); line-height: 1.5; }
+.taxation-page h2 { font-size: 1.08rem; }
+.taxation-page h3 { font-size: .96rem; }
+
+.taxation-filters, .taxation-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: .55rem .75rem;
+    min-inline-size: 0;
+}
+
+.taxation-filters {
+    padding: .8rem 1rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .85rem;
+    background: var(--tax-surface);
+}
+
+.taxation-invoice-filters {
+    border: 0;
+    border-radius: 0;
+    padding-block-start: 0;
+}
+
+.taxation-page :is(.taxation-filters, .taxation-fields) label:not(.form-check) {
+    display: grid;
+    flex: 1 1 10rem;
+    min-inline-size: 0;
+    max-inline-size: 18rem;
+    gap: .25rem;
+    margin: 0;
+    font-size: .88rem;
+}
+
+.taxation-page :is(.taxation-filters, .taxation-fields) .form-check {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem 0;
+    margin: 0;
+}
+
+.taxation-page :is(.taxation-selection, .form-check) .form-check-input {
+    flex: 0 0 auto;
+    float: none;
+    margin: 0;
+    accent-color: var(--tax-action);
+}
+
+.taxation-page input.form-check-input:checked {
+    background-color: var(--tax-action);
+    border-color: var(--tax-action);
+}
+
+.taxation-page .taxation-invoice-filters label.taxation-search-field { flex-grow: 2; max-inline-size: 29rem; }
+.taxation-search-control { position: relative; display: block; }
+.taxation-search-control > :is(i, svg) {
+    position: absolute;
+    inset-inline-start: .75rem;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    color: var(--tax-muted);
+    pointer-events: none;
+}
+
+.taxation-page .taxation-search-control input { padding-inline: 2.15rem .7rem; text-align: start; }
+
+.taxation-page :is(.form-control, .form-select) {
+    min-inline-size: 0;
+    width: 100%;
+    min-block-size: 34px;
+    border-color: var(--tax-border);
+    border-radius: .45rem;
+    color: var(--tax-text);
+    font-family: inherit;
+    font-size: .92rem;
+}
+
+.taxation-filters .form-select:has(option[value=""]:checked) { color: var(--tax-text); }
+.taxation-page .form-control::placeholder { color: var(--tax-muted); opacity: 1; }
+.taxation-page :is(.form-control, .form-select):focus { border-color: var(--tax-action); box-shadow: 0 0 0 2px var(--tax-success-light); }
+.taxation-page :is(a, button, summary, input, select):focus-visible { outline: 2px solid var(--tax-action); outline-offset: 2px; }
+
+.taxation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.taxation-page .btn { border-radius: .5rem; min-block-size: 32px; padding-inline: .75rem; font: inherit; font-size: .88rem; }
+.taxation-page .taxation-action { color: var(--tax-surface); background: var(--tax-action); border-color: var(--tax-action); }
+.taxation-page .taxation-action:is(:hover, :focus-visible) { background: var(--tax-primary); color: var(--tax-surface); }
+.taxation-page .taxation-validate { border-color: var(--tax-border); color: var(--tax-primary); background: var(--tax-surface); }
+.taxation-page .taxation-validate:is(:hover, :focus-visible) { border-color: var(--tax-action); background: var(--tax-success-light); color: var(--tax-primary); }
+.taxation-page .taxation-text-action { color: var(--tax-primary); }
+.taxation-page .taxation-text-action:hover { background: var(--tax-success-light); }
+
+.taxation-batch { border-block-start: 1px solid var(--tax-border); background: var(--tax-bg); }
+.taxation-batch-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem .85rem; padding: .6rem 1rem; }
+.taxation-selection { display: flex; align-items: center; gap: .5rem; cursor: pointer; margin: 0; }
+.taxation-selection-count { color: var(--tax-muted); font-size: .85rem; }
+.taxation-batch-bar > button { margin-inline-start: auto; }
+.taxation-page :is([data-batch-status], [data-admin-status], [data-action-message]):empty { display: none; }
+.taxation-page [data-batch-status] { padding: .45rem 1rem; color: var(--tax-primary); font-weight: 700; }
+.taxation-batch [data-batch-results] { margin: 0; padding: .3rem 2rem .75rem 1rem; }
+.taxation-batch [data-failed] { color: var(--tax-danger); }
+
+.taxation-table-shell {
+    display: flow-root;
+    position: relative;
+    min-inline-size: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+.taxation-table-shell:has(.dt-container) { overflow: visible; }
+
+.taxation-page .dt-container > .dt-layout-table { display: block; }
+.taxation-page .dt-container .dt-layout-table > .dt-layout-full {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+.taxation-page .dt-container > .row:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .35rem .75rem;
+    padding: .25rem .65rem;
+}
+.taxation-page .dt-container .dt-info { color: var(--tax-muted); }
+
+.taxation-panel > .taxation-table-shell:last-child { border-end-start-radius: .8rem; border-end-end-radius: .8rem; }
+.taxation-table { margin: 0; min-inline-size: 42rem; font-size: .9rem; }
+.taxation-table > thead > tr > th { color: var(--tax-muted); background: var(--tax-bg); font-weight: 600; }
+.taxation-table > :is(thead, tbody) > tr > * { padding: .65rem .75rem; border-color: var(--tax-border); vertical-align: middle; }
+.taxation-table > tbody > tr:last-child > * { border-block-end: 0; }
+.taxation-table > tbody > tr:focus-within > * { background: var(--tax-success-light); }
+.taxation-table td, .taxation-table th { overflow-wrap: anywhere; }
+.taxation-table small { display: block; font-size: .8rem; color: var(--tax-muted); }
+.taxation-invoice-table { min-inline-size: 54rem; }
+.taxation-report-table .taxation-table { min-inline-size: 50rem; }
+.taxation-invoice-check { inline-size: 2.9rem; text-align: center; }
+.taxation-invoice-id { white-space: nowrap; }
+.taxation-invoice-actions > :is(a, button) { margin-block-end: .15rem; }
+.taxation-table .taxation-currency { display: inline; }
+.taxation-table summary { cursor: pointer; color: var(--tax-primary); font-weight: 600; }
+.taxation-table summary > * { margin-inline-end: .2rem; margin-block: .1rem; }
+.taxation-documents, .taxation-result ul { padding-inline-start: 1.1rem; margin-block: .3rem 0; }
+.taxation-documents li + li { margin-block-start: .5rem; }
+.taxation-result { max-inline-size: 24rem; font-size: .85rem; }
+.taxation-result[data-state="valid"] { color: var(--tax-primary); }
+.taxation-result[data-state="error"], .taxation-row-errors td { color: var(--tax-danger); }
+
+.taxation-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    max-inline-size: 100%;
+    padding: .14rem .48rem;
+    border: 1px solid var(--tax-border);
+    border-radius: 999px;
+    background: var(--tax-bg);
+    color: var(--tax-muted);
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.taxation-status::before { content: ""; flex: 0 0 .35rem; block-size: .35rem; border-radius: 50%; background: currentColor; }
+.taxation-status:is([data-status="Accepted"], [data-status="Active"]) { color: var(--tax-primary); background: var(--tax-success-light); }
+.taxation-status:is([data-status="Pending"], [data-status="InFlight"], [data-status="Submitted"]) { color: var(--tax-secondary); background: var(--tax-secondary-light); }
+.taxation-status:is([data-status="Unknown"], [data-status="Rejected"]) { color: var(--tax-danger); background: var(--tax-danger-light); }
+.taxation-error, .taxation-row-errors td { background: var(--tax-danger-light); color: var(--tax-danger); }
+.taxation-error { padding: .6rem .85rem; border-radius: .55rem; }
+.taxation-panel > .taxation-error { margin: .25rem 1rem .85rem; }
+.taxation-page ul.taxation-error { padding-inline-start: 2rem; }
+.taxation-row-errors ul { margin: 0; }
+.taxation-empty {
+    display: grid;
+    justify-items: center;
+    gap: .55rem;
+    padding: 2rem 1rem;
+    border-block-start: 1px solid var(--tax-border);
+    color: var(--tax-muted);
+    text-align: center;
+}
+
+.taxation-empty i { font-size: 1.35rem; color: var(--tax-action); }
+.taxation-page a:not(.btn) { text-underline-offset: .2em; }
+.taxation-pagination { display: flex; justify-content: center; flex-wrap: wrap; gap: .6rem 1rem; padding: .75rem; }
+.taxation-pagination a { color: var(--tax-primary); }
+
+.taxation-workflow { display: grid; gap: .65rem; padding: .85rem 1rem; }
+.taxation-workflow.taxation-fields { display: flex; }
+.taxation-workflow fieldset { min-inline-size: 0; margin-block-end: .45rem; }
+.taxation-fields legend { float: none; margin-block-end: .3rem; font-size: .9rem; }
+.taxation-fields label .taxation-error { display: block; padding: .25rem .4rem; overflow-wrap: anywhere; }
+
+.taxation-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: .55rem;
+}
+
+.taxation-summary > div {
+    min-inline-size: 0;
+    padding: .65rem .75rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .65rem;
+    background: var(--tax-surface);
+}
+
+.taxation-summary dt { color: var(--tax-muted); font-size: .82rem; font-weight: 400; }
+.taxation-summary dd { margin: .2rem 0 0; overflow-wrap: anywhere; font-weight: 700; }
+.taxation-summary > .taxation-summary-total { background: var(--tax-success-light); color: var(--tax-primary); }
+.taxation-muted { color: var(--tax-muted); font-size: .88rem; }
+.taxation-section-list { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr)); }
+.taxation-product-list {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+
+.taxation-product { padding: .65rem .8rem; }
+.taxation-product h2 { margin-block-end: .45rem; }
+
+.taxation-mapping-row.taxation-fields {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, .7fr) minmax(0, 1.25fr) minmax(0, 1.5fr) auto;
+    align-items: end;
+    gap: .45rem .65rem;
+}
+
+.taxation-page .taxation-mapping-row label:not(.form-check) { max-inline-size: none; }
+.taxation-mapping-row > .taxation-error { grid-column: 1 / -1; font-size: .84rem; }
+.taxation-product-unit { display: grid; gap: .15rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.taxation-mapping-row + .taxation-mapping-row { border-block-start: 1px solid var(--tax-border); margin-block-start: .55rem; padding-block-start: .55rem; }
+
+.taxation-history { list-style: none; padding: 0; margin: 0; }
+.taxation-history li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .3rem .65rem;
+    padding: .6rem .8rem;
+    border-inline-start: 2px solid var(--tax-border);
+    border-block-end: 1px solid var(--tax-border);
+}
+
+.taxation-history li:last-child { border-block-end: 0; }
+.taxation-history li:first-child { border-inline-start-color: var(--tax-action); }
+.taxation-history time { color: var(--tax-muted); font-size: .82rem; }
+.taxation-history strong { font-size: .9rem; }
+
+.taxation-report-cards {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: .55rem;
+}
+
+.taxation-report-card {
+    display: grid;
+    gap: .25rem;
+    align-content: start;
+    padding: .65rem .85rem;
+    min-block-size: 5.4rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .65rem;
+    background: var(--tax-surface);
+    color: var(--tax-primary);
+}
+
+.taxation-report-card strong { font-size: 1.4rem; }
+.taxation-report-card meter { inline-size: 100%; block-size: .5rem; }
+.taxation-report-card:is([data-report-status="Unknown"], [data-report-status="Rejected"], [data-report-status="NeedsData"]) { color: var(--tax-danger); }
+
+@media (max-width: 991px) {
+    .taxation-report-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+    .taxation-report-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .taxation-heading { padding: .85rem; }
+    .taxation-hero-count { border: 0; padding: 0; display: flex; gap: .5rem; align-items: baseline; }
+    .taxation-hero-count strong { font-size: 1.25rem; }
+    .taxation-hero-icon { flex-basis: 2.4rem; block-size: 2.4rem; }
+    .taxation-navigation a { min-block-size: 23px; font-size: 11px; padding: 1px 5px; margin-block: 0; }
+    .taxation-page .btn { min-block-size: 23px; font-size: 11px; padding: 1px 5px; margin-block: 0; }
+    .taxation-batch-bar > button { margin-inline-start: 0; }
+    .taxation-invoice-table { min-inline-size: 0; }
+    .taxation-invoice-table, .taxation-invoice-table tbody { display: block; }
+    .taxation-invoice-table thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .taxation-invoice-table tbody { padding: .45rem .65rem .65rem; }
+    .taxation-invoice-table tbody > tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border: 1px solid var(--tax-border);
+        border-radius: .65rem;
+        margin-block-start: .45rem;
+    }
+    .taxation-invoice-table tbody > tr > * { min-inline-size: 0; border: 0; padding: .35rem .6rem; background: transparent; text-align: start; }
+    .taxation-page .dt-container .taxation-invoice-table tbody > tr > * { padding: .35rem .6rem !important; text-align: start !important; }
+    .taxation-page .dt-container .taxation-invoice-table tbody > tr > .taxation-invoice-check { text-align: end !important; }
+    .taxation-invoice-table .taxation-invoice-check { inline-size: auto; grid-column: 2; grid-row: 1; text-align: end; }
+    .taxation-invoice-id { grid-column: 1; grid-row: 1; white-space: normal; }
+    .taxation-invoice-table .taxation-invoice-actions { grid-column: 1 / -1; border-block-start: 1px solid var(--tax-border); }
+    .taxation-invoice-table [data-label]::before { content: attr(data-label); display: block; color: var(--tax-muted); font-size: .76rem; }
+    .taxation-invoice-table .form-check-input { width: 1.15rem; height: 1.15rem; }
+}
+
+@media (max-width: 480px) {
+    .taxation-report-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .taxation-mapping-row.taxation-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .taxation-product-unit { grid-column: 1 / -1; display: flex; align-items: baseline; gap: .4rem; }
+    .taxation-mapping-row button { justify-self: start; }
+}
+
+@media (max-width: 430px) {
+    .taxation-page .taxation-invoice-filters label.taxation-search-field { max-inline-size: none; }
+    .taxation-page :is(.taxation-filters, .taxation-fields) label:not(.form-check) { flex-basis: 100%; max-inline-size: none; }
+    .taxation-page .taxation-invoice-filters label:not(.taxation-search-field) { flex-basis: calc(50% - .4rem); }
+    .taxation-invoice-filters .taxation-actions { flex-basis: 100%; }
+    .taxation-page [data-taxation-report-dates] label:not(.form-check) { flex-basis: calc(50% - .4rem); }
+    .taxation-page :is(.form-control, .form-select) { min-block-size: 38px; }
+}

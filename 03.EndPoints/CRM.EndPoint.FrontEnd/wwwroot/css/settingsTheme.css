@@ -37,11 +37,6 @@
 #settingsSmsWorkspace .sms-summary-card:nth-child(2) .sms-summary-icon { background:#F3EDFC; color:#5811B4; }
 #settingsSmsWorkspace .sms-summary-content strong { color:#004944; font:700 18px/1.8 IRANSansBold; }
 #settingsSmsWorkspace .sms-summary-content span { color:#545961; font-size:13px; }
-#settingsSmsWorkspace .sms-tabs { background:#F0F1F7; border-color:#DDE1E8; gap:5px; flex-wrap:wrap; }
-#settingsSmsWorkspace .sms-tab { border-radius:6px; color:#545961; font:500 14px/1.8 IRANSansMedium; }
-#settingsSmsWorkspace .sms-tab.active { background:#004944; color:#fff; border-color:#004944; }
-#settingsSmsWorkspace .sms-tab-count { background:#F3EDFC; color:#5811B4; }
-#settingsSmsWorkspace .sms-tab.active .sms-tab-count { background:#fff; color:#004944; }
 #settingsSmsWorkspace .sms-content-card table thead th { color:#004944; background:#E7F3F0; font:700 13px/1.8 IRANSansBold; }
 #settingsSmsWorkspace .sms-content-card table tbody td { font:400 13px/1.8 IRANSans; border-color:#DDE1E8; }
 .crm-settings-theme :is(button,a,input,select):focus-visible { outline:2px solid #5811B4; outline-offset:2px; }
@@ -49,8 +44,6 @@
     .crm-settings-theme :is(.InfoData,.user-list-panel,.sms-content-card,.sms-summary-card,.user-card) { padding:9px; }
     .crm-settings-theme .InfoData > form { flex-wrap:wrap; }
     #settingsUsersWorkspace :is(.user-page-actions,.user-card-actions) { flex-wrap:wrap; }
-    #settingsSmsWorkspace .sms-tabs { gap:4px; }
-    #settingsSmsWorkspace .sms-tab { padding:7px; font-size:13px; }
 }
 
 /* External software directory: centered page, scannable cards, clear destination action. */
