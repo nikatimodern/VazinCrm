@@ -21,21 +21,14 @@ namespace CRM.EndPoint.FrontEnd.Services.Menu;
 public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     public async Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user)
     {
-        // Read current roles from Identity, not the potentially stale cookie.
-        // This makes the menu snapshot authoritative immediately after role edits.
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        var identityDb = serviceProvider.GetRequiredService<UserContextDb>();
-        var roles = string.IsNullOrWhiteSpace(userId)
-            ? user.Claims.Where(x => x.Type == ClaimTypes.Role).Select(x => x.Value).ToHashSet()
-            : (await (from assignment in identityDb.UserRoles.AsNoTracking()
-                join role in identityDb.Roles.AsNoTracking() on assignment.RoleId equals role.Id
-                where assignment.UserId == userId
-                select role.Name).ToListAsync())
-                .Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!).ToHashSet();
+        // Keep the exact role claim source and inherited permissions used before
+        // the menu redesign. Apply those rules to the original hierarchy first.
+        var roles = user.Claims
+            .Where(x => x.Type == ClaimTypes.Role)
+            .Select(x => x.Value)
+            .ToHashSet();
 
-        var menus = OrganizeMenus(BuildMenus(user));
-
-        var filteredMenus = Filter(menus, roles);
+        var filteredMenus = OrganizeMenus(Filter(BuildMenus(user), roles), roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
             // Match the exact audience/role resolution used by the release history.
@@ -642,45 +635,49 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         menus.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
     }
 
-    private static List<MenuItem> OrganizeMenus(List<MenuItem> definitions)
+    private static List<MenuItem> OrganizeMenus(List<MenuItem> definitions, HashSet<string> userRoles)
     {
         var source = definitions.ToList();
 
+        static bool HasEntry(MenuItem item) =>
+            !string.IsNullOrEmpty(item.Url) || !string.IsNullOrEmpty(item.OnClick)
+            || item.SubItems.Count > 0;
+
+        static MenuItem Missing(string id) => new() { Id = "missing-" + id };
+
         MenuItem Take(string id)
         {
-            var item = source.Single(x => x.Id == id);
+            // Legacy filtering can remove any item, including a whole category.
+            var item = source.FirstOrDefault(x => x.Id == id);
+            if (item is null) return Missing(id);
             source.Remove(item);
             return item;
         }
 
-        MenuItem Child(MenuItem parent, string id)
-        {
-            var child = parent.SubItems.Single(x => x.Id == id);
-            // Old children without Roles inherited their previous parent.
-            // Flattening the menu must not silently grant additional access.
-            child.Roles = child.Roles.Count == 0
-                ? parent.Roles.ToList()
-                : child.Roles.Intersect(parent.Roles).ToList();
-            return child;
-        }
+        static MenuItem Child(MenuItem parent, string id) =>
+            parent.SubItems.FirstOrDefault(x => x.Id == id) ?? Missing(id);
 
         MenuItem Category(string id, string title, string icon, int order, params MenuItem[] children)
         {
-            for (var i = 0; i < children.Length; i++)
-                children[i].DisplayOrder = i + 1;
+            // Preserve only previously visible items; role checks were completed
+            // against the original parent hierarchy prior to this rearrangement.
+            var visible = children.Where(HasEntry).ToList();
+            for (var i = 0; i < visible.Count; i++)
+                visible[i].DisplayOrder = i + 1;
             return new MenuItem
             {
                 Id = id, Title = title, IconHtml = icon, DisplayOrder = order,
-                SubItems = children.ToList()
+                SubItems = visible
             };
         }
 
         MenuItem MobileShortcut(string id, MenuItem original, string title, string url, int order) =>
-            new MenuItem
+            !HasEntry(original) ? Missing(id) : new MenuItem
             {
                 Id = id, Title = title, Url = url, IconHtml = original.IconHtml,
                 Roles = original.Roles.ToList(), DisplayOrder = order,
-                ShowInMobileBottomMenu = true, ShowInDesktop = false
+                ShowInMobileBottomMenu = true, ShowInDesktop = false,
+                ShowInMobile = original.ShowInMobile
             };
 
         var dashboard = Take("dashboard");
@@ -703,18 +700,22 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var warnings = Take("warnings");
         var version = Take("releaseNotes");
 
-        people.Title = "مشتریان";
-        people.Url = "/Customer/Index?roleType=1";
-        people.ShowInMobileBottomMenu = false;
+        var canViewPeople = HasEntry(people);
+        if (canViewPeople)
+        {
+            people.Title = "مشتریان";
+            people.Url = "/Customer/Index?roleType=1";
+            people.ShowInMobileBottomMenu = false;
+        }
         deals.ShowInMobileBottomMenu = false;
         workReport.ShowInMobileBottomMenu = false;
 
-        var suppliers = new MenuItem
+        var suppliers = canViewPeople ? new MenuItem
         {
             Id = "suppliers", Title = "تأمین‌کنندگان",
             Url = "/Customer/Index?roleType=2",
             Roles = people.Roles.ToList()
-        };
+        } : Missing("suppliers");
 
         var categoryDaily = Category("categoryDaily", "فعالیت‌های روزانه", MenuIcons.Tasks, 10,
             tasks, workReport);
@@ -734,11 +735,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var categoryReports = Category("categoryReports", "گزارش‌های مدیریتی", MenuIcons.Reports, 60,
             Child(reports, "profit"), Child(reports, "demand"));
 
-        // Only roles that have at least one action in _SettingModal should see it.
-        settings.Roles = [
-            AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin,
-            AppRoles.FinancialAdmin, AppRoles.FinancialExpert
-        ];
+        // Use the original Settings role list without any overrides.
         settings.DisplayOrder = 70;
         MenuItem SettingLink(string id, string title, string url, params string[] allowedRoles) =>
             new MenuItem
@@ -764,10 +761,12 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 SettingLink("settingsExternal", "مدیریت ارتباطات", "/ExternalSoftware/Index", AppRoles.Admin)
             ]
         };
+        // Links in the Settings modal retain their existing role restrictions.
+        extraSettings.SubItems = FilterItems(extraSettings.SubItems, userRoles, []);
         // Keep the existing mobile bottom bar shortcuts. The new categorized
         // pages remain reachable from the mobile "More" drawer as well.
-        return
-        [
+        return new List<MenuItem>
+        {
             dashboard,
             MobileShortcut("dealMobile", deals, "سفارشات", "/Deal/Index", 2),
             MobileShortcut("peopleMobile", people, "اشخاص", "/Customer/Index", 3),
@@ -775,7 +774,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             MobileShortcut("reportMobile", workReport, "گزارش کار", "/Report/Index", 5),
             categoryDaily, categorySales, categorySupply, categoryProduction,
             categoryFinance, categoryReports, settings, extraSettings, overdue, warnings, version
-        ];
+        }.Where(HasEntry).OrderBy(x => x.DisplayOrder).ToList();
     }
 
     private static List<MenuItem> Filter(List<MenuItem> menus, HashSet<string> userRoles)
