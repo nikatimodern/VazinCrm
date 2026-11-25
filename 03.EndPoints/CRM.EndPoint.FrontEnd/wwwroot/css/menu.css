@@ -961,3 +961,26 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     justify-content: center;
     gap: 0;
 }
+
+/* Sidebar expand/collapse performance: animating width and mainWrapper's
+   margin forces costly layout/container-query recalculations on every frame.
+   Apply the same final geometry immediately instead of a 500/700ms mismatch.
+   Keep separate hover and accordion animations unchanged. */
+@media (min-width: 768px) {
+    #desktopSidebar,
+    #mainWrapper {
+        transition: none !important;
+    }
+    /* This temporary class exists only for the two frames around a rail toggle.
+       Do not let a previously opened accordion interpolate into a flyout. */
+    html.menu-rail-switching #desktopSidebar .has-submenu > .submenu,
+    html.menu-rail-switching #desktopSidebar .has-submenu .submenu-arrow,
+    html.menu-rail-switching #desktopSidebar .menu-icon-frame {
+        transition: none !important;
+        transition-delay: 0s !important;
+    }
+    html.menu-rail-switching #desktopSidebar .menu-item::after,
+    html.menu-rail-switching #desktopSidebar .menu-icon-frame::after {
+        animation: none !important;
+    }
+}
