@@ -129,6 +129,16 @@
         search.value = ""; sort.value = "asc"; page = 0; render();
     });
 
+    get("termsAdd").addEventListener("click", () => {
+        editor.querySelector('[name="Input.Id"]').value = "";
+        editor.querySelector('[name="Input.Text"]').value = "";
+        const lastOrder = canonical.reduce((max, row) => Math.max(max, order(row)), 0);
+        editor.querySelector('[name="Input.Order"]').value = String(Math.min(lastOrder + 1, 2147483647));
+        get("termsEditorTitle").textContent = "افزودن بند";
+        editor.querySelectorAll("[data-valmsg-for]").forEach(message => { message.textContent = ""; });
+        editor.querySelectorAll(".input-validation-error").forEach(field => field.classList.remove("input-validation-error"));
+    });
+
     const modal = bootstrap.Modal.getOrCreateInstance(editor);
     if (editor.dataset.open === "true") modal.show();
     const scope = window.PageRuntime?.current;
