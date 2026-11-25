@@ -962,17 +962,18 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     gap: 0;
 }
 
-/* Sidebar expand/collapse performance: animating width and mainWrapper's
-   margin forces costly layout/container-query recalculations on every frame.
-   Apply the same final geometry immediately instead of a 500/700ms mismatch.
-   Keep separate hover and accordion animations unchanged. */
+/* Responsive, synchronized rail transition: sidebar width and content
+   offset use one 180ms curve (instead of the former 500ms / 700ms mismatch).
+   Avoid animating other layout properties or nested accordion grids here. */
 @media (min-width: 768px) {
-    #desktopSidebar,
-    #mainWrapper {
-        transition: none !important;
+    #desktopSidebar {
+        transition: width 180ms cubic-bezier(.22, 1, .36, 1) !important;
     }
-    /* This temporary class exists only for the two frames around a rail toggle.
-       Do not let a previously opened accordion interpolate into a flyout. */
+    #mainWrapper {
+        transition: margin-right 180ms cubic-bezier(.22, 1, .36, 1) !important;
+    }
+    /* Freeze only secondary effects for the duration of the rail animation;
+       regular accordion expansion and icon hover remain animated afterward. */
     html.menu-rail-switching #desktopSidebar .has-submenu > .submenu,
     html.menu-rail-switching #desktopSidebar .has-submenu .submenu-arrow,
     html.menu-rail-switching #desktopSidebar .menu-icon-frame {
@@ -982,5 +983,15 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     html.menu-rail-switching #desktopSidebar .menu-item::after,
     html.menu-rail-switching #desktopSidebar .menu-icon-frame::after {
         animation: none !important;
+    }
+    /* An open flyout must not paint into the content while the rail moves. */
+    html.menu-rail-switching #desktopNavbar {
+        overflow: hidden !important;
+        scrollbar-width: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #desktopSidebar, #mainWrapper {
+        transition: none !important;
     }
 }
