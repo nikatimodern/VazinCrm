@@ -189,10 +189,16 @@
         renderSearch(row.querySelector("[data-menu-search-panel]"));
     }
     function syncSettingsFavorites() {
+        // ASP.NET MVC can generate /Controller for an Index action even when
+        // the catalog stores /Controller/Index. Treat both as the same page.
+        const settingsPath = href => {
+            const pathname = new URL(href, window.location.origin).pathname.toLowerCase();
+            return pathname.replace(/\/index\/?$/, "").replace(/\/$/, "") || "/";
+        };
         const catalog = new Map(Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
-            .map(link => [new URL(link.href).pathname.toLowerCase(), link]));
+            .map(link => [settingsPath(link.href), link]));
         document.querySelectorAll("#BaseSetting a[href]").forEach(link => {
-            const meta = catalog.get(new URL(link.href).pathname.toLowerCase());
+            const meta = catalog.get(settingsPath(link.href));
             if (!meta) return;
             let star = link.parentElement?.querySelector(":scope > .erp-settings-favorite-button");
             if (!star) {
