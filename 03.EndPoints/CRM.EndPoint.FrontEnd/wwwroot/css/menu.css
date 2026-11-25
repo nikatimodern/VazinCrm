@@ -648,3 +648,143 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
         padding-left: 0;
     }
 }
+
+
+/* Compact fixed footer controls: keep counters, alerts and release links functional,
+   but don't let them consume the same height as regular navigation sections. */
+#desktopFixedActions,
+#mobileDrawerFixedActions {
+    gap: 1px;
+    padding: 4px 7px;
+}
+#desktopFixedActions .menu-entry,
+#mobileDrawerFixedActions .menu-entry {
+    width: 100%;
+    min-width: 0;
+}
+#desktopFixedActions .menu-item,
+#mobileDrawerFixedActions .menu-item {
+    min-height: 29px;
+    height: auto;
+    padding: 3px 6px;
+    gap: 6px;
+    border-radius: 6px;
+    font-size: 11px;
+}
+#desktopFixedActions .menu-icon-frame,
+#mobileDrawerFixedActions .menu-icon-frame {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+}
+#desktopFixedActions .menu-icon-frame .menu-icon,
+#mobileDrawerFixedActions .menu-icon-frame .menu-icon {
+    width: 17px !important;
+    height: 17px;
+}
+#desktopFixedActions .menu-item .menu-item-title,
+#mobileDrawerFixedActions .menu-item .menu-item-title {
+    font-size: 11px;
+    line-height: 1.45;
+    gap: 4px;
+    min-width: 0;
+}
+#desktopFixedActions .menu-entry > .menu-item,
+#mobileDrawerFixedActions .menu-entry > .menu-item {
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
+}
+#desktopFixedActions .badge-count-menuItem,
+#mobileDrawerFixedActions .badge-count-menuItem {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 3px;
+    margin-inline-start: 2px;
+    border-radius: 5px;
+}
+/* Single compact release label instead of rendering the duplicate version line. */
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    min-height: 31px;
+    justify-content: center;
+    text-align: center;
+    padding: 3px 4px;
+}
+#desktopFixedActions .menu-release-notes .menu-item-title,
+#mobileDrawerFixedActions .menu-release-notes .menu-item-title {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    font-size: 11px;
+    line-height: 1.35;
+    font-family: IRANSansBold;
+    white-space: normal;
+}
+#desktopFixedActions .menu-release-notes .menu-release-date,
+#mobileDrawerFixedActions .menu-release-notes .menu-release-date {
+    font-size: 9px;
+    font-family: IRANSans;
+    line-height: 1.2;
+    margin-top: 1px;
+    color: #c3dfd6;
+}
+#desktopFixedActions .menu-release-compact,
+#mobileDrawerFixedActions .menu-release-compact {
+    display: none;
+}
+@media (min-width: 768px) {
+    /* A collapsed footer needs a short version indicator, not the full text. */
+    html.sidebar-collapsed #desktopFixedActions .menu-release-compact {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-release-compact small {
+        display: none;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-release-notes {
+        padding: 4px 1px;
+        min-height: 27px;
+    }
+}
+
+/* Keep the collapse/expand hamburger legible on the dark green header. */
+#desktopSidebar .menuHeader #collapseMenuIcon,
+#desktopSidebar .menuHeader #expandMenuIcon {
+    color: #fff !important;
+    background: transparent;
+    border: 0;
+    opacity: 1;
+}
+#desktopSidebar .menuHeader #collapseMenuIcon svg,
+#desktopSidebar .menuHeader #expandMenuIcon svg {
+    stroke: #fff !important;
+}
+
+/* Restore the continuous gentle up/down motion of a hovered menu icon.
+   Animate the SVG, not the container, so the existing orbit border still works. */
+@keyframes erpMenuIconHoverHop {
+    0%, 100% { transform: translateY(0); }
+    35% { transform: translateY(-3px); }
+    70% { transform: translateY(1px); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .menu-nav .menu-item:not(.menu-warning-new):hover > .menu-icon-frame > .menu-icon,
+    .menu-nav .menu-item:not(.menu-warning-new):focus-visible > .menu-icon-frame > .menu-icon {
+        animation: erpMenuIconHoverHop .72s ease-in-out infinite;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .menu-nav .menu-item > .menu-icon-frame > .menu-icon {
+        animation: none !important;
+    }
+}
