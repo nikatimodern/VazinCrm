@@ -55,4 +55,56 @@ internal static class MenuIcons
     public const string More =
         """<span class="menu-icon-frame" aria-hidden="true"><svg class="menu-icon" data-menu-icon="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5h16" /> <path d="M4 12h16" /> <path d="M4 19h16" /></svg></span>""";
 
+
+    // Every rendered destination has an icon, including leaves that historically
+    // inherited a parent icon or were defined without one. Favorites use their
+    // canonical destination id so that they show the same icon as the menu link.
+    public static string ForItem(CRM.EndPoint.FrontEnd.Models.Menu.MenuItem item)
+    {
+        var id = string.IsNullOrWhiteSpace(item.FavoriteTargetId)
+            ? item.Id : item.FavoriteTargetId;
+        if (id is null)
+            return string.IsNullOrWhiteSpace(item.IconHtml) ? GenericPage : item.IconHtml;
+
+        return id switch
+        {
+            "suppliers" => Svg("truck", "<path d='M10 17h4V5H2v12h3'/><path d='M14 9h4l4 4v4h-3'/><circle cx='7.5' cy='17.5' r='2.5'/><circle cx='16.5' cy='17.5' r='2.5'/>"),
+            "productionVoucher" => Svg("factory", "<path d='M2 20V9l6 4V9l6 4V4l8 3v13z'/><path d='M6 17h.01M12 17h.01M18 17h.01'/>"),
+            "warehouseVoucher" => Svg("package-check", "<path d='m12 3 9 5-9 5-9-5 9-5Z'/><path d='M3 8v10l9 5 9-5V8M12 13v10'/><path d='m15 17 2 2 3-3'/>"),
+            "warehouse" => Svg("warehouse", "<path d='M3 10 12 3l9 7v11H3z'/><path d='M3 10h18M9 21v-8h6v8'/>"),
+            "supplyFactor" => Svg("file-text", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6M8 13h8M8 17h8'/>"),
+            "requestAmount" => Svg("hand-coins", "<path d='M11 15h2a2 2 0 0 0 2-2 2 2 0 0 0-2-2H9a3 3 0 0 0-3 3v3'/><path d='M2 14v7h6l4-2 8-5a2 2 0 0 0-2-3l-3 2'/><circle cx='18' cy='5' r='3'/>"),
+            "receivedChecks" => Svg("clipboard-check", "<rect x='5' y='4' width='14' height='18' rx='2'/><path d='M9 4V2h6v2M8 13l3 3 5-6'/>"),
+            "issuedChecks" => Svg("file-pen-line", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6M8 15h3m-3 4h8M13 15l5-5'/>"),
+            "transfer" => Svg("arrow-left-right", "<path d='M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4'/>"),
+            "cashier" => Svg("wallet-cards", "<rect x='3' y='4' width='18' height='16' rx='2'/><path d='M3 9h18M7 15h4'/>"),
+            "cashIndex" => Svg("coins", "<circle cx='8' cy='8' r='5'/><path d='M12 13a5 5 0 1 0 0 9M7 18h.01M17 9h.01'/>"),
+            "profit" => Svg("chart-column-increasing", "<path d='M3 3v18h18M7 17v-4h3v4M12 17V8h3v9M17 17V5h3v12'/>"),
+            "demand" => Svg("receipt-text", "<path d='M4 2h16v20l-4-2-4 2-4-2-4 2z'/><path d='M8 7h8M8 11h8M8 15h5'/>"),
+            "releaseNotes" => Svg("file-clock", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h9M14 2v6h6'/><circle cx='18' cy='17' r='4'/><path d='M18 15v2l1 1'/>"),
+            "settingsVersions" => Svg("history", "<path d='M3 12a9 9 0 1 1 2.5 6M3 17v-5h5'/><path d='M12 7v5l3 2'/>"),
+            "settingsUsers" => Customers,
+            "settingsCompany" => Svg("building-2", "<rect x='3' y='2' width='14' height='20' rx='2'/><path d='M17 9h4v13h-4M7 6h2M11 6h2M7 10h2M11 10h2M7 14h2M11 14h2'/>"),
+            "settingsFinance" => Accounting,
+            "settingsMain" => Settings,
+            "settingsBin" => Svg("trash-2", "<path d='M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7'/>"),
+            "settingsSms" => Svg("message-square", "<path d='M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l2-4a8.5 8.5 0 1 1 16-4.5Z'/>"),
+            "settingsExternal" => Svg("plug-zap", "<path d='M7 2v5M17 2v5M6 7h12v3a6 6 0 0 1-12 0zM12 16v6'/>"),
+            _ when id.Contains("moadian", System.StringComparison.OrdinalIgnoreCase) ||
+                   id.Contains("modian", System.StringComparison.OrdinalIgnoreCase) ||
+                   (item.Title?.Contains("مودیان") ?? false)
+                => Svg("file-check-2", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6M9 15l2 2 4-4'/>"),
+            _ => string.IsNullOrWhiteSpace(item.IconHtml) ? GenericPage : item.IconHtml
+        };
+    }
+
+    private static readonly string GenericPage =
+        Svg("file-text", "<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6M8 13h8M8 17h8'/>");
+
+    private static string Svg(string name, string content) =>
+        "<span class=\"menu-icon-frame\" aria-hidden=\"true\"><svg class=\"menu-icon\" data-menu-icon=\"" +
+        name + "\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" " +
+        "stroke-linecap=\"round\" stroke-linejoin=\"round\" focusable=\"false\">" +
+        content + "</svg></span>";
+
 }

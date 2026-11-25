@@ -888,3 +888,61 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
         width: 27px;
     }
 }
+
+
+/* A collapsed category already opens an informative flyout. Its heading does
+   not need an overlapping Bootstrap tooltip. Links still keep their tooltip.
+   Layout.js only initializes tooltips from [data-tooltip-left]. */
+.menu-nav .submenu-items .menu-item {
+    justify-content: flex-start;
+    gap: 7px;
+}
+.menu-nav .submenu-items .menu-icon-frame {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    background: rgba(197, 242, 227, .045);
+}
+.menu-nav .submenu-items .menu-icon-frame .menu-icon {
+    width: 16px !important;
+    height: 16px;
+}
+.menu-nav .submenu-items .menu-item-title {
+    text-align: right;
+}
+@media (min-width: 768px) {
+    /* Override the compact-rail centering for items inside flyout panels. */
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item,
+    html.sidebar-collapsed #desktopNavbar .submenu .submenu-toggle {
+        justify-content: flex-start;
+        gap: 7px;
+        padding-inline: 9px;
+        text-align: right;
+    }
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item > .menu-icon-frame {
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+    }
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item > .menu-item-title {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+/* Retain the small footer version text when adding its icon. */
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    gap: 5px;
+}
+#desktopFixedActions .menu-release-notes .menu-icon-frame,
+#mobileDrawerFixedActions .menu-release-notes .menu-icon-frame {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+#desktopFixedActions .menu-release-notes .menu-icon-frame .menu-icon,
+#mobileDrawerFixedActions .menu-release-notes .menu-icon-frame .menu-icon {
+    width: 15px !important;
+    height: 15px;
+}
