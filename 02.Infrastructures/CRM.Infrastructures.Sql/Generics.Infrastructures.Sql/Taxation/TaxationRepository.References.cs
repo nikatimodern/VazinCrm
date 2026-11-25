@@ -14,7 +14,7 @@ namespace CRM.Infrastructures.Sql.Taxation;
 public sealed partial class TaxationRepository
 {
     public async Task<Guid> EnqueueReferenceAsync(Guid referenceId, Guid? factorId, TaxDispatchKind kind, string actorId,
-        Func<TaxReferenceSource, TaxReferenceRegistration> register, CancellationToken ct)
+        Func<TaxReferenceSource, CancellationToken, Task<TaxReferenceRegistration>> register, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         await LockAsync(db, $"tax-reference:{referenceId:D}", ct);
@@ -47,9 +47,9 @@ public sealed partial class TaxationRepository
         if (memory.FiscalId != reference.FiscalId)
             throw new ArgumentException("شناسهٔ حافظه با سند مرجع یکسان نیست.");
 
-        var registered = register(new(reference, protection.Unprotect(snapshotSource.ProtectedPreview),
+        var registered = await register(new(reference, protection.Unprotect(snapshotSource.ProtectedPreview),
             protection.Unprotect(reference.ProtectedSubmission),
-            protection.Unprotect(reference.ProtectedWorkFolderEvidence), candidate));
+            protection.Unprotect(reference.ProtectedWorkFolderEvidence), candidate), ct);
         var snapshot = new TaxInvoiceSnapshot
         {
             Id = Guid.NewGuid(), FactorId = factorId ?? reference.FactorId, TaxMemoryId = memory.Id,

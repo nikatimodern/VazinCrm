@@ -6,15 +6,24 @@ using CRM.Core.Domain.Taxation;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class TaxPaymentTransport(MoadianClient v2, TaxConnectionSettings settings) : ITaxPaymentTransport
+internal sealed class TaxPaymentTransport(TaxSandboxClients clients, TaxSandboxRouting routing) : ITaxPaymentTransport
 {
-    public Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload, CancellationToken ct)
+    public async Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload, CancellationToken ct)
     {
-        if (v2 is null || settings.ActiveProtocol != TaxAuthorityProtocol.V2 || invoice.Protocol != TaxAuthorityProtocol.V2)
-            throw new ArgumentException("ثبت پرداخت فقط با روش فعال نسخه ۲ در دسترس است.");
-        return v2.PreparePaymentAsync(invoice, attemptId, payload, ct);
+        if (invoice.Environment != TaxAuthorityEnvironment.Sandbox || invoice.Protocol != TaxAuthorityProtocol.V2 ||
+            !await IsAllowedAsync(invoice.MemoryId, ct))
+            throw new ArgumentException("ثبت پرداخت فقط با روش فعال آزمایشی نسخه ۲ در دسترس است.");
+        return await clients.V2.PreparePaymentAsync(invoice, attemptId, payload, ct);
     }
 
-    public Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct) =>
-        settings.WithActiveSendAsync(TaxAuthorityProtocol.V2, () => v2.SubmitPaymentAsync(request, ct), ct);
+    public async Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct)
+    {
+        if (!await IsAllowedAsync(request.MemoryId, ct))
+            throw new TaxTransportException("The selected tax payment transport is no longer available.");
+        return await clients.V2.SubmitPaymentAsync(request, ct);
+    }
+
+    private async Task<bool> IsAllowedAsync(Guid? id, CancellationToken ct) =>
+        await routing.GetActiveProtocolAsync(ct) == TaxAuthorityProtocol.V2 &&
+        await routing.IsAllowedAsync(id, TaxAuthorityProtocol.V2, ct);
 }

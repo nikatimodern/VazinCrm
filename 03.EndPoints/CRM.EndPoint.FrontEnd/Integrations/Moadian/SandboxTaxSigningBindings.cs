@@ -3,11 +3,27 @@ using CRM.Core.Domain.Taxation;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
-internal sealed class SandboxTaxSigningBindings(IConfiguration config, TaxConnectionSettings settings) : ITaxSigningBindings
+internal sealed class SandboxTaxSigningBindings(IConfiguration config, TaxConnectionSettings settings, ITaxMemorySettingsRepository repository) : ITaxSigningBindings
 {
+    public async Task<TaxSigningBinding> GetAsync(Guid memoryId, CancellationToken ct)
+    {
+        var memory = await repository.FindMemoryAsync(memoryId, ct);
+        if (memory?.SellerEconomicCode is not null)
+        {
+            if (memory.Environment != TaxAuthorityEnvironment.Sandbox || string.IsNullOrEmpty(memory.CredentialFingerprint))
+                throw new ArgumentException("تنظیمات اتصال آزمایشی حافظه کامل نیست.");
+            return memory.Protocol == TaxAuthorityProtocol.V1
+                ? new(memory.Environment, null, memory.SellerEconomicCode, memory.Protocol, memory.CredentialFingerprint)
+                : new(memory.Environment, memory.CredentialFingerprint, memory.SellerEconomicCode);
+        }
+        return Get(memoryId);
+    }
+
     public TaxSigningBinding Get(Guid memoryId)
     {
         var profile = settings.Read();

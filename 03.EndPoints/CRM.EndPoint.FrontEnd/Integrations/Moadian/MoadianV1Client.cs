@@ -33,8 +33,7 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
 
         using var privateKey = keys.Open(submission.V1KeyFingerprint);
         var token = await GetTokenAsync(submission.FiscalId, privateKey, ct);
-        using var info = await SyncAsync("GET_SERVER_INFORMATION", new Packet(null, "GET_SERVER_INFORMATION", null),
-            null, null, ct);
+        using var info = await ReadServerInformationAsync(ct);
         var configured = Property(GetResultData(info.RootElement, "SERVER_INFORMATION"), "publicKeys");
         if (configured.ValueKind != JsonValueKind.Array) throw InvalidResponse();
         var candidates = configured.EnumerateArray().Where(key => Text(key, "algorithm") == "RSA" &&
@@ -51,7 +50,7 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         var encrypted = TaxV1Cryptography.Encrypt(submission.Payload, authorityKey);
         var packet = new Packet(attemptId, "INVOICE.V01", encrypted.Data, keyId, encrypted.SymmetricKey, encrypted.Iv,
             submission.FiscalId, TaxV1Cryptography.Sign(invoice.RootElement, privateKey));
-        return new PreparedTaxRequest(attemptId, Build(Enqueue, new[] { packet }, true, token, privateKey, attemptId), TaxAuthorityProtocol.V1);
+        return new PreparedTaxRequest(attemptId, Build(Enqueue, new[] { packet }, true, token, privateKey, attemptId), TaxAuthorityProtocol.V1, submission.MemoryId);
     }
 
     public async Task<TaxAcknowledgement> SendAsync(PreparedTaxRequest request, CancellationToken ct)
@@ -108,6 +107,14 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         if (Text(info, "fiscalStatus") != "ACTIVE" || Text(info, "economicCode") != binding.SellerEconomicCode)
             throw new ArgumentException("حافظه مالیاتی فعال نیست یا شناسه اقتصادی فروشنده با پاسخ سازمان همخوانی ندارد.");
     }
+
+    internal Task<JsonDocument> ReadServerInformationAsync(CancellationToken ct) =>
+        SyncAsync("GET_SERVER_INFORMATION", new Packet(null, "GET_SERVER_INFORMATION", null), null, null, ct);
+
+    internal static bool HasServerInformation(JsonElement response) =>
+        Property(GetResultData(response, "SERVER_INFORMATION"), "publicKeys") is { ValueKind: JsonValueKind.Array } keys &&
+        keys.EnumerateArray().Any(x => Text(x, "algorithm") == "RSA" && Number(x, "purpose") == 1 &&
+            Text(x, "id") is { Length: > 0 } && Text(x, "key") is { Length: > 0 });
 
     internal async Task<string> GetTokenAsync(string fiscalId, RSA key, CancellationToken ct)
     {

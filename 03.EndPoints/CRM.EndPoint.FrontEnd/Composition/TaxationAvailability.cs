@@ -9,7 +9,7 @@ namespace CRM.EndPoint.FrontEnd.Composition;
 internal static class TaxationAvailability
 {
     internal static bool IsLocalEnabled(IWebHostEnvironment environment, IConfiguration configuration) =>
-        environment.IsDevelopment() && configuration.GetValue<bool>("Taxation:EnableLocalPreview");
+        environment.IsDevelopment() && configuration.GetValue("Taxation:EnableLocalPreview", true);
 
     internal static bool TryGetSandboxAddress(IWebHostEnvironment environment, IConfiguration configuration, out Uri address)
         => TryGetSandboxAddress(environment, configuration, TaxAuthorityProtocol.V2, out address);

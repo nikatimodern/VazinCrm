@@ -42,7 +42,7 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
                 header = new { requestTraceId = attemptId, fiscalId = submission.FiscalId },
                 payload = encrypted
             } })
-        });
+        }, memoryId: submission.MemoryId);
     }
 
     public async Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload,
@@ -58,7 +58,7 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
             Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) },
             Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
         };
-        return new PreparedTaxRequest(attemptId, message);
+        return new PreparedTaxRequest(attemptId, message, memoryId: invoice.MemoryId);
     }
 
     public async Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct)
@@ -131,10 +131,15 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
     {
         if (!TaxInvoicePayload.MatchesTaxId(submission.FiscalId, submission.TaxId, submission.InvoiceSerial))
             throw new CryptographicException("Pinned tax invoice identity is invalid.");
-        var certificate = certificates.Open(submission.CertificateSha256);
+        return OpenSigningCertificate(submission.CertificateSha256);
+    }
+
+    private X509Certificate2 OpenSigningCertificate(string fingerprint)
+    {
+        var certificate = certificates.Open(fingerprint);
         var now = clock.GetUtcNow();
         if (certificate.HasPrivateKey &&
-            string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), submission.CertificateSha256, StringComparison.Ordinal) &&
+            string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), fingerprint, StringComparison.Ordinal) &&
             now >= certificate.NotBefore.ToUniversalTime() && now <= certificate.NotAfter.ToUniversalTime())
             return certificate;
         certificate.Dispose();
@@ -190,12 +195,20 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         throw InvalidResponse();
     }
 
-    private async Task<JsonDocument> GetAsync(TaxSubmission submission, X509Certificate2 cert, string path, CancellationToken ct)
+    internal async Task<JsonDocument> CheckServerInformationAsync(TaxMemory memory, Action authenticated, CancellationToken ct)
+    {
+        var credentials = new TaxSubmission(Guid.Empty, memory.FiscalId, memory.Environment, memory.CredentialFingerprint,
+            null, null, null, null, null, TaxDispatchStatus.Pending);
+        using var certificate = OpenSigningCertificate(memory.CredentialFingerprint);
+        return await GetAsync(credentials, certificate, "server-information", ct, authenticated);
+    }
+
+    private async Task<JsonDocument> GetAsync(TaxSubmission submission, X509Certificate2 cert, string path, CancellationToken ct, Action onAccepted = null)
     {
         var token = await AuthenticateAsync(submission, cert, ct);
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return await ExchangeAsync(request, ct);
+        return await ExchangeAsync(request, ct, onAccepted);
     }
 
     private async Task<string> AuthenticateAsync(TaxSubmission submission, X509Certificate2 cert, CancellationToken ct)
@@ -215,13 +228,14 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = submission.FiscalId }), cert, now);
     }
 
-    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct)
+    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct, Action onAccepted = null)
     {
         try
         {
             using var response = await http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
                 throw new TaxTransportException($"Tax authority returned HTTP {(int)response.StatusCode}.");
+            onAccepted?.Invoke();
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         }

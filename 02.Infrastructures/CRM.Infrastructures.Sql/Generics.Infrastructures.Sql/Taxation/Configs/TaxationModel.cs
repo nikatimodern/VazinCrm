@@ -12,8 +12,17 @@ internal static class TaxationModel
         var memory = model.Entity<TaxMemory>();
         memory.Property(x => x.FiscalId).IsRequired().HasMaxLength(6);
         memory.Property(x => x.Title).IsRequired().HasMaxLength(120);
-        memory.HasIndex(x => x.FiscalId).IsUnique();
+        memory.Property(x => x.Environment).HasDefaultValue(TaxAuthorityEnvironment.Sandbox);
+        memory.Property(x => x.Protocol).HasDefaultValue(TaxAuthorityProtocol.V2);
+        memory.Property(x => x.SellerEconomicCode).HasMaxLength(14);
+        memory.Property(x => x.CredentialFingerprint).HasMaxLength(64);
+        memory.HasIndex(x => new { x.Environment, x.FiscalId }).IsUnique();
         memory.HasIndex(x => x.IsActive).IsUnique().HasFilter("[IsActive] = 1");
+
+        var audit = model.Entity<TaxMemoryAuditEvent>();
+        audit.HasOne<TaxMemory>().WithMany().HasForeignKey(x => x.MemoryId).OnDelete(DeleteBehavior.Restrict);
+        audit.Property(x => x.ActorId).IsRequired().HasMaxLength(450);
+        audit.Property(x => x.Operation).IsRequired().HasMaxLength(40);
 
         var mapping = model.Entity<TaxProductMapping>();
         mapping.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);

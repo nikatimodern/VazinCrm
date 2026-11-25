@@ -133,7 +133,7 @@ internal sealed class TaxConnectionSettings : ITaxConnectionSettings, ITaxV1Sign
         }
     }
 
-    private string Import(string pem)
+    internal string Import(string pem, string publicKeyPem = null)
     {
         if (!OperatingSystem.IsWindows())
             throw new ArgumentException("ذخیرهٔ کلید نسخه ۱ به حساب اجرای ویندوز نیاز دارد.");
@@ -153,6 +153,8 @@ internal sealed class TaxConnectionSettings : ITaxConnectionSettings, ITaxV1Sign
             throw new ArgumentException("کلید خصوصی RSA باید حداقل ۲۰۴۸ بیتی باشد.");
 
         var fingerprint = Fingerprint(key);
+        if (publicKeyPem is not null)
+            VerifyPublicKey(publicKeyPem, fingerprint);
         var file = KeyFile(fingerprint);
         byte[] raw;
         try { raw = key.ExportPkcs8PrivateKey(); }
@@ -169,6 +171,24 @@ internal sealed class TaxConnectionSettings : ITaxConnectionSettings, ITaxV1Sign
             CryptographicOperations.ZeroMemory(raw);
         }
     }
+
+    internal static void VerifyPublicKey(string pem, string expected)
+    {
+        if (string.IsNullOrWhiteSpace(pem) || pem.Length > 8192 ||
+            (!pem.Contains("-----BEGIN PUBLIC KEY-----", StringComparison.Ordinal) &&
+             !pem.Contains("-----BEGIN RSA PUBLIC KEY-----", StringComparison.Ordinal)) ||
+            pem.Contains("PRIVATE KEY", StringComparison.Ordinal))
+            throw new ArgumentException("کلید عمومی RSA در قالب PEM وارد کنید.");
+
+        using var key = RSA.Create();
+        try { key.ImportFromPem(pem); }
+        catch (Exception ex) when (ex is ArgumentException or CryptographicException)
+        { throw new ArgumentException("کلید عمومی RSA معتبر نیست."); }
+        if (Fingerprint(key) != expected)
+            throw new ArgumentException("کلید عمومی با کلید خصوصی مطابقت ندارد.");
+    }
+
+    internal static bool IsValidFingerprint(string value) => IsFingerprint(value);
 
     private static string Fingerprint(RSA key) => Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo()));
     private static bool IsFingerprint(string value) => value is { Length: 64 } && value.All(char.IsAsciiHexDigit);

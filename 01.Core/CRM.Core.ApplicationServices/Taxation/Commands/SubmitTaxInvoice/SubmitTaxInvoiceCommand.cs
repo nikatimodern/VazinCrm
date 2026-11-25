@@ -25,7 +25,7 @@ public sealed class SubmitTaxInvoiceCommandHandler(ITaxSubmissionRepository repo
         {
             var filing = request.Filing ?? throw new ArgumentException("اطلاعات صدور صورتحساب اصلی لازم است.");
             var draft = await repository.ReadDraftAsync(request.DispatchId, ct);
-            var profile = bindings.Get(draft.MemoryId);
+            var profile = await bindings.GetAsync(draft.MemoryId, ct);
             var preview = JsonSerializer.Deserialize<InvoicePreview>(draft.Snapshot);
             if (preview is null || preview.FiscalId != draft.FiscalId || preview.MemoryId != draft.MemoryId)
                 throw new CryptographicException("Frozen tax snapshot does not match the dispatch.");

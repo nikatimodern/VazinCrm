@@ -5,6 +5,7 @@ namespace CRM.Core.ApplicationServices.Taxation.Submission;
 public interface ITaxSigningBindings
 {
     TaxSigningBinding Get(Guid memoryId);
+    Task<TaxSigningBinding> GetAsync(Guid memoryId, CancellationToken ct) => Task.FromResult(Get(memoryId));
 }
 
 public interface ITaxAuthorityClient
@@ -15,9 +16,10 @@ public interface ITaxAuthorityClient
     Task<TaxWorkFolderResult?> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct);
 }
 
-public sealed class PreparedTaxRequest(Guid attemptId, HttpRequestMessage message, TaxAuthorityProtocol protocol = TaxAuthorityProtocol.V2) : IDisposable
+public sealed class PreparedTaxRequest(Guid attemptId, HttpRequestMessage message, TaxAuthorityProtocol protocol = TaxAuthorityProtocol.V2, Guid? memoryId = null) : IDisposable
 {
     public TaxAuthorityProtocol Protocol { get; } = protocol;
+    public Guid? MemoryId { get; } = memoryId;
     public Guid AttemptId { get; } = attemptId;
     public HttpRequestMessage Message { get; } = message;
     public void Dispose() => Message.Dispose();

@@ -50,7 +50,7 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
         return new(item.Id, item.FiscalId, item.AuthorityEnvironment.Value, item.CertificateSha256,
             item.TaxId, item.Status == TaxDispatchStatus.Pending ? protection.Unprotect(item.ProtectedSubmission) : null,
             item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial, item.Kind, reference,
-            item.AuthorityProtocol, item.V1KeyFingerprint);
+            item.AuthorityProtocol, item.V1KeyFingerprint, item.MemoryId);
     }
 
     public async Task PinAsync(Guid dispatchId, TaxSigningBinding binding, long serial, string taxId, string payload, CancellationToken ct)

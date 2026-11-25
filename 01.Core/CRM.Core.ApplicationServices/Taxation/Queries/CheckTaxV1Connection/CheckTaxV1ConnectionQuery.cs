@@ -18,7 +18,7 @@ public sealed class CheckTaxV1ConnectionQueryHandler(ITaxationRepository reposit
     {
         var memories = await repository.ListMemoriesAsync(ct);
         var memory = memories.SingleOrDefault(x => x.Id == request.MemoryId) ?? throw new KeyNotFoundException();
-        var binding = bindings.Get(memory.Id);
+        var binding = await bindings.GetAsync(memory.Id, ct);
         if (binding.Protocol != TaxAuthorityProtocol.V1)
             throw new ArgumentException("روش فعال شرکت نسخه ۱ نیست.");
         await probe.CheckAsync(memory.FiscalId, binding, ct);

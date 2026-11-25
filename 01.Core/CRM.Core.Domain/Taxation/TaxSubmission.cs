@@ -15,7 +15,7 @@ public sealed record TaxSubmission(Guid DispatchId, string FiscalId, TaxAuthorit
     string CertificateSha256, string TaxId, string Payload, Guid? AttemptId, DateTimeOffset? StartedAt,
     Guid? ReferenceNumber, TaxDispatchStatus Status, long? InvoiceSerial = null,
     TaxDispatchKind Kind = TaxDispatchKind.Original, TaxSubmissionReference Reference = null,
-    TaxAuthorityProtocol Protocol = TaxAuthorityProtocol.V2, string V1KeyFingerprint = null);
+    TaxAuthorityProtocol Protocol = TaxAuthorityProtocol.V2, string V1KeyFingerprint = null, Guid? MemoryId = null);
 
 public sealed record TaxSubmissionReference(string TaxId, TaxDispatchKind Kind, TaxDispatchStatus Status,
     string WorkFolderEvidence, string EvidenceVersion);

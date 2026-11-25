@@ -440,3 +440,17 @@
     .taxation-page [data-taxation-report-dates] label:not(.form-check) { flex-basis: calc(50% - .4rem); }
     .taxation-page :is(.form-control, .form-select) { min-block-size: 38px; }
 }
+
+.taxation-memory-settings { margin-block-start: .65rem; }
+.taxation-memory-settings .taxation-credential-fields {
+    flex-basis: 100%;
+    padding: .45rem .6rem .6rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .55rem;
+}
+.taxation-memory-settings legend { float: none; width: auto; font-size: .86rem; padding-inline: .2rem; }
+.taxation-connection-check { margin: 0; padding-inline-start: 1.55rem; }
+.taxation-connection-check li { padding-block: .2rem; }
+.taxation-connection-check [data-check-status="Passed"] { color: var(--tax-primary); }
+.taxation-connection-check [data-check-status="Failed"] { color: var(--tax-danger); }
+.taxation-connection-check [data-check-status="Skipped"] { color: var(--tax-muted); }

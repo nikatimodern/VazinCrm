@@ -7179,6 +7179,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CredentialFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Environment")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("FiscalId")
                         .IsRequired()
                         .HasMaxLength(6)
@@ -7186,6 +7195,18 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Protocol")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
+
+                    b.Property<bool>("SandboxEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SellerEconomicCode")
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -7197,14 +7218,45 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FiscalId")
-                        .IsUnique();
-
                     b.HasIndex("IsActive")
                         .IsUnique()
                         .HasFilter("[IsActive] = 1");
 
+                    b.HasIndex("Environment", "FiscalId")
+                        .IsUnique();
+
                     b.ToTable("TaxMemories");
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxMemoryAuditEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("MemoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemoryId");
+
+                    b.ToTable("TaxMemoryAuditEvents");
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxPaymentDispatch", b =>
@@ -8617,6 +8669,15 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.HasOne("CRM.Core.Domain.Taxation.TaxMemory", null)
                         .WithMany()
                         .HasForeignKey("TaxMemoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CRM.Core.Domain.Taxation.TaxMemoryAuditEvent", b =>
+                {
+                    b.HasOne("CRM.Core.Domain.Taxation.TaxMemory", null)
+                        .WithMany()
+                        .HasForeignKey("MemoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
