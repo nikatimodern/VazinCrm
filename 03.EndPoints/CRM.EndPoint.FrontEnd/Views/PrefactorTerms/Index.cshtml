@@ -23,7 +23,10 @@
         }
         <div class="terms-toolbar d-flex flex-wrap align-items-center gap-2">
             <button id="termsAdd" type="button" class="terms-button terms-primary" data-bs-toggle="modal" data-bs-target="#prefactorTermEditor"><i class="fa fa-plus" aria-hidden="true"></i> افزودن بند جدید</button>
-            <input id="prefactorTermSearch" type="search" class="form-control flex-grow-1" style="width:auto" aria-label="جستجو" placeholder="جستجو در متن، اولویت یا ثبت‌کننده..." />
+            <div class="terms-search flex-grow-1">
+                <input id="prefactorTermSearch" type="search" class="form-control" aria-label="جستجو" placeholder="جستجو در متن، اولویت یا ثبت‌کننده..." />
+                <button type="button" id="termsClearSearch" class="terms-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو" hidden><i class="fa fa-times" aria-hidden="true"></i></button>
+            </div>
             <select id="termsSort" class="form-select" style="width:auto" aria-label="مرتب‌سازی">
                 <option value="asc">اولویت: صعودی</option>
                 <option value="desc">اولویت: نزولی</option>
@@ -31,7 +34,6 @@
                 <option value="new">جدیدترین تاریخ ثبت</option>
                 <option value="old">قدیمی‌ترین تاریخ ثبت</option>
             </select>
-            <button type="button" id="termsReset" class="terms-button" title="بازنشانی جستجو و مرتب‌سازی"><i class="fa fa-times" aria-hidden="true"></i> بازنشانی</button>
             <a asp-action="Index" class="terms-button" title="به‌روزرسانی" aria-label="به‌روزرسانی"><i class="fa fa-sync-alt" aria-hidden="true"></i></a>
             <span class="terms-count ms-auto"><i class="fa fa-list-ol" aria-hidden="true"></i> <strong id="prefactorTermCount" aria-live="polite">@Model.Terms.Count</strong> بند</span>
         </div>
