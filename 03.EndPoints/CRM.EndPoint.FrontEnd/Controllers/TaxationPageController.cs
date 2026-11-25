@@ -67,8 +67,14 @@ public sealed class TaxationPageController(ICqrsDispatcher dispatcher, IWebHostE
     {
         if (!TaxationAvailability.IsLocalEnabled(environment, configuration)) return NotFound();
         var memories = await dispatcher.QueryAsync(new ListTaxMemoriesQuery(), ct);
-        return View(new TaxMemoryAdminPage(memories.Select(memory => new TaxMemoryRow(memory,
-            memory.SellerEconomicCode is null ? legacy.DescribeSandbox(memory.Id) : credentials.Describe(memory).Message)).ToArray(), credentials.ListCertificates()));
+        var rows = memories.Select(memory =>
+        {
+            if (memory.SellerEconomicCode is null)
+                return new TaxMemoryRow(memory, legacy.DescribeSandbox(memory.Id));
+            var credential = credentials.Describe(memory);
+            return new TaxMemoryRow(memory, credential.Message, credential.Ready);
+        }).ToArray();
+        return View(new TaxMemoryAdminPage(rows, credentials.ListCertificates()));
     }
 
     [HttpGet("products")]

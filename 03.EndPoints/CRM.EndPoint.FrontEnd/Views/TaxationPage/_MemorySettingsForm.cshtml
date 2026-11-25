@@ -3,55 +3,116 @@
 @{
     var memory = Model.Memory;
     var existing = memory.Id != Guid.Empty;
+    var hasCredential = !string.IsNullOrWhiteSpace(memory.CredentialFingerprint);
 }
-<form method="post" class="taxation-fields taxation-memory-settings" data-admin-action="memory-settings" data-url="@Url.Action("SaveMemorySettings", "Taxation")">
+<form method="post" class="taxation-memory-settings" data-admin-action="memory-settings" data-url="@Url.Action("SaveMemorySettings", "Taxation")">
     <input type="hidden" name="id" value="@(existing ? memory.Id.ToString("D") : null)" />
     <input type="hidden" name="expectedUpdatedUtc" value="@(existing ? DateTime.SpecifyKind(memory.UpdatedUtc, DateTimeKind.Utc).ToString("O") : null)" />
-    <label>عنوان حافظه
-        <input class="form-control form-control-sm" name="title" value="@memory.Title" required maxlength="120" />
-    </label>
-    <label>شناسه یکتای حافظه
-        <input class="form-control form-control-sm" name="fiscalId" value="@memory.FiscalId" required maxlength="6" pattern="[A-Za-z0-9]{6}" dir="ltr" />
-    </label>
-    <label>کد اقتصادی فروشنده
-        <input class="form-control form-control-sm" name="sellerEconomicCode" value="@memory.SellerEconomicCode" required
-               maxlength="14" pattern="[0-9]{11}|[0-9]{14}" inputmode="numeric" dir="ltr" />
-    </label>
-    <label>محیط
-        <select name="environment" class="form-select form-select-sm">
-            <option value="1" selected="@(memory.Environment == TaxAuthorityEnvironment.Sandbox)">آزمایشی</option>
-            <option value="2" selected="@(memory.Environment == TaxAuthorityEnvironment.Production)">عملیاتی (غیرفعال)</option>
-        </select>
-    </label>
-    <label>نسخه اتصال
-        <select name="protocol" class="form-select form-select-sm">
-            <option value="1" selected="@(memory.Protocol == TaxAuthorityProtocol.V1)">V1 — بدون گواهی امضا</option>
-            <option value="2" selected="@(memory.Protocol == TaxAuthorityProtocol.V2)">V2 — با گواهی امضا</option>
-        </select>
-    </label>
-    <label class="form-check" data-sandbox-field>
-        <input type="checkbox" class="form-check-input" name="sandboxEnabled" checked="@memory.SandboxEnabled" /> اجازه اتصال آزمایشی این حافظه
-    </label>
-    <fieldset class="taxation-fields taxation-credential-fields" data-protocol="1" hidden="@(memory.Protocol != TaxAuthorityProtocol.V1)">
-        <legend>کلیدهای RSA</legend>
-        <label>کلید خصوصی (PEM) <input type="file" name="privateKey" accept=".pem,.key" class="form-control form-control-sm" /></label>
-        <label>کلید عمومی متناظر (PEM) <input type="file" name="publicKey" accept=".pem,.pub,.key" class="form-control form-control-sm" /></label>
+
+    <fieldset class="taxation-settings-section">
+        <legend>مشخصات حافظه</legend>
+        <div class="taxation-fields">
+            <label>عنوان حافظه
+                <input class="form-control form-control-sm" name="title" value="@memory.Title" required maxlength="120" />
+            </label>
+            <label>شناسه یکتای حافظه
+                <input class="form-control form-control-sm" name="fiscalId" value="@memory.FiscalId" required minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" dir="ltr" />
+            </label>
+            <label>کد اقتصادی فروشنده
+                <input class="form-control form-control-sm" name="sellerEconomicCode" value="@memory.SellerEconomicCode" required
+                       maxlength="14" pattern="[0-9]{11}|[0-9]{14}" inputmode="numeric" dir="ltr" />
+            </label>
+        </div>
     </fieldset>
-    <fieldset class="taxation-fields taxation-credential-fields" data-protocol="2" hidden="@(memory.Protocol != TaxAuthorityProtocol.V2)">
-        <legend>گواهی ویندوز</legend>
-        <label>گواهی معتبر سرور
-            <select name="certificateSha256" class="form-select form-select-sm">
-                <option value="">انتخاب گواهی یا نصب از فایل</option>
-                @foreach (var cert in Model.Certificates)
-                {
-                    <option value="@cert.Fingerprint" selected="@(memory.CredentialFingerprint == cert.Fingerprint)" disabled="@(!cert.PrivateKeyAccessible)">
-                        @cert.Subject · @cert.Issuer · @cert.ExpiresUtc.ToString("yyyy-MM-dd") · @(cert.PrivateKeyAccessible ? "کلید در دسترس" : "کلید در دسترس نیست")
-                    </option>
-                }
-            </select>
-        </label>
-        <label>نصب PFX/P12 <input type="file" name="pfx" accept=".pfx,.p12" class="form-control form-control-sm" /></label>
-        <label>رمز فایل <input type="password" name="pfxPassword" maxlength="256" autocomplete="new-password" class="form-control form-control-sm" disabled /></label>
+
+    <fieldset class="taxation-settings-section">
+        <legend>محیط و روش اتصال</legend>
+        <div class="taxation-fields">
+            <label>محیط
+                <select name="environment" class="form-select form-select-sm">
+                    <option value="1" selected="@(memory.Environment == TaxAuthorityEnvironment.Sandbox)">آزمایشی</option>
+                    <option value="2" selected="@(memory.Environment == TaxAuthorityEnvironment.Production)">عملیاتی (ثبت تنظیمات)</option>
+                </select>
+            </label>
+            <label>نسخه اتصال
+                <select name="protocol" class="form-select form-select-sm">
+                    <option value="1" selected="@(memory.Protocol == TaxAuthorityProtocol.V1)">V1 — بدون گواهی امضا</option>
+                    <option value="2" selected="@(memory.Protocol == TaxAuthorityProtocol.V2)">V2 — با گواهی امضا</option>
+                </select>
+            </label>
+            <label class="form-check" data-sandbox-field hidden="@(memory.Environment == TaxAuthorityEnvironment.Production)">
+                <input type="checkbox" class="form-check-input" name="sandboxEnabled" checked="@memory.SandboxEnabled" disabled="@(memory.Environment == TaxAuthorityEnvironment.Production)" />
+                اجازه اتصال به محیط آزمایشی
+            </label>
+        </div>
+        <p class="taxation-muted" data-production-help hidden="@(memory.Environment != TaxAuthorityEnvironment.Production)">تنظیمات حافظه عملیاتی قابل ذخیره و بررسی محلی است. فعال‌سازی و تست آنلاین در این نسخه غیرفعال است.</p>
     </fieldset>
-    <button type="submit" class="btn btn-sm taxation-action">@Model.Heading</button>
+
+    <fieldset class="taxation-settings-section" data-protocol="1" hidden="@(memory.Protocol != TaxAuthorityProtocol.V1)" disabled="@(memory.Protocol != TaxAuthorityProtocol.V1)">
+        <legend>کلیدهای اتصال V1</legend>
+        <p class="taxation-muted">@(hasCredential && memory.Protocol == TaxAuthorityProtocol.V1
+            ? "برای نگه داشتن جفت کلید فعلی، ورودی فایل‌ها را خالی بگذارید."
+            : "فایل کلید خصوصی و فایل کلید عمومی متناظر را انتخاب کنید.")</p>
+        <div class="taxation-upload-row">
+            <label class="taxation-upload">
+                <input type="file" name="privateKey" accept=".pem,.key" aria-label="انتخاب فایل کلید خصوصی PEM" />
+                <span><strong>کلید خصوصی</strong><span class="taxation-muted"> · PEM</span></span>
+                <span class="taxation-upload-action"><i class="fas fa-upload" aria-hidden="true"></i> انتخاب فایل</span>
+                <bdi class="taxation-upload-file" data-file-name aria-live="polite">فایلی انتخاب نشده</bdi>
+            </label>
+            <label class="taxation-upload">
+                <input type="file" name="publicKey" accept=".pem,.pub,.key" aria-label="انتخاب فایل کلید عمومی PEM" />
+                <span><strong>کلید عمومی</strong><span class="taxation-muted"> · PEM</span></span>
+                <span class="taxation-upload-action"><i class="fas fa-upload" aria-hidden="true"></i> انتخاب فایل</span>
+                <bdi class="taxation-upload-file" data-file-name aria-live="polite">فایلی انتخاب نشده</bdi>
+            </label>
+        </div>
+    </fieldset>
+
+    <fieldset class="taxation-settings-section" data-protocol="2" hidden="@(memory.Protocol != TaxAuthorityProtocol.V2)" disabled="@(memory.Protocol != TaxAuthorityProtocol.V2)">
+        <legend>گواهی اتصال V2</legend>
+        <div class="taxation-certificate-choice">
+            <label>انتخاب گواهی از مخزن ویندوز
+                <select name="certificateSha256" class="form-select form-select-sm">
+                    <option value="">گواهی را انتخاب کنید</option>
+                    @foreach (var cert in Model.Certificates)
+                    {
+                        <option value="@cert.Fingerprint" data-issuer="@cert.Issuer" data-expires="@cert.ExpiresUtc.ToString("yyyy-MM-dd")"
+                                selected="@(memory.CredentialFingerprint == cert.Fingerprint)" disabled="@(!cert.PrivateKeyAccessible)">
+                            @cert.Subject@(cert.PrivateKeyAccessible ? "" : " · کلید در دسترس نیست")
+                        </option>
+                    }
+                </select>
+            </label>
+            <p class="taxation-muted" data-certificate-detail hidden></p>
+            @if (Model.Certificates.Count == 0)
+            {
+                <p class="taxation-muted">گواهی معتبری در مخزن سرور پیدا نشد. در صورت داشتن مجوز، از فایل گواهی استفاده کنید.</p>
+            }
+        </div>
+        <div class="taxation-pfx-path">
+            <p class="taxation-muted">برای نصب گواهی جدید از فایل PFX/P12 استفاده کنید.</p>
+            <div class="taxation-upload-row">
+                <label class="taxation-upload">
+                    <input type="file" name="pfx" accept=".pfx,.p12" aria-label="انتخاب فایل گواهی PFX یا P12" />
+                    <strong>فایل گواهی</strong>
+                    <span class="taxation-upload-action"><i class="fas fa-upload" aria-hidden="true"></i> انتخاب فایل</span>
+                    <bdi class="taxation-upload-file" data-file-name aria-live="polite">فایلی انتخاب نشده</bdi>
+                </label>
+                <label class="taxation-pfx-password" data-pfx-password hidden>رمز فایل گواهی
+                    <input type="password" name="pfxPassword" maxlength="256" autocomplete="new-password" class="form-control form-control-sm" disabled />
+                </label>
+            </div>
+        </div>
+    </fieldset>
+
+    <footer class="taxation-memory-form-footer">
+        @if (!Context.Request.IsHttps)
+        {
+            <p class="taxation-muted">بارگذاری کلید خصوصی و فایل گواهی به HTTPS نیاز دارد.</p>
+        }
+        <p class="taxation-muted" data-file-pending role="status" hidden>فایل انتخاب شده است. برای ثبت آن، فرم را ذخیره کنید.</p>
+        <p class="taxation-error" data-form-status role="alert" hidden></p>
+        <button type="submit" class="btn btn-sm taxation-action"><i class="fas fa-save" aria-hidden="true"></i> @Model.Heading</button>
+    </footer>
 </form>

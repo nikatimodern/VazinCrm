@@ -42,7 +42,8 @@ public sealed partial class TaxationSqlTests
 
         var productionId = await repo.SaveSettingsAsync(first with
         {
-            Id = null, Environment = TaxAuthorityEnvironment.Production, ExpectedUpdatedUtc = null
+            Id = null, Environment = TaxAuthorityEnvironment.Production, Protocol = TaxAuthorityProtocol.V1,
+            ExpectedUpdatedUtc = null
         }, "admin-test", Ct);
         await Assert.ThrowsAsync<ArgumentException>(() => repo.ActivateAsync(productionId, Ct));
         Assert.Equal(memory.Id, (await repo.FindActiveMemoryAsync(Ct)).Id);
@@ -58,11 +59,16 @@ public sealed partial class TaxationSqlTests
             using var sales = TaxationHttpTestHost.Connect(app, "sales");
             using var forbidden = await sales.GetAsync("/Taxation/memories", Ct);
             Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
-            var page = await GetPageAsync(browser, "/Taxation/memories");
-            Assert.Contains("تست اتصال", page);
-            Assert.Contains("V1", page);
-            Assert.Contains("PFX/P12", page);
+            var page = await GetPageAsync(browser, $"/Taxation/memories?saved={memory.Id:D}");
+            Assert.Contains("تنظیمات حافظه ذخیره شد.", page);
+            Assert.Contains("جفت کلید ثبت شده", page);
+            Assert.Contains("گواهی ثبت شده", page);
+            Assert.Contains("انتخاب فایل کلید خصوصی PEM", page);
+            Assert.Contains("انتخاب فایل گواهی PFX یا P12", page);
+            Assert.Contains("تست اتصال آزمایشی", page);
+            Assert.Contains("بررسی تنظیمات و کلید یا گواهی", page);
             var result = await PostAsync<TaxConnectionStep[]>(browser, $"/api/taxation/memories/{productionId:D}/check-connection", null);
+            Assert.Equal("Passed", result[0].Status);
             Assert.Equal("Skipped", result[2].Status);
             Assert.Equal(0, authority.InvoicePosts);
         }

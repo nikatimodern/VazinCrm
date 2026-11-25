@@ -21,19 +21,25 @@ internal sealed class TaxConnectionCheck(TaxSandboxClients clients, ITaxMemoryCr
     {
         var steps = new ConnectionSteps();
         var sandbox = memory.Environment == TaxAuthorityEnvironment.Sandbox;
-        var configured = sandbox && !string.IsNullOrWhiteSpace(memory.SellerEconomicCode) &&
-            Enum.IsDefined(memory.Protocol);
-        steps.Record(0, configured, configured ? "تنظیمات حافظه آزمایشی معتبر است." :
-            sandbox ? "تنظیمات حافظه را کامل کنید." : "آزمون آنلاین محیط عملیاتی غیرفعال است.");
+        var configured = !string.IsNullOrWhiteSpace(memory.Title) &&
+            memory.FiscalId is { Length: 6 } fiscalId && fiscalId.All(char.IsAsciiLetterOrDigit) &&
+            memory.SellerEconomicCode is { Length: 11 or 14 } seller && seller.All(char.IsAsciiDigit) &&
+            Enum.IsDefined(memory.Environment) && Enum.IsDefined(memory.Protocol);
+        steps.Record(0, configured, configured ? "قالب تنظیمات ذخیره‌شده معتبر است." : "تنظیمات حافظه را کامل کنید.");
 
         var credential = credentials.Describe(memory);
         steps.Record(1, credential.Ready, credential.Message);
+        if (!sandbox)
+        {
+            steps.SkipOnline("اتصال آنلاین محیط عملیاتی غیرفعال است.");
+            return steps.Results;
+        }
         if (!configured || !credential.Ready)
             return steps.Results;
 
         if (!await access.IsAllowedAsync(memory.Id, memory.Protocol, ct))
         {
-            steps.Record(2, false, "ابتدا ارتباط آزمایشی این حافظه را فعال کنید.");
+            steps.SkipOnline("این بررسی به اجرای ERP در محیط توسعه و اجازه اتصال آزمایشی این حافظه نیاز دارد.");
             return steps.Results;
         }
 
@@ -86,5 +92,10 @@ internal sealed class TaxConnectionCheck(TaxSandboxClients clients, ITaxMemoryCr
         internal IReadOnlyList<TaxConnectionStep> Results => steps;
         internal void Record(int index, bool passed, string message) =>
             steps[index] = new(Names[index], passed ? "Passed" : "Failed", message);
+        internal void SkipOnline(string message)
+        {
+            for (var index = 2; index < steps.Length; index++)
+                steps[index] = new(Names[index], "Skipped", message);
+        }
     }
 }

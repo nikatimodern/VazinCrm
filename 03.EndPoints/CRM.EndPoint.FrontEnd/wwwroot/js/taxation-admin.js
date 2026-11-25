@@ -22,8 +22,27 @@
         const visibleEnvironment = form.querySelector("select[name=environment]");
         const sandbox = visibleEnvironment.value === "1";
         form.querySelector("[data-sandbox-field]").hidden = !sandbox;
+        form.querySelector("[data-production-help]").hidden = sandbox;
         fields.sandboxEnabled.disabled = !sandbox;
-        fields.pfxPassword.disabled = !fields.pfx.files.length;
+        const hasPfx = fields.protocol.value === "2" && fields.pfx.files.length > 0;
+        form.querySelector("[data-pfx-password]").hidden = !hasPfx;
+        fields.pfxPassword.disabled = !hasPfx;
+
+        let hasPendingFile = false;
+        for (const box of form.querySelectorAll(".taxation-upload")) {
+            const input = box.querySelector("input");
+            const file = input.files[0];
+            box.dataset.selected = Boolean(file);
+            box.querySelector("[data-file-name]").textContent = file ? file.name : "فایلی انتخاب نشده";
+            hasPendingFile ||= Boolean(file && !input.matches(":disabled"));
+        }
+        form.querySelector("[data-file-pending]").hidden = !hasPendingFile;
+
+        const certificate = fields.certificateSha256.selectedOptions[0];
+        const detail = form.querySelector("[data-certificate-detail]");
+        detail.hidden = !certificate?.value || hasPfx;
+        detail.textContent = hasPfx || !certificate?.value ? "" :
+            `صادرکننده ${certificate.dataset.issuer} · انقضا ${certificate.dataset.expires}`;
     }
 
     for (const form of root.querySelectorAll('[data-admin-action="memory-settings"]')) {
@@ -81,10 +100,26 @@
         if (busy) return;
 
         const fields = Object.fromEntries(new FormData(form));
+        const isCheck = action === "memory-check";
+        const card = isCheck ? form.closest("article") : null;
+        const inline = card?.querySelector("[data-connection-feedback]") ?? form.querySelector("[data-form-status]");
+        function showError(text) {
+            const target = inline ?? status;
+            target.textContent = text;
+            if (inline) {
+                status.textContent = "";
+                target.hidden = false;
+            }
+        }
+        if (inline) inline.hidden = true;
         busy = true;
         const button = form.querySelector("button[type=submit]");
         button.disabled = true;
-        status.textContent = "در حال ثبت…";
+        if (isCheck) {
+            card.querySelector("[data-connection-results]").hidden = true;
+            inline.textContent = "در حال بررسی…";
+            inline.hidden = false;
+        } else status.textContent = "در حال ثبت…";
         try {
             const data = action === "memory-settings" ? await settingsData(fields) : action === "state" || action === "memory-check" ? null : action === "memory"
                 ? { id: fields.id || null, fiscalId: fields.fiscalId, title: fields.title }
@@ -95,19 +130,27 @@
                 onError: error => {
                     if (signal.aborted) return;
                     const response = error.response?.data;
-                    status.textContent = typeof response === "string" && !response.trimStart().startsWith("<")
-                        ? response : "ذخیره انجام نشد. اطلاعات واردشده را بررسی کنید.";
+                    showError(typeof response === "string" && !response.trimStart().startsWith("<")
+                        ? response : "عملیات انجام نشد. اطلاعات واردشده را بررسی کنید.");
                 }
             });
             if (result && !signal.aborted) {
-                if (action === "memory-check" && Array.isArray(result)) {
-                    showCheck(form, result);
-                    status.textContent = "";
+                if (isCheck) {
+                    if (Array.isArray(result) && result.length) {
+                        showCheck(form, result);
+                        inline.hidden = true;
+                    } else showError("نتیجه بررسی دریافت نشد.");
+                } else if (action === "memory-settings") {
+                    const destination = new URL(window.location.href);
+                    destination.searchParams.set("saved", result);
+                    destination.hash = "tax-memory-" + result;
+                    if (destination.href === window.location.href) window.location.reload();
+                    else window.location.replace(destination.href);
                 } else window.location.reload();
             }
         } catch (error) {
-            if (!signal.aborted) status.textContent = action === "memory-settings" && error.message
-                ? error.message : "عملیات انجام نشد.";
+            if (!signal.aborted) showError(action === "memory-settings" && error.message
+                ? error.message : "عملیات انجام نشد.");
         } finally {
             busy = false;
             button.disabled = false;

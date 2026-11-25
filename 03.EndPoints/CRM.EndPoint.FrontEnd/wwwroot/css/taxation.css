@@ -441,14 +441,147 @@
     .taxation-page :is(.form-control, .form-select) { min-block-size: 38px; }
 }
 
-.taxation-memory-settings { margin-block-start: .65rem; }
-.taxation-memory-settings .taxation-credential-fields {
-    flex-basis: 100%;
-    padding: .45rem .6rem .6rem;
+/* Memory configuration */
+.taxation-memory-add summary,
+.taxation-memory-edit summary {
+    cursor: pointer;
+    color: var(--tax-primary);
+    font-weight: 700;
+}
+
+.taxation-memory-add summary:focus-visible,
+.taxation-memory-edit summary:focus-visible {
+    outline: 2px solid var(--tax-action);
+    outline-offset: .2rem;
+}
+
+.taxation-memory-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .65rem;
+    color: var(--tax-muted);
+    font-size: .88rem;
+}
+
+.taxation-memory-card { scroll-margin-block-start: 5rem; }
+
+.taxation-page .taxation-memory-feedback,
+.taxation-memory-credential {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: .65rem .75rem;
+    border: 1px solid var(--tax-border);
+    border-radius: .55rem;
+    background: var(--tax-bg);
+}
+
+.taxation-page .taxation-memory-feedback,
+.taxation-memory-credential[data-ready="true"] {
+    background: var(--tax-success-light);
+    color: var(--tax-primary);
+}
+
+.taxation-memory-credential p {
+    margin-block-start: .2rem;
+    font-size: .86rem;
+}
+
+.taxation-memory-edit {
+    padding-block-start: .55rem;
+    border-block-start: 1px solid var(--tax-border);
+}
+
+.taxation-memory-settings {
+    display: grid;
+    gap: .6rem;
+    margin-block-start: .55rem;
+}
+
+.taxation-memory-settings .taxation-settings-section {
+    min-inline-size: 0;
+    margin: 0;
+    padding: .55rem .7rem .7rem;
     border: 1px solid var(--tax-border);
     border-radius: .55rem;
 }
-.taxation-memory-settings legend { float: none; width: auto; font-size: .86rem; padding-inline: .2rem; }
+
+.taxation-settings-section legend {
+    float: none;
+    width: auto;
+    margin: 0;
+    padding-inline: .3rem;
+    color: var(--tax-primary);
+    font-size: .91rem;
+    font-weight: 700;
+}
+
+.taxation-settings-section .taxation-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: .45rem .75rem;
+}
+
+.taxation-page .taxation-settings-section .taxation-fields label { max-inline-size: none; }
+
+.taxation-upload-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: .55rem;
+    margin-block-start: .45rem;
+}
+
+.taxation-upload {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .25rem .5rem;
+    padding: .55rem .65rem;
+    border: 1px dashed var(--tax-action);
+    border-radius: .55rem;
+    background: var(--tax-surface);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.taxation-upload input[type="file"] {
+    display: block;
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.taxation-upload:hover,
+.taxation-upload[data-selected="true"] { background: var(--tax-success-light); }
+
+.taxation-upload:focus-within { outline: 2px solid var(--tax-action); outline-offset: 2px; }
+
+.taxation-upload-action { color: var(--tax-action); font-weight: 700; }
+
+.taxation-upload-file {
+    grid-column: 1 / -1;
+    color: var(--tax-muted);
+    font-size: .83rem;
+    overflow-wrap: anywhere;
+}
+
+.taxation-certificate-choice label,
+.taxation-pfx-password { display: grid; align-content: start; gap: .25rem; font-size: .88rem; }
+
+.taxation-certificate-choice > p { margin-block-start: .35rem; }
+
+.taxation-pfx-path {
+    margin-block-start: .55rem;
+    padding-block-start: .55rem;
+    border-block-start: 1px solid var(--tax-border);
+}
+
+.taxation-memory-form-footer { display: grid; justify-items: start; gap: .4rem; }
+.taxation-memory-form-footer [data-form-status] { max-inline-size: 100%; overflow-wrap: anywhere; }
 .taxation-connection-check { margin: 0; padding-inline-start: 1.55rem; }
 .taxation-connection-check li { padding-block: .2rem; }
 .taxation-connection-check [data-check-status="Passed"] { color: var(--tax-primary); }

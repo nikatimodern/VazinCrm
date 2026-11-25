@@ -59,8 +59,16 @@ public sealed class TaxMemorySettingsTests
         var check = new TaxConnectionCheck(clients, new MockCredentials(), new Access(false));
         var production = Memory(TaxAuthorityProtocol.V2);
         production.Environment = TaxAuthorityEnvironment.Production;
-        Assert.Equal("Skipped", (await check.CheckAsync(production, default))[2].Status);
-        Assert.Equal("Failed", (await check.CheckAsync(Memory(TaxAuthorityProtocol.V1), default))[2].Status);
+        var productionResults = await check.CheckAsync(production, default);
+        Assert.Equal(["Passed", "Passed", "Skipped", "Skipped", "Skipped"], productionResults.Select(x => x.Status));
+        Assert.Contains("عملیاتی", productionResults[2].Message);
+
+        var sandboxResults = await check.CheckAsync(Memory(TaxAuthorityProtocol.V1), default);
+        Assert.Equal(["Passed", "Passed", "Skipped", "Skipped", "Skipped"], sandboxResults.Select(x => x.Status));
+        Assert.Contains("آزمایشی", sandboxResults[2].Message);
+
+        production.SellerEconomicCode = "invalid";
+        Assert.Equal("Failed", (await check.CheckAsync(production, default))[0].Status);
     }
 
     [Fact]
@@ -86,7 +94,7 @@ public sealed class TaxMemorySettingsTests
 
     private static TaxMemory Memory(TaxAuthorityProtocol protocol) => new()
     {
-        Id = Guid.NewGuid(), FiscalId = FiscalId, SellerEconomicCode = Seller, CredentialFingerprint = new string('A', 64),
+        Id = Guid.NewGuid(), Title = "Tax memory", FiscalId = FiscalId, SellerEconomicCode = Seller, CredentialFingerprint = new string('A', 64),
         Protocol = protocol, SandboxEnabled = true
     };
 
