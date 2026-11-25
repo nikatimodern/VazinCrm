@@ -802,3 +802,89 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
         animation: none !important;
     }
 }
+
+
+/* Compact desktop rail: all icon frames share one horizontal centerline.
+   Scope to the collapsed desktop sidebar; expanded and mobile layouts stay intact. */
+@media (min-width: 768px) {
+    html.sidebar-collapsed #desktopSidebar {
+        width: 56px !important;
+        align-items: center;
+    }
+    html.sidebar-collapsed #mainWrapper {
+        margin-right: 56px;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuHeader {
+        width: 100%;
+        padding-inline: 0;
+        justify-content: center;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuHeader > a {
+        margin-inline: auto;
+    }
+    html.sidebar-collapsed #desktopNavbar {
+        width: 100%;
+        padding: 5px 4px;
+        scrollbar-width: none;
+    }
+    html.sidebar-collapsed #desktopNavbar::-webkit-scrollbar {
+        display: none;
+    }
+    html.sidebar-collapsed #desktopNavbar > .menu-list,
+    html.sidebar-collapsed #desktopNavbar .has-submenu,
+    html.sidebar-collapsed #desktopNavbar .menu-entry,
+    html.sidebar-collapsed #desktopNavbar .menu-favorite-row,
+    html.sidebar-collapsed #desktopNavbar .menu-favorites-panel,
+    html.sidebar-collapsed #desktopNavbar .menu-search-row {
+        width: 100%;
+        min-width: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-favorite-row {
+        padding-inline: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item,
+    html.sidebar-collapsed #desktopNavbar .menu-search-row .menu-search-trigger,
+    html.sidebar-collapsed #desktopFixedActions .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        padding-inline: 0;
+        margin-inline: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item > .menu-icon-frame,
+    html.sidebar-collapsed #desktopFixedActions .menu-item > .menu-icon-frame {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        margin-inline: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    html.sidebar-collapsed #desktopFixedActions {
+        width: 100%;
+        padding: 4px;
+        align-items: center;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-entry {
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter {
+        width: 100%;
+        padding: 6px 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter .ownerCompany-link {
+        width: 100%;
+        justify-content: center;
+        margin: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter .ownerCompany-logo {
+        width: 27px;
+    }
+}
