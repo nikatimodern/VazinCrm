@@ -29,8 +29,10 @@ public sealed record TaxAcknowledgement(Guid ReferenceNumber, string Evidence);
 public sealed record TaxProcessingResult(Guid? ReferenceNumber, string Status, string Evidence);
 public sealed record TaxWorkFolderResult(string? InvoiceStatus, string? Article6Status, string? Error, string Evidence);
 
-public sealed class TaxTransportException(string message, int? httpStatusCode = null, bool timedOut = false) : Exception(message)
+public sealed class TaxTransportException(string message, int? httpStatusCode = null, bool timedOut = false,
+    string? authorityErrorCode = null) : Exception(message)
 {
     public int? HttpStatusCode { get; } = httpStatusCode;
     public bool TimedOut { get; } = timedOut;
+    public string? AuthorityErrorCode { get; } = authorityErrorCode;
 }

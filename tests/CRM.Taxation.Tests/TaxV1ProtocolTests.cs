@@ -28,6 +28,47 @@ public sealed class TaxV1ProtocolTests
     }
 
     [Fact]
+    public void RequestNormalizationMatchesIndependentOpenSslGetTokenVector()
+    {
+        using var packet = JsonDocument.Parse("""
+            {"uid":null,"packetType":"GET_TOKEN","retry":false,"data":{"username":"ABC123"},
+             "encryptionKeyId":"","symmetricKey":"","iv":"","fiscalId":"","dataSignature":""}
+            """);
+        var headers = new Dictionary<string, string>
+        {
+            ["timestamp"] = "1655185848687",
+            ["requestTraceId"] = "00112233-4455-4677-8899-aabbccddeeff"
+        };
+        const string expected = "ABC123#########GET_TOKEN#00112233-4455-4677-8899-aabbccddeeff#false###1655185848687##";
+        // Generated with OpenSSL dgst -sha256 and a throwaway 2048-bit RSA key.
+        const string signature = "Z3wxFetGqqq8dMTbLFYqtSGK3be645yTA1x9nKWMKt3YPFHbYoSsKLXSCnGjEwfAQP3VCvMvBZTcEwB7jzZ+L6LpYXazNJd4x26VVvSrBt5Ra2c49yEEPUkPvm0yeJxhOJ/OdLbGBp+4eipIPSvWEQC1Cpm4vjvADPT9Qe0yJHSZfUCH8O54EAIqYo8iXndSQ3QShxxgNW3Wa+3PRott11yD4iH110f6pux9bJPQWZQEajbFqtyBAo2xThX2j7Hn83e4S4Vlb69NLnVWrw0HojRM2sNaLibquLUdyrVNNO0YhZtTo8QU0P33SkT/AjAqOykOsnXADoqE2Fqh8nEszg==";
+        using var signer = RSA.Create();
+        signer.ImportFromPem("""
+            -----BEGIN PUBLIC KEY-----
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxXp/J/18WvArZRFkWjR3
+            9du8HInFEPhY68kJ0A/DmLUlw8L6ng4ZXiva1hwu0CC+CXxZWPf25J1WnNkT3Iey
+            Rtxu/XAXTd5sID7UOTyYjWF8DLenS8SpikJDft/4/DxskpbnqqfyaYn2VmZa4ehr
+            tbH37WbK6EdnGoiSifb+RUfoGjDy2X7yKSTRY0nPINudviASpk2/j8tQFSJa0AWz
+            JElZZWU10Uf7iOBuhqFBgFSynMNB9YIW2RAYZEy3npYqKpTCF+5EaA3Q7CcO7n1+
+            BLDJlLQPf6Q0fL+vzFMJNFVAUHe3a4dVN/Ecr7iUaMBX9nR8plmH1AZwBV9wPVXX
+            hQIDAQAB
+            -----END PUBLIC KEY-----
+            """);
+        var normalized = TaxV1Cryptography.Normalize(packet.RootElement, headers);
+        Assert.Equal(expected, normalized);
+        VerifySignature(signer, normalized, signature);
+    }
+
+    [Fact]
+    public void NormalizationUsesFullPathsAndKeepsTwoDigitArrayIndexesInOrder()
+    {
+        using var payload = JsonDocument.Parse("""
+            {"data":{"zz":"last","z":"first"},"data.zoo":"middle","packets":[0,1,2,3,4,5,6,7,8,9,10,11]}
+            """);
+        Assert.Equal("first#middle#last#0#1#2#3#4#5#6#7#8#9#10#11", TaxV1Cryptography.Normalize(payload.RootElement));
+    }
+
+    [Fact]
     public async Task SendsSignedEncryptedPacketAndKeepsReceiptSeparateFromProcessing()
     {
         using var signer = RSA.Create(2048);
@@ -45,18 +86,22 @@ public sealed class TaxV1ProtocolTests
             {
                 Assert.Equal(FiscalId, body.GetProperty("packet").GetProperty("data").GetProperty("username").GetString());
                 Assert.Null(request.Headers.Authorization);
-                VerifyEnvelope(request, body, "packet", signer);
+                VerifySyncEnvelope(request, body, signer, FiscalId, "");
                 return Token();
             }
             if (path.EndsWith("/GET_SERVER_INFORMATION"))
+            {
+                Assert.Null(request.Headers.Authorization);
+                Assert.False(body.TryGetProperty("signature", out _));
                 return Reply(new { result = new { packetType = "SERVER_INFORMATION", data = new { publicKeys = new[] {
                     new { id = "server-key", algorithm = "RSA", purpose = 1, key = Convert.ToBase64String(authority.ExportSubjectPublicKeyInfo()) } } } } });
+            }
             if (path.EndsWith("/normal-enqueue"))
             {
                 Assert.Equal("mock-token", request.Headers.Authorization?.Parameter);
                 Assert.Equal(attempt.ToString("D"), request.Headers.GetValues("requestTraceId").Single());
-                VerifyEnvelope(request, body, "packets", signer);
                 var packet = body.GetProperty("packets")[0];
+                Assert.Equal(JsonValueKind.Null, body.GetProperty("signatureKeyId").ValueKind);
                 Assert.Equal(attempt, packet.GetProperty("uid").GetGuid());
                 Assert.Equal("INVOICE.V01", packet.GetProperty("packetType").GetString());
                 Assert.Equal(FiscalId, packet.GetProperty("fiscalId").GetString());
@@ -67,12 +112,17 @@ public sealed class TaxV1ProtocolTests
                 Assert.Equal(32, Convert.FromHexString(Encoding.ASCII.GetString(secret)).Length);
                 Assert.Equal(16, Convert.FromHexString(packet.GetProperty("iv").GetString()!).Length);
                 Assert.Equal(Encoding.UTF8.GetByteCount(Invoice) + 16, Convert.FromBase64String(packet.GetProperty("data").GetString()!).Length);
-                using var source = JsonDocument.Parse(Invoice);
-                Assert.Equal(TaxV1Cryptography.Sign(source.RootElement, signer), packet.GetProperty("dataSignature").GetString());
+                var packetSignature = packet.GetProperty("dataSignature").GetString()!;
+                VerifySignature(signer, $"1.25#کالا ## الف#1#1#{TaxId}", packetSignature);
+                var envelope = string.Join('#', "mock-token", packet.GetProperty("data").GetString()!, packetSignature,
+                    "server-key", FiscalId, packet.GetProperty("iv").GetString()!, "INVOICE.V01", "false",
+                    packet.GetProperty("symmetricKey").GetString()!, attempt.ToString("D"), Trace(request), Timestamp(request));
+                VerifySignature(signer, envelope, body.GetProperty("signature").GetString()!);
                 return Reply(new { result = new[] { new { uid = attempt, referenceNumber = receipt } } });
             }
             Assert.EndsWith("/INQUIRY_BY_REFERENCE_NUMBER", path);
             Assert.Equal(receipt, body.GetProperty("packet").GetProperty("data").GetProperty("referenceNumber")[0].GetGuid());
+            VerifySyncEnvelope(request, body, signer, receipt.ToString("D"), FiscalId);
             return Inquiry(attempt, receipt, "SUCCESS", "SUCCESS");
         });
         var client = new MoadianV1Client(http, new Keys(signer), TimeProvider.System);
@@ -102,6 +152,7 @@ public sealed class TaxV1ProtocolTests
             var data = body.RootElement.GetProperty("packet").GetProperty("data")[0];
             Assert.Equal(attempt, data.GetProperty("uid").GetGuid());
             Assert.Equal(FiscalId, data.GetProperty("fiscalId").GetString());
+            VerifySyncEnvelope(request, body.RootElement, signer, $"{FiscalId}#{attempt:D}", "");
             return Inquiry(attempt, Guid.NewGuid(), status, null);
         });
         var result = await new MoadianV1Client(http, new Keys(signer), TimeProvider.System)
@@ -115,13 +166,19 @@ public sealed class TaxV1ProtocolTests
     {
         using var signer = RSA.Create(2048);
         var calls = 0;
-        using var http = Http(request =>
+        using var http = Http(async request =>
         {
             calls++;
-            if (request.RequestUri!.AbsolutePath.EndsWith("/GET_TOKEN")) return Task.FromResult(Token());
+            using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync());
+            if (request.RequestUri!.AbsolutePath.EndsWith("/GET_TOKEN"))
+            {
+                VerifySyncEnvelope(request, body.RootElement, signer, FiscalId, "");
+                return Token();
+            }
             Assert.EndsWith("/GET_FISCAL_INFORMATION", request.RequestUri.AbsolutePath);
-            return Task.FromResult(Reply(new { result = new { packetType = "FISCAL_INFORMATION",
-                data = new { fiscalStatus = "ACTIVE", economicCode = Seller } } }));
+            VerifySyncEnvelope(request, body.RootElement, signer, "#", FiscalId);
+            return Reply(new { result = new { packetType = "FISCAL_INFORMATION",
+                data = new { fiscalStatus = "ACTIVE", economicCode = Seller } } });
         });
         var client = new MoadianV1Client(http, new Keys(signer), TimeProvider.System);
         await client.VerifyIdentityAsync(FiscalId, new(TaxAuthorityEnvironment.Sandbox, null, Seller,
@@ -186,17 +243,33 @@ public sealed class TaxV1ProtocolTests
         finally { temp.Delete(recursive: true); }
     }
 
-    private static void VerifyEnvelope(HttpRequestMessage request, JsonElement body, string name, RSA signer)
+    private static void VerifySyncEnvelope(HttpRequestMessage request, JsonElement body, RSA signer, string data, string fiscalId)
     {
-        var fields = new Dictionary<string, object>
+        var packet = body.GetProperty("packet");
+        Assert.Equal(fiscalId, packet.GetProperty("fiscalId").GetString());
+        Assert.Equal(JsonValueKind.Null, packet.GetProperty("uid").ValueKind);
+        Assert.False(body.TryGetProperty("signatureKeyId", out _));
+        var trace = Trace(request);
+        Assert.True(Guid.TryParseExact(trace, "D", out _));
+        var timestamp = Timestamp(request);
+        Assert.True(long.TryParse(timestamp, out var milliseconds) && milliseconds > 1_000_000_000_000);
+        var operation = packet.GetProperty("packetType").GetString();
+        var normalized = string.Join('#', data, "#", "#", fiscalId.Length == 0 ? "#" : fiscalId, "#",
+            operation, trace, "false", "#", timestamp, "#");
+        if (request.Headers.Authorization is { } auth)
         {
-            [name] = body.GetProperty(name),
-            ["requestTraceId"] = request.Headers.GetValues("requestTraceId").Single(),
-            ["timestamp"] = request.Headers.GetValues("timestamp").Single()
-        };
-        if (request.Headers.Authorization is { } auth) fields["Authorization"] = auth.Parameter!;
-        Assert.Equal(TaxV1Cryptography.Sign(JsonSerializer.SerializeToElement(fields), signer), body.GetProperty("signature").GetString());
+            Assert.Equal("Bearer", auth.Scheme);
+            normalized = auth.Parameter + "#" + normalized;
+        }
+        VerifySignature(signer, normalized, body.GetProperty("signature").GetString()!);
     }
+
+    private static void VerifySignature(RSA signer, string normalized, string signature) =>
+        Assert.True(signer.VerifyData(Encoding.UTF8.GetBytes(normalized), Convert.FromBase64String(signature),
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1), "Signature did not match the independent signing input.");
+
+    private static string Trace(HttpRequestMessage request) => request.Headers.GetValues("requestTraceId").Single();
+    private static string Timestamp(HttpRequestMessage request) => request.Headers.GetValues("timestamp").Single();
 
     private static TaxSubmission Submission() => new(Guid.NewGuid(), FiscalId, TaxAuthorityEnvironment.Sandbox, null,
         TaxId, Invoice, null, null, null, TaxDispatchStatus.Pending, InvoiceSerial: Serial, Protocol: TaxAuthorityProtocol.V1, V1KeyFingerprint: "key");

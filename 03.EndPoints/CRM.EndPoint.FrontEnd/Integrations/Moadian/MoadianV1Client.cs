@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -50,7 +51,7 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         var encrypted = TaxV1Cryptography.Encrypt(submission.Payload, authorityKey);
         var packet = new Packet(attemptId, "INVOICE.V01", encrypted.Data, keyId, encrypted.SymmetricKey, encrypted.Iv,
             submission.FiscalId, TaxV1Cryptography.Sign(invoice.RootElement, privateKey));
-        return new PreparedTaxRequest(attemptId, Build(Enqueue, new[] { packet }, true, token, privateKey, attemptId), TaxAuthorityProtocol.V1, submission.MemoryId);
+        return new PreparedTaxRequest(attemptId, Build(Enqueue, packet, true, token, privateKey, attemptId), TaxAuthorityProtocol.V1, submission.MemoryId);
     }
 
     public async Task<TaxAcknowledgement> SendAsync(PreparedTaxRequest request, CancellationToken ct)
@@ -76,7 +77,8 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         object data = submission.ReferenceNumber is { } reference
             ? new { referenceNumber = new[] { reference } }
             : new[] { new { uid = attempt, fiscalId = submission.FiscalId } };
-        using var result = await SyncAsync(operation, new Packet(null, operation, data, FiscalId: submission.FiscalId),
+        using var result = await SyncAsync(operation, new Packet(null, operation, data,
+                FiscalId: submission.ReferenceNumber.HasValue ? submission.FiscalId : ""),
             token, key, ct);
         var entry = Match(GetResultData(result.RootElement, "INQUIRY_RESULT"),
             x => Id(x, "uid") == attempt && (Text(x, "fiscalId") == submission.FiscalId ||
@@ -137,23 +139,24 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         return await ExchangeAsync(request, ct);
     }
 
-    private HttpRequestMessage Build(string path, object packet, bool batch, string token, RSA key, Guid? traceId = null)
+    private HttpRequestMessage Build(string path, Packet packet, bool batch, string token, RSA key, Guid? traceId = null)
     {
         var trace = (traceId ?? Guid.NewGuid()).ToString("D");
         var time = clock.GetUtcNow().ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
-        var scope = new System.Collections.Generic.Dictionary<string, object>
+        var headers = new Dictionary<string, string>
         {
-            [batch ? "packets" : "packet"] = packet,
             ["requestTraceId"] = trace,
             ["timestamp"] = time
         };
-        if (token is not null) scope["Authorization"] = token;
-        var signature = key is null ? null : TaxV1Cryptography.Sign(JsonSerializer.SerializeToElement(scope, JsonSerializerOptions.Web), key);
+        if (token is not null) headers["Authorization"] = token;
+        var payload = batch ? JsonSerializer.SerializeToElement(new[] { packet }, JsonSerializerOptions.Web)
+            : JsonSerializer.SerializeToElement(packet, JsonSerializerOptions.Web);
+        var signature = key is null ? null : TaxV1Cryptography.Sign(payload, key, headers);
         var message = new HttpRequestMessage(HttpMethod.Post, path)
         {
             Content = batch
-                ? JsonContent.Create(new { packets = packet, signature, signatureKeyId = (string)null })
-                : JsonContent.Create(new { packet, signature })
+                ? JsonContent.Create(new { packets = payload, signature, signatureKeyId = (string)null })
+                : signature is null ? JsonContent.Create(new { packet = payload }) : JsonContent.Create(new { packet = payload, signature })
         };
         message.Headers.Add("requestTraceId", trace);
         message.Headers.Add("timestamp", time);
@@ -166,10 +169,20 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         try
         {
             using var response = await http.SendAsync(request, ct);
-            if (!response.IsSuccessStatusCode)
-                throw new TaxTransportException("Tax V1 authority returned an unsuccessful HTTP status.", (int)response.StatusCode);
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
-            return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+            var success = response.IsSuccessStatusCode;
+            JsonDocument body = null;
+            try
+            {
+                body = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+            }
+            catch (JsonException) when (!success) { }
+
+            var code = body is null ? null : ReadErrorCode(body.RootElement);
+            if (success && code is null) return body;
+            body?.Dispose();
+            throw new TaxTransportException("Tax V1 authority rejected the request.",
+                success ? null : (int)response.StatusCode, authorityErrorCode: code);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -179,6 +192,23 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         {
             throw InvalidResponse();
         }
+    }
+
+    private static string ReadErrorCode(JsonElement body) =>
+        Property(body, "errors") is { ValueKind: JsonValueKind.Array } errors
+            ? errors.EnumerateArray().Select(ErrorCode).FirstOrDefault(code => code is not null)
+            : ErrorCode(body);
+
+    private static string ErrorCode(JsonElement error)
+    {
+        var value = Property(error, "errorCode");
+        var code = value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString(),
+            JsonValueKind.Number => value.GetRawText(),
+            _ => null
+        };
+        return code is { Length: 4 or 5 } && code.All(char.IsAsciiDigit) ? code : null;
     }
 
     private static JsonElement GetResultData(JsonElement body, string type)

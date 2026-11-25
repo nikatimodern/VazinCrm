@@ -78,7 +78,9 @@ internal sealed class TaxConnectionCheck(TaxProtocolClients sandboxClients, ITax
             var operation = v1 && failedStage == 3
                 ? tokenReceived ? "توکن دریافت شد. استعلام هویت حافظه: " : "دریافت توکن V1: "
                 : "";
-            steps.Record(failedStage, false, operation + DescribeFailure(ex));
+            var code = ex is TaxTransportException { AuthorityErrorCode: { } authorityCode }
+                ? $" کد خطای سازمان {authorityCode}." : "";
+            steps.Record(failedStage, false, operation + DescribeFailure(ex) + code);
         }
         return steps.Results;
     }

@@ -1,6 +1,7 @@
 extern alias TaxCrypto;
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
@@ -14,19 +15,32 @@ namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
 
 internal static class TaxV1Cryptography
 {
-    internal static string Sign(JsonElement value, RSA key) =>
-        Convert.ToBase64String(key.SignData(Encoding.UTF8.GetBytes(Normalize(value)), HashAlgorithmName.SHA256,
+    private static readonly StringComparer PathOrder = StringComparer.Create(CultureInfo.GetCultureInfo("en-US"), false);
+
+    internal static string Sign(JsonElement value, RSA key, IReadOnlyDictionary<string, string> headers = null) =>
+        Convert.ToBase64String(key.SignData(Encoding.UTF8.GetBytes(Normalize(value, headers)), HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1));
 
-    internal static string Normalize(JsonElement value) => string.Join('#', Values(value));
-
-    private static System.Collections.Generic.IEnumerable<string> Values(JsonElement value) => value.ValueKind switch
+    internal static string Normalize(JsonElement value, IReadOnlyDictionary<string, string> headers = null)
     {
-        JsonValueKind.Object => value.EnumerateObject().OrderBy(x => x.Name, StringComparer.Ordinal)
-            .SelectMany(x => Values(x.Value)),
-        JsonValueKind.Array => value.EnumerateArray().SelectMany(Values),
-        _ => [Scalar(value)]
+        var fields = Fields(value, value.ValueKind == JsonValueKind.Array ? "packets" : "");
+        if (headers is not null)
+            fields = fields.Concat(headers.Select(header => (header.Key, Escape(header.Value))));
+        return string.Join('#', fields.OrderBy(field => field.Path, PathOrder)
+            .ThenBy(field => field.Path, StringComparer.Ordinal).Select(field => field.Text));
+    }
+
+    private static IEnumerable<(string Path, string Text)> Fields(JsonElement value, string path) => value.ValueKind switch
+    {
+        JsonValueKind.Object => value.EnumerateObject()
+            .SelectMany(field => Fields(field.Value, ChildPath(path, field.Name))),
+        // Keep array positions in numeric order when sorting the flattened paths.
+        JsonValueKind.Array => value.EnumerateArray()
+            .SelectMany((item, index) => Fields(item, ChildPath(path, index.ToString("D10", CultureInfo.InvariantCulture)))),
+        _ => [(path, Scalar(value))]
     };
+
+    private static string ChildPath(string path, string name) => path.Length == 0 ? name : path + "." + name;
 
     private static string Scalar(JsonElement value)
     {
@@ -37,8 +51,11 @@ internal static class TaxV1Cryptography
             JsonValueKind.Number when value.TryGetDecimal(out var number) => number.ToString("0.############################", CultureInfo.InvariantCulture),
             _ => value.GetRawText()
         };
-        return string.IsNullOrEmpty(text) ? "#" : text.Replace("#", "##", StringComparison.Ordinal);
+        return Escape(text);
     }
+
+    private static string Escape(string text) =>
+        string.IsNullOrEmpty(text) ? "#" : text.Replace("#", "##", StringComparison.Ordinal);
 
     internal static (string Data, string SymmetricKey, string Iv) Encrypt(string json, RSA authorityKey)
     {

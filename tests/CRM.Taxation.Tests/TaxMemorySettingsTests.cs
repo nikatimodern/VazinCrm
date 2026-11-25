@@ -61,6 +61,8 @@ public sealed class TaxMemorySettingsTests
 
     [Theory]
     [InlineData("token-401", false, "HTTP 401")]
+    [InlineData("token-401-code", false, "HTTP 401")]
+    [InlineData("token-error-envelope", false, "کد خطای سازمان 5013")]
     [InlineData("token-invalid", false, "پاسخ قابل تأیید")]
     [InlineData("token-timeout", false, "زمان انتظار")]
     [InlineData("fiscal-403", true, "HTTP 403")]
@@ -78,6 +80,12 @@ public sealed class TaxMemorySettingsTests
                 return scenario switch
                 {
                     "token-401" => new(HttpStatusCode.Unauthorized) { Content = new StringContent(confidential) },
+                    "token-401-code" => new(HttpStatusCode.Unauthorized) { Content = JsonContent.Create(new
+                    {
+                        errors = new[] { new { errorCode = confidential }, new { errorCode = "5013" } },
+                        errorDetail = confidential
+                    }) },
+                    "token-error-envelope" => Json(new { errors = new[] { new { errorCode = 5013, errorDetail = confidential } } }),
                     "token-invalid" => Json(new { errorDetail = confidential }),
                     "token-timeout" => throw new TaskCanceledException(),
                     _ => Json(new { result = new { packetType = "TOKEN_RESULT", data = new { token = confidential } } })
@@ -109,6 +117,7 @@ public sealed class TaxMemorySettingsTests
         Assert.Equal(["Passed", "Passed", "Passed", "Failed", "Skipped"], results.Select(x => x.Status));
         Assert.Contains(tokenReceived ? "توکن دریافت شد" : "دریافت توکن V1", results[3].Message);
         Assert.Contains(reason, results[3].Message);
+        if (scenario == "token-401-code") Assert.Contains("کد خطای سازمان 5013", results[3].Message);
         Assert.All(results, step => Assert.DoesNotContain(confidential, step.Message));
     }
 
