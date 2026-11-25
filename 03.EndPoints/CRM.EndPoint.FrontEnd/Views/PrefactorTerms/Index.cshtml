@@ -10,7 +10,7 @@
     <div class="InfoData">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
             <h5 class="mb-0">شرایط و توضیحات تکمیلی پیش‌فاکتور</h5>
-            <a asp-controller="ASetting" asp-action="Index" class="hoverLink">بازگشت به تنظیمات</a>
+            <button type="button" class="btn btn-sm btn-outline-secondary crm-mobile-dense-action" onclick="showModalSetting()">تنظیمات</button>
         </div>
         @if (TempData["PrefactorTermsMessage"] is string message) {
             <p role="status" class="mb-2 text-success">@message</p>
