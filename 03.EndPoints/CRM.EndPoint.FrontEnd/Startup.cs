@@ -197,6 +197,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Sepidar2InvoiceExportRepository>();
             services.AddScoped<SepidarUserResolver>();
             services.AddScoped<IPreFactorDestinationRepository, PreFactorDestinationRepository>();
+            services.AddScoped<IPrefactorTermsRepository, PrefactorTermsRepository>();
             services.AddScoped<ISalesInvoiceDestinationRepository, SalesInvoiceDestinationRepository>();
             services.AddTransient<Sepidar1Service>();
             services.AddTransient<Sepidar2Service>();
