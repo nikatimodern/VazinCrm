@@ -595,6 +595,9 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         {
             foreach (var item in nodes)
             {
+                // This fixed footer link is always present and must never be starred
+                // or duplicated in the Favorites section (including previously saved rows).
+                if (item.Id == "overdueOpenDeals") continue;
                 // Settings links are hidden from the sidebar but remain searchable/starable.
                 if (!item.ShowInDesktop && item.Id != "extraSettings") continue;
                 if (!string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
