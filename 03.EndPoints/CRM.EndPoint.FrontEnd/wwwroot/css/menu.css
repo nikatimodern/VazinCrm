@@ -703,13 +703,14 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     margin-inline-start: 2px;
     border-radius: 5px;
 }
-/* Single compact release label instead of rendering the duplicate version line. */
+/* The version footer is metadata, not a prominent navigation heading.
+   Scope both lines to this button so generic sidebar typography cannot enlarge it. */
 #desktopFixedActions .menu-release-notes,
 #mobileDrawerFixedActions .menu-release-notes {
-    min-height: 31px;
+    min-height: 25px;
     justify-content: center;
     text-align: center;
-    padding: 3px 4px;
+    padding: 2px 4px;
 }
 #desktopFixedActions .menu-release-notes .menu-item-title,
 #mobileDrawerFixedActions .menu-release-notes .menu-item-title {
@@ -719,16 +720,24 @@ html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
     align-items: center;
     justify-content: center;
     gap: 0;
-    font-size: 11px;
-    line-height: 1.35;
-    font-family: IRANSansBold;
-    white-space: normal;
+    font-size: 10px;
+    line-height: 1.2;
+    font-family: IRANSans, sans-serif;
+    white-space: nowrap;
+}
+#desktopFixedActions .menu-release-notes .menu-item-title > span:first-child,
+#mobileDrawerFixedActions .menu-release-notes .menu-item-title > span:first-child {
+    font-size: 10px !important;
+    line-height: 1.25;
+    font-family: IRANSans, sans-serif;
+    font-weight: 500;
 }
 #desktopFixedActions .menu-release-notes .menu-release-date,
 #mobileDrawerFixedActions .menu-release-notes .menu-release-date {
-    font-size: 9px;
-    font-family: IRANSans;
-    line-height: 1.2;
+    font-size: 8px !important;
+    font-family: IRANSans, sans-serif;
+    font-weight: 400;
+    line-height: 1.15;
     margin-top: 1px;
     color: #c3dfd6;
 }
