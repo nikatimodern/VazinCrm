@@ -46,7 +46,9 @@
             data-tooltip-left="@(string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title} - {Model.Subtitle}")"
             aria-label="@(Model.Id == "releaseNotes" ? (string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title}، {Model.Subtitle}") : null)"
             onclick="@Model.OnClick">
-        @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
+        @if (Model.Id != "releaseNotes") {
+            @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
+        }
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) {
