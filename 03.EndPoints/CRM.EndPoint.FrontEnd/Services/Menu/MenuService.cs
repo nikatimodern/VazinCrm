@@ -632,7 +632,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         menus.Add(new MenuItem
         {
             Id = "favorites", Title = "علاقه‌مندی‌ها",
-            IconHtml = MenuIcons.Tasks, DisplayOrder = 6,
+            IconHtml = MenuIcons.Tasks, DisplayOrder = 0,
             IsFavoritesGroup = true, SubItems = visible
         });
         menus.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
@@ -657,8 +657,15 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             return item;
         }
 
-        static MenuItem Child(MenuItem parent, string id) =>
-            parent.SubItems.FirstOrDefault(x => x.Id == id) ?? Missing(id);
+        static MenuItem Child(MenuItem parent, string id)
+        {
+            // Remove moved items from their original parent so new links added
+            // by subsequent merges remain available for the rebuilt menu.
+            var child = parent.SubItems.FirstOrDefault(x => x.Id == id);
+            if (child is null) return Missing(id);
+            parent.SubItems.Remove(child);
+            return child;
+        }
 
         MenuItem Category(string id, string title, string icon, int order, params MenuItem[] children)
         {
@@ -738,6 +745,35 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         var categoryReports = Category("categoryReports", "گزارش‌های مدیریتی", MenuIcons.Reports, 60,
             Child(reports, "profit"), Child(reports, "demand"));
 
+        // Never drop newly introduced navigation entries during later merges.
+        // Filter(BuildMenus(...)) has already applied the ERP's original role
+        // rules before reaching this presenter.
+        categoryProduction.SubItems.AddRange(vouchers.SubItems.Where(HasEntry));
+        categoryReports.SubItems.AddRange(reports.SubItems.Where(HasEntry));
+        categoryFinance.SubItems.AddRange(treasury.SubItems.Where(HasEntry));
+        categoryFinance.SubItems.AddRange(cash.SubItems.Where(HasEntry));
+
+        // The tax-payer system (مودیان) belongs to Finance if it is supplied by
+        // BuildMenus in a later merge; reuse its original URL and role audience.
+        // Do not invent its route or grant any new permission in this branch.
+        static bool IsMoadian(MenuItem item) =>
+            (item.Title?.Contains("مودیان", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Id?.Contains("moadian", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Id?.Contains("modian", StringComparison.OrdinalIgnoreCase) ?? false);
+
+        var moadianItems = source.Where(item => HasEntry(item) && IsMoadian(item)).ToList();
+        foreach (var item in moadianItems)
+        {
+            source.Remove(item);
+            categoryFinance.SubItems.Add(item);
+        }
+
+        // Any other page introduced after the redesign also stays visible,
+        // pending an explicit categorization decision.
+        var ungrouped = source.Where(HasEntry).ToList();
+        foreach (var item in ungrouped)
+            item.DisplayOrder = Math.Max(65, item.DisplayOrder);
+
         // Use the original Settings role list without any overrides.
         settings.DisplayOrder = 70;
         MenuItem SettingLink(string id, string title, string url, params string[] allowedRoles) =>
@@ -777,7 +813,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             MobileShortcut("reportMobile", workReport, "گزارش کار", "/Report/Index", 5),
             categoryDaily, categorySales, categorySupply, categoryProduction,
             categoryFinance, categoryReports, settings, extraSettings, overdue, warnings, version
-        }.Where(HasEntry).OrderBy(x => x.DisplayOrder).ToList();
+        }.Concat(ungrouped).Where(HasEntry).OrderBy(x => x.DisplayOrder).ToList();
     }
 
     private static List<MenuItem> Filter(List<MenuItem> menus, HashSet<string> userRoles)
