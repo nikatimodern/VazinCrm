@@ -9,6 +9,7 @@ using CRM.Core.Domain.Deals;
 using CRM.EndPoint.FrontEnd.IServices.Menu;
 using CRM.EndPoint.FrontEnd.Models.Menu;
 using CRM.Infrastructures.Sql;
+using Generics.Infrastructures.Sql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CRM.Core.ApplicationServices.Security;
@@ -23,6 +24,8 @@ namespace CRM.EndPoint.FrontEnd.Services.Menu;
 public class MenuService(IServiceProvider serviceProvider) : IMenuService {
     public async Task<List<MenuItem>> GetMenusAsync(ClaimsPrincipal user)
     {
+        // Keep the exact role claim source and inherited permissions used before
+        // the menu redesign. Apply those rules to the original hierarchy first.
         var roles = user.Claims
             .Where(x => x.Type == ClaimTypes.Role)
             .Select(x => x.Value)
@@ -30,7 +33,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
         var menus = BuildMenus(user);
         if (roles.Contains(AppRoles.Admin) && TaxationAvailability.IsLocalEnabled(
-            serviceProvider.GetRequiredService<IWebHostEnvironment>(), serviceProvider.GetRequiredService<IConfiguration>()))
+                serviceProvider.GetRequiredService<IWebHostEnvironment>(), serviceProvider.GetRequiredService<IConfiguration>()))
         {
             menus.Add(new MenuItem
             {
@@ -39,7 +42,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             });
         }
 
-        var filteredMenus = Filter(menus, roles);
+        var filteredMenus = OrganizeMenus(Filter(menus, roles), roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
             // Match the exact audience/role resolution used by the release history.
@@ -52,6 +55,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
         }
 
         await SetBadgeCountsAsync(filteredMenus);
+        await AttachFavoritesAsync(filteredMenus, user);
 
         return filteredMenus;
     }
@@ -248,7 +252,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                 DisplayOrder = 8,
                 SubItems = [
                     new MenuItem {
-                        Id = "orders",
+                        Id = "productionVoucher",
                         Title = "حواله تولید",
                         Url = "/Order/Index",
                     },
@@ -584,6 +588,249 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
 
             #endregion
         ];
+    }
+
+
+    // Keep page definitions and role assignments in BuildMenus. Only their
+    // navigation hierarchy changes here; no endpoint or permission is expanded.
+    private async Task AttachFavoritesAsync(List<MenuItem> menus, ClaimsPrincipal user)
+    {
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return;
+
+        var favorites = await serviceProvider.GetRequiredService<UserContextDb>().MenuFavorites
+            .AsNoTracking()
+            .Where(f => f.UserId == userId)
+            .OrderBy(f => f.SortOrder).ThenBy(f => f.MenuId)
+            .ToListAsync();
+
+        var links = new Dictionary<string, (MenuItem Item, string Icon)>(StringComparer.Ordinal);
+        void Collect(IEnumerable<MenuItem> nodes, string parentIcon = "")
+        {
+            foreach (var item in nodes)
+            {
+                // This fixed footer link is always present and must never be starred
+                // or duplicated in the Favorites section (including previously saved rows).
+                if (item.Id == "overdueOpenDeals") continue;
+                // Settings links are hidden from the sidebar but remain searchable/starable.
+                if (!item.ShowInDesktop && item.Id != "extraSettings") continue;
+                if (!string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
+                {
+                    item.FavoriteTargetId = item.Id;
+                    links[item.Id] = (item, string.IsNullOrEmpty(item.IconHtml) ? parentIcon : item.IconHtml);
+                }
+                Collect(item.SubItems, string.IsNullOrEmpty(item.IconHtml) ? parentIcon : item.IconHtml);
+            }
+        }
+        Collect(menus);
+        var favoriteIds = favorites.Select(f => f.MenuId).ToHashSet(StringComparer.Ordinal);
+        foreach (var entry in links.Values) entry.Item.IsFavorite = favoriteIds.Contains(entry.Item.Id);
+
+        var visible = favorites.Where(f => links.ContainsKey(f.MenuId))
+            .Select(f =>
+            {
+                var (source, icon) = links[f.MenuId];
+                return new MenuItem
+                {
+                    Id = "favorite-" + source.Id,
+                    FavoriteTargetId = source.Id,
+                    Title = source.Title,
+                    Url = source.Url,
+                    IconHtml = icon,
+                    IsFavorite = true,
+                    DisplayOrder = f.SortOrder
+                };
+            }).ToList();
+        if (visible.Count == 0) return;
+
+        menus.Add(new MenuItem
+        {
+            Id = "favorites", Title = "علاقه‌مندی‌ها",
+            IconHtml = MenuIcons.Tasks, DisplayOrder = 0,
+            IsFavoritesGroup = true, SubItems = visible
+        });
+        menus.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
+    }
+
+    private static List<MenuItem> OrganizeMenus(List<MenuItem> definitions, HashSet<string> userRoles)
+    {
+        var source = definitions.ToList();
+
+        static bool HasEntry(MenuItem item) =>
+            !string.IsNullOrEmpty(item.Url) || !string.IsNullOrEmpty(item.OnClick)
+            || item.SubItems.Count > 0;
+
+        static MenuItem Missing(string id) => new() { Id = "missing-" + id };
+
+        MenuItem Take(string id)
+        {
+            // Legacy filtering can remove any item, including a whole category.
+            var item = source.FirstOrDefault(x => x.Id == id);
+            if (item is null) return Missing(id);
+            source.Remove(item);
+            return item;
+        }
+
+        static MenuItem Child(MenuItem parent, string id)
+        {
+            // Remove moved items from their original parent so new links added
+            // by subsequent merges remain available for the rebuilt menu.
+            var child = parent.SubItems.FirstOrDefault(x => x.Id == id);
+            if (child is null) return Missing(id);
+            parent.SubItems.Remove(child);
+            return child;
+        }
+
+        MenuItem Category(string id, string title, string icon, int order, params MenuItem[] children)
+        {
+            // Preserve only previously visible items; role checks were completed
+            // against the original parent hierarchy prior to this rearrangement.
+            var visible = children.Where(HasEntry).ToList();
+            for (var i = 0; i < visible.Count; i++)
+                visible[i].DisplayOrder = i + 1;
+            return new MenuItem
+            {
+                Id = id, Title = title, IconHtml = icon, DisplayOrder = order,
+                SubItems = visible
+            };
+        }
+
+        MenuItem MobileShortcut(string id, MenuItem original, string title, string url, int order) =>
+            !HasEntry(original) ? Missing(id) : new MenuItem
+            {
+                Id = id, Title = title, Url = url, IconHtml = original.IconHtml,
+                Roles = original.Roles.ToList(), DisplayOrder = order,
+                ShowInMobileBottomMenu = true, ShowInDesktop = false,
+                ShowInMobile = original.ShowInMobile
+            };
+
+        var dashboard = Take("dashboard");
+        dashboard.DisplayOrder = 1;
+        var cartable = Take("cartable");
+        cartable.DisplayOrder = 4;
+        var deals = Take("deal");
+        var people = Take("customer");
+        var tasks = Take("carizo");
+        var workReport = Take("report");
+        var accounting = Take("accountancy");
+        var vouchers = Take("orders");
+        var reports = Take("reports");
+        var treasury = Take("treasury");
+        var prices = Take("amount");
+        var cash = Take("cash");
+        var quality = Take("qualityControl");
+        var settings = Take("settings");
+        var overdue = Take("overdueOpenDeals");
+        var warnings = Take("warnings");
+        var version = Take("releaseNotes");
+
+        var canViewPeople = HasEntry(people);
+        if (canViewPeople)
+        {
+            people.Title = "مشتریان";
+            people.Url = "/Customer/Index?roleType=1";
+            people.ShowInMobileBottomMenu = false;
+        }
+        deals.ShowInMobileBottomMenu = false;
+        workReport.ShowInMobileBottomMenu = false;
+
+        var suppliers = canViewPeople ? new MenuItem
+        {
+            Id = "suppliers", Title = "تأمین‌کنندگان",
+            Url = "/Customer/Index?roleType=2",
+            Roles = people.Roles.ToList()
+        } : Missing("suppliers");
+
+        var categoryDaily = Category("categoryDaily", "فعالیت‌های روزانه", MenuIcons.Tasks, 10,
+            tasks, workReport);
+        var categorySales = Category("categorySales", "فروش", MenuIcons.Deals, 20,
+            people, deals);
+        var categorySupply = Category("categorySupply", "تأمین", MenuIcons.Treasury, 30,
+            suppliers, prices, Child(treasury, "supplyFactor"), Child(treasury, "requestAmount"));
+        var categoryProduction = Category("categoryProduction", "تولید، انبار و کیفیت", MenuIcons.Vouchers, 40,
+            Child(vouchers, "productionVoucher"), Child(vouchers, "warehouseVoucher"),
+            Child(treasury, "warehouse"), quality);
+        var checks = Child(treasury, "check");
+        var receivedChecks = Child(checks, "receivedChecks");
+        var issuedChecks = Child(checks, "issuedChecks");
+        var categoryFinance = Category("categoryFinance", "مالی و خزانه‌داری", MenuIcons.Accounting, 50,
+            accounting, receivedChecks, issuedChecks, Child(treasury, "transfer"),
+            Child(cash, "cashier"), Child(cash, "cashIndex"));
+        var categoryReports = Category("categoryReports", "گزارش‌های مدیریتی", MenuIcons.Reports, 60,
+            Child(reports, "profit"), Child(reports, "demand"));
+
+        // Never drop newly introduced navigation entries during later merges.
+        // Filter(BuildMenus(...)) has already applied the ERP's original role
+        // rules before reaching this presenter.
+        categoryProduction.SubItems.AddRange(vouchers.SubItems.Where(HasEntry));
+        categoryReports.SubItems.AddRange(reports.SubItems.Where(HasEntry));
+        categoryFinance.SubItems.AddRange(treasury.SubItems.Where(HasEntry));
+        categoryFinance.SubItems.AddRange(cash.SubItems.Where(HasEntry));
+
+        // The tax-payer system (مودیان) belongs to Finance if it is supplied by
+        // BuildMenus in a later merge; reuse its original URL and role audience.
+        // Do not invent its route or grant any new permission in this branch.
+        static bool IsMoadian(MenuItem item) =>
+            item.Id == "taxation" ||
+            (item.Title?.Contains("مودیان", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Title?.Contains("مؤدیان", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Id?.Contains("moadian", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (item.Id?.Contains("modian", StringComparison.OrdinalIgnoreCase) ?? false);
+
+        var moadianItems = source.Where(item => HasEntry(item) && IsMoadian(item)).ToList();
+        foreach (var item in moadianItems)
+        {
+            source.Remove(item);
+            categoryFinance.SubItems.Add(item);
+        }
+
+        // Any other page introduced after the redesign also stays visible,
+        // pending an explicit categorization decision.
+        var ungrouped = source.Where(HasEntry).ToList();
+        foreach (var item in ungrouped)
+            item.DisplayOrder = Math.Max(65, item.DisplayOrder);
+
+        // Use the original Settings role list without any overrides.
+        settings.DisplayOrder = 70;
+        MenuItem SettingLink(string id, string title, string url, params string[] allowedRoles) =>
+            new MenuItem
+            {
+                Id = id, Title = title, Url = url,
+                Roles = allowedRoles.ToList()
+            };
+        var extraSettings = new MenuItem
+        {
+            Id = "extraSettings", Title = "تنظیمات", DisplayOrder = 80,
+            IconHtml = MenuIcons.Settings,
+            ShowInDesktop = false, ShowInMobile = false,
+            SubItems = [
+                SettingLink("settingsVersions", "مدیریت تغییرات نسخه‌ها", "/ReleaseNotesAdmin/Index", AppRoles.Admin),
+                SettingLink("settingsUsers", "کاربران", "/Admin/Index", AppRoles.Admin),
+                SettingLink("settingsCompany", "اطلاعات پایه شرکت", "/BaseItem/Index",
+                    AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin, AppRoles.FinancialAdmin),
+                SettingLink("settingsFinance", "اطلاعات پایه مالی", "/BaseItem/Financial",
+                    AppRoles.Admin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin),
+                SettingLink("settingsMain", "تنظیمات پایه", "/Asetting/Index", AppRoles.Admin),
+                SettingLink("settingsPrefactorTerms", "شرایط قرارداد در پیش فاکتور", "/PrefactorTerms/Index", AppRoles.Admin),
+                SettingLink("settingsBin", "سطل زباله", "/Asetting/RecycleBin", AppRoles.Admin),
+                SettingLink("settingsSms", "مدیریت پیامک", "/Sms/Index", AppRoles.Admin),
+                SettingLink("settingsExternal", "مدیریت ارتباطات", "/ExternalSoftware/Index", AppRoles.Admin)
+            ]
+        };
+        // Links in the Settings modal retain their existing role restrictions.
+        extraSettings.SubItems = FilterItems(extraSettings.SubItems, userRoles, []);
+        // Keep the existing mobile bottom bar shortcuts. The new categorized
+        // pages remain reachable from the mobile "More" drawer as well.
+        return new List<MenuItem>
+        {
+            dashboard,
+            MobileShortcut("dealMobile", deals, "سفارشات", "/Deal/Index", 2),
+            MobileShortcut("peopleMobile", people, "اشخاص", "/Customer/Index", 3),
+            cartable,
+            MobileShortcut("reportMobile", workReport, "گزارش کار", "/Report/Index", 5),
+            categoryDaily, categorySales, categorySupply, categoryProduction,
+            categoryFinance, categoryReports, settings, extraSettings, overdue, warnings, version
+        }.Concat(ungrouped).Where(HasEntry).OrderBy(x => x.DisplayOrder).ToList();
     }
 
     private static List<MenuItem> Filter(List<MenuItem> menus, HashSet<string> userRoles)

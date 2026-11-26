@@ -754,9 +754,11 @@ async function loadSupplyAllocations(id) {
     sfAllocationRefreshNeeded = false;
     document.querySelectorAll("[data-supply-factor-id]").forEach(card => {
         if (sfAllocationIsSales() || card.dataset.supplyFactorId !== data.factor.id) return;
+        const statusChanged = card.classList.contains("sf-supply-card-complete") !== !!data.isAllocationComplete;
         card.classList.toggle("sf-supply-card-complete", data.isAllocationComplete);
         const badge = card.querySelector(".sf-supply-complete-badge");
         if (badge) badge.hidden = !data.isAllocationComplete;
+        if (statusChanged) card.dispatchEvent(new Event("sf:allocation-status-changed", { bubbles: true }));
     });
     document.getElementById("sfAllocationsTitle").textContent = `تخصیص فاکتور ${sfAllocationIsSales() ? "فروش" : "تامین"} ${data.factor.serialNumber}`;
     if (!sfAllocationOpen.size) {

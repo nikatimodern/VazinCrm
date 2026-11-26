@@ -374,3 +374,624 @@ html #mobileDrawerNavbar .has-submenu::before {
 		transform: none !important;
 	}
 }
+
+
+/* ERP navigation: keep project teal and mint palette, without category-specific colors. */
+#desktopSidebar, #mobileDrawer { display:flex; flex-direction:column; }
+#desktopSidebar { height:100dvh; }
+#desktopNavbar, #mobileDrawerNavbar { flex:1 1 auto; min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+#desktopSidebar .menuHeader, #mobileDrawer .menuHeader,
+#desktopSidebar .menuFooter, .menu-fixed-actions { flex-shrink:0; }
+.menu-fixed-actions { padding:5px 9px 6px; border-top:1px solid rgba(168,240,221,.15); }
+.menu-fixed-actions .menu-item { width:100%; }
+.menu-header-actions { display:flex; gap:4px; align-items:center; }
+.menuHeader { position:relative; }
+.menu-search-toggle { display:inline-flex; justify-content:center; align-items:center; width:32px; height:32px; border:0; border-radius:8px; background:transparent; color:#d3f7eb; cursor:pointer; }
+.menu-search-toggle:hover, .menu-search-toggle[aria-expanded=true] { background:rgba(169,240,221,.15); color:#bcf5e5; }
+.menu-search-panel { position:absolute; z-index:1050; right:9px; top:calc(100% + 4px); width:min(280px, calc(100vw - 24px)); max-height: min(410px, 65vh); overflow-y:auto; padding:9px; border-radius:12px; border:1px solid rgba(169,240,221,.35); background:#06534e; color:#e9fff9; box-shadow:0 14px 32px rgba(0,0,0,.28); }
+.menu-search-panel[hidden] { display:none !important; }
+.menu-search-field { display:flex; align-items:center; background:rgba(255,255,255,.95); border-radius:8px; color:#143e39; padding-inline:7px; }
+.menu-search-field input { min-width:0; width:100%; border:0; padding:8px 6px; background:transparent; color:#143e39; outline:none; font:inherit; }
+.menu-search-field button { background:none; color:#245e55; border:0; font-size:22px; cursor:pointer; }
+.menu-search-results { max-height:320px; overflow:auto; padding-top:6px; }
+.menu-search-result { display:block; text-decoration:none; color:#ecfff9; padding:7px 9px; border-radius:7px; font-size:13px; }
+.menu-search-result:hover, .menu-search-result:focus-visible { background:rgba(164,232,217,.17); color:#fff; }
+.menu-search-result small { display:block; font-size:11px; color:#b1dbd2; margin-top:1px; }
+.menu-search-empty { font-size:12px; padding:12px 8px; color:#d0e7e3; }
+html.sidebar-collapsed #desktopSidebar .menu-search-panel { right:48px; }
+.menu-nav .menu-entry { position:relative; display:flex; align-items:center; min-width:0; }
+.menu-nav .menu-entry > .menu-item { width:100%; padding-left:30px; }
+.menu-nav .menu-favorite-toggle { border:0; background:transparent; position:absolute; left:4px; top:50%; transform:translateY(-50%); width:26px; height:28px; padding:5px; display:grid; place-items:center; color:#d0e7e3; cursor:pointer; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .15s,color .15s; }
+.menu-nav .menu-entry:hover .menu-favorite-toggle, .menu-nav .menu-entry:focus-within .menu-favorite-toggle, .menu-nav .menu-favorite-toggle.is-favorite { opacity:1; pointer-events:auto; }
+.menu-nav .menu-favorite-toggle:hover, .menu-nav .menu-favorite-toggle.is-favorite { color:#b7f4ce; }
+.menu-nav .menu-favorite-toggle svg { width:15px; height:15px; }
+.menu-favorites-panel { padding:6px 4px 8px; border-bottom:1px solid rgba(169,240,221,.13); }
+.menu-favorites-title { display:flex; align-items:center; gap:7px; padding:5px 10px; color:#bcf5e5; font-family:IRANSansBold; font-size:12px; }
+.menu-favorites-list { list-style:none; padding:0; margin:0; }
+.menu-favorite-row { display:flex; align-items:center; min-width:0; padding-right:2px; border-radius:7px; }
+.menu-favorite-row > .menu-entry { flex:1; min-width:0; }
+.menu-favorite-row .menu-item { min-height:31px !important; }
+.menu-favorite-row .menu-item-title { font-size:12px !important; }
+.menu-favorite-grip { color:#b6d9d0; cursor:grab; flex-shrink:0; padding:4px 2px; }
+.menu-favorite-grip:active { cursor:grabbing; }
+.menu-favorite-overflow { display:none; }
+.menu-favorites-panel.is-expanded .menu-favorite-overflow { display:flex; }
+.menu-favorites-more { color:#bcf5e5; font-size:11px; background:transparent; border:0; padding:5px 15px; cursor:pointer; }
+.menu-nav .submenu-toggle.active-ancestor { color:#bcf5e5; }
+html.sidebar-collapsed #desktopNavbar .menu-favorites-title span,
+html.sidebar-collapsed #desktopNavbar .menu-favorite-row .menu-item-title,
+html.sidebar-collapsed #desktopNavbar .menu-favorites-more { display:none; }
+html.sidebar-collapsed #desktopNavbar .menu-favorite-row .menu-favorite-toggle { display:none; }
+html.sidebar-collapsed #desktopNavbar .menu-favorite-grip { display:none; }
+@media (hover:none), (pointer:coarse) {
+    .menu-nav .menu-favorite-toggle { opacity:1; pointer-events:auto; }
+}
+@media (max-width:767.98px) {
+    #mobileDrawer { height:100dvh; max-height:100dvh; }
+    #mobileDrawerNavbar { padding-bottom:12px; }
+    .menu-search-panel { right:6px; width:min(320px, calc(100vw - 24px)); }
+}
+
+.menu-settings-section-title { margin:11px 3px 4px; padding:7px 9px 6px; border-bottom:1px solid #dbeae5; color:#116a60; font:12px IRANSansBold, sans-serif; }
+.menu-settings-section-title:first-child { margin-top:0; }
+
+.erp-account-disabled-text { font:13px/2 IRANSans, sans-serif; color:#475569; }
+.erp-forced-logout { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin:18px auto 4px; min-width:190px; border-radius:10px; padding:12px 16px; border:3px solid transparent; color:#0e685f; font:13px IRANSansBold,sans-serif; background:linear-gradient(#e9f7f3,#e9f7f3) padding-box,conic-gradient(#1da48e var(--erp-ring-progress,100%),#d9e3e1 0) border-box; user-select:none; pointer-events:none; }
+.erp-forced-logout strong { font:16px IRANSansBold,sans-serif; }
+
+/* Keep fixed alerts/version from stretching because .menu-nav is flex-grow:1 globally. */
+#desktopFixedActions, #mobileDrawerFixedActions { flex:0 0 auto; justify-content:flex-start; gap:2px; width:100%; }
+#desktopNavbar, #mobileDrawerNavbar { justify-content:flex-start; }
+
+.erp-settings-favorite-row { display:flex; align-items:stretch; gap:5px; }
+.erp-settings-favorite-row > a { flex:1; min-width:0; }
+.erp-settings-favorite-button { width:34px; flex:0 0 34px; border:1px solid #d8e8e3; border-radius:8px; background:#eff8f5; color:#718b85; display:grid; place-items:center; cursor:pointer; }
+.erp-settings-favorite-button:hover, .erp-settings-favorite-button.is-favorite { color:#098472; background:#e0f5ed; border-color:#9fd9c7; }
+.erp-settings-favorite-button svg { width:17px; height:17px; }
+
+/* RTL sidebar alignment: use the right edge for every navigation item.
+   Keep the mobile bottom bar centered and the favorites star on the left. */
+#desktopNavbar,
+#mobileDrawerNavbar,
+#desktopFixedActions,
+#mobileDrawerFixedActions {
+    direction: rtl;
+    text-align: right;
+}
+#desktopNavbar > .menu-list,
+#mobileDrawerNavbar > .menu-list {
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .has-submenu,
+#mobileDrawerNavbar .has-submenu,
+#desktopNavbar .menu-entry,
+#mobileDrawerNavbar .menu-entry,
+#desktopNavbar .menu-favorites-panel,
+#mobileDrawerNavbar .menu-favorites-panel {
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .menu-item,
+#mobileDrawerNavbar .menu-item,
+#desktopFixedActions .menu-item,
+#mobileDrawerFixedActions .menu-item {
+    direction: rtl;
+    display: flex;
+    justify-content: flex-start;
+    text-align: right;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+#desktopNavbar .menu-item > .menu-icon-frame,
+#mobileDrawerNavbar .menu-item > .menu-icon-frame,
+#desktopFixedActions .menu-item > .menu-icon-frame,
+#mobileDrawerFixedActions .menu-item > .menu-icon-frame {
+    flex: 0 0 auto;
+}
+#desktopNavbar .menu-item > .menu-item-title,
+#mobileDrawerNavbar .menu-item > .menu-item-title,
+#desktopFixedActions .menu-item > .menu-item-title,
+#mobileDrawerFixedActions .menu-item > .menu-item-title {
+    direction: rtl;
+    text-align: right;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#desktopNavbar .menu-item-title > span:first-child,
+#mobileDrawerNavbar .menu-item-title > span:first-child,
+#desktopFixedActions .menu-item-title > span:first-child,
+#mobileDrawerFixedActions .menu-item-title > span:first-child {
+    text-align: right;
+}
+
+
+/* Sidebar search is the first NAV item, not a header action. */
+#desktopNavbar .menu-search-row,
+#mobileDrawerNavbar .menu-search-row {
+    position: relative;
+    z-index: 20;
+    flex: 0 0 auto;
+    min-width: 0;
+    width: 100%;
+    padding: 3px 1px 8px;
+}
+#desktopNavbar .menu-search-trigger,
+#mobileDrawerNavbar .menu-search-trigger {
+    display: none;
+}
+#desktopNavbar .menu-search-panel,
+#mobileDrawerNavbar .menu-search-panel {
+    position: static;
+    display: block;
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+#desktopNavbar .menu-search-field,
+#mobileDrawerNavbar .menu-search-field {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(174, 235, 218, .24);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .11);
+    color: #e7fff7;
+    padding-inline: 9px 3px;
+    transition: border-color .15s, background-color .15s;
+}
+#desktopNavbar .menu-search-field:focus-within,
+#mobileDrawerNavbar .menu-search-field:focus-within {
+    border-color: #a8f0dd;
+    background: rgba(255,255,255,.15);
+}
+#desktopNavbar .menu-search-field-icon,
+#mobileDrawerNavbar .menu-search-field-icon {
+    flex: 0 0 17px;
+    color: #c9eee4;
+}
+#desktopNavbar .menu-search-field input,
+#mobileDrawerNavbar .menu-search-field input {
+    font: 12px IRANSans, sans-serif;
+    color: #fff;
+    direction: rtl;
+    text-align: right;
+    padding: 7px 2px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    outline: 0;
+    background: transparent;
+    border: 0;
+}
+#desktopNavbar .menu-search-field input::placeholder,
+#mobileDrawerNavbar .menu-search-field input::placeholder { color: #c5e1db; opacity: 1; }
+#desktopNavbar .menu-search-field button,
+#mobileDrawerNavbar .menu-search-field button {
+    width: 24px;
+    height: 27px;
+    flex: 0 0 24px;
+    padding: 0;
+    font-size: 19px;
+    border: 0;
+    background: transparent;
+    color: #bddbd2;
+    cursor: pointer;
+}
+#desktopNavbar .menu-search-results,
+#mobileDrawerNavbar .menu-search-results {
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 5px;
+    padding: 3px;
+    background: rgba(0, 40, 37, .93);
+    border: 1px solid rgba(174, 235, 218, .22);
+    border-radius: 8px;
+}
+#desktopNavbar .menu-search-results[hidden],
+#mobileDrawerNavbar .menu-search-results[hidden] { display: none !important; }
+
+/* Collapsed: search appears as the first icon, aligned exactly like menu icons.
+   Clicking it reveals a compact search popover beside the 64px sidebar. */
+@media (min-width: 768px) {
+    html.sidebar-collapsed #desktopNavbar .menu-search-trigger {
+        display: flex;
+        width: 100%;
+        min-height: 34px;
+        align-items: center;
+        justify-content: flex-start;
+        padding-block: 4px;
+        padding-inline: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-panel {
+        display: none;
+        position: absolute;
+        top: 0;
+        right: calc(100% + 8px);
+        width: 270px;
+        max-width: calc(100vw - 85px);
+        padding: 10px;
+        border: 1px solid rgba(169, 240, 221, .3);
+        border-radius: 10px;
+        background: #004944;
+        box-shadow: 0 12px 25px rgba(0,0,0,.28);
+        z-index: 1200;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-row.is-search-open > .menu-search-panel {
+        display: block;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-search-results {
+        max-height: 320px;
+    }
+
+    /* Stars are editing affordances for expanded navigation only. In
+       collapsed mode, keep the favorite page links, hide the star controls. */
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-title,
+    html.sidebar-collapsed #desktopSidebar .menu-favorite-toggle,
+    html.sidebar-collapsed #desktopSidebar .menu-favorite-grip,
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-more {
+        display: none !important;
+    }
+    html.sidebar-collapsed #desktopSidebar .menu-favorites-panel {
+        padding-top: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-entry > .menu-item {
+        padding-left: 0;
+    }
+}
+
+
+/* Compact fixed footer controls: keep counters, alerts and release links functional,
+   but don't let them consume the same height as regular navigation sections. */
+#desktopFixedActions,
+#mobileDrawerFixedActions {
+    gap: 1px;
+    padding: 4px 7px;
+}
+#desktopFixedActions .menu-entry,
+#mobileDrawerFixedActions .menu-entry {
+    width: 100%;
+    min-width: 0;
+}
+#desktopFixedActions .menu-item,
+#mobileDrawerFixedActions .menu-item {
+    min-height: 29px;
+    height: auto;
+    padding: 3px 6px;
+    gap: 6px;
+    border-radius: 6px;
+    font-size: 11px;
+}
+#desktopFixedActions .menu-icon-frame,
+#mobileDrawerFixedActions .menu-icon-frame {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+}
+#desktopFixedActions .menu-icon-frame .menu-icon,
+#mobileDrawerFixedActions .menu-icon-frame .menu-icon {
+    width: 17px !important;
+    height: 17px;
+}
+#desktopFixedActions .menu-item .menu-item-title,
+#mobileDrawerFixedActions .menu-item .menu-item-title {
+    font-size: 11px;
+    line-height: 1.45;
+    gap: 4px;
+    min-width: 0;
+}
+#desktopFixedActions .menu-entry > .menu-item,
+#mobileDrawerFixedActions .menu-entry > .menu-item {
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
+}
+#desktopFixedActions .badge-count-menuItem,
+#mobileDrawerFixedActions .badge-count-menuItem {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 3px;
+    margin-inline-start: 2px;
+    border-radius: 5px;
+}
+/* The version footer is metadata, not a prominent navigation heading.
+   Scope both lines to this button so generic sidebar typography cannot enlarge it. */
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    min-height: 25px;
+    justify-content: center;
+    text-align: center;
+    padding: 2px 4px;
+}
+#desktopFixedActions .menu-release-notes .menu-item-title,
+#mobileDrawerFixedActions .menu-release-notes .menu-item-title {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    font-size: 10px;
+    line-height: 1.2;
+    font-family: IRANSans, sans-serif;
+    white-space: nowrap;
+}
+#desktopFixedActions .menu-release-notes .menu-item-title > span:first-child,
+#mobileDrawerFixedActions .menu-release-notes .menu-item-title > span:first-child {
+    font-size: 10px !important;
+    line-height: 1.25;
+    font-family: IRANSans, sans-serif;
+    font-weight: 500;
+}
+#desktopFixedActions .menu-release-notes .menu-release-date,
+#mobileDrawerFixedActions .menu-release-notes .menu-release-date {
+    font-size: 8px !important;
+    font-family: IRANSans, sans-serif;
+    font-weight: 400;
+    line-height: 1.15;
+    margin-top: 1px;
+    color: #c3dfd6;
+}
+#desktopFixedActions .menu-release-compact,
+#mobileDrawerFixedActions .menu-release-compact {
+    display: none;
+}
+@media (min-width: 768px) {
+    /* A collapsed footer needs a short version indicator, not the full text. */
+    /* The expanded footer labels must disappear in the 64px sidebar,
+       despite their more-specific desktop styles above. */
+    html.sidebar-collapsed #desktopFixedActions .menu-item .menu-item-title {
+        display: none;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-release-compact {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-release-compact small {
+        display: none;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-release-notes {
+        padding: 4px 1px;
+        min-height: 27px;
+    }
+}
+
+/* Keep the collapse/expand hamburger legible on the dark green header. */
+#desktopSidebar .menuHeader #collapseMenuIcon,
+#desktopSidebar .menuHeader #expandMenuIcon {
+    color: #fff !important;
+    background: transparent;
+    border: 0;
+    opacity: 1;
+}
+#desktopSidebar .menuHeader #collapseMenuIcon svg,
+#desktopSidebar .menuHeader #expandMenuIcon svg {
+    stroke: #fff !important;
+}
+
+/* Restore the continuous gentle up/down motion of a hovered menu icon.
+   Animate the SVG, not the container, so the existing orbit border still works. */
+@keyframes erpMenuIconHoverHop {
+    0%, 100% { transform: translateY(0); }
+    35% { transform: translateY(-3px); }
+    70% { transform: translateY(1px); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .menu-nav .menu-item:not(.menu-warning-new):hover > .menu-icon-frame > .menu-icon,
+    .menu-nav .menu-item:not(.menu-warning-new):focus-visible > .menu-icon-frame > .menu-icon {
+        animation: erpMenuIconHoverHop .72s ease-in-out infinite;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .menu-nav .menu-item > .menu-icon-frame > .menu-icon {
+        animation: none !important;
+    }
+}
+
+
+/* Compact desktop rail: all icon frames share one horizontal centerline.
+   Scope to the collapsed desktop sidebar; expanded and mobile layouts stay intact. */
+@media (min-width: 768px) {
+    html.sidebar-collapsed #desktopSidebar {
+        width: 56px !important;
+        align-items: center;
+    }
+    html.sidebar-collapsed #mainWrapper {
+        margin-right: 56px;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuHeader {
+        width: 100%;
+        padding-inline: 0;
+        justify-content: center;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuHeader > a {
+        margin-inline: auto;
+    }
+    html.sidebar-collapsed #desktopNavbar {
+        width: 100%;
+        padding: 5px 4px;
+        scrollbar-width: none;
+    }
+    html.sidebar-collapsed #desktopNavbar::-webkit-scrollbar {
+        display: none;
+    }
+    html.sidebar-collapsed #desktopNavbar > .menu-list,
+    html.sidebar-collapsed #desktopNavbar .has-submenu,
+    html.sidebar-collapsed #desktopNavbar .menu-entry,
+    html.sidebar-collapsed #desktopNavbar .menu-favorite-row,
+    html.sidebar-collapsed #desktopNavbar .menu-favorites-panel,
+    html.sidebar-collapsed #desktopNavbar .menu-search-row {
+        width: 100%;
+        min-width: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-favorite-row {
+        padding-inline: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item,
+    html.sidebar-collapsed #desktopNavbar .menu-search-row .menu-search-trigger,
+    html.sidebar-collapsed #desktopFixedActions .menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        padding-inline: 0;
+        margin-inline: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed #desktopNavbar .menu-item > .menu-icon-frame,
+    html.sidebar-collapsed #desktopFixedActions .menu-item > .menu-icon-frame {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        margin-inline: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    html.sidebar-collapsed #desktopFixedActions {
+        width: 100%;
+        padding: 4px;
+        align-items: center;
+    }
+    html.sidebar-collapsed #desktopFixedActions .menu-entry {
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter {
+        width: 100%;
+        padding: 6px 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter .ownerCompany-link {
+        width: 100%;
+        justify-content: center;
+        margin: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed #desktopSidebar .menuFooter .ownerCompany-logo {
+        width: 27px;
+    }
+}
+
+
+/* A collapsed category already opens an informative flyout. Its heading does
+   not need an overlapping Bootstrap tooltip. Links still keep their tooltip.
+   Layout.js only initializes tooltips from [data-tooltip-left]. */
+.menu-nav .submenu-items .menu-item {
+    justify-content: flex-start;
+    gap: 7px;
+}
+.menu-nav .submenu-items .menu-icon-frame {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    background: rgba(197, 242, 227, .045);
+}
+.menu-nav .submenu-items .menu-icon-frame .menu-icon {
+    width: 16px !important;
+    height: 16px;
+}
+.menu-nav .submenu-items .menu-item-title {
+    text-align: right;
+}
+@media (min-width: 768px) {
+    /* Override the compact-rail centering for items inside flyout panels. */
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item,
+    html.sidebar-collapsed #desktopNavbar .submenu .submenu-toggle {
+        justify-content: flex-start;
+        gap: 7px;
+        padding-inline: 9px;
+        text-align: right;
+    }
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item > .menu-icon-frame {
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+    }
+    html.sidebar-collapsed #desktopNavbar .submenu .menu-item > .menu-item-title {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+/* Retain the small footer version text when adding its icon. */
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    gap: 5px;
+}
+#desktopFixedActions .menu-release-notes .menu-icon-frame,
+#mobileDrawerFixedActions .menu-release-notes .menu-icon-frame {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+#desktopFixedActions .menu-release-notes .menu-icon-frame .menu-icon,
+#mobileDrawerFixedActions .menu-release-notes .menu-icon-frame .menu-icon {
+    width: 15px !important;
+    height: 15px;
+}
+
+
+/* Release notes are intentionally text-only in both expanded and collapsed
+   sidebars, even if a previously rendered view still contains old icon markup. */
+#desktopFixedActions .menu-release-notes > .menu-icon-frame,
+#mobileDrawerFixedActions .menu-release-notes > .menu-icon-frame,
+#desktopFixedActions .menu-release-notes > svg,
+#mobileDrawerFixedActions .menu-release-notes > svg {
+    display: none !important;
+}
+#desktopFixedActions .menu-release-notes,
+#mobileDrawerFixedActions .menu-release-notes {
+    justify-content: center;
+    gap: 0;
+}
+
+/* Responsive, synchronized rail transition: sidebar width and content
+   offset use one 180ms curve (instead of the former 500ms / 700ms mismatch).
+   Avoid animating other layout properties or nested accordion grids here. */
+@media (min-width: 768px) {
+    #desktopSidebar {
+        transition: width 180ms cubic-bezier(.22, 1, .36, 1) !important;
+    }
+    #mainWrapper {
+        transition: margin-right 180ms cubic-bezier(.22, 1, .36, 1) !important;
+    }
+    /* Freeze only secondary effects for the duration of the rail animation;
+       regular accordion expansion and icon hover remain animated afterward. */
+    html.menu-rail-switching #desktopSidebar .has-submenu > .submenu,
+    html.menu-rail-switching #desktopSidebar .has-submenu .submenu-arrow,
+    html.menu-rail-switching #desktopSidebar .menu-icon-frame {
+        transition: none !important;
+        transition-delay: 0s !important;
+    }
+    html.menu-rail-switching #desktopSidebar .menu-item::after,
+    html.menu-rail-switching #desktopSidebar .menu-icon-frame::after {
+        animation: none !important;
+    }
+    /* An open flyout must not paint into the content while the rail moves. */
+    html.menu-rail-switching #desktopNavbar {
+        overflow: hidden !important;
+        scrollbar-width: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #desktopSidebar, #mainWrapper {
+        transition: none !important;
+    }
+}

@@ -4,14 +4,14 @@
 }
 
 <div id="supplyFactorWorkspace" class="crm-operations-theme w-100">
-    <div class="row align-items-center justify-content-between flex-wrap mb-2 g-2">
-        <div class="d-flex col-lg-3">
+    <div class="sf-toolbar">
+        <div class="sf-toolbar-actions d-flex">
             <button class="buttonGray2 d-flex align-items-center gap-1" style="padding: 4px 8px" onclick="showSupplyFactorModal()">
                 <span style="line-height: 1">ثبت فاکتور جدید</span>
                 <svg style="width: 20px" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
             </button>
         </div>
-        <div class="col-12 col-lg-5 d-flex align-items-center gap-2 flex-wrap">
+        <div class="sf-toolbar-search d-flex align-items-center">
             <div class="search-group flex-grow-1">
                 <input class="form-control" id="supplyFactorSearch" placeholder="جستجو">
                 <div class="search-icon">
@@ -19,14 +19,25 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex align-items-start justify-content-start justify-content-lg-end gap-2 col-lg-3">
-            @*<div id="ContentDealFilterId" class="ContentFilter"></div>
-            <div class="btnFilter d-none d-lg-flex" data-filterVarConfig="filterDealConfig" data-filterCallBack="callbackFilterDeal" data-filterContentId="ContentDealFilterId" data-filterInpSearchId="dealSearchId" data-filterVarSearch="dealSearchVal" onclick="ShowFilterPopup(this)">
-                <svg style="width:24px;color:#333" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd"></path></svg>
-            </div>*@
-        </div>
+        <section class="sf-overview" aria-label="خلاصه وضعیت تخصیص فاکتورهای تامین">
+            <div class="sf-overview-card sf-overview-complete">
+                <div class="sf-overview-info">
+                    <div class="sf-overview-title"><i class="fa fa-check-circle" aria-hidden="true"></i> تخصیص تکمیل‌شده</div>
+                    <div class="sf-overview-value" aria-live="polite"><strong data-sf-overview-count="complete">—</strong> از <b data-sf-overview-total>—</b> عدد</div>
+                </div>
+                <button type="button" class="sf-overview-action" data-sf-status-filter="complete" aria-pressed="false" aria-controls="supplyFactorsContainer" disabled>مشاهده</button>
+            </div>
+            <div class="sf-overview-card sf-overview-pending">
+                <div class="sf-overview-info">
+                    <div class="sf-overview-title"><i class="fa fa-clock" aria-hidden="true"></i> تخصیص تکمیل‌نشده</div>
+                    <div class="sf-overview-value" aria-live="polite"><strong data-sf-overview-count="pending">—</strong> از <b data-sf-overview-total>—</b> عدد</div>
+                </div>
+                <button type="button" class="sf-overview-action" data-sf-status-filter="pending" aria-pressed="false" aria-controls="supplyFactorsContainer" disabled>مشاهده</button>
+            </div>
+        </section>
     </div>
     <div id="supplyFactorsContainer"></div>
+    <div id="sfOverviewEmpty" class="sf-overview-empty" role="status" hidden>فاکتوری با شرایط انتخاب‌شده یافت نشد.</div>
 </div>
 
 
@@ -39,19 +50,69 @@
     <script src="~/js/supplyFinancial.js" data-page-bindings="openSupplyFinancial" asp-append-version="true"></script>
     <script>document.addEventListener("DOMContentLoaded", () => enableMomentumScrollScope(document.getElementById("supplyFactorWorkspace")));</script>
     <script src="~/js/supplyFactor.js?release=7.5.6" data-page-bindings="orderHeadsSupFactorSelectedIds,supplyFactorData,sfItemIndex,incompleteSfItemsCount,supplyFactorDiscountInp,supplyFactorAttInpId,showSupplyFactorModal,initSupplyFactorModal,cancelSupplyFactorModal,addSfItem,calculateSupplyFactorTotals,sfFieldRules,showSupplyFactorItems,deleteSfItem,showUpdateSfItem,updateSfItem,cancelUpdateSfItem,addItemSupplyFactor,canselModalItemSupplyFactor,processSupplyFactorWithAi,updateSupplyFactorValidationState,showAddOrderHeadSfModal,getOrderHeadIdsBySupplier,isSetupSupplyTomSelect,setupSelectOptions,submitSupplyFactorModal,getSupplyFactor,showEditSupplyFactorModal,deleteSupplyFactor,sfAllocationState,sfAllocationPerspective,sfAllocationIsSales,sfAllocationSaving,sfAllocationChoosing,sfAllocationSelector,sfAllocationRequest,sfAllocationAbort,sfAllocationOrigin,sfAllocationInvoiceId,sfAllocationFilter,sfAllocationCurrentItemId,sfAllocationOpen,sfAllocationDrafts,sfPickerTab,sfPickerData,sfPickerTargets,sfPickerForm,sfPickerAbort,sfPickerRequest,sfPickerTimer,sfPickerLoading,sfAllocationText,sfAllocationEscape,sfAllocationNumber,sfAllocationRemaining,sfAllocationNormalize,sfAllocationIcon,sfAllocationSalesWeight,sfAllocationDisplayRecord,sfAllocationTargetLabel,sfAllocationSalesCapacity,sfAllocationSkeleton,sfAllocationEmpty,ensureSupplyAllocationUI,sfAllocationRefreshNeeded,sfAllocationFeedback,showSalesFactorAllocations,showSupplyAllocations,loadSupplyAllocations,sfAllocationCapacity,updateSupplyAllocationLimit,captureSupplyAllocationDrafts,sfAllocationForm,renderSupplyAllocations,renderSupplyAllocationRecords,filterSupplyAllocationItems,navigateSupplyAllocationItem,loadSupplyAllocationPicker,renderSupplyAllocationPicker,updateSupplyPickerSelection,selectSupplyAllocationFactor,clearSupplyAllocationFormError,supplyAllocationFormError,submitSupplyAllocation,persistSupplyAllocation,deleteSupplyAllocation,retrySupplyAllocations" asp-append-version="true"></script>
-    <script data-page-bindings="getAllSupplyFactors">
-        document.addEventListener("DOMContentLoaded", async () => {
-            await getAllSupplyFactors();
+    <script data-page-bindings="getAllSupplyFactors,updateSupplyFactorOverview">
+        document.addEventListener("DOMContentLoaded", () => {
+            const workspace = document.getElementById("supplyFactorWorkspace");
+            if (!workspace) return;
 
+            workspace.querySelectorAll("[data-sf-status-filter]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const wasSelected = button.getAttribute("aria-pressed") === "true";
+                    workspace.querySelectorAll("[data-sf-status-filter]").forEach(action => {
+                        action.setAttribute("aria-pressed", String(action === button && !wasSelected));
+                    });
+                    updateSupplyFactorOverview(workspace);
+                });
+            });
+            workspace.addEventListener("sf:allocation-status-changed", () => updateSupplyFactorOverview(workspace));
             initSearchInput("supplyFactorSearch", getAllSupplyFactors);
+            getAllSupplyFactors();
         });
 
-        const getAllSupplyFactors = async () => {
-            const val = document.getElementById("supplyFactorSearch")?.value.trim() ?? "";
-            const res = await sendApiRequest({ url: "/Supply/GetAllSupplyFactorsPartial", params: { search: val }, returnFullResponse: true, skeleton: { target: "#supplyFactorsContainer", retry: getAllSupplyFactors } });
-            if (!res) return;
-            document.getElementById("supplyFactorsContainer").innerHTML = res.data;
+        const updateSupplyFactorOverview = workspace => {
+            const ready = workspace.dataset.sfSummaryReady === "true";
+            const cards = [...workspace.querySelectorAll("#supplyFactorsContainer .sf-supply-card")];
+            const completeCount = cards.filter(card => card.classList.contains("sf-supply-card-complete")).length;
+            const format = value => ready ? value.toLocaleString("fa-IR") : "—";
+            workspace.querySelector('[data-sf-overview-count="complete"]').textContent = format(completeCount);
+            workspace.querySelector('[data-sf-overview-count="pending"]').textContent = format(cards.length - completeCount);
+            workspace.querySelectorAll("[data-sf-overview-total]").forEach(total => {
+                total.textContent = format(cards.length);
+            });
 
+            const selected = workspace.querySelector('[data-sf-status-filter][aria-pressed="true"]')?.dataset.sfStatusFilter;
+            workspace.querySelectorAll("[data-sf-status-filter]").forEach(button => {
+                const active = button.dataset.sfStatusFilter === selected;
+                button.textContent = active ? "نمایش همه" : "مشاهده";
+                button.disabled = !ready;
+            });
+
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const complete = card.classList.contains("sf-supply-card-complete");
+                const matches = !selected || (selected === "complete" ? complete : !complete);
+                card.hidden = ready && !matches;
+                if (matches) visibleCount++;
+            });
+            workspace.querySelector("#sfOverviewEmpty").hidden = !ready || visibleCount !== 0;
+        };
+
+        const getAllSupplyFactors = async () => {
+            const workspace = document.getElementById("supplyFactorWorkspace");
+            if (!workspace) return;
+            const container = workspace.querySelector("#supplyFactorsContainer");
+            const requestId = String(Number(container.dataset.sfRequestId || 0) + 1);
+            container.dataset.sfRequestId = requestId;
+            workspace.dataset.sfSummaryReady = "false";
+            updateSupplyFactorOverview(workspace);
+
+            const val = workspace.querySelector("#supplyFactorSearch").value.trim();
+            const res = await sendApiRequest({ url: "/Supply/GetAllSupplyFactorsPartial", params: { search: val }, returnFullResponse: true, skeleton: { target: "#supplyFactorsContainer", retry: getAllSupplyFactors } });
+            if (!workspace.isConnected || container.dataset.sfRequestId !== requestId || !res) return;
+
+            container.innerHTML = res.data;
+            workspace.dataset.sfSummaryReady = "true";
+            updateSupplyFactorOverview(workspace);
         };
     </script>
 }

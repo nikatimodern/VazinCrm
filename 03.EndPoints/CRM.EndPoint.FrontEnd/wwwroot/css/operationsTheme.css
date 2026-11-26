@@ -111,3 +111,119 @@
     #priceWorkspace .list-product__grid { grid-template-columns:minmax(0,1fr); }
     #priceWorkspace .list-product__box { padding:9px; }
 }
+
+/* Supply invoice overview: compact status filters, scoped to the supply list. */
+#supplyFactorWorkspace {
+    container: sf-workspace / inline-size;
+}
+#supplyFactorWorkspace .sf-toolbar {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) minmax(200px, 42%) minmax(390px, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+#supplyFactorWorkspace .sf-toolbar-search { min-width: 0; }
+#supplyFactorWorkspace .sf-toolbar-search .search-group { min-width: 0; width: 100%; }
+#supplyFactorWorkspace .sf-toolbar-actions button { white-space: nowrap; }
+#supplyFactorWorkspace .sf-overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: min(100%, 440px);
+    justify-self: end;
+}
+#supplyFactorWorkspace .sf-overview-card {
+    --sf-overview-accent: var(--ops-action);
+    --sf-overview-tint: var(--ops-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    min-width: 0;
+    padding: 3px 6px;
+    background: #fff;
+    border: 1px solid var(--ops-border);
+    border-radius: 7px;
+}
+#supplyFactorWorkspace .sf-overview-pending {
+    --sf-overview-accent: var(--ops-purple);
+    --sf-overview-tint: var(--ops-purple-light);
+}
+#supplyFactorWorkspace .sf-overview-info { min-width: 0; }
+#supplyFactorWorkspace .sf-overview-title {
+    color: #545961;
+    font-size: 11px;
+    line-height: 1.4;
+}
+#supplyFactorWorkspace .sf-overview-title i {
+    color: var(--sf-overview-accent);
+    margin-inline-end: 3px;
+}
+#supplyFactorWorkspace .sf-overview-value {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #545961;
+    font-variant-numeric: tabular-nums;
+}
+#supplyFactorWorkspace .sf-overview-value strong {
+    color: var(--sf-overview-accent);
+    font-family: IRANSansBold;
+    font-size: 16px;
+}
+#supplyFactorWorkspace .sf-overview-value b { color: #212529; }
+#supplyFactorWorkspace .sf-overview-action {
+    flex-shrink: 0;
+    min-height: 24px;
+    padding: 1px 5px;
+    white-space: nowrap;
+    border: 1px solid var(--sf-overview-accent);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--sf-overview-accent);
+    font: 500 11px/1.5 IRANSansMedium;
+}
+#supplyFactorWorkspace .sf-overview-action:not(:disabled):hover,
+#supplyFactorWorkspace .sf-overview-action[aria-pressed="true"] {
+    background: var(--sf-overview-tint);
+}
+#supplyFactorWorkspace .sf-overview-action:focus-visible {
+    outline: 2px solid var(--sf-overview-accent);
+    outline-offset: 2px;
+}
+#supplyFactorWorkspace .sf-overview-action:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+#supplyFactorWorkspace .sf-supply-card[hidden],
+#supplyFactorWorkspace .sf-overview-empty[hidden] { display: none !important; }
+#supplyFactorWorkspace .sf-overview-empty {
+    padding: 10px;
+    text-align: center;
+    color: #545961;
+    font-size: 13px;
+}
+@container sf-workspace (max-width: 999px) {
+    #supplyFactorWorkspace .sf-toolbar {
+        grid-template-columns: max-content minmax(0, 1fr);
+        gap: 6px;
+    }
+    #supplyFactorWorkspace .sf-overview {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: 440px;
+        justify-self: end;
+    }
+}
+@container sf-workspace (max-width: 420px) {
+    #supplyFactorWorkspace .sf-toolbar { grid-template-columns: minmax(0, 1fr); }
+    #supplyFactorWorkspace .sf-overview-card { flex-wrap: wrap; gap: 2px 4px; }
+}
+@media (max-width: 767px) {
+    #supplyFactorWorkspace .sf-overview-action {
+        min-height: 23px;
+        font-size: 11px;
+        padding: 1px 5px;
+        margin-block: 0;
+    }
+}

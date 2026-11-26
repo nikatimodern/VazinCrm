@@ -47,10 +47,12 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 public sealed class CustomerController(ICqrsDispatcher requests) : Controller
 {
     [Authorize(Policy = "NotCustomerOnly")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(int roleType = -1, CancellationToken cancellationToken = default)
     {
         var user = await requests.QueryAsync(new GetCustomersPageQuery(), cancellationToken);
         ViewBag.SubTitle = " فرم ثبت مشتری"; ViewBag.Head = "Customer";
+        ViewBag.DirectoryTitle = roleType == 1 ? "مشتریان" : roleType == 2 ? "تأمین‌کنندگان" : "اشخاص";
+        ViewBag.DirectorySubtitle = roleType == 1 ? "فهرست مشتریان" : roleType == 2 ? "فهرست تأمین‌کنندگان" : "مشتریان و تأمین‌کنندگان";
         return View(user);
     }
     [Authorize(Policy = "NotCustomerOnly"), HttpPost]

@@ -2816,6 +2816,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
             var items = await query
                 .OrderBy(f => f.Order)
+                .ThenBy(f => f.Id)
                 .Select(f => new BaseDescriptionVModel {
                     Text = f.Text,
                     Official = f.Official,

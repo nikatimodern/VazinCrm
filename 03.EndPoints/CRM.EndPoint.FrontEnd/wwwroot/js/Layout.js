@@ -73,35 +73,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 const modalSelector = new ModalSelector();
 
+// Reuse Bootstrap tooltips instead of creating and destroying each instance on
+// every rail click. All work for creation happens *after* the width transition.
 let tooltipList = [];
 function initTooltipsIfCollapsed() {
-    if (!document.documentElement.classList.contains("sidebar-collapsed")) return;
-    
-    
-    const triggers = document.querySelectorAll("[data-tooltip-left]");
-    
-    tooltipList = [...triggers]
-        .filter(el => !el.closest(".submenu"))
-        .map(el => {
-            const isSubmenu = el.closest(".has-submenu");
-            
-            return new bootstrap.Tooltip(el, {
-                title: el.getAttribute("data-tooltip-left"),
-                delay: { show: 150, hide: 0 },
-                customClass: "main-font",
-                placement: isSubmenu ? "top" : "left",
-            });
+    if (!document.documentElement.classList.contains("sidebar-collapsed") ||
+        !window.bootstrap?.Tooltip) return;
+
+    tooltipList = tooltipList.filter(entry => {
+        if (entry.element.isConnected) return true;
+        entry.tooltip.dispose();
+        return false;
+    });
+    const known = new Set(tooltipList.map(entry => entry.element));
+    for (const element of document.querySelectorAll("#desktopSidebar [data-tooltip-left]")) {
+        if (element.closest(".submenu") || known.has(element)) continue;
+        const tooltip = new bootstrap.Tooltip(element, {
+            title: element.getAttribute("data-tooltip-left"),
+            delay: { show: 150, hide: 0 },
+            customClass: "main-font",
+            placement: element.closest(".has-submenu") ? "top" : "left",
         });
-    
+        tooltipList.push({ element, tooltip });
+    }
+    for (const entry of tooltipList) entry.tooltip.enable();
 }
 
+let menuToggleCleanup = null;
 function toggleMenu() {
-    const collapsed = document.documentElement.classList.toggle("sidebar-collapsed");
-    sessionStorage.setItem("sidebar-collapsed", collapsed);
-    
-    tooltipList.forEach(t => t.dispose());
-    tooltipList = [];
-    if (collapsed) initTooltipsIfCollapsed();
+    const root = document.documentElement;
+    const sidebar = document.getElementById("desktopSidebar");
+    // Cancel any previous completion callback during rapid repeated clicks.
+    // The browser then reverses the existing CSS transition from its current
+    // intermediate width, instead of forcing a jump or another DOM rebuild.
+    if (menuToggleCleanup) menuToggleCleanup();
+    root.classList.add("menu-rail-switching");
+
+    const collapsed = root.classList.toggle("sidebar-collapsed");
+    sessionStorage.setItem("sidebar-collapsed", String(collapsed));
+
+    // Do not destroy tooltip instances. Disable them immediately when opening,
+    // and re-enable them only after the collapsed rail has settled.
+    if (!collapsed) {
+        for (const entry of tooltipList) {
+            entry.tooltip.hide();
+            entry.tooltip.disable();
+        }
+    }
+
+    let completed = false;
+    let fallbackId = null;
+    function finish() {
+        if (completed) return;
+        completed = true;
+        sidebar?.removeEventListener("transitionend", onTransitionEnd);
+        if (fallbackId !== null) clearTimeout(fallbackId);
+        if (menuToggleCleanup === cancel) menuToggleCleanup = null;
+        root.classList.remove("menu-rail-switching");
+        if (root.classList.contains("sidebar-collapsed")) initTooltipsIfCollapsed();
+    }
+    function onTransitionEnd(event) {
+        if (event.target === sidebar && event.propertyName === "width") finish();
+    }
+    function cancel() {
+        completed = true;
+        sidebar?.removeEventListener("transitionend", onTransitionEnd);
+        if (fallbackId !== null) clearTimeout(fallbackId);
+    }
+
+    sidebar?.addEventListener("transitionend", onTransitionEnd);
+    // Transitionend does not fire when reduced motion is enabled or the target
+    // width already matches. Always release the temporary class.
+    fallbackId = setTimeout(finish, 240);
+    menuToggleCleanup = cancel;
 }
 
 connection.on("TaskChanged", id => {
