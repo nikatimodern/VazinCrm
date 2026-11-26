@@ -41,8 +41,13 @@ function renderExternalSoftwareFactors(items = []) {
         card: item => ({
             title: item.externalSoftwareTitle,
             missing: item.isMissing,
-            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد."
-                : item.requiresSynchronization ? "اقلام یا مبالغ فاکتور با ERP مغایرت دارد." : "",
+            status: item.isMissing ? "فاکتور در نرم‌افزار مقصد پیدا نشد." : "",
+            discrepancy: item.requiresSynchronization ? {
+                message: "اقلام یا مبالغ فاکتور با ERP مغایرت دارد.",
+                onSynchronize: item.canMaintainDestination && item.mappingId ? event => openFactorDestinationSync(
+                    event.currentTarget, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId }, history.modal)
+                    : null,
+            } : null,
             fields: [
                 ["شماره فاکتور", item.externalFactorNumber],
                 ["مشتری", item.customerName],
@@ -62,10 +67,7 @@ function renderExternalSoftwareFactors(items = []) {
                     softwareTitle: item.externalSoftwareTitle,
                     url: "/Factor/DeleteMissingExternalFactorMapping",
                     onDeleted: () => loadFactorExternalSoftwares(sourceId),
-                }) : !item.isMissing && item.canMaintainDestination && item.requiresSynchronization && item.mappingId
-                ? ui.action("همگام‌سازی با ERP", { icon: "fa-sync-alt", onClick: event => openFactorDestinationSync(
-                    event.currentTarget, { sourceId, externalSoftwareId: item.externalSoftwareId, mappingId: item.mappingId }, history.modal) })
-                : null,
+                }) : null,
         }),
     });
 }
@@ -190,12 +192,7 @@ function renderFactorDestinationSync(modal, key, { preview, items, settings }) {
         const columns = ["کالا", "انبار", "مقدار", "قیمت واحد", "مبلغ", "تخفیف", "مالیات"];
         const values = (row, item, stock) => [item || "—", stock || "—",
             ...[row.quantity, row.fee, row.price, row.discount, row.tax].map(format)];
-        const section = (title, headings, data) => {
-            const node = element("section");
-            node.append(element("h6", "fbold mb-2 external-pf-software", title));
-            node.insertAdjacentHTML("beforeend", renderExternalFinancialPreviewTable(headings, data));
-            content.append(node);
-        };
+        const section = (title, headings, data) => appendExternalFinancialPreviewSection(content, title, headings, data);
         section("اقلام فعلی سپیدار", columns, preview.destinationRows.map(row => values(row, row.itemTitle, row.stockTitle)));
         section("اقلام جایگزین از ERP", columns, rows.map(state => values(state.row, labels.get(state.itemId), state.stockTitle)));
         const totals = [["جمع مبلغ کالاها", "price"], ["تخفیف کل", "discount"], ["مالیات کل", "tax"], ["مبلغ نهایی", "total"]];

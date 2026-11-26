@@ -1,6 +1,7 @@
 ﻿using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Accountancies.Repositories;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Attachments.Entities;
@@ -1549,8 +1550,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt)
+        public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt,
+            [FromServices] IDepositFinancialRepository depositFinancial, CancellationToken ct)
         {
+            if (model == null) return BadRequest();
+            var sourceId = model.Id != Guid.Empty ? model.Id : model.ParentId.GetValueOrDefault();
+            await using var guard = sourceId != Guid.Empty ? await depositFinancial.LockAsync(sourceId, ct) : null;
+            if (model.Id != Guid.Empty &&
+                (await depositFinancial.GetDepositAsync(model.Id, ct))?.GetChequeModificationRestriction() is { } restriction)
+                return Conflict(restriction);
             using var transAction = db.Database.BeginTransaction(); //شروع
             try
             {
@@ -1639,15 +1647,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model)
+        public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model,
+            [FromServices] IDepositFinancialRepository depositFinancial,
+            CancellationToken ct)
         {
+            if (model == null || model.Id == Guid.Empty) return BadRequest();
+            await using var guard = await depositFinancial.LockAsync(model.Id, ct);
             var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
             if (item == null) return NotFound();
+            var collectionDate = dtService.GetDateMiladi(model.VosolDate);
+            if (item.PayType == PayTypeEnum.چکی &&
+                !await db.AccountancyTransfers.AnyAsync(x => x.AccountancyId == item.Id && !x.IsDeleted, ct))
+            {
+                if (!collectionDate.HasValue)
+                    return BadRequest("تاریخ وصول چک را وارد کنید.");
+                if (model.BankAccountId is not Guid bankId || bankId == Guid.Empty ||
+                    !await depositFinancial.HasAvailableCollectionBankAsync(bankId, ct))
+                    return BadRequest("حساب بانکی مقصد وصول چک را از حساب‌های فعال شرکت انتخاب کنید.");
+            }
 
 
             item.credit = model.ReciveAmount;
             item.VosolDate = model.VosolDate;
-            item.VosolDateM = dtService.GetDateMiladi(model.VosolDate);
+            item.VosolDateM = collectionDate;
             item.BankAccountId = model.BankAccountId;
             item.BankAccountTxt = model.BankAccountTxt;
             item.Vosoled = true;
@@ -1659,9 +1681,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model)
+        public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model,
+            [FromServices] IDepositFinancialRepository depositFinancial,
+            CancellationToken ct)
         {
             if (model?.AccData == null) return BadRequest();
+            var sourceId = model.AccData.Id != Guid.Empty ? model.AccData.Id : model.AccData.ParentId.GetValueOrDefault();
+            await using var guard = sourceId != Guid.Empty ? await depositFinancial.LockAsync(sourceId, ct) : null;
+            if (model.AccData.Id != Guid.Empty)
+            {
+                var original = await depositFinancial.GetDepositAsync(model.AccData.Id, ct);
+                if (original?.GetChequeModificationRestriction() is { } restriction)
+                    return Conflict(restriction);
+                var mappings = await depositFinancial.GetMappingsAsync(model.AccData.Id, null, null, ct);
+                if (mappings.Any(x => x.HasPendingExternalId()))
+                    return Conflict("ابتدا انتقال مالی در حال انجام این واریزی را تکمیل کنید.");
+                if (mappings.Count > 0)
+                {
+                    if (original == null || original.PayType != model.AccData.PayType || original.AccType != model.AccData.AccType)
+                        return Conflict("نوع صورت‌حساب و نوع واریزی پس از انتقال به نرم‌افزار مالی قابل تغییر نیست.");
+                }
+            }
             await using var transAction = await db.Database.BeginTransactionAsync(); //شروع
             try
             {

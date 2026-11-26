@@ -7,8 +7,12 @@ namespace CRM.Core.ApplicationServices.Accountancies.Commands.RemoveAccountancyT
 
 public sealed record RemoveAccountancyTransferCommand(Guid AccountancyId) : ICommand<AccountancyOutcome>;
 
-public sealed class RemoveAccountancyTransferCommandHandler(IAccountancyRepository repository) : ICommandHandler<RemoveAccountancyTransferCommand, AccountancyOutcome>
+public sealed class RemoveAccountancyTransferCommandHandler(IAccountancyRepository repository, IDepositFinancialRepository financial)
+    : ICommandHandler<RemoveAccountancyTransferCommand, AccountancyOutcome>
 {
     public async Task<AccountancyOutcome> HandleAsync(RemoveAccountancyTransferCommand request, CancellationToken ct)
-        => await repository.RemoveTransferAsync(request.AccountancyId, ct) ? new(200) : new(404);
+    {
+        await using var guard = await financial.LockAsync(request.AccountancyId, ct);
+        return await repository.RemoveTransferAsync(request.AccountancyId, ct) ? new(200) : new(404);
+    }
 }

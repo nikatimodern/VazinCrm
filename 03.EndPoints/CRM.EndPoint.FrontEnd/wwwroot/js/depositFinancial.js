@@ -64,7 +64,8 @@ async function openDepositFinancial(id) {
                     fields: [["شماره " + label(result.payType), row.document?.number],
                         ["مشتری", result.customerName]],
                     registration: { date: row.registeredAt, by: row.registeredBy },
-                    status: row.missing ? "سند در نرم‌افزار مقصد پیدا نشد." : row.cheque?.message,
+                    status: row.missing ? "سند در نرم‌افزار مقصد پیدا نشد." : null,
+                    discrepancy: depositDiscrepancy(row, 0, label(result.payType)),
                     operations: row.document && row.mappingId && !row.pending
                         ? maintenanceActions(row, 0, label(result.payType)) : [],
                 };
@@ -110,7 +111,9 @@ async function openDepositFinancial(id) {
         const entries = [];
         let nextAction;
         const actionId = row.cheque.nextAction;
-        if (actionId && !row.pending) {
+        const sync = row.synchronization;
+        if (actionId && !row.pending && !sync?.changes.length && !sync?.assignmentRestriction &&
+            !(actionId === chequeAction.collect && sync?.receiptRestriction)) {
             const button = historyCard.action("ثبت " + chequeActionTitle[actionId]);
             button.onclick = async () => {
                 if (choosing || busy || isModalOpen(wizard.modal)) return;
@@ -132,6 +135,7 @@ async function openDepositFinancial(id) {
             entries.push(historyCard.relatedItem({
                 title: caption, fields: [[dateLabel, entry.dateText], [detailLabel, detail]],
                 registration: { date: entry.registeredAt },
+                discrepancy: depositDiscrepancy(row, operation, title),
                 operations: row.mappingId && !row.pending
                     ? maintenanceActions(row, operation, title) : [],
             }));
@@ -139,6 +143,58 @@ async function openDepositFinancial(id) {
         return entries.length || nextAction
             ? { title: "عملیات مرتبط چک", entries, action: nextAction, open: true }
             : null;
+    }
+
+    function depositDiscrepancy(row, operation, title) {
+        const sync = row.synchronization;
+        if (!sync || row.pending || !row.mappingId) return null;
+        if (operation === 0 && row.cheque?.bankCollectionRestriction)
+            return { message: row.cheque.bankCollectionRestriction };
+        const restriction = operation === chequeAction.assign ? sync.assignmentRestriction
+            : operation === chequeAction.collect ? sync.collectionRestriction
+                : operation === chequeAction.spend ? sync.paymentRestriction : sync.receiptRestriction;
+        const changed = operation === 0 ? sync.changes.length > 0 : operation === chequeAction.spend && sync.paymentChanged;
+        if (!restriction && !changed && (operation || !row.cheque?.message)) return null;
+        return {
+            message: restriction || (changed ? title + " با ERP مغایرت دارد." : row.cheque.message),
+            onSynchronize: changed && !restriction ? event => openSynchronization(row, operation, title, event.currentTarget) : null,
+        };
+    }
+
+    async function openSynchronization(row, operation, title, button) {
+        if (choosing || busy || isModalOpen(wizard.modal)) return;
+        choosing = button.disabled = true;
+        try {
+            const key = { id, softwareId: row.id, mappingId: row.mappingId, action: operation };
+            const preview = await api("PreviewSynchronization", key);
+            if (!preview || signal.aborted || !isModalOpen(history)) return;
+            const { impact, changes } = preview;
+            const blocked = impact.blockers.length > 0;
+            const content = make("div", null, "external-prefactor-preview d-grid gap-3");
+            appendExternalFinancialPreviewSection(content, title + " شماره " + impact.number,
+                ["عنوان", "مقدار فعلی در سپیدار", "مقدار جایگزین"], changes.map(change => [change.title, change.current, change.proposed]));
+            const notes = make("ul", null, "small ps-4 mb-0");
+            if (blocked) impact.blockers.forEach(text => notes.append(make("li", text)));
+            else if (impact.voucherNumber != null)
+                notes.append(make("li", "سند حسابداری شماره " + impact.voucherNumber +
+                    (impact.autoVoucher ? " بازسازی می‌شود." : " حذف می‌شود و صدور خودکار در مقصد غیرفعال است.")));
+            else notes.append(make("li", impact.autoVoucher
+                ? "سند حسابداری صادر می‌شود." : "صدور خودکار سند حسابداری در مقصد غیرفعال است."));
+            if (notes.childElementCount) content.append(notes);
+            destinations = [row];
+            index = 0;
+            stage("بررسی نهایی همگام‌سازی",
+                blocked ? "برای این سند امکان همگام‌سازی وجود ندارد." : "تغییرات روی همان سند سپیدار اعمال می‌شوند.",
+                "", '<i class="fas fa-sync-alt" aria-hidden="true"></i>', content,
+                blocked ? "بستن" : "تأیید و همگام‌سازی",
+                blocked ? close : async () => {
+                    const result = await api("SubmitSynchronization", { ...key, token: impact.token }, "POST", true);
+                    if (!result?.saved) return;
+                    toastifySuccess(title + " همگام شد.");
+                    close();
+                }, blocked ? null : close, true);
+            ModalToggle(wizard.modal, "show");
+        } finally { choosing = button.disabled = false; }
     }
 
     function maintenanceActions(row, operation, title) {
@@ -155,6 +211,9 @@ async function openDepositFinancial(id) {
 
     async function openMaintenance(row, operation, title, edit) {
         if (choosing || busy || isModalOpen(wizard.modal)) return;
+        if (edit && (operation === 0 && row.synchronization?.changes.length ||
+            operation === chequeAction.spend && row.synchronization?.paymentChanged))
+            return toastifyError("ابتدا مغایرت سند را از روی کارت سوابق برطرف کنید.");
         choosing = true;
         try {
             const key = { id, softwareId: row.id, mappingId: row.mappingId, action: operation, edit };

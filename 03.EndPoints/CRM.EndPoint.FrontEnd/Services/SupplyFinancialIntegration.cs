@@ -64,22 +64,28 @@ public sealed partial class SupplyFinancialIntegration(ISupplyFinancialRepositor
                 : await service.FindPurchaseDocumentAsync(false, ReadId(purchaseMapping), ct);
             var receipts = purchase == null ? [] : await service.FindReceiptsForPurchaseAsync(purchase.Id, ct);
             var mappedReceiptId = receiptMapping == null ? (int?)null : ReadId(receiptMapping);
+            var status = purchase == null || purchaseMapping!.HasPendingExternalId() ? new SupplySyncStatus(false, false)
+                : await maintenance.GetSyncStatusAsync(new(software.Id, purchase.Id,
+                    receiptMapping?.HasPendingExternalId() == false ? mappedReceiptId : null), source, ct);
             var receiptHistory = receipts.Select(receipt =>
-                ToHistory(receipt, receipt.Id == mappedReceiptId ? receiptMapping : null)!).ToList();
+                ToHistory(receipt, receipt.Id == mappedReceiptId ? receiptMapping : null,
+                    receipt.Id == mappedReceiptId && status.ReceiptChanged)!).ToList();
             if (mappedReceiptId.HasValue && receipts.All(receipt => receipt.Id != mappedReceiptId))
             {
                 var mappedReceipt = await service.FindPurchaseDocumentAsync(true, mappedReceiptId.Value, ct);
                 receiptHistory.Add(ToHistory(mappedReceipt, receiptMapping)!);
             }
-            results.Add(new SupplyFinancialDestination(software.Id, software.Title, ToHistory(purchase, purchaseMapping), receiptHistory));
+            results.Add(new SupplyFinancialDestination(software.Id, software.Title,
+                ToHistory(purchase, purchaseMapping, status.PurchaseChanged), receiptHistory));
         }
         return SupplyResult.Success(new SupplyFinancialHistory(source.SerialNumber, results));
 
-        SupplyFinancialDocumentHistory? ToHistory(SepidarService.PurchaseDocument? document, ExternalMapping? mapping) =>
+        SupplyFinancialDocumentHistory? ToHistory(SepidarService.PurchaseDocument? document, ExternalMapping? mapping,
+            bool requiresSynchronization = false) =>
             document == null && mapping == null ? null : new SupplyFinancialDocumentHistory(document,
                 document == null ? null : BaseServices.GetDatePersian(document.Date), mapping?.Id,
                 mapping?.CreateDateTxt ?? (document?.CreationDate is DateTime created ? dates.GetDateTimePersian(created) : null),
-                mapping?.UserCreator);
+                mapping?.UserCreator, requiresSynchronization);
     }
 
     public async Task<SupplyResult> DeleteMissingMappingAsync(Guid sourceId, Guid softwareId, Guid mappingId,
@@ -128,6 +134,7 @@ public sealed partial class SupplyFinancialIntegration(ISupplyFinancialRepositor
             });
         }
 
+        await EnsurePurchaseSyncedAsync(new(request.ExternalSoftwareId, purchaseId, null), source, ct);
         var receiptSource = await service.GetFullPurchaseReceiptSourceAsync(purchaseId, ct);
         var stocks = await service.GetPurchaseReceiptStocksAsync(purchaseId, ct);
         var itemDisplays = await service.GetReceiptItemDisplaysAsync(
@@ -181,6 +188,7 @@ public sealed partial class SupplyFinancialIntegration(ISupplyFinancialRepositor
         if (request.Receipt)
         {
             var purchaseId = await GetPurchaseIdAsync(request, ct);
+            await EnsurePurchaseSyncedAsync(new(request.ExternalSoftwareId, purchaseId, null), source, ct);
             var draft = await service.PreparePurchaseReceiptDraftAsync(purchaseId, request.StockId,
                 GetReceiptDate(request), request.Description, request.RowDescriptions, ct);
             var labels = await service.GetPurchaseItemLabelsAsync(draft.Items.Select(x => x.ItemRef).ToArray(), ct);

@@ -67,6 +67,14 @@ public sealed class DepositFinancialController(DepositFinancialService service, 
         request == null ? InvalidRequest() : RespondAsync(() => service.SubmitMaintenanceAsync(request, ct));
 
     [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> PreviewSynchronization([FromBody] DepositSynchronizationRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.PreviewSynchronizationAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public Task<IActionResult> SubmitSynchronization([FromBody] DepositSynchronizationRequest request, CancellationToken ct) =>
+        request == null ? InvalidRequest() : RespondAsync(() => service.SubmitSynchronizationAsync(request, ct));
+
+    [HttpPost, ValidateAntiForgeryToken]
     public Task<IActionResult> DeleteMissing([FromBody] DepositTransferRequest request, CancellationToken ct) =>
         request == null ? InvalidRequest() : RespondAsync(async () => {
             await service.DeleteMissingAsync(request.Id, request.SoftwareId, ct);

@@ -87,13 +87,6 @@ async function openPreFactorDestinationEdit(button, key, historyModal) {
     }
 }
 
-function preFactorSynchronizationAction(key, historyModal) {
-    const button = ExternalFinancialHistory.action("همگام‌سازی با ERP", {
-        icon: "fa-sync-alt", onClick: () => openPreFactorSynchronization(button, key, historyModal),
-    });
-    return button;
-}
-
 async function openPreFactorSynchronization(button, key, historyModal) {
     const modal = document.getElementById("preFactorDestinationSyncModal");
     if (!modal || modal.dataset.active || button.disabled) return;

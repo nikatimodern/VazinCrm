@@ -115,6 +115,25 @@ class ExternalFinancialHistory {
         return message;
     }
 
+    static discrepancyNotice({ message, onSynchronize }) {
+        const notice = this.element("div", "external-pf-discrepancy");
+        const copy = this.element("div", "external-pf-discrepancy-copy");
+        const icon = this.element("i", "fas fa-exclamation-circle");
+        icon.setAttribute("aria-hidden", "true");
+        const text = this.element("div");
+        text.append(this.element("strong", "external-pf-discrepancy-title", message));
+        if (onSynchronize)
+            text.append(this.element("div", "external-pf-discrepancy-hint", "برای رفع مغایرت، تغییرات را بررسی و تأیید کنید."));
+        copy.append(icon, text);
+        notice.append(copy);
+        if (onSynchronize) {
+            const button = this.action("شروع همگام‌سازی", { icon: "fa-sync-alt", onClick: onSynchronize });
+            button.classList.add("external-pf-sync-action", "crm-mobile-dense-action");
+            notice.append(button);
+        }
+        return notice;
+    }
+
     static async confirmEdit(modal, question, details) {
         const content = this.element("div", "text-start");
         content.append(this.element("p", details.length ? "mb-2" : "mb-0", question));
@@ -130,7 +149,7 @@ class ExternalFinancialHistory {
         return result.isConfirmed;
     }
 
-    static card({ title, fields = [], registration, view, operations = [], action, related, status, missing = false }) {
+    static card({ title, fields = [], registration, view, operations = [], action, related, status, discrepancy, missing = false }) {
         const card = this.element("article", "external-pf-card" + (missing ? " external-pf-missing" : ""));
         const header = this.element("header", "external-pf-card-header");
         header.append(this.element("strong", "external-pf-software", title));
@@ -143,12 +162,13 @@ class ExternalFinancialHistory {
         }
         card.append(header);
         if (status) card.append(this.statusMessage(status));
+        if (!missing && discrepancy) card.append(this.discrepancyNotice(discrepancy));
         card.append(...this.recordFields(fields, registration));
         if (related) card.append(this.related(related));
         return card;
     }
 
-    static relatedItem({ title, fields = [], registration, view, action, operations = [], status, missing = false }) {
+    static relatedItem({ title, fields = [], registration, view, action, operations = [], status, discrepancy, missing = false }) {
         const item = this.element("div", "external-pf-related-item" + (missing ? " external-pf-missing" : ""));
         const header = this.element("div", "external-pf-card-header");
         const caption = this.element("strong", "external-pf-related-title");
@@ -167,6 +187,7 @@ class ExternalFinancialHistory {
         }
         item.append(header);
         if (status) item.append(this.statusMessage(status));
+        if (!missing && discrepancy) item.append(this.discrepancyNotice(discrepancy));
         if (fields.length || registration) item.append(...this.recordFields(fields, registration));
         return item;
     }

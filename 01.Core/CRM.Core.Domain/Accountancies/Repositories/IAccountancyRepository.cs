@@ -35,7 +35,7 @@ public interface IAccountancyRepository
     Task<AccountancyTransfer?> GetTransferAsync(Guid accountancyId, CancellationToken ct);
     Task SaveTransferAsync(AccountancyTransfer transfer, CancellationToken ct);
     Task<bool> RemoveTransferAsync(Guid accountancyId, CancellationToken ct);
-    Task<bool> RemoveVosolAsync(Guid accountancyId, CancellationToken ct);
+    Task<bool> RemoveVosolAsync(Guid accountancyId, CancellationToken ct, DepositOriginalCheque? original = null);
     void SaveBank(BankAccount item, bool create);
     Task RemoveTasksAsync(Guid id, CancellationToken ct);
     Task SaveAsync(CancellationToken ct);

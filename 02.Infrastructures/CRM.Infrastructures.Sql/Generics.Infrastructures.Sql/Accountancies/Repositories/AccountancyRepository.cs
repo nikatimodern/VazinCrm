@@ -52,12 +52,18 @@ public sealed class AccountancyRepository(CRMContextDb db) : IAccountancyReposit
         await db.SaveChangesAsync(ct);
         return true;
     }
-    public async Task<bool> RemoveVosolAsync(Guid accountancyId, CancellationToken ct)
+    public async Task<bool> RemoveVosolAsync(Guid accountancyId, CancellationToken ct, DepositOriginalCheque? original = null)
     {
         var accountancy = await db.Accountancies.FirstOrDefaultAsync(x => x.Id == accountancyId, ct);
         if (accountancy == null)
             return false;
         accountancy.Vosoled = false;
+        if (original != null)
+        {
+            accountancy.credit = original.Amount;
+            accountancy.VosolDateM = original.Due.Date;
+            accountancy.VosolDate = CRM.Framework.BaseServices.GetDatePersian(original.Due);
+        }
         await db.SaveChangesAsync(ct);
         return true;
     }

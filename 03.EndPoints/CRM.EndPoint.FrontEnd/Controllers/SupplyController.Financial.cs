@@ -15,6 +15,8 @@ using CRM.Core.ApplicationServices.Supplies.Commands.EditSupplyReceiptDestinatio
 using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyDestinationDeletion;
 using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyDestination;
 using CRM.Core.ApplicationServices.Supplies.Commands.SubmitSupplyFinancial;
+using CRM.Core.ApplicationServices.Supplies.Commands.SynchronizeSupplyDestination;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyDestinationSync;
 using CRM.Core.Domain.Supplies.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -63,6 +65,14 @@ public partial class SupplyController
     [HttpGet, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> GetFinancialReceiptEdit([FromQuery] SupplyDestinationKey key, CancellationToken ct) =>
         FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyReceiptEditQuery(key), ct));
+
+    [HttpGet, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> GetFinancialSynchronization([FromQuery] SupplyDestinationKey key, bool receiptOnly, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.QueryAsync(new GetSupplyDestinationSyncQuery(key, receiptOnly), ct));
+
+    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
+    public Task<IActionResult> SynchronizeFinancialDocument([FromBody] SupplyDestinationSyncRequest input, CancellationToken ct) =>
+        FinancialResponseAsync(() => requests.CommandAsync(new SynchronizeSupplyDestinationCommand(input), ct));
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = FinancialExportRoles)]
     public Task<IActionResult> EditFinancialReceipt([FromBody] SupplyReceiptEditRequest input, CancellationToken ct) =>

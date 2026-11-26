@@ -18,7 +18,8 @@ using CRM.Core.ApplicationServices.Accountancies.Services;
 
 namespace CRM.Core.ApplicationServices.Accountancies.Commands.AcceptAccountancy;
 public sealed record AcceptAccountancyCommand(AccStatusEnum Status, Guid Id, string Description) : ICommand<AccountancyOutcome>;
-public sealed class AcceptAccountancyCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationDates dates, IApplicationAudit audit, IAccountancyEffects effects) : ICommandHandler<AcceptAccountancyCommand, AccountancyOutcome>
+public sealed class AcceptAccountancyCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationDates dates, IApplicationAudit audit,
+    IAccountancyEffects effects, IDepositFinancialRepository financial) : ICommandHandler<AcceptAccountancyCommand, AccountancyOutcome>
 {
     public async Task<AccountancyOutcome> HandleAsync(AcceptAccountancyCommand request, CancellationToken ct)
     {
@@ -26,10 +27,13 @@ public sealed class AcceptAccountancyCommandHandler(IAccountancyRepository repos
         var Id = request.Id;
         var Description = request.Description;
         var user = (await actor.GetAsync(ct)).User;
+        await using var guard = await financial.LockAsync(request.Id, ct);
         var oldAcc = await repository.GetAsync(request.Id, false, false, ct);
         var acc = await repository.GetAsync(request.Id, false, true, ct);
         if (acc == null)
             return new(404, "رکوردی یافت نشد!");
+        if (acc.Status != status && acc.GetChequeModificationRestriction() is { } restriction)
+            return new(409, restriction);
         acc.CommentText = request.Description;
         if (acc.PayType is PayTypeEnum.نقدی or PayTypeEnum.تهاتری)
         {
