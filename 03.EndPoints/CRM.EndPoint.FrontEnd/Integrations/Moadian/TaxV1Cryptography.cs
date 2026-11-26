@@ -18,10 +18,8 @@ internal static class TaxV1Cryptography
     private static readonly StringComparer PathOrder = StringComparer.Create(CultureInfo.GetCultureInfo("en-US"), false);
 
     internal static string Sign(JsonElement value, RSA key, IReadOnlyDictionary<string, string> headers = null) =>
-        SignUtf8(Normalize(value, headers), key);
-
-    internal static string SignUtf8(string value, RSA key) =>
-        Convert.ToBase64String(key.SignData(Encoding.UTF8.GetBytes(value), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        Convert.ToBase64String(key.SignData(Encoding.UTF8.GetBytes(Normalize(value, headers)), HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1));
 
     internal static string Normalize(JsonElement value, IReadOnlyDictionary<string, string> headers = null)
     {
