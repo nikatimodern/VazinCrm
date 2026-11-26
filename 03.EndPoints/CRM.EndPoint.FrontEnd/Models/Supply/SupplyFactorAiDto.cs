@@ -8,8 +8,9 @@ namespace CRM.EndPoint.FrontEnd.Models.Supply;
 public class SupplyFactorAiDto {
     public byte OfficialType { get; set; }
     public string SerialNumber { get; set; }
+    public string Date { get; set; }
 
-    public string Date {
+/*    public string Date {
         get;
         init {
             field = value;
@@ -17,7 +18,7 @@ public class SupplyFactorAiDto {
         }
     }
 
-    public DateTime? DateMiladi { get; private set; }
+    public DateTime? DateMiladi { get; private set; }*/
 
     public List<SupplyFactorAiItemDto> Items { get; set; } = [];
 }
