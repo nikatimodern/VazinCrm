@@ -78,6 +78,41 @@
         };
     }
 
+    function showDiagnostics(diagnostics) {
+        const details = document.createElement("details");
+        details.className = "mt-2 taxation-muted";
+        const summary = document.createElement("summary");
+        summary.textContent = "جزئیات درخواست‌های V1";
+        details.append(summary);
+        for (const entry of diagnostics) {
+            const fields = document.createElement("dl");
+            fields.className = "mb-2 ps-2";
+            const values = [
+                ["آدرس درخواست", entry.url, true],
+                ["نام سرآیندهای درخواست", entry.headerNames.join("، "), true],
+                ["ساختار JSON درخواست", entry.requestJson, true],
+                ["کد HTTP پاسخ", entry.httpStatusCode ?? "پاسخی دریافت نشد"],
+                ["Content-Type پاسخ", entry.contentType ?? "در دسترس نیست", true]
+            ];
+            if (entry.errorCode) values.push(["کد خطای سازمان", entry.errorCode], ["شرح خطای سازمان", entry.errorDescription]);
+            for (const [label, value, technical] of values) {
+                const term = document.createElement("dt");
+                term.textContent = label;
+                const description = document.createElement("dd");
+                if (technical) {
+                    const code = document.createElement("code");
+                    code.dir = "ltr";
+                    code.className = "taxation-check-value";
+                    code.textContent = value;
+                    description.append(code);
+                } else description.textContent = value;
+                fields.append(term, description);
+            }
+            details.append(fields);
+        }
+        return details;
+    }
+
     function showCheck(form, result) {
         const list = form.closest("article").querySelector("[data-connection-results]");
         list.replaceChildren();
@@ -86,6 +121,7 @@
             const row = document.createElement("li");
             row.dataset.checkStatus = step.status;
             row.textContent = `${step.name} · ${labels[step.status] || ""} · ${step.message}`;
+            if (step.diagnostics?.length) row.append(showDiagnostics(step.diagnostics));
             list.append(row);
         }
         list.hidden = !list.children.length;

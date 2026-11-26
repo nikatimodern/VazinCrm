@@ -584,6 +584,7 @@
 .taxation-memory-form-footer [data-form-status] { max-inline-size: 100%; overflow-wrap: anywhere; }
 .taxation-connection-check { margin: 0; padding-inline-start: 1.55rem; }
 .taxation-connection-check li { padding-block: .2rem; }
+.taxation-connection-check .taxation-check-value { overflow-wrap: anywhere; unicode-bidi: isolate; }
 .taxation-connection-check [data-check-status="Passed"] { color: var(--tax-primary); }
 .taxation-connection-check [data-check-status="Failed"] { color: var(--tax-danger); }
 .taxation-connection-check [data-check-status="Skipped"] { color: var(--tax-muted); }

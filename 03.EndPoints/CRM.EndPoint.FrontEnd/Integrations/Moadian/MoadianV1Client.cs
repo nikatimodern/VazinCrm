@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Taxation.Submission;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxConnectionCheck;
 using CRM.Core.Domain.Taxation;
 
 namespace CRM.EndPoint.FrontEnd.Integrations.Moadian;
@@ -99,13 +100,14 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
     public Task<TaxWorkFolderResult> GetWorkFolderAsync(TaxSubmission submission, CancellationToken ct) =>
         throw new ArgumentException("استعلام مستقل وضعیت کارپوشه با نسخه ۱ در ERP فعال نیست.");
 
-    internal async Task VerifyIdentityAsync(string fiscalId, TaxSigningBinding binding, CancellationToken ct, Action onTokenReceived = null)
+    internal async Task VerifyIdentityAsync(string fiscalId, TaxSigningBinding binding, CancellationToken ct,
+        Action onTokenReceived = null, Action<TaxConnectionDiagnostic> report = null)
     {
         using var key = keys.Open(binding.V1KeyFingerprint);
-        var token = await GetTokenAsync(fiscalId, key, ct);
+        var token = await GetTokenAsync(fiscalId, key, ct, report);
         onTokenReceived?.Invoke();
         using var response = await SyncAsync("GET_FISCAL_INFORMATION",
-            new Packet(null, "GET_FISCAL_INFORMATION", null, FiscalId: fiscalId), token, key, ct);
+            new Packet(null, "GET_FISCAL_INFORMATION", null, FiscalId: fiscalId), token, key, ct, report);
         var info = GetResultData(response.RootElement, "FISCAL_INFORMATION");
         var status = Text(info, "fiscalStatus");
         var seller = Text(info, "economicCode");
@@ -117,26 +119,27 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
             throw new FiscalIdentityException("کد اقتصادی ذخیره‌شده با پاسخ سامانه مؤدیان همخوانی ندارد.");
     }
 
-    internal Task<JsonDocument> ReadServerInformationAsync(CancellationToken ct) =>
-        SyncAsync("GET_SERVER_INFORMATION", new Packet(null, "GET_SERVER_INFORMATION", null), null, null, ct);
+    internal Task<JsonDocument> ReadServerInformationAsync(CancellationToken ct, Action<TaxConnectionDiagnostic> report = null) =>
+        SyncAsync("GET_SERVER_INFORMATION", new Packet(null, "GET_SERVER_INFORMATION", null), null, null, ct, report);
 
     internal static bool HasServerInformation(JsonElement response) =>
         Property(GetResultData(response, "SERVER_INFORMATION"), "publicKeys") is { ValueKind: JsonValueKind.Array } keys &&
         keys.EnumerateArray().Any(x => Text(x, "algorithm") == "RSA" && Number(x, "purpose") == 1 &&
             Text(x, "id") is { Length: > 0 } && Text(x, "key") is { Length: > 0 });
 
-    internal async Task<string> GetTokenAsync(string fiscalId, RSA key, CancellationToken ct)
+    internal async Task<string> GetTokenAsync(string fiscalId, RSA key, CancellationToken ct, Action<TaxConnectionDiagnostic> report = null)
     {
         using var result = await SyncAsync("GET_TOKEN", new Packet(null, "GET_TOKEN", new { username = fiscalId }),
-            null, key, ct);
+            null, key, ct, report);
         return Text(GetResultData(result.RootElement, "TOKEN_RESULT"), "token") is { Length: > 0 } token
             ? token : throw InvalidResponse();
     }
 
-    private async Task<JsonDocument> SyncAsync(string operation, Packet packet, string token, RSA key, CancellationToken ct)
+    private async Task<JsonDocument> SyncAsync(string operation, Packet packet, string token, RSA key, CancellationToken ct,
+        Action<TaxConnectionDiagnostic> report = null)
     {
         using var request = Build(Sync + operation, packet, false, token, key);
-        return await ExchangeAsync(request, ct);
+        return await ExchangeAsync(request, ct, report);
     }
 
     private HttpRequestMessage Build(string path, Packet packet, bool batch, string token, RSA key, Guid? traceId = null)
@@ -164,11 +167,21 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         return message;
     }
 
-    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct)
+    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct,
+        Action<TaxConnectionDiagnostic> report = null)
     {
+        var requestJson = report is null ? null : TaxV1Diagnostic.ReadRequestShape(request.Content);
+        int? statusCode = null;
+        string contentType = null;
+        string code = null;
         try
         {
             using var response = await http.SendAsync(request, ct);
+            if (report is not null)
+            {
+                statusCode = (int)response.StatusCode;
+                contentType = TaxV1Diagnostic.SafeContentType(response.Content.Headers.ContentType);
+            }
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             var success = response.IsSuccessStatusCode;
             JsonDocument body = null;
@@ -178,7 +191,7 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
             }
             catch (JsonException) when (!success) { }
 
-            var code = body is null ? null : ReadErrorCode(body.RootElement);
+            code = body is null ? null : ReadErrorCode(body.RootElement);
             if (success && code is null) return body;
             body?.Dispose();
             throw new TaxTransportException("Tax V1 authority rejected the request.",
@@ -191,6 +204,10 @@ internal sealed class MoadianV1Client(HttpClient http, ITaxV1SigningKeys keys, T
         catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException)
         {
             throw InvalidResponse();
+        }
+        finally
+        {
+            report?.Invoke(TaxV1Diagnostic.Describe(http.BaseAddress, request, requestJson, statusCode, contentType, code));
         }
     }
 

@@ -101,9 +101,10 @@ internal sealed class TaxConnectionCheck(TaxProtocolClients sandboxClients, ITax
         CancellationToken ct, Action onTokenReceived)
     {
         await client.VerifyIdentityAsync(memory.FiscalId,
-            new(memory.Environment, null, memory.SellerEconomicCode, TaxAuthorityProtocol.V1, memory.CredentialFingerprint), ct, onTokenReceived);
+            new(memory.Environment, null, memory.SellerEconomicCode, TaxAuthorityProtocol.V1, memory.CredentialFingerprint), ct,
+            onTokenReceived, diagnostic => steps.AddDiagnostic(3, diagnostic));
         steps.Record(3, true, "توکن دریافت شد و هویت حافظه با اطلاعات سازمان تطبیق داشت.");
-        return await client.ReadServerInformationAsync(ct);
+        return await client.ReadServerInformationAsync(ct, diagnostic => steps.AddDiagnostic(4, diagnostic));
     }
 
     private sealed class ConnectionSteps
@@ -112,7 +113,9 @@ internal sealed class TaxConnectionCheck(TaxProtocolClients sandboxClients, ITax
         private readonly TaxConnectionStep[] steps = Names.Select(name => new TaxConnectionStep(name, "Skipped", "بررسی نشد.")).ToArray();
         internal IReadOnlyList<TaxConnectionStep> Results => steps;
         internal void Record(int index, bool passed, string message) =>
-            steps[index] = new(Names[index], passed ? "Passed" : "Failed", message);
+            steps[index] = steps[index] with { Status = passed ? "Passed" : "Failed", Message = message };
+        internal void AddDiagnostic(int index, TaxConnectionDiagnostic diagnostic) =>
+            steps[index] = steps[index] with { Diagnostics = [.. steps[index].Diagnostics ?? [], diagnostic] };
         internal void SkipOnline(string message)
         {
             for (var index = 2; index < steps.Length; index++)

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxMemorySettings;
 using CRM.Core.Domain.Taxation;
 using CRM.EndPoint.FrontEnd.Integrations.Moadian;
@@ -57,11 +58,27 @@ public sealed class TaxMemorySettingsTests
         Assert.Equal(5, results.Count);
         Assert.All(results, step => Assert.Equal("Passed", step.Status));
         Assert.Equal(protocol == TaxAuthorityProtocol.V1 ? 4 : 3, paths.Count);
+        if (protocol == TaxAuthorityProtocol.V2)
+        {
+            Assert.DoesNotContain("Diagnostics", JsonSerializer.Serialize(results));
+            return;
+        }
+        var diagnostics = results[3].Diagnostics;
+        Assert.NotNull(diagnostics);
+        Assert.Equal(2, diagnostics.Count);
+        Assert.EndsWith("/GET_TOKEN", diagnostics[0].Url);
+        Assert.DoesNotContain("Authorization", diagnostics[0].HeaderNames);
+        Assert.EndsWith("/GET_FISCAL_INFORMATION", diagnostics[1].Url);
+        Assert.Contains("Authorization", diagnostics[1].HeaderNames);
+        Assert.DoesNotContain("mock-token", JsonSerializer.Serialize(results));
+        Assert.All(diagnostics, diagnostic => Assert.Equal(200, diagnostic.HttpStatusCode));
+        Assert.EndsWith("/GET_SERVER_INFORMATION", Assert.Single(results[4].Diagnostics!).Url);
     }
 
     [Theory]
     [InlineData("token-401", false, "HTTP 401")]
     [InlineData("token-401-code", false, "HTTP 401")]
+    [InlineData("token-custom-content-type", false, "HTTP 401")]
     [InlineData("token-error-envelope", false, "کد خطای سازمان 5013")]
     [InlineData("token-invalid", false, "پاسخ قابل تأیید")]
     [InlineData("token-timeout", false, "زمان انتظار")]
@@ -85,6 +102,10 @@ public sealed class TaxMemorySettingsTests
                         errors = new[] { new { errorCode = confidential }, new { errorCode = "5013" } },
                         errorDetail = confidential
                     }) },
+                    "token-custom-content-type" => new(HttpStatusCode.Unauthorized)
+                    {
+                        Content = new StringContent(confidential, System.Text.Encoding.UTF8, "application/" + confidential)
+                    },
                     "token-error-envelope" => Json(new { errors = new[] { new { errorCode = 5013, errorDetail = confidential } } }),
                     "token-invalid" => Json(new { errorDetail = confidential }),
                     "token-timeout" => throw new TaskCanceledException(),
@@ -118,7 +139,43 @@ public sealed class TaxMemorySettingsTests
         Assert.Contains(tokenReceived ? "توکن دریافت شد" : "دریافت توکن V1", results[3].Message);
         Assert.Contains(reason, results[3].Message);
         if (scenario == "token-401-code") Assert.Contains("کد خطای سازمان 5013", results[3].Message);
-        Assert.All(results, step => Assert.DoesNotContain(confidential, step.Message));
+        Assert.DoesNotContain(confidential, JsonSerializer.Serialize(results));
+
+        var token = results[3].Diagnostics![0];
+        Assert.Equal("https://tp.tax.gov.ir/req/api/self-tsp/sync/GET_TOKEN", token.Url);
+        Assert.Equal(["Content-Type", "requestTraceId", "timestamp"], token.HeaderNames);
+        using var shape = JsonDocument.Parse(token.RequestJson);
+        Assert.Equal("[REDACTED]", shape.RootElement.GetProperty("signature").GetString());
+        var packet = shape.RootElement.GetProperty("packet");
+        Assert.Equal("GET_TOKEN", packet.GetProperty("packetType").GetString());
+        Assert.Equal(JsonValueKind.Null, packet.GetProperty("uid").ValueKind);
+        Assert.False(packet.GetProperty("retry").GetBoolean());
+        Assert.Equal("[REDACTED]", packet.GetProperty("data").GetProperty("username").GetString());
+        switch (scenario)
+        {
+            case "token-401-code":
+                Assert.Equal(401, token.HttpStatusCode);
+                Assert.Equal("application/json; charset=utf-8", token.ContentType);
+                Assert.Equal("5013", token.ErrorCode);
+                Assert.Equal("امضای درخواست نامعتبر است", token.ErrorDescription);
+                break;
+            case "token-401":
+                Assert.Equal(401, token.HttpStatusCode);
+                Assert.Equal("text/plain; charset=utf-8", token.ContentType);
+                Assert.Null(token.ErrorCode);
+                break;
+            case "token-custom-content-type":
+                Assert.Equal("[REDACTED]", token.ContentType);
+                break;
+            case "token-timeout":
+                Assert.Null(token.HttpStatusCode);
+                Assert.Null(token.ContentType);
+                break;
+            case "token-error-envelope":
+                Assert.Equal(200, token.HttpStatusCode);
+                Assert.Equal("5013", token.ErrorCode);
+                break;
+        }
     }
 
     [Fact]
