@@ -13,6 +13,6 @@ internal sealed class JobPositionConfig : IEntityTypeConfiguration<JobPosition>
         builder.Property(x => x.Code).HasMaxLength(40).IsRequired();
         builder.Property(x => x.Title).HasMaxLength(150).IsRequired();
         builder.HasIndex(x => x.Code).IsUnique();
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
