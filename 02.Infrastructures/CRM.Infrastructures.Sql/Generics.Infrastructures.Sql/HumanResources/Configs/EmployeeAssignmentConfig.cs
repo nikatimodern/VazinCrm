@@ -19,6 +19,6 @@ internal sealed class EmployeeAssignmentConfig : IEntityTypeConfiguration<Employ
         builder.HasOne<Department>().WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<JobPosition>().WithMany().HasForeignKey(x => x.PositionId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom });
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
