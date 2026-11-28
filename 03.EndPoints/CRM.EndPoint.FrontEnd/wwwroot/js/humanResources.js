@@ -10,12 +10,16 @@
         const signal = window.PageRuntime?.current?.signal;
         const canRestore = () => root.isConnected && !signal?.aborted &&
             !root.closest('[aria-busy="true"]');
+        let ready = false;
+        dossier.addEventListener("shown.bs.modal", () => { ready = true; }, { signal });
+        dossier.addEventListener("hide.bs.modal", () => { ready = false; }, { signal });
         dossier.addEventListener("click", event => {
             const trigger = event.target.closest("[data-hr-dossier-editor]");
-            if (!trigger || !dossier.contains(trigger)) return;
+            if (!ready || !trigger || !dossier.contains(trigger)) return;
             const editor = root.querySelector("#" + trigger.dataset.hrDossierEditor);
             if (!editor) return;
             const editorModal = bootstrap.Modal.getOrCreateInstance(editor);
+            ready = false;
             // Bootstrap supports one visible modal at a time. Wait for its backdrop
             // and focus trap to be released before opening the next modal.
             dossier.addEventListener("hidden.bs.modal", () => {
