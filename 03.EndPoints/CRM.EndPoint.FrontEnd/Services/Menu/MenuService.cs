@@ -42,6 +42,21 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
             });
         }
 
+        // Administrative preview only; actual HR data remains guarded by the HR access adapter.
+        if (roles.Contains(AppRoles.Admin))
+        {
+            menus.Add(new MenuItem
+            {
+                Id = "categoryHumanResources", Title = "منابع انسانی", IconHtml = MenuIcons.Customers,
+                Roles = [AppRoles.Admin], DisplayOrder = 65,
+                SubItems = [new MenuItem
+                {
+                    Id = "hrEmployees", Title = "مدیریت پرسنل", Url = "/HumanResources/Index",
+                    Roles = [AppRoles.Admin], DisplayOrder = 1
+                }]
+            });
+        }
+
         var filteredMenus = OrganizeMenus(Filter(menus, roles), roles);
         var versionMenu = filteredMenus.FirstOrDefault(x => x.Id == "releaseNotes");
         if (versionMenu is not null) {
