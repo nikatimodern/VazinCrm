@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using CRM.Core.Domain.HumanResources.Entities;
+
 namespace CRM.Core.Domain.HumanResources.Repositories;
 
 public sealed record EmployeeProfileDetail(Guid Id, string PersonnelCode, string FirstName, string LastName,
-    bool HasAccount, byte[] RowVersion);
+    bool HasAccount, byte[] RowVersion, EmployeePersonalDetails PersonalDetails);
 public sealed record EmployeeAccountCandidate(string Id, string FirstName, string LastName);
-public sealed record CreateEmployeeProfileInput(string PersonnelCode, string FirstName, string LastName, string AppUserId);
-public sealed record EditEmployeeProfileInput(Guid Id, string FirstName, string LastName, byte[] RowVersion);
+public sealed record CreateEmployeeProfileInput(string PersonnelCode, string FirstName, string LastName, string AppUserId, EmployeePersonalDetails PersonalDetails);
+public sealed record EditEmployeeProfileInput(Guid Id, string FirstName, string LastName, byte[] RowVersion, EmployeePersonalDetails PersonalDetails);
 public enum EmployeeSaveStatus { Saved, Invalid, Denied, NotFound, Conflict }
 public sealed record EmployeeSaveResult(EmployeeSaveStatus Status, Guid? Id = null);
 
