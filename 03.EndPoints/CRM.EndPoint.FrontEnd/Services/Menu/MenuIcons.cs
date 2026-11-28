@@ -83,6 +83,8 @@ internal static class MenuIcons
             "demand" => Svg("receipt-text", "<path d='M4 2h16v20l-4-2-4 2-4-2-4 2z'/><path d='M8 7h8M8 11h8M8 15h5'/>"),
             "releaseNotes" => "", // Version is always text-only (also in collapsed rail).
             "settingsVersions" => Svg("history", "<path d='M3 12a9 9 0 1 1 2.5 6M3 17v-5h5'/><path d='M12 7v5l3 2'/>"),
+            "categoryHumanResources" => Customers,
+            "hrEmployees" => Svg("contact-round", "<rect x='3' y='3' width='18' height='18' rx='2'/><circle cx='12' cy='10' r='3'/><path d='M6 18c0-4 12-4 12 0'/>"),
             "settingsUsers" => Customers,
             "settingsCompany" => Svg("building-2", "<rect x='3' y='2' width='14' height='20' rx='2'/><path d='M17 9h4v13h-4M7 6h2M11 6h2M7 10h2M11 10h2M7 14h2M11 14h2'/>"),
             "settingsFinance" => Accounting,
