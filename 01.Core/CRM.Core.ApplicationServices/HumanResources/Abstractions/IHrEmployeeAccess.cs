@@ -1,24 +1,21 @@
 namespace CRM.Core.ApplicationServices.HumanResources.Abstractions;
 
-// This boundary must be implemented by the current Access Catalog adapter.
-// Never accept these fields from HTTP input or infer them from an admin role.
+// Server-resolved permissions and employee scopes. The temporary senior-admin
+// adapter will be replaced by Access Catalog integration. Never bind from HTTP input.
 public sealed record HrEmployeeAccess(string ActorId, bool CanView, bool CanCreate,
     IReadOnlyCollection<Guid> ViewEmployeeIds, IReadOnlyCollection<Guid> EditEmployeeIds,
     IReadOnlyCollection<Guid> ContractViewEmployeeIds, IReadOnlyCollection<string> ImportAccountIds,
     IReadOnlyCollection<Guid> ContractCreateEmployeeIds, IReadOnlyCollection<Guid> ContractEditEmployeeIds,
     IReadOnlyCollection<Guid> ContractApproveEmployeeIds, IReadOnlyCollection<Guid> ContractTerminateEmployeeIds,
     bool CanUploadEducationOnCreate, IReadOnlyCollection<Guid> EducationDocumentViewIds,
-    IReadOnlyCollection<Guid> EducationDocumentEditIds);
+    IReadOnlyCollection<Guid> EducationDocumentEditIds)
+{
+    public static HrEmployeeAccess Denied { get; } =
+        new("", false, false, [], [], [], [], [], [], [], [], false, [], []);
+}
 
 public interface IHrEmployeeAccess
 {
     Task<HrEmployeeAccess> GetAsync(CancellationToken ct);
 }
 
-// This branch has not integrated AccLevel yet. The default adapter deliberately
-// grants no permissions; changing configuration alone cannot bypass the gate.
-public sealed class LockedHrEmployeeAccess : IHrEmployeeAccess
-{
-    public Task<HrEmployeeAccess> GetAsync(CancellationToken ct) =>
-        Task.FromResult(new HrEmployeeAccess("", false, false, [], [], [], [], [], [], [], [], false, [], []));
-}
