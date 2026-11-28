@@ -4,7 +4,9 @@ namespace CRM.Core.ApplicationServices.HumanResources.Abstractions;
 // Never accept these fields from HTTP input or infer them from an admin role.
 public sealed record HrEmployeeAccess(string ActorId, bool CanView, bool CanCreate,
     IReadOnlyCollection<Guid> ViewEmployeeIds, IReadOnlyCollection<Guid> EditEmployeeIds,
-    IReadOnlyCollection<Guid> ContractViewEmployeeIds, IReadOnlyCollection<string> ImportAccountIds);
+    IReadOnlyCollection<Guid> ContractViewEmployeeIds, IReadOnlyCollection<string> ImportAccountIds,
+    IReadOnlyCollection<Guid> ContractCreateEmployeeIds, IReadOnlyCollection<Guid> ContractEditEmployeeIds,
+    IReadOnlyCollection<Guid> ContractApproveEmployeeIds, IReadOnlyCollection<Guid> ContractTerminateEmployeeIds);
 
 public interface IHrEmployeeAccess
 {
@@ -16,5 +18,5 @@ public interface IHrEmployeeAccess
 public sealed class LockedHrEmployeeAccess : IHrEmployeeAccess
 {
     public Task<HrEmployeeAccess> GetAsync(CancellationToken ct) =>
-        Task.FromResult(new HrEmployeeAccess("", false, false, [], [], [], []));
+        Task.FromResult(new HrEmployeeAccess("", false, false, [], [], [], [], [], [], [], []));
 }
