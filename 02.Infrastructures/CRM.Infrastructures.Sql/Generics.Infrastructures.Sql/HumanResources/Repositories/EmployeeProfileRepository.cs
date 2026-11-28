@@ -20,7 +20,8 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
         if (allowedIds is null || !allowedIds.Contains(id)) return null;
         return await db.HrEmployeeProfiles.AsNoTracking().Where(x => x.Id == id && !x.IsDeleted)
             .Select(x => new EmployeeProfileDetail(x.Id, x.PersonnelCode, x.FirstName, x.LastName,
-                x.AppUserId != null, EF.Property<byte[]>(x, "RowVersion"))).SingleOrDefaultAsync(ct);
+                x.AppUserId != null, EF.Property<byte[]>(x, "RowVersion"),
+                new EmployeePersonalDetails(x.FatherName, x.NationalCode, x.BirthCertificateNumber, x.BirthDate, x.Mobile, x.Telephone, x.Email, x.Address, x.Education, x.EmergencyContactName, x.EmergencyContactPhone))).SingleOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<EmployeeAccountCandidate>> GetCandidatesAsync(IReadOnlyCollection<string> allowedAccountIds, CancellationToken ct)
@@ -51,7 +52,11 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
             last = account.LastName;
         }
         EmployeeProfile entity;
-        try { entity = new EmployeeProfile(input.PersonnelCode, first, last, accountId); }
+        try
+        {
+            entity = new EmployeeProfile(input.PersonnelCode, first, last, accountId);
+            entity.SetPersonalDetails(input.PersonalDetails ?? new EmployeePersonalDetails());
+        }
         catch (ArgumentException) { return new(EmployeeSaveStatus.Invalid); }
         entity.UserCreatorID = actorId;
         entity.UserModifyID = actorId;
@@ -67,8 +72,16 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
         if (allowedIds is null || !allowedIds.Contains(input.Id)) return new(EmployeeSaveStatus.Denied);
         var entity = await db.HrEmployeeProfiles.SingleOrDefaultAsync(x => x.Id == input.Id && !x.IsDeleted, ct);
         if (entity is null) return new(EmployeeSaveStatus.NotFound);
-        try { entity.SetName(input.FirstName, input.LastName); }
-        catch (ArgumentException) { return new(EmployeeSaveStatus.Invalid); }
+        try
+        {
+            entity.SetName(input.FirstName, input.LastName);
+            entity.SetPersonalDetails(input.PersonalDetails ?? new EmployeePersonalDetails());
+        }
+        catch (ArgumentException)
+        {
+            db.Entry(entity).State = EntityState.Detached;
+            return new(EmployeeSaveStatus.Invalid);
+        }
         db.Entry(entity).Property<byte[]>("RowVersion").OriginalValue = input.RowVersion;
         entity.UserModifyID = actorId;
         entity.ModifyDate = DateTime.Now;
