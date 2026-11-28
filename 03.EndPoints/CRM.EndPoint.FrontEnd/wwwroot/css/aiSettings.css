@@ -1,0 +1,80 @@
+#aiSettingsWorkspace {
+    --ai-primary: var(--color-primary, #004944);
+    --ai-primary-light: var(--color-primary-light, #E7F3F0);
+    --ai-border: var(--color-border, #DDE1E8);
+    --ai-muted: var(--color-text-muted, #545961);
+    --ai-secondary: var(--color-secondary, #5811B4);
+    --ai-secondary-light: var(--color-secondary-light, #F3EDFC);
+}
+#aiSettingsWorkspace .ai-settings-title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border: 1px solid var(--ai-border);
+    border-radius: 6px;
+    color: var(--ai-primary);
+    background: var(--ai-primary-light);
+}
+#aiSettingsWorkspace .ai-settings-title {
+    color: var(--ai-primary);
+    font: 700 18px/1.8 IRANSansBold;
+}
+#aiSettingsWorkspace .ai-settings-heading {
+    color: var(--ai-primary);
+    font: 500 14px/1.8 IRANSansMedium;
+    margin-bottom: 6px;
+}
+#aiSettingsWorkspace .ai-settings-notice {
+    color: var(--ai-secondary);
+    background: var(--ai-secondary-light);
+    border: 1px solid var(--ai-border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 13px;
+}
+#aiSettingsWorkspace .ai-settings-providers {
+    display: grid;
+    gap: 6px;
+}
+#aiSettingsWorkspace .ai-settings-provider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    border: 1px solid var(--ai-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+#aiSettingsWorkspace .ai-settings-state {
+    color: var(--ai-muted);
+    font-size: 12px;
+}
+#aiSettingsWorkspace .ai-settings-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    padding: 0;
+    gap: 6px;
+}
+#aiSettingsWorkspace .ai-settings-sections li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    border: 1px solid var(--ai-border);
+    border-radius: 6px;
+    padding: 7px 10px;
+}
+#aiSettingsWorkspace .ai-settings-sections i {
+    color: var(--ai-muted);
+    flex: 0 0 16px;
+    text-align: center;
+}
+@media (max-width: 767px) {
+    #aiSettingsWorkspace .ai-settings-sections { grid-template-columns: minmax(0, 1fr); }
+    #aiSettingsWorkspace .ai-settings-title { font-size: 16px; }
+}
