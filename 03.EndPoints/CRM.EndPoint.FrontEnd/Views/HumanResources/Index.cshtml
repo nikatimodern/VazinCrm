@@ -47,7 +47,7 @@
                 <h1 class="hr-title mb-0"><i class="fa fa-users" aria-hidden="true"></i> مدیریت پرسنل</h1>
                 <p class="small text-muted mb-0">پرونده پرسنلی و قراردادهای کاری</p>
             </div>
-            @if (Model.CanCreate || !Model.CanView) {
+            @if (Model.CanCreate) {
                 <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrCreateEmployee">
                     <i class="fa fa-plus" aria-hidden="true"></i> افزودن پرسنل
                 </button>
@@ -58,7 +58,7 @@
         }
         @if (!Model.CanView) {
             <p role="status" class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i>
-                نمای اولیه: ثبت و مشاهده اطلاعات واقعی پس از تکمیل سطح دسترسی و آماده‌سازی دیتابیس فعال می‌شود.
+                شما مجوز دسترسی به منابع انسانی را ندارید.
             </p>
         }
         <form method="get" asp-action="Index" class="d-flex gap-2 flex-wrap align-items-center mb-2">
@@ -78,7 +78,7 @@
                         </tr>
                     }
                     @if (Model.Employees.Count == 0) {
-                        <tr><td colspan="3" class="text-center text-muted py-3">@(Model.CanView ? "پرسنلی پیدا نشد." : "لیست هنوز فعال نیست.")</td></tr>
+                        <tr><td colspan="3" class="text-center text-muted py-3">@(Model.CanView ? "پرسنلی پیدا نشد." : "عدم دسترسی")</td></tr>
                     }
                 </tbody>
             </table>
@@ -104,7 +104,7 @@
             </div>
         </section>
     }
-    @if (Model.CanCreate || !Model.CanView) {
+    @if (Model.CanCreate) {
         @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "create" })
     }
     @if (selected != null) {
