@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.Domain.Accountancies.Entities;
+using CRM.Core.Domain.Accountancies.Enum;
 using CRM.Core.Domain.Accountancies.Repositories;
 using CRM.Core.Domain.ExternalSoftwares.Entites;
 using CRM.Core.Domain.ExternalSoftwares.Enums;
@@ -20,6 +21,10 @@ public sealed class DepositFinancialRepository(CRMContextDb db, Sepidar1ContextD
     public Task<Accountancy?> GetDepositAsync(Guid id, CancellationToken ct) =>
         db.Accountancies.AsNoTracking().Include(x => x.AccountancyTransfer)
             .SingleOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
+
+    public Task<bool> HasAvailableCollectionBankAsync(Guid id, CancellationToken ct) =>
+        db.BankAccounts.AsNoTracking().AnyAsync(x => x.Id == id && !x.IsDeleted &&
+            x.Active && x.BankAccountType == BankAccountTypeEnum.شرکت, ct);
 
     public async Task<IReadOnlyList<ExternalSoftware>> GetDestinationsAsync(CancellationToken ct) =>
         await db.ExternalSoftwares.AsNoTracking().OrderBy(x => x.Title).ToListAsync(ct);
@@ -50,6 +55,33 @@ public sealed class DepositFinancialRepository(CRMContextDb db, Sepidar1ContextD
     }
 
     public Task<IAsyncDisposable> LockAsync(Guid id, CancellationToken ct) => ExternalSoftwares.FinancialMappingLock.AcquireAsync(db, id, ct);
+
+    public async Task<DepositOriginalCheque?> ReadOriginalChequeAsync(IReadOnlyList<ExternalMapping> mappings, CancellationToken ct)
+    {
+        DepositOriginalCheque? original = null;
+        foreach (var mapping in mappings)
+        {
+            if (mapping.ExEntityName != "ReceiptHeader" || mapping.HasPendingExternalId() ||
+                !int.TryParse(mapping.ExEntityId, out var id) || id <= 0)
+                return null;
+            SepidarContextDbBase? destination = mapping.ExternalSoftwareId == Sepidar1SoftwareId ? first
+                : mapping.ExternalSoftwareId == Sepidar2SoftwareId ? second : null;
+            if (destination == null || await HasOtherDestinationMappingAsync(mapping, id, ct))
+                return null;
+            var rows = await (from cheque in destination.ReceiptCheques.AsNoTracking()
+                join receipt in destination.ReceiptHeaders.AsNoTracking() on cheque.ReceiptHeaderRef equals receipt.ReceiptHeaderId
+                where receipt.ReceiptHeaderId == id && receipt.Type == 1 && receipt.ItemType == 4
+                select new { cheque.Amount, cheque.Date, cheque.IsGuarantee, receipt.TotalAmount }).Take(2).ToListAsync(ct);
+            if (rows.Count != 1 || rows[0].IsGuarantee || rows[0].Amount <= 0 ||
+                rows[0].Amount != rows[0].TotalAmount || rows[0].Date == null)
+                return null;
+            var candidate = new DepositOriginalCheque(rows[0].Amount, rows[0].Date!.Value.Date);
+            if (original != null && original != candidate)
+                return null;
+            original = candidate;
+        }
+        return original;
+    }
 
     public async Task RemoveDestinationMappingAsync(ExternalMapping mapping, CancellationToken ct)
     {

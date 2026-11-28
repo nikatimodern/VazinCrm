@@ -9,7 +9,8 @@ namespace CRM.Core.ApplicationServices.Accountancies.Commands.AddAccountancyTran
 
 public sealed record AddAccountancyTransferCommand(AccountancyTransfer Model) : ICommand<AccountancyOutcome>;
 
-public sealed class AddAccountancyTransferCommandHandler(IAccountancyRepository repository, ICustomerRepository customers) : ICommandHandler<AddAccountancyTransferCommand, AccountancyOutcome>
+public sealed class AddAccountancyTransferCommandHandler(IAccountancyRepository repository, ICustomerRepository customers,
+    IDepositFinancialRepository financial) : ICommandHandler<AddAccountancyTransferCommand, AccountancyOutcome>
 {
     public async Task<AccountancyOutcome> HandleAsync(AddAccountancyTransferCommand request, CancellationToken ct)
     {
@@ -22,6 +23,7 @@ public sealed class AddAccountancyTransferCommandHandler(IAccountancyRepository 
             request.Model.Beneficiary = string.Join(" - ", new[] { customer.CompanyName, customer.AgentName, customer.CustomerCode.ToString() }
                 .Where(value => !string.IsNullOrWhiteSpace(value)));
         }
+        await using var guard = await financial.LockAsync(request.Model.AccountancyId, ct);
         await repository.SaveTransferAsync(request.Model, ct);
         return new(200);
     }

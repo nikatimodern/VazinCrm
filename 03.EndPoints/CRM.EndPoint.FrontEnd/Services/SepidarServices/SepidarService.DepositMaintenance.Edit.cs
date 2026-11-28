@@ -38,11 +38,11 @@ public partial class SepidarService
     }
 
     private async Task<bool> EditDepositDocumentAsync(DepositMaintenancePlan plan, DepositInput input, DateTime? due,
-        int modifier, CancellationToken ct)
+        int modifier, CancellationToken ct, decimal? syncAmount = null, DateTime? syncDate = null)
     {
         var db = sepidarContext;
-        var amount = plan.Note?.SumAmount ?? plan.Receipt!.TotalAmount;
-        var prepared = await PrepareDepositAsync(input, amount, plan.Impact.Date, due, true, ct, plan.Cheque?.ReceiptChequeId);
+        var amount = syncAmount ?? plan.Note?.SumAmount ?? plan.Receipt!.TotalAmount;
+        var prepared = await PrepareDepositAsync(input, amount, syncDate ?? plan.Impact.Date, due, true, ct, plan.Cheque?.ReceiptChequeId);
         if (prepared.Year != plan.Year || prepared.AutoVoucher != plan.Impact.AutoVoucher ||
             prepared.Currency != (plan.Receipt?.CurrencyRef ?? plan.Note!.CurrencyRef))
             throw new SepidarTransferValidationException("سال مالی، ارز یا تنظیم صدور سند تغییر کرده است.");
@@ -58,6 +58,13 @@ public partial class SepidarService
         {
             db.Attach(note);
             db.Attach(row);
+            if (syncAmount.HasValue)
+            {
+                note.Date = prepared.Date;
+                note.SumAmountInBaseCurrency = note.SumAmount = prepared.Amount;
+                row.Amount = prepared.Amount;
+                row.AmountInBaseCurrency = prepared.Amount;
+            }
             note.Description = note.Description_En = input.NoteDescription ?? "";
             note.VoucherRef = voucher;
             note.LastModifier = modifier;
@@ -75,6 +82,11 @@ public partial class SepidarService
         else if (plan.Receipt is { } receipt)
         {
             db.Attach(receipt);
+            if (syncAmount.HasValue)
+            {
+                receipt.Date = prepared.Date;
+                receipt.TotalAmountInBaseCurrency = receipt.TotalAmount = prepared.Amount;
+            }
             receipt.VoucherRef = voucher;
             receipt.State = voucher.HasValue ? 2 : 1;
             receipt.AccountSlRef = prepared.CreditAccount;
@@ -87,6 +99,11 @@ public partial class SepidarService
             if (plan.Draft is { } transferRow)
             {
                 db.Attach(transferRow);
+                if (syncAmount.HasValue)
+                {
+                    transferRow.Date = transferRow.HeaderDate = prepared.Date;
+                    transferRow.Amount = transferRow.AmountInBaseCurrency = prepared.Amount;
+                }
                 transferRow.BankAccountRef = input.BankAccountId;
                 transferRow.Number = input.Reference;
                 transferRow.Description = transferRow.Description_En = input.Description;
@@ -95,6 +112,13 @@ public partial class SepidarService
             if (plan.Cheque is { } cheque)
             {
                 db.Attach(cheque);
+                if (syncAmount.HasValue)
+                {
+                    cheque.HeaderDate = prepared.Date;
+                    cheque.Amount = cheque.AmountInBaseCurrency = prepared.Amount;
+                    var initial = await db.ReceiptChequeHistory.SingleAsync(x => x.ReceiptChequeRef == cheque.ReceiptChequeId, ct);
+                    initial.Date = prepared.Date;
+                }
                 cheque.Number = input.Reference;
                 cheque.Date = prepared.Due;
                 cheque.BankRef = input.BankId;

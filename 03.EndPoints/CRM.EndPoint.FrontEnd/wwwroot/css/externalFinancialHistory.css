@@ -236,6 +236,55 @@ button.external-pf-related-caption {
     background: color-mix(in srgb, var(--color-danger-light, #FCE8F0) 90%, var(--color-danger, #C2185B));
 }
 
+.external-pf-discrepancy {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem .75rem;
+    padding: .45rem .55rem;
+    border-inline-start: 2px solid var(--color-danger, #C2185B);
+    border-radius: .4rem;
+    background: var(--color-danger-light, #FCE8F0);
+    color: var(--color-danger, #C2185B);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.external-pf-discrepancy-copy {
+    display: flex;
+    align-items: baseline;
+    flex: 1 1 13rem;
+    gap: .4rem;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+}
+
+.external-pf-discrepancy-title {
+    font-family: IRANSansBold;
+    font-weight: normal;
+}
+
+.external-pf-discrepancy-hint {
+    color: var(--color-text-muted, #545961);
+}
+
+.external-pf-discrepancy .external-pf-sync-action {
+    margin-inline-start: auto;
+    border-color: var(--color-danger, #C2185B);
+    background: var(--color-surface, #fff);
+    color: var(--color-danger, #C2185B);
+}
+
+.external-pf-discrepancy .external-pf-sync-action:hover:not(:disabled) {
+    background: var(--color-danger, #C2185B);
+    color: var(--color-surface, #fff);
+}
+
+.external-pf-sync-action:focus-visible {
+    outline: 2px solid var(--color-danger, #C2185B);
+    outline-offset: 2px;
+}
+
 .external-pf-remove,
 .external-pf-remove:hover:not(:disabled) {
     color: var(--color-danger, #C2185B);

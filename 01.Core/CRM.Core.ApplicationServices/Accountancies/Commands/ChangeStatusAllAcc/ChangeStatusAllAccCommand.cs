@@ -18,21 +18,43 @@ using CRM.Core.ApplicationServices.Accountancies.Services;
 
 namespace CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAllAcc;
 public sealed record ChangeStatusAllAccCommand(Guid PfId) : ICommand<AccountancyOutcome>;
-public sealed class ChangeStatusAllAccCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationAudit audit) : ICommandHandler<ChangeStatusAllAccCommand, AccountancyOutcome>
+public sealed class ChangeStatusAllAccCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationAudit audit,
+    IDepositFinancialRepository financial) : ICommandHandler<ChangeStatusAllAccCommand, AccountancyOutcome>
 {
     public async Task<AccountancyOutcome> HandleAsync(ChangeStatusAllAccCommand request, CancellationToken ct)
     {
         var pfId = request.PfId;
         var user = (await actor.GetAsync(ct)).User;
-        var accS = await repository.GetPendingAsync(pfId, ct);
-        foreach (var acc in accS)
+        var candidates = await repository.GetPendingAsync(pfId, ct);
+        var locks = new List<IAsyncDisposable>();
+        try
         {
-            var oldAcc = await repository.GetAsync(acc.Id, false, false, ct);
-            acc.Status = AccStatusEnum.در_دست_تایید;
-            await audit.LogAsync(oldAcc, acc, LogActionEnum.تغییر_وضعیت, user, ct, null, "ارسال به مالی");
-        }
+            foreach (var chequeId in candidates.Where(acc => acc.PayType == PayTypeEnum.چکی).Select(acc => acc.Id).Order())
+                locks.Add(await financial.LockAsync(chequeId, ct));
 
-        await repository.SaveAsync(ct);
-        return new(200);
+            var pending = new List<(Accountancy Current, Accountancy Original)>();
+            foreach (var acc in candidates)
+            {
+                var original = await repository.GetAsync(acc.Id, false, false, ct);
+                if (original == null || original.Status is not (AccStatusEnum.ثبت_اولیه or AccStatusEnum.رد_شده))
+                    continue;
+                if (original.GetChequeModificationRestriction() is { } restriction)
+                    return new(409, restriction);
+                pending.Add((acc, original));
+            }
+
+            foreach (var (acc, original) in pending)
+            {
+                acc.Status = AccStatusEnum.در_دست_تایید;
+                await audit.LogAsync(original, acc, LogActionEnum.تغییر_وضعیت, user, ct, null, "ارسال به مالی");
+            }
+            await repository.SaveAsync(ct);
+            return new(200);
+        }
+        finally
+        {
+            for (var index = locks.Count - 1; index >= 0; index--)
+                await locks[index].DisposeAsync();
+        }
     }
 }

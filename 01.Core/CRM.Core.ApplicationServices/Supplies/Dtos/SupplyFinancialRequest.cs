@@ -10,7 +10,7 @@ public sealed record SupplyFinancialDestination(Guid Id, string Title,
     public SupplyFinancialDocumentHistory? Receipt => Receipts.FirstOrDefault();
 }
 public sealed record SupplyFinancialDocumentHistory(object? Document, string? DateText, Guid? MappingId,
-    string? RegisteredAt, string? RegisteredBy);
+    string? RegisteredAt, string? RegisteredBy, bool RequiresSynchronization = false);
 
 public sealed record SupplyFinancialRequest
 {
@@ -41,6 +41,8 @@ public interface ISupplyFinancialIntegration
     Task<SupplyResult> EditPurchaseAsync(SupplyDestinationEditRequest request, CancellationToken ct);
     Task<SupplyResult> GetReceiptEditAsync(SupplyDestinationKey key, CancellationToken ct);
     Task<SupplyResult> EditReceiptAsync(SupplyReceiptEditRequest request, CancellationToken ct);
+    Task<SupplyResult> GetSyncAsync(SupplyDestinationKey key, bool receiptOnly, CancellationToken ct);
+    Task<SupplyResult> SynchronizeAsync(SupplyDestinationSyncRequest request, CancellationToken ct);
     Task<SupplyResult> PreviewDestinationDeletionAsync(SupplyDestinationKey key, CancellationToken ct);
     Task<SupplyResult> DeleteDestinationAsync(SupplyDestinationKey key, string token, CancellationToken ct);
     Task<SupplyResult> DeleteMissingMappingAsync(Guid sourceId, Guid softwareId, Guid mappingId, bool receipt, CancellationToken ct);

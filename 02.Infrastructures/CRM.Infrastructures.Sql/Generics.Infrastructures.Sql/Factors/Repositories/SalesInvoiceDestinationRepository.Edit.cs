@@ -21,6 +21,10 @@ public sealed partial class SalesInvoiceDestinationRepository
         var (db, mapping, id) = await ResolveAsync(key, ct);
         var snapshot = await GetEditSnapshotAsync(db, id, false, ct);
         var invoice = snapshot.Invoice;
+        var requiresSynchronization = HasSyncDifference(await ReadSyncSourceAsync(key.SourceId, ct),
+            invoice, snapshot.Rows.Select(DestinationLine));
+        if (requiresSynchronization)
+            snapshot.Plan.Blockers.Insert(0, SynchronizeFirst);
         var itemIds = snapshot.Rows.Select(x => x.ItemRef).Distinct().ToArray();
         var stockIds = snapshot.Rows.Select(x => x.StockRef).Distinct().ToArray();
         var items = await db.Items.AsNoTracking().Where(x => itemIds.Contains(x.ItemID))
@@ -34,7 +38,7 @@ public sealed partial class SalesInvoiceDestinationRepository
             invoice.SaleTypeRef, snapshot.Broker?.PartyRef, snapshot.Rows.Select(row => new SalesInvoiceEditRow(
                 row.InvoiceItemID, row.RowID, row.ItemRef, items.GetValueOrDefault(row.ItemRef), row.StockRef,
                 stocks.GetValueOrDefault(row.StockRef), row.Quantity, row.Fee, row.QuotationItemRef.HasValue)).ToArray(),
-            invoice.Price, invoice.Discount, invoice.Rate);
+            invoice.Price, invoice.Discount, invoice.Rate, requiresSynchronization);
     }
 
     public async Task EditAsync(SalesInvoiceDestinationKey key, string token, int modifier, SalesInvoiceEdit edit,
@@ -52,6 +56,8 @@ public sealed partial class SalesInvoiceDestinationRepository
             throw new SalesInvoiceDestinationException("فاکتور یا اسناد وابسته تغییر کرده‌اند. فرم را دوباره باز کنید.");
 
         var invoice = snapshot.Invoice;
+        if (HasSyncDifference(await ReadSyncSourceAsync(key.SourceId, ct), invoice, snapshot.Rows.Select(DestinationLine)))
+            throw new SalesInvoiceDestinationException(SynchronizeFirst);
         var date = edit.Date.Date;
         await ValidateEditHeaderAsync(db, invoice, edit, date, ct);
         var selections = edit.Items.ToDictionary(x => x.Id);
@@ -64,13 +70,59 @@ public sealed partial class SalesInvoiceDestinationRepository
         if (edit.AutoDelivery && await HasPricedStockAsync(db, invoice.FiscalYearRef, date, nextStocks, ct))
             throw new SalesInvoiceDestinationException("انبار انتخاب‌شده برای تاریخ خروج جدید قیمت‌گذاری شده است.");
 
-        var stockByDelivery = plan.Deliveries.ToDictionary(x => x.Id, x => x.StockRef);
-        var restored = plan.DeliveryLines.GroupBy(row => (stockByDelivery[row.DeliveryId], row.ItemRef, row.TracingRef))
-            .ToDictionary(g => g.Key, g => g.Sum(row => row.Quantity));
         var issued = snapshot.Rows.GroupBy(row => {
             var selected = selections[row.InvoiceItemID];
             return (selected.StockId, selected.ItemId, row.TracingRef);
         }).ToDictionary(g => g.Key, g => g.Sum(row => row.Quantity));
+        await RebuildEditedInvoiceAsync(db, snapshot, modifier, issued, edit.AutoVoucher, edit.AutoDelivery, edit.BrokerPartyId,
+            async () =>
+            {
+                invoice.InvoiceItems = snapshot.Rows;
+                db.Attach(invoice);
+                foreach (var row in changedRows)
+                {
+                    var selected = selections[row.InvoiceItemID];
+                    row.ItemRef = selected.ItemId;
+                    row.StockRef = selected.StockId;
+                    row.QuotationItemRef = null;
+                }
+                if (edit.CustomerId is int customerId && customerId != invoice.CustomerPartyRef)
+                {
+                    var customer = await db.Parties.AsNoTracking()
+                        .Where(x => x.PartyId == customerId && x.IsCustomer && x.Dl != null && x.Dl.IsActive)
+                        .Select(x => new { x.PartyId, Name = (x.Name + " " + x.LastName).Trim(),
+                            PartyMainAddressRef = x.PartyAddresses.Where(p => p.IsMain == 1).Select(p => (int?)p.PartyAddressId).FirstOrDefault() })
+                        .SingleOrDefaultAsync(ct)
+                        ?? throw new SalesInvoiceDestinationException("مشتری مقصد معتبر نیست.");
+                    invoice.CustomerPartyRef = customer.PartyId;
+                    invoice.CustomerRealName = invoice.CustomerRealName_En = customer.Name;
+                    invoice.PartyAddressRef = customer.PartyMainAddressRef;
+                }
+                invoice.SaleTypeRef = edit.SaleTypeId ?? invoice.SaleTypeRef;
+                if (invoice.Date.Date != date)
+                    invoice.TaxPayerBillIssueDateTime = date;
+                invoice.Date = date;
+                invoice.Number = edit.Number;
+            },
+            () =>
+            {
+                var changedIds = changedRows.Select(row => row.InvoiceItemID).ToHashSet();
+                return UpdateQuotationAsync(db, plan.Items.Where(row => changedIds.Contains(row.Id)).ToList(), null, ct);
+            }, post, ct);
+        await transaction.CommitAsync(ct);
+    }
+
+    private static async Task RebuildEditedInvoiceAsync(SepidarContextDbBase db, EditSnapshot snapshot, int modifier,
+        Dictionary<(int StockRef, int ItemRef, int? TracingRef), decimal> issued, bool autoVoucher, bool autoDelivery,
+        int? brokerPartyId, Func<Task> updateInvoice, Func<Task> updateQuotation,
+        Func<SalesInvoicePosting, CancellationToken, Task> post, CancellationToken ct)
+    {
+        var plan = snapshot.Plan;
+        var invoice = snapshot.Invoice;
+        var id = invoice.InvoiceId;
+        var stockByDelivery = plan.Deliveries.ToDictionary(x => x.Id, x => x.StockRef);
+        var restored = plan.DeliveryLines.GroupBy(row => (stockByDelivery[row.DeliveryId], row.ItemRef, row.TracingRef))
+            .ToDictionary(g => g.Key, g => g.Sum(row => row.Quantity));
         var keys = plan.Items.Select(row => (row.StockRef, row.ItemRef, row.TracingRef)).Concat(restored.Keys)
             .Concat(issued.Keys).Distinct().ToArray();
         using var summary = SepidarStockSummary.CreateTable(keys, invoice.FiscalYearRef);
@@ -82,32 +134,7 @@ public sealed partial class SalesInvoiceDestinationRepository
         {
             await DeleteSalesDeliveriesAsync(db, plan.Deliveries, ct);
             await db.InvoiceBrokers.Where(x => x.InvoiceRef == id).ExecuteDeleteAsync(ct);
-            invoice.InvoiceItems = snapshot.Rows;
-            db.Attach(invoice);
-            foreach (var row in changedRows)
-            {
-                var selected = selections[row.InvoiceItemID];
-                row.ItemRef = selected.ItemId;
-                row.StockRef = selected.StockId;
-                row.QuotationItemRef = null;
-            }
-            if (edit.CustomerId is int customerId && customerId != invoice.CustomerPartyRef)
-            {
-                var customer = await db.Parties.AsNoTracking()
-                    .Where(x => x.PartyId == customerId && x.IsCustomer && x.Dl != null && x.Dl.IsActive)
-                    .Select(x => new { x.PartyId, Name = (x.Name + " " + x.LastName).Trim(),
-                        PartyMainAddressRef = x.PartyAddresses.Where(p => p.IsMain == 1).Select(p => (int?)p.PartyAddressId).FirstOrDefault() })
-                    .SingleOrDefaultAsync(ct)
-                    ?? throw new SalesInvoiceDestinationException("مشتری مقصد معتبر نیست.");
-                invoice.CustomerPartyRef = customer.PartyId;
-                invoice.CustomerRealName = invoice.CustomerRealName_En = customer.Name;
-                invoice.PartyAddressRef = customer.PartyMainAddressRef;
-            }
-            invoice.SaleTypeRef = edit.SaleTypeId ?? invoice.SaleTypeRef;
-            if (invoice.Date.Date != date)
-                invoice.TaxPayerBillIssueDateTime = date;
-            invoice.Date = date;
-            invoice.Number = edit.Number;
+            await updateInvoice();
             invoice.VoucherRef = null;
             invoice.Version++;
             invoice.LastModifier = modifier;
@@ -120,27 +147,25 @@ public sealed partial class SalesInvoiceDestinationRepository
             await SepidarStockSummary.RecalculateAsync(db, summary, ct);
 
             var numbers = plan.Deliveries.GroupBy(x => x.StockRef).ToDictionary(x => x.Key, x => x.Max(row => row.Number));
-            await post(new(invoice, edit.BrokerPartyId, numbers), ct);
-            if (invoice.State != ActiveInvoice || invoice.VoucherRef.HasValue != edit.AutoVoucher)
+            await post(new(invoice, brokerPartyId, numbers), ct);
+            if (invoice.State != ActiveInvoice || invoice.VoucherRef.HasValue != autoVoucher)
                 throw new SalesInvoiceDestinationException("بازسازی اسناد وابسته فاکتور تکمیل نشد.");
             if (plan.Voucher is { } previousVoucher)
             {
                 await DeleteSupplementaryDataAsync(db, VoucherType, previousVoucher.Id, ct);
                 await db.Vouchers.Where(x => x.VoucherId == previousVoucher.Id).ExecuteDeleteAsync(ct);
             }
-            var changedIds = changedRows.Select(row => row.InvoiceItemID).ToHashSet();
-            await UpdateQuotationAsync(db, plan.Items.Where(row => changedIds.Contains(row.Id)).ToList(), null, ct);
+            await updateQuotation();
             await SepidarStockSummary.LockAsync(db, summary, ct);
             await SepidarStockSummary.RecalculateAsync(db, summary, ct);
             var after = await ReadStockAsync(db, invoice.FiscalYearRef, keys, ct);
             if (keys.Any(key => after.GetValueOrDefault(key) != before.GetValueOrDefault(key) + restored.GetValueOrDefault(key) -
-                    (edit.AutoDelivery ? issued.GetValueOrDefault(key) : 0m)))
+                    (autoDelivery ? issued.GetValueOrDefault(key) : 0m)))
                 throw new SalesInvoiceDestinationException("بازسازی خروج‌ها با تغییر مورد انتظار موجودی تطبیق ندارد. ویرایش انجام نشد.");
-            await transaction.CommitAsync(ct);
         }
         catch (SqlException ex) when (ex.Number == 547)
         {
-            throw new SalesInvoiceDestinationException("سند وابسته‌ای در سپیدار مانع ویرایش است. تغییرات اعمال نشد.");
+            throw new SalesInvoiceDestinationException("سند وابسته‌ای در سپیدار مانع تغییر فاکتور است. تغییرات اعمال نشد.");
         }
     }
 

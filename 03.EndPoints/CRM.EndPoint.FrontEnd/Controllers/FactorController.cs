@@ -1,6 +1,7 @@
 ﻿using CRM.Core.Domain;
 using CRM.Core.Domain.Accountancies.Entities;
 using CRM.Core.Domain.Accountancies.Enum;
+using CRM.Core.Domain.Accountancies.Repositories;
 using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.ASettings.Entities;
 using CRM.Core.Domain.Attachments.Entities;
@@ -1549,8 +1550,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt)
+        public async Task<IActionResult> AddPayAttachmentBack(Accountancy model, List<Attachment> ListAtt,
+            [FromServices] IDepositFinancialRepository depositFinancial, CancellationToken ct)
         {
+            if (model == null) return BadRequest();
+            var sourceId = model.Id != Guid.Empty ? model.Id : model.ParentId.GetValueOrDefault();
+            await using var guard = sourceId != Guid.Empty ? await depositFinancial.LockAsync(sourceId, ct) : null;
+            if (model.Id != Guid.Empty &&
+                (await depositFinancial.GetDepositAsync(model.Id, ct))?.GetChequeModificationRestriction() is { } restriction)
+                return Conflict(restriction);
             using var transAction = db.Database.BeginTransaction(); //شروع
             try
             {
@@ -1639,15 +1647,29 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model)
+        public async Task<IActionResult> VosolCheckInvoice([FromBody] Accountancy model,
+            [FromServices] IDepositFinancialRepository depositFinancial,
+            CancellationToken ct)
         {
+            if (model == null || model.Id == Guid.Empty) return BadRequest();
+            await using var guard = await depositFinancial.LockAsync(model.Id, ct);
             var item = await db.Accountancies.FirstOrDefaultAsync(f => f.Id == model.Id);
             if (item == null) return NotFound();
+            var collectionDate = dtService.GetDateMiladi(model.VosolDate);
+            if (item.PayType == PayTypeEnum.چکی &&
+                !await db.AccountancyTransfers.AnyAsync(x => x.AccountancyId == item.Id && !x.IsDeleted, ct))
+            {
+                if (!collectionDate.HasValue)
+                    return BadRequest("تاریخ وصول چک را وارد کنید.");
+                if (model.BankAccountId is not Guid bankId || bankId == Guid.Empty ||
+                    !await depositFinancial.HasAvailableCollectionBankAsync(bankId, ct))
+                    return BadRequest("حساب بانکی مقصد وصول چک را از حساب‌های فعال شرکت انتخاب کنید.");
+            }
 
 
             item.credit = model.ReciveAmount;
             item.VosolDate = model.VosolDate;
-            item.VosolDateM = dtService.GetDateMiladi(model.VosolDate);
+            item.VosolDateM = collectionDate;
             item.BankAccountId = model.BankAccountId;
             item.BankAccountTxt = model.BankAccountTxt;
             item.Vosoled = true;
@@ -1659,9 +1681,27 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model)
+        public async Task<IActionResult> AddPayAttachment([FromBody] AccViewModel model,
+            [FromServices] IDepositFinancialRepository depositFinancial,
+            CancellationToken ct)
         {
             if (model?.AccData == null) return BadRequest();
+            var sourceId = model.AccData.Id != Guid.Empty ? model.AccData.Id : model.AccData.ParentId.GetValueOrDefault();
+            await using var guard = sourceId != Guid.Empty ? await depositFinancial.LockAsync(sourceId, ct) : null;
+            if (model.AccData.Id != Guid.Empty)
+            {
+                var original = await depositFinancial.GetDepositAsync(model.AccData.Id, ct);
+                if (original?.GetChequeModificationRestriction() is { } restriction)
+                    return Conflict(restriction);
+                var mappings = await depositFinancial.GetMappingsAsync(model.AccData.Id, null, null, ct);
+                if (mappings.Any(x => x.HasPendingExternalId()))
+                    return Conflict("ابتدا انتقال مالی در حال انجام این واریزی را تکمیل کنید.");
+                if (mappings.Count > 0)
+                {
+                    if (original == null || original.PayType != model.AccData.PayType || original.AccType != model.AccData.AccType)
+                        return Conflict("نوع صورت‌حساب و نوع واریزی پس از انتقال به نرم‌افزار مالی قابل تغییر نیست.");
+                }
+            }
             await using var transAction = await db.Database.BeginTransactionAsync(); //شروع
             try
             {
@@ -4254,7 +4294,8 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
-        public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId, CancellationToken ct)
+        public async Task<IActionResult> GetExternalSoftwareFactors(Guid factorId,
+            [FromServices] ISalesInvoiceDestinationRepository destinationRepository, CancellationToken ct)
         {
             if (factorId == Guid.Empty)
                 return BadRequest("شناسه فاکتور معتبر نیست.");
@@ -4292,6 +4333,19 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                 var invoice = service != null && invoiceIdValid
                     ? await service.GetInvoiceSummaryAsync(invoiceId)
                     : null;
+                var requiresSynchronization = false;
+                if (invoice != null)
+                {
+                    try
+                    {
+                        requiresSynchronization = await destinationRepository.HasSyncDifferenceAsync(
+                            new(factorId, mapping.ExternalSoftwareId, mapping.MappingId), ct);
+                    }
+                    catch (SalesInvoiceDestinationException)
+                    {
+                        // Preserve the existing history card when the mapping cannot be maintained.
+                    }
+                }
 
                 result.Add(new {
                     mapping.ExternalSoftwareId,
@@ -4300,6 +4354,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                     CanDeleteMissing = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
                         User.IsInRole("مدیر مالی") || User.IsInRole("کارشناس مالی"),
                     CanMaintainDestination = invoice != null,
+                    RequiresSynchronization = requiresSynchronization,
                     ExternalSoftwareTitle = mapping.SoftwareTitle,
                     ExternalFactorNumber = invoice?.Number.ToString() ?? "—",
                     CreationDate = mapping.CreateDateTxt,
@@ -4417,14 +4472,15 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
         [Authorize(Roles = FinancialExportRoles)]
         [HttpGet]
-        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId)
+        public async Task<IActionResult> GetExternalSoftwarePreFactors(Guid preFactorId,
+            [FromServices] IPreFactorDestinationRepository destinationRepository, CancellationToken ct)
         {
             try
             {
                 if (preFactorId == Guid.Empty)
                     return BadRequest("شناسه پیش‌فاکتور معتبر نیست.");
 
-                var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == preFactorId);
+                var preFactor = await db.PreFactors.AsNoTracking().FirstOrDefaultAsync(x => x.Id == preFactorId, ct);
 
                 if (preFactor == null)
                     return NotFound("پیش‌فاکتور پیدا نشد.");
@@ -4444,7 +4500,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         x.UserCreator,
                         x.CreateDateTxt
                     })
-                    .ToListAsync();
+                    .ToListAsync(ct);
 
                 var result = new List<ExternalSoftwarePreFactorDto>();
                 var canMaintain = User.IsInRole("مدیر ارشد") || User.IsInRole("مدیر عامل") ||
@@ -4457,13 +4513,28 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
                         return BadRequest("نرم‌افزار مالی این سابقه قابل بررسی نیست.");
 
                     var validId = int.TryParse(mapping.ExEntityId, out var externalId) && externalId > 0;
-                    var externalPreFactor = validId ? await service.GetQuotationAsync(externalId) : null;
+                    var externalPreFactor = validId ? await service.GetQuotationAsync(externalId, ct) : null;
+                    var canMaintainDestination = canMaintain && mapping.ExEntityName == nameof(Quotation);
+                    var requiresSynchronization = false;
+                    if (externalPreFactor != null && canMaintainDestination)
+                    {
+                        try
+                        {
+                            requiresSynchronization = await destinationRepository.HasSyncDifferenceAsync(
+                                new(preFactorId, mapping.ExternalSoftwareId, mapping.MappingId), ct);
+                        }
+                        catch (PreFactorDestinationException)
+                        {
+                            // A card with an invalid mapping can still display its existing history.
+                        }
+                    }
 
                     result.Add(new ExternalSoftwarePreFactorDto {
                         MappingId = mapping.MappingId,
                         IsMissing = externalPreFactor == null,
                         CanDeleteMissing = canMaintain,
-                        CanMaintainDestination = canMaintain && mapping.ExEntityName == nameof(Quotation),
+                        CanMaintainDestination = canMaintainDestination,
+                        RequiresSynchronization = requiresSynchronization,
                         ExternalSoftwareId = mapping.ExternalSoftwareId,
                         ExternalSoftwareTitle = mapping.SoftwareTitle,
                         PreFactorNumber = preFactor.SerialNumber.ToString(),
@@ -4481,7 +4552,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers {
 
                 return Ok(result);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 return BadRequest();
             }

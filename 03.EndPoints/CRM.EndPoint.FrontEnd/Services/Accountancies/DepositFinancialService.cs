@@ -31,18 +31,22 @@ public sealed partial class DepositFinancialService(IDepositFinancialRepository 
     public async Task<object> HistoryAsync(Guid id, CancellationToken ct)
     {
         var source = await SourceAsync(id, ct);
-        var maps = await repository.GetMappingsAsync(id, null, null, ct);
+        var maps = await GetSyncMappingsAsync(source, ct);
+        var bankCollectionRestriction = await GetBankCollectionRestrictionAsync(source, ct);
         var entries = await Task.WhenAll((await repository.GetDestinationsAsync(ct))
             .Where(x => x.Id == Sepidar1SoftwareId || x.Id == Sepidar2SoftwareId).Select(async software => {
-                var mapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id);
+                var mapping = maps.SingleOrDefault(x => x.ExternalSoftwareId == software.Id && x.MapType == DepositType);
                 var service = Destination(software.Id);
                 var document = mapping == null ? null : await FindAsync(service, mapping, ct);
                 var cheque = document != null && source.PayType == PayTypeEnum.چکی
-                    ? await GetChequeHistoryAsync(service, source, ReadId(mapping!), ct) : null;
+                    ? await GetChequeHistoryAsync(service, source, ReadId(mapping!), bankCollectionRestriction, ct) : null;
+                var synchronization = document != null && mapping is { } completed && !completed.HasPendingExternalId()
+                    ? await service.GetDepositSyncSummaryAsync(ReadId(completed), GetSyncSource(source, software.Id, maps), ct)
+                    : null;
                 return new { software.Id, software.Title, Document = document, MappingId = mapping?.Id,
                     RegisteredAt = mapping?.CreateDateTxt, RegisteredBy = mapping?.UserCreator,
                     DateText = BaseServices.GetDatePersian(document?.Date), Missing = mapping != null && document == null && !mapping.HasPendingExternalId(),
-                    Pending = mapping?.HasPendingExternalId() == true, Cheque = cheque };
+                    Pending = mapping?.HasPendingExternalId() == true, Cheque = cheque, Synchronization = synchronization };
             }));
         return new { PayType = (int)source.PayType, source.SerialNum, source.CustomerName, Entries = entries };
     }

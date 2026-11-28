@@ -87,6 +87,160 @@ async function openPreFactorDestinationEdit(button, key, historyModal) {
     }
 }
 
+async function openPreFactorSynchronization(button, key, historyModal) {
+    const modal = document.getElementById("preFactorDestinationSyncModal");
+    if (!modal || modal.dataset.active || button.disabled) return;
+    modal.dataset.active = "true";
+    button.disabled = true;
+    const release = () => {
+        button.disabled = false;
+        delete modal.dataset.active;
+        if (button.isConnected && isModalOpen(historyModal)) button.focus();
+    };
+    let opened = false;
+    try {
+        const response = await sendApiRequest({
+            url: "/PreFactorDestination/SyncPreview", method: "POST", data: key, successMsg: null,
+            headers: ExternalFinancialWizard.antiforgeryHeaders(historyModal),
+        });
+        if (!response?.preview || !button.isConnected || !isModalOpen(historyModal)) return;
+        renderPreFactorSynchronization(modal, key, response);
+        modal.addEventListener("hidden.bs.modal", release, { once: true });
+        ModalToggle(modal, "show");
+        opened = true;
+    } finally {
+        if (!opened) release();
+    }
+}
+
+function renderPreFactorSynchronization(modal, key, { preview, items }) {
+    const wizard = new ExternalFinancialWizard({
+        modal, container: "preFactorDestinationSyncBody",
+        back: "preFactorDestinationSyncBack", confirm: "preFactorDestinationSyncSave",
+    });
+    const element = ExternalFinancialHistory.element;
+    const itemOptions = items.map(item => ({ value: item.id, label: formatPreFactorDestinationLabel(item.code, item.title) }));
+    const itemTitles = new Map(itemOptions.map(item => [item.value, item.label]));
+    const stockCache = new Map();
+    const rows = preview.sourceRows.map(row => ({
+        row, itemId: itemTitles.has(row.suggestedItemId) ? row.suggestedItemId : 0,
+        stockId: row.suggestedStockId ?? 0, stockTitle: "", loading: false,
+    }));
+    const close = modal.querySelector(".btn-close");
+    let saving = false;
+    const hide = () => ModalToggle(modal, "hide");
+    const guardClose = event => { if (saving) event.preventDefault(); };
+    const stage = (title, subtitle, step, content) => wizard.render({
+        destination: preview.softwareTitle, position: "پیش‌فاکتور شماره " + preview.number, large: true,
+        title, subtitle, step, icon: '<i class="fas fa-sync-alt" aria-hidden="true"></i>', content,
+    });
+    const scroll = enableMomentumScrollScope(modal);
+    modal.addEventListener("hide.bs.modal", guardClose);
+    modal.addEventListener("hidden.bs.modal", () => {
+        modal.removeEventListener("hide.bs.modal", guardClose);
+        scroll();
+        wizard.destroy();
+        wizard.container.replaceChildren();
+        wizard.back.onclick = wizard.confirm.onclick = null;
+    }, { once: true });
+
+    if (preview.blockers.length) {
+        const content = element("ul", "external-mapping-entity ps-4 mb-0");
+        for (const blocker of preview.blockers) content.append(element("li", null, blocker));
+        stage("همگام‌سازی پیش‌فاکتور", "در حال حاضر امکان جایگزینی اقلام وجود ندارد.", "", content);
+        wizard.setActions({ confirmText: "بستن", confirmDisabled: false, backHidden: true });
+        wizard.confirm.onclick = hide;
+        return;
+    }
+
+    function renderSelections() {
+        const { content, toolbar, list } = createExternalItemMatching();
+        toolbar.remove();
+        const update = () => wizard.setActions({ confirmDisabled: rows.some(row => row.loading || !row.itemId || !row.stockId) });
+        const controls = rows.map(({ row, itemId }, index) => appendPreFactorItemMatch(
+            list, row, "preFactorSyncItem_" + index, row.quantity, itemOptions, itemId));
+        stage("تطبیق اقلام ERP", "کالا و انبار مقصد را برای اقلام جایگزین بررسی کنید.", "مرحله ۱ از ۲", content);
+        wizard.setActions({ confirmText: "بررسی تغییرات", backText: "انصراف", backHidden: false, backDisabled: false });
+        wizard.back.onclick = hide;
+        wizard.confirm.onclick = renderComparison;
+        for (const [index, state] of rows.entries()) {
+            const { target, select: item } = controls[index];
+            const stock = ExternalFinancialWizard.linkedStockField(target, {
+                id: "preFactorSyncStock_" + index, softwareId: key.externalSoftwareId, cache: stockCache, required: true,
+                isCurrent: () => content.isConnected,
+                onChange: () => readStock(),
+                onLoading: loading => { state.loading = loading; update(); },
+            });
+            function readStock() {
+                state.stockId = Number(stock.select.value);
+                state.stockTitle = stock.select.selectedOptions[0]?.textContent ?? "";
+                update();
+            }
+            async function loadStock(preferred) {
+                await stock.update(state.itemId, preferred);
+                if (content.isConnected) readStock();
+            }
+            new TomSelect(item, { create: false, placeholder: "جستجو و انتخاب کالا", onChange: value => {
+                state.itemId = Number(value);
+                state.stockId = 0;
+                void loadStock("");
+            } });
+            void loadStock(state.stockId);
+        }
+        update();
+    }
+
+    function renderComparison() {
+        if (wizard.confirm.disabled || saving) return;
+        const content = element("div", "external-prefactor-preview d-grid gap-3");
+        const columns = ["کالا", "انبار", "مقدار", "قیمت واحد", "مبلغ", "تخفیف", "مالیات"];
+        const number = value => Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 4 });
+        const comparisonRow = (title, stock, row) => [
+            title || "—", stock || "—", ...[row.quantity, row.fee, row.price, row.discount, row.tax].map(number),
+        ];
+        const addSection = (title, headings, entries) => {
+            const group = element("section");
+            group.append(element("h6", "fbold mb-2 external-pf-software", title));
+            group.insertAdjacentHTML("beforeend", renderExternalFinancialPreviewTable(headings, entries));
+            content.append(group);
+        };
+        addSection("اقلام فعلی سپیدار", columns, preview.destinationRows.map(row =>
+            comparisonRow(formatPreFactorDestinationLabel(row.itemCode, row.title),
+                formatPreFactorDestinationLabel(row.stockCode, row.stock), row)));
+        addSection("اقلام جایگزین از ERP", columns, rows.map(state =>
+            comparisonRow(itemTitles.get(state.itemId), state.stockTitle, state.row)));
+        const totals = [["جمع مبلغ کالاها", "price"], ["تخفیف کل", "discount"], ["مالیات کل", "tax"], ["مبلغ نهایی", "total"]];
+        addSection("مقایسه مبالغ (ریال)", ["عنوان", "سپیدار", "ERP"], totals.map(([label, field]) =>
+            [label, number(preview.destinationAmounts[field]), number(preview.sourceAmounts[field])]));
+        stage("بررسی نهایی همگام‌سازی", "با ثبت، اقلام فعلی سپیدار با اقلام ERP جایگزین می‌شوند.", "مرحله ۲ از ۲", content);
+        wizard.setActions({ confirmText: "تأیید و همگام‌سازی", backText: "برگشت", confirmDisabled: false });
+        wizard.back.onclick = renderSelections;
+        wizard.confirm.onclick = async () => {
+            if (saving) return;
+            saving = close.disabled = true;
+            wizard.setActions({ confirmDisabled: true, backDisabled: true });
+            let result;
+            try {
+                result = await sendApiRequest({
+                    url: "/PreFactorDestination/Synchronize", method: "POST", successMsg: null,
+                    headers: ExternalFinancialWizard.antiforgeryHeaders(modal),
+                    data: { key, token: preview.token, items: rows.map(({ row, itemId, stockId }) => ({ sourceRowId: row.id, itemId, stockId })) },
+                });
+            } finally {
+                saving = close.disabled = false;
+                wizard.setActions({ confirmDisabled: false, backDisabled: false });
+            }
+            if (!result) return;
+            if (result.changed) toastifySuccess("اقلام پیش‌فاکتور در سپیدار همگام شد.");
+            else toastifyInfo("اقلام و مبالغ پیش‌فاکتور از قبل همگام‌اند.");
+            hide();
+            if (externalSotwarePfId === key.sourceId && isModalOpen("externalSoftwarePreFactorsModal"))
+                await getPreFactorExternalSotwares(key.sourceId);
+        };
+    }
+    renderSelections();
+}
+
 function renderPreFactorDestinationEdit(modal, key, { document: quote, saleTypes, customers, items, stocks }) {
     const wizard = new ExternalFinancialWizard({
         modal, container: "preFactorDestinationEditBody", back: "preFactorDestinationEditBack", confirm: "preFactorDestinationEditSave",
@@ -589,6 +743,27 @@ async function exSoftwarePreFactorLoadItems(reload = false) {
 }
 
 
+function formatPreFactorDestinationLabel(code, title) {
+    return [code, title].filter(Boolean).join(" - ");
+}
+
+function appendPreFactorItemMatch(list, item, id, quantity, itemOptions, selected) {
+    const target = appendExternalItemMatchRow(list, item.productTitle, quantity, item.unitTxt);
+    const label = document.createElement("label");
+    label.className = "form-label mb-0";
+    label.htmlFor = id;
+    label.textContent = "کالای معادل در نرم‌افزار مالی";
+    const select = document.createElement("select");
+    select.id = id;
+    select.className = "external-mapping-item-select show-dropdown-arrow";
+    select.required = true;
+    select.append(new Option("", ""));
+    for (const option of itemOptions)
+        select.append(new Option(option.label, option.value, false, String(option.value) === String(selected ?? "")));
+    target.append(label, select);
+    return { target, select };
+}
+
 function exSoftwarePreFactorRenderItems() {
     const state = externalSoftwareProcess;
     const software = state.software;
@@ -615,28 +790,14 @@ function exSoftwarePreFactorRenderItems() {
         }
     });
 
+    const itemOptions = (software.sepidarItems ?? []).map(item => ({
+        value: item.id, label: formatPreFactorDestinationLabel(item.code, item.title),
+    }));
     for (const item of state.preFactor.items ?? []) {
         const itemId = String(item.preFactorItemId);
-        const target = appendExternalItemMatchRow(list, item.productTitle, item.weightCount, item.unitTxt);
-        const label = document.createElement("label");
-        label.className = "form-label mb-0";
-        label.htmlFor = "externalMappingItem_" + itemId;
-        label.textContent = "کالای معادل در نرم‌افزار مالی";
-
-        const select = document.createElement("select");
-        select.id = label.htmlFor;
+        const { target, select } = appendPreFactorItemMatch(list, item, "externalMappingItem_" + itemId,
+            item.weightCount, itemOptions, state.mappings.items[itemId]?.externalItemId);
         select.dataset.crmItemId = itemId;
-        select.className = "external-mapping-item-select show-dropdown-arrow";
-        select.required = true;
-        const selected = String(state.mappings.items[itemId]?.externalItemId ?? "");
-        select.append(new Option("", ""));
-        for (const product of software.sepidarItems ?? []) {
-            select.append(new Option(
-                product.code + " - " + product.title, product.id, false,
-                String(product.id) === selected,
-            ));
-        }
-        target.append(label, select);
         rows.push({ itemId, target, select });
     }
 

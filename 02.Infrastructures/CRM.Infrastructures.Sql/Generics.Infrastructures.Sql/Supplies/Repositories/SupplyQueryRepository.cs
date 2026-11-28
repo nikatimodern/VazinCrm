@@ -12,6 +12,7 @@ using CRM.Core.Domain.Attachments.Entities;
 using CRM.Core.Domain.Attachments.Enum;
 using CRM.Core.Domain.BaseItems.Enums;
 using CRM.Core.Domain.Customers.Enum;
+using CRM.Core.Domain.ExternalSoftwares.Enums;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.LogSystems.Entities;
 using CRM.Core.Domain.Orders.Enums;
@@ -426,6 +427,9 @@ public sealed class SupplyQueryRepository(CRMContextDb db) : ISupplyQueryReposit
             var data = await db.SupplyFactors.AsNoTracking().Where(f => f.Id == id).Include(f => f.SupplyFactorOrderHeads).Include(f => f.Items)
                 .Select(sf => new {
                     SupplyFactor = sf,
+                    HasFinancialTransfer = db.ExternalMappings.Any(mapping => mapping.EntityId == sf.Id &&
+                        mapping.EntityName == nameof(SupplyFactor) &&
+                        (mapping.MapType == ExternalMappingTypeEnum.فاکتور_خرید || mapping.MapType == ExternalMappingTypeEnum.رسید_انبار)),
                     OrderSerials = sf.SupplyFactorOrderHeads.Join(db.OrderHeads, sfo => sfo.OrderHeadId, oh => oh.Id, (sfo, oh) => oh.OrderNumber)
                         .ToList(),
                     Attachments = db.Attachments.Where(a => a.EntityId == sf.Id && a._AttachType == _AttachType.SupplyFactor).ToList()

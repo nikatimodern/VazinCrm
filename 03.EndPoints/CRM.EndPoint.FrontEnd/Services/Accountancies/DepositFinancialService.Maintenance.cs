@@ -20,6 +20,7 @@ public sealed partial class DepositFinancialService
     public async Task<object> PreviewMaintenanceAsync(DepositMaintenanceRequest request, CancellationToken ct)
     {
         var (source, mapping, destination) = await ResolveDepositMaintenanceAsync(request, ct);
+        await EnsureDepositMaintenanceSyncedAsync(request, source, mapping, destination, ct);
         var type = (int)source.PayType;
         var details = await destination.GetDepositMaintenanceAsync(ReadId(mapping), type, request.Action,
             request.Edit, request.SoftwareId, repository, ct);
@@ -38,6 +39,7 @@ public sealed partial class DepositFinancialService
             throw new SepidarTransferValidationException("تأیید عملیات معتبر نیست.");
         await using var guard = await repository.LockAsync(request.Id, ct);
         var (source, mapping, destination) = await ResolveDepositMaintenanceAsync(request, ct);
+        await EnsureDepositMaintenanceSyncedAsync(request, source, mapping, destination, ct);
         DepositInput? input = null;
         DateTime? due = null;
         if (request.Edit && request.Action == DepositChequeAction.None)
@@ -63,6 +65,19 @@ public sealed partial class DepositFinancialService
             await repository.RemoveDestinationMappingAsync(mapping, timeout.Token);
         }
         return result;
+    }
+
+    private async Task EnsureDepositMaintenanceSyncedAsync(DepositMaintenanceRequest request, Accountancy source,
+        ExternalMapping mapping, SepidarService destination, CancellationToken ct)
+    {
+        if (!request.Edit || request.Action is not (DepositChequeAction.None or DepositChequeAction.Spend))
+            return;
+        var sync = await destination.GetDepositSyncSummaryAsync(ReadId(mapping),
+            GetSyncSource(source, request.SoftwareId, await GetSyncMappingsAsync(source, ct)), ct);
+        if (request.Action == DepositChequeAction.None && sync.Changes.Count > 0 ||
+            request.Action == DepositChequeAction.Spend && (sync.PaymentChanged || sync.PaymentRestriction != null))
+            throw new SepidarTransferValidationException(sync.PaymentRestriction ?? sync.ReceiptRestriction ??
+                "ابتدا مغایرت سند را از روی کارت سوابق برطرف کنید.");
     }
 
     private async Task<(Accountancy Source, ExternalMapping Mapping, SepidarService Destination)> ResolveDepositMaintenanceAsync(

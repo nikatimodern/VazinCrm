@@ -8,6 +8,7 @@ public class ExternalSoftwarePreFactorDto
     public bool IsMissing { get; set; }
     public bool CanDeleteMissing { get; set; }
     public bool CanMaintainDestination { get; set; }
+    public bool RequiresSynchronization { get; set; }
     public Guid ExternalSoftwareId { get; set; }
     public string ExternalSoftwareTitle { get; set; } = string.Empty;
 
