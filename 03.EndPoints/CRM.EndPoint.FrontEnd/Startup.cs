@@ -183,6 +183,9 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<IDocumentRenderService, DocumentRenderService>();
 
+            services.AddScoped<MenuDefinitionService>();
+            services.AddScoped<MenuBadgeService>();
+            services.AddScoped<MenuFavoritesService>();
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<PreFactorService>();
             services.AddScoped<ExternalMappingService>();
