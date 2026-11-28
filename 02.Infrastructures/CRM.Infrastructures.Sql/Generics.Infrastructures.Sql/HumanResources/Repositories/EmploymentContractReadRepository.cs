@@ -40,5 +40,5 @@ public sealed class EmploymentContractReadRepository(CRMContextDb db) : IEmploym
         select new EmploymentContractItem(contract.Id, employee.Id, employee.PersonnelCode,
             employee.FirstName, employee.LastName, contract.ContractNumber, contract.Term,
             contract.AgreementDate, contract.StartDate, contract.EndDate, contract.Status,
-            contract.TerminatedOn, contract.PreviousContractId);
+            contract.TerminatedOn, contract.PreviousContractId, EF.Property<byte[]>(contract, "RowVersion"));
 }
