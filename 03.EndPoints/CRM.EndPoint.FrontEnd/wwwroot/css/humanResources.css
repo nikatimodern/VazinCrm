@@ -1,0 +1,30 @@
+#hrEmployeeWorkspace {
+    --hr-primary: var(--color-primary, #004944);
+    --hr-action: var(--color-primary-action, #00665C);
+    --hr-border: var(--color-border, #DDE1E8);
+    --hr-light: var(--color-primary-light, #E7F3F0);
+    --hr-muted: var(--color-text-muted, #545961);
+}
+#hrEmployeeWorkspace .hr-title { font: 700 18px/1.8 IRANSansBold; color: var(--hr-primary); }
+#hrEmployeeWorkspace .hr-heading { font: 500 14px/1.8 IRANSansMedium; color: var(--hr-primary); margin-bottom: 8px; }
+#hrEmployeeWorkspace .hr-notice { border: 1px solid var(--hr-border); border-radius: 6px; padding: 8px; color: var(--hr-muted); }
+#hrEmployeeWorkspace .hr-search { flex: 1 1 220px; width: auto; }
+#hrEmployeeWorkspace .hr-table th { background: var(--hr-light); color: var(--hr-primary); white-space: nowrap; }
+#hrEmployeeWorkspace .hr-table .hr-selected td { background: var(--hr-light); }
+#hrEmployeeWorkspace .hr-action {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    min-height: 34px; padding: 4px 10px; border: 1px solid var(--hr-border);
+    border-radius: 6px; background: #fff; color: var(--hr-primary); text-decoration: none;
+    font: 500 13px/1.8 IRANSansMedium;
+}
+#hrEmployeeWorkspace .hr-action:hover:not(:disabled) { background: var(--hr-light); }
+#hrEmployeeWorkspace .hr-primary { background: var(--hr-action); color: #fff; border-color: var(--hr-action); }
+#hrEmployeeWorkspace .hr-primary:hover:not(:disabled) { background: var(--hr-primary); color: #fff; }
+#hrEmployeeWorkspace .hr-action:disabled,
+#hrEmployeeWorkspace fieldset:disabled .hr-action { opacity: .55; cursor: not-allowed; }
+#hrEmployeeWorkspace .hr-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; }
+#hrEmployeeWorkspace .hr-fields label { display: block; margin-bottom: 4px; }
+@media (max-width: 767px) {
+    #hrEmployeeWorkspace .hr-fields { grid-template-columns: minmax(0,1fr); }
+    #hrEmployeeWorkspace .hr-action { min-height: 23px; padding: 1px 5px; font-size: 11px; }
+}
