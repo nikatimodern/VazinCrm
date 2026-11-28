@@ -14,6 +14,6 @@ internal sealed class EmploymentRecordConfig : IEntityTypeConfiguration<Employme
         builder.Property(x => x.EmploymentType).HasMaxLength(64).IsRequired();
         builder.HasOne<EmployeeProfile>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.EmployeeId, x.StartDate }).IsUnique();
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
