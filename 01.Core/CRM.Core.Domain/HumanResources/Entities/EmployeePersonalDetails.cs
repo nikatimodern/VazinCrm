@@ -14,4 +14,6 @@ public sealed record EmployeePersonalDetails(
     string Address = null,
     string Education = null,
     string EmergencyContactName = null,
-    string EmergencyContactPhone = null);
+    string EmergencyContactPhone = null,
+    decimal? Latitude = null,
+    decimal? Longitude = null);
