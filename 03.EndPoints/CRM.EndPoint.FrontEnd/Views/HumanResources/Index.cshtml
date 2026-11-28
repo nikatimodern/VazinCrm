@@ -1,0 +1,150 @@
+@model CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory.EmployeeDirectoryPage
+@using CRM.Core.Domain.HumanResources.Entities
+@using System.Globalization
+@functions {
+    private static string PersianDate(DateOnly? date)
+    {
+        if (!date.HasValue) return "—";
+        var value = date.Value.ToDateTime(TimeOnly.MinValue);
+        var calendar = new PersianCalendar();
+        return $"{calendar.GetYear(value):0000}/{calendar.GetMonth(value):00}/{calendar.GetDayOfMonth(value):00}";
+    }
+    private static string ContractStatus(EmploymentContractStatus status) => status switch
+    {
+        EmploymentContractStatus.Draft => "پیش‌نویس",
+        EmploymentContractStatus.Approved => "تأییدشده",
+        EmploymentContractStatus.Terminated => "فسخ‌شده",
+        EmploymentContractStatus.Cancelled => "لغوشده",
+        _ => "نامشخص"
+    };
+}
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "مدیریت پرسنل";
+    var selected = Model.Selected;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/humanResources.css?release=7.5.6" asp-append-version="true" />
+}
+<div id="hrEmployeeWorkspace" class="crm-settings-theme p-2" dir="rtl">
+    <section class="InfoData mb-2">
+        <header class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <div>
+                <h1 class="hr-title mb-0"><i class="fa fa-users" aria-hidden="true"></i> مدیریت پرسنل</h1>
+                <p class="small text-muted mb-0">پرونده پرسنلی و قراردادهای کاری</p>
+            </div>
+            @if (Model.CanCreate) {
+                <a class="hr-action hr-primary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page">
+                    <i class="fa fa-plus" aria-hidden="true"></i> پرسنل جدید
+                </a>
+            }
+        </header>
+        @if (TempData["HrEmployeeMessage"] is string message) {
+            <p role="status" class="@(TempData["HrEmployeeSuccess"] is true ? "text-success" : "text-danger") mb-2">@message</p>
+        }
+        @if (!Model.CanView) {
+            <p role="status" class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i>
+                نمای اولیه: ثبت و مشاهده اطلاعات واقعی پس از تکمیل سطح دسترسی و آماده‌سازی دیتابیس فعال می‌شود.
+            </p>
+        }
+        <form method="get" asp-action="Index" class="d-flex gap-2 flex-wrap align-items-center mb-2">
+            <label class="visually-hidden" for="hrSearch">جستجوی پرسنل</label>
+            <input id="hrSearch" name="search" value="@Model.Search" maxlength="100" class="form-control hr-search"
+                type="search" placeholder="نام، نام خانوادگی یا کد پرسنلی..." disabled="@(!Model.CanView)" />
+            <button type="submit" class="hr-action" disabled="@(!Model.CanView)"><i class="fa fa-search" aria-hidden="true"></i> جستجو</button>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 hr-table">
+                <thead><tr><th scope="col">کد پرسنلی</th><th scope="col">نام و نام خانوادگی</th><th scope="col">عملیات</th></tr></thead>
+                <tbody>
+                    @foreach (var employee in Model.Employees) {
+                        <tr class="@(selected?.Id == employee.Id ? "hr-selected" : "")">
+                            <td>@employee.PersonnelCode</td><td><strong>@employee.FirstName @employee.LastName</strong></td>
+                            <td><a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page" asp-route-employeeId="@employee.Id">پرونده و قراردادها</a></td>
+                        </tr>
+                    }
+                    @if (Model.Employees.Count == 0) {
+                        <tr><td colspan="3" class="text-center text-muted py-3">@(Model.CanView ? "پرسنلی پیدا نشد." : "لیست هنوز فعال نیست.")</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.CanView && (Model.Page > 1 || Model.HasNextPage)) {
+            <nav class="d-flex align-items-center justify-content-end gap-2 mt-2" aria-label="صفحه‌بندی پرسنل">
+                @if (Model.Page > 1) { <a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)">قبلی</a> }
+                <span class="small">صفحه @Model.Page</span>
+                @if (Model.HasNextPage) { <a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">بعدی</a> }
+            </nav>
+        }
+    </section>
+    @if (selected != null || Model.CanCreate || !Model.CanView) {
+        <section class="InfoData mb-2">
+            <h2 class="hr-heading">@(selected != null ? "پرونده پرسنلی" : "افزودن پرسنل")</h2>
+            <form asp-action="SaveEmployee" method="post">
+                @if (selected != null) {
+                    <input type="hidden" name="id" value="@selected.Id" />
+                    <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(selected.RowVersion)" />
+                }
+                <fieldset disabled="@(selected != null ? !Model.CanEdit : !Model.CanCreate)">
+                    <div class="hr-fields">
+                        <div>
+                            <label for="hrPersonnelCode">کد پرسنلی</label>
+                            <input id="hrPersonnelCode" name="personnelCode" class="form-control" maxlength="40" value="@selected?.PersonnelCode"
+                                readonly="@(selected != null)" required />
+                        </div>
+                        <div>
+                            <label for="hrFirstName">نام</label>
+                            <input id="hrFirstName" name="firstName" class="form-control" maxlength="100" value="@selected?.FirstName" />
+                        </div>
+                        <div>
+                            <label for="hrLastName">نام خانوادگی</label>
+                            <input id="hrLastName" name="lastName" class="form-control" maxlength="100" value="@selected?.LastName" />
+                        </div>
+                        @if (selected == null) {
+                            <div>
+                                <label for="hrAccount">حساب کاربری موجود (اختیاری)</label>
+                                <select id="hrAccount" name="appUserId" class="form-select">
+                                    <option value="">بدون حساب کاربری</option>
+                                    @foreach (var account in Model.Candidates) {
+                                        <option value="@account.Id">@account.FirstName @account.LastName</option>
+                                    }
+                                </select>
+                                <small class="text-muted">در صورت انتخاب حساب، نام از اطلاعات همان حساب خوانده می‌شود.</small>
+                            </div>
+                        } else {
+                            <div><span>حساب کاربری: </span><strong>@(selected.HasAccount ? "متصل" : "بدون حساب")</strong></div>
+                        }
+                    </div>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button class="hr-action hr-primary" type="submit"><i class="fa fa-save" aria-hidden="true"></i> ذخیره</button>
+                    </div>
+                </fieldset>
+            </form>
+        </section>
+    }
+    @if (selected != null || !Model.CanView) {
+        <section class="InfoData">
+            <h2 class="hr-heading"><i class="fa fa-file-alt" aria-hidden="true"></i> قراردادهای پرسنلی</h2>
+            @if (!Model.CanViewContracts) {
+                <p class="text-muted mb-0">مشاهده قراردادها نیازمند مجوز مستقل است.</p>
+            } else {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0 hr-table">
+                        <thead><tr><th>شماره</th><th>نوع</th><th>شروع</th><th>پایان</th><th>وضعیت ثبت</th></tr></thead>
+                        <tbody>
+                        @foreach (var contract in Model.Contracts) {
+                            <tr><td>@contract.ContractNumber</td><td>@(contract.Term == EmploymentContractTerm.FixedTerm ? "مدت‌دار" : "بدون تاریخ پایان")</td>
+                            <td>@PersianDate(contract.StartDate)</td><td>@PersianDate(contract.EndDate)</td><td>@ContractStatus(contract.Status)</td></tr>
+                        }
+                        @if (Model.Contracts.Count == 0) {
+                            <tr><td colspan="5" class="text-center text-muted">قراردادی ثبت نشده است.</td></tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted">حداکثر ۲۰ قرارداد اخیر؛ ثبت، تمدید و فیلتر سررسید در مرحله بعد فعال می‌شود.</small>
+            }
+        </section>
+    }
+</div>
