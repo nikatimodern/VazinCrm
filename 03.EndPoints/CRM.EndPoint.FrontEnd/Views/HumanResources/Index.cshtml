@@ -35,6 +35,8 @@
     Layout = "_Layout";
     ViewData["Title"] = "مدیریت پرسنل";
     var selected = Model.Selected;
+    var message = TempData["HrEmployeeMessage"] as string;
+    var success = TempData["HrEmployeeSuccess"] is true;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
@@ -53,8 +55,8 @@
                 </button>
             }
         </header>
-        @if (TempData["HrEmployeeMessage"] is string message) {
-            <p role="status" class="@(TempData["HrEmployeeSuccess"] is true ? "text-success" : "text-danger") mb-2">@message</p>
+        @if (selected == null && message != null) {
+            <p role="status" class="@(success ? "text-success" : "text-danger") mb-2">@message</p>
         }
         @if (!Model.CanView) {
             <p role="status" class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i>
@@ -74,7 +76,13 @@
                     @foreach (var employee in Model.Employees) {
                         <tr class="@(selected?.Id == employee.Id ? "hr-selected" : "")">
                             <td>@employee.PersonnelCode</td><td><strong>@employee.FirstName @employee.LastName</strong></td>
-                            <td><a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page" asp-route-employeeId="@employee.Id">پرونده و قراردادها</a></td>
+                            <td>
+                                @if (selected?.Id == employee.Id) {
+                                    <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrEmployeeDossier">پرونده و قراردادها</button>
+                                } else {
+                                    <a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page" asp-route-employeeId="@employee.Id">پرونده و قراردادها</a>
+                                }
+                            </td>
                         </tr>
                     }
                     @if (Model.Employees.Count == 0) {
@@ -91,31 +99,32 @@
             </nav>
         }
     </section>
-    @if (selected != null) {
-        <section class="InfoData mb-2">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div>
-                    <h2 class="hr-heading mb-1">پرونده پرسنلی: @selected.FirstName @selected.LastName</h2>
-                    <small class="text-muted">کد پرسنلی: @selected.PersonnelCode | حساب کاربری: @(selected.HasAccount ? "متصل" : "بدون حساب")</small>
-                </div>
-                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrEditEmployee">
-                    <i class="fa fa-user-edit" aria-hidden="true"></i> @(Model.CanEdit ? "ویرایش اطلاعات" : "مشاهده اطلاعات")
-                </button>
-            </div>
-        </section>
-    }
     @if (Model.CanCreate) {
         @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "create" })
     }
     @if (selected != null) {
-        @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "edit" })
-    }
-    @if (selected != null) {
-        <section class="InfoData">
+        <div class="modal fade hr-employee-modal" id="hrEmployeeDossier" tabindex="-1" aria-labelledby="hrEmployeeDossierTitle" aria-hidden="true" dir="rtl">
+            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="hrEmployeeDossierTitle" class="modal-title hr-heading mb-0"><i class="fa fa-user" aria-hidden="true"></i> پرونده و قراردادها: @selected.FirstName @selected.LastName</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (message != null) {
+                            <p role="status" class="@(success ? "text-success" : "text-danger") mb-2">@message</p>
+                        }
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom pb-2 mb-2">
+                            <small class="text-muted">کد پرسنلی: <strong>@selected.PersonnelCode</strong> | حساب کاربری: @(selected.HasAccount ? "متصل" : "بدون حساب")</small>
+                            <button type="button" class="hr-action" data-hr-dossier-editor="hrEditEmployee">
+                                <i class="fa fa-user-edit" aria-hidden="true"></i> @(Model.CanEdit ? "ویرایش اطلاعات" : "مشاهده اطلاعات")
+                            </button>
+                        </div>
+        <section>
             <header class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
                 <h2 class="hr-heading mb-0"><i class="fa fa-file-alt" aria-hidden="true"></i> قراردادهای پرسنلی</h2>
                 @if (Model.CanCreateContract) {
-                    <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="1">
+                    <button type="button" class="hr-action hr-primary" data-hr-dossier-editor="hrContractEditor" data-operation="1">
                         <i class="fa fa-plus" aria-hidden="true"></i> افزودن قرارداد
                     </button>
                 }
@@ -142,26 +151,26 @@
                                     <div class="d-flex gap-1 flex-wrap justify-content-center">
                                         @if (contract.Status == EmploymentContractStatus.Draft) {
                                             @if (Model.CanEditContract) {
-                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="2"
+                                                <button type="button" class="hr-action" data-hr-dossier-editor="hrContractEditor" data-operation="2"
                                                     data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)"
                                                     data-number="@contract.ContractNumber" data-term="@((int)contract.Term)"
                                                     data-agreement="@PersianDate(contract.AgreementDate)" data-start="@PersianDate(contract.StartDate)"
                                                     data-end="@(contract.EndDate.HasValue ? PersianDate(contract.EndDate) : "")">ویرایش</button>
-                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="5"
+                                                <button type="button" class="hr-action" data-hr-dossier-editor="hrContractEditor" data-operation="5"
                                                     data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">لغو</button>
                                             }
                                             @if (Model.CanApproveContract) {
-                                                <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="4"
+                                                <button type="button" class="hr-action hr-primary" data-hr-dossier-editor="hrContractEditor" data-operation="4"
                                                     data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">تأیید</button>
                                             }
                                         } else if (contract.Status == EmploymentContractStatus.Approved) {
                                             @if (Model.CanCreateContract && contract.EndDate.HasValue) {
-                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="3"
+                                                <button type="button" class="hr-action" data-hr-dossier-editor="hrContractEditor" data-operation="3"
                                                     data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber"
                                                     data-start="@(contract.EndDate.Value == DateOnly.MaxValue ? "" : PersianDate(contract.EndDate.Value.AddDays(1)))">تمدید</button>
                                             }
                                             @if (Model.CanTerminateContract) {
-                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="6"
+                                                <button type="button" class="hr-action" data-hr-dossier-editor="hrContractEditor" data-operation="6"
                                                     data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">فسخ</button>
                                             }
                                         }
@@ -189,6 +198,14 @@
                 <small class="text-muted">بازه هشدار اولیه: ۳۰ روز قبل از پایان قرارداد.</small>
             }
         </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="hr-action" data-bs-dismiss="modal">بستن</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "edit" })
         @if (Model.CanViewContracts && (Model.CanCreateContract || Model.CanEditContract || Model.CanApproveContract || Model.CanTerminateContract)) {
             @await Html.PartialAsync("_ContractEditor", Model)
         }
