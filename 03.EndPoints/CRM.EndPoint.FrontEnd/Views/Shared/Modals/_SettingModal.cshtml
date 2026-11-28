@@ -14,7 +14,7 @@
                 <div id="settingsMenuContent" class="d-flex flex-column gap-1">
                     @foreach (var group in Model) {
                         <div class="menu-settings-section-title">@group.Title</div>
-                        @foreach (var entry in group.SubItems) {
+                        foreach (var entry in group.SubItems) {
                             if (entry.DisplayType == MenuDisplayType.Link) {
                                 <div class="erp-settings-favorite-row">
                                     <a class="buttonGreen-wide" href="@entry.Url" data-settings-menu-link="@entry.Id"
