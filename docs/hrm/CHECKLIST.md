@@ -14,9 +14,11 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [x] Draft personnel, organization, device, raw attendance and work-rule relational schema and ingestion contract (TECHNICAL-DESIGN.md).
 - [ ] Review design, relationships, retention, security, and obtain schema approval.
 ## H02 — Personnel and organization
-- [ ] Define entities and repositories, EF mappings and application use cases; approved migration + SQL.
-- [ ] Employee profile, employment history, unique code and optional linked Identity account.
-- [ ] Departments, positions, manager hierarchy and effective-dated assignments.
+- [x] Add five initial Domain entities with per-record constructor/date/reference validation: EmployeeProfile, EmploymentRecord, Department, JobPosition, EmployeeAssignment (uncompiled).
+- [ ] Define repository contracts and SQL implementations, per-entity EF mappings and scoped application use cases; approved migration + SQL.
+- [ ] Isolate HR configurations to CRMContextDb: SepidarContextDbBase currently scans the shared assembly without a predicate; verify both contexts before registration.
+- [ ] Enforce employee profile/history uniqueness, optional Identity link existence/uniqueness and non-overlap transactionally; build workflow.
+- [ ] Enforce department/manager ancestor cycle checks, position existence and primary assignment overlap transactionally; build workflow.
 - [ ] Restricted personnel documents, audit and permission/scope registration.
 - [ ] Compact RTL personnel/organization UI, search/report/export authorization and tests.
 ## H03 — Attendance devices
@@ -64,4 +66,4 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Architecture checker, actual build, UI/RTL/mobile review, documentation and pilot.
 - [ ] Approved cross-branch integration and release; no main merge without approval.
 
-Evidence: technical design v0.2 recorded in TECHNICAL-DESIGN.md. Device model and protocol remain unknown; AccLevel is not integrated into baseline. No runtime code, device connection, migration, build or tests yet. Checklist persistence is verified separately after commit.
+Evidence: v0.3 five HumanResources Domain entities added and read back from hrm. Per-record guards only; uniqueness, cross-record dates, cycles and permission require persistence/application checks. EmploymentRecord is the source of employment history; no duplicate employment state on EmployeeProfile yet. No EF mapping registration, migration, device connection, UI, endpoint, or main changes. Shared assembly scanning in Sepidar requires context isolation before HR configurations. No checked-out repository or dotnet SDK; build and tests not run.
