@@ -16,6 +16,6 @@ internal sealed class EmployeeProfileConfig : IEntityTypeConfiguration<EmployeeP
         builder.Property(x => x.AppUserId).HasMaxLength(450);
         builder.HasIndex(x => x.PersonnelCode).IsUnique();
         builder.HasIndex(x => x.AppUserId).IsUnique().HasFilter("[AppUserId] IS NOT NULL");
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
