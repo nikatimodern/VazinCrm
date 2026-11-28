@@ -31,11 +31,18 @@ using CRM.Core.Domain.SystemWarnings.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
+using CRM.Core.Domain.HumanResources.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
+
+        public DbSet<EmployeeProfile> HrEmployeeProfiles { get; set; }
+        public DbSet<EmploymentRecord> HrEmploymentRecords { get; set; }
+        public DbSet<Department> HrDepartments { get; set; }
+        public DbSet<JobPosition> HrJobPositions { get; set; }
+        public DbSet<EmployeeAssignment> HrEmployeeAssignments { get; set; }
 
         public DbSet<CRM.Core.Domain.Taxation.TaxDispatch> TaxDispatches { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxPaymentDispatch> TaxPaymentDispatches { get; set; }
