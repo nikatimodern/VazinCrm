@@ -1,6 +1,7 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.HumanResources.Abstractions;
 using CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmployeeProfile;
+using CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmploymentContract;
 using CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory;
 using CRM.Core.Domain.HumanResources.Repositories;
 using CRM.Infrastructures.Sql.HumanResources.Repositories;
@@ -18,6 +19,8 @@ internal static class HumanResourcesRegistration
         services.AddScoped<IEmploymentContractReadRepository, EmploymentContractReadRepository>();
         services.AddScoped<IQueryHandler<GetEmployeeDirectoryQuery, EmployeeDirectoryPage>, GetEmployeeDirectoryQueryHandler>();
         services.AddScoped<ICommandHandler<SaveEmployeeProfileCommand, EmployeeSaveResult>, SaveEmployeeProfileCommandHandler>();
+        services.AddScoped<IEmploymentContractWriteRepository, EmploymentContractWriteRepository>();
+        services.AddScoped<ICommandHandler<SaveEmploymentContractCommand, ContractSaveResult>, SaveEmploymentContractCommandHandler>();
         return services;
     }
 }
