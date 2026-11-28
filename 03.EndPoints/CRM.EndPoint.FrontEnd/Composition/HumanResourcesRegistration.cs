@@ -1,0 +1,23 @@
+using CRM.Core.ApplicationServices.Abstractions.Cqrs;
+using CRM.Core.ApplicationServices.HumanResources.Abstractions;
+using CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmployeeProfile;
+using CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory;
+using CRM.Core.Domain.HumanResources.Repositories;
+using CRM.Infrastructures.Sql.HumanResources.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CRM.EndPoint.FrontEnd.Composition;
+
+internal static class HumanResourcesRegistration
+{
+    public static IServiceCollection AddHumanResources(this IServiceCollection services)
+    {
+        services.AddScoped<IHrEmployeeAccess, LockedHrEmployeeAccess>();
+        services.AddScoped<IEmployeeDirectoryReadRepository, EmployeeDirectoryReadRepository>();
+        services.AddScoped<IEmployeeProfileRepository, EmployeeProfileRepository>();
+        services.AddScoped<IEmploymentContractReadRepository, EmploymentContractReadRepository>();
+        services.AddScoped<IQueryHandler<GetEmployeeDirectoryQuery, EmployeeDirectoryPage>, GetEmployeeDirectoryQueryHandler>();
+        services.AddScoped<ICommandHandler<SaveEmployeeProfileCommand, EmployeeSaveResult>, SaveEmployeeProfileCommandHandler>();
+        return services;
+    }
+}
