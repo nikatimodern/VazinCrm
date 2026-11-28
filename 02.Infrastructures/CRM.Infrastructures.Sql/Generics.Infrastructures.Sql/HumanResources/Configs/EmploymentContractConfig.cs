@@ -32,6 +32,6 @@ internal sealed class EmploymentContractConfig : IEntityTypeConfiguration<Employ
             .HasForeignKey(x => new { x.EmployeeId, x.PreviousContractId })
             .HasPrincipalKey(x => new { x.EmployeeId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
