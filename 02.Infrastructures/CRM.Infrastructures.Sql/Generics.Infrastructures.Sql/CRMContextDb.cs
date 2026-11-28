@@ -43,6 +43,7 @@ namespace CRM.Infrastructures.Sql {
         public DbSet<Department> HrDepartments { get; set; }
         public DbSet<JobPosition> HrJobPositions { get; set; }
         public DbSet<EmployeeAssignment> HrEmployeeAssignments { get; set; }
+        public DbSet<EmploymentContract> HrEmploymentContracts { get; set; }
 
         public DbSet<CRM.Core.Domain.Taxation.TaxDispatch> TaxDispatches { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxPaymentDispatch> TaxPaymentDispatches { get; set; }
