@@ -18,7 +18,7 @@ public sealed class TaxInvoiceListing(CRMContextDb db, ITaxPreviewProtector prot
         var dispatch = await db.TaxDispatches.AsNoTracking().Where(x => x.Id == id)
             .Select(x => new
             {
-                x.Id, x.SnapshotId, x.MemoryId, x.Kind, x.TaxId, x.AttemptId, x.AuthorityReference, x.QueuedUtc,
+                x.Id, x.SnapshotId, x.MemoryId, x.Kind, x.AuthorityProtocol, x.TaxId, x.AttemptId, x.AuthorityReference, x.QueuedUtc,
                 x.SubmissionStartedAt, x.AuthorityProcessingStatus,
                 Status = x.Status == TaxDispatchStatus.InFlight && x.LeaseUntilUtc <= now
                     ? TaxDispatchStatus.Unknown : x.Status,
@@ -42,7 +42,7 @@ public sealed class TaxInvoiceListing(CRMContextDb db, ITaxPreviewProtector prot
         return new(dispatch.Id, dispatch.SnapshotId, dispatch.MemoryId, dispatch.Kind, dispatch.Status, dispatch.TaxId,
             dispatch.AttemptId, dispatch.AuthorityReference, dispatch.HasAcknowledgement, dispatch.QueuedUtc,
             dispatch.SubmissionStartedAt, dispatch.AuthorityProcessingStatus, dispatch.ProtectedWorkFolderEvidence != null,
-            ReadStatus(workFolder, "invoiceStatus"), ReadStatus(workFolder, "article6Status"), history, olderBefore);
+            ReadStatus(workFolder, "invoiceStatus"), ReadStatus(workFolder, "article6Status"), history, olderBefore, dispatch.AuthorityProtocol);
     }
 
     private static string ReadStatus(JsonDocument evidence, string key) =>

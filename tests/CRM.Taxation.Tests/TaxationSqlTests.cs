@@ -64,8 +64,10 @@ public sealed partial class TaxationSqlTests : IAsyncLifetime
         var foundation = db.Database.GetMigrations().Single(x => x.EndsWith("_AddTaxationFoundation", StringComparison.Ordinal));
         await db.GetService<IMigrator>().MigrateAsync(foundation);
         var memory = new TaxMemory { Id = Guid.NewGuid(), FiscalId = "KEEP01", Title = "Before queue", UpdatedUtc = DateTime.UtcNow };
-        db.TaxMemories.Add(memory);
-        await db.SaveChangesAsync();
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO TaxMemories (Id, FiscalId, Title, IsActive, UpdatedUtc)
+            VALUES ({memory.Id}, {memory.FiscalId}, {memory.Title}, {memory.IsActive}, {memory.UpdatedUtc})
+            """);
         await db.Database.MigrateAsync();
         Assert.Equal("Before queue", await db.TaxMemories.Where(x => x.Id == memory.Id).Select(x => x.Title).SingleAsync());
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());

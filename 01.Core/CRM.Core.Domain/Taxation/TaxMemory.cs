@@ -9,6 +9,11 @@ public sealed class TaxMemory
     public string Title { get; set; }
     public bool IsActive { get; set; }
     public DateTime UpdatedUtc { get; set; }
+    public TaxAuthorityEnvironment Environment { get; set; } = TaxAuthorityEnvironment.Sandbox;
+    public TaxAuthorityProtocol Protocol { get; set; } = TaxAuthorityProtocol.V2;
+    public string SellerEconomicCode { get; set; }
+    public string CredentialFingerprint { get; set; }
+    public bool SandboxEnabled { get; set; }
 }
 
 public sealed class TaxProductMapping

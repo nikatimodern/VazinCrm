@@ -20,6 +20,8 @@ internal sealed class TaxDispatchConfig : IEntityTypeConfiguration<TaxDispatch>
         builder.HasIndex(x => new { x.AuthorityEnvironment, x.TaxId }).IsUnique()
             .HasFilter("[TaxId] IS NOT NULL");
         builder.Property(x => x.CertificateSha256).HasMaxLength(64);
+        builder.Property(x => x.AuthorityProtocol).HasDefaultValue(TaxAuthorityProtocol.V2);
+        builder.Property(x => x.V1KeyFingerprint).HasMaxLength(64);
         builder.Property(x => x.TaxId).HasMaxLength(22);
         builder.Property(x => x.AuthorityProcessingStatus).HasMaxLength(16);
         builder.HasIndex(x => x.SnapshotId).IsUnique();

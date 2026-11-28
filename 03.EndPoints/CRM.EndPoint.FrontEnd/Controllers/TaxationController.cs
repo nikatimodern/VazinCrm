@@ -1,6 +1,11 @@
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxConnection;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.CheckTaxV1Connection;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxConnectionCheck;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxMemorySettings;
+using CRM.EndPoint.FrontEnd.Integrations.Moadian;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.DeactivateTaxMemory;
@@ -39,7 +44,7 @@ namespace CRM.EndPoint.FrontEnd.Controllers;
 [ApiController, Route("api/taxation"), Authorize(Roles = AppRoles.Admin), AutoValidateAntiforgeryToken]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [ServiceFilter(typeof(TaxationAuditFilter))]
-public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration config) : ControllerBase
+public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvironment environment, IConfiguration config, ITaxSandboxAccess access = null) : ControllerBase
 {
     [HttpGet("memories")]
     public Task<IActionResult> Memories(CancellationToken ct) =>
@@ -48,6 +53,36 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
     [HttpPost("memories")]
     public Task<IActionResult> SaveMemory(SaveTaxMemoryCommand command, CancellationToken ct) =>
         Run(() => dispatcher.CommandAsync(command, ct));
+
+    [HttpPost("connection")]
+    [RequestSizeLimit(16 * 1024)]
+    public Task<IActionResult> SaveConnection(SaveTaxConnectionCommand command, CancellationToken ct) =>
+        Run(() =>
+        {
+            if (!string.IsNullOrEmpty(command.V1PrivateKey) && !Request.IsHttps)
+                throw new ArgumentException("برای ثبت کلید خصوصی از اتصال HTTPS استفاده کنید.");
+            return dispatcher.CommandAsync(command, ct);
+        });
+
+    [HttpPost("memories/{id:guid}/check-v1")]
+    public Task<IActionResult> CheckV1(Guid id, CancellationToken ct) =>
+        TaxationAvailability.TryGetSandboxAddress(environment, config, TaxAuthorityProtocol.V1, out _)
+            ? Run(() => dispatcher.QueryAsync(new CheckTaxV1ConnectionQuery(id), ct))
+            : Task.FromResult<IActionResult>(NotFound());
+
+    [HttpPost("memory-settings")]
+    [RequestSizeLimit(120 * 1024)]
+    public Task<IActionResult> SaveMemorySettings(TaxMemorySettingsInput input, CancellationToken ct) =>
+        Run(() =>
+        {
+            if (!Request.IsHttps && (input.Pfx is not null || input.PfxPassword is not null || input.PrivateKeyPem is not null))
+                throw new ArgumentException("برای بارگذاری کلید خصوصی یا گواهی از HTTPS استفاده کنید.");
+            return dispatcher.CommandAsync(new SaveTaxMemorySettingsCommand(input, User.FindFirstValue(ClaimTypes.NameIdentifier)), ct);
+        });
+
+    [HttpPost("memories/{id:guid}/check-connection")]
+    public Task<IActionResult> CheckConnection(Guid id, CancellationToken ct) =>
+        Run(() => dispatcher.QueryAsync(new GetTaxConnectionCheckQuery(id), ct));
 
     [HttpPost("memories/{id:guid}/activate")]
     public Task<IActionResult> Activate(Guid id, CancellationToken ct) =>
@@ -97,7 +132,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
 
     [HttpPost("payments/{id:guid}/submit")]
     public Task<IActionResult> SubmitPayment(Guid id, CancellationToken ct) =>
-        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxPaymentCommand(id), ct));
+        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxPaymentCommand(id), ct), ct);
 
     [HttpGet("payments/{id:guid}")]
     public Task<IActionResult> PaymentState(Guid id, CancellationToken ct) =>
@@ -105,7 +140,7 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
 
     [HttpPost("dispatches/{id:guid}/submit")]
     public Task<IActionResult> Submit(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] TaxFilingDetails filing, CancellationToken ct) =>
-        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct));
+        RunSandbox(() => dispatcher.CommandAsync(new SubmitTaxInvoiceCommand(id, filing), ct), ct);
 
     [HttpGet("dispatches/{id:guid}")]
     public Task<IActionResult> Dispatch(Guid id, CancellationToken ct, long? historyBefore = null) =>
@@ -113,14 +148,17 @@ public sealed class TaxationController(ICqrsDispatcher dispatcher, IWebHostEnvir
 
     [HttpPost("dispatches/{id:guid}/inquire")]
     public Task<IActionResult> Inquire(Guid id, CancellationToken ct) =>
-        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxSubmissionCommand(id), ct));
+        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxSubmissionCommand(id), ct), ct);
 
     [HttpPost("dispatches/{id:guid}/work-folder")]
     public Task<IActionResult> WorkFolder(Guid id, CancellationToken ct) =>
-        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxWorkFolderCommand(id), ct));
+        RunSandbox(() => dispatcher.CommandAsync(new InquireTaxWorkFolderCommand(id), ct), ct);
 
-    private Task<IActionResult> RunSandbox<T>(Func<Task<T>> action) =>
-        TaxationAvailability.TryGetSandboxAddress(environment, config, out _) ? Run(action) : Task.FromResult<IActionResult>(NotFound());
+    private async Task<IActionResult> RunSandbox<T>(Func<Task<T>> action, CancellationToken ct)
+    {
+        var enabled = access is null ? TaxationAvailability.HasSandboxTransport(environment, config) : await access.HasTransportAsync(ct);
+        return enabled ? await Run(action) : NotFound();
+    }
 
     public sealed record TaxPreviewVersion(string Version, ExportTaxDetails Export = null);
 

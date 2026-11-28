@@ -1,44 +1,95 @@
-@model IReadOnlyList<CRM.EndPoint.FrontEnd.Models.Taxation.TaxMemoryRow>
+@using CRM.Core.Domain.Taxation
+@using CRM.EndPoint.FrontEnd.Models.Taxation
+@model TaxMemoryAdminPage
 @{
     ViewData["Title"] = "حافظه‌های مالیاتی";
+    var showCreate = Model.Memories.Count == 0;
+    Guid.TryParse(Context.Request.Query["saved"], out var savedId);
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/taxation.css?release=7.0.4" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/taxation.css" asp-append-version="true" />
 }
 <section class="taxation-page" id="taxationAdmin" dir="rtl">
     <header class="taxation-heading">
-        <div><h1>حافظه‌های مالیاتی</h1><p>حافظه فعال و آمادگی گواهی برای محیط آزمایشی را بررسی کنید.</p></div><span class="taxation-status">@Model.Count حافظه</span>
+        <div>
+            <h1>حافظه‌های مالیاتی</h1>
+            <p>مشخصات حافظه، روش ارسال و کلید یا گواهی اتصال را مدیریت کنید.</p>
+        </div>
+        <span class="taxation-status">@Model.Memories.Count حافظه</span>
     </header>
     <partial name="_TaxationNavigation" />
     @Html.AntiForgeryToken()
     <p data-admin-status role="status"></p>
-    <form method="post" class="taxation-workflow taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
-        <label>شناسه حافظه <input class="form-control form-control-sm" name="fiscalId" required maxlength="6" pattern="[A-Za-z0-9]{6}" dir="ltr" /></label>
-        <label>عنوان حافظه <input class="form-control form-control-sm" name="title" required maxlength="120" /></label>
-        <button type="submit" class="btn btn-sm taxation-action">افزودن حافظه</button>
-    </form>
-    @if (Model.Count == 0)
+    @if (Model.Memories.Any(row => row.Memory.Id == savedId))
     {
-        <div class="taxation-panel taxation-empty"><i class="fas fa-shield-alt" aria-hidden="true"></i><strong>حافظه‌ای ثبت نشده است.</strong></div>
+        <p class="taxation-memory-feedback" role="status"><i class="fas fa-check-circle" aria-hidden="true"></i> تنظیمات حافظه ذخیره شد.</p>
     }
-    @foreach (var entry in Model)
+
+    <details class="taxation-workflow taxation-memory-add" open="@showCreate">
+        <summary><i class="fas fa-plus" aria-hidden="true"></i> تعریف حافظه جدید</summary>
+        <partial name="_MemorySettingsForm" model='new TaxMemorySettingsForm(new TaxMemory(), Model.Certificates, "ثبت حافظه")' />
+    </details>
+    @foreach (var entry in Model.Memories)
     {
         var memory = entry.Memory;
-        <article class="taxation-workflow">
-            <header class="taxation-workflow-heading"><h2><bdi dir="ltr">@memory.FiscalId</bdi></h2><span class="taxation-status" data-status="@(memory.IsActive ? "Active" : null)">@(memory.IsActive ? "فعال" : "غیرفعال")</span></header>
-            <p>@entry.SandboxReadiness</p>
-            <form method="post" class="taxation-fields" data-admin-action="memory" data-url="@Url.Action("SaveMemory", "Taxation")">
-                <input type="hidden" name="id" value="@memory.Id" />
-                <input type="hidden" name="fiscalId" value="@memory.FiscalId" />
-                <label>عنوان حافظه <input class="form-control form-control-sm" name="title" value="@memory.Title" maxlength="120" required /></label>
-                <button type="submit" class="btn btn-sm taxation-validate">ذخیره عنوان</button>
-            </form>
-            <form method="post" data-admin-action="state" data-url="@Url.Action(memory.IsActive ? "Deactivate" : "Activate", "Taxation", new { id = memory.Id })">
-                <button type="submit" class="btn btn-sm taxation-validate">@(memory.IsActive ? "غیرفعال کردن" : "فعال کردن")</button>
-            </form>
+        var sandbox = memory.Environment == TaxAuthorityEnvironment.Sandbox;
+        var hasCredential = !string.IsNullOrWhiteSpace(memory.CredentialFingerprint);
+        var certificate = memory.Protocol == TaxAuthorityProtocol.V2 && hasCredential
+            ? Model.Certificates.FirstOrDefault(x => x.Fingerprint == memory.CredentialFingerprint) : null;
+        <article class="taxation-workflow taxation-memory-card" id="tax-memory-@memory.Id.ToString("D")">
+            <header class="taxation-workflow-heading">
+                <div>
+                    <h2>@memory.Title</h2>
+                    <div class="taxation-memory-tags">
+                        <bdi dir="ltr">@memory.FiscalId</bdi>
+                        <span>@(sandbox ? "آزمایشی" : "عملیاتی")</span>
+                        <span>@(memory.Protocol == TaxAuthorityProtocol.V1 ? "V1 · بدون گواهی" : "V2 · با گواهی")</span>
+                    </div>
+                </div>
+                <span class="taxation-status" data-status="@(memory.IsActive ? "Active" : null)">@(memory.IsActive ? "فعال" : "غیرفعال")</span>
+            </header>
+
+            <div class="taxation-memory-credential" data-ready="@entry.CredentialReady.ToString().ToLowerInvariant()">
+                <i class="fas @(entry.CredentialReady ? "fa-shield-alt" : "fa-key")" aria-hidden="true"></i>
+                <div>
+                    <strong>@(hasCredential
+                        ? memory.Protocol == TaxAuthorityProtocol.V1 ? "جفت کلید ثبت شده" : "گواهی ثبت شده"
+                        : "کلید یا گواهی از این فرم ثبت نشده")</strong>
+                    @if (certificate is not null)
+                    {
+                        <p><bdi>@certificate.Subject</bdi> · انقضا <bdi dir="ltr">@certificate.ExpiresUtc.ToString("yyyy-MM-dd")</bdi></p>
+                    }
+                    <p>@entry.Status</p>
+                </div>
+            </div>
+            <div class="taxation-actions">
+                <form method="post" data-admin-action="memory-check" data-url="@Url.Action("CheckConnection", "Taxation", new { id = memory.Id })">
+                    <button type="submit" class="btn btn-sm taxation-validate"><i class="fas fa-plug" aria-hidden="true"></i> @(sandbox ? "تست اتصال آزمایشی" : "تست اتصال عملیاتی")</button>
+                </form>
+                @if (sandbox || memory.IsActive)
+                {
+                    <form method="post" data-admin-action="state" data-url="@Url.Action(memory.IsActive ? "Deactivate" : "Activate", "Taxation", new { id = memory.Id })">
+                        <button type="submit" class="btn btn-sm taxation-validate">@(memory.IsActive ? "غیرفعال کردن" : "فعال کردن")</button>
+                    </form>
+                }
+            </div>
+            @if (sandbox)
+            {
+                <p class="taxation-muted">برای تست آنلاین، گزینه «اجازه اتصال به محیط آزمایشی» را در تنظیمات همین حافظه روشن و ذخیره کنید.</p>
+            }
+            else
+            {
+                <p class="taxation-muted">این تست با سازمان امور مالیاتی تماس می‌گیرد و فقط اتصال و احراز هویت را بررسی می‌کند. حافظه برای ارسال فعال نمی‌شود.</p>
+            }
+            <p class="taxation-muted" data-connection-feedback role="status" hidden></p>
+            <ol class="taxation-connection-check" data-connection-results aria-live="polite" hidden></ol>
+            <details class="taxation-memory-edit">
+                <summary><i class="fas fa-pen" aria-hidden="true"></i> ویرایش تنظیمات و تعویض کلید یا گواهی</summary>
+                <partial name="_MemorySettingsForm" model='new TaxMemorySettingsForm(memory, Model.Certificates, "ذخیره تنظیمات")' />
+            </details>
         </article>
     }
 </section>
 @section Scripts {
-    <script src="~/js/taxation-admin.js?release=7.0.4" asp-append-version="true"></script>
+    <script src="~/js/taxation-admin.js" asp-append-version="true"></script>
 }

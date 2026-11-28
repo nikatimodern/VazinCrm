@@ -42,7 +42,7 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
                 header = new { requestTraceId = attemptId, fiscalId = submission.FiscalId },
                 payload = encrypted
             } })
-        });
+        }, memoryId: submission.MemoryId);
     }
 
     public async Task<PreparedTaxRequest> PreparePaymentAsync(TaxSubmission invoice, Guid attemptId, string payload,
@@ -58,7 +58,7 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
             Headers = { Authorization = new AuthenticationHeaderValue("Bearer", token) },
             Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json")
         };
-        return new PreparedTaxRequest(attemptId, message);
+        return new PreparedTaxRequest(attemptId, message, memoryId: invoice.MemoryId);
     }
 
     public async Task<TaxPaymentReply> SubmitPaymentAsync(PreparedTaxRequest request, CancellationToken ct)
@@ -131,10 +131,15 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
     {
         if (!TaxInvoicePayload.MatchesTaxId(submission.FiscalId, submission.TaxId, submission.InvoiceSerial))
             throw new CryptographicException("Pinned tax invoice identity is invalid.");
-        var certificate = certificates.Open(submission.CertificateSha256);
+        return OpenSigningCertificate(submission.CertificateSha256);
+    }
+
+    private X509Certificate2 OpenSigningCertificate(string fingerprint)
+    {
+        var certificate = certificates.Open(fingerprint);
         var now = clock.GetUtcNow();
         if (certificate.HasPrivateKey &&
-            string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), submission.CertificateSha256, StringComparison.Ordinal) &&
+            string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), fingerprint, StringComparison.Ordinal) &&
             now >= certificate.NotBefore.ToUniversalTime() && now <= certificate.NotAfter.ToUniversalTime())
             return certificate;
         certificate.Dispose();
@@ -190,18 +195,32 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         throw InvalidResponse();
     }
 
-    private async Task<JsonDocument> GetAsync(TaxSubmission submission, X509Certificate2 cert, string path, CancellationToken ct)
+    internal async Task<JsonDocument> CheckServerInformationAsync(TaxMemory memory, Action authenticated, CancellationToken ct)
+    {
+        using var certificate = OpenSigningCertificate(memory.CredentialFingerprint);
+        var token = await SignChallengeAsync(memory.FiscalId, certificate, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "server-information");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await ExchangeAsync(request, ct, authenticated);
+    }
+
+    private async Task<JsonDocument> GetAsync(TaxSubmission submission, X509Certificate2 cert, string path, CancellationToken ct, Action onAccepted = null)
     {
         var token = await AuthenticateAsync(submission, cert, ct);
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return await ExchangeAsync(request, ct);
+        return await ExchangeAsync(request, ct, onAccepted);
     }
 
     private async Task<string> AuthenticateAsync(TaxSubmission submission, X509Certificate2 cert, CancellationToken ct)
     {
         if (submission.Environment != TaxAuthorityEnvironment.Sandbox)
             throw new InvalidOperationException("Only Sandbox credentials are supported for manual dispatch.");
+        return await SignChallengeAsync(submission.FiscalId, cert, ct);
+    }
+
+    private async Task<string> SignChallengeAsync(string fiscalId, X509Certificate2 cert, CancellationToken ct)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Get, "nonce?timeToLive=30");
         using var body = await ExchangeAsync(request, ct);
         var nonce = Text(body.RootElement, "nonce");
@@ -212,16 +231,17 @@ internal sealed class MoadianClient(HttpClient http, ITaxCertificateStore certif
         var now = clock.GetUtcNow();
         if (now > cert.NotAfter.ToUniversalTime())
             throw new CryptographicException("Pinned tax signing certificate expired before authentication.");
-        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = submission.FiscalId }), cert, now);
+        return TaxJose.Sign(JsonSerializer.Serialize(new { nonce, clientId = fiscalId }), cert, now);
     }
 
-    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct)
+    private async Task<JsonDocument> ExchangeAsync(HttpRequestMessage request, CancellationToken ct, Action onAccepted = null)
     {
         try
         {
             using var response = await http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
                 throw new TaxTransportException($"Tax authority returned HTTP {(int)response.StatusCode}.");
+            onAccepted?.Invoke();
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             return await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         }

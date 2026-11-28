@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql.Taxation;
 
-public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProtector protection) : ITaxationRepository
+public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProtector protection) : ITaxationRepository, ITaxMemorySettingsRepository
 {
     public async Task<IReadOnlyList<TaxMemory>> ListMemoriesAsync(CancellationToken ct) =>
         await db.TaxMemories.AsNoTracking().OrderByDescending(x => x.IsActive).ThenBy(x => x.FiscalId).ToListAsync(ct);
@@ -39,7 +39,13 @@ public sealed partial class TaxationRepository(CRMContextDb db, ITaxPreviewProte
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         await LockAsync(db, "tax-memory-activation", ct);
-        if (!await db.TaxMemories.AnyAsync(x => x.Id == id, ct)) throw new KeyNotFoundException();
+        var target = await db.TaxMemories.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw new KeyNotFoundException();
+        if (target.Environment != TaxAuthorityEnvironment.Sandbox)
+            throw new ArgumentException("فعال‌سازی حافظه عملیاتی در این نسخه مجاز نیست.");
+        var active = await db.TaxMemories.AsNoTracking().SingleOrDefaultAsync(x => x.IsActive, ct);
+        if (active is not null && active.Id != target.Id && active.Protocol != target.Protocol &&
+            await HasPendingForMemoryAsync(active.Id, ct))
+            throw new ArgumentException("پیش از فعال‌سازی روش دیگر، اسناد باز حافظه فعلی را تعیین تکلیف کنید.");
         var now = DateTime.UtcNow;
         await db.TaxMemories.Where(x => x.IsActive && x.Id != id).ExecuteUpdateAsync(s =>
             s.SetProperty(x => x.IsActive, false).SetProperty(x => x.UpdatedUtc, now), ct);

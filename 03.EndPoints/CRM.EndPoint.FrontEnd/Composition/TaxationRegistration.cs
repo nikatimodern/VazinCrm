@@ -1,6 +1,10 @@
 using CRM.Core.ApplicationServices.Taxation.Commands.SubmitTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxConnection;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxPayment;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxPayment;
+using CRM.Core.ApplicationServices.Taxation.Queries.CheckTaxV1Connection;
+using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxConnectionCheck;
+using CRM.Core.ApplicationServices.Taxation.Commands.SaveTaxMemorySettings;
 using CRM.Core.ApplicationServices.Taxation.Queries.ListTaxInvoices;
 using CRM.Core.ApplicationServices.Taxation.Queries.GetTaxDispatch;
 using CRM.Core.ApplicationServices.Taxation.Commands.EnqueueTaxInvoiceBatch;
@@ -49,20 +53,23 @@ internal static class TaxationRegistration
         services.AddScoped<ICommandHandler<EnqueueTaxPaymentCommand, Guid>, EnqueueTaxPaymentCommandHandler>();
         services.AddScoped<IQueryHandler<GetTaxPaymentQuery, TaxPaymentState>, GetTaxPaymentQueryHandler>();
         services.AddScoped<ITaxSubmissionRepository, TaxSubmissionRepository>();
-        services.AddSingleton<ITaxAuthorityClient>(sp =>
-        {
-            var config = sp.GetRequiredService<IConfiguration>();
-            var environment = sp.GetRequiredService<IWebHostEnvironment>();
-            if (!TaxationAvailability.TryGetSandboxAddress(environment, config, out var address))
-                throw new InvalidOperationException("Tax Sandbox transport is disabled or has an invalid address.");
-            return new MoadianClient(new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false })
-            {
-                BaseAddress = address,
-                Timeout = TimeSpan.FromSeconds(20),
-                MaxResponseContentBufferSize = 1024 * 1024
-            }, sp.GetRequiredService<ITaxCertificateStore>(), sp.GetRequiredService<TimeProvider>());
-        });
-        services.AddSingleton<ITaxPaymentTransport>(sp => (ITaxPaymentTransport)sp.GetRequiredService<ITaxAuthorityClient>());
+        services.AddSingleton<TaxConnectionSettings>();
+        services.AddSingleton<ITaxConnectionSettings>(sp => sp.GetRequiredService<TaxConnectionSettings>());
+        services.AddSingleton<ITaxV1SigningKeys>(sp => sp.GetRequiredService<TaxConnectionSettings>());
+        services.AddScoped<ICommandHandler<SaveTaxConnectionCommand, bool>, SaveTaxConnectionCommandHandler>();
+        services.AddScoped<IQueryHandler<CheckTaxV1ConnectionQuery, bool>, CheckTaxV1ConnectionQueryHandler>();
+        services.AddSingleton(sp => CreateProtocolClients(sp, productionCheck: false));
+        services.AddKeyedSingleton(TaxProductionConnectionHandler.ClientKey,
+            (sp, _) => CreateProtocolClients(sp, productionCheck: true));
+        services.AddSingleton<ITaxV1IdentityProbe>(sp => new TaxV1IdentityProbe(sp.GetRequiredService<TaxProtocolClients>().V1));
+        services.AddScoped<TaxSandboxRouting>();
+        services.AddScoped<ITaxSandboxAccess>(sp => sp.GetRequiredService<TaxSandboxRouting>());
+        services.AddScoped<ITaxAuthorityClient, TaxAuthorityRouter>();
+        services.AddScoped<ITaxPaymentTransport, TaxPaymentTransport>();
+        services.AddSingleton<ITaxMemoryCredentials, TaxMemoryCredentials>();
+        services.AddScoped<ITaxConnectionCheck, TaxConnectionCheck>();
+        services.AddScoped<ICommandHandler<SaveTaxMemorySettingsCommand, Guid>, SaveTaxMemorySettingsCommandHandler>();
+        services.AddScoped<IQueryHandler<GetTaxConnectionCheckQuery, IReadOnlyList<TaxConnectionStep>>, GetTaxConnectionCheckQueryHandler>();
         services.AddScoped<ICommandHandler<SubmitTaxPaymentCommand, TaxPaymentState>, SubmitTaxPaymentCommandHandler>();
         services.AddScoped<ICommandHandler<SubmitTaxInvoiceCommand, TaxDispatchState>, SubmitTaxInvoiceCommandHandler>();
         services.AddScoped<ICommandHandler<InquireTaxSubmissionCommand, TaxDispatchState>, InquireTaxSubmissionCommandHandler>();
@@ -72,7 +79,9 @@ internal static class TaxationRegistration
         services.AddScoped<ICommandHandler<EnqueueTaxInvoiceCommand, Guid>, EnqueueTaxInvoiceCommandHandler>();
         services.AddScoped<ICommandHandler<EnqueueTaxInvoiceBatchCommand, IReadOnlyList<TaxInvoiceBatchResult>>,
             EnqueueTaxInvoiceBatchCommandHandler>();
-        services.AddScoped<ITaxationRepository, TaxationRepository>();
+        services.AddScoped<TaxationRepository>();
+        services.AddScoped<ITaxationRepository>(sp => sp.GetRequiredService<TaxationRepository>());
+        services.AddScoped<ITaxMemorySettingsRepository>(sp => sp.GetRequiredService<TaxationRepository>());
         services.AddScoped<ITaxInvoiceListing, TaxInvoiceListing>();
         services.AddScoped<ITaxReportRepository, TaxReportRepository>();
         services.AddScoped<IQueryHandler<GetTaxReportQuery, TaxReportData>, GetTaxReportQueryHandler>();
@@ -86,5 +95,21 @@ internal static class TaxationRegistration
         services.AddScoped<IQueryHandler<PreviewTaxInvoiceQuery, InvoicePreview>, PreviewTaxInvoiceQueryHandler>();
         services.AddScoped<ICommandHandler<SaveTaxPreviewCommand, Guid>, SaveTaxPreviewCommandHandler>();
         services.AddScoped<ICommandHandler<SetTaxProductMappingCommand, bool>, SetTaxProductMappingCommandHandler>();
+    }
+
+    private static TaxProtocolClients CreateProtocolClients(IServiceProvider services, bool productionCheck) =>
+        new(CreateHttp(TaxAuthorityProtocol.V1, productionCheck), CreateHttp(TaxAuthorityProtocol.V2, productionCheck),
+            services.GetRequiredService<ITaxV1SigningKeys>(), services.GetRequiredService<ITaxCertificateStore>(),
+            services.GetRequiredService<TimeProvider>());
+
+    private static HttpClient CreateHttp(TaxAuthorityProtocol protocol, bool productionCheck)
+    {
+        var transport = new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false };
+        return new HttpClient(productionCheck ? new TaxProductionConnectionHandler(protocol, transport) : transport)
+        {
+            BaseAddress = productionCheck ? TaxProductionConnectionHandler.Address(protocol) : TaxSandboxRouting.Address(protocol),
+            Timeout = TimeSpan.FromSeconds(20),
+            MaxResponseContentBufferSize = 1024 * 1024
+        };
     }
 }

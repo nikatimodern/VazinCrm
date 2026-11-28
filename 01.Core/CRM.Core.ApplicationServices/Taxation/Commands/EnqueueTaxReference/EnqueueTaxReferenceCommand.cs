@@ -31,6 +31,6 @@ public sealed class EnqueueTaxReferenceCommandHandler(ITaxationRepository reposi
             throw new ArgumentException("نوع سند، فاکتور یا زمان صدور سند ارجاعی معتبر نیست.");
 
         return repository.EnqueueReferenceAsync(request.ReferenceId, data.FactorId, data.Kind, request.ActorId,
-            source => TaxReferenceInvoice.Build(source, data, bindings.Get(source.Reference.MemoryId)), ct);
+            async (source, token) => TaxReferenceInvoice.Build(source, data, await bindings.GetAsync(source.Reference.MemoryId, token)), ct);
     }
 }

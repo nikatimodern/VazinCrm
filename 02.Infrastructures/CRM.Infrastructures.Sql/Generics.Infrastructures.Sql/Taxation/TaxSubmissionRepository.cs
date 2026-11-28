@@ -10,6 +10,13 @@ namespace CRM.Infrastructures.Sql.Taxation;
 
 public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtector protection) : ITaxSubmissionRepository
 {
+    public async Task<bool> HasOpenSubmissionsAsync(TaxAuthorityProtocol protocol, CancellationToken ct) =>
+        await db.TaxDispatches.AnyAsync(x => x.AuthorityProtocol == protocol &&
+            (x.Status == TaxDispatchStatus.InFlight || x.Status == TaxDispatchStatus.Submitted ||
+             x.Status == TaxDispatchStatus.Unknown || (x.Status == TaxDispatchStatus.Pending && x.TaxId != null)), ct) ||
+        (protocol == TaxAuthorityProtocol.V2 && await db.TaxPaymentDispatches.AnyAsync(x =>
+            x.Status == TaxPaymentStatus.Pending || x.Status == TaxPaymentStatus.InFlight || x.Status == TaxPaymentStatus.Unknown, ct));
+
     public async Task<TaxSubmissionDraft> ReadDraftAsync(Guid dispatchId, CancellationToken ct)
     {
         var draft = await (from item in db.TaxDispatches
@@ -42,7 +49,8 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
         }
         return new(item.Id, item.FiscalId, item.AuthorityEnvironment.Value, item.CertificateSha256,
             item.TaxId, item.Status == TaxDispatchStatus.Pending ? protection.Unprotect(item.ProtectedSubmission) : null,
-            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial, item.Kind, reference);
+            item.AttemptId, item.SubmissionStartedAt, item.AuthorityReference, item.Status, item.InvoiceSerial, item.Kind, reference,
+            item.AuthorityProtocol, item.V1KeyFingerprint, item.MemoryId);
     }
 
     public async Task PinAsync(Guid dispatchId, TaxSigningBinding binding, long serial, string taxId, string payload, CancellationToken ct)
@@ -55,6 +63,8 @@ public sealed class TaxSubmissionRepository(CRMContextDb db, ITaxPreviewProtecto
                     .SetProperty(x => x.InvoiceSerial, serial)
                     .SetProperty(x => x.AuthorityEnvironment, binding.Environment)
                     .SetProperty(x => x.CertificateSha256, binding.CertificateSha256)
+                    .SetProperty(x => x.AuthorityProtocol, binding.Protocol)
+                    .SetProperty(x => x.V1KeyFingerprint, binding.V1KeyFingerprint)
                     .SetProperty(x => x.ProtectedSubmission, encrypted), ct);
         }
         catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2601 or 2627)

@@ -24,6 +24,9 @@ public sealed class EnqueueTaxPaymentCommandHandler(ITaxPaymentRepository reposi
 
     internal static TaxPaymentRegistration Prepare(TaxPaymentSource source, TaxPaymentDetails details, DateTimeOffset now)
     {
+        if (source.Invoice.AuthorityProtocol == TaxAuthorityProtocol.V1)
+            throw new ArgumentException("ثبت پرداخت برای صورتحساب ارسالی نسخه ۱ در ERP فعال نیست.");
+
         var receipt = source.Receipt;
         if (source.Invoice.Status != TaxDispatchStatus.Accepted || source.Invoice.Kind == TaxDispatchKind.Cancellation ||
             receipt.IsDeleted || receipt.fid != source.Invoice.FactorId || receipt.InvoiceType != InvoiceTypeEnum.فاکتور ||

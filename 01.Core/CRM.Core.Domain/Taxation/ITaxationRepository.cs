@@ -17,6 +17,7 @@ public sealed record TaxReferenceRegistration(string Preview, string Payload, st
 public sealed class TaxPreviewConflictException : InvalidOperationException
 {
     public TaxPreviewConflictException() : base("اطلاعات پیش‌نمایش تغییر کرده است. پیش‌نمایش جدید دریافت کنید.") { }
+    public TaxPreviewConflictException(string message) : base(message) { }
 }
 
 public sealed class TaxFullReturnRequiresCancellationException(Guid referenceId)
@@ -43,6 +44,6 @@ public interface ITaxationRepository
     Task<string> ReadSnapshotAsync(Guid id, CancellationToken ct);
     Task<Guid> SaveSnapshotAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
     Task<Guid> EnqueueReferenceAsync(Guid referenceId, Guid? factorId, TaxDispatchKind kind, string actorId,
-        Func<TaxReferenceSource, TaxReferenceRegistration> register, CancellationToken ct);
+        Func<TaxReferenceSource, CancellationToken, Task<TaxReferenceRegistration>> register, CancellationToken ct);
     Task<Guid> EnqueueAsync(Guid factorId, string actorId, Func<TaxPreviewSource, string> validate, CancellationToken ct);
 }

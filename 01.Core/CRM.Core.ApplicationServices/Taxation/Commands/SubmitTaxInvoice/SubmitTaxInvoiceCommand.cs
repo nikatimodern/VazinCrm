@@ -25,12 +25,16 @@ public sealed class SubmitTaxInvoiceCommandHandler(ITaxSubmissionRepository repo
         {
             var filing = request.Filing ?? throw new ArgumentException("اطلاعات صدور صورتحساب اصلی لازم است.");
             var draft = await repository.ReadDraftAsync(request.DispatchId, ct);
-            var profile = bindings.Get(draft.MemoryId);
+            var profile = await bindings.GetAsync(draft.MemoryId, ct);
             var preview = JsonSerializer.Deserialize<InvoicePreview>(draft.Snapshot);
             if (preview is null || preview.FiscalId != draft.FiscalId || preview.MemoryId != draft.MemoryId)
                 throw new CryptographicException("Frozen tax snapshot does not match the dispatch.");
             if (filing.IssuedAt > clock.GetUtcNow())
                 throw new ArgumentException("زمان صدور صورتحساب نمی‌تواند در آینده باشد.");
+            if (profile.Protocol == TaxAuthorityProtocol.V1 &&
+                (preview.Pattern is not (null or TaxInvoicePattern.DomesticSale) || preview.InvoiceType is not (null or 1)))
+                throw new ArgumentException("نسخه ۱ فقط برای فاکتور اصلی فروش داخلی نوع اول فعال است.");
+
             var (taxId, payload) = TaxInvoicePayload.Build(preview, profile, filing);
             await repository.PinAsync(request.DispatchId, profile, filing.Serial, taxId, payload, ct);
             submission = await repository.FindAsync(request.DispatchId, ct);
