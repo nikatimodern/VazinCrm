@@ -9387,6 +9387,21 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
 
+                    b.Property<byte[]>("EducationDocumentContent")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("EducationDocumentType")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppUserId")
@@ -9400,7 +9415,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                         .IsUnique()
                         .HasFilter("[NationalCode] IS NOT NULL");
 
-                    b.ToTable("HrEmployeeProfiles");
+                    b.ToTable("HrEmployeeProfiles", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HrEmployeeProfiles_Coordinates", "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] BETWEEN -90 AND 90 AND [Longitude] BETWEEN -180 AND 180)");
+                        });
                 });
 
             modelBuilder.Entity("CRM.Core.Domain.HumanResources.Entities.EmploymentContract", b =>
