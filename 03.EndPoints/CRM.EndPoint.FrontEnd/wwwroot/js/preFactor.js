@@ -1380,6 +1380,12 @@ function renderExternalSoftwarePreFactors(items = [], sourceId = externalSotware
                 },
             };
             if (item.canMaintainDestination) {
+                if (item.requiresSynchronization) {
+                    card.discrepancy = {
+                        message: "اقلام یا مبالغ پیش‌فاکتور با ERP مغایرت دارد.",
+                        onSynchronize: event => openPreFactorSynchronization(event.currentTarget, key, history.modal),
+                    };
+                }
                 card.operations = [
                     ui.action("ویرایش انتقال", { icon: "fa-pencil-alt",
                         onClick: event => openPreFactorDestinationEdit(event.currentTarget, key, history.modal) }),

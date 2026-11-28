@@ -18,7 +18,8 @@ using CRM.Core.ApplicationServices.Accountancies.Services;
 
 namespace CRM.Core.ApplicationServices.Accountancies.Commands.ChangeStatusAcc;
 public sealed record ChangeStatusAccCommand(Guid Id) : ICommand<AccountancyOutcome>;
-public sealed class ChangeStatusAccCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationAudit audit) : ICommandHandler<ChangeStatusAccCommand, AccountancyOutcome>
+public sealed class ChangeStatusAccCommandHandler(IAccountancyRepository repository, CurrentActor actor, IApplicationAudit audit,
+    IDepositFinancialRepository financial) : ICommandHandler<ChangeStatusAccCommand, AccountancyOutcome>
 {
     public async Task<AccountancyOutcome> HandleAsync(ChangeStatusAccCommand request, CancellationToken ct)
     {
@@ -26,10 +27,13 @@ public sealed class ChangeStatusAccCommandHandler(IAccountancyRepository reposit
         try
         {
             var user = (await actor.GetAsync(ct)).User;
-            var oldAcc = await repository.GetAsync(id, false, false, ct);
+            await using var guard = await financial.LockAsync(id, ct);
             var acc = await repository.GetAsync(id, false, true, ct);
             if (acc == null)
                 return new(404, "رکوردی یافت نشد!");
+            if (acc.GetChequeModificationRestriction() is { } restriction)
+                return new(409, restriction);
+            var oldAcc = await repository.GetAsync(id, false, false, ct);
             acc.Status = AccStatusEnum.در_دست_تایید;
             await audit.LogAsync(oldAcc, acc, LogActionEnum.تغییر_وضعیت, user, ct, null, "ارسال به مالی");
             await repository.SaveAsync(ct);

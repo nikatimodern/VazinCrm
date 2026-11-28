@@ -20,7 +20,7 @@ using static CRM.Core.Domain.ExternalSoftwares.ExternalSoftwareIds;
 
 namespace CRM.Infrastructures.Sql.PreFactors.Repositories;
 
-public sealed class PreFactorDestinationRepository(CRMContextDb crm, Sepidar1ContextDb first, Sepidar2ContextDb second)
+public sealed partial class PreFactorDestinationRepository(CRMContextDb crm, Sepidar1ContextDb first, Sepidar2ContextDb second)
     : IPreFactorDestinationRepository
 {
     private const string OpenFiscalYearMessage = "سال مالی این پیش‌فاکتور در نرم‌افزار مقصد فعال نیست.";
@@ -195,6 +195,9 @@ public sealed class PreFactorDestinationRepository(CRMContextDb crm, Sepidar1Con
         CheckVersion(quote, edit.Version, edit.LastModificationDate);
         await CheckFiscalYearAsync(destination, quote, ct);
         var items = await destination.QuotationItems.Where(x => x.QuotationRef == id).ToListAsync(ct);
+        if (await HasSyncDifferenceAsync(edit.Key.SourceId, quote,
+                items.OrderBy(x => x.RowID).ThenBy(x => x.QuotationItemID).Select(DestinationValues), ct))
+            throw new PreFactorDestinationException("ابتدا پیش‌فاکتور را با ERP همگام‌سازی کنید.");
         if (edit.Items == null || edit.Items.Count != items.Count || edit.Items.Any(x => x == null) ||
             edit.Items.Select(x => x.Id).Distinct().Count() != items.Count)
             throw new PreFactorDestinationException("انتخاب‌های اقلام با ردیف‌های پیش‌فاکتور مقصد مطابقت ندارند.");

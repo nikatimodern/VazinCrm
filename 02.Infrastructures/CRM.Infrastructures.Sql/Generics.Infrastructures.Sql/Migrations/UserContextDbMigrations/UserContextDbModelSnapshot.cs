@@ -210,6 +210,24 @@ namespace CRM.Infrastructures.Sql.Migrations.UserContextDbMigrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.MenuFavorite", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MenuId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "MenuId");
+
+                    b.ToTable("MenuFavorites");
+                });
+
             modelBuilder.Entity("CRM.Core.Domain.AppUsers.Entities.OtpMobileState", b =>
                 {
                     b.Property<string>("Mobile")

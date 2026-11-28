@@ -3,6 +3,7 @@ let orderHeadsSupFactorSelectedIds = [];
 let supplyFactorData = { items: [] };
 let sfItemIndex = null;
 let incompleteSfItemsCount = 0;
+let supplyFactorFinancialHeaderLocked = false;
 
 const supplyFactorDiscountInp = document.getElementById("sf-discount");
 
@@ -41,6 +42,7 @@ async function showSupplyFactorModal(dealId = null) {
     // toggleElementsRequired(document.getElementById("supplyFactorOrderHead"), dealId === null);
     
     await initSupplyFactorModal();
+    lockSupplyFactorFinancialHeader(false);
     ModalToggle("#supplyFactorModal");
 }
 
@@ -49,7 +51,29 @@ async function initSupplyFactorModal() {
     Unit(4, "supplyFactorItem");
 }
 
+function lockSupplyFactorFinancialHeader(locked) {
+    supplyFactorFinancialHeaderLocked = locked;
+    const form = document.getElementById("supplyFactorHeadFormId");
+    form.querySelectorAll('[name="date"], [name="serialNumber"], [name="officialType"]').forEach(control => {
+        control.disabled = locked;
+        control.required = !locked;
+    });
+    const supplier = form.querySelector('[name="supplierId"]');
+    supplier.required = !locked;
+    if (supplier.tomselect) {
+        if (locked) supplier.tomselect.disable();
+        else supplier.tomselect.enable();
+    } else supplier.disabled = locked;
+}
+
+function getLockedSupplyFactorFinancialHeader() {
+    if (!supplyFactorFinancialHeaderLocked) return {};
+    const { date, serialNumber, officialType, supplierId, supplierTxt } = supplyFactorData;
+    return { date, serialNumber, officialType, supplierId, supplierTxt };
+}
+
 function cancelSupplyFactorModal() {
+    lockSupplyFactorFinancialHeader(false);
     window.supplyFactorAttachments = [];
     supplyFactorData = { items: [] };
     
@@ -257,7 +281,7 @@ async function processSupplyFactorWithAi(btn) {
         showLoading: false,
         timeout: 0,
         onSuccess: (res) => {
-            supplyFactorData = { ...supplyFactorData, ...res.data };
+            supplyFactorData = { ...supplyFactorData, ...res.data, ...getLockedSupplyFactorFinancialHeader() };
             
             calculateSupplyFactorTotals();
             showSupplyFactorItems();
@@ -275,6 +299,7 @@ async function processSupplyFactorWithAi(btn) {
     
     
     toggleElementsDisabled(elementsToDisable, false);
+    if (supplyFactorFinancialHeaderLocked) lockSupplyFactorFinancialHeader(true);
     spinner.classList.add("d-none");
     aiIcon.classList.remove("d-none");
 }
@@ -395,9 +420,10 @@ async function submitSupplyFactorModal() {
     const model = {
         ...supplyFactorData,
         ...mySer.convertFormToJSON("supplyFactorHeadFormId"),
-        supplierTxt: supplierSelect.options[supplierSelect.selectedIndex].text,
+        supplierTxt: supplierSelect.selectedOptions[0]?.text,
         description: document.getElementById("sf-description")?.value?.trim(),
         attachments: window.supplyFactorAttachments,
+        ...getLockedSupplyFactorFinancialHeader(),
     };
     
     await sendApiRequest({
@@ -442,7 +468,9 @@ async function showEditSupplyFactorModal(id) {
     window.supplyFactorAttachments = data.attachments;
     
     FileUpReload(supplyFactorAttInpId);
+    lockSupplyFactorFinancialHeader(false);
     mySer.convertJsonToForm(supplyFactorData, "supplyFactorHeadFormId");
+    lockSupplyFactorFinancialHeader(data.hasFinancialTransfer === true);
     
     document.getElementById("sf-sumTotalAmount").textContent = supplyFactorData.sumTotalAmount.toLocaleString();
     document.getElementById("sf-totalTax").textContent = supplyFactorData.totalTax.toLocaleString();
@@ -759,9 +787,11 @@ async function loadSupplyAllocations(id) {
     sfAllocationRefreshNeeded = false;
     document.querySelectorAll("[data-supply-factor-id]").forEach(card => {
         if (sfAllocationIsSales() || card.dataset.supplyFactorId !== data.factor.id) return;
+        const statusChanged = card.classList.contains("sf-supply-card-complete") !== !!data.isAllocationComplete;
         card.classList.toggle("sf-supply-card-complete", data.isAllocationComplete);
         const badge = card.querySelector(".sf-supply-complete-badge");
         if (badge) badge.hidden = !data.isAllocationComplete;
+        if (statusChanged) card.dispatchEvent(new Event("sf:allocation-status-changed", { bubbles: true }));
     });
     document.getElementById("sfAllocationsTitle").textContent = `تخصیص فاکتور ${sfAllocationIsSales() ? "فروش" : "تامین"} ${data.factor.serialNumber}`;
     if (!sfAllocationOpen.size) {

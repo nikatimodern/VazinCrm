@@ -59,15 +59,15 @@
     </div>
 
     <div class="sms-content-card">
-        <div class="sms-tabs">
-            <button type="button" class="sms-tab @(canReceive ? "active" : "d-none")" data-target="receivesTab" data-document-permission="ReceivedSms.View">
-                <i class="fa-regular fa-comment-dots"></i>
+        <div class="sms-tabs" role="group" aria-label="نمایش پیامک‌ها">
+            <button type="button" class="sms-tab @(canReceive ? "active" : "d-none")" data-target="receivesTab" data-document-permission="ReceivedSms.View" aria-controls="receivesTab" aria-pressed="@(canReceive ? "true" : "false")">
+                <i class="fas fa-comment-dots" aria-hidden="true"></i>
                 پیامک‌های دریافتی
                 <span class="sms-tab-count d-none" id="receivesCount">0</span>
             </button>
 
-            <button type="button" class="sms-tab @(!canSent ? "d-none" : !canReceive ? "active" : "")" data-target="reportsTab" data-document-permission="SentSms.View">
-                <i class="fa-regular fa-paper-plane"></i>
+            <button type="button" class="sms-tab @(!canSent ? "d-none" : !canReceive ? "active" : "")" data-target="reportsTab" data-document-permission="SentSms.View" aria-controls="reportsTab" aria-pressed="@(!canReceive && canSent ? "true" : "false")">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i>
                 گزارش ارسال
                 <span class="sms-tab-count d-none" id="reportsCount">0</span>
             </button>

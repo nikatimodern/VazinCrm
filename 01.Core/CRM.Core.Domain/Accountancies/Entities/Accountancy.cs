@@ -87,5 +87,20 @@ namespace CRM.Core.Domain.Accountancies.Entities {
         public Guid? RequestAmountId { get; set; }
         
         public AccountancyTransfer AccountancyTransfer { get; set; }
+
+        public string? GetChequeModificationRestriction()
+        {
+            if (PayType != PayTypeEnum.چکی)
+                return null;
+
+            var transferred = AccountancyTransfer is { IsDeleted: false };
+            return (Vosoled, transferred) switch
+            {
+                (true, true) => "برای ویرایش یا تغییر وضعیت این چک، ابتدا وصول و انتقال آن را حذف کنید.",
+                (true, false) => "برای ویرایش یا تغییر وضعیت این چک، ابتدا وصول آن را حذف کنید.",
+                (false, true) => "برای ویرایش یا تغییر وضعیت این چک، ابتدا انتقال آن را حذف کنید.",
+                _ => null,
+            };
+        }
     }
 }

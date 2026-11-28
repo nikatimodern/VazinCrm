@@ -160,69 +160,70 @@
 }
 
 
-.sms-tabs {
+#settingsSmsWorkspace .sms-tabs {
 	display: flex;
 	align-items: center;
-	gap: .25rem;
-	padding: .55rem .7rem 0;
-	border-bottom: 1px solid #edf2f2;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 0 0 8px;
+	border-bottom: 1px solid var(--ops-border);
+	background: #fff;
 }
 
-
-.sms-tab {
-	position: relative;
-	display: inline-flex;
-	align-items: center;
-	gap: .5rem;
-	padding: .8rem .9rem;
-	border: 0;
-	background: transparent;
-	color: #81908f;
-	font-size: .82rem;
-	cursor: pointer;
-}
-
-
-.sms-tab::after {
-	content: "";
-	position: absolute;
-	right: .7rem;
-	left: .7rem;
-	bottom: -1px;
-	height: 2px;
-	background: transparent;
-	border-radius: 2px 2px 0 0;
-}
-
-
-.sms-tab.active {
-	color: #004944;
-	font-family: IRANSansBold;
-}
-
-
-.sms-tab.active::after {
-	background: #004944;
-}
-
-
-.sms-tab-count {
-	min-width: 22px;
-	height: 22px;
+#settingsSmsWorkspace .sms-tab {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 .35rem;
-	border-radius: 999px;
-	background: #f0f4f4;
-	color: #748482;
-	font-size: 11px;
+	gap: 6px;
+	min-width: 0;
+	min-height: 34px;
+	padding: 4px 10px;
+	border: 1px solid var(--ops-border);
+	border-radius: 6px;
+	background: #fff;
+	color: #545961;
+	font: 500 13px/1.5 IRANSansMedium;
+	white-space: nowrap;
+	cursor: pointer;
 }
 
+#settingsSmsWorkspace .sms-tab > i {
+	font-size: 13px;
+	flex-shrink: 0;
+}
 
-.sms-tab.active .sms-tab-count {
-	background: #e8f5f3;
-	color: #00655e;
+#settingsSmsWorkspace .sms-tab:not(.active):hover {
+	background: var(--ops-light);
+	border-color: var(--ops-action);
+	color: var(--ops-primary);
+}
+
+#settingsSmsWorkspace .sms-tab.active {
+	background: var(--ops-action);
+	border-color: var(--ops-action);
+	color: #fff;
+}
+
+#settingsSmsWorkspace .sms-tab-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	min-width: 20px;
+	min-height: 20px;
+	padding: 0 5px;
+	border: 1px solid var(--ops-border);
+	border-radius: 5px;
+	background: var(--ops-purple-light);
+	color: var(--ops-purple);
+	font: 500 11px/1.4 IRANSansMedium;
+	font-variant-numeric: tabular-nums;
+}
+
+#settingsSmsWorkspace .sms-tab.active .sms-tab-count {
+	background: #fff;
+	border-color: #fff;
+	color: var(--ops-primary);
 }
 
 
@@ -391,9 +392,15 @@
 		grid-template-columns: 1fr;
 	}
 	
-	.sms-tabs {
-		overflow-x: auto;
-		white-space: nowrap;
+	#settingsSmsWorkspace .sms-tabs {
+		gap: 4px;
+		padding-bottom: 6px;
+	}
+	#settingsSmsWorkspace .sms-tab {
+		min-height: 23px;
+		padding: 1px 5px;
+		font-size: 11px;
+		margin-block: 0;
 	}
 	
 	.sms-tab-content {

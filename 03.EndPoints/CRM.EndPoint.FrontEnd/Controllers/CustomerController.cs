@@ -91,7 +91,7 @@ public sealed class CustomerController(
     }
 
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly)]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(int roleType = -1, CancellationToken cancellationToken = default)
     {
         var viewScope = await ScopeAsync("View", cancellationToken);
         if (viewScope == AccessScopes.None) return Forbid();
@@ -100,6 +100,8 @@ public sealed class CustomerController(
         ViewBag.ScopeEnforced = Enforce;
         var user = await requests.QueryAsync(new GetCustomersPageQuery(), cancellationToken);
         ViewBag.SubTitle = " فرم ثبت شخص"; ViewBag.Head = "Customer";
+        ViewBag.DirectoryTitle = roleType == 1 ? "مشتریان" : roleType == 2 ? "تأمین‌کنندگان" : "اشخاص";
+        ViewBag.DirectorySubtitle = roleType == 1 ? "فهرست مشتریان" : roleType == 2 ? "فهرست تأمین‌کنندگان" : "مشتریان و تأمین‌کنندگان";
         return View(user);
     }
     [CustomerLegacyAuthorize(CustomerLegacyMode.NotCustomerOnly), HttpPost]

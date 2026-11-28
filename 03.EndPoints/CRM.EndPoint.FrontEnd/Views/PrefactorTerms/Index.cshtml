@@ -1,0 +1,119 @@
+@model CRM.EndPoint.FrontEnd.Models.Setting.PrefactorTermsPageModel
+@inject CRM.EndPoint.FrontEnd.Services.DateTimeServices DateTimeService
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "شرایط قرارداد در پیش فاکتور";
+    var openEditor = Model.Input.Id.HasValue || !ViewData.ModelState.IsValid;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/prefactorTerms.css?release=7.5.6" asp-append-version="true" />
+}
+<div id="prefactorTermsWorkspace" class="crm-settings-theme crm-terms-page p-2" dir="rtl" data-reorder-url="@Url.Action("Reorder")">
+    <div class="InfoData">
+        <header class="terms-heading d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="terms-title">
+                <span class="terms-title-icon" aria-hidden="true"><i class="fa fa-file-alt"></i></span>
+                <div>
+                    <h5 class="mb-1">مدیریت شرایط قرارداد در پیش فاکتور</h5>
+                    <p class="small text-muted mb-0">بندهای چاپ پیش‌فاکتور را مدیریت کنید. تغییرات در نمایش پیش‌فاکتورهای قبلی نیز اعمال می‌شوند.</p>
+                </div>
+            </div>
+            <div class="terms-count">
+                <i class="fa fa-list-ol" aria-hidden="true"></i>
+                <div><strong id="prefactorTermCount">@Model.Terms.Count</strong> بند <span class="terms-count-label">تعداد کل بندها</span></div>
+            </div>
+        </header>
+        @if (TempData["PrefactorTermsMessage"] is string message) {
+            <p role="status" class="mb-2 text-success">@message</p>
+        }
+        <div class="terms-toolbar d-flex flex-wrap align-items-center gap-2">
+            <button id="termsAdd" type="button" class="terms-button terms-primary" data-bs-toggle="modal" data-bs-target="#prefactorTermEditor"><i class="fa fa-plus" aria-hidden="true"></i> افزودن بند جدید</button>
+            <div class="terms-search flex-grow-1">
+                <i class="fa fa-search terms-search-icon" aria-hidden="true"></i>
+                <input id="prefactorTermSearch" type="search" class="form-control" aria-label="جستجو" placeholder="جستجو در متن، اولویت یا ثبت‌کننده..." />
+                <button type="button" id="termsClearSearch" class="terms-clear-search" aria-label="پاک کردن جستجو" title="پاک کردن جستجو" hidden><i class="fa fa-times" aria-hidden="true"></i></button>
+            </div>
+            <select id="termsSort" class="form-select terms-sort" aria-label="مرتب‌سازی">
+                <option value="asc">مرتب‌سازی: اولویت صعودی</option>
+                <option value="desc">اولویت: نزولی</option>
+                <option value="text">متن بند</option>
+                <option value="new">جدیدترین تاریخ ثبت</option>
+                <option value="old">قدیمی‌ترین تاریخ ثبت</option>
+            </select>
+            <a asp-action="Index" class="terms-button" title="به‌روزرسانی" aria-label="به‌روزرسانی"><i class="fa fa-sync-alt" aria-hidden="true"></i></a>
+        </div>
+        <p id="termsDragHint" class="small text-muted mb-2">برای تغییر اولویت، دستگیره کنار هر بند را بکشید. ترتیب جدید خودکار ذخیره می‌شود.</p>
+        <div class="table-responsive terms-table-wrap">
+            <table class="table mb-0 align-middle terms-table">
+                <thead><tr><th scope="col" class="terms-number">ردیف</th><th scope="col" class="terms-text-heading">متن بند</th><th scope="col" class="terms-number">اولویت</th><th scope="col" class="terms-created">اطلاعات ثبت</th><th scope="col" class="terms-actions">عملیات</th></tr></thead>
+                <tbody id="prefactorTermList">
+                @foreach (var term in Model.Terms) {
+                    <tr class="prefactor-term-row" data-id="@term.Id" data-order="@term.Order" data-created="@(term.CreateDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffffff", System.Globalization.CultureInfo.InvariantCulture))">
+                        <td class="terms-row-number text-center"></td>
+                        <td class="prefactor-term-text">@term.Text</td>
+                        <td class="text-center"><span class="terms-priority">@term.Order</span></td>
+                        <td class="terms-created small">
+                            <div class="terms-creator"><i class="fa fa-user" aria-hidden="true"></i><span>@(string.IsNullOrWhiteSpace(term.CreatedByName) ? (string.IsNullOrWhiteSpace(term.UserId) ? "نامشخص" : "کاربر یافت نشد") : term.CreatedByName)</span></div>
+                            <div class="text-muted terms-created-date"><i class="fa fa-calendar-alt" aria-hidden="true"></i><span dir="ltr">@(term.CreateDate.HasValue ? DateTimeService.GetDateTimePersian(term.CreateDate.Value) : "ثبت نشده")</span></div>
+                        </td>
+                        <td><div class="d-flex justify-content-center align-items-center gap-1">
+                            <button type="button" class="terms-button terms-handle crm-mobile-density-exempt" title="جابه‌جایی (کلیدهای بالا و پایین)" aria-label="جابه‌جایی بند"><i class="fa fa-grip-vertical" aria-hidden="true"></i></button>
+                            <a asp-action="Index" asp-route-editId="@term.Id" class="terms-button terms-edit" title="ویرایش" aria-label="ویرایش بند"><i class="fa fa-pen" aria-hidden="true"></i></a>
+                            <a asp-action="ConfirmDelete" asp-route-id="@term.Id" class="terms-button terms-delete" title="حذف" aria-label="حذف بند"><i class="fa fa-trash-alt" aria-hidden="true"></i></a>
+                        </div></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <p id="prefactorTermEmpty" class="text-muted text-center py-3 mb-0" hidden="@(Model.Terms.Count > 0)">بندی یافت نشد.</p>
+        <footer class="terms-footer d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2">
+            <span id="termsPageInfo" class="small text-muted"></span>
+            <nav class="terms-pagination" aria-label="صفحه‌بندی">
+                <button type="button" id="termsFirst" class="terms-button" title="صفحه اول" aria-label="صفحه اول"><i class="fa fa-angle-double-right" aria-hidden="true"></i></button>
+                <button type="button" id="termsPrev" class="terms-button" title="صفحه قبل" aria-label="صفحه قبل"><i class="fa fa-chevron-right" aria-hidden="true"></i></button>
+                <span id="termsPageNumber" class="terms-page-number" aria-live="polite"></span>
+                <button type="button" id="termsNext" class="terms-button" title="صفحه بعد" aria-label="صفحه بعد"><i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+                <button type="button" id="termsLast" class="terms-button" title="صفحه آخر" aria-label="صفحه آخر"><i class="fa fa-angle-double-left" aria-hidden="true"></i></button>
+            </nav>
+            <label class="d-flex align-items-center gap-1 small">نمایش
+                <select id="termsPageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">۱۰</option><option value="25">۲۵</option><option value="0">همه</option>
+                </select>
+            </label>
+        </footer>
+    </div>
+    <div class="modal fade" id="prefactorTermEditor" tabindex="-1" aria-labelledby="termsEditorTitle" data-open="@(openEditor ? "true" : "false")">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Save" method="post">
+                    <div class="modal-header">
+                        <h5 id="termsEditorTitle" class="modal-title">@(Model.Input.Id.HasValue ? "ویرایش بند" : "افزودن بند")</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <div class="modal-body d-flex flex-column gap-2">
+                        <input asp-for="Input.Id" type="hidden" />
+                        <label asp-for="Input.Order">اولویت نمایش</label>
+                        <input asp-for="Input.Order" type="number" min="1" class="form-control" style="width:110px" required />
+                        <span asp-validation-for="Input.Order" class="text-danger small"></span>
+                        <label asp-for="Input.Text">متن بند</label>
+                        <textarea asp-for="Input.Text" class="form-control" rows="5" required></textarea>
+                        <span asp-validation-for="Input.Text" class="text-danger small"></span>
+                    </div>
+                    <div class="modal-footer">
+                        @if (Model.Input.Id.HasValue) {
+                            <a asp-action="Index" class="terms-button">انصراف</a>
+                        } else {
+                            <button type="button" class="terms-button" data-bs-dismiss="modal">انصراف</button>
+                        }
+                        <button type="submit" class="terms-button terms-primary">ذخیره</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/prefactorTerms.js?release=7.5.6" asp-append-version="true"></script>
+}

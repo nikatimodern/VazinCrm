@@ -1,0 +1,97 @@
+.crm-terms-page {
+    width:100%;
+    --terms-primary:var(--color-primary,#004944);
+    --terms-action:var(--color-primary-action,#00665C);
+    --terms-accent:var(--color-secondary,#5811B4);
+    --terms-accent-light:var(--color-secondary-light,#F3EDFC);
+    --terms-danger:var(--color-danger,#C2185B);
+    --terms-danger-light:var(--color-danger-light,#FCE8F0);
+    --terms-border:var(--color-border,#DDE1E8);
+    --terms-surface:var(--color-surface,#fff);
+    --terms-background:var(--color-background,#F0F1F7);
+    --terms-text:var(--color-text,#212529);
+    --terms-muted:var(--color-text-muted,#545961);
+}
+.crm-terms-page .InfoData { border-radius:10px; box-shadow:0 2px 8px rgb(33 37 41 / 4%); }
+.crm-terms-page .terms-heading { border-bottom:1px solid var(--terms-border); padding-bottom:10px; margin-bottom:12px; }
+.crm-terms-page .terms-title { display:flex; align-items:center; gap:10px; flex:1 1 300px; min-width:0; }
+.crm-terms-page .terms-title-icon { display:grid; place-items:center; flex:0 0 38px; height:38px; border-radius:8px; color:var(--terms-primary); background:var(--color-primary-light,#E7F3F0); font-size:18px; }
+.crm-terms-page .terms-heading h5 { font:700 17px/1.7 IRANSansBold,sans-serif; color:var(--terms-primary); }
+.crm-terms-page .terms-heading p { font-size:12px; }
+.crm-terms-page .terms-count { display:flex; align-items:center; gap:10px; padding:5px 12px; min-height:44px; border:1px solid var(--terms-border); border-radius:8px; background:var(--terms-accent-light); color:var(--terms-accent); line-height:1.6; white-space:nowrap; }
+.crm-terms-page .terms-count > i { font-size:19px; }
+.crm-terms-page .terms-count strong { font:700 17px/1.4 IRANSansBold,sans-serif; }
+.crm-terms-page .terms-count-label { display:block; color:var(--terms-muted); font-size:11px; }
+.crm-terms-page .terms-toolbar { margin-bottom:7px; }
+.crm-terms-page .terms-toolbar > :is(.terms-button,.terms-search,.form-select) { min-height:34px; }
+.crm-terms-page .terms-toolbar :is(.form-control,.form-select) { min-height:34px; font-size:13px; }
+.crm-terms-page .terms-sort { width:auto; max-width:100%; }
+.crm-terms-page .terms-button {
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    min-height:32px; padding:4px 10px; border:1px solid var(--terms-border);
+    border-radius:7px; background:var(--terms-surface); color:var(--terms-text);
+    font:400 13px/1.6 IRANSans,sans-serif; white-space:nowrap; text-decoration:none; cursor:pointer;
+    transition:background-color .12s,border-color .12s,color .12s;
+}
+.crm-terms-page .terms-button:hover:not(:disabled) { background:var(--terms-background); }
+.crm-terms-page .terms-button:focus-visible { outline:2px solid var(--terms-accent); outline-offset:2px; }
+.crm-terms-page .terms-button:disabled { opacity:.45; cursor:default; }
+.crm-terms-page .terms-primary { color:#fff; border-color:var(--terms-action); background:var(--terms-action); }
+.crm-terms-page .terms-primary:hover:not(:disabled) { background:var(--terms-primary); }
+.crm-terms-page .terms-search { position:relative; min-width:180px; }
+.crm-terms-page .terms-search input { padding-inline-start:10px; padding-inline-end:56px; text-align:start; }
+.crm-terms-page .terms-search input::-webkit-search-cancel-button { appearance:none; -webkit-appearance:none; }
+.crm-terms-page .terms-search-icon { position:absolute; inset-inline-end:11px; top:50%; transform:translateY(-50%); color:var(--terms-muted); pointer-events:none; z-index:1; }
+.crm-terms-page .terms-clear-search { position:absolute; inset-inline-end:28px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:24px; height:24px; padding:0; border:0; border-radius:5px; background:transparent; color:var(--terms-muted); }
+.crm-terms-page .terms-clear-search[hidden] { display:none; }
+.crm-terms-page .terms-clear-search:hover:not(:disabled) { background:var(--terms-background); }
+.crm-terms-page .terms-clear-search:focus-visible { outline:2px solid var(--terms-accent); }
+.crm-terms-page .terms-clear-search:disabled { opacity:.45; }
+.crm-terms-page #termsDragHint { font-size:11px; }
+.crm-terms-page .terms-table-wrap { border:1px solid var(--terms-border); border-radius:8px; overflow-x:auto; }
+.crm-terms-page .terms-table { width:100%; min-width:620px; margin:0; color:var(--terms-text); font-size:13px; }
+.crm-terms-page .terms-table thead th { color:var(--terms-accent); background:var(--terms-accent-light); font-weight:700; white-space:nowrap; border-bottom:1px solid var(--terms-border); }
+.crm-terms-page .terms-table :is(th,td) { padding:7px 10px; border-color:var(--terms-border); vertical-align:middle; }
+.crm-terms-page .terms-table tbody tr:last-child td { border-bottom:0; }
+.crm-terms-page .terms-number { width:60px; text-align:center; }
+.crm-terms-page .terms-row-number { color:var(--terms-muted); font-size:12px; }
+.crm-terms-page .terms-text-heading,.crm-terms-page .terms-table .prefactor-term-text { text-align:start; }
+.crm-terms-page .prefactor-term-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.95; }
+.crm-terms-page .terms-priority { display:inline-block; min-width:35px; padding:3px 8px; border:1px solid var(--terms-border); border-radius:6px; background:var(--terms-accent-light); color:var(--terms-accent); font-weight:700; white-space:nowrap; }
+.crm-terms-page .terms-created { width:155px; min-width:130px; text-align:center; }
+.crm-terms-page .terms-creator,.crm-terms-page .terms-created-date { display:flex; justify-content:center; align-items:center; gap:5px; }
+.crm-terms-page .terms-creator { overflow-wrap:anywhere; font-size:12px; }
+.crm-terms-page .terms-created-date { white-space:nowrap; font-size:11px; }
+.crm-terms-page .terms-created i { color:var(--terms-muted); font-size:11px; }
+.crm-terms-page .terms-actions { width:126px; text-align:center; }
+.crm-terms-page .terms-table .terms-button { width:30px; min-width:30px; min-height:30px; padding:3px; }
+.crm-terms-page .terms-edit { color:var(--terms-accent); border-color:var(--terms-accent); }
+.crm-terms-page .terms-edit:hover:not(:disabled) { color:var(--terms-accent); background:var(--terms-accent-light); }
+.crm-terms-page .terms-delete { color:var(--terms-danger); border-color:var(--terms-danger); }
+.crm-terms-page .terms-delete:hover:not(:disabled) { color:var(--terms-danger); background:var(--terms-danger-light); }
+.crm-terms-page .terms-handle { cursor:grab; touch-action:none; color:var(--terms-muted); }
+.crm-terms-page .terms-handle:active { cursor:grabbing; }
+.crm-terms-page .terms-table tbody tr:hover td { background:var(--terms-background); }
+.crm-terms-page .terms-table tbody tr.terms-ghost td { background:var(--terms-accent-light); }
+.crm-terms-page .terms-footer { margin-top:4px; }
+.crm-terms-page .terms-pagination { display:flex; align-items:center; gap:4px; }
+.crm-terms-page .terms-pagination .terms-button { min-width:30px; padding:4px 7px; }
+.crm-terms-page .terms-page-number { display:inline-flex; justify-content:center; align-items:center; min-width:48px; min-height:32px; padding:3px 8px; background:var(--terms-accent); border:1px solid var(--terms-accent); border-radius:7px; color:#fff; font-size:12px; white-space:nowrap; }
+.crm-terms-page .terms-footer .form-select { min-height:32px; font-size:12px; }
+@media (max-width:767px) {
+    .crm-terms-page .terms-title { flex-basis:100%; gap:7px; }
+    .crm-terms-page .terms-heading h5 { font-size:15px; }
+    .crm-terms-page .terms-title-icon { flex-basis:32px; height:32px; font-size:15px; }
+    .crm-terms-page .terms-count { padding:4px 8px; min-height:34px; }
+    .crm-terms-page .terms-count strong { font-size:14px; }
+    .crm-terms-page .terms-count-label { display:inline; margin-inline-start:5px; }
+    .crm-terms-page .terms-search { order:-1; flex-basis:100%; }
+    .crm-terms-page .terms-button:not(.crm-mobile-density-exempt) { min-height:26px; font-size:11px; padding:2px 6px; margin-block:0; }
+    .crm-terms-page .terms-table :is(th,td) { padding:5px 7px; }
+    .crm-terms-page .terms-table { min-width:600px; }
+    .crm-terms-page .terms-number { width:42px; }
+    .crm-terms-page .terms-footer { gap:7px; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .crm-terms-page .terms-button { transition:none; }
+}

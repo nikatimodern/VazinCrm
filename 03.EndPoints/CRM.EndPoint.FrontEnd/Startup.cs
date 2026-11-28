@@ -190,6 +190,9 @@ namespace CRM.EndPoint.FrontEnd {
 
             services.AddScoped<IDocumentRenderService, DocumentRenderService>();
 
+            services.AddScoped<MenuDefinitionService>();
+            services.AddScoped<MenuBadgeService>();
+            services.AddScoped<MenuFavoritesService>();
             services.AddScoped<IMenuService, MenuService>();
             services.AddScoped<PreFactorService>();
             services.AddScoped<ExternalMappingService>();
@@ -204,6 +207,7 @@ namespace CRM.EndPoint.FrontEnd {
             services.AddScoped<Sepidar2InvoiceExportRepository>();
             services.AddScoped<SepidarUserResolver>();
             services.AddScoped<IPreFactorDestinationRepository, PreFactorDestinationRepository>();
+            services.AddScoped<IPrefactorTermsRepository, PrefactorTermsRepository>();
             services.AddScoped<ISalesInvoiceDestinationRepository, SalesInvoiceDestinationRepository>();
             services.AddTransient<Sepidar1Service>();
             services.AddTransient<Sepidar2Service>();

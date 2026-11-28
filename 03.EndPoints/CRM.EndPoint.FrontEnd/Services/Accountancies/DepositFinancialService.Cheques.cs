@@ -23,12 +23,24 @@ public sealed partial class DepositFinancialService
     private static AccountancyTransfer? ActiveChequeTransfer(Accountancy source) =>
         source.AccountancyTransfer is { IsDeleted: false } transfer ? transfer : null;
 
-    private static async Task<object> GetChequeHistoryAsync(SepidarService service, Accountancy source, int receiptId, CancellationToken ct)
+    private async Task<string?> GetBankCollectionRestrictionAsync(Accountancy source, CancellationToken ct)
+    {
+        if (!UsesBankCollection(source)) return null;
+        if (source.BankAccountId is not Guid bankId || bankId == Guid.Empty ||
+            !await repository.HasAvailableCollectionBankAsync(bankId, ct))
+            return "وصول چک در ERP حساب مقصد معتبر ندارد. ابتدا از «وصول شده» حساب بانکی مقصد را اصلاح کنید.";
+        return source.VosolDateM.HasValue ? null
+            : "تاریخ وصول چک در ERP ثبت نشده است. ابتدا از «وصول شده» تاریخ وصول را اصلاح کنید.";
+    }
+
+    private static async Task<object> GetChequeHistoryAsync(SepidarService service, Accountancy source, int receiptId,
+        string? bankCollectionRestriction, CancellationToken ct)
     {
         var status = await service.FindDepositChequeStatusAsync(receiptId, ct);
         var transferred = ActiveChequeTransfer(source) != null;
         if (status == null)
-            return new { NextAction = DepositChequeAction.None, Message = "چک این رسید در مقصد قابل تطبیق نیست.",
+            return new { NextAction = DepositChequeAction.None, BankCollectionRestriction = bankCollectionRestriction,
+                Message = "چک این رسید در مقصد قابل تطبیق نیست.",
                 MaintenanceRestriction = "چک این رسید در مقصد قابل تطبیق نیست." };
         var assignment = status.Assignment;
         var assignmentBank = assignment?.BankId is int bankId
@@ -37,11 +49,12 @@ public sealed partial class DepositFinancialService
         var collectionBank = collection?.BankId is int collectedBankId && collectedBankId != assignment?.BankId
             ? await service.GetChequeAssignmentBankTitleAsync(collectedBankId, ct) : assignmentBank;
         var payment = status.Payment;
-        var next = status.Next(transferred, source.Vosoled);
+        var next = bankCollectionRestriction == null ? status.Next(transferred, source.Vosoled) : DepositChequeAction.None;
         const string shared = "این سند شامل بیش از یک چک است.";
         return new
         {
             NextAction = next,
+            BankCollectionRestriction = bankCollectionRestriction,
             MaintenanceRestriction = payment != null ? "ابتدا اعلامیه پرداختِ خرج کردن چک را حذف کنید."
                 : collection != null || assignment != null ? "ابتدا عملیات وصول و واگذاری را به ترتیب از آخر حذف کنید."
                 : status.State != 1 ? "چک در وضعیت نزد صندوق نیست." : null,
@@ -143,6 +156,9 @@ public sealed partial class DepositFinancialService
         var source = await SourceAsync(request.Id, ct);
         if (source.PayType != PayTypeEnum.چکی)
             throw new SepidarTransferValidationException("این عملیات فقط برای واریزی چکی قابل انجام است.");
+        if (request.Action is DepositChequeAction.Assign or DepositChequeAction.Collect &&
+            await GetBankCollectionRestrictionAsync(source, ct) is { } restriction)
+            throw new SepidarTransferValidationException(restriction);
         var service = Destination(request.SoftwareId);
         var mappings = await repository.GetMappingsAsync(source.Id, null, null, ct);
         var receipt = mappings.SingleOrDefault(x => x.ExternalSoftwareId == request.SoftwareId && x.MapType == DepositType);
@@ -151,6 +167,14 @@ public sealed partial class DepositFinancialService
         var receiptId = ReadId(receipt);
         if (request.ReceiptId != 0 && request.ReceiptId != receiptId)
             throw new SepidarTransferValidationException("رسید دریافت مقصد تغییر کرده است. سوابق را دوباره باز کنید.");
+        var sync = await service.GetDepositSyncSummaryAsync(receiptId,
+            GetSyncSource(source, request.SoftwareId, await GetSyncMappingsAsync(source, ct)), ct);
+        if (sync.Changes.Count > 0)
+            throw new SepidarTransferValidationException(sync.ReceiptRestriction ?? "ابتدا رسید دریافت را با ERP همگام‌سازی کنید.");
+        if (sync.AssignmentRestriction != null)
+            throw new SepidarTransferValidationException(sync.AssignmentRestriction);
+        if (request.Action == DepositChequeAction.Collect && sync.ReceiptRestriction != null)
+            throw new SepidarTransferValidationException(sync.ReceiptRestriction);
         return (source, service, receiptId);
     }
 

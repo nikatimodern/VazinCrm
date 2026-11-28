@@ -453,9 +453,9 @@ function renderExternalFinancialStage(modal, container, { destination, position,
                 <div class="external-mapping-stage-icon">${icon}</div>
                 <div class="external-mapping-stage-content">
                     <div class="external-mapping-stage-title">${escapeHtml(title)}</div>
-                    <div class="external-mapping-stage-subtitle">${escapeHtml(subtitle)}</div>
+                    ${subtitle ? `<div class="external-mapping-stage-subtitle">${escapeHtml(subtitle)}</div>` : ""}
                 </div>
-                <span class="external-mapping-step">${escapeHtml(step)}</span>
+                ${step ? `<span class="external-mapping-step">${escapeHtml(step)}</span>` : ""}
             </div>
             ${typeof content === "string" ? content : ""}
         </div>`;
@@ -470,6 +470,16 @@ function renderExternalFinancialPreviewTable(columns, rows) {
                     `<td${index === row.length - 1 ? ' class="fbold"' : ""}>${escapeHtml(value ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody>
             </table>
         </div>`;
+}
+
+function appendExternalFinancialPreviewSection(container, title, columns, rows) {
+    const section = document.createElement("section");
+    const heading = document.createElement("h6");
+    heading.className = "fbold mb-2 external-pf-software";
+    heading.textContent = title;
+    section.append(heading);
+    section.insertAdjacentHTML("beforeend", renderExternalFinancialPreviewTable(columns, rows));
+    container.append(section);
 }
 
 function renderExternalFinancialPreview({ fields, columns, rows, totals, detailsHtml }) {

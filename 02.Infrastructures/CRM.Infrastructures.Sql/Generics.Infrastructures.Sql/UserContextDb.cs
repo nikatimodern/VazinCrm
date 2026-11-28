@@ -18,11 +18,11 @@ namespace Generics.Infrastructures.Sql {
         public DbSet<AccessUserPermission> AccessUserPermissions { get; set; }
         public DbSet<AccessUserScopeMember> AccessUserScopeMembers { get; set; }
         public DbSet<AccessHistoryEntry> AccessHistoryEntries { get; set; }
+        public DbSet<MenuFavorite> MenuFavorites { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
-
 
             // The old method was declared without "override" and its configurations were
             // never part of the effective Identity model. Keep the existing AppUser/Position
@@ -45,8 +45,14 @@ namespace Generics.Infrastructures.Sql {
                 entity.HasIndex(x => x.CreatedAtUtc);
                 entity.HasIndex(x => new { x.Kind, x.CreatedAtUtc });
             });
-
-
+            // The old non-override OnModelCreating was never executed by EF Core.
+            // Configure only the new menu feature here to preserve the effective
+            // Identity and application model mappings used before this feature.
+            modelBuilder.Entity<MenuFavorite>(entity => {
+                entity.HasKey(f => new { f.UserId, f.MenuId });
+                entity.Property(f => f.UserId).HasMaxLength(450).IsRequired();
+                entity.Property(f => f.MenuId).HasMaxLength(100).IsRequired();
+            });
         }
     }
 }

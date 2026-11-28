@@ -18,6 +18,7 @@ public sealed partial class SupplyFinancialIntegration
     public async Task<SupplyResult> GetReceiptEditAsync(SupplyDestinationKey key, CancellationToken ct)
     {
         var (service, document, _) = await ResolveMaintenanceAsync(key, true, ct);
+        await EnsureDestinationSyncedAsync(document, key.SourceId, ct);
         var state = await maintenance.GetReceiptEditAsync(document, ct);
         var itemIds = state.Rows.Select(row => row.ItemId).Distinct().ToArray();
         var items = await service.GetReceiptItemDisplaysAsync(itemIds, ct);
@@ -42,6 +43,7 @@ public sealed partial class SupplyFinancialIntegration
         var date = GetReceiptDate(new SupplyFinancialRequest { DateText = request.DateText });
         await using var guard = await repository.LockAsync(request.Key.SourceId, ct);
         var (service, document, _) = await ResolveMaintenanceAsync(request.Key, true, ct);
+        await EnsureDestinationSyncedAsync(document, request.Key.SourceId, ct);
         var modifier = await sepidarUsers.GetCurrentExternalUserIdAsync(request.Key.SoftwareId, service, ct);
         await maintenance.EditReceiptAsync(document, request.Token, modifier,
             new(date, request.StockId, request.Description, request.RowDescriptions),
@@ -52,6 +54,7 @@ public sealed partial class SupplyFinancialIntegration
     public async Task<SupplyResult> GetPurchaseEditAsync(SupplyDestinationKey key, CancellationToken ct)
     {
         var (service, document, _) = await ResolveMaintenanceAsync(key, false, ct);
+        await EnsureDestinationSyncedAsync(document, key.SourceId, ct);
         var state = await maintenance.GetPurchaseAsync(document, ct);
         var canChangeLookups = state.Restriction == null && !state.HasLinkedReceipt;
         var vendors = canChangeLookups ? await service.GetPurchaseVendorsAsync(null, ct) : [];
@@ -77,6 +80,7 @@ public sealed partial class SupplyFinancialIntegration
 
         await using var guard = await repository.LockAsync(request.Key.SourceId, ct);
         var (service, document, _) = await ResolveMaintenanceAsync(request.Key, false, ct);
+        await EnsureDestinationSyncedAsync(document, request.Key.SourceId, ct);
         var state = await maintenance.GetPurchaseAsync(document, ct);
         if (state.Restriction != null)
             return SupplyResult.Invalid(state.Restriction);

@@ -46,6 +46,8 @@ using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyReceiptEdit;
 using CRM.Core.ApplicationServices.Supplies.Commands.EditSupplyReceiptDestination;
 using CRM.Core.ApplicationServices.Supplies.Queries.PreviewSupplyDestinationDeletion;
 using CRM.Core.ApplicationServices.Supplies.Commands.DeleteSupplyDestination;
+using CRM.Core.ApplicationServices.Supplies.Commands.SynchronizeSupplyDestination;
+using CRM.Core.ApplicationServices.Supplies.Queries.GetSupplyDestinationSync;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.Reports.Commands.AddReport;
 using CRM.Core.ApplicationServices.Reports.Queries.GetReport;
@@ -96,6 +98,7 @@ public static class ApplicationServicesRegistration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddTaxation();
         services.AddCustomerServices();
         services.AddWorkspaceServices();
         services.AddPageModules();
@@ -160,6 +163,8 @@ public static class ApplicationServicesRegistration
         services.AddScoped<ISupplyDestinationMaintenanceRepository, SupplyDestinationMaintenanceRepository>();
         services.AddScoped<IQueryHandler<GetSupplyReceiptEditQuery, SupplyResult>, GetSupplyReceiptEditQueryHandler>();
         services.AddScoped<ICommandHandler<EditSupplyReceiptDestinationCommand, SupplyResult>, EditSupplyReceiptDestinationCommandHandler>();
+        services.AddScoped<IQueryHandler<GetSupplyDestinationSyncQuery, SupplyResult>, GetSupplyDestinationSyncQueryHandler>();
+        services.AddScoped<ICommandHandler<SynchronizeSupplyDestinationCommand, SupplyResult>, SynchronizeSupplyDestinationCommandHandler>();
         services.AddScoped<IQueryHandler<GetSupplyPurchaseEditQuery, SupplyResult>, GetSupplyPurchaseEditQueryHandler>();
         services.AddScoped<ICommandHandler<EditSupplyPurchaseDestinationCommand, SupplyResult>, EditSupplyPurchaseDestinationCommandHandler>();
         services.AddScoped<IQueryHandler<PreviewSupplyDestinationDeletionQuery, SupplyResult>, PreviewSupplyDestinationDeletionQueryHandler>();

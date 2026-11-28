@@ -22,12 +22,14 @@ public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repo
         if (model == null)
             return SupplyResult.Invalid();
         await using var financialLock = await financial.LockAsync(model.Id, cancellationToken);
-        if ((await financial.GetMappingsAsync(model.Id, cancellationToken)).Count > 0)
+        var mappings = await financial.GetMappingsAsync(model.Id, cancellationToken);
+        if (mappings.Any(mapping => mapping.HasPendingExternalId() || !int.TryParse(mapping.ExEntityId, out var id) || id <= 0))
             return SupplyResult.Invalid("این فاکتور تأمین در فرایند انتقال مالی قرار دارد و قابل ویرایش نیست.");
         await using var transaction = await repository.BeginTransactionAsync(false, cancellationToken);
         try
         {
-            model.DateMiladi = integrations.GetDateMiladi(model.Date) ?? DateTime.Now;
+            var date = integrations.GetDateMiladi(model.Date);
+            model.DateMiladi = date ?? DateTime.Now;
             model.ModifyDate = DateTime.Now;
             model.ModifyDateTxt = integrations.GetDateTimePersian();
             model.UserModify = user.FullName;
@@ -35,6 +37,16 @@ public sealed class UpdateSupplyFactorCommandHandler(ISupplyWriteRepository repo
             var entity = await repository.GetSupplyFactorForUpdateAsync(model.Id, cancellationToken);
             if (entity == null)
                 return SupplyResult.Missing("رکوردی یافت نشد!");
+            if (mappings.Count > 0 && (date == null || model.SupplierId != entity.SupplierId ||
+                model.DateMiladi.Date != entity.DateMiladi.Date || model.SerialNumber != entity.SerialNumber ||
+                model.OfficialType != entity.OfficialType || model.IsDeleted != entity.IsDeleted))
+                return SupplyResult.Invalid("پس از انتقال مالی، تأمین‌کننده، تاریخ، شماره و نوع فاکتور قابل تغییر نیستند.");
+            if (mappings.Count > 0)
+            {
+                model.Date = entity.Date;
+                model.DateMiladi = entity.DateMiladi;
+                model.SupplierTxt = entity.SupplierTxt;
+            }
             foreach (var existingItem in entity.Items.OrderBy(x => x.Id))
             {
                 await repository.LockSupplyItemAsync(existingItem.Id, cancellationToken);

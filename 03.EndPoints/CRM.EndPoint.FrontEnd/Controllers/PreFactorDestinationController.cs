@@ -36,7 +36,11 @@ public sealed class PreFactorDestinationController(IPreFactorDestinationReposito
             var document = await repository.GetAsync(key, ct);
             if (document == null)
                 return NotFound("پیش‌فاکتور در نرم‌افزار مقصد پیدا نشد.");
-            if (!editing || document.Restriction != null)
+            if (!editing)
+                return Ok(new { document });
+            if (await repository.HasSyncDifferenceAsync(key, ct))
+                return Conflict("ابتدا پیش‌فاکتور را با ERP همگام‌سازی کنید.");
+            if (document.Restriction != null)
                 return Ok(new { document });
 
             var destination = Resolve(key.ExternalSoftwareId);
@@ -45,6 +49,30 @@ public sealed class PreFactorDestinationController(IPreFactorDestinationReposito
             var items = await destination.GetSepidarItemsAsync(ct);
             var stocks = await destination.GetStocksByItemIds(document.Items.Select(x => x.ItemId).Distinct().ToList(), ct);
             return Ok(new { document, saleTypes, customers, items, stocks });
+        });
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> SyncPreview([FromBody] PreFactorDestinationKey key, CancellationToken ct) =>
+        RespondAsync(async () =>
+        {
+            if (key == null || !ModelState.IsValid)
+                return BadRequest("سابقه همگام‌سازی معتبر نیست.");
+            var preview = await repository.GetSyncPreviewAsync(key, ct);
+            var items = preview.Blockers.Count == 0 ? await Resolve(key.ExternalSoftwareId).GetSepidarItemsAsync(ct) : [];
+            return Ok(new { preview, items });
+        });
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public Task<IActionResult> Synchronize([FromBody] PreFactorSyncRequest request, CancellationToken ct) =>
+        RespondAsync(async () =>
+        {
+            if (request?.Key == null || string.IsNullOrWhiteSpace(request.Token) || !ModelState.IsValid)
+                return BadRequest("اطلاعات همگام‌سازی معتبر نیست.");
+            var user = await users.GetCurrentExternalUserIdAsync(request.Key.ExternalSoftwareId,
+                Resolve(request.Key.ExternalSoftwareId), ct);
+            return Ok(new { changed = await repository.SynchronizeAsync(request, user, ct) });
         });
 
     [HttpPost]

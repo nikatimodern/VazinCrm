@@ -13,6 +13,7 @@ using CRM.Core.Domain.AppUsers.Entities;
 using CRM.Core.Domain.Customers.Entities;
 using CRM.Core.Domain.Customers.Enum;
 using CRM.Core.Domain.Emails.Entities;
+using CRM.Core.Domain.Factors;
 using CRM.Core.Domain.Factors.Enum;
 using CRM.Core.Domain.PreFactors.Entities;
 using CRM.Core.Domain.PreFactors.Enum;
@@ -290,7 +291,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     var weightCount = decimal.Parse(item.WeightCount);
 
                     // مبلغ قبل از تخفیف و مالیات
-                    var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
+                    var amountBeforeDiscount = InvoiceAmounts.Gross(weightCount, item.UnitAmount);
 
                     // تخفیف آیتم
                     item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
@@ -301,9 +302,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     // مالیات آیتم
                     if (isOfficial)
                     {
-                        var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
-
-                        item.TaxAmount = CalculateTax(taxBase, taxPercent);
+                        item.TaxAmount = InvoiceAmounts.Tax(amountBeforeDiscount, item.Discount, taxPercent, taxAfterDiscount);
                     } else
                     {
                         item.TaxAmount = 0;
@@ -339,7 +338,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     var weightCount = decimal.Parse(item.WeightCount);
 
                     // مبلغ قبل از تخفیف و مالیات
-                    var amountBeforeDiscount = Math.Round(weightCount * item.UnitAmount);
+                    var amountBeforeDiscount = InvoiceAmounts.Gross(weightCount, item.UnitAmount);
 
                     // تخفیف آیتم
                     item.Discount = Math.Min(Math.Max(0, Math.Round(item.Discount)), amountBeforeDiscount);
@@ -350,9 +349,7 @@ namespace CRM.EndPoint.FrontEnd.Services {
                     // مالیات آیتم
                     if (isOfficial)
                     {
-                        var taxBase = taxAfterDiscount ? amountAfterDiscount : amountBeforeDiscount;
-
-                        item.TaxAmount = CalculateTax(taxBase, taxPercent);
+                        item.TaxAmount = InvoiceAmounts.Tax(amountBeforeDiscount, item.Discount, taxPercent, taxAfterDiscount);
                     } else
                     {
                         item.TaxAmount = 0;
@@ -375,11 +372,6 @@ namespace CRM.EndPoint.FrontEnd.Services {
             }
 
             return model;
-        }
-
-        private static decimal CalculateTax(decimal amount, int taxPercent)
-        {
-            return Math.Floor(amount * taxPercent / 100m); // تقریب رو به پایین
         }
 
         public static string GetTypeTxtPfactor(int type)

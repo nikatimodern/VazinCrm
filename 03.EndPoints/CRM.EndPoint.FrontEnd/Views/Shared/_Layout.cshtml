@@ -171,47 +171,8 @@
     (function setActiveMenu() {
         const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, "");
 
-        // Active کردن لینک فعلی
-        document.querySelectorAll(".menu-link").forEach(link => {
-            const href = link.getAttribute("href");
-            if (!href || href === "#") return;
-            const linkUrl = new URL(href, window.location.origin);
-            const linkPath = linkUrl.pathname.toLowerCase().replace(/\/$/, "");
-            if (linkPath !== currentPath) return;
-
-            link.classList.add("active-menu");
-            link.setAttribute("aria-current", "page");
-
-            let parent = link.closest(".has-submenu");
-            while (parent) {
-                parent.classList.add("open");
-                const parentMenuItem = parent.querySelector(":scope > .menu-item");
-                parentMenuItem?.classList.add("active-ancestor");
-                parentMenuItem?.setAttribute("aria-expanded", "true");
-                parent = parent.parentElement?.closest(".has-submenu");
-            }
-        });
-
-
-        // باز و بسته کردن submenu
-        document.querySelectorAll(".menu-nav .submenu-toggle").forEach((menu, index) => {
-            const wrapper = menu.parentElement;
-            const submenu = wrapper.querySelector(":scope > .submenu");
-            submenu.id = `navigation-submenu-${index}`;
-            menu.setAttribute("aria-controls", submenu.id);
-            menu.addEventListener("click", function () {
-                const open = wrapper.classList.toggle("open");
-                menu.setAttribute("aria-expanded", String(open));
-                if (!open && submenu.contains(document.activeElement)) menu.focus();
-            });
-            wrapper.addEventListener("keydown", event => {
-                if (event.key !== "Escape" || !wrapper.classList.contains("open")) return;
-                event.stopPropagation();
-                wrapper.classList.remove("open");
-                menu.setAttribute("aria-expanded", "false");
-                menu.focus();
-            });
-        });
+        // The shared menu client owns active links and independent submenu state.
+        // It remains mounted during Virtual DOM navigation.
 
         // Animate only intentional interaction, including keyboard and touch input.
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -329,6 +290,7 @@
 <template data-page-scripts>@await RenderSectionAsync("Scripts", required: false)</template>
 <script src="~/js/pageDom.js?release=7.5.6" defer asp-append-version="true"></script>
 <script src="~/js/pageRuntime.js?release=7.5.6" defer asp-append-version="true"></script>
+<script src="~/js/menuNavigation.js?release=7.6.0" defer asp-append-version="true"></script>
 <script src="~/js/pageNavigation.js?release=7.5.6" defer asp-append-version="true"></script>
 
 </body>

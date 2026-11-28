@@ -398,6 +398,9 @@ public partial class SepidarService
         return await GetNextIdAsync(table, count, ct);
     }
 
+    internal Task<int> ReserveSupplySyncRowIdsAsync(bool receipt, int count, CancellationToken ct) =>
+        GetLockedNextPurchaseIdAsync(receipt ? "INV.InventoryReceiptItem" : "INV.InventoryPurchaseInvoiceItem", count, ct);
+
     public async Task<PurchaseDocument> AddSupplyPurchaseAsync(int id, int creator, SupplyFactor source,
         int vendorId, IReadOnlyList<PurchaseItemSelection> selections, string description,
         string expectedPreview, CancellationToken ct)

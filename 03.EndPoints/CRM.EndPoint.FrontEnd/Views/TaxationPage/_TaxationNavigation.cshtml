@@ -1,0 +1,21 @@
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var items = new[]
+    {
+        (Action: "Index", Label: "صورتحساب‌ها", Icon: "fa-file-invoice"),
+        (Action: "Reports", Label: "گزارش‌ها", Icon: "fa-chart-bar"),
+        (Action: "Memories", Label: "حافظه‌های مالیاتی", Icon: "fa-shield-alt"),
+        (Action: "Products", Label: "تطبیق کالاها", Icon: "fa-boxes")
+    };
+    if (action is "Preview" or "Dispatch")
+        action = "Index";
+}
+<nav class="taxation-navigation" aria-label="بخش‌های سامانه مؤدیان">
+    @foreach (var item in items)
+    {
+        <a asp-controller="TaxationPage" asp-action="@item.Action" class="crm-mobile-dense-action"
+           aria-current="@(action == item.Action ? "page" : null)">
+            <i class="fas @item.Icon" aria-hidden="true"></i><span>@item.Label</span>
+        </a>
+    }
+</nav>

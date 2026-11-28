@@ -1,31 +1,55 @@
-﻿@model CRM.EndPoint.FrontEnd.Models.Menu.MenuItem
+@using CRM.EndPoint.FrontEnd.Models.Menu
+@model MenuItem
 
-@if (Model.SubItems?.Count > 0) {
-    // Menu item with submenu
-    <div class="has-submenu @(Model.Id)-menu">
-        <button type="button" data-tooltip-left="@Model.Title" class="menu-item submenu-toggle" aria-expanded="false">
-            @Html.Raw(Model.IconHtml)
+@if (Model.IsFavoritesGroup) {
+    <section class="menu-favorites-panel" data-menu-favorites aria-label="علاقه‌مندی‌ها">
+        <div class="menu-favorites-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span>علاقه‌مندی‌ها</span>
+        </div>
+        <ul class="menu-favorites-list" data-favorites-list>
+            @for (var index = 0; index < Model.SubItems.Count; index++) {
+                var favorite = Model.SubItems[index];
+                <li class="menu-favorite-row @(index >= 5 ? "menu-favorite-overflow" : "")"
+                    data-favorite-row data-favorite-id="@favorite.FavoriteTargetId">
+                    <span class="menu-favorite-grip" title="تغییر ترتیب" aria-hidden="true">
+                        <svg width="14" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                    </span>
+                    <partial name="Menu/_MenuItem" model="favorite" />
+                </li>
+            }
+        </ul>
+        @if (Model.SubItems.Count > 5) {
+            <button type="button" class="menu-favorites-more" data-favorites-more aria-expanded="false">نمایش بیشتر (@(Model.SubItems.Count - 5))</button>
+        }
+    </section>
+} else if (Model.DisplayType == MenuDisplayType.Group) {
+    <div class="has-submenu @(Model.Id)-menu" data-menu-group="@Model.Id">
+        <button type="button" class="menu-item submenu-toggle" aria-label="@Model.Title" aria-expanded="false">
+            @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
             <span class="menu-item-title">
                 <span>@Model.Title</span>
-                <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6" /></svg>
+                <svg class="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"/></svg>
             </span>
         </button>
         <ul class="submenu">
             <li class="submenu-content">
                 <ul class="submenu-items">
-                @foreach (var sub in Model.SubItems) {
-                    <li>
-                        <partial name="Menu/_MenuItem" model="sub" />
-                    </li>
-                }
+                    @foreach (var sub in Model.SubItems) {
+                        <li><partial name="Menu/_MenuItem" model="sub" /></li>
+                    }
                 </ul>
             </li>
         </ul>
     </div>
-} else if (string.IsNullOrEmpty(Model.Url)) {
-    // Menu button
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")" data-tooltip-left="@(string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title} - {Model.Subtitle}")" aria-label="@(Model.Id == "releaseNotes" ? (string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title}، {Model.Subtitle}") : null)" onclick="@Model.OnClick">
-        @Html.Raw(Model.IconHtml)
+} else if (Model.DisplayType is MenuDisplayType.Action or MenuDisplayType.Modal) {
+    <button type="button" id="@Model.ElementId" data-menu-id="@Model.Id" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")"
+            data-tooltip-left="@(string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title} - {Model.Subtitle}")"
+            aria-label="@(Model.Id == "releaseNotes" ? (string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title}، {Model.Subtitle}") : null)"
+            onclick="@Model.OnClick">
+        @if (Model.Id != "releaseNotes") {
+            @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
+        }
         <span class="menu-item-title">
             <span>@Model.Title</span>
             @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) {
@@ -38,21 +62,30 @@
         @if (Model.Id == "releaseNotes") {
             <span class="menu-release-compact" aria-hidden="true">
                 <span dir="ltr">@Model.Title.Replace("نسخه ", "")</span>
-                @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) {
-                    <small dir="ltr">@Model.Subtitle</small>
-                }
+                @if (!string.IsNullOrWhiteSpace(Model.Subtitle)) { <small dir="ltr">@Model.Subtitle</small> }
             </span>
         }
     </button>
-} else {
-    // Menu link
-    <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @(Model.Id == "overdueOpenDeals" ? (Model.BadgeCount.GetValueOrDefault() > 0 ? "menu-overdue-attention" : "") : Model.ClassName)" data-tooltip-left="@Model.Title">
-        @Html.Raw(Model.IconHtml)
-        <span class="menu-item-title">
-            <span>@Model.Title</span>
-            @if (Model.BadgeCount > 0) {
-                <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
-            }
-        </span>
-    </a>
+} else if (Model.DisplayType == MenuDisplayType.Link) {
+    <div class="menu-entry" data-menu-entry="@Model.FavoriteTargetId">
+        <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @(Model.Id == "overdueOpenDeals" ? (Model.BadgeCount.GetValueOrDefault() > 0 ? "menu-overdue-attention" : "") : Model.ClassName)"
+           data-tooltip-left="@Model.Title">
+            @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
+            <span class="menu-item-title">
+                <span>@Model.Title</span>
+                @if (Model.BadgeCount > 0) {
+                    <span class="badge-count badge-count-menuItem @(Model.Id == "overdueOpenDeals" ? "badge-count-overdue" : "")">@Model.BadgeCount</span>
+                }
+            </span>
+        </a>
+        @if (!string.IsNullOrWhiteSpace(Model.FavoriteTargetId)) {
+            <button type="button" class="menu-favorite-toggle @(Model.IsFavorite ? "is-favorite" : "")"
+                    data-menu-favorite="@Model.FavoriteTargetId"
+                    aria-label="@(Model.IsFavorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها")"
+                    aria-pressed="@(Model.IsFavorite ? "true" : "false")"
+                    title="@(Model.IsFavorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها")">
+                <svg viewBox="0 0 24 24" fill="@(Model.IsFavorite ? "currentColor" : "none")" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+        }
+    </div>
 }
