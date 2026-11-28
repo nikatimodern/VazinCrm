@@ -87,6 +87,7 @@ internal static class MenuIcons
             "settingsCompany" => Svg("building-2", "<rect x='3' y='2' width='14' height='20' rx='2'/><path d='M17 9h4v13h-4M7 6h2M11 6h2M7 10h2M11 10h2M7 14h2M11 14h2'/>"),
             "settingsFinance" => Accounting,
             "settingsMain" => Settings,
+            "settingsAi" => Svg("bot", "<rect x='4' y='7' width='16' height='13' rx='3'/><path d='M12 7V3M10 3h4M2 11v5M22 11v5M9 12h.01M15 12h.01M9 16h6'/>"),
             "settingsBin" => Svg("trash-2", "<path d='M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7'/>"),
             "settingsSms" => Svg("message-square", "<path d='M21 11.5a8.5 8.5 0 0 1-8.5 8.5H3l2-4a8.5 8.5 0 1 1 16-4.5Z'/>"),
             "settingsExternal" => Svg("plug-zap", "<path d='M7 2v5M17 2v5M6 7h12v3a6 6 0 0 1-12 0zM12 16v6'/>"),
