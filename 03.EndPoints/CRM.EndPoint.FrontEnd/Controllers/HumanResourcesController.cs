@@ -15,8 +15,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.EndPoint.FrontEnd.Controllers;
 
-// Administrator-only preview. Actual employee/contract access is separately
-// enforced by the application handlers and currently denied by the locked adapter.
+// Senior-administrator-only HR access until Access Catalog integration.
+// Application handlers independently enforce the server-resolved scopes.
 [Authorize(Roles = AppRoles.Admin)]
 [AutoValidateAntiforgeryToken]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
