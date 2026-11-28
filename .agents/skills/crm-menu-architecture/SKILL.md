@@ -29,7 +29,7 @@ Do not introduce another menu registry, hard-coded navigation tree in a view or 
 
 1. Verify the actual controller/action or route, intended audience, existing access policy and target category.
 2. Locate the final category in `BuildMenus`. Add the item directly to its `SubItems` using a unique stable ID, Persian title, verified URL or existing modal action, appropriate icon and explicit sibling order. Do not add it to an obsolete category for later relocation.
-3. Set the required visibility and access metadata. Reuse a role group or policy only if its audience matches exactly. For a new feature follow the target branch's current permission model; do not introduce new role-only checks when the feature uses entity permissions.
+3. Set the required visibility and access metadata. Declare role lists directly in each MenuItem using explicit AppRoles constants; do not introduce shared role arrays just to remove duplication. Use inheritance only when the actual parent is intended to grant the same audience to its children. Preserve existing authoritative feature access policies (such as QualityControlAccessPolicy) instead of duplicating or weakening them. For a new feature follow the target branch's current permission model; do not introduce new role-only checks when the feature uses entity permissions.
 4. Verify desktop, mobile drawer, search and favorites. Add a separate mobile bottom shortcut only when requested or required by the existing design. For settings, use the existing supplemental settings link mechanism and keep the actual settings modal in sync.
 5. Run focused build/tests and report the result; do not claim validation that was not executed.
 
@@ -40,7 +40,15 @@ new MenuItem {
     Id = "warehouse",
     Title = "انبار",
     Url = "/Warehouse/Index",
-    Roles = [.. SupplyFactorRoles],
+    Roles = [
+        AppRoles.Admin,
+        AppRoles.ManagingDirector,
+        AppRoles.ExecutiveDirector,
+        AppRoles.TaminExpert,
+        AppRoles.TaminAdmin,
+        AppRoles.FinancialExpert,
+        AppRoles.FinancialAdmin
+    ],
     DisplayOrder = 3
 }
 ```

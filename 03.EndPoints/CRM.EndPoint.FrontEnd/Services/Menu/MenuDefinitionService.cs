@@ -15,38 +15,6 @@ public sealed class MenuDefinitionService(
     IConfiguration configuration,
     MenuBadgeService badges)
 {
-    // These audiences also preserve the inherited access of relocated links.
-    private static readonly string[] DashboardRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.SalesExpert, AppRoles.SalesAdmin, AppRoles.TaminExpert, AppRoles.TaminAdmin,
-        AppRoles.FinancialExpert, AppRoles.FinancialAdmin
-    ];
-    private static readonly string[] SalesAndSupplyRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.SalesExpert, AppRoles.SalesAdmin, AppRoles.TaminExpert, AppRoles.TaminAdmin
-    ];
-    private static readonly string[] WorkReportRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.SalesExpert, AppRoles.TaminExpert
-    ];
-    private static readonly string[] FinanceRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.FinancialExpert, AppRoles.FinancialAdmin
-    ];
-    private static readonly string[] TreasuryRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.TaminExpert, AppRoles.TaminAdmin, AppRoles.FinancialExpert,
-        AppRoles.FinancialAdmin, AppRoles.TanKhah
-    ];
-    private static readonly string[] SupplyFactorRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.ExecutiveDirector,
-        AppRoles.TaminExpert, AppRoles.TaminAdmin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin
-    ];
-    private static readonly string[] CashRoles = [
-        AppRoles.Admin, AppRoles.ManagingDirector, AppRoles.FinancialAdmin,
-        AppRoles.FinancialExpert, AppRoles.TanKhah
-    ];
-
     public List<MenuItem> BuildMenus(ClaimsPrincipal user, HashSet<string> roles)
     {
         var showTaxation = roles.Contains(AppRoles.Admin) &&
@@ -56,11 +24,48 @@ public sealed class MenuDefinitionService(
             #region Dashboard and mobile shortcuts
             new MenuItem {
                 Id = "dashboard", Title = "داشبورد", Url = "/Dashboard/Index",
-                IconHtml = MenuIcons.Dashboard, Roles = [.. DashboardRoles],
+                IconHtml = MenuIcons.Dashboard,
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.ManagingDirector,
+                    AppRoles.ExecutiveDirector,
+                    AppRoles.SalesExpert,
+                    AppRoles.SalesAdmin,
+                    AppRoles.TaminExpert,
+                    AppRoles.TaminAdmin,
+                    AppRoles.FinancialExpert,
+                    AppRoles.FinancialAdmin
+                ],
                 DisplayOrder = 1, ShowInMobileBottomMenu = true
             },
-            MobileShortcut("dealMobile", "سفارشات", "/Deal/Index", MenuIcons.Deals, 2, SalesAndSupplyRoles),
-            MobileShortcut("peopleMobile", "اشخاص", "/Customer/Index", MenuIcons.Customers, 3, SalesAndSupplyRoles),
+            new MenuItem {
+                Id = "dealMobile", Title = "سفارشات", Url = "/Deal/Index",
+                IconHtml = MenuIcons.Deals,
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.ManagingDirector,
+                    AppRoles.ExecutiveDirector,
+                    AppRoles.SalesExpert,
+                    AppRoles.SalesAdmin,
+                    AppRoles.TaminExpert,
+                    AppRoles.TaminAdmin
+                ],
+                DisplayOrder = 2, ShowInMobileBottomMenu = true, ShowInDesktop = false
+            },
+            new MenuItem {
+                Id = "peopleMobile", Title = "اشخاص", Url = "/Customer/Index",
+                IconHtml = MenuIcons.Customers,
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.ManagingDirector,
+                    AppRoles.ExecutiveDirector,
+                    AppRoles.SalesExpert,
+                    AppRoles.SalesAdmin,
+                    AppRoles.TaminExpert,
+                    AppRoles.TaminAdmin
+                ],
+                DisplayOrder = 3, ShowInMobileBottomMenu = true, ShowInDesktop = false
+            },
             new MenuItem {
                 Id = "cartable", Title = "کارتابل", Url = "/Cartable/Index",
                 IconHtml = MenuIcons.Cartable, DisplayOrder = 4, ShowInMobileBottomMenu = true,
@@ -68,7 +73,18 @@ public sealed class MenuDefinitionService(
                     AppRoles.SalesExpert, AppRoles.SalesAdmin, AppRoles.TaminExpert,
                     AppRoles.FinancialExpert, AppRoles.FinancialAdmin]
             },
-            MobileShortcut("reportMobile", "گزارش کار", "/Report/Index", MenuIcons.WorkReports, 5, WorkReportRoles),
+            new MenuItem {
+                Id = "reportMobile", Title = "گزارش کار", Url = "/Report/Index",
+                IconHtml = MenuIcons.WorkReports,
+                Roles = [
+                    AppRoles.Admin,
+                    AppRoles.ManagingDirector,
+                    AppRoles.ExecutiveDirector,
+                    AppRoles.SalesExpert,
+                    AppRoles.TaminExpert
+                ],
+                DisplayOrder = 5, ShowInMobileBottomMenu = true, ShowInDesktop = false
+            },
             #endregion
 
             #region Daily activities
@@ -78,11 +94,31 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "carizo", Title = "کاربان", Url = "/Carizo/Index",
-                        IconHtml = MenuIcons.Tasks, Roles = [.. DashboardRoles], DisplayOrder = 1
+                        IconHtml = MenuIcons.Tasks,
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "report", Title = "گزارش کار", Url = "/Report/Index",
-                        IconHtml = MenuIcons.WorkReports, Roles = [.. WorkReportRoles], DisplayOrder = 2
+                        IconHtml = MenuIcons.WorkReports,
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.TaminExpert
+                        ],
+                        DisplayOrder = 2
                     }
                 ]
             },
@@ -95,11 +131,31 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "customer", Title = "مشتریان", Url = "/Customer/Index?roleType=1",
-                        IconHtml = MenuIcons.Customers, Roles = [.. SalesAndSupplyRoles], DisplayOrder = 1
+                        IconHtml = MenuIcons.Customers,
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin
+                        ],
+                        DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "deal", Title = "سفارشات", Url = "/Deal/Index",
-                        IconHtml = MenuIcons.Deals, Roles = [.. SalesAndSupplyRoles], DisplayOrder = 2
+                        IconHtml = MenuIcons.Deals,
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin
+                        ],
+                        DisplayOrder = 2
                     }
                 ]
             },
@@ -112,7 +168,16 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "suppliers", Title = "تأمین‌کنندگان", Url = "/Customer/Index?roleType=2",
-                        Roles = [.. SalesAndSupplyRoles], DisplayOrder = 1
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin
+                        ],
+                        DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "amount", Title = "قیمت ها", Url = "/Amount/Index", IconHtml = MenuIcons.Prices,
@@ -121,11 +186,30 @@ public sealed class MenuDefinitionService(
                     },
                     new MenuItem {
                         Id = "supplyFactor", Title = "ثبت فاکتور تامین", Url = "/Supply/SupplyFactor",
-                        Roles = [.. SupplyFactorRoles], DisplayOrder = 3
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "requestAmount", Title = "ثبت درخواست وجه", Url = "/RequestAmount/Index",
-                        Roles = [.. TreasuryRoles], DisplayOrder = 4
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin,
+                            AppRoles.TanKhah
+                        ],
+                        DisplayOrder = 4
                     }
                 ]
             },
@@ -138,15 +222,42 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "productionVoucher", Title = "حواله تولید", Url = "/Order/Index",
-                        Roles = [.. SalesAndSupplyRoles], DisplayOrder = 1
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin
+                        ],
+                        DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "warehouseVoucher", Title = "حواله انبار", Url = "/Warehouse/Voucher",
-                        Roles = [.. SalesAndSupplyRoles], DisplayOrder = 2
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.SalesExpert,
+                            AppRoles.SalesAdmin,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin
+                        ],
+                        DisplayOrder = 2
                     },
                     new MenuItem {
                         Id = "warehouse", Title = "انبار", Url = "/Warehouse/Index",
-                        Roles = [.. SupplyFactorRoles], DisplayOrder = 3
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.TaminExpert,
+                            AppRoles.TaminAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "qualityControl", Title = "کنترل کیفیت", Url = "/QualityControl/Index",
@@ -170,15 +281,36 @@ public sealed class MenuDefinitionService(
                     },
                     new MenuItem {
                         Id = "receivedChecks", Title = "چک‌های دریافتی", Url = "/Check/Received",
-                        Roles = [.. FinanceRoles], DisplayOrder = 2
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 2
                     },
                     new MenuItem {
                         Id = "issuedChecks", Title = "صدور چک", Url = "/Check/Index",
-                        Roles = [.. FinanceRoles], DisplayOrder = 3
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "transfer", Title = "نقل و انتقال", Url = "/Transfer/Index",
-                        Roles = [.. FinanceRoles], DisplayOrder = 4
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 4
                     },
                     new MenuItem {
                         Id = "cashier", Title = "ثبت تنخواه دار", Url = "/Cash/Cashier",
@@ -187,7 +319,14 @@ public sealed class MenuDefinitionService(
                     },
                     new MenuItem {
                         Id = "cashIndex", Title = "ثبت تنخواه", Url = "/Cash/Index",
-                        Roles = [.. CashRoles], DisplayOrder = 6
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.FinancialAdmin,
+                            AppRoles.FinancialExpert,
+                            AppRoles.TanKhah
+                        ],
+                        DisplayOrder = 6
                     },
                     .. (showTaxation ? new[] {
                         new MenuItem {
@@ -207,11 +346,25 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "profit", Title = "بهای تمام شده", Url = "/Supply/Profit",
-                        Roles = [.. FinanceRoles], DisplayOrder = 1
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "demand", Title = "مطالبات", Url = "/Supply/Demand",
-                        Roles = [.. FinanceRoles], DisplayOrder = 2
+                        Roles = [
+                            AppRoles.Admin,
+                            AppRoles.ManagingDirector,
+                            AppRoles.ExecutiveDirector,
+                            AppRoles.FinancialExpert,
+                            AppRoles.FinancialAdmin
+                        ],
+                        DisplayOrder = 2
                     }
                 ]
             },
@@ -266,11 +419,6 @@ public sealed class MenuDefinitionService(
         ];
     }
 
-    private static MenuItem MobileShortcut(string id, string title, string url, string icon,
-        int order, string[] roles) => new() {
-        Id = id, Title = title, Url = url, IconHtml = icon, Roles = [.. roles], DisplayOrder = order,
-        ShowInMobileBottomMenu = true, ShowInDesktop = false
-    };
 
     private static MenuItem SettingLink(string id, string title, string url, params string[] roles) => new() {
         Id = id, Title = title, Url = url, Roles = [.. roles]
