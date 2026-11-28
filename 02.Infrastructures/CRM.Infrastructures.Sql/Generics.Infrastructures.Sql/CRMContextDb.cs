@@ -31,11 +31,16 @@ using CRM.Core.Domain.SystemWarnings.Entities;
 using CRM.Core.Domain.Transfers.Entities;
 using CRM.Core.Domain.Warehouses.Entities;
 using CRM.Core.Domain.WebPushSubscriptions.Entities;
+using CRM.Core.Domain.Ai.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Infrastructures.Sql {
     public class CRMContextDb : DbContext {
         public CRMContextDb(DbContextOptions<CRMContextDb> op) : base(op) { }
+
+        public DbSet<AiProvider> AiProviders { get; set; }
+        public DbSet<AiModel> AiModels { get; set; }
+        public DbSet<AiTaskRoute> AiTaskRoutes { get; set; }
 
         public DbSet<CRM.Core.Domain.Taxation.TaxDispatch> TaxDispatches { get; set; }
         public DbSet<CRM.Core.Domain.Taxation.TaxPaymentDispatch> TaxPaymentDispatches { get; set; }
