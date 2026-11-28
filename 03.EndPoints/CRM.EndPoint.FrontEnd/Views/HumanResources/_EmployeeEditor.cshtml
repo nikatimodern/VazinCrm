@@ -1,0 +1,123 @@
+@model CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory.EmployeeDirectoryPage
+@using System.Globalization
+@functions {
+    private static string PersianDate(DateOnly? date)
+    {
+        if (!date.HasValue) return "";
+        var value = date.Value.ToDateTime(TimeOnly.MinValue);
+        var calendar = new PersianCalendar();
+        return $"{calendar.GetYear(value):0000}/{calendar.GetMonth(value):00}/{calendar.GetDayOfMonth(value):00}";
+    }
+}
+@{
+    var isEdit = (ViewData["HrEditorMode"] as string) == "edit";
+    var profile = isEdit ? Model.Selected : null;
+    var details = profile?.PersonalDetails;
+    var modalId = isEdit ? "hrEditEmployee" : "hrCreateEmployee";
+    var canSave = isEdit ? Model.CanEdit : Model.CanCreate;
+    var title = isEdit ? (canSave ? "ویرایش پرونده پرسنلی" : "مشاهده پرونده پرسنلی") : "افزودن پرسنل";
+}
+<div class="modal fade hr-employee-modal" id="@modalId" tabindex="-1" aria-labelledby="@($"{modalId}_title")" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" asp-controller="HumanResources" asp-action="SaveEmployee" method="post">
+            <div class="modal-header">
+                <h2 class="modal-title hr-heading mb-0" id="@($"{modalId}_title")"><i class="fa fa-user" aria-hidden="true"></i> @title</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                @if (!canSave) {
+                    <p class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i> @(Model.CanView ? "مجوز ویرایش این پرونده را ندارید." : "نمای اولیه؛ ذخیره اطلاعات پس از فعال شدن سطح دسترسی امکان‌پذیر است.")</p>
+                }
+                @if (isEdit && profile != null) {
+                    <input type="hidden" name="Id" value="@profile.Id" />
+                    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(profile.RowVersion)" />
+                }
+                <fieldset disabled="@(!canSave)">
+                    <h3 class="hr-group-title"><i class="fa fa-id-card" aria-hidden="true"></i> مشخصات فردی و هویتی</h3>
+                    <div class="hr-fields">
+                        <div>
+                            <label for="@($"{modalId}_PersonnelCode")">کد پرسنلی *</label>
+                            <input id="@($"{modalId}_PersonnelCode")" name="PersonnelCode" class="form-control" maxlength="40" value="@(profile?.PersonnelCode)" readonly="@isEdit" required />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_FirstName")">نام</label>
+                            <input id="@($"{modalId}_FirstName")" name="FirstName" class="form-control" maxlength="100" value="@(profile?.FirstName)" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_LastName")">نام خانوادگی</label>
+                            <input id="@($"{modalId}_LastName")" name="LastName" class="form-control" maxlength="100" value="@(profile?.LastName)" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_FatherName")">نام پدر</label>
+                            <input id="@($"{modalId}_FatherName")" name="FatherName" class="form-control" type="text" maxlength="100" value="@(details?.FatherName)" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_NationalCode")">کد ملی (در صورت وجود)</label>
+                            <input id="@($"{modalId}_NationalCode")" name="NationalCode" class="form-control" type="text" maxlength="10" value="@(details?.NationalCode)" inputmode="numeric" dir="ltr" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_BirthCertificateNumber")">شماره شناسنامه</label>
+                            <input id="@($"{modalId}_BirthCertificateNumber")" name="BirthCertificateNumber" class="form-control" type="text" maxlength="32" value="@(details?.BirthCertificateNumber)" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_BirthDateText")">تاریخ تولد (شمسی)</label>
+                            <input id="@($"{modalId}_BirthDateText")" name="BirthDateText" class="form-control" type="text" maxlength="10" value="@PersianDate(details?.BirthDate)" inputmode="numeric" dir="ltr" placeholder="1400/01/01" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_Education")">مدرک / رشته تحصیلی</label>
+                            <input id="@($"{modalId}_Education")" name="Education" class="form-control" maxlength="100" value="@(details?.Education)" />
+                        </div>
+                    </div>
+                    <h3 class="hr-group-title"><i class="fa fa-phone" aria-hidden="true"></i> اطلاعات تماس</h3>
+                    <div class="hr-fields">
+                        <div>
+                            <label for="@($"{modalId}_Mobile")">شماره همراه</label>
+                            <input id="@($"{modalId}_Mobile")" name="Mobile" class="form-control" type="tel" maxlength="24" value="@(details?.Mobile)" dir="ltr" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_Telephone")">تلفن ثابت</label>
+                            <input id="@($"{modalId}_Telephone")" name="Telephone" class="form-control" type="tel" maxlength="24" value="@(details?.Telephone)" dir="ltr" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_Email")">ایمیل</label>
+                            <input id="@($"{modalId}_Email")" name="Email" class="form-control" type="email" maxlength="254" value="@(details?.Email)" dir="ltr" />
+                        </div>
+                        <div class="hr-field-wide">
+                            <label for="@($"{modalId}_Address")">نشانی محل سکونت</label>
+                            <textarea id="@($"{modalId}_Address")" name="Address" class="form-control" maxlength="500" rows="2">@(details?.Address)</textarea>
+                        </div>
+                    </div>
+                    <h3 class="hr-group-title"><i class="fa fa-address-book" aria-hidden="true"></i> تماس اضطراری</h3>
+                    <div class="hr-fields">
+                        <div>
+                            <label for="@($"{modalId}_EmergencyContactName")">نام شخص تماس اضطراری</label>
+                            <input id="@($"{modalId}_EmergencyContactName")" name="EmergencyContactName" class="form-control" type="text" maxlength="150" value="@(details?.EmergencyContactName)" />
+                        </div>
+                        <div>
+                            <label for="@($"{modalId}_EmergencyContactPhone")">تلفن تماس اضطراری</label>
+                            <input id="@($"{modalId}_EmergencyContactPhone")" name="EmergencyContactPhone" class="form-control" type="tel" maxlength="24" value="@(details?.EmergencyContactPhone)" dir="ltr" />
+                        </div>
+                    </div>
+                    <h3 class="hr-group-title"><i class="fa fa-user-circle" aria-hidden="true"></i> حساب کاربری ERP</h3>
+                    @if (!isEdit) {
+                        <label for="@($"{modalId}_AppUserId")">انتخاب کاربر موجود (اختیاری)</label>
+                        <select id="@($"{modalId}_AppUserId")" name="AppUserId" class="form-select">
+                            <option value="">بدون حساب کاربری</option>
+                            @foreach (var account in Model.Candidates) {
+                                <option value="@account.Id">@account.FirstName @account.LastName</option>
+                            }
+                        </select>
+                        <small class="text-muted">برای کاربر موجود، نام و نام خانوادگی از همان حساب دریافت می‌شود؛ در ثبت دستی وارد کردن هر دو الزامی است.</small>
+                    } else {
+                        <span>حساب کاربری: <strong>@(profile?.HasAccount == true ? "متصل" : "بدون حساب")</strong></span>
+                    }
+                    <p class="small text-muted mt-2 mb-0">سوابق استخدام، سمت، واحد سازمانی و قراردادها جداگانه در پرونده پرسنلی ثبت خواهند شد.</p>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="hr-action" data-bs-dismiss="modal">بستن</button>
+                <button type="submit" class="hr-action hr-primary" disabled="@(!canSave)"><i class="fa fa-save" aria-hidden="true"></i> ذخیره</button>
+            </div>
+        </form>
+    </div>
+</div>
