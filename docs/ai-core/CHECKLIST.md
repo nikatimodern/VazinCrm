@@ -25,7 +25,9 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [ ] Test deterministic mock adapters and invoice/audio regression.
 ## A03 — Persistence and security
 - [ ] Finalize logical entities, actual key types, retention and access model.
-- [ ] Domain repository contracts, SQL implementations/mappings, application use cases.
+- [x] Add AiProvider, AiModel, AiTaskRoute Domain entities, per-entity EF configurations, named CRMContextDb sets, and bounded read-only catalog repository contract/implementation (source only; not compiled).
+- [x] Exclude the new AI/HR CRM-only configuration namespaces from Sepidar assembly scanning; verify matching source on both branches.
+- [ ] Verify actual EF models in CRM and both Sepidar contexts, repository SQL translation, runtime build, and scoped application use cases/write repository.
 - [ ] Generate approved migration and reviewable SQL; apply only with explicit authorization.
 - [ ] Register permissions/Scope and enforce direct/indirect paths, including tool execution, reports, search and exports.
 - [ ] Enforce data classification, redaction, LocalOnly fail-closed and no secret disclosure.
@@ -72,4 +74,4 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [ ] UI accessibility/RTL/mobile, architecture checker and actual build.
 - [ ] Documentation, staged release, approval before deployment or main merge.
 
-Evidence: v0.3 source foundation added and read back from ai-core (IAiProvider, AiProviderPolicy, AiProviderRouter, GapgptTextProvider). No changes to Startup/DI, legacy AI flows, application endpoints, packages, database or main. Local VM adapter, live verification, secret rotation and AccLevel integration remain open. The environment has no checked-out repository or dotnet SDK; build and tests not run. Source tasks checked only for code presence, not operational completion.
+Evidence: provider foundation and read-only settings landing page retained. v0.4 adds catalog entities, mappings, named DbSets and metadata read repository, with no DI registration or write endpoints. New entities default disabled; route is single primary model per task for now, no automatic fallback or runtime activation. Migration generation and execution still pending approval. No changes to Startup/DI, legacy AI flows, packages, actual database or main. Local VM adapter, live verification, secret rotation and AccLevel integration remain open. The environment has no checked-out repository or dotnet SDK; build and tests not run. Source tasks checked only for code presence, not operational completion.
