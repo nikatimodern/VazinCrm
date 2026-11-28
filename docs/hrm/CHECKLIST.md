@@ -23,7 +23,20 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Enforce department/manager ancestor cycle checks, position existence and primary assignment overlap transactionally; build workflow.
 - [ ] Restricted personnel documents, audit and permission/scope registration.
 - [ ] Compact RTL personnel/organization UI, search/report/export authorization and tests.
-## H03 — Attendance devices
+## H02-C — Priority release: employee list, contracts and expiry reminders
+**User-approved priority:** complete H02 and H02-C before H03/H04 attendance work. Keep all later modules in the roadmap. No dependence on AI or attendance devices.
+- [x] Add distinct EmploymentContract entity, draft/approval/cancellation/termination transitions and linked renewal draft that preserves the predecessor (source only).
+- [x] Add deterministic date-state and reminder-threshold policy (company-local date supplied by caller; inclusive end date; untested).
+- [x] Add CRM-only EF mapping, unique contract number, employee/predecessor relations, checks and named DbSet (source only).
+- [x] Add scoped, paged contract history and date-range read repository (source only).
+- [ ] Complete employee list, profile create/edit and reviewed import of existing IsEmployee accounts with unique personnel code; no duplicate Identity accounts.
+- [ ] Implement transactional employee/contract write use cases, current authorization, overlap and predecessor validation, audited approval and concurrency conflict handling.
+- [ ] Build contract tab, create/edit draft, approval/renewal and termination workflow, compact RTL contract overview and status filters.
+- [ ] Implement guarded signed-contract attachment upload/download, independent sensitive-field access and audit.
+- [ ] Implement daily expiry scan, durable reminders/outbox and deduplication, catch-up after downtime, assignment and renewal/non-renewal follow-up; reauthorize recipients and resolve superseded reminders.
+- [ ] Add configurable warning thresholds (proposed 30/15/7/3/1/0 days), notification and cartable integration; expired/open-ended and approved-successor cases.
+- [ ] Complete permission/scope integration, approved migration and SQL, build, tests, browser review and pilot.
+## H03 — Attendance devices (after priority release)
 - [ ] Device catalog, credentials reference, health and sync status.
 - [ ] Vendor-neutral adapter and first verified device implementation.
 - [ ] Device-to-employee mapping and unmapped event queue.
@@ -42,7 +55,7 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Personal portal, own documents/attendance/requests, scoped access and mobile UI.
 - [ ] Monthly review, approved snapshot, close/lock, authorized reopen and audit.
 ## H06 — Contracts and payroll
-- [ ] Contracts, amendments, expiry alerts and compensation components.
+- [ ] Contract amendments and compensation components after H02-C priority release; base contract/expiry work is tracked in H02-C.
 - [ ] Confirm payroll system of record (ERP or Sepidar), calculation/export ownership.
 - [ ] Effective-dated legal rules, verified payroll, insurance, tax, benefits and deductions if ERP owns calculation.
 - [ ] Loans/advances, installments, payslips and controlled access.
@@ -68,4 +81,4 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Architecture checker, actual build, UI/RTL/mobile review, documentation and pilot.
 - [ ] Approved cross-branch integration and release; no main merge without approval.
 
-Evidence: v0.3 five HumanResources Domain entities added and read back from hrm. Per-record guards only; uniqueness, cross-record dates, cycles and permission require persistence/application checks. EmploymentRecord is the source of employment history; no duplicate employment state on EmployeeProfile yet. v0.4 adds per-entity mappings, named DbSets and read-only repository with explicit server-authorized employee ID set (empty set denies); code-level Sepidar configuration exclusion is in place, runtime model isolation remains untested. No DI registration, write repository, migration, device connection, UI, endpoint, database or main changes. Cross-record overlap, cycles and Identity validation remain pending. No checked-out repository or dotnet SDK; build and tests not run.
+Evidence: v0.5 adds contract source foundation and the user-approved priority release H02-C. Contract type is fixed/open-ended for now; expiry policy is deterministic and does not change employment state. No automatic notifications, writes, migrations or endpoints. Contract overlap, renewal authorization, approved-successor reconciliation, policy settings, company timezone and payroll fields remain open. v0.3 five HumanResources Domain entities added and read back from hrm. Per-record guards only; uniqueness, cross-record dates, cycles and permission require persistence/application checks. EmploymentRecord is the source of employment history; no duplicate employment state on EmployeeProfile yet. v0.4 adds per-entity mappings, named DbSets and read-only repository with explicit server-authorized employee ID set (empty set denies); code-level Sepidar configuration exclusion is in place, runtime model isolation remains untested. No DI registration, write repository, migration, device connection, UI, endpoint, database or main changes. Cross-record overlap, cycles and Identity validation remain pending. No checked-out repository or dotnet SDK; build and tests not run.
