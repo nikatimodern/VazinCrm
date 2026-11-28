@@ -1,5 +1,7 @@
 @model CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory.EmployeeDirectoryPage
 @using CRM.Core.Domain.HumanResources.Entities
+@using CRM.Core.Domain.HumanResources.Services
+@using CRM.Core.Domain.HumanResources.Repositories
 @using System.Globalization
 @functions {
     private static string PersianDate(DateOnly? date)
@@ -9,13 +11,24 @@
         var calendar = new PersianCalendar();
         return $"{calendar.GetYear(value):0000}/{calendar.GetMonth(value):00}/{calendar.GetDayOfMonth(value):00}";
     }
-    private static string ContractStatus(EmploymentContractStatus status) => status switch
+    private static string DateStateLabel(ContractDateState state) => state switch
     {
-        EmploymentContractStatus.Draft => "پیش‌نویس",
-        EmploymentContractStatus.Approved => "تأییدشده",
-        EmploymentContractStatus.Terminated => "فسخ‌شده",
-        EmploymentContractStatus.Cancelled => "لغوشده",
+        ContractDateState.Draft => "پیش‌نویس",
+        ContractDateState.Cancelled => "لغوشده",
+        ContractDateState.Terminated => "فسخ‌شده",
+        ContractDateState.Upcoming => "شروع نشده",
+        ContractDateState.Valid => "معتبر",
+        ContractDateState.ExpiringSoon => "نزدیک به انقضا",
+        ContractDateState.EndsToday => "انقضا در امروز",
+        ContractDateState.Expired => "منقضی‌شده",
         _ => "نامشخص"
+    };
+    private static string DateStateClass(ContractDateState state) => state switch
+    {
+        ContractDateState.Valid => "hr-state-valid",
+        ContractDateState.ExpiringSoon => "hr-state-warning",
+        ContractDateState.EndsToday or ContractDateState.Expired or ContractDateState.Terminated => "hr-state-danger",
+        _ => "hr-state-neutral"
     };
 }
 @{
@@ -99,27 +112,86 @@
     }
     @if (selected != null) {
         <section class="InfoData">
-            <h2 class="hr-heading"><i class="fa fa-file-alt" aria-hidden="true"></i> قراردادهای پرسنلی</h2>
+            <header class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <h2 class="hr-heading mb-0"><i class="fa fa-file-alt" aria-hidden="true"></i> قراردادهای پرسنلی</h2>
+                @if (Model.CanCreateContract) {
+                    <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="1">
+                        <i class="fa fa-plus" aria-hidden="true"></i> افزودن قرارداد
+                    </button>
+                }
+            </header>
             @if (!Model.CanViewContracts) {
                 <p class="text-muted mb-0">مشاهده قراردادها نیازمند مجوز مستقل است.</p>
             } else {
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0 hr-table">
-                        <thead><tr><th>شماره</th><th>نوع</th><th>شروع</th><th>پایان</th><th>وضعیت ثبت</th></tr></thead>
+                        <thead><tr><th>شماره</th><th>نوع</th><th>شروع</th><th>پایان</th><th>وضعیت</th><th>زمان باقی‌مانده</th><th>عملیات</th></tr></thead>
                         <tbody>
                         @foreach (var contract in Model.Contracts) {
-                            <tr><td>@contract.ContractNumber</td><td>@(contract.Term == EmploymentContractTerm.FixedTerm ? "مدت‌دار" : "بدون تاریخ پایان")</td>
-                            <td>@PersianDate(contract.StartDate)</td><td>@PersianDate(contract.EndDate)</td><td>@ContractStatus(contract.Status)</td></tr>
+                            var today = Model.BusinessDate.Value;
+                            var state = ContractExpiryPolicy.GetState(contract.Status, contract.StartDate, contract.EndDate, contract.TerminatedOn, today, 30);
+                            var remaining = contract.EndDate.HasValue ? contract.EndDate.Value.DayNumber - today.DayNumber : (int?)null;
+                            var showRemaining = contract.Status == EmploymentContractStatus.Approved && remaining.HasValue;
+                            <tr>
+                                <td>@contract.ContractNumber</td>
+                                <td>@(contract.Term == EmploymentContractTerm.FixedTerm ? "مدت‌دار" : "بدون تاریخ پایان")</td>
+                                <td>@PersianDate(contract.StartDate)</td><td>@PersianDate(contract.EndDate)</td>
+                                <td><span class="hr-state @DateStateClass(state)">@DateStateLabel(state)</span></td>
+                                <td>@(showRemaining ? (remaining.Value < 0 ? $"{Math.Abs(remaining.Value)} روز گذشته" : remaining.Value == 0 ? "امروز" : $"{remaining.Value} روز") : "—")</td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap justify-content-center">
+                                        @if (contract.Status == EmploymentContractStatus.Draft) {
+                                            @if (Model.CanEditContract) {
+                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="2"
+                                                    data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)"
+                                                    data-number="@contract.ContractNumber" data-term="@((int)contract.Term)"
+                                                    data-agreement="@PersianDate(contract.AgreementDate)" data-start="@PersianDate(contract.StartDate)"
+                                                    data-end="@(contract.EndDate.HasValue ? PersianDate(contract.EndDate) : "")">ویرایش</button>
+                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="5"
+                                                    data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">لغو</button>
+                                            }
+                                            @if (Model.CanApproveContract) {
+                                                <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="4"
+                                                    data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">تأیید</button>
+                                            }
+                                        } else if (contract.Status == EmploymentContractStatus.Approved) {
+                                            @if (Model.CanCreateContract && contract.EndDate.HasValue) {
+                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="3"
+                                                    data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber"
+                                                    data-start="@(contract.EndDate.Value == DateOnly.MaxValue ? "" : PersianDate(contract.EndDate.Value.AddDays(1)))">تمدید</button>
+                                            }
+                                            @if (Model.CanTerminateContract) {
+                                                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrContractEditor" data-operation="6"
+                                                    data-contract-id="@contract.Id" data-row-version="@Convert.ToBase64String(contract.RowVersion)" data-number="@contract.ContractNumber">فسخ</button>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
                         }
                         @if (Model.Contracts.Count == 0) {
-                            <tr><td colspan="5" class="text-center text-muted">قراردادی ثبت نشده است.</td></tr>
+                            <tr><td colspan="7" class="text-center text-muted">قراردادی ثبت نشده است.</td></tr>
                         }
                         </tbody>
                     </table>
                 </div>
-                <small class="text-muted">حداکثر ۲۰ قرارداد اخیر؛ ثبت، تمدید و فیلتر سررسید در مرحله بعد فعال می‌شود.</small>
+                @if (Model.ContractPage > 1 || Model.HasNextContractPage) {
+                    <nav class="d-flex align-items-center justify-content-end gap-2 mt-2" aria-label="صفحه‌بندی قراردادها">
+                        @if (Model.ContractPage > 1) {
+                            <a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page" asp-route-employeeId="@selected.Id" asp-route-contractPage="@(Model.ContractPage - 1)">قبلی</a>
+                        }
+                        <span class="small">صفحه @Model.ContractPage</span>
+                        @if (Model.HasNextContractPage) {
+                            <a class="hr-action" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page" asp-route-employeeId="@selected.Id" asp-route-contractPage="@(Model.ContractPage + 1)">بعدی</a>
+                        }
+                    </nav>
+                }
+                <small class="text-muted">بازه هشدار اولیه: ۳۰ روز قبل از پایان قرارداد.</small>
             }
         </section>
+        @if (Model.CanViewContracts && (Model.CanCreateContract || Model.CanEditContract || Model.CanApproveContract || Model.CanTerminateContract)) {
+            @await Html.PartialAsync("_ContractEditor", Model)
+        }
     }
 </div>
 
