@@ -78,7 +78,9 @@ public abstract class SepidarContextDbBase : DbContext {
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(this.GetType().Assembly,
+            type => type.Namespace != "CRM.Infrastructures.Sql.Ai.Configs"
+                && type.Namespace != "CRM.Infrastructures.Sql.HumanResources.Configs");
 
         modelBuilder.Entity<Invoice>().ToView("vwInvoice", "SLS").Ignore(f => f.DateTXT);
         modelBuilder.Entity<InvoiceItem>().ToView("vwInvoiceItem", "SLS");
