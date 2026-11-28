@@ -9344,6 +9344,49 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
                     b.Property<string>("UserModifyID")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("BirthCertificateNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Education")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EmergencyContactPhone")
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("FatherName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("NationalCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Telephone")
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppUserId")
@@ -9352,6 +9395,10 @@ namespace CRM.Infrastructures.Sql.Migrations.CRMContextDbMigrations
 
                     b.HasIndex("PersonnelCode")
                         .IsUnique();
+
+                    b.HasIndex("NationalCode")
+                        .IsUnique()
+                        .HasFilter("[NationalCode] IS NOT NULL");
 
                     b.ToTable("HrEmployeeProfiles");
                 });
