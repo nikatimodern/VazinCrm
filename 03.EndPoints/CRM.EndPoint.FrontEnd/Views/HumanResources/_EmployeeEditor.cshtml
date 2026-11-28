@@ -19,12 +19,15 @@
 }
 <div class="modal fade hr-employee-modal" id="@modalId" tabindex="-1" aria-labelledby="@($"{modalId}_title")" aria-hidden="true" dir="rtl">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <form class="modal-content" asp-controller="HumanResources" asp-action="SaveEmployee" method="post">
+        <form class="modal-content" asp-controller="HumanResources" asp-action="SaveEmployee" method="post" enctype="multipart/form-data">
             <div class="modal-header">
                 <h2 class="modal-title hr-heading mb-0" id="@($"{modalId}_title")"><i class="fa fa-user" aria-hidden="true"></i> @title</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <div class="modal-body">
+                @if (isEdit && Model.CanViewEducationDocument && profile?.HasEducationDocument == true) {
+                    <a class="hr-action mb-2" asp-action="DownloadEducationDocument" asp-route-employeeId="@profile.Id"><i class="fa fa-paperclip" aria-hidden="true"></i> دریافت مدرک تحصیلی</a>
+                }
                 @if (!canSave) {
                     <p class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i> @(Model.CanView ? "مجوز ویرایش این پرونده را ندارید." : "نمای اولیه؛ ذخیره اطلاعات پس از فعال شدن سطح دسترسی امکان‌پذیر است.")</p>
                 }
@@ -36,8 +39,8 @@
                     <h3 class="hr-group-title"><i class="fa fa-id-card" aria-hidden="true"></i> مشخصات فردی و هویتی</h3>
                     <div class="hr-fields">
                         <div>
-                            <label for="@($"{modalId}_PersonnelCode")">کد پرسنلی *</label>
-                            <input id="@($"{modalId}_PersonnelCode")" name="PersonnelCode" class="form-control" maxlength="40" value="@(profile?.PersonnelCode)" readonly="@isEdit" required />
+                            <label for="@($"{modalId}_PersonnelCode")">کد پرسنلی</label>
+                            <input id="@($"{modalId}_PersonnelCode")" class="form-control" value="@(profile?.PersonnelCode ?? "پس از ذخیره تولید می‌شود")" readonly />
                         </div>
                         <div>
                             <label for="@($"{modalId}_FirstName")">نام</label>
@@ -67,6 +70,13 @@
                             <label for="@($"{modalId}_Education")">مدرک / رشته تحصیلی</label>
                             <input id="@($"{modalId}_Education")" name="Education" class="form-control" maxlength="100" value="@(details?.Education)" />
                         </div>
+                        @if (!Model.CanView || (isEdit ? Model.CanEditEducationDocument : Model.CanUploadEducationOnCreate)) {
+                            <div>
+                                <label for="@($"{modalId}_EducationDocument")">پیوست مدرک تحصیلی (اختیاری)</label>
+                                <input id="@($"{modalId}_EducationDocument")" name="EducationDocument" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                <small class="text-muted">PDF یا تصویر؛ حداکثر ۵ مگابایت.</small>
+                            </div>
+                        }
                     </div>
                     <h3 class="hr-group-title"><i class="fa fa-phone" aria-hidden="true"></i> اطلاعات تماس</h3>
                     <div class="hr-fields">
@@ -85,6 +95,27 @@
                         <div class="hr-field-wide">
                             <label for="@($"{modalId}_Address")">نشانی محل سکونت</label>
                             <textarea id="@($"{modalId}_Address")" name="Address" class="form-control" maxlength="500" rows="2">@(details?.Address)</textarea>
+                            <div class="hr-location mt-2">
+                                <input type="hidden" name="Latitude" value="@(details?.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                                <input type="hidden" name="Longitude" value="@(details?.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                                <button type="button" class="hr-action" data-hr-map-open><i class="fa fa-map-marker-alt" aria-hidden="true"></i> انتخاب موقعیت روی نقشه</button>
+                                <button type="button" class="hr-action" data-hr-map-clear>پاک کردن موقعیت</button>
+                                <small data-hr-map-value class="text-muted" dir="ltr"></small>
+                                <div data-hr-map-panel hidden class="mt-2">
+                                    <p class="small text-muted mb-1">با تأیید بارگذاری نقشه، محدوده مشاهده‌شده به OpenStreetMap ارسال می‌شود؛ روی نقشه کلیک کنید.</p>
+                                    <button type="button" class="hr-action mb-1" data-hr-map-load>بارگذاری نقشه آنلاین</button>
+                                    <div class="d-flex gap-1 flex-wrap mb-1" dir="ltr">
+                                        <button type="button" class="hr-action" data-hr-map-nav="left" aria-label="غرب">←</button>
+                                        <button type="button" class="hr-action" data-hr-map-nav="up" aria-label="شمال">↑</button>
+                                        <button type="button" class="hr-action" data-hr-map-nav="down" aria-label="جنوب">↓</button>
+                                        <button type="button" class="hr-action" data-hr-map-nav="right" aria-label="شرق">→</button>
+                                        <button type="button" class="hr-action" data-hr-map-nav="plus" aria-label="بزرگنمایی">+</button>
+                                        <button type="button" class="hr-action" data-hr-map-nav="minus" aria-label="کوچکنمایی">−</button>
+                                    </div>
+                                    <div class="hr-map-canvas" data-hr-map-canvas dir="ltr" aria-label="نقشه انتخاب موقعیت"></div>
+                                    <small><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <h3 class="hr-group-title"><i class="fa fa-address-book" aria-hidden="true"></i> تماس اضطراری</h3>
