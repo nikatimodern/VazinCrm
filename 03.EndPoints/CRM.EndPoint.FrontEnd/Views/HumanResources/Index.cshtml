@@ -34,10 +34,10 @@
                 <h1 class="hr-title mb-0"><i class="fa fa-users" aria-hidden="true"></i> مدیریت پرسنل</h1>
                 <p class="small text-muted mb-0">پرونده پرسنلی و قراردادهای کاری</p>
             </div>
-            @if (Model.CanCreate) {
-                <a class="hr-action hr-primary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@Model.Page">
-                    <i class="fa fa-plus" aria-hidden="true"></i> پرسنل جدید
-                </a>
+            @if (Model.CanCreate || !Model.CanView) {
+                <button type="button" class="hr-action hr-primary" data-bs-toggle="modal" data-bs-target="#hrCreateEmployee">
+                    <i class="fa fa-plus" aria-hidden="true"></i> افزودن پرسنل
+                </button>
             }
         </header>
         @if (TempData["HrEmployeeMessage"] is string message) {
@@ -78,52 +78,26 @@
             </nav>
         }
     </section>
-    @if (selected != null || Model.CanCreate || !Model.CanView) {
+    @if (selected != null) {
         <section class="InfoData mb-2">
-            <h2 class="hr-heading">@(selected != null ? "پرونده پرسنلی" : "افزودن پرسنل")</h2>
-            <form asp-action="SaveEmployee" method="post">
-                @if (selected != null) {
-                    <input type="hidden" name="id" value="@selected.Id" />
-                    <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(selected.RowVersion)" />
-                }
-                <fieldset disabled="@(selected != null ? !Model.CanEdit : !Model.CanCreate)">
-                    <div class="hr-fields">
-                        <div>
-                            <label for="hrPersonnelCode">کد پرسنلی</label>
-                            <input id="hrPersonnelCode" name="personnelCode" class="form-control" maxlength="40" value="@selected?.PersonnelCode"
-                                readonly="@(selected != null)" required />
-                        </div>
-                        <div>
-                            <label for="hrFirstName">نام</label>
-                            <input id="hrFirstName" name="firstName" class="form-control" maxlength="100" value="@selected?.FirstName" />
-                        </div>
-                        <div>
-                            <label for="hrLastName">نام خانوادگی</label>
-                            <input id="hrLastName" name="lastName" class="form-control" maxlength="100" value="@selected?.LastName" />
-                        </div>
-                        @if (selected == null) {
-                            <div>
-                                <label for="hrAccount">حساب کاربری موجود (اختیاری)</label>
-                                <select id="hrAccount" name="appUserId" class="form-select">
-                                    <option value="">بدون حساب کاربری</option>
-                                    @foreach (var account in Model.Candidates) {
-                                        <option value="@account.Id">@account.FirstName @account.LastName</option>
-                                    }
-                                </select>
-                                <small class="text-muted">در صورت انتخاب حساب، نام از اطلاعات همان حساب خوانده می‌شود.</small>
-                            </div>
-                        } else {
-                            <div><span>حساب کاربری: </span><strong>@(selected.HasAccount ? "متصل" : "بدون حساب")</strong></div>
-                        }
-                    </div>
-                    <div class="d-flex justify-content-end mt-2">
-                        <button class="hr-action hr-primary" type="submit"><i class="fa fa-save" aria-hidden="true"></i> ذخیره</button>
-                    </div>
-                </fieldset>
-            </form>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h2 class="hr-heading mb-1">پرونده پرسنلی: @selected.FirstName @selected.LastName</h2>
+                    <small class="text-muted">کد پرسنلی: @selected.PersonnelCode | حساب کاربری: @(selected.HasAccount ? "متصل" : "بدون حساب")</small>
+                </div>
+                <button type="button" class="hr-action" data-bs-toggle="modal" data-bs-target="#hrEditEmployee">
+                    <i class="fa fa-user-edit" aria-hidden="true"></i> @(Model.CanEdit ? "ویرایش اطلاعات" : "مشاهده اطلاعات")
+                </button>
+            </div>
         </section>
     }
-    @if (selected != null || !Model.CanView) {
+    @if (Model.CanCreate || !Model.CanView) {
+        @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "create" })
+    }
+    @if (selected != null) {
+        @await Html.PartialAsync("_EmployeeEditor", Model, new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["HrEditorMode"] = "edit" })
+    }
+    @if (selected != null) {
         <section class="InfoData">
             <h2 class="hr-heading"><i class="fa fa-file-alt" aria-hidden="true"></i> قراردادهای پرسنلی</h2>
             @if (!Model.CanViewContracts) {
@@ -148,3 +122,7 @@
         </section>
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/humanResources.js?release=7.5.6" asp-append-version="true"></script>
+}
