@@ -80,7 +80,7 @@ public sealed class MenuController(UserContextDb db, IMenuService menus) : Contr
             foreach (var node in nodes)
             {
                 // Fixed footer actions aren't eligible for user favorites.
-                if (node.ShowInDesktop && !node.IsFavoritesGroup
+                if (node.ShowInDesktop && node.DisplayType == MenuDisplayType.Link && !node.IsFavoritesGroup
                     && node.Id != "releaseNotes" && node.Id != "overdueOpenDeals"
                     && !string.IsNullOrWhiteSpace(node.Url)) allowed.Add(node.Id);
                 if (!node.IsFavoritesGroup) Visit(node.SubItems);

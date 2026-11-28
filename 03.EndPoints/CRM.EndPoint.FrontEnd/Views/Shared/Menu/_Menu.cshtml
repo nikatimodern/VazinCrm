@@ -14,7 +14,7 @@
     var mobileDrawer = mobileMenus.Where(m => !m.ShowInMobileBottomMenu).ToList();
     var mobileMain = mobileDrawer.Where(m => !fixedIds.Contains(m.Id)).ToList();
     var mobileFixed = mobileDrawer.Where(m => fixedIds.Contains(m.Id)).ToList();
-    var settingsLinks = userMenus.FirstOrDefault(m => m.Id == "extraSettings")?.SubItems ?? [];
+    var settings = userMenus.FirstOrDefault(m => m.Id == "settings");
 }
 
 <div id="desktopSidebar" class="sidebar">
@@ -124,12 +124,6 @@
     </div>
 </div>
 
-<div id="menuSupplementalLinks" hidden aria-hidden="true">
-    @foreach (var item in settingsLinks) {
-        <a href="@item.Url" data-menu-extra-link="@item.Id" data-menu-extra-title="@item.Title"
-           data-menu-extra-favorite="@item.IsFavorite.ToString().ToLowerInvariant()"></a>
-    }
-</div>
 <form id="menuFavoritesAntiforgery" class="d-none">@Html.AntiForgeryToken()</form>
-<partial name="Modals/_SettingModal" />
+<partial name="Modals/_SettingModal" model="@(settings?.SubItems ?? new List<CRM.EndPoint.FrontEnd.Models.Menu.MenuItem>())" />
 <partial name="Modals/_WarningModal" />

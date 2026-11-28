@@ -1,4 +1,5 @@
-@model CRM.EndPoint.FrontEnd.Models.Menu.MenuItem
+@using CRM.EndPoint.FrontEnd.Models.Menu
+@model MenuItem
 
 @if (Model.IsFavoritesGroup) {
     <section class="menu-favorites-panel" data-menu-favorites aria-label="علاقه‌مندی‌ها">
@@ -22,7 +23,7 @@
             <button type="button" class="menu-favorites-more" data-favorites-more aria-expanded="false">نمایش بیشتر (@(Model.SubItems.Count - 5))</button>
         }
     </section>
-} else if (Model.SubItems?.Count > 0) {
+} else if (Model.DisplayType == MenuDisplayType.Group) {
     <div class="has-submenu @(Model.Id)-menu" data-menu-group="@Model.Id">
         <button type="button" class="menu-item submenu-toggle" aria-label="@Model.Title" aria-expanded="false">
             @Html.Raw(CRM.EndPoint.FrontEnd.Services.Menu.MenuIcons.ForItem(Model))
@@ -41,8 +42,8 @@
             </li>
         </ul>
     </div>
-} else if (string.IsNullOrEmpty(Model.Url)) {
-    <button type="button" id="@Model.ElementId" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")"
+} else if (Model.DisplayType is MenuDisplayType.Action or MenuDisplayType.Modal) {
+    <button type="button" id="@Model.ElementId" data-menu-id="@Model.Id" class="menu-item @Model.ClassName @(Model.Id == "warnings" ? "menu-warning-attention" : "")"
             data-tooltip-left="@(string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title} - {Model.Subtitle}")"
             aria-label="@(Model.Id == "releaseNotes" ? (string.IsNullOrWhiteSpace(Model.Subtitle) ? Model.Title : $"{Model.Title}، {Model.Subtitle}") : null)"
             onclick="@Model.OnClick">
@@ -65,7 +66,7 @@
             </span>
         }
     </button>
-} else {
+} else if (Model.DisplayType == MenuDisplayType.Link) {
     <div class="menu-entry" data-menu-entry="@Model.FavoriteTargetId">
         <a href="@Model.Url" id="@Model.ElementId" class="menu-item menu-link @(Model.Id == "overdueOpenDeals" ? (Model.BadgeCount.GetValueOrDefault() > 0 ? "menu-overdue-attention" : "") : Model.ClassName)"
            data-tooltip-left="@Model.Title">

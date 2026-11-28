@@ -31,6 +31,7 @@ public sealed class MenuFavoritesService(UserContextDb db)
             var (source, icon) = links[f.MenuId];
             return new MenuItem {
                 Id = "favorite-" + source.Id, FavoriteTargetId = source.Id,
+                DisplayType = MenuDisplayType.Link,
                 Title = source.Title, Url = source.Url, IconHtml = icon,
                 IsFavorite = true, DisplayOrder = f.SortOrder
             };
@@ -38,7 +39,7 @@ public sealed class MenuFavoritesService(UserContextDb db)
         if (visible.Count == 0) return;
 
         menus.Add(new MenuItem {
-            Id = "favorites", Title = "علاقه‌مندی‌ها", IconHtml = MenuIcons.Tasks,
+            Id = "favorites", DisplayType = MenuDisplayType.Group, Title = "علاقه‌مندی‌ها", IconHtml = MenuIcons.Tasks,
             DisplayOrder = 0, IsFavoritesGroup = true, SubItems = visible
         });
         menus.Sort((a, b) => a.DisplayOrder.CompareTo(b.DisplayOrder));
@@ -50,10 +51,10 @@ public sealed class MenuFavoritesService(UserContextDb db)
         foreach (var item in nodes)
         {
             if (item.Id == "overdueOpenDeals") continue;
-            if (!item.ShowInDesktop && item.Id != "extraSettings") continue;
+            if (!item.ShowInDesktop) continue;
 
             var icon = string.IsNullOrEmpty(item.IconHtml) ? parentIcon : item.IconHtml;
-            if (!string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
+            if (item.DisplayType == MenuDisplayType.Link && !string.IsNullOrEmpty(item.Url) && !links.ContainsKey(item.Id))
             {
                 item.FavoriteTargetId = item.Id;
                 links.Add(item.Id, (item, icon));

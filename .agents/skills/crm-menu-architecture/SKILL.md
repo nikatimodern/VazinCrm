@@ -30,7 +30,7 @@ Do not introduce another menu registry, hard-coded navigation tree in a view or 
 1. Verify the actual controller/action or route, intended audience, existing access policy and target category.
 2. Locate the final category in `BuildMenus`. Add the item directly to its `SubItems` using a unique stable ID, Persian title, verified URL or existing modal action, appropriate icon and explicit sibling order. Do not add it to an obsolete category for later relocation.
 3. Set the required visibility and access metadata. Declare role lists directly in each MenuItem using explicit AppRoles constants; do not introduce shared role arrays just to remove duplication. Use inheritance only when the actual parent is intended to grant the same audience to its children. Preserve existing authoritative feature access policies (such as QualityControlAccessPolicy) instead of duplicating or weakening them. For a new feature follow the target branch's current permission model; do not introduce new role-only checks when the feature uses entity permissions.
-4. Verify desktop, mobile drawer, search and favorites. Add a separate mobile bottom shortcut only when requested or required by the existing design. For settings, use the existing supplemental settings link mechanism and keep the actual settings modal in sync.
+4. Verify desktop, mobile drawer, search and favorites. Add a separate mobile bottom shortcut only when requested or required by the existing design. For settings, define items in the settings modal's SubItems and use the same filtered tree for Razor rendering, search and favorites.
 5. Run focused build/tests and report the result; do not claim validation that was not executed.
 
 Example: the existing production category's warehouse entry illustrates a direct definition, including its explicit effective role audience:
@@ -38,6 +38,7 @@ Example: the existing production category's warehouse entry illustrates a direct
 ```csharp
 new MenuItem {
     Id = "warehouse",
+    DisplayType = MenuDisplayType.Link,
     Title = "انبار",
     Url = "/Warehouse/Index",
     Roles = [
@@ -57,7 +58,7 @@ This is an existing entry, not a new entry to duplicate. Use a suitable audience
 
 ## Category and ordering conventions
 
-The existing root layout is dashboard and mobile shortcuts (1–5), daily activities (10), sales (20), supply (30), production/warehouse/quality (40), finance/treasury (50), management reports (60), settings (70), hidden supplemental settings (80), and fixed actions (998–1000). Read the current definitions rather than treating this list as a permanent inventory. Add a category directly in the intended place when needed; do not rearrange existing categories without a request.
+The existing root layout is dashboard and mobile shortcuts (1–5), daily activities (10), sales (20), supply (30), production/warehouse/quality (40), finance/treasury (50), management reports (60), settings (70), and fixed actions (998–1000). Read the current definitions rather than treating this list as a permanent inventory. Add a category directly in the intended place when needed; do not rearrange existing categories without a request.
 
 Use explicit, meaningful sibling DisplayOrder values for normal entries; preserve intentional existing exceptions. Sort visible items by DisplayOrder only. Do not renumber or mutate DisplayOrder after filtering; gaps are valid. Do not introduce separate compaction or order-preservation flags. Preserve existing IDs, URLs, titles, icon inheritance and visibility flags unless the task explicitly changes them. IDs are used for persisted favorites and navigation state; do not rename or repurpose them casually.
 
@@ -73,7 +74,8 @@ Preserve TaxationAvailability and the existing Admin plus local-preview gate for
 
 - Reuse MenuIcons and the existing Razor menu rendering. Inherited icons are valid where the current renderer supplies them; do not create a parallel icon system.
 - Keep ShowInDesktop, ShowInMobile and ShowInMobileBottomMenu consistent with the intended surfaces. Existing desktop category entries and mobile-only shortcuts have distinct stable IDs where needed.
-- Settings modal links are represented in extraSettings (hidden from desktop and mobile menus) for search and favorites. Inspect the actual settings modal and supplemental links when adding or removing an entry; keep permission rules consistent across both. Do not change unrelated modal behavior.
+- Declare DisplayType explicitly for each menu definition: Link for URL navigation, Group for expandable groups, Action for an operation, and Modal for a modal trigger. OnClick describes behavior only; do not infer display type from it or from the presence of SubItems. The favorites group retains its dedicated renderer.
+- Settings is a Modal with Group children and Link/Modal/Action entries beneath them. Define titles, icons, roles, order and routes/actions only in MenuDefinitionService. _SettingModal receives the filtered groups, renders real links and favorite buttons directly, and is refreshed from the same menu snapshot. Search and active-page highlighting consume those real links. Do not introduce a hidden supplemental link catalog, a second settings definition, or URL-based favorite matching. Preserve the phonebook modal action; URL-free actions are not eligible for page favorites. Keep existing settings IDs for persisted favorites.
 - Preserve the fixed footer actions overdueOpenDeals, warnings and releaseNotes. Overdue open deals must not be starred or duplicated. Release notes must keep the existing audience-aware latest version logic. Warnings retain their existing empty-badge hiding rule.
 - Calculate badges through MenuBadgeService and the existing authorized query or service; preserve user scope, asynchronous behavior and badge-hide rules. Do not introduce new service-locator usage or database queries into definitions.
 - Keep favorites attached after filtering and badge handling. Never render an inaccessible saved favorite; keep stored menu IDs and ordering intact. For favorite changes also inspect MenuController's server-side allowed-link validation.

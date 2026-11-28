@@ -2,7 +2,7 @@
 (() => {
     "use strict";
     const navIds = ["desktopNavbar", "mobileDrawerNavbar"];
-    const replaceIds = ["desktopNavbar", "desktopFixedActions", "mobileNavbar", "mobileDrawerNavbar", "mobileDrawerFixedActions", "menuSupplementalLinks"];
+    const replaceIds = ["desktopNavbar", "desktopFixedActions", "mobileNavbar", "mobileDrawerNavbar", "mobileDrawerFixedActions"];
     const user = window.userContext?.id || "anonymous";
     const groupKey = id => "vazin:menu-groups:" + user + ":" + id;
     const normalizeText = s => (s || "").toLocaleLowerCase("fa")
@@ -61,9 +61,9 @@
                 parent = parent.parentElement?.closest("[data-menu-group]");
             }
         });
-        const inSettings = Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
+        const inSettings = Array.from(document.querySelectorAll("#settingsMenuContent [data-settings-menu-link]"))
             .some(link => matches(new URL(link.href), current));
-        if (inSettings) document.querySelectorAll(".menu-item[onclick*='showModalSetting']")
+        if (inSettings) document.querySelectorAll(".menu-item[data-menu-id=\"settings\"]")
             .forEach(button => button.classList.add("active-ancestor"));
     }
     const antiforgery = () => document.querySelector('#menuFavoritesAntiforgery input[name="__RequestVerificationToken"]')?.value;
@@ -101,10 +101,15 @@
             // the new instance while keeping the first-load handler untouched.
             document.getElementById("mobileMoreMenuBtn")?.addEventListener("click", () =>
                 window.toggleMobileDrawer?.(true));
+            const settingsContent = document.getElementById("settingsMenuContent");
+            const updatedSettings = doc.getElementById("settingsMenuContent");
+            if (settingsContent && updatedSettings) {
+                settingsContent.replaceChildren(...updatedSettings.childNodes);
+                window.enableMomentumScrollScope?.(document.getElementById("BaseSetting"));
+            }
             restoreGroups();
             highlight();
             initSortable();
-            syncSettingsFavorites();
             // Refresh replaces the navigation subtree; the expanded textbox
             // stays visible by CSS and the results start closed.
             document.querySelectorAll("[data-menu-search-row]").forEach(row => row.classList.remove("is-search-open"));
@@ -132,8 +137,9 @@
                 || (link.closest("#mobileNavbar") ? "دسترسی سریع" : "");
             return { title, route, href: link.href };
         });
-        const extras = Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
-            .map(link => ({ title: link.dataset.menuExtraTitle, route: "تنظیمات", href: link.href }));
+        const extras = Array.from(document.querySelectorAll("#settingsMenuContent [data-settings-menu-link]"))
+            .map(link => ({ title: link.dataset.settingsMenuTitle,
+                route: ["تنظیمات", link.dataset.settingsMenuGroup].filter(Boolean).join(" ← "), href: link.href }));
         return canonical.concat(extras).filter(item => {
             if (seen.has(item.href)) return false;
             seen.add(item.href); return true;
@@ -187,39 +193,6 @@
         const input = row.querySelector("[data-menu-search-input]");
         input?.focus();
         renderSearch(row.querySelector("[data-menu-search-panel]"));
-    }
-    function syncSettingsFavorites() {
-        // ASP.NET MVC can generate /Controller for an Index action even when
-        // the catalog stores /Controller/Index. Treat both as the same page.
-        const settingsPath = href => {
-            const pathname = new URL(href, window.location.origin).pathname.toLowerCase();
-            return pathname.replace(/\/index\/?$/, "").replace(/\/$/, "") || "/";
-        };
-        const catalog = new Map(Array.from(document.querySelectorAll("#menuSupplementalLinks [data-menu-extra-link]"))
-            .map(link => [settingsPath(link.href), link]));
-        document.querySelectorAll("#BaseSetting a[href]").forEach(link => {
-            const meta = catalog.get(settingsPath(link.href));
-            if (!meta) return;
-            let star = link.parentElement?.querySelector(":scope > .erp-settings-favorite-button");
-            if (!star) {
-                const wrapper = document.createElement("div");
-                wrapper.className = "erp-settings-favorite-row";
-                link.replaceWith(wrapper);
-                wrapper.append(link);
-                star = document.createElement("button");
-                star.type = "button";
-                star.className = "erp-settings-favorite-button";
-                star.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-                wrapper.append(star);
-            }
-            star.dataset.menuFavorite = meta.dataset.menuExtraLink;
-            const selected = meta.dataset.menuExtraFavorite === "true";
-            star.classList.toggle("is-favorite", selected);
-            star.setAttribute("aria-pressed", String(selected));
-            star.setAttribute("aria-label", selected ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها");
-            star.title = star.getAttribute("aria-label");
-            star.querySelector("svg")?.setAttribute("fill", selected ? "currentColor" : "none");
-        });
     }
     function initSortable() {
         if (!window.Sortable) return;
@@ -316,5 +289,4 @@
     restoreGroups();
     highlight();
     initSortable();
-    syncSettingsFavorites();
 })();

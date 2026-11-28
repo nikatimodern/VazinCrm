@@ -20,6 +20,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "dashboard",
+                DisplayType = MenuDisplayType.Link,
                 Title = "داشبورد",
                 Url = "/Dashboard/Index",
                 IconHtml = MenuIcons.Dashboard,
@@ -39,6 +40,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             },
             new MenuItem {
                 Id = "dealMobile",
+                DisplayType = MenuDisplayType.Link,
                 Title = "سفارشات",
                 Url = "/Deal/Index",
                 IconHtml = MenuIcons.Deals,
@@ -57,6 +59,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             },
             new MenuItem {
                 Id = "peopleMobile",
+                DisplayType = MenuDisplayType.Link,
                 Title = "اشخاص",
                 Url = "/Customer/Index",
                 IconHtml = MenuIcons.Customers,
@@ -75,6 +78,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             },
             new MenuItem {
                 Id = "cartable",
+                DisplayType = MenuDisplayType.Link,
                 Title = "کارتابل",
                 Url = "/Cartable/Index",
                 IconHtml = MenuIcons.Cartable,
@@ -95,6 +99,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "reportMobile",
+                DisplayType = MenuDisplayType.Link,
                 Title = "گزارش کار",
                 Url = "/Report/Index",
 
@@ -119,12 +124,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categoryDaily",
+                DisplayType = MenuDisplayType.Group,
                 Title = "فعالیت‌های روزانه",
                 IconHtml = MenuIcons.Tasks,
                 DisplayOrder = 10,
                 SubItems = [
                     new MenuItem {
                         Id = "carizo",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "کاربان",
                         Url = "/Carizo/Index",
                         IconHtml = MenuIcons.Tasks,
@@ -144,6 +151,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
                     new MenuItem {
                         Id = "report",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "گزارش کار",
                         Url = "/Report/Index",
                         IconHtml = MenuIcons.WorkReports,
@@ -165,12 +173,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categorySales",
+                DisplayType = MenuDisplayType.Group,
                 Title = "فروش",
                 IconHtml = MenuIcons.Deals,
                 DisplayOrder = 20,
                 SubItems = [
                     new MenuItem {
                         Id = "customer",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "مشتریان",
                         Url = "/Customer/Index?roleType=1",
                         IconHtml = MenuIcons.Customers,
@@ -187,6 +197,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "deal",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "سفارشات",
                         Url = "/Deal/Index",
                         IconHtml = MenuIcons.Deals,
@@ -210,12 +221,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categorySupply",
+                DisplayType = MenuDisplayType.Group,
                 Title = "تأمین",
                 IconHtml = MenuIcons.Treasury,
                 DisplayOrder = 30,
                 SubItems = [
                     new MenuItem {
                         Id = "suppliers",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "تأمین‌کنندگان",
                         Url = "/Customer/Index?roleType=2",
                         Roles = [
@@ -232,6 +245,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
                     new MenuItem {
                         Id = "amount",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "قیمت ها",
                         Url = "/Amount/Index",
                         IconHtml = MenuIcons.Prices,
@@ -246,6 +260,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
                     new MenuItem {
                         Id = "supplyFactor",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "ثبت فاکتور تامین",
                         Url = "/Supply/SupplyFactor",
                         Roles = [
@@ -262,6 +277,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
                     new MenuItem {
                         Id = "requestAmount",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "ثبت درخواست وجه",
                         Url = "/RequestAmount/Index",
                         Roles = [
@@ -285,12 +301,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categoryProduction",
+                DisplayType = MenuDisplayType.Group,
                 Title = "تولید، انبار و کیفیت",
                 IconHtml = MenuIcons.Vouchers,
                 DisplayOrder = 40,
                 SubItems = [
                     new MenuItem {
                         Id = "productionVoucher",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "حواله تولید",
                         Url = "/Order/Index",
                         Roles = [
@@ -306,6 +324,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "warehouseVoucher",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "حواله انبار",
                         Url = "/Warehouse/Voucher",
                         Roles = [
@@ -321,6 +340,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "warehouse",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "انبار",
                         Url = "/Warehouse/Index",
                         Roles = [
@@ -336,6 +356,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "qualityControl",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "کنترل کیفیت",
                         Url = "/QualityControl/Index",
                         IconHtml = MenuIcons.QualityControl,
@@ -351,12 +372,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categoryFinance",
+                DisplayType = MenuDisplayType.Group,
                 Title = "مالی و خزانه‌داری",
                 IconHtml = MenuIcons.Accounting,
                 DisplayOrder = 50,
                 SubItems = [
                     new MenuItem {
                         Id = "accountancy",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "حسابداری",
                         Url = "/Accountancy/Index",
                         IconHtml = MenuIcons.Accounting,
@@ -373,6 +396,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "receivedChecks",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "چک‌های دریافتی",
                         Url = "/Check/Received",
                         Roles = [
@@ -386,6 +410,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "issuedChecks",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "صدور چک",
                         Url = "/Check/Index",
                         Roles = [
@@ -399,6 +424,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "transfer",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "نقل و انتقال",
                         Url = "/Transfer/Index",
                         Roles = [
@@ -412,6 +438,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "cashier",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "ثبت تنخواه دار",
                         Url = "/Cash/Cashier",
                         Roles = [
@@ -423,6 +450,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "cashIndex",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "ثبت تنخواه",
                         Url = "/Cash/Index",
                         Roles = [
@@ -438,6 +466,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                         ? new[] {
                             new MenuItem {
                                 Id = "taxation",
+                                DisplayType = MenuDisplayType.Link,
                                 Title = "سامانه مؤدیان",
                                 Url = "/Taxation",
                                 IconHtml = MenuIcons.Accounting,
@@ -455,12 +484,14 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "categoryReports",
+                DisplayType = MenuDisplayType.Group,
                 Title = "گزارش‌های مدیریتی",
                 IconHtml = MenuIcons.Reports,
                 DisplayOrder = 60,
                 SubItems = [
                     new MenuItem {
                         Id = "profit",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "بهای تمام شده",
                         Url = "/Supply/Profit",
                         Roles = [
@@ -474,6 +505,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     },
                     new MenuItem {
                         Id = "demand",
+                        DisplayType = MenuDisplayType.Link,
                         Title = "مطالبات",
                         Url = "/Supply/Demand",
                         Roles = [
@@ -494,6 +526,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "settings",
+                DisplayType = MenuDisplayType.Modal,
                 Title = "تنظیمات",
                 IconHtml = MenuIcons.Settings,
                 OnClick = "showModalSetting()", DisplayOrder = 70,
@@ -505,27 +538,130 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
                     AppRoles.SalesAdmin,
                     AppRoles.FinancialAdmin,
                     AppRoles.FinancialExpert
-                ]
-            },
-            new MenuItem {
-                Id = "extraSettings",
-                Title = "تنظیمات",
-                IconHtml = MenuIcons.Settings,
-                DisplayOrder = 80,
-                ShowInDesktop = false,
-                ShowInMobile = false,
+                ],
                 SubItems = [
-                    SettingLink("settingsVersions", "مدیریت تغییرات نسخه‌ها", "/ReleaseNotesAdmin/Index", AppRoles.Admin),
-                    SettingLink("settingsUsers", "کاربران", "/Admin/Index", AppRoles.Admin),
-                    SettingLink("settingsCompany", "اطلاعات پایه شرکت", "/BaseItem/Index",
-                        AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin, AppRoles.FinancialAdmin),
-                    SettingLink("settingsFinance", "اطلاعات پایه مالی", "/BaseItem/Financial",
-                        AppRoles.Admin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin),
-                    SettingLink("settingsMain", "تنظیمات پایه", "/Asetting/Index", AppRoles.Admin),
-                    SettingLink("settingsPrefactorTerms", "شرایط قرارداد در پیش فاکتور", "/PrefactorTerms/Index", AppRoles.Admin),
-                    SettingLink("settingsBin", "سطل زباله", "/Asetting/RecycleBin", AppRoles.Admin),
-                    SettingLink("settingsSms", "مدیریت پیامک", "/Sms/Index", AppRoles.Admin),
-                    SettingLink("settingsExternal", "مدیریت ارتباطات", "/ExternalSoftware/Index", AppRoles.Admin)
+                    new MenuItem {
+                        Id = "settingsGroupUsers",
+                        DisplayType = MenuDisplayType.Group,
+                        Title = "کاربران و نسخه‌ها",
+                        DisplayOrder = 1,
+                        SubItems = [
+                            new MenuItem {
+                                Id = "settingsVersions",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "مدیریت تغییرات نسخه‌ها",
+                                Url = "/ReleaseNotesAdmin/Index",
+                                IconHtml = MenuIcons.SettingsModalVersions,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 1
+                            },
+                            new MenuItem {
+                                Id = "settingsUsers",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "کاربران",
+                                Url = "/Admin/Index",
+                                IconHtml = MenuIcons.SettingsModalUsers,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 2
+                            }
+                        ]
+                    },
+                    new MenuItem {
+                        Id = "settingsGroupBase",
+                        DisplayType = MenuDisplayType.Group,
+                        Title = "اطلاعات پایه",
+                        DisplayOrder = 2,
+                        SubItems = [
+                            new MenuItem {
+                                Id = "settingsCompany",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "اطلاعات پایه شرکت",
+                                Url = "/BaseItem/Index",
+                                IconHtml = MenuIcons.SettingsModalCompany,
+                                Roles = [AppRoles.Admin, AppRoles.TaminAdmin, AppRoles.SalesAdmin, AppRoles.FinancialAdmin],
+                                DisplayOrder = 1
+                            },
+                            new MenuItem {
+                                Id = "settingsFinance",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "اطلاعات پایه مالی",
+                                Url = "/BaseItem/Financial",
+                                IconHtml = MenuIcons.SettingsModalFinance,
+                                Roles = [AppRoles.Admin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin],
+                                DisplayOrder = 2
+                            }
+                        ]
+                    },
+                    new MenuItem {
+                        Id = "settingsGroupSystem",
+                        DisplayType = MenuDisplayType.Group,
+                        Title = "تنظیمات سیستم",
+                        DisplayOrder = 3,
+                        SubItems = [
+                            new MenuItem {
+                                Id = "settingsMain",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "تنظیمات پایه",
+                                Url = "/Asetting/Index",
+                                IconHtml = MenuIcons.SettingsModalMain,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 1
+                            },
+                            new MenuItem {
+                                Id = "settingsPrefactorTerms",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "شرایط قرارداد در پیش فاکتور",
+                                Url = "/PrefactorTerms/Index",
+                                IconHtml = MenuIcons.SettingsModalPrefactorTerms,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 2
+                            },
+                            new MenuItem {
+                                Id = "settingsBin",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "سطل زباله",
+                                Url = "/Asetting/RecycleBin",
+                                IconHtml = MenuIcons.SettingsModalBin,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 3
+                            }
+                        ]
+                    },
+                    new MenuItem {
+                        Id = "settingsGroupCommunications",
+                        DisplayType = MenuDisplayType.Group,
+                        Title = "ارتباطات",
+                        DisplayOrder = 4,
+                        SubItems = [
+                            new MenuItem {
+                                Id = "settingsPhonebook",
+                                DisplayType = MenuDisplayType.Modal,
+                                Title = "دفترچه تلفن",
+                                OnClick = "showModalPhonebook()",
+                                IconHtml = MenuIcons.SettingsModalPhonebook,
+                                Roles = [AppRoles.Admin, AppRoles.SalesAdmin],
+                                DisplayOrder = 1
+                            },
+                            new MenuItem {
+                                Id = "settingsSms",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "مدیریت پیامک",
+                                Url = "/Sms/Index",
+                                IconHtml = MenuIcons.SettingsModalSms,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 2
+                            },
+                            new MenuItem {
+                                Id = "settingsExternal",
+                                DisplayType = MenuDisplayType.Link,
+                                Title = "مدیریت ارتباطات",
+                                Url = "/ExternalSoftware/Index",
+                                IconHtml = MenuIcons.SettingsModalExternal,
+                                Roles = [AppRoles.Admin],
+                                DisplayOrder = 3
+                            }
+                        ]
+                    }
                 ]
             },
 
@@ -535,6 +671,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
 
             new MenuItem {
                 Id = "overdueOpenDeals",
+                DisplayType = MenuDisplayType.Link,
                 Title = "سفارشات باز معوقه",
                 Url = "/OverdueDeal/Index",
                 ClassName = "blink-button",
@@ -552,6 +689,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             },
             new MenuItem {
                 Id = "warnings",
+                DisplayType = MenuDisplayType.Modal,
                 Title = "هشدارها",
                 ElementId = "warningsMenuId",
                 OnClick = "showModalWarnings()",
@@ -569,6 +707,7 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             },
             new MenuItem {
                 Id = "releaseNotes",
+                DisplayType = MenuDisplayType.Modal,
                 Title = "نسخه",
                 OnClick = "showReleaseNotesHistory()",
                 ClassName = "menu-release-notes",
@@ -580,9 +719,4 @@ public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConf
             #endregion
         ];
     }
-
-
-    private static MenuItem SettingLink(string id, string title, string url, params string[] roles) => new() {
-        Id = id, Title = title, Url = url, Roles = [.. roles]
-    };
 }
