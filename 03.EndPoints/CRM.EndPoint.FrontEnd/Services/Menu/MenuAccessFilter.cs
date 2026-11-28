@@ -20,8 +20,6 @@ internal static class MenuAccessFilter
                 continue;
 
             item.SubItems = FilterItems(item.SubItems, userRoles, effectiveRoles);
-            if (item.CompactChildOrder)
-                CompactOrders(item.SubItems);
 
             if (string.IsNullOrEmpty(item.Url) && string.IsNullOrEmpty(item.OnClick) && item.SubItems.Count == 0)
                 continue;
@@ -29,15 +27,5 @@ internal static class MenuAccessFilter
             visible.Add(item);
         }
         return visible.OrderBy(item => item.DisplayOrder).ToList();
-    }
-
-    private static void CompactOrders(List<MenuItem> items)
-    {
-        var order = 0;
-        foreach (var item in items)
-        {
-            if (!item.KeepDisplayOrder)
-                item.DisplayOrder = ++order;
-        }
     }
 }

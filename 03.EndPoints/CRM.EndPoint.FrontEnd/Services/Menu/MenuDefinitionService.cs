@@ -74,7 +74,7 @@ public sealed class MenuDefinitionService(
             #region Daily activities
             new MenuItem {
                 Id = "categoryDaily", Title = "فعالیت‌های روزانه", IconHtml = MenuIcons.Tasks,
-                DisplayOrder = 10, CompactChildOrder = true,
+                DisplayOrder = 10,
                 SubItems = [
                     new MenuItem {
                         Id = "carizo", Title = "کاربان", Url = "/Carizo/Index",
@@ -91,7 +91,7 @@ public sealed class MenuDefinitionService(
             #region Sales
             new MenuItem {
                 Id = "categorySales", Title = "فروش", IconHtml = MenuIcons.Deals,
-                DisplayOrder = 20, CompactChildOrder = true,
+                DisplayOrder = 20,
                 SubItems = [
                     new MenuItem {
                         Id = "customer", Title = "مشتریان", Url = "/Customer/Index?roleType=1",
@@ -108,7 +108,7 @@ public sealed class MenuDefinitionService(
             #region Supply
             new MenuItem {
                 Id = "categorySupply", Title = "تأمین", IconHtml = MenuIcons.Treasury,
-                DisplayOrder = 30, CompactChildOrder = true,
+                DisplayOrder = 30,
                 SubItems = [
                     new MenuItem {
                         Id = "suppliers", Title = "تأمین‌کنندگان", Url = "/Customer/Index?roleType=2",
@@ -134,7 +134,7 @@ public sealed class MenuDefinitionService(
             #region Production, warehouse and quality
             new MenuItem {
                 Id = "categoryProduction", Title = "تولید، انبار و کیفیت", IconHtml = MenuIcons.Vouchers,
-                DisplayOrder = 40, CompactChildOrder = true,
+                DisplayOrder = 40,
                 SubItems = [
                     new MenuItem {
                         Id = "productionVoucher", Title = "حواله تولید", Url = "/Order/Index",
@@ -160,7 +160,7 @@ public sealed class MenuDefinitionService(
             #region Finance and treasury
             new MenuItem {
                 Id = "categoryFinance", Title = "مالی و خزانه‌داری", IconHtml = MenuIcons.Accounting,
-                DisplayOrder = 50, CompactChildOrder = true,
+                DisplayOrder = 50,
                 SubItems = [
                     new MenuItem {
                         Id = "accountancy", Title = "حسابداری", Url = "/Accountancy/Index",
@@ -193,7 +193,7 @@ public sealed class MenuDefinitionService(
                         new MenuItem {
                             Id = "taxation", Title = "سامانه مؤدیان", Url = "/Taxation",
                             IconHtml = MenuIcons.Accounting, Roles = [AppRoles.Admin],
-                            DisplayOrder = 21, KeepDisplayOrder = true
+                            DisplayOrder = 21
                         }
                     } : Array.Empty<MenuItem>())
                 ]
@@ -203,7 +203,7 @@ public sealed class MenuDefinitionService(
             #region Management reports
             new MenuItem {
                 Id = "categoryReports", Title = "گزارش‌های مدیریتی", IconHtml = MenuIcons.Reports,
-                DisplayOrder = 60, CompactChildOrder = true,
+                DisplayOrder = 60,
                 SubItems = [
                     new MenuItem {
                         Id = "profit", Title = "بهای تمام شده", Url = "/Supply/Profit",

@@ -30,9 +30,5 @@ public class MenuItem {
     public Func<IServiceProvider, Task<int>> GetBadgeCountAsync { get; init; }
     public bool HideWhenBadgeEmpty { get; set; }
 
-    public bool IsStandalone { get; init; } // Fixed actions outside the main menu.
-
-    // Internal definition metadata; the public menu contract remains unchanged.
-    internal bool CompactChildOrder { get; init; }
-    internal bool KeepDisplayOrder { get; init; }
+    public bool IsStandalone { get; init; } // بیرون از لیست اصلی (مثل هشدارها)
 }

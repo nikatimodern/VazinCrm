@@ -19,7 +19,7 @@ The menu code belongs in `03.EndPoints/CRM.EndPoint.FrontEnd/Services/Menu/`. De
 | MenuBadgeService.cs | Badge computation and removal of items configured to hide when their badge is empty |
 | MenuFavoritesService.cs | Attach eligible favorite metadata and build the favorites group from authorized visible links |
 | MenuIcons.cs | Shared menu icon definitions |
-| Models/Menu/MenuItem.cs (relative to FrontEnd) | Existing menu model and internal definition metadata |
+| Models/Menu/MenuItem.cs (relative to FrontEnd) | Existing menu model |
 | IServices/Menu/IMenuService.cs (relative to FrontEnd) | Stable consumer-facing contract |
 | Startup.cs (relative to FrontEnd) | Scoped dependency registrations |
 
@@ -51,7 +51,7 @@ This is an existing entry, not a new entry to duplicate. Use a suitable audience
 
 The existing root layout is dashboard and mobile shortcuts (1–5), daily activities (10), sales (20), supply (30), production/warehouse/quality (40), finance/treasury (50), management reports (60), settings (70), hidden supplemental settings (80), and fixed actions (998–1000). Read the current definitions rather than treating this list as a permanent inventory. Add a category directly in the intended place when needed; do not rearrange existing categories without a request.
 
-Use meaningful, unique sibling DisplayOrder values for normal entries; preserve intentional existing exceptions. CompactChildOrder enables consecutive visible child order after filtering. KeepDisplayOrder preserves an intentional special child order (currently taxation). Preserve existing IDs, URLs, titles, icon inheritance and visibility flags unless the task explicitly changes them. IDs are used for persisted favorites and navigation state; do not rename or repurpose them casually.
+Use explicit, meaningful sibling DisplayOrder values for normal entries; preserve intentional existing exceptions. Sort visible items by DisplayOrder only. Do not renumber or mutate DisplayOrder after filtering; gaps are valid. Do not introduce separate compaction or order-preservation flags. Preserve existing IDs, URLs, titles, icon inheritance and visibility flags unless the task explicitly changes them. IDs are used for persisted favorites and navigation state; do not rename or repurpose them casually.
 
 ## Access and security
 
