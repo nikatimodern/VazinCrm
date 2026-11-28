@@ -12,7 +12,8 @@ public sealed record EmployeeDirectoryPage(bool CanView, bool CanCreate, bool Ca
     string Search, int Page, bool HasNextPage, IReadOnlyList<EmployeeDirectoryItem> Employees,
     EmployeeProfileDetail Selected, IReadOnlyList<EmployeeAccountCandidate> Candidates,
     IReadOnlyList<EmploymentContractItem> Contracts, bool CanCreateContract, bool CanEditContract,
-    bool CanApproveContract, bool CanTerminateContract, DateOnly? BusinessDate, int ContractPage, bool HasNextContractPage);
+    bool CanApproveContract, bool CanTerminateContract, DateOnly? BusinessDate, int ContractPage, bool HasNextContractPage,
+    bool CanUploadEducationOnCreate, bool CanViewEducationDocument, bool CanEditEducationDocument);
 
 public sealed class GetEmployeeDirectoryQueryHandler(IHrEmployeeAccess access,
     IEmployeeDirectoryReadRepository directory, IEmployeeProfileRepository profiles,
@@ -28,7 +29,7 @@ public sealed class GetEmployeeDirectoryQueryHandler(IHrEmployeeAccess access,
         if (search.Length > 100) search = search[..100];
         var page = Math.Clamp(query.Page, 1, 100000);
         if (!rights.CanView || string.IsNullOrWhiteSpace(rights.ActorId))
-            return new(false, false, false, false, "", 1, false, [], null, [], [], false, false, false, false, null, 1, false);
+            return new(false, false, false, false, "", 1, false, [], null, [], [], false, false, false, false, null, 1, false, false, false, false);
 
         var rows = await directory.SearchAsync(rights.ViewEmployeeIds, search, (page - 1) * PageSize, PageSize + 1, ct);
         var selected = query.EmployeeId.HasValue
@@ -48,6 +49,9 @@ public sealed class GetEmployeeDirectoryQueryHandler(IHrEmployeeAccess access,
             canViewContracts && rights.ContractEditEmployeeIds.Contains(selected.Id),
             canViewContracts && rights.ContractApproveEmployeeIds.Contains(selected.Id),
             canViewContracts && rights.ContractTerminateEmployeeIds.Contains(selected.Id),
-            canViewContracts ? HrBusinessDate.Today() : null, contractPage, contractRows.Count > PageSize);
+            canViewContracts ? HrBusinessDate.Today() : null, contractPage, contractRows.Count > PageSize,
+            rights.CanCreate && rights.CanUploadEducationOnCreate,
+            selected != null && rights.EducationDocumentViewIds.Contains(selected.Id),
+            canEdit && rights.EducationDocumentEditIds.Contains(selected.Id));
     }
 }
