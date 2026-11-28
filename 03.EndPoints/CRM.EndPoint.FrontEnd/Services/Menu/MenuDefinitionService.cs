@@ -10,14 +10,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace CRM.EndPoint.FrontEnd.Services.Menu;
 
-public sealed class MenuDefinitionService(
-    IWebHostEnvironment environment,
-    IConfiguration configuration,
-    MenuBadgeService badges) {
+public sealed class MenuDefinitionService(IWebHostEnvironment environment, IConfiguration configuration, MenuBadgeService badges) {
     public List<MenuItem> BuildMenus(ClaimsPrincipal user, HashSet<string> roles)
     {
-        var showTaxation = roles.Contains(AppRoles.Admin) &&
-                           TaxationAvailability.IsLocalEnabled(environment, configuration);
+        var showTaxation = roles.Contains(AppRoles.Admin) && TaxationAvailability.IsLocalEnabled(environment, configuration);
 
         return [
             #region Dashboard and mobile shortcuts
@@ -125,17 +121,13 @@ public sealed class MenuDefinitionService(
                 Id = "categoryDaily",
                 Title = "فعالیت‌های روزانه",
                 IconHtml = MenuIcons.Tasks,
-
                 DisplayOrder = 10,
-
                 SubItems = [
                     new MenuItem {
                         Id = "carizo",
                         Title = "کاربان",
                         Url = "/Carizo/Index",
-
                         IconHtml = MenuIcons.Tasks,
-
                         Roles = [
                             AppRoles.Admin,
                             AppRoles.ManagingDirector,
@@ -147,7 +139,6 @@ public sealed class MenuDefinitionService(
                             AppRoles.FinancialExpert,
                             AppRoles.FinancialAdmin
                         ],
-
                         DisplayOrder = 1
                     },
 
@@ -176,9 +167,7 @@ public sealed class MenuDefinitionService(
                 Id = "categorySales",
                 Title = "فروش",
                 IconHtml = MenuIcons.Deals,
-
                 DisplayOrder = 20,
-
                 SubItems = [
                     new MenuItem {
                         Id = "customer",
@@ -196,7 +185,6 @@ public sealed class MenuDefinitionService(
                         ],
                         DisplayOrder = 1
                     },
-
                     new MenuItem {
                         Id = "deal",
                         Title = "سفارشات",
@@ -211,7 +199,6 @@ public sealed class MenuDefinitionService(
                             AppRoles.TaminExpert,
                             AppRoles.TaminAdmin
                         ],
-
                         DisplayOrder = 2
                     }
                 ]
