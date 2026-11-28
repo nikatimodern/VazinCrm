@@ -7,6 +7,7 @@ using CRM.Core.ApplicationServices.HumanResources.Queries.GetEducationDocument;
 using CRM.Core.Domain.HumanResources.Repositories;
 using CRM.Infrastructures.Sql.HumanResources.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using CRM.EndPoint.FrontEnd.Services.HumanResources;
 
 namespace CRM.EndPoint.FrontEnd.Composition;
 
@@ -14,7 +15,8 @@ internal static class HumanResourcesRegistration
 {
     public static IServiceCollection AddHumanResources(this IServiceCollection services)
     {
-        services.AddScoped<IHrEmployeeAccess, LockedHrEmployeeAccess>();
+        services.AddScoped<IHrAccessScopeRepository, HrAccessScopeRepository>();
+        services.AddScoped<IHrEmployeeAccess, AdminHrEmployeeAccess>();
         services.AddScoped<IEmployeeDirectoryReadRepository, EmployeeDirectoryReadRepository>();
         services.AddScoped<IEmployeeProfileRepository, EmployeeProfileRepository>();
         services.AddScoped<IEmploymentContractReadRepository, EmploymentContractReadRepository>();
