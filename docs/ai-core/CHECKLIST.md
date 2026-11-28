@@ -32,6 +32,7 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [ ] Protect against prompt injection, untrusted files, unsafe outputs, cross-user cache/memory leakage.
 - [ ] Audit requests/operations with minimal metadata and current actor; revoke permissions immediately.
 ## A04 — Management center
+- [x] Add administrator-only AI settings landing page and existing Settings modal/search/favorites navigation entry; read-only, no credentials or live health claims. Source committed; build/browser verification pending.
 - [ ] Provider and model configuration, secure secret references, health/test.
 - [ ] Per-task model/routing and feature switches.
 - [ ] Versioned prompts, tools, agents and scheduling.
