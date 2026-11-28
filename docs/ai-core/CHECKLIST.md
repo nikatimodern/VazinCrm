@@ -13,10 +13,13 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [x] Draft normalized provider contract, capability-aware routing and candidate relational schema (TECHNICAL-DESIGN.md).
 - [ ] Review design and obtain entity/schema approval.
 ## A02 — Provider foundation
-- [ ] Define normalized request/result and capability-aware provider contract.
-- [ ] Implement GapGPT adapter and regression-compatible legacy integration.
-- [ ] Implement timeouts, cancellation, bounded retries and error classification.
-- [ ] Design provider/model catalog, task routing, safe fallback, classification and quotas.
+- [x] Add normalized text/JSON request/result, capability enum and IAiProvider source contract (uncompiled; no live capability claim).
+- [x] Add isolated GapgptTextProvider source for text/JSON; no DI registration or runtime exposure yet.
+- [ ] Configure dedicated authenticated HttpClient, secure settings, approved synthetic live test and regression-compatible legacy integration.
+- [x] Add request validation, timeout/cancellation, bounded response and safe error classification in adapter source.
+- [ ] Verify timeout/cancellation/errors with tests and implement approved retry policy (no automatic retries in first slice).
+- [x] Add explicit provider/model routing and fail-closed data policy source; no automatic fallback.
+- [ ] Implement persistent catalog, authorized task classification, safe fallback policy, quotas, secure endpoint allowlist and registration.
 - [ ] Implement local VM adapter after actual API and deployment details are known.
 - [ ] Validate local VM Persian quality, tool/stream support, load, network security, cutover and rollback.
 - [ ] Test deterministic mock adapters and invoice/audio regression.
@@ -68,4 +71,4 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [ ] UI accessibility/RTL/mobile, architecture checker and actual build.
 - [ ] Documentation, staged release, approval before deployment or main merge.
 
-Evidence: technical design v0.2 recorded in TECHNICAL-DESIGN.md. Access Catalog DbSets are present on AccLevel but absent on the baseline UserContextDb; approved integration remains a blocker before operational endpoints. No runtime build, tests, migration or live AI calls yet. Checklist persistence is verified separately after commit.
+Evidence: v0.3 source foundation added and read back from ai-core (IAiProvider, AiProviderPolicy, AiProviderRouter, GapgptTextProvider). No changes to Startup/DI, legacy AI flows, application endpoints, packages, database or main. Local VM adapter, live verification, secret rotation and AccLevel integration remain open. The environment has no checked-out repository or dotnet SDK; build and tests not run. Source tasks checked only for code presence, not operational completion.
