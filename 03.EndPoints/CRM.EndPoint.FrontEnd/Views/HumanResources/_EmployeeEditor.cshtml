@@ -29,7 +29,7 @@
                     <a class="hr-action mb-2" asp-action="DownloadEducationDocument" asp-route-employeeId="@profile.Id"><i class="fa fa-paperclip" aria-hidden="true"></i> دریافت مدرک تحصیلی</a>
                 }
                 @if (!canSave) {
-                    <p class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i> @(Model.CanView ? "مجوز ویرایش این پرونده را ندارید." : "نمای اولیه؛ ذخیره اطلاعات پس از فعال شدن سطح دسترسی امکان‌پذیر است.")</p>
+                    <p class="hr-notice mb-2"><i class="fa fa-lock" aria-hidden="true"></i> @(Model.CanView ? "مجوز ویرایش این پرونده را ندارید." : "شما مجوز دسترسی به منابع انسانی را ندارید.")</p>
                 }
                 @if (isEdit && profile != null) {
                     <input type="hidden" name="Id" value="@profile.Id" />
@@ -70,7 +70,7 @@
                             <label for="@($"{modalId}_Education")">مدرک / رشته تحصیلی</label>
                             <input id="@($"{modalId}_Education")" name="Education" class="form-control" maxlength="100" value="@(details?.Education)" />
                         </div>
-                        @if (!Model.CanView || (isEdit ? Model.CanEditEducationDocument : Model.CanUploadEducationOnCreate)) {
+                        @if (isEdit ? Model.CanEditEducationDocument : Model.CanUploadEducationOnCreate) {
                             <div>
                                 <label for="@($"{modalId}_EducationDocument")">پیوست مدرک تحصیلی (اختیاری)</label>
                                 <input id="@($"{modalId}_EducationDocument")" name="EducationDocument" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
