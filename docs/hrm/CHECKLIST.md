@@ -5,10 +5,13 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [x] Create hrm from main (GitHub branch creation confirmed).
 - [x] Read root AGENTS and mandatory Clean Code baseline/Onion and backend skills.
 - [x] Record initial architecture, logical entities and scoped documentation instructions.
-- [ ] Inspect actual AppUser/employee, access catalog, DbContext, attachment and approval patterns.
-- [ ] Verify employee/Sepidar mapping keys, existing org/personnel structures and data reuse.
+- [x] Inspect AppUser, Identity/CRM contexts, admin employee/account queries, attachment entity and AccLevel catalog context difference (TECHNICAL-DESIGN.md).
+- [ ] Trace approval workflows, protected attachment download and actual catalog enforcement; approved catalog integration required.
+- [x] Inspect current employee-to-Sepidar mapping keys and AppUser position/person references; distinguish user and payroll mappings.
+- [ ] Verify existing organization/personnel records, payroll schema and safe migration/reuse paths.
 - [ ] Identify device brand/model, firmware, LAN access, API/SDK and anonymized sample log.
 - [ ] Confirm business rules, calendar, time zone, payroll owner and current effective legal requirements.
+- [x] Draft personnel, organization, device, raw attendance and work-rule relational schema and ingestion contract (TECHNICAL-DESIGN.md).
 - [ ] Review design, relationships, retention, security, and obtain schema approval.
 ## H02 — Personnel and organization
 - [ ] Define entities and repositories, EF mappings and application use cases; approved migration + SQL.
@@ -61,4 +64,4 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Architecture checker, actual build, UI/RTL/mobile review, documentation and pilot.
 - [ ] Approved cross-branch integration and release; no main merge without approval.
 
-Evidence: design-only phase; no runtime code, device connection, migration, build or tests yet. Checklist persistence is verified separately after commit.
+Evidence: technical design v0.2 recorded in TECHNICAL-DESIGN.md. Device model and protocol remain unknown; AccLevel is not integrated into baseline. No runtime code, device connection, migration, build or tests yet. Checklist persistence is verified separately after commit.
