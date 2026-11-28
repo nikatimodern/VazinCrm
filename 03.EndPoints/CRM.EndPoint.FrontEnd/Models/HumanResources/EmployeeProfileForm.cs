@@ -1,6 +1,4 @@
 using System;
-using System.Globalization;
-using System.Linq;
 using CRM.Core.Domain.HumanResources.Entities;
 
 namespace CRM.EndPoint.FrontEnd.Models.HumanResources;
@@ -28,24 +26,7 @@ public sealed class EmployeeProfileForm
     public bool TryGetDetails(out EmployeePersonalDetails details)
     {
         details = null;
-        DateOnly? birthDate = null;
-        if (!string.IsNullOrWhiteSpace(BirthDateText))
-        {
-            var normalized = new string(BirthDateText.Trim().Select(c => c switch
-            {
-                >= '\u06F0' and <= '\u06F9' => (char)('0' + c - '\u06F0'),
-                >= '\u0660' and <= '\u0669' => (char)('0' + c - '\u0660'),
-                _ => c
-            }).ToArray());
-            var parts = normalized.Split('/');
-            if (parts.Length != 3 || parts[0].Length != 4 ||
-                !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var year) ||
-                !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var month) ||
-                !int.TryParse(parts[2], NumberStyles.None, CultureInfo.InvariantCulture, out var day))
-                return false;
-            try { birthDate = DateOnly.FromDateTime(new PersianCalendar().ToDateTime(year, month, day, 0, 0, 0, 0)); }
-            catch (ArgumentOutOfRangeException) { return false; }
-        }
+        if (!HrPersianDate.TryParseOptional(BirthDateText, out var birthDate)) return false;
         details = new EmployeePersonalDetails(FatherName, NationalCode, BirthCertificateNumber, birthDate,
             Mobile, Telephone, Email, Address, Education, EmergencyContactName, EmergencyContactPhone);
         return true;
