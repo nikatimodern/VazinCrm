@@ -28,3 +28,23 @@
     #hrEmployeeWorkspace .hr-fields { grid-template-columns: minmax(0,1fr); }
     #hrEmployeeWorkspace .hr-action { min-height: 23px; padding: 1px 5px; font-size: 11px; }
 }
+
+#hrEmployeeWorkspace .hr-employee-modal .modal-header,
+#hrEmployeeWorkspace .hr-employee-modal .modal-footer { padding: 9px 12px; }
+#hrEmployeeWorkspace .hr-employee-modal .modal-body { padding: 10px 12px; }
+#hrEmployeeWorkspace .hr-employee-modal .hr-fields { grid-template-columns: repeat(3,minmax(0,1fr)); }
+#hrEmployeeWorkspace .hr-field-wide { grid-column: 1 / -1; }
+#hrEmployeeWorkspace .hr-group-title {
+    color: var(--hr-primary); font: 500 13px/1.8 IRANSansMedium;
+    margin: 10px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--hr-border);
+}
+#hrEmployeeWorkspace .hr-group-title:first-child { margin-top: 0; }
+#hrEmployeeWorkspace .hr-employee-modal label { font-size: 12px; margin-bottom: 4px; }
+#hrEmployeeWorkspace .hr-employee-modal .form-control:not(textarea),
+#hrEmployeeWorkspace .hr-employee-modal .form-select { min-height: 34px; padding-block: 4px; }
+@media (max-width: 767px) {
+    #hrEmployeeWorkspace .hr-employee-modal .hr-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 420px) {
+    #hrEmployeeWorkspace .hr-employee-modal .hr-fields { grid-template-columns: minmax(0,1fr); }
+}
