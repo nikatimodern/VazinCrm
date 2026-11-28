@@ -3,6 +3,35 @@
     if (!root) return;
     enableMomentumScrollScope(root);
 
+    const dossier = root.querySelector("#hrEmployeeDossier");
+    if (dossier && !dossier.dataset.initialized) {
+        dossier.dataset.initialized = "true";
+        const dossierModal = bootstrap.Modal.getOrCreateInstance(dossier);
+        const signal = window.PageRuntime?.current?.signal;
+        const canRestore = () => root.isConnected && !signal?.aborted &&
+            !root.closest('[aria-busy="true"]');
+        dossier.addEventListener("click", event => {
+            const trigger = event.target.closest("[data-hr-dossier-editor]");
+            if (!trigger || !dossier.contains(trigger)) return;
+            const editor = root.querySelector("#" + trigger.dataset.hrDossierEditor);
+            if (!editor) return;
+            const editorModal = bootstrap.Modal.getOrCreateInstance(editor);
+            // Bootstrap supports one visible modal at a time. Wait for its backdrop
+            // and focus trap to be released before opening the next modal.
+            dossier.addEventListener("hidden.bs.modal", () => {
+                if (!canRestore()) return;
+                editor.addEventListener("hidden.bs.modal", () => {
+                    if (canRestore()) dossierModal.show();
+                }, { once: true, signal });
+                editorModal.show(trigger);
+            }, { once: true, signal });
+            dossierModal.hide();
+        }, { signal });
+        // The selected record is resolved and authorized by the server, including
+        // after contract pagination and the existing post/redirect/get workflow.
+        dossierModal.show();
+    }
+
     const modal = root.querySelector("#hrContractEditor");
     if (!modal || modal.dataset.initialized) return;
     modal.dataset.initialized = "true";
