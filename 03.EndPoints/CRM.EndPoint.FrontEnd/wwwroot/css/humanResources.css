@@ -55,3 +55,7 @@
 #hrEmployeeWorkspace .hr-state-danger { color: var(--color-danger, #C2185B); background: var(--color-danger-light, #FCE8F0); }
 #hrEmployeeWorkspace .hr-state-neutral { color: var(--hr-muted); background: var(--color-background, #F0F1F7); }
 #hrEmployeeWorkspace #hrContractEditor fieldset[hidden] { display: none; }
+
+#hrEmployeeWorkspace .hr-map-canvas { position: relative; width: 100%; height: 260px; overflow: hidden; background: var(--hr-light); cursor: crosshair; border: 1px solid var(--hr-border); border-radius: 6px; }
+#hrEmployeeWorkspace .hr-map-canvas img { position: absolute; width: 256px; height: 256px; max-width: none; pointer-events: none; }
+#hrEmployeeWorkspace .hr-map-pin { position: absolute; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; background: var(--hr-action); box-shadow: 0 0 0 1px var(--hr-primary); transform: translate(-50%, -50%); pointer-events: none; }
