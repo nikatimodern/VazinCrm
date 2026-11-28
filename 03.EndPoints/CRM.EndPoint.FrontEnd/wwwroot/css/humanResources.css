@@ -48,3 +48,10 @@
 @media (max-width: 420px) {
     #hrEmployeeWorkspace .hr-employee-modal .hr-fields { grid-template-columns: minmax(0,1fr); }
 }
+
+#hrEmployeeWorkspace .hr-state { display: inline-block; border: 1px solid var(--hr-border); border-radius: 6px; padding: 2px 6px; white-space: nowrap; font-size: 12px; }
+#hrEmployeeWorkspace .hr-state-valid { color: var(--hr-primary); background: var(--hr-light); }
+#hrEmployeeWorkspace .hr-state-warning { color: var(--color-secondary, #5811B4); background: var(--color-secondary-light, #F3EDFC); }
+#hrEmployeeWorkspace .hr-state-danger { color: var(--color-danger, #C2185B); background: var(--color-danger-light, #FCE8F0); }
+#hrEmployeeWorkspace .hr-state-neutral { color: var(--hr-muted); background: var(--color-background, #F0F1F7); }
+#hrEmployeeWorkspace #hrContractEditor fieldset[hidden] { display: none; }
