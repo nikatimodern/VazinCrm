@@ -15,6 +15,6 @@ internal sealed class DepartmentConfig : IEntityTypeConfiguration<Department>
         builder.Property(x => x.Name).HasMaxLength(150).IsRequired();
         builder.HasIndex(x => x.Code).IsUnique();
         builder.HasOne<Department>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
-        builder.Property<byte[]>("RowVersion").IsRowVersion();
+        builder.Property<byte[]>("RowVersion").IsRequired().IsRowVersion();
     }
 }
