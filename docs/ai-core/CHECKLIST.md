@@ -6,9 +6,11 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [x] Read root AGENTS and mandatory Clean Code baseline/Onion and backend skills.
 - [x] Identify existing GapGPT, Vira, AiService, prompt/DTO and background registrations (main source inspection).
 - [x] Record initial architecture, logical entities and scoped documentation instructions.
-- [ ] Verify full dependency map, project refs, call paths and current access enforcement.
+- [x] Inspect direct project references, supply invoice CQRS path, AI queue/worker and provider dependencies (TECHNICAL-DESIGN.md).
+- [ ] Complete remaining call-site inventory and verify actual DI resolution, access enforcement and runtime architecture checker.
 - [ ] Confirm API capabilities, tool calling/streaming, live model availability and usage.
 - [ ] Inventory and rotate exposed credentials with owner; secure runtime settings; review repository visibility/history.
+- [x] Draft normalized provider contract, capability-aware routing and candidate relational schema (TECHNICAL-DESIGN.md).
 - [ ] Review design and obtain entity/schema approval.
 ## A02 — Provider foundation
 - [ ] Define normalized request/result and capability-aware provider contract.
@@ -66,4 +68,4 @@ Update only after verified evidence. Counts are task counts, not effort. Design 
 - [ ] UI accessibility/RTL/mobile, architecture checker and actual build.
 - [ ] Documentation, staged release, approval before deployment or main merge.
 
-Evidence: design-only phase; no runtime build, tests, migration or live AI calls yet. Checklist persistence is verified separately after commit.
+Evidence: technical design v0.2 recorded in TECHNICAL-DESIGN.md. Access Catalog DbSets are present on AccLevel but absent on the baseline UserContextDb; approved integration remains a blocker before operational endpoints. No runtime build, tests, migration or live AI calls yet. Checklist persistence is verified separately after commit.
