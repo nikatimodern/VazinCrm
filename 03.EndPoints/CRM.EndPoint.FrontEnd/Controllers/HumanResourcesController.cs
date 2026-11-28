@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmployeeProfile;
+using CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmploymentContract;
 using CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory;
 using CRM.Core.ApplicationServices.Security;
 using CRM.Core.Domain.HumanResources.Repositories;
@@ -21,8 +22,8 @@ public sealed class HumanResourcesController(ICqrsDispatcher dispatcher) : Contr
 {
     [HttpGet]
     public async Task<IActionResult> Index(string search, int page = 1, Guid? employeeId = null,
-        CancellationToken ct = default) =>
-        View(await dispatcher.QueryAsync(new GetEmployeeDirectoryQuery(search, page, employeeId), ct));
+        int contractPage = 1, CancellationToken ct = default) =>
+        View(await dispatcher.QueryAsync(new GetEmployeeDirectoryQuery(search, page, employeeId, contractPage), ct));
 
     [HttpPost]
     public async Task<IActionResult> SaveEmployee(EmployeeProfileForm input, CancellationToken ct)
@@ -45,5 +46,28 @@ public sealed class HumanResourcesController(ICqrsDispatcher dispatcher) : Contr
         };
         TempData["HrEmployeeSuccess"] = result.Status == EmployeeSaveStatus.Saved;
         return RedirectToAction(nameof(Index), new { employeeId = result.Id ?? input.Id });
+    }
+    [HttpPost]
+    public async Task<IActionResult> SaveContract(EmploymentContractForm input, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || !input.TryGetChange(out var change))
+        {
+            TempData["HrEmployeeMessage"] = "اطلاعات قرارداد یا تاریخ‌ها معتبر نیست.";
+            TempData["HrEmployeeSuccess"] = false;
+            return RedirectToAction(nameof(Index), new { employeeId = input.EmployeeId });
+        }
+        var result = await dispatcher.CommandAsync(new SaveEmploymentContractCommand(change), ct);
+        if (result.Status == ContractSaveStatus.Denied) return Forbid();
+        if (result.Status == ContractSaveStatus.NotFound) return NotFound();
+        TempData["HrEmployeeMessage"] = result.Status switch
+        {
+            ContractSaveStatus.Saved => "عملیات قرارداد با موفقیت ثبت شد.",
+            ContractSaveStatus.Conflict => "شماره قرارداد تکراری است یا اطلاعات هم‌زمان تغییر کرده است؛ دوباره بررسی کنید.",
+            ContractSaveStatus.Overlap => "بازه قرارداد با قرارداد تأییدشده دیگری هم‌پوشانی دارد.",
+            ContractSaveStatus.InvalidPredecessor => "ارتباط با قرارداد قبلی یا تمدید موجود معتبر نیست.",
+            _ => "اطلاعات یا وضعیت قرارداد برای این عملیات معتبر نیست."
+        };
+        TempData["HrEmployeeSuccess"] = result.Status == ContractSaveStatus.Saved;
+        return RedirectToAction(nameof(Index), new { employeeId = input.EmployeeId });
     }
 }
