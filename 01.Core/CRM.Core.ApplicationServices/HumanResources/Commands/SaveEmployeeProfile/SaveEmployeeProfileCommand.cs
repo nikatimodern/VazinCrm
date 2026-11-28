@@ -1,11 +1,12 @@
 using CRM.Core.ApplicationServices.Abstractions.Cqrs;
 using CRM.Core.ApplicationServices.HumanResources.Abstractions;
 using CRM.Core.Domain.HumanResources.Repositories;
+using CRM.Core.Domain.HumanResources.Entities;
 
 namespace CRM.Core.ApplicationServices.HumanResources.Commands.SaveEmployeeProfile;
 
 public sealed record SaveEmployeeProfileCommand(Guid? Id, string PersonnelCode, string FirstName,
-    string LastName, string AppUserId, byte[] RowVersion) : ICommand<EmployeeSaveResult>;
+    string LastName, string AppUserId, byte[] RowVersion, EmployeePersonalDetails PersonalDetails) : ICommand<EmployeeSaveResult>;
 
 public sealed class SaveEmployeeProfileCommandHandler(IHrEmployeeAccess access, IEmployeeProfileRepository repository)
     : ICommandHandler<SaveEmployeeProfileCommand, EmployeeSaveResult>
@@ -19,11 +20,11 @@ public sealed class SaveEmployeeProfileCommandHandler(IHrEmployeeAccess access, 
         {
             if (!rights.ViewEmployeeIds.Contains(command.Id.Value) || !rights.EditEmployeeIds.Contains(command.Id.Value))
                 return new(EmployeeSaveStatus.Denied);
-            return await repository.EditAsync(new(command.Id.Value, command.FirstName, command.LastName, command.RowVersion),
+            return await repository.EditAsync(new(command.Id.Value, command.FirstName, command.LastName, command.RowVersion, command.PersonalDetails),
                 rights.ActorId, rights.EditEmployeeIds, ct);
         }
         if (!rights.CanCreate) return new(EmployeeSaveStatus.Denied);
-        return await repository.CreateAsync(new(command.PersonnelCode, command.FirstName, command.LastName, command.AppUserId),
+        return await repository.CreateAsync(new(command.PersonnelCode, command.FirstName, command.LastName, command.AppUserId, command.PersonalDetails),
             rights.ActorId, rights.ImportAccountIds, ct);
     }
 }
