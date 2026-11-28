@@ -1,0 +1,55 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "تنظیمات هوش مصنوعی";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/settingsTheme.css?release=7.5.6" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/aiSettings.css?release=7.5.6" asp-append-version="true" />
+}
+<div id="aiSettingsWorkspace" class="crm-settings-theme p-2" dir="rtl">
+    <section class="InfoData">
+        <header class="d-flex align-items-center gap-2 mb-3">
+            <span class="ai-settings-title-icon" aria-hidden="true"><i class="fa fa-robot"></i></span>
+            <div>
+                <h1 class="ai-settings-title mb-0">تنظیمات هوش مصنوعی</h1>
+                <p class="small text-muted mb-0">مرکز مدیریت هوش مصنوعی وزین</p>
+            </div>
+        </header>
+        <p class="ai-settings-notice mb-3"><i class="fa fa-info-circle" aria-hidden="true"></i>
+            این صفحه فعلاً نمای اولیه و فقط خواندنی است. مدیریت و ذخیره تنظیمات پس از تکمیل زیرساخت فعال می‌شود.
+        </p>
+        <h2 class="ai-settings-heading">ارائه‌دهندگان هوش مصنوعی</h2>
+        <div class="ai-settings-providers mb-3">
+            <div class="ai-settings-provider">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa fa-cloud text-muted" aria-hidden="true"></i>
+                    <div><strong dir="ltr">GapGPT</strong><div class="small text-muted">سرویس فعلی پروژه</div></div>
+                </div>
+                <span class="ai-settings-state">اتصال زنده بررسی نشده</span>
+            </div>
+            <div class="ai-settings-provider">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa fa-server text-muted" aria-hidden="true"></i>
+                    <div><strong>هوش مصنوعی اختصاصی وزین</strong><div class="small text-muted">ماشین مجازی داخل شبکه</div></div>
+                </div>
+                <span class="ai-settings-state">در حال آماده‌سازی</span>
+            </div>
+            <div class="ai-settings-provider">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa fa-microphone text-muted" aria-hidden="true"></i>
+                    <div><strong>آوانگار</strong><div class="small text-muted">سرویس تخصصی تبدیل صوت به متن</div></div>
+                </div>
+                <span class="ai-settings-state">اتصال زنده بررسی نشده</span>
+            </div>
+        </div>
+        <h2 class="ai-settings-heading">مدیریت و پیکربندی — برنامه توسعه</h2>
+        <ul class="ai-settings-sections mb-0">
+            <li><i class="fa fa-cogs" aria-hidden="true"></i><span>ارائه‌دهندگان، مدل‌ها و انتخاب سرویس</span></li>
+            <li><i class="fa fa-comment-alt" aria-hidden="true"></i><span>پرامپت‌ها و دستیار هوشمند</span></li>
+            <li><i class="fa fa-tools" aria-hidden="true"></i><span>ابزارها و عامل‌های هوشمند</span></li>
+            <li><i class="fa fa-clock" aria-hidden="true"></i><span>وظایف زمان‌بندی‌شده</span></li>
+            <li><i class="fa fa-shield-alt" aria-hidden="true"></i><span>امنیت و سطح دسترسی</span></li>
+            <li><i class="fa fa-chart-bar" aria-hidden="true"></i><span>مصرف، هزینه و تاریخچه پردازش‌ها</span></li>
+        </ul>
+    </section>
+</div>
