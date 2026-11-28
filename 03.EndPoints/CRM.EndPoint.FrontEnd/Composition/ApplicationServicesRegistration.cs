@@ -110,6 +110,7 @@ public static class ApplicationServicesRegistration
         services.AddAccountancyServices();
         services.AddCashServices();
         services.AddAdminServices();
+        services.AddHumanResources();
         services.AddScoped<IQueryHandler<GetReportQuery, Report>, GetReportQueryHandler>();
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddHttpContextAccessor();
