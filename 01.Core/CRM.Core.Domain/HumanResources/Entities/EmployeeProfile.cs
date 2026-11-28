@@ -34,6 +34,24 @@ public sealed class EmployeeProfile : BaseEntity
     public string EmergencyContactName { get; private set; }
     public string EmergencyContactPhone { get; private set; }
 
+    public decimal? Latitude { get; private set; }
+    public decimal? Longitude { get; private set; }
+    public byte[] EducationDocumentContent { get; private set; }
+    public string EducationDocumentType { get; private set; }
+
+    // Only called by the separately authorized document workflow.
+    public void SetEducationDocument(byte[] content)
+    {
+        if (content is null || content.Length < 8 || content.Length > 5 * 1024 * 1024)
+            throw new ArgumentException("Invalid document size.", nameof(content));
+        var type = content.AsSpan().StartsWith(new byte[] { 37, 80, 68, 70, 45 }) ? "application/pdf"
+            : content.AsSpan().StartsWith(new byte[] { 255, 216, 255 }) ? "image/jpeg"
+            : content.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) ? "image/png" : null;
+        if (type is null) throw new ArgumentException("Unsupported document format.", nameof(content));
+        EducationDocumentContent = (byte[])content.Clone();
+        EducationDocumentType = type;
+    }
+
     public void SetPersonalDetails(EmployeePersonalDetails details)
     {
         ArgumentNullException.ThrowIfNull(details);
@@ -52,6 +70,11 @@ public sealed class EmployeeProfile : BaseEntity
         if (details.BirthDate.HasValue && (details.BirthDate.Value.Year < 1900 || details.BirthDate.Value > DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))))
             throw new ArgumentException("Invalid birth date.", nameof(details.BirthDate));
 
+        if (details.Latitude.HasValue != details.Longitude.HasValue ||
+            details.Latitude is < -90 or > 90 || details.Longitude is < -180 or > 180)
+            throw new ArgumentException("Invalid address coordinates.", nameof(details));
+        Latitude = details.Latitude.HasValue ? Math.Round(details.Latitude.Value, 6) : null;
+        Longitude = details.Longitude.HasValue ? Math.Round(details.Longitude.Value, 6) : null;
         FatherName = father;
         NationalCode = national;
         BirthCertificateNumber = certificate;
