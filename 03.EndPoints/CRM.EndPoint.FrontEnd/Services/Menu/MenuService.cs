@@ -812,6 +812,7 @@ public class MenuService(IServiceProvider serviceProvider) : IMenuService {
                     AppRoles.Admin, AppRoles.FinancialExpert, AppRoles.FinancialAdmin),
                 SettingLink("settingsMain", "تنظیمات پایه", "/Asetting/Index", AppRoles.Admin),
                 SettingLink("settingsPrefactorTerms", "شرایط قرارداد در پیش فاکتور", "/PrefactorTerms/Index", AppRoles.Admin),
+                SettingLink("settingsAi", "تنظیمات هوش مصنوعی", "/AiSettings/Index", AppRoles.Admin),
                 SettingLink("settingsBin", "سطل زباله", "/Asetting/RecycleBin", AppRoles.Admin),
                 SettingLink("settingsSms", "مدیریت پیامک", "/Sms/Index", AppRoles.Admin),
                 SettingLink("settingsExternal", "مدیریت ارتباطات", "/ExternalSoftware/Index", AppRoles.Admin)
