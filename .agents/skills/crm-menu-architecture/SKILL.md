@@ -33,7 +33,7 @@ Do not introduce another menu registry, hard-coded navigation tree in a view or 
 4. Verify desktop, mobile drawer, search and favorites. Add a separate mobile bottom shortcut only when requested or required by the existing design. For settings, use the existing supplemental settings link mechanism and keep the actual settings modal in sync.
 5. Run focused build/tests and report the result; do not claim validation that was not executed.
 
-Example: the existing production category's warehouse entry illustrates a direct definition, including its inherited access constraint:
+Example: the existing production category's warehouse entry illustrates a direct definition, including its explicit effective role audience:
 
 ```csharp
 new MenuItem {
@@ -41,7 +41,6 @@ new MenuItem {
     Title = "انبار",
     Url = "/Warehouse/Index",
     Roles = [.. SupplyFactorRoles],
-    RequiredParentRoles = TreasuryRoles,
     DisplayOrder = 3
 }
 ```
@@ -58,7 +57,7 @@ Use meaningful, unique sibling DisplayOrder values for normal entries; preserve 
 
 Menu visibility is not endpoint authorization. Verify the actual server-side permission and record Scope independently, including direct requests and indirect operations. Never expand a user's audience simply because a page has moved to a different category.
 
-In the current legacy-compatible role filter, a nonempty Roles list is checked against role claims; an empty list inherits the nearest effective parent audience, and an empty effective audience has no role restriction. RequiredParentRoles is an additional independent any-of constraint, ANDed with the effective role check. An inaccessible parent excludes all descendants. Preserve those semantics for existing entries; do not grant access by omitting a role list or combining independent constraints into a single union. Reuse current centralized permission checks when the target feature uses the newer access model; update the centralized filter if explicitly required rather than scattering access logic. Do not bypass security or weaken direct endpoint checks.
+In the current legacy-compatible role filter, a nonempty Roles list is checked against role claims; an empty list inherits the nearest effective parent audience, and an empty effective audience has no role restriction. When moving an entry to a category with a different audience, declare its previous effective roles directly on the item. Do not introduce a separate parent-role override property. An inaccessible parent excludes all descendants. Preserve those semantics for existing entries; do not grant access by omitting a role list or broadening the effective audience. Reuse current centralized permission checks when the target feature uses the newer access model; update the centralized filter if explicitly required rather than scattering access logic. Do not bypass security or weaken direct endpoint checks.
 
 Preserve TaxationAvailability and the existing Admin plus local-preview gate for the taxation item. Keep visibility checks centralized; never invent environment or feature-flag bypasses.
 

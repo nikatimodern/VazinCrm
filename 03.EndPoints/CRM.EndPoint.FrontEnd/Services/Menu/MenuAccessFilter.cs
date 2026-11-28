@@ -15,9 +15,6 @@ internal static class MenuAccessFilter
         var visible = new List<MenuItem>();
         foreach (var item in items ?? [])
         {
-            if (item.RequiredParentRoles.Count > 0 && !item.RequiredParentRoles.Any(userRoles.Contains))
-                continue;
-
             var effectiveRoles = item.Roles.Count > 0 ? item.Roles : parentRoles;
             if (effectiveRoles.Count > 0 && !effectiveRoles.Any(userRoles.Contains))
                 continue;

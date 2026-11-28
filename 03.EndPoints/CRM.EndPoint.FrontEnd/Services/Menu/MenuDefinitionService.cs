@@ -121,11 +121,11 @@ public sealed class MenuDefinitionService(
                     },
                     new MenuItem {
                         Id = "supplyFactor", Title = "ثبت فاکتور تامین", Url = "/Supply/SupplyFactor",
-                        Roles = [.. SupplyFactorRoles], RequiredParentRoles = TreasuryRoles, DisplayOrder = 3
+                        Roles = [.. SupplyFactorRoles], DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "requestAmount", Title = "ثبت درخواست وجه", Url = "/RequestAmount/Index",
-                        RequiredParentRoles = TreasuryRoles, DisplayOrder = 4
+                        Roles = [.. TreasuryRoles], DisplayOrder = 4
                     }
                 ]
             },
@@ -138,15 +138,15 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "productionVoucher", Title = "حواله تولید", Url = "/Order/Index",
-                        RequiredParentRoles = SalesAndSupplyRoles, DisplayOrder = 1
+                        Roles = [.. SalesAndSupplyRoles], DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "warehouseVoucher", Title = "حواله انبار", Url = "/Warehouse/Voucher",
-                        RequiredParentRoles = SalesAndSupplyRoles, DisplayOrder = 2
+                        Roles = [.. SalesAndSupplyRoles], DisplayOrder = 2
                     },
                     new MenuItem {
                         Id = "warehouse", Title = "انبار", Url = "/Warehouse/Index",
-                        Roles = [.. SupplyFactorRoles], RequiredParentRoles = TreasuryRoles, DisplayOrder = 3
+                        Roles = [.. SupplyFactorRoles], DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "qualityControl", Title = "کنترل کیفیت", Url = "/QualityControl/Index",
@@ -170,24 +170,24 @@ public sealed class MenuDefinitionService(
                     },
                     new MenuItem {
                         Id = "receivedChecks", Title = "چک‌های دریافتی", Url = "/Check/Received",
-                        RequiredParentRoles = FinanceRoles, DisplayOrder = 2
+                        Roles = [.. FinanceRoles], DisplayOrder = 2
                     },
                     new MenuItem {
                         Id = "issuedChecks", Title = "صدور چک", Url = "/Check/Index",
-                        RequiredParentRoles = FinanceRoles, DisplayOrder = 3
+                        Roles = [.. FinanceRoles], DisplayOrder = 3
                     },
                     new MenuItem {
                         Id = "transfer", Title = "نقل و انتقال", Url = "/Transfer/Index",
-                        Roles = [.. FinanceRoles], RequiredParentRoles = TreasuryRoles, DisplayOrder = 4
+                        Roles = [.. FinanceRoles], DisplayOrder = 4
                     },
                     new MenuItem {
                         Id = "cashier", Title = "ثبت تنخواه دار", Url = "/Cash/Cashier",
                         Roles = [AppRoles.Admin, AppRoles.FinancialAdmin, AppRoles.FinancialExpert],
-                        RequiredParentRoles = CashRoles, DisplayOrder = 5
+                        DisplayOrder = 5
                     },
                     new MenuItem {
                         Id = "cashIndex", Title = "ثبت تنخواه", Url = "/Cash/Index",
-                        RequiredParentRoles = CashRoles, DisplayOrder = 6
+                        Roles = [.. CashRoles], DisplayOrder = 6
                     },
                     .. (showTaxation ? new[] {
                         new MenuItem {
@@ -207,11 +207,11 @@ public sealed class MenuDefinitionService(
                 SubItems = [
                     new MenuItem {
                         Id = "profit", Title = "بهای تمام شده", Url = "/Supply/Profit",
-                        RequiredParentRoles = FinanceRoles, DisplayOrder = 1
+                        Roles = [.. FinanceRoles], DisplayOrder = 1
                     },
                     new MenuItem {
                         Id = "demand", Title = "مطالبات", Url = "/Supply/Demand",
-                        RequiredParentRoles = FinanceRoles, DisplayOrder = 2
+                        Roles = [.. FinanceRoles], DisplayOrder = 2
                     }
                 ]
             },

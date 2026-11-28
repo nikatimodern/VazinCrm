@@ -33,7 +33,6 @@ public class MenuItem {
     public bool IsStandalone { get; init; } // Fixed actions outside the main menu.
 
     // Internal definition metadata; the public menu contract remains unchanged.
-    internal IReadOnlyList<string> RequiredParentRoles { get; init; } = [];
     internal bool CompactChildOrder { get; init; }
     internal bool KeepDisplayOrder { get; init; }
 }
