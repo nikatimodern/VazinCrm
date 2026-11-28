@@ -8,7 +8,9 @@ internal sealed class EmployeeProfileConfig : IEntityTypeConfiguration<EmployeeP
 {
     public void Configure(EntityTypeBuilder<EmployeeProfile> builder)
     {
-        builder.ToTable("HrEmployeeProfiles");
+        builder.ToTable("HrEmployeeProfiles", table =>
+            table.HasCheckConstraint("CK_HrEmployeeProfiles_Coordinates",
+                "([Latitude] IS NULL AND [Longitude] IS NULL) OR ([Latitude] IS NOT NULL AND [Longitude] IS NOT NULL AND [Latitude] BETWEEN -90 AND 90 AND [Longitude] BETWEEN -180 AND 180)"));
         builder.HasKey(x => x.Id);
         builder.Property(x => x.PersonnelCode).HasMaxLength(40).IsRequired();
         builder.Property(x => x.FirstName).HasMaxLength(100).IsRequired();
@@ -25,6 +27,10 @@ internal sealed class EmployeeProfileConfig : IEntityTypeConfiguration<EmployeeP
         builder.Property(x => x.Education).HasMaxLength(100);
         builder.Property(x => x.EmergencyContactName).HasMaxLength(150);
         builder.Property(x => x.EmergencyContactPhone).HasMaxLength(24);
+        builder.Property(x => x.Latitude).HasPrecision(9, 6);
+        builder.Property(x => x.Longitude).HasPrecision(9, 6);
+        builder.Property(x => x.EducationDocumentContent).HasColumnType("varbinary(max)");
+        builder.Property(x => x.EducationDocumentType).HasMaxLength(32);
         builder.HasIndex(x => x.NationalCode).IsUnique().HasFilter("[NationalCode] IS NOT NULL");
         builder.HasIndex(x => x.PersonnelCode).IsUnique();
         builder.HasIndex(x => x.AppUserId).IsUnique().HasFilter("[AppUserId] IS NOT NULL");
