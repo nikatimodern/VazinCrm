@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +23,16 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
         return await db.HrEmployeeProfiles.AsNoTracking().Where(x => x.Id == id && !x.IsDeleted)
             .Select(x => new EmployeeProfileDetail(x.Id, x.PersonnelCode, x.FirstName, x.LastName,
                 x.AppUserId != null, EF.Property<byte[]>(x, "RowVersion"),
-                new EmployeePersonalDetails(x.FatherName, x.NationalCode, x.BirthCertificateNumber, x.BirthDate, x.Mobile, x.Telephone, x.Email, x.Address, x.Education, x.EmergencyContactName, x.EmergencyContactPhone))).SingleOrDefaultAsync(ct);
+                new EmployeePersonalDetails(x.FatherName, x.NationalCode, x.BirthCertificateNumber, x.BirthDate, x.Mobile, x.Telephone, x.Email, x.Address, x.Education, x.EmergencyContactName, x.EmergencyContactPhone, x.Latitude, x.Longitude), x.EducationDocumentContent != null)).SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<EmployeeEducationDocument> GetEducationDocumentAsync(Guid id, IReadOnlyCollection<Guid> allowedIds, CancellationToken ct)
+    {
+        if (allowedIds is null || !allowedIds.Contains(id)) return null;
+        return await db.HrEmployeeProfiles.AsNoTracking()
+            .Where(x => x.Id == id && !x.IsDeleted && x.EducationDocumentContent != null)
+            .Select(x => new EmployeeEducationDocument(x.EducationDocumentContent, x.EducationDocumentType))
+            .SingleOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<EmployeeAccountCandidate>> GetCandidatesAsync(IReadOnlyCollection<string> allowedAccountIds, CancellationToken ct)
@@ -51,17 +62,29 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
             first = account.FirstName;
             last = account.LastName;
         }
+        // Serialize allocation, including soft-deleted rows, and keep the existing unique index.
+        // Numeric legacy codes are preserved; the next code starts at 1001 or above the maximum.
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         EmployeeProfile entity;
         try
         {
-            entity = new EmployeeProfile(input.PersonnelCode, first, last, accountId);
+            var maximum = (await db.Database.SqlQueryRaw<long>(
+                "SELECT COALESCE(MAX(TRY_CONVERT(bigint, [PersonnelCode])), CONVERT(bigint, 1000)) AS [Value] FROM [HrEmployeeProfiles] WITH (UPDLOCK, HOLDLOCK)")
+                .ToListAsync(ct)).Single();
+            if (maximum == long.MaxValue) return new(EmployeeSaveStatus.Conflict);
+            var code = (Math.Max(1000L, maximum) + 1).ToString(CultureInfo.InvariantCulture);
+            entity = new EmployeeProfile(code, first, last, accountId);
             entity.SetPersonalDetails(input.PersonalDetails ?? new EmployeePersonalDetails());
+            if (input.EducationDocument != null) entity.SetEducationDocument(input.EducationDocument);
         }
         catch (ArgumentException) { return new(EmployeeSaveStatus.Invalid); }
+        catch (SqlException ex) when (ex.Number == 1205) { return new(EmployeeSaveStatus.Conflict); }
         entity.UserCreatorID = actorId;
         entity.UserModifyID = actorId;
         db.HrEmployeeProfiles.Add(entity);
-        return await PersistAsync(entity, ct);
+        var result = await PersistAsync(entity, ct);
+        if (result.Status == EmployeeSaveStatus.Saved) await transaction.CommitAsync(ct);
+        return result;
     }
 
     public async Task<EmployeeSaveResult> EditAsync(EditEmployeeProfileInput input, string actorId,
@@ -76,6 +99,7 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
         {
             entity.SetName(input.FirstName, input.LastName);
             entity.SetPersonalDetails(input.PersonalDetails ?? new EmployeePersonalDetails());
+            if (input.EducationDocument != null) entity.SetEducationDocument(input.EducationDocument);
         }
         catch (ArgumentException)
         {
@@ -101,7 +125,7 @@ public sealed class EmployeeProfileRepository(CRMContextDb db, UserContextDb use
             db.Entry(entity).State = EntityState.Detached;
             return new(EmployeeSaveStatus.Conflict);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 or 1205 })
         {
             db.Entry(entity).State = EntityState.Detached;
             return new(EmployeeSaveStatus.Conflict);
