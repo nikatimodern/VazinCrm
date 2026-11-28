@@ -1,0 +1,59 @@
+@model CRM.Core.ApplicationServices.HumanResources.Queries.GetEmployeeDirectory.EmployeeDirectoryPage
+<div class="modal fade hr-employee-modal" id="hrContractEditor" tabindex="-1" aria-labelledby="hrContractEditorTitle" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" asp-controller="HumanResources" asp-action="SaveContract" method="post" id="hrContractForm">
+            <input type="hidden" name="EmployeeId" value="@Model.Selected.Id" />
+            <input type="hidden" name="Operation" />
+            <input type="hidden" name="ContractId" />
+            <input type="hidden" name="RowVersion" />
+            <div class="modal-header">
+                <h2 class="modal-title hr-heading mb-0" id="hrContractEditorTitle">قرارداد پرسنلی</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2">@Model.Selected.FirstName @Model.Selected.LastName | کد پرسنلی: @Model.Selected.PersonnelCode</p>
+                <p class="hr-notice mb-2" id="hrContractOperationNote" role="status" hidden></p>
+                <fieldset id="hrContractTerms" class="hr-fields">
+                    <div>
+                        <label for="hrContractNumber">شماره قرارداد *</label>
+                        <input id="hrContractNumber" name="Number" class="form-control" maxlength="64" required />
+                    </div>
+                    <div>
+                        <label for="hrContractTerm">نوع قرارداد *</label>
+                        <select id="hrContractTerm" name="Term" class="form-select" required>
+                            <option value="1">مدت‌دار</option>
+                            <option value="2">بدون تاریخ پایان</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="hrAgreementDate">تاریخ تنظیم *</label>
+                        <input id="hrAgreementDate" name="AgreementDateText" class="form-control" maxlength="10" inputmode="numeric" dir="ltr" placeholder="1405/09/01" required />
+                    </div>
+                    <div>
+                        <label for="hrContractStart">تاریخ شروع *</label>
+                        <input id="hrContractStart" name="StartDateText" class="form-control" maxlength="10" inputmode="numeric" dir="ltr" placeholder="1405/09/01" required />
+                    </div>
+                    <div>
+                        <label for="hrContractEnd">تاریخ پایان</label>
+                        <input id="hrContractEnd" name="EndDateText" class="form-control" maxlength="10" inputmode="numeric" dir="ltr" placeholder="1405/12/29" required />
+                    </div>
+                </fieldset>
+                <fieldset id="hrContractResolution" class="hr-fields" hidden disabled>
+                    <div id="hrTerminationField" hidden>
+                        <label for="hrTerminationDate">تاریخ فسخ *</label>
+                        <input id="hrTerminationDate" name="TerminationDateText" class="form-control" maxlength="10" inputmode="numeric" dir="ltr" />
+                    </div>
+                    <div class="hr-field-wide">
+                        <label for="hrContractReason">دلیل *</label>
+                        <textarea id="hrContractReason" name="Reason" class="form-control" maxlength="1000" rows="3" required></textarea>
+                    </div>
+                </fieldset>
+                <small class="text-muted" id="hrContractDateHint">تاریخ‌ها به شمسی و با قالب سال/ماه/روز وارد شوند.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="hr-action" data-bs-dismiss="modal">انصراف</button>
+                <button type="submit" class="hr-action hr-primary" id="hrContractSubmit">ثبت</button>
+            </div>
+        </form>
+    </div>
+</div>
