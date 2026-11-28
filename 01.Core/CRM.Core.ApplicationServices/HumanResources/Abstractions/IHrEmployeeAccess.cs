@@ -6,7 +6,9 @@ public sealed record HrEmployeeAccess(string ActorId, bool CanView, bool CanCrea
     IReadOnlyCollection<Guid> ViewEmployeeIds, IReadOnlyCollection<Guid> EditEmployeeIds,
     IReadOnlyCollection<Guid> ContractViewEmployeeIds, IReadOnlyCollection<string> ImportAccountIds,
     IReadOnlyCollection<Guid> ContractCreateEmployeeIds, IReadOnlyCollection<Guid> ContractEditEmployeeIds,
-    IReadOnlyCollection<Guid> ContractApproveEmployeeIds, IReadOnlyCollection<Guid> ContractTerminateEmployeeIds);
+    IReadOnlyCollection<Guid> ContractApproveEmployeeIds, IReadOnlyCollection<Guid> ContractTerminateEmployeeIds,
+    bool CanUploadEducationOnCreate, IReadOnlyCollection<Guid> EducationDocumentViewIds,
+    IReadOnlyCollection<Guid> EducationDocumentEditIds);
 
 public interface IHrEmployeeAccess
 {
@@ -18,5 +20,5 @@ public interface IHrEmployeeAccess
 public sealed class LockedHrEmployeeAccess : IHrEmployeeAccess
 {
     public Task<HrEmployeeAccess> GetAsync(CancellationToken ct) =>
-        Task.FromResult(new HrEmployeeAccess("", false, false, [], [], [], [], [], [], [], []));
+        Task.FromResult(new HrEmployeeAccess("", false, false, [], [], [], [], [], [], [], [], false, [], []));
 }
