@@ -15,8 +15,10 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Review design, relationships, retention, security, and obtain schema approval.
 ## H02 — Personnel and organization
 - [x] Add five initial Domain entities with per-record constructor/date/reference validation: EmployeeProfile, EmploymentRecord, Department, JobPosition, EmployeeAssignment (uncompiled).
-- [ ] Define repository contracts and SQL implementations, per-entity EF mappings and scoped application use cases; approved migration + SQL.
-- [ ] Isolate HR configurations to CRMContextDb: SepidarContextDbBase currently scans the shared assembly without a predicate; verify both contexts before registration.
+- [x] Add five per-entity EF configurations, named CRMContextDb sets, and bounded employee directory/history/assignment read repository contract and SQL implementation; source only.
+- [ ] Implement scoped application use cases and transactional write repository; approved migration + SQL.
+- [x] Exclude the new AI/HR CRM-only configuration namespaces from Sepidar assembly scanning; verify matching source on both branches.
+- [ ] Verify actual CRM and Sepidar EF models and repository SQL translation with build/tests.
 - [ ] Enforce employee profile/history uniqueness, optional Identity link existence/uniqueness and non-overlap transactionally; build workflow.
 - [ ] Enforce department/manager ancestor cycle checks, position existence and primary assignment overlap transactionally; build workflow.
 - [ ] Restricted personnel documents, audit and permission/scope registration.
@@ -66,4 +68,4 @@ Update only with evidence. Counts are task counts, not effort. Design is not imp
 - [ ] Architecture checker, actual build, UI/RTL/mobile review, documentation and pilot.
 - [ ] Approved cross-branch integration and release; no main merge without approval.
 
-Evidence: v0.3 five HumanResources Domain entities added and read back from hrm. Per-record guards only; uniqueness, cross-record dates, cycles and permission require persistence/application checks. EmploymentRecord is the source of employment history; no duplicate employment state on EmployeeProfile yet. No EF mapping registration, migration, device connection, UI, endpoint, or main changes. Shared assembly scanning in Sepidar requires context isolation before HR configurations. No checked-out repository or dotnet SDK; build and tests not run.
+Evidence: v0.3 five HumanResources Domain entities added and read back from hrm. Per-record guards only; uniqueness, cross-record dates, cycles and permission require persistence/application checks. EmploymentRecord is the source of employment history; no duplicate employment state on EmployeeProfile yet. v0.4 adds per-entity mappings, named DbSets and read-only repository with explicit server-authorized employee ID set (empty set denies); code-level Sepidar configuration exclusion is in place, runtime model isolation remains untested. No DI registration, write repository, migration, device connection, UI, endpoint, database or main changes. Cross-record overlap, cycles and Identity validation remain pending. No checked-out repository or dotnet SDK; build and tests not run.
